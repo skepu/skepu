@@ -13,6 +13,33 @@ SkePU 2 consists of four parts:
 
 ## Setting up the SkePU source-to-source compiler
 
+### Cloning with submodules
+
+This repository should be cloned with `git clone --recursive $URL` in
+order to also clone the submodules it links to. `git submodule update --init`
+can be used to clone submodules to an existing repository.
+
+### Building - Automatically
+
+Run
+
+`$ make`
+
+in the project root.
+
+The automated build depends on CMake and rsync. It is recommendend to
+build with the `-j` flag to get a parallel build, for example `$ make
+-j$(nproc)`. The binary will be available in `build/bin/skepu`.
+
+
+### Building - Manually
+
+Running the `Makefile` in the project root will execute the following
+steps with some minor changes, but will use `rsync` and a separate
+copy of the source tree for building.
+
+The steps followed in building SkePU "by hand" is outlined below.
+
 1. Clone LLVM and Clang Git repositories and confirm that Clang builds.
 2. Patch Clang (see below) to add SkePU attributes and diagnostics to Clang.
 	It also instructs the Clang build system to build the SkePU tool.
@@ -22,30 +49,12 @@ SkePU 2 consists of four parts:
 5. If successful, the SkePU precompiler binary should now be in `<clang build>/bin/skepu`.
 6. Run `skepu -help` to confirm that everything worked and to see available options.
 
-### Cloning LLVM and Clang
 
-`$ mkdir ~/clang-llvm && cd ~/clang-llvm`
-
-`$ git clone http://llvm.org/git/llvm.git`
-
-`$ cd llvm/tools`
-
-`$ git clone http://llvm.org/git/clang.git`
-
-
-### Patch Clang
-
-TODO: Checkout a specific llvm / Clang version first!
-
-`$ cd <clang source>`
-
-`$ git apply <skepu source>/clang_patch.patch`
-
-### Symlink SkePU sources in Clang
+#### Symlink SkePU sources in Clang
 
 `$ ln -s <skepu source>/clang_precompiler <clang source>/tools/skepu-tool`
 
-### Building SkePU precompiler
+#### Building SkePU precompiler
 
 Create and/or move to build directory.
 
@@ -59,8 +68,7 @@ Set up CMake (once)
 
 Build the SkePU tool (once for SkePU users)
 
-`$ make skepu-tool`
-
+`$ make skepu-tool` (in the `build` folder previously created)
 
 ## Compatibility with SkePU 1
 
