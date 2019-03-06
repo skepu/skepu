@@ -1,6 +1,6 @@
 [submodule "clang"]
 	path = clang
-	url = git@gitlab.liu.se:henhe459/clang-skepu.git
+	url = https://gitlab.ida.liu.se/henhe459/clang-skepu.git
 [submodule "llvm"]
 	path = llvm
 	url = http://llvm.org/git/llvm.git
