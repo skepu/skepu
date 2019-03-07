@@ -14,8 +14,12 @@ build_skepu:
     - build/bin/
   script:
     - make -j12
+  only:
+    - merge_requests
 
 test_skepu:
   stage: tests
   script:
     - build/bin/skepu-tool --help
+  only:
+    - merge_requests
