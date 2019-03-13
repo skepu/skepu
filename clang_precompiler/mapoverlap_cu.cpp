@@ -23,8 +23,9 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU(
 	int poly, SKEPU_MAPOVERLAP_INPUT_TYPE pad, size_t overlap
 )
 {
-   extern __shared__ char _sdata[];
-   SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata);
+   extern __shared__ SKEPU_MAPOVERLAP_INPUT_TYPE sdata[];
+   // extern __shared__ char _sdata[];
+   // SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata);
 
    size_t tid = threadIdx.x;
    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -112,8 +113,9 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_Row(
 	int poly, SKEPU_MAPOVERLAP_INPUT_TYPE pad, size_t overlap, size_t blocksPerRow, size_t rowWidth
 )
 {
-   extern __shared__ char _sdata[];
-   SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata);
+   extern __shared__ SKEPU_MAPOVERLAP_INPUT_TYPE sdata[];
+   // extern __shared__ char _sdata[];
+   // SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata);
 
    size_t tid = threadIdx.x;
    size_t i = blockIdx.x * blockDim.x + tid;
@@ -203,8 +205,9 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_Col(
 	int poly, SKEPU_MAPOVERLAP_INPUT_TYPE pad, size_t overlap, size_t blocksPerCol, size_t rowWidth, size_t colWidth
 )
 {
-   extern __shared__ char _sdata[];
-   SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata);
+   extern __shared__ SKEPU_MAPOVERLAP_INPUT_TYPE sdata[];
+   // extern __shared__ char _sdata[];
+   // SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata);
 
    size_t tid = threadIdx.x;
    size_t i = blockIdx.x * blockDim.x + tid;
@@ -297,8 +300,9 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_ColMulti(
 	int poly, int deviceType, SKEPU_MAPOVERLAP_INPUT_TYPE pad, size_t overlap, size_t blocksPerCol, size_t rowWidth, size_t colWidth
 )
 {
-   extern __shared__ char _sdata[];
-   SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata);
+   extern __shared__ SKEPU_MAPOVERLAP_INPUT_TYPE sdata[];
+   // extern __shared__ char _sdata[];
+   // SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata);
 
    size_t tid = threadIdx.x;
    size_t i = blockIdx.x * blockDim.x + tid;
@@ -494,8 +498,9 @@ __global__ void SKEPU_KERNEL_NAME_conv_cuda_2D_kernel(
 	const size_t sharedRows, const size_t sharedCols
 )
 {
-	extern __shared__ char _sdata[];
-	SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata); // will also contain extra (overlap data)
+   extern __shared__ SKEPU_MAPOVERLAP_INPUT_TYPE sdata[]; // will also contain extra (overlap data)
+	// extern __shared__ char _sdata[];
+	// SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata); // will also contain extra (overlap data)
 	
 	size_t xx = blockIdx.x * blockDim.x;
 	size_t yy = blockIdx.y * blockDim.y;

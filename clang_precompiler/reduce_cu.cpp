@@ -11,8 +11,9 @@ using namespace clang;
 static const char *ReduceKernelTemplate_CU = R"~~~(
 __global__ void SKEPU_KERNEL_NAME(SKEPU_REDUCE_RESULT_TYPE *input, SKEPU_REDUCE_RESULT_TYPE *output, size_t n, size_t blockSize, bool nIsPow2)
 {
-	extern __shared__ alignas(SKEPU_REDUCE_RESULT_TYPE) char _sdata[];
-	SKEPU_REDUCE_RESULT_TYPE *sdata = reinterpret_cast<SKEPU_REDUCE_RESULT_TYPE*>(_sdata);
+	extern __shared__ SKEPU_REDUCE_RESULT_TYPE sdata[];
+	// extern __shared__ alignas(SKEPU_REDUCE_RESULT_TYPE) char _sdata[];
+	// SKEPU_REDUCE_RESULT_TYPE *sdata = reinterpret_cast<SKEPU_REDUCE_RESULT_TYPE*>(_sdata);
 	
 	// perform first level of reduction,
 	// reading from global memory, writing to shared memory

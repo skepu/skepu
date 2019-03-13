@@ -9,8 +9,9 @@ using namespace clang;
 const std::string ScanKernel_CU = R"~~~(
 __global__ void SKEPU_KERNEL_NAME_ScanKernel(SKEPU_SCAN_TYPE* input, SKEPU_SCAN_TYPE* output, SKEPU_SCAN_TYPE* blockSums, size_t n, size_t numElements)
 {
-	extern __shared__ char _sdata[];
-	SKEPU_SCAN_TYPE* sdata = reinterpret_cast<SKEPU_SCAN_TYPE*>(_sdata);
+	extern __shared__ SKEPU_SCAN_TYPE sdata[];
+	// extern __shared__ char _sdata[];
+	// SKEPU_SCAN_TYPE* sdata = reinterpret_cast<SKEPU_SCAN_TYPE*>(_sdata);
 	
 	size_t thid = threadIdx.x;
 	unsigned int pout = 0;
@@ -54,8 +55,9 @@ __global__ void SKEPU_KERNEL_NAME_ScanKernel(SKEPU_SCAN_TYPE* input, SKEPU_SCAN_
 const std::string ScanUpdate_CU = R"~~~(
 __global__ void SKEPU_KERNEL_NAME_ScanUpdate(SKEPU_SCAN_TYPE *data, SKEPU_SCAN_TYPE *sums, int isInclusive, SKEPU_SCAN_TYPE init, size_t n, SKEPU_SCAN_TYPE *ret)
 {
-	extern __shared__ char _sdata[];
-	SKEPU_SCAN_TYPE* sdata = reinterpret_cast<SKEPU_SCAN_TYPE*>(_sdata);
+	extern __shared__ SKEPU_SCAN_TYPE sdata[];
+	// extern __shared__ char _sdata[];
+	// SKEPU_SCAN_TYPE* sdata = reinterpret_cast<SKEPU_SCAN_TYPE*>(_sdata);
 	
 	__shared__ SKEPU_SCAN_TYPE offset;
 	__shared__ SKEPU_SCAN_TYPE inc_offset;

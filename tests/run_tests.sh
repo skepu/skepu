@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 SKEPU_TOOL=../build/bin/skepu-tool
 # Path to cuda installation
@@ -13,7 +13,7 @@ SKEPU_DEBUG=0
 mkdir -p output
 mkdir -p tmp
 
-skeletons=( map )
+skeletons=( map reduce mapreduce mapoverlap scan )
 for skel in "${skeletons[@]}"
 do 
     ./run_test.sh ${skel} $SKEPU_TOOL $CUDA_DIR $CLANG_SOURCE_DIR $OPT_FLAG $SKEPU_DEBUG
