@@ -43,6 +43,7 @@ std::unordered_map<const VarDecl*, UserConstant*> UserConstants;
 // Explicitly allowed functions to call from user functions
 std::unordered_set<std::string> AllowedFunctionNamesCalledInUFs
 {
+	"exp",
 	"sqrt",
 	"abs",
 	"printf",
