@@ -1,0 +1,4 @@
+#define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_COLOUR_ANSI
+#define CATCH_CONFIG_FAST_COMPILE
+#include "catch.hpp"
