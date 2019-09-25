@@ -8,7 +8,7 @@
 
 #ifdef SKEPU_MPI_STARPU
 #include <starpu.h>
-#include <skepu2.hpp>
+#include <skepu>
 #endif
 
 namespace soffa {
@@ -33,7 +33,7 @@ namespace soffa {
 						{
 								using namespace std::chrono;
 #ifdef SKEPU_MPI_STARPU
-								if (skepu2::cluster::mpi_rank() != 0) {
+								if (skepu::cluster::mpi_rank() != 0) {
 										_filename = "";
 										_description = "";
 								}

@@ -1,5 +1,5 @@
 #include <iostream>
-#include <skepu2.hpp>
+#include <skepu>
 
 float plus_f(float a, float b)
 {
@@ -20,21 +20,21 @@ int main(int argc, char *argv[])
 	}
 	
 	const size_t size = atoi(argv[1]);
-	auto spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
 	
 	
-	skepu2::Matrix<float> m(size / 2, size / 2);
-	skepu2::Vector<float> v(size), rv(size / 2);
+	skepu::Matrix<float> m(size / 2, size / 2);
+	skepu::Vector<float> v(size), rv(size / 2);
 	m.randomize(0, 10);
 	v.randomize(0, 10);
 	
 	std::cout << "v: " << v << "\n";
 	std::cout << "m: " << m << "\n";
 	
-	auto sum = skepu2::Reduce(plus_f);
+	auto sum = skepu::Reduce(plus_f);
 	sum.setBackend(spec);
 	
-	auto max_sum = skepu2::Reduce(plus_f, max_f);
+	auto max_sum = skepu::Reduce(plus_f, max_f);
 	max_sum.setBackend(spec);
 	
 	// With containers
@@ -44,22 +44,22 @@ int main(int argc, char *argv[])
 	r = sum(m);
 	std::cout << "Reduce: r = " << r << "\n";
 	
-	sum.setReduceMode(skepu2::ReduceMode::RowWise);
+	sum.setReduceMode(skepu::ReduceMode::RowWise);
 	sum(rv, m);
 	std::cout << "Reduce: r = " << rv << "\n";
 	
-	sum.setReduceMode(skepu2::ReduceMode::ColWise);
+	sum.setReduceMode(skepu::ReduceMode::ColWise);
 	sum(rv, m);
 	std::cout << "Reduce: r = " << rv << "\n";
 	
 	
 	
 	// 2D reduce
-	max_sum.setReduceMode(skepu2::ReduceMode::RowWise);
+	max_sum.setReduceMode(skepu::ReduceMode::RowWise);
 	r = max_sum(m);
 	std::cout << "Reduce 2D max row-sum: r = " << r << "\n";
 	
-	max_sum.setReduceMode(skepu2::ReduceMode::ColWise);
+	max_sum.setReduceMode(skepu::ReduceMode::ColWise);
 	r = max_sum(m);
 	std::cout << "Reduce 2D max col-sum: r = " << r << "\n";
 	

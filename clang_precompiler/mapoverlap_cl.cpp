@@ -351,14 +351,14 @@ public:
 		if (initialized)
 			return;
 		
-		std::string source = skepu2::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
+		std::string source = skepu::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
 		
 		// Builds the code and creates kernel for all devices
 		size_t counter = 0;
-		for (skepu2::backend::Device_CL *device : skepu2::backend::Environment<int>::getInstance()->m_devices_CL)
+		for (skepu::backend::Device_CL *device : skepu::backend::Environment<int>::getInstance()->m_devices_CL)
 		{
 			cl_int err;
-			cl_program program = skepu2::backend::cl_helpers::buildProgram(device, source);
+			cl_program program = skepu::backend::cl_helpers::buildProgram(device, source);
 			cl_kernel kernel_vector = clCreateKernel(program, "SKEPU_KERNEL_NAME_Vector", &err);
 			CL_CHECK_ERROR(err, "Error creating MapOverlap 1D vector kernel 'SKEPU_KERNEL_NAME'");
 			
@@ -384,34 +384,34 @@ public:
 	static void mapOverlapVector
 	(
 		size_t deviceID, size_t localSize, size_t globalSize,
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *input, SKEPU_HOST_KERNEL_PARAMS
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_RESULT_TYPE> *output, skepu2::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *wrap,
+		skepu::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *input, SKEPU_HOST_KERNEL_PARAMS
+		skepu::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_RESULT_TYPE> *output, skepu::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *wrap,
 		size_t n, size_t overlap, size_t out_offset, size_t out_numelements, int poly, SKEPU_MAPOVERLAP_INPUT_TYPE pad,
 		size_t sharedMemSize
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_VECTOR);
-		skepu2::backend::cl_helpers::setKernelArgs(kernel, input->getDeviceDataPointer(), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(),
+		skepu::backend::cl_helpers::setKernelArgs(kernel, input->getDeviceDataPointer(), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(),
 			wrap->getDeviceDataPointer(), n, overlap, out_offset, out_numelements, poly, pad);
 		clSetKernelArg(kernel, SKEPU_KERNEL_ARG_COUNT + 9, sharedMemSize, NULL);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching MapOverlap 1D vector kernel");
 	}
 	
 	static void mapOverlapMatrixRowWise
 	(
 		size_t deviceID, size_t localSize, size_t globalSize,
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *input, SKEPU_HOST_KERNEL_PARAMS
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_RESULT_TYPE> *output, skepu2::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *wrap,
+		skepu::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *input, SKEPU_HOST_KERNEL_PARAMS
+		skepu::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_RESULT_TYPE> *output, skepu::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *wrap,
 		size_t n, size_t overlap, size_t out_offset, size_t out_numelements, int poly, SKEPU_MAPOVERLAP_INPUT_TYPE pad, size_t blocksPerRow, size_t rowWidth,
 		size_t sharedMemSize
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_MATRIX_ROW);
-		skepu2::backend::cl_helpers::setKernelArgs(kernel, input->getDeviceDataPointer(), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(),
+		skepu::backend::cl_helpers::setKernelArgs(kernel, input->getDeviceDataPointer(), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(),
 			wrap->getDeviceDataPointer(), n, overlap, out_offset, out_numelements, poly, pad, blocksPerRow, rowWidth);
 		clSetKernelArg(kernel, SKEPU_KERNEL_ARG_COUNT + 11, sharedMemSize, NULL);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
 			kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching MapOverlap 1D matrix row-wise kernel");
 	}
@@ -419,17 +419,17 @@ public:
 	static void mapOverlapMatrixColWise
 	(
 		size_t deviceID, size_t localSize, size_t globalSize,
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *input, SKEPU_HOST_KERNEL_PARAMS
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_RESULT_TYPE> *output, skepu2::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *wrap,
+		skepu::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *input, SKEPU_HOST_KERNEL_PARAMS
+		skepu::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_RESULT_TYPE> *output, skepu::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *wrap,
 		size_t n, size_t overlap, size_t out_offset, size_t out_numelements, int poly, SKEPU_MAPOVERLAP_INPUT_TYPE pad, size_t blocksPerCol, size_t rowWidth, size_t colWidth,
 		size_t sharedMemSize
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_MATRIX_COL);
-		skepu2::backend::cl_helpers::setKernelArgs(kernel, input->getDeviceDataPointer(), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(),
+		skepu::backend::cl_helpers::setKernelArgs(kernel, input->getDeviceDataPointer(), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(),
 			wrap->getDeviceDataPointer(), n, overlap, out_offset, out_numelements, poly, pad, blocksPerCol, rowWidth, colWidth);
 		clSetKernelArg(kernel, SKEPU_KERNEL_ARG_COUNT + 12, sharedMemSize, NULL);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
 			kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching MapOverlap 1D matrix col-wise kernel");
 	}
@@ -437,17 +437,17 @@ public:
 	static void mapOverlapMatrixColWiseMulti
 	(
 		size_t deviceID, size_t localSize, size_t globalSize,
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *input, SKEPU_HOST_KERNEL_PARAMS
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_RESULT_TYPE> *output, skepu2::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *wrap,
+		skepu::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *input, SKEPU_HOST_KERNEL_PARAMS
+		skepu::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_RESULT_TYPE> *output, skepu::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *wrap,
 		size_t n, size_t overlap, size_t in_offset, size_t out_numelements, int poly, int deviceType, SKEPU_MAPOVERLAP_INPUT_TYPE pad, size_t blocksPerCol, size_t rowWidth, size_t colWidth,
 		size_t sharedMemSize
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_MATRIX_COL_MULTI);
-		skepu2::backend::cl_helpers::setKernelArgs(kernel, input->getDeviceDataPointer(), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(),
+		skepu::backend::cl_helpers::setKernelArgs(kernel, input->getDeviceDataPointer(), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(),
 			wrap->getDeviceDataPointer(), n, overlap, in_offset, out_numelements, poly, deviceType, pad, blocksPerCol, rowWidth, colWidth);
 		clSetKernelArg(kernel, SKEPU_KERNEL_ARG_COUNT + 13, sharedMemSize, NULL);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
 			kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching MapOverlap 1D matrix col-wise multi kernel");
 	}
@@ -654,14 +654,14 @@ public:
 		if (initialized)
 			return;
 		
-		std::string source = skepu2::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
+		std::string source = skepu::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
 		
 		// Builds the code and creates kernel for all devices
 		size_t counter = 0;
-		for (skepu2::backend::Device_CL *device : skepu2::backend::Environment<int>::getInstance()->m_devices_CL)
+		for (skepu::backend::Device_CL *device : skepu::backend::Environment<int>::getInstance()->m_devices_CL)
 		{
 			cl_int err;
-			cl_program program = skepu2::backend::cl_helpers::buildProgram(device, source);
+			cl_program program = skepu::backend::cl_helpers::buildProgram(device, source);
 			cl_kernel kernel = clCreateKernel(program, "SKEPU_KERNEL_NAME", &err);
 			CL_CHECK_ERROR(err, "Error creating MapOverlap 2D kernel 'SKEPU_KERNEL_NAME'");
 			
@@ -674,17 +674,17 @@ public:
 	static void mapOverlap2D
 	(
 		size_t deviceID, size_t localSize[2], size_t globalSize[2],
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *input, SKEPU_HOST_KERNEL_PARAMS
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_RESULT_TYPE> *output,
+		skepu::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_INPUT_TYPE> *input, SKEPU_HOST_KERNEL_PARAMS
+		skepu::backend::DeviceMemPointer_CL<SKEPU_MAPOVERLAP_RESULT_TYPE> *output,
 		size_t out_rows, size_t out_cols, size_t overlap_y, size_t overlap_x,
 		size_t in_pitch, size_t sharedRows, size_t sharedCols,
 		size_t sharedMemSize
 	)
 	{
-		skepu2::backend::cl_helpers::setKernelArgs(kernels(deviceID), input->getDeviceDataPointer(), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(),
+		skepu::backend::cl_helpers::setKernelArgs(kernels(deviceID), input->getDeviceDataPointer(), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(),
 			out_rows, out_cols, overlap_y, overlap_x, in_pitch, sharedRows, sharedCols);
 		clSetKernelArg(kernels(deviceID), SKEPU_KERNEL_ARG_COUNT + 9, sharedMemSize, NULL);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
 			kernels(deviceID), 2, NULL, globalSize, localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching MapOverlap 2D kernel");
 	}

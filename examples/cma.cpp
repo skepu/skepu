@@ -1,5 +1,5 @@
 #include <iostream>
-#include <skepu2.hpp>
+#include <skepu>
 
 template<typename T>
 T sum(T a, T b)
@@ -8,16 +8,16 @@ T sum(T a, T b)
 }
 
 template<typename T, typename U>
-U avg(skepu2::Index1D index, T sum)
+U avg(skepu::Index1D index, T sum)
 {
 	return (U)sum / (index.i + 1);
 }
 
 
-auto prefix_sum = skepu2::Scan(sum<int>);
-auto average = skepu2::Map<1>(avg<int, float>);
+auto prefix_sum = skepu::Scan(sum<int>);
+auto average = skepu::Map<1>(avg<int, float>);
 
-void cma(skepu2::Vector<int> &in, skepu2::Vector<float> &out, skepu2::BackendSpec *spec = nullptr)
+void cma(skepu::Vector<int> &in, skepu::Vector<float> &out, skepu::BackendSpec *spec = nullptr)
 {
 	if (spec)
 	{
@@ -38,10 +38,10 @@ int main(int argc, char *argv[])
 	}
 	
 	const size_t size = atoi(argv[1]);
-	auto spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
 	
-	skepu2::Vector<int> in(size);
-	skepu2::Vector<float> out(size);
+	skepu::Vector<int> in(size);
+	skepu::Vector<float> out(size);
 	in.randomize(0, 10);
 	
 	if (size <= 50)

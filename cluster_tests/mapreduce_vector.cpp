@@ -4,40 +4,40 @@
 
 namespace test_map_vector
 {
-		size_t seq_init_impl(skepu2::Index1D index) {
+		size_t seq_init_impl(skepu::Index1D index) {
 				return index.i;
 		}
-		auto seq_init = skepu2::Map<0>(seq_init_impl);
+		auto seq_init = skepu::Map<0>(seq_init_impl);
 
 		size_t add_one_impl(size_t x) {
 					return x + 1;
 		}
-		auto add_one = skepu2::Map<1>(add_one_impl);
+		auto add_one = skepu::Map<1>(add_one_impl);
 
 		size_t add_impl(size_t x, size_t y) {
 					return x + y;
 		}
-		auto add = skepu2::Map<2>(add_impl);
+		auto add = skepu::Map<2>(add_impl);
 
 		size_t add_k_impl(size_t x, size_t k) {
 					return x + k;
 		}
-		auto add_k = skepu2::Map<1>(add_k_impl);
+		auto add_k = skepu::Map<1>(add_k_impl);
 
-		size_t add_container_impl(size_t x, const skepu2::Vec<size_t> xs) {
+		size_t add_container_impl(size_t x, const skepu::Vec<size_t> xs) {
 					size_t tot = 0;
 					for (size_t i = 0; i < xs.size; ++i){
 							tot += xs[i];
 					}
 					return x + tot;
 		}
-		auto add_container = skepu2::Map<1>(add_container_impl);
+		auto add_container = skepu::Map<1>(add_container_impl);
 
 
-		TEST_CASE( "Map on skepu2::Vector" ) {
+		TEST_CASE( "Map on skepu::Vector" ) {
 			FOR_N {
-				skepu2::Vector<size_t> v(n);
-				skepu2::Vector<size_t> res(n);
+				skepu::Vector<size_t> v(n);
+				skepu::Vector<size_t> res(n);
 				seq_init(v);
 				SECTION( "indexed maps on vector" ) {
 							CHECK( v[n/2] == n/2 );
@@ -89,7 +89,7 @@ namespace test_map_vector
 							add_one(v,v);
 							k += n;
 
-							skepu2::Vector<size_t> w(n);
+							skepu::Vector<size_t> w(n);
 							seq_init(w);
 							add_container(res, w, v);
 
@@ -124,9 +124,9 @@ namespace test_map_vector
 				} // FORN
 
 				SECTION ( "completely mismatched vector alignment")  {
-								skepu2::Vector<size_t> a(1389); seq_init(a.begin(), a.end());
-								skepu2::Vector<size_t> b(2789); seq_init(b.begin(), b.end());
-								skepu2::Vector<size_t> res(1131);
+								skepu::Vector<size_t> a(1389); seq_init(a.begin(), a.end());
+								skepu::Vector<size_t> b(2789); seq_init(b.begin(), b.end());
+								skepu::Vector<size_t> res(1131);
 							seq_init(res);
 
 							add(res.begin() + 5, res.end() - 6, a.begin() + 37, b.begin() + 999);

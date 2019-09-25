@@ -6,7 +6,7 @@
 #include <iostream>
 #include <cmath>
 
-#include <skepu2.hpp>
+#include <skepu>
 
 [[skepu::userconstant]] constexpr int
 	MAX = 255,
@@ -31,10 +31,10 @@ T clamp_sum(T a, T b)
 }
 
 
-auto clamped_sum = skepu2::Map<2>(clamp_sum<int>);
-auto squared_diff_sum = skepu2::MapReduce<2>(diff_squared, sum<float>);
+auto clamped_sum = skepu::Map<2>(clamp_sum<int>);
+auto squared_diff_sum = skepu::MapReduce<2>(diff_squared, sum<float>);
 
-float psnr(skepu2::Matrix<int> &img, skepu2::Matrix<int> noise, skepu2::BackendSpec *spec = nullptr)
+float psnr(skepu::Matrix<int> &img, skepu::Matrix<int> noise, skepu::BackendSpec *spec = nullptr)
 {
 	
 	if (spec)
@@ -46,7 +46,7 @@ float psnr(skepu2::Matrix<int> &img, skepu2::Matrix<int> noise, skepu2::BackendS
 	const size_t rows = img.total_rows();
 	const size_t cols = img.total_cols();
 	
-	skepu2::Matrix<int> comp_img(rows, cols);
+	skepu::Matrix<int> comp_img(rows, cols);
 	
 	// Add noise
 	clamped_sum(comp_img, img, noise);
@@ -67,9 +67,9 @@ int main(int argc, char *argv[])
 	
 	const size_t rows = std::stoul(argv[1]);
 	const size_t cols = std::stoul(argv[2]);
-	auto spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[3])};
+	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[3])};
 	
-	skepu2::Matrix<int> img(rows, cols), noise(rows, cols);
+	skepu::Matrix<int> img(rows, cols), noise(rows, cols);
 	
 	// Generate random image and random noise
 	img.randomize(0, MAX);

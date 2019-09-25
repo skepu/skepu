@@ -16,7 +16,7 @@ CLANG_INCLUDE="-I $CLANG_SOURCE_DIR/lib/Headers/"
 CUDA_INCLUDE="-I $CUDA_DIR/include/"
 
 # # On Triolith:
-# CLANG_INCLUDE=(-I /software/apps/gcc/4.9.2/build01/include/c++/4.9.2/x86_64-unknown-linux-gnu/ -I /software/apps/gcc/4.9.2/build01/include/c++/4.9.2 -I $CLANG_SOURCE_DIR/lib/Headers -I ~/skepu_hybrid_execution/skepu2-preview/include)
+# CLANG_INCLUDE=(-I /software/apps/gcc/4.9.2/build01/include/c++/4.9.2/x86_64-unknown-linux-gnu/ -I /software/apps/gcc/4.9.2/build01/include/c++/4.9.2 -I $CLANG_SOURCE_DIR/lib/Headers -I ~/skepu_hybrid_execution/skepu-preview/include)
 # CUDA_INCLUDE="-I $CUDA_DIR/include/ -L $CUDA_DIR/lib64"
 
 

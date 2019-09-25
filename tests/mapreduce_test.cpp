@@ -1,5 +1,5 @@
 #include <iostream>
-#include <skepu2.hpp>
+#include <skepu>
 #include "tests_common.hpp"
 
 const size_t NUM_ELEMENTS = 10000;
@@ -18,21 +18,21 @@ int add(int a, int b) {
 
 void testNormal() {
 	printInfo("Running regular dotproduct test");
-	auto dot_prod = skepu2::MapReduce<2>(mult, add);
+	auto dot_prod = skepu::MapReduce<2>(mult, add);
 	dot_prod.setStartValue(10);
 	
-	skepu2::Vector<int> in1(NUM_ELEMENTS);
-	skepu2::Vector<int> in2(NUM_ELEMENTS);
+	skepu::Vector<int> in1(NUM_ELEMENTS);
+	skepu::Vector<int> in2(NUM_ELEMENTS);
 	in1.randomize();
 	in2.randomize();
 	
 	printInfo("Running sequential CPU backend");
-	skepu2::BackendSpec spec1(skepu2::Backend::Type::CPU);
+	skepu::BackendSpec spec1(skepu::Backend::Type::CPU);
 	dot_prod.setBackend(spec1);
 	int seqRes = dot_prod(in1, in2);
 	
 	printInfo("Running hybrid execution backend");
-	skepu2::BackendSpec spec2(skepu2::Backend::Type::Hybrid);
+	skepu::BackendSpec spec2(skepu::Backend::Type::Hybrid);
 	spec2.setDevices(1);
 	spec2.setCPUPartitionRatio(0.5);
 	dot_prod.setBackend(spec2);
@@ -46,26 +46,26 @@ void testNormal() {
 }
 
 
-int gen(skepu2::Index1D idx, int elem) {
+int gen(skepu::Index1D idx, int elem) {
 	return idx.i;
 }
 
 
 void testIndex() {
 	printInfo("Running Index1D test");
-	auto seq_sum = skepu2::MapReduce<1>(gen, add);
+	auto seq_sum = skepu::MapReduce<1>(gen, add);
 	seq_sum.setStartValue(10);
 	
-	skepu2::Vector<int> in(NUM_ELEMENTS);
+	skepu::Vector<int> in(NUM_ELEMENTS);
 	in.randomize();
 	
 	printInfo("Running sequential CPU backend");
-	skepu2::BackendSpec spec1(skepu2::Backend::Type::CPU);
+	skepu::BackendSpec spec1(skepu::Backend::Type::CPU);
 	seq_sum.setBackend(spec1);
 	int seqRes = seq_sum(in);
 	
 	printInfo("Running hybrid execution backend");
-	skepu2::BackendSpec spec2(skepu2::Backend::Type::Hybrid);
+	skepu::BackendSpec spec2(skepu::Backend::Type::Hybrid);
 	spec2.setDevices(1);
 	spec2.setCPUPartitionRatio(0.5);
 	seq_sum.setBackend(spec2);

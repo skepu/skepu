@@ -3,7 +3,7 @@
 #include <iomanip>
 #include <cmath>
 
-#include <skepu2.hpp>
+#include <skepu>
 
 // Particle data structure that is used as an element type.
 struct Particle
@@ -23,7 +23,7 @@ constexpr float delta_t [[skepu::userconstant]] = 0.1;
  * All elements from parr and a single element (named 'pi') are accessible
  * to produce one output element of the same type.
  */
-Particle move(skepu2::Index1D index, Particle pi, const skepu2::Vec<Particle> parr)
+Particle move(skepu::Index1D index, Particle pi, const skepu::Vec<Particle> parr)
 {
 	size_t i = index.i;
 	
@@ -61,7 +61,7 @@ Particle move(skepu2::Index1D index, Particle pi, const skepu2::Vec<Particle> pa
 
 
 // Generate user-function that is used for initializing particles array.
-Particle init(skepu2::Index1D index, size_t np)
+Particle init(skepu::Index1D index, size_t np)
 {
 	int s = index.i;
 	int d = np / 2 + 1;
@@ -87,7 +87,7 @@ Particle init(skepu2::Index1D index, size_t np)
 
 
 // A helper function to write particle output values to standard output stream.
-void save_step(skepu2::Vector<Particle> &particles, std::ostream &os = std::cout)
+void save_step(skepu::Vector<Particle> &particles, std::ostream &os = std::cout)
 {
 	int i = 0;
 	for (Particle &p : particles)
@@ -103,7 +103,7 @@ void save_step(skepu2::Vector<Particle> &particles, std::ostream &os = std::cout
 }
 
 //! A helper function to write particle output values to a file.
-void save_step(skepu2::Vector<Particle> &particles, const std::string &filename)
+void save_step(skepu::Vector<Particle> &particles, const std::string &filename)
 {
 	std::ofstream out(filename);
 	
@@ -114,13 +114,13 @@ void save_step(skepu2::Vector<Particle> &particles, const std::string &filename)
 }
 
 
-auto nbody_init = skepu2::Map<0>(init);
-auto nbody_simulate_step = skepu2::Map<1>(move);
+auto nbody_init = skepu::Map<0>(init);
+auto nbody_simulate_step = skepu::Map<1>(move);
 
-void nbody(skepu2::Vector<Particle> &particles, size_t iterations, skepu2::BackendSpec *spec = nullptr)
+void nbody(skepu::Vector<Particle> &particles, size_t iterations, skepu::BackendSpec *spec = nullptr)
 {
 	size_t np = particles.size();
-	skepu2::Vector<Particle> doublebuffer(particles.size());
+	skepu::Vector<Particle> doublebuffer(particles.size());
 	
 	if (spec)
 	{
@@ -148,10 +148,10 @@ int main(int argc, char *argv[])
 	
 	const size_t np = std::stoul(argv[1]);
 	const size_t iterations = std::stoul(argv[2]);
-	auto spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[3])};
+	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[3])};
 	
 	// Particle vectors....
-	skepu2::Vector<Particle> particles(np);
+	skepu::Vector<Particle> particles(np);
 	
 	nbody(particles, iterations, &spec);
 	

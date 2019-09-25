@@ -171,11 +171,11 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName)
 	}
 	SSSkepuFunctorStruct << ">;\n";
 	
-	SSSkepuFunctorStruct << "constexpr static skepu2::AccessMode anyAccessMode[] = {\n";
+	SSSkepuFunctorStruct << "constexpr static skepu::AccessMode anyAccessMode[] = {\n";
 	
 	for (auto param : UF.anyContainerParams)
 	{
-		SSSkepuFunctorStruct << "skepu2::AccessMode::";
+		SSSkepuFunctorStruct << "skepu::AccessMode::";
 		if (param.accessMode == AccessMode::Read)
 			SSSkepuFunctorStruct << "Read, ";
 		else if (param.accessMode == AccessMode::Write)
@@ -468,7 +468,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 	
 	if (d->isStaticLocal())
 		SSNewDecl << "static ";
-	SSNewDecl << "skepu2::backend::" << skeleton.name << "<" << SSTemplateArgs.str() << "> " << InstanceName << "(" << SSCallArgs.str() << ")";
+	SSNewDecl << "skepu::backend::" << skeleton.name << "<" << SSTemplateArgs.str() << "> " << InstanceName << "(" << SSCallArgs.str() << ")";
 	
 	GlobalRewriter.InsertText(d->getSourceRange().getBegin(), SSNewDecl.str());
 	

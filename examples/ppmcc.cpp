@@ -9,7 +9,7 @@
 #include <iostream>
 #include <cmath>
 
-#include <skepu2.hpp>
+#include <skepu>
 
 // Unary user-function used for mapping
 template<typename T>
@@ -36,11 +36,11 @@ T plus(T a, T b)
 using T = float;
 
 // Skeleton definitions
-auto sum = skepu2::Reduce(plus<T>);
-auto dotProduct = skepu2::MapReduce<2>(mult<T>, plus<T>);
-auto sumSquare = skepu2::MapReduce<1>(square<T>, plus<T>);
+auto sum = skepu::Reduce(plus<T>);
+auto dotProduct = skepu::MapReduce<2>(mult<T>, plus<T>);
+auto sumSquare = skepu::MapReduce<1>(square<T>, plus<T>);
 
-T ppmcc(skepu2::Vector<T> &x, skepu2::Vector<T> &y, skepu2::BackendSpec *spec = nullptr)
+T ppmcc(skepu::Vector<T> &x, skepu::Vector<T> &y, skepu::BackendSpec *spec = nullptr)
 {
 	if (spec)
 	{
@@ -66,10 +66,10 @@ int main(int argc, char *argv[])
 	}
 	
 	const size_t size = std::stoul(argv[1]);
-	auto spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
 	
 	// Vector operands
-	skepu2::Vector<T> x(size), y(size);
+	skepu::Vector<T> x(size), y(size);
 	x.randomize(1, 3);
 	y.randomize(2, 4);
 	

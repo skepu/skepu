@@ -45,14 +45,14 @@ public:
 		if (initialized)
 			return;
 		
-		std::string source = skepu2::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
+		std::string source = skepu::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
 		
 		// Builds the code and creates kernel for all devices
 		size_t counter = 0;
-		for (skepu2::backend::Device_CL *device : skepu2::backend::Environment<int>::getInstance()->m_devices_CL)
+		for (skepu::backend::Device_CL *device : skepu::backend::Environment<int>::getInstance()->m_devices_CL)
 		{
 			cl_int err;
-			cl_program program = skepu2::backend::cl_helpers::buildProgram(device, source);
+			cl_program program = skepu::backend::cl_helpers::buildProgram(device, source);
 			cl_kernel kernel = clCreateKernel(program, "SKEPU_KERNEL_NAME", &err);
 			CL_CHECK_ERROR(err, "Error creating map kernel 'SKEPU_KERNEL_NAME'");
 			
@@ -65,12 +65,12 @@ public:
 	static void map
 	(
 		size_t deviceID, size_t localSize, size_t globalSize,
-		SKEPU_HOST_KERNEL_PARAMS skepu2::backend::DeviceMemPointer_CL<SKEPU_MAP_RESULT_TYPE> *output,
+		SKEPU_HOST_KERNEL_PARAMS skepu::backend::DeviceMemPointer_CL<SKEPU_MAP_RESULT_TYPE> *output,
 		size_t w, size_t n, size_t base
 	)
 	{
-		skepu2::backend::cl_helpers::setKernelArgs(kernels(deviceID), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(), w, n, base);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernels(deviceID), 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+		skepu::backend::cl_helpers::setKernelArgs(kernels(deviceID), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(), w, n, base);
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernels(deviceID), 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching Map kernel");
 	}
 };
@@ -101,7 +101,7 @@ std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::
 	{
 		if (!first) { SSMapFuncParams << ", "; }
 		SSKernelParamList << "__global " << param.resolvedTypeName << " *" << param.name << ", ";
-		SSHostKernelParamList << "skepu2::backend::DeviceMemPointer_CL<" << param.resolvedTypeName << "> *" << param.name << ", ";
+		SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<" << param.resolvedTypeName << "> *" << param.name << ", ";
 		SSKernelArgs << param.name << "->getDeviceDataPointer(), ";
 		SSMapFuncParams << param.name << "[i]";
 		first = false;

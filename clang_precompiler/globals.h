@@ -52,7 +52,7 @@ extern clang::Rewriter GlobalRewriter;
 
 //extern clang::SourceManager *SM;
 
-const std::string SkePU_UF_Prefix {"skepu2_userfunction_"};
+const std::string SkePU_UF_Prefix {"skepu_userfunction_"};
 
 
 void replaceTextInString(std::string& text, const std::string &find, const std::string &replace);

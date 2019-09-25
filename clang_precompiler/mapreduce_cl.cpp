@@ -124,14 +124,14 @@ public:
 		if (initialized)
 			return;
 		
-		std::string source = skepu2::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
+		std::string source = skepu::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
 		
 		// Builds the code and creates kernel for all devices
 		size_t counter = 0;
-		for (skepu2::backend::Device_CL *device : skepu2::backend::Environment<int>::getInstance()->m_devices_CL)
+		for (skepu::backend::Device_CL *device : skepu::backend::Environment<int>::getInstance()->m_devices_CL)
 		{
 			cl_int err;
-			cl_program program = skepu2::backend::cl_helpers::buildProgram(device, source);
+			cl_program program = skepu::backend::cl_helpers::buildProgram(device, source);
 			cl_kernel kernel_mapreduce = clCreateKernel(program, "SKEPU_KERNEL_NAME", &err);
 			CL_CHECK_ERROR(err, "Error creating MapReduce kernel 'SKEPU_KERNEL_NAME'");
 			
@@ -150,29 +150,29 @@ public:
 	(
 		size_t deviceID, size_t localSize, size_t globalSize,
 		SKEPU_HOST_KERNEL_PARAMS
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_REDUCE_RESULT_TYPE> *output,
+		skepu::backend::DeviceMemPointer_CL<SKEPU_REDUCE_RESULT_TYPE> *output,
 		size_t w, size_t n, size_t base,
 		size_t sharedMemSize
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_MAPREDUCE);
-		skepu2::backend::cl_helpers::setKernelArgs(kernel, SKEPU_KERNEL_ARGS output->getDeviceDataPointer(), w, n, base);
+		skepu::backend::cl_helpers::setKernelArgs(kernel, SKEPU_KERNEL_ARGS output->getDeviceDataPointer(), w, n, base);
 		clSetKernelArg(kernel, SKEPU_KERNEL_ARG_COUNT + 4, sharedMemSize, NULL);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching MapReduce kernel");
 	}
 	
 	static void reduceOnly
 	(
 		size_t deviceID, size_t localSize, size_t globalSize,
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_REDUCE_RESULT_TYPE> *input, skepu2::backend::DeviceMemPointer_CL<SKEPU_REDUCE_RESULT_TYPE> *output,
+		skepu::backend::DeviceMemPointer_CL<SKEPU_REDUCE_RESULT_TYPE> *input, skepu::backend::DeviceMemPointer_CL<SKEPU_REDUCE_RESULT_TYPE> *output,
 		size_t n, size_t sharedMemSize
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_REDUCE);
-		skepu2::backend::cl_helpers::setKernelArgs(kernel, input->getDeviceDataPointer(), output->getDeviceDataPointer(), n);
+		skepu::backend::cl_helpers::setKernelArgs(kernel, input->getDeviceDataPointer(), output->getDeviceDataPointer(), n);
 		clSetKernelArg(kernel, 3, sharedMemSize, NULL);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching MapReduce reduce-only kernel");
 	}
 };
@@ -203,7 +203,7 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 	{
 		if (!first) { SSMapFuncParams << ", "; }
 		SSKernelParamList << "__global " << param.resolvedTypeName << " *" << param.name << ", ";
-		SSHostKernelParamList << "skepu2::backend::DeviceMemPointer_CL<const " << param.resolvedTypeName << "> *" << param.name << ", ";
+		SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<const " << param.resolvedTypeName << "> *" << param.name << ", ";
 		SSKernelArgs << param.name << "->getDeviceDataPointer(), ";
 		SSMapFuncParams << param.name << "[i]";
 		first = false;

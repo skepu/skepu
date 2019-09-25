@@ -1,5 +1,5 @@
 #include <iostream>
-#include <skepu2.hpp>
+#include <skepu>
 
 void swap_f(int *a, int *b)
 {
@@ -8,7 +8,7 @@ void swap_f(int *a, int *b)
 	*b = tmp;
 }
 
-void sort_f(skepu2::Vec<int> array, size_t nn)
+void sort_f(skepu::Vec<int> array, size_t nn)
 {
 #if SKEPU_USING_BACKEND_CL
 	
@@ -36,9 +36,9 @@ void sort_f(skepu2::Vec<int> array, size_t nn)
 }
 
 
-void sort(skepu2::Vector<int> &v, skepu2::BackendSpec spec)
+void sort(skepu::Vector<int> &v, skepu::BackendSpec spec)
 {
-	auto sort = skepu2::Call(sort_f);
+	auto sort = skepu::Call(sort_f);
 	
 	spec.setGPUBlocks(1);
 	spec.setGPUThreads(v.size());
@@ -56,9 +56,9 @@ int main(int argc, char *argv[])
 	}
 	
 	size_t size = std::stoul(argv[1]);
-	auto spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
 	
-	skepu2::Vector<int> v(size);
+	skepu::Vector<int> v(size);
 	v.randomize(0, 100);
 	
 	sort(v, spec);

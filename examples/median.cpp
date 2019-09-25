@@ -5,7 +5,7 @@
 #include <time.h>
 #include <iterator>
 
-#include <skepu2.hpp>
+#include <skepu>
 #include "lodepng.h"
 
 // Information about the image. Used to rebuild the image after filtering.
@@ -18,7 +18,7 @@ struct ImageInfo
 
 // Reads a file from png and retuns it as a skepu::Matrix. Uses a library called LodePNG.
 // Also returns information about the image as an out variable in imageInformation.
-skepu2::Matrix<unsigned char> ReadAndPadPngFileToMatrix(std::string filePath, int kernelRadius, LodePNGColorType colorType, ImageInfo& imageInformation)
+skepu::Matrix<unsigned char> ReadAndPadPngFileToMatrix(std::string filePath, int kernelRadius, LodePNGColorType colorType, ImageInfo& imageInformation)
 {
 	std::vector<unsigned char> fileContents, image;
 	unsigned imageWidth, imageHeight;
@@ -29,7 +29,7 @@ skepu2::Matrix<unsigned char> ReadAndPadPngFileToMatrix(std::string filePath, in
 	int elementsPerPixel = (colorType == LCT_GREY) ? 1 : 3;
 	
 	// Create a matrix which fits the image and the padding needed.
-	skepu2::Matrix<unsigned char> inputMatrix(imageHeight + 2*kernelRadius, (imageWidth + 2*kernelRadius) * elementsPerPixel);
+	skepu::Matrix<unsigned char> inputMatrix(imageHeight + 2*kernelRadius, (imageWidth + 2*kernelRadius) * elementsPerPixel);
 	
 	int nonEdgeStartX = kernelRadius * elementsPerPixel;
 	int nonEdgeEndX = inputMatrix.total_cols() - kernelRadius * elementsPerPixel;
@@ -86,7 +86,7 @@ skepu2::Matrix<unsigned char> ReadAndPadPngFileToMatrix(std::string filePath, in
 	return inputMatrix;
 }
 
-void WritePngFileMatrix(skepu2::Matrix<unsigned char> imageData, std::string filePath, LodePNGColorType colorType, ImageInfo& imageInformation)
+void WritePngFileMatrix(skepu::Matrix<unsigned char> imageData, std::string filePath, LodePNGColorType colorType, ImageInfo& imageInformation)
 {
 	std::vector<unsigned char> imageDataVector; 
 	for (int i = 0; i < imageData.total_rows(); i++)
@@ -154,10 +154,10 @@ int main(int argc, char* argv[])
 	
 	std::string inputFileName = argv[1];
 	std::string outputFileName = argv[2];
-	skepu2::BackendSpec spec;
-	if (argc > 3) spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[6])};
+	skepu::BackendSpec spec;
+	if (argc > 3) spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[6])};
 	
-	auto calculateMedian = skepu2::MapOverlap(median_kernel);
+	auto calculateMedian = skepu::MapOverlap(median_kernel);
 	calculateMedian.setBackend(spec);
 	
 	const int startRadius = atoi(argv[3]);
@@ -174,8 +174,8 @@ int main(int argc, char* argv[])
 		
 		// Read the padded image into a matrix. Create the output matrix without padding.
 		ImageInfo imageInfo;
-		skepu2::Matrix<unsigned char> inputMatrix = ReadAndPadPngFileToMatrix(inputFileName, kernelRadius, colorType, imageInfo);
-		skepu2::Matrix<unsigned char> outputMatrix(imageInfo.height, imageInfo.width * imageInfo.elementsPerPixel, 120);
+		skepu::Matrix<unsigned char> inputMatrix = ReadAndPadPngFileToMatrix(inputFileName, kernelRadius, colorType, imageInfo);
+		skepu::Matrix<unsigned char> outputMatrix(imageInfo.height, imageInfo.width * imageInfo.elementsPerPixel, 120);
 		
 		int testRuns = 1;
 		double timeTaken = 0;

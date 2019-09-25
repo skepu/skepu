@@ -1,5 +1,5 @@
 #include <iostream>
-#include <skepu2.hpp>
+#include <skepu>
 #include "tests_common.hpp"
 
 const size_t NUM_ELEMENTS = 10000;
@@ -13,26 +13,26 @@ int sum(int a, int b) {
 }
 
 int main(int argc, char* argv[]) {
-	auto sum_1d = skepu2::Reduce(sum);
+	auto sum_1d = skepu::Reduce(sum);
 // 	sum_1d.setStartValue(1284);
-	skepu2::Vector<int> in(NUM_ELEMENTS);
-	skepu2::Matrix<int> inMat(NUM_ELEMENTS, NUM_ELEMENTS);
+	skepu::Vector<int> in(NUM_ELEMENTS);
+	skepu::Matrix<int> inMat(NUM_ELEMENTS, NUM_ELEMENTS);
 	in.randomize();
 	inMat.randomize();
 	
-	skepu2::Vector<int> seqRes1DMat(NUM_ELEMENTS);
-	skepu2::Vector<int> hybridRes1DMat(NUM_ELEMENTS);
+	skepu::Vector<int> seqRes1DMat(NUM_ELEMENTS);
+	skepu::Vector<int> hybridRes1DMat(NUM_ELEMENTS);
 	
 	std::cout <<"##### Running 1D test #####" << std::endl;
 	
 	printInfo("Running sequential CPU backend");
-	skepu2::BackendSpec spec1(skepu2::Backend::Type::CPU);
+	skepu::BackendSpec spec1(skepu::Backend::Type::CPU);
 	sum_1d.setBackend(spec1);
 	int seqRes1DVec = sum_1d(in);
 	sum_1d(seqRes1DMat, inMat);
 	
 	printInfo("Running hybrid execution backend");
-	skepu2::BackendSpec spec2(skepu2::Backend::Type::Hybrid);
+	skepu::BackendSpec spec2(skepu::Backend::Type::Hybrid);
 	spec2.setCPUThreads(16);
 	spec2.setDevices(1);
 	spec2.setCPUPartitionRatio(0.5);
@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 	
 	
 	std::cout << "##### Running 2D test #####" << std::endl;
-	auto sum_2d = skepu2::Reduce(sum, mult);
+	auto sum_2d = skepu::Reduce(sum, mult);
 // 	sum_2d.setStartValue(48839);
 	
 	printInfo("Running sequential CPU backend");

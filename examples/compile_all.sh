@@ -5,7 +5,7 @@ SKEPU_TOOL=~/clang-llvm/build/bin/skepu-tool
 
 # On Triolith:
 NVCC=/usr/local/cuda-7.5/bin/nvcc
-CLANG_INCLUDE=(-I /software/apps/gcc/4.9.2/build01/include/c++/4.9.2/x86_64-unknown-linux-gnu/ -I /software/apps/gcc/4.9.2/build01/include/c++/4.9.2 -I ~/clang-llvm/llvm/tools/clang/lib/Headers -I ~/skepu_hybrid_execution/skepu2-preview/include)
+CLANG_INCLUDE=(-I /software/apps/gcc/4.9.2/build01/include/c++/4.9.2/x86_64-unknown-linux-gnu/ -I /software/apps/gcc/4.9.2/build01/include/c++/4.9.2 -I ~/clang-llvm/llvm/tools/clang/lib/Headers -I ~/skepu_hybrid_execution/skepu-preview/include)
 GCC_INCLUDE="-I ../include -I . -I /usr/local/cuda-7.5/include/ -L /usr/local/cuda-7.5/lib64"
 
 mkdir output

@@ -3,7 +3,7 @@
 #include <iomanip>
 #include <cmath>
 
-#include <skepu2.hpp>
+#include <skepu>
 #include "performance_tests_common.hpp"
 
 
@@ -30,7 +30,7 @@ constexpr float delta_t [[skepu::userconstant]] = 0.1;
  * All elements from parr and a single element (named 'pi') are accessible
  * to produce one output element of the same type.
  */
-Particle move(skepu2::Index1D index, Particle pi, const skepu2::Vec<Particle> parr)
+Particle move(skepu::Index1D index, Particle pi, const skepu::Vec<Particle> parr)
 {
 	size_t i = index.i;
 	
@@ -68,7 +68,7 @@ Particle move(skepu2::Index1D index, Particle pi, const skepu2::Vec<Particle> pa
 
 
 // Generate user-function that is used for initializing particles array.
-Particle init(skepu2::Index1D index, size_t np)
+Particle init(skepu::Index1D index, size_t np)
 {
 	int s = index.i;
 	int d = np / 2 + 1;
@@ -94,7 +94,7 @@ Particle init(skepu2::Index1D index, size_t np)
 
 
 // A helper function to write particle output values to standard output stream.
-void save_step(skepu2::Vector<Particle> &particles, std::ostream &os = std::cout)
+void save_step(skepu::Vector<Particle> &particles, std::ostream &os = std::cout)
 {
 	int i = 0;
 	for (Particle &p : particles)
@@ -110,7 +110,7 @@ void save_step(skepu2::Vector<Particle> &particles, std::ostream &os = std::cout
 }
 
 //! A helper function to write particle output values to a file.
-void save_step(skepu2::Vector<Particle> &particles, const std::string &filename)
+void save_step(skepu::Vector<Particle> &particles, const std::string &filename)
 {
 	std::ofstream out(filename);
 	
@@ -121,14 +121,14 @@ void save_step(skepu2::Vector<Particle> &particles, const std::string &filename)
 }
 
 
-auto nbody_init = skepu2::Map<0>(init);
-auto nbody_simulate_step = skepu2::Map<1>(move);
+auto nbody_init = skepu::Map<0>(init);
+auto nbody_simulate_step = skepu::Map<1>(move);
 
 double nbody() {
-	skepu2::Timer timer;
+	skepu::Timer timer;
 	for(size_t test = 0; test < NUM_REPEATS; ++test) {
-		skepu2::Vector<Particle> particles(N);
-		skepu2::Vector<Particle> doublebuffer(N);
+		skepu::Vector<Particle> particles(N);
+		skepu::Vector<Particle> doublebuffer(N);
 		
 		timer.start();
 		// particle vectors initialization
@@ -147,14 +147,14 @@ double nbody() {
 
 constexpr auto benchmarkFunc = nbody;
 
-void setBackend(const skepu2::BackendSpec& spec) {
+void setBackend(const skepu::BackendSpec& spec) {
 	nbody_init.setBackend(spec);
 	nbody_simulate_step.setBackend(spec);
 }
 
 void tune() {
-	skepu2::backend::tuner::hybridTune(nbody_init);
-	skepu2::backend::tuner::hybridTune(nbody_simulate_step);
+	skepu::backend::tuner::hybridTune(nbody_init);
+	skepu::backend::tuner::hybridTune(nbody_simulate_step);
 	nbody_init.resetBackend();
 	nbody_simulate_step.resetBackend();
 }
@@ -163,18 +163,18 @@ int main(int argc, char* argv[]) {
 	std::vector<double> times;
 	
 	std::cout << application << ": Running CPU backend" << std::endl;
-	skepu2::BackendSpec specCPU(skepu2::Backend::Type::CPU);
+	skepu::BackendSpec specCPU(skepu::Backend::Type::CPU);
 	setBackend(specCPU);
 	double cpuTime = benchmarkFunc();
 	
 	std::cout << application << ": Running OpenMP backend" << std::endl;
-	skepu2::BackendSpec specOpenMP(skepu2::Backend::Type::OpenMP);
+	skepu::BackendSpec specOpenMP(skepu::Backend::Type::OpenMP);
 	specOpenMP.setCPUThreads(16);
 	setBackend(specOpenMP);
 	times.push_back(benchmarkFunc());
 	
 	std::cout << application << ": Running CUDA GPU backend" << std::endl;
-	skepu2::BackendSpec specGPU(skepu2::Backend::Type::CUDA);
+	skepu::BackendSpec specGPU(skepu::Backend::Type::CUDA);
 	specGPU.setDevices(1);
 	setBackend(specGPU);
 	times.push_back(benchmarkFunc());
@@ -187,7 +187,7 @@ int main(int argc, char* argv[]) {
 	
 	for(size_t ratio = 0; ratio <= 100; ratio += 5) {
 		double percentage = (double)ratio / 100.0;
-		skepu2::BackendSpec spec(skepu2::Backend::Type::Hybrid);
+		skepu::BackendSpec spec(skepu::Backend::Type::Hybrid);
 		spec.setDevices(1);
 		spec.setCPUThreads(16);
 		spec.setCPUPartitionRatio(percentage);

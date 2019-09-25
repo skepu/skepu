@@ -31,13 +31,13 @@ std::string createMapKernelProgram_CU(UserFunction &mapFunc, size_t arity, std::
 	if (mapFunc.indexed1D)
 	{
 		SSMapFuncParams << "index";
-		indexInitializer = "skepu2::Index1D index;\n\t\tindex.i = base + i;";
+		indexInitializer = "skepu::Index1D index;\n\t\tindex.i = base + i;";
 		first = false;
 	}
 	else if (mapFunc.indexed2D)
 	{
 		SSMapFuncParams << "index";
-		indexInitializer = "skepu2::Index2D index;\n\t\tindex.row = (base + i) / w;\n\t\tindex.col = (base + i) % w;";
+		indexInitializer = "skepu::Index2D index;\n\t\tindex.row = (base + i) / w;\n\t\tindex.col = (base + i) % w;";
 		first = false;
 	}
 	

@@ -1,5 +1,5 @@
 #include <iostream>
-#include <skepu2.hpp>
+#include <skepu>
 
 float plus_f(float a, float b)
 {
@@ -15,18 +15,18 @@ int main(int argc, char *argv[])
 	}
 	
 	const size_t size = atoi(argv[1]);
-	auto spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
 	
-	skepu2::Vector<float> v(size), r(size);
+	skepu::Vector<float> v(size), r(size);
 	v.randomize(0, 10);
 	
 	std::cout << "v: " << v << "\n";
 	
-	auto prefix_sum = skepu2::Scan(plus_f);
+	auto prefix_sum = skepu::Scan(plus_f);
 	prefix_sum.setBackend(spec);
 	
 	prefix_sum.setStartValue(10);
-	prefix_sum.setScanMode(skepu2::ScanMode::Inclusive);
+	prefix_sum.setScanMode(skepu::ScanMode::Inclusive);
 	
 	// With containers
 	prefix_sum(r, v);
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	std::cout << "Scan inclusive: r = " << r << "\n";
 	
 	
-	prefix_sum.setScanMode(skepu2::ScanMode::Exclusive);
+	prefix_sum.setScanMode(skepu::ScanMode::Exclusive);
 	
 	// With containers
 	prefix_sum(r, v);

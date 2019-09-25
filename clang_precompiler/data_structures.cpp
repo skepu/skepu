@@ -125,7 +125,7 @@ UserType::UserType(const CXXRecordDecl *t)
 	}
 	
 	static const std::string RunTimeTypeNameFunc = R"~~~(
-	namespace skepu2 { template<> std::string getDataTypeCL<TYPE_NAME>() { return "struct TYPE_NAME"; } }
+	namespace skepu { template<> std::string getDataTypeCL<TYPE_NAME>() { return "struct TYPE_NAME"; } }
 	)~~~";
 	
 	if (GenCL)
@@ -275,12 +275,12 @@ std::string UserFunction::RandomAccessParam::TypeNameHost()
 	switch (this->containerType)
 	{
 		case ContainerType::Vector:
-			return "std::tuple<skepu2::Vector<" + this->resolvedTypeName + "> *, skepu2::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
+			return "std::tuple<skepu::Vector<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
 		case ContainerType::Matrix:
-			return "std::tuple<skepu2::Matrix<" + this->resolvedTypeName + "> *, skepu2::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
+			return "std::tuple<skepu::Matrix<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
 		case ContainerType::SparseMatrix:
-			return "std::tuple<skepu2::SparseMatrix<" + this->resolvedTypeName + "> *, skepu2::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *, "
-				+ "skepu2::backend::DeviceMemPointer_CL<size_t> *, skepu2::backend::DeviceMemPointer_CL<size_t> *>";
+			return "std::tuple<skepu::SparseMatrix<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *, "
+				+ "skepu::backend::DeviceMemPointer_CL<size_t> *, skepu::backend::DeviceMemPointer_CL<size_t> *>";
 		default:
 			llvm::errs() << "ERROR: TypeNameHost: Invalid switch value\n";
 			return "";
@@ -371,8 +371,8 @@ UserFunction::UserFunction(FunctionDecl *f)
 	if (f->param_size() > 0)
 	{
 		std::string name = (*it)->getOriginalType().getAsString();
-		this->indexed1D = (name == "skepu2::Index1D" || name == "struct skepu2::Index1D");
-		this->indexed2D = (name == "skepu2::Index2D" || name == "struct skepu2::Index1D");
+		this->indexed1D = (name == "skepu::Index1D" || name == "struct skepu::Index1D");
+		this->indexed2D = (name == "skepu::Index2D" || name == "struct skepu::Index1D");
 	}
 	
 	if (this->indexed1D || this->indexed2D)

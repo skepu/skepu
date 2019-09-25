@@ -1,5 +1,5 @@
 #include <iostream>
-#include <skepu2.hpp>
+#include <skepu>
 #include "tests_common.hpp"
 
 const size_t NUM_ELEMENTS = 6553600;
@@ -22,19 +22,19 @@ int sum(int overlap, size_t stride, const int* v) {
 	return res;
 }
 
-// auto skeleton = skepu2::Reduce(add);
-// auto skeleton = skepu2::MapReduce<2>(mult, add);
+// auto skeleton = skepu::Reduce(add);
+// auto skeleton = skepu::MapReduce<2>(mult, add);
 
-// auto skeleton = skepu2::Map<2>(add);
-auto skeleton = skepu2::MapOverlap(sum);
-// auto skeleton = skepu2::Scan(add);
+// auto skeleton = skepu::Map<2>(add);
+auto skeleton = skepu::MapOverlap(sum);
+// auto skeleton = skepu::Scan(add);
 
 double runSingleTest(std::string str, size_t size) {
-	skepu2::Timer timer;
+	skepu::Timer timer;
 	for(size_t test = 0; test < NUM_TESTS; ++test) {
-		skepu2::Vector<int> in1(size);
-// 		skepu2::Vector<int> in2(size);
-		skepu2::Vector<int> out(size);
+		skepu::Vector<int> in1(size);
+// 		skepu::Vector<int> in2(size);
+		skepu::Vector<int> out(size);
 		in1.randomize();
 // 		in2.randomize();
 		
@@ -47,15 +47,15 @@ double runSingleTest(std::string str, size_t size) {
 
 #if 0
 void testOneImplementation() {
-	skepu2::BackendSpec openMPBackend(skepu2::Backend::Type::OpenMP);
+	skepu::BackendSpec openMPBackend(skepu::Backend::Type::OpenMP);
 	openMPBackend.setCPUThreads(15);
 	runSingleTest("OpenMP", 3912843/2, openMPBackend);
 	
-	skepu2::BackendSpec openCLBackend(skepu2::Backend::Type::CUDA);
+	skepu::BackendSpec openCLBackend(skepu::Backend::Type::CUDA);
 	openCLBackend.setDevices(1);
 	runSingleTest("OpenCL", 3912843/2+1, openCLBackend);
 	
-	skepu2::BackendSpec hybridBackend(skepu2::Backend::Type::Hybrid);
+	skepu::BackendSpec hybridBackend(skepu::Backend::Type::Hybrid);
 	hybridBackend.setCPUThreads(16);
 	hybridBackend.setDevices(1);
 	hybridBackend.setCPUPartitionRatio(0.5);
@@ -76,7 +76,7 @@ void testTuning() {
 		double percentage = (double)ratio / 100.0;
 		percentage = percentage;
 		std::cout << "Set ratio to " << percentage << std::endl;
-		skepu2::BackendSpec spec(skepu2::Backend::Type::Hybrid);
+		skepu::BackendSpec spec(skepu::Backend::Type::Hybrid);
 		spec.setDevices(1);
 		spec.setCPUThreads(16);
 		spec.setCPUPartitionRatio(percentage);
@@ -95,26 +95,26 @@ void testTuning() {
 	std::cout << std::endl;
 	
 	printInfo("Running CPU");
-	skepu2::BackendSpec cpuSpec(skepu2::Backend::Type::CPU);
+	skepu::BackendSpec cpuSpec(skepu::Backend::Type::CPU);
 	skeleton.setBackend(cpuSpec);
 	double cpuTime = runSingleTest("CPU", NUM_ELEMENTS);
 	
 	printInfo("Running OpenMP");
-	skepu2::BackendSpec openmpSpec(skepu2::Backend::Type::OpenMP);
+	skepu::BackendSpec openmpSpec(skepu::Backend::Type::OpenMP);
 	openmpSpec.setCPUThreads(16);
 	skeleton.setBackend(openmpSpec);
 	double openmpTime = runSingleTest("OpenMP", NUM_ELEMENTS);
 	
 	
 	printInfo("Running CUDA/OpenCL");
-	skepu2::BackendSpec gpuSpec(skepu2::Backend::Type::CUDA);
+	skepu::BackendSpec gpuSpec(skepu::Backend::Type::CUDA);
 	gpuSpec.setDevices(1);
 	skeleton.setBackend(gpuSpec);
 	double gpuTime = runSingleTest("CUDA/OpenCL", NUM_ELEMENTS);
 	
 	
 	printInfo("Running auto-tuner");
-	skepu2::backend::tuner::hybridTune(skeleton);
+	skepu::backend::tuner::hybridTune(skeleton);
 
 	skeleton.resetBackend();
 	printInfo("Test auto-tuner");

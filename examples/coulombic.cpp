@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cmath>
 
-#include <skepu2.hpp>
+#include <skepu>
 
 #define RAND_MAX_LOC 100
 
@@ -44,7 +44,7 @@ std::ostream &operator<<(std::ostream &o, Atom &a)
 // potential values.
 //
 //
-float coulombPotential_f(skepu2::Index2D index, float energygridItem, const skepu2::Vec<Atom> atoms, float gridspacing)
+float coulombPotential_f(skepu::Index2D index, float energygridItem, const skepu::Vec<Atom> atoms, float gridspacing)
 {
 	float coory = gridspacing * index.col;
 	float coorx = gridspacing * index.row;
@@ -72,7 +72,7 @@ float coulombPotential_f(skepu2::Index2D index, float energygridItem, const skep
 
 
 // Function to initialize atoms
-void initatoms(skepu2::Vector<Atom> &atombuf, dimension3 volsize, double gridspacing)
+void initatoms(skepu::Vector<Atom> &atombuf, dimension3 volsize, double gridspacing)
 {
 	srand(0);
 	
@@ -98,16 +98,16 @@ void initatoms(skepu2::Vector<Atom> &atombuf, dimension3 volsize, double gridspa
 const float gridspacing = 0.1;
 const size_t matrixSize = 10;
 
-auto columbicPotential = skepu2::Map<1>(coulombPotential_f);
+auto columbicPotential = skepu::Map<1>(coulombPotential_f);
 
-void coulombic(skepu2::Matrix<float> &energy_out, skepu2::Vector<Atom> &atombuf, skepu2::BackendSpec *spec = nullptr)
+void coulombic(skepu::Matrix<float> &energy_out, skepu::Vector<Atom> &atombuf, skepu::BackendSpec *spec = nullptr)
 {
 	size_t atomcount = atombuf.size();
 	
 	if (spec)
 		columbicPotential.setBackend(*spec);
 		
-	skepu2::Matrix<float> grid_in(matrixSize, matrixSize);
+	skepu::Matrix<float> grid_in(matrixSize, matrixSize);
 	
 	columbicPotential(energy_out, grid_in, atombuf, gridspacing);
 }
@@ -121,10 +121,10 @@ int main(int argc, char* argv[])
 	}
 	
 	const size_t atomcount = std::stoul(argv[1]);
-	auto spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
 	
-	skepu2::Vector<Atom> atoms(atomcount);
-	skepu2::Matrix<float> energy_out(matrixSize, matrixSize);
+	skepu::Vector<Atom> atoms(atomcount);
+	skepu::Matrix<float> energy_out(matrixSize, matrixSize);
 	
 	// allocate and initialize atom coordinates and charges
 	dimension3 volsize {2048, 2048, 1};

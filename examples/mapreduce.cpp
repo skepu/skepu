@@ -2,11 +2,11 @@
 #include <utility>
 #include <cfloat>
 
-#include <milli.hpp>
-#include <skepu2.hpp>
+#include "milli.hpp"
+#include <skepu>
 
 // User-function used for mapping
-float mult_f_i(skepu2::Index1D index, float a, float b, skepu2::Vec<float> arr, float cons)
+float mult_f_i(skepu::Index1D index, float a, float b, skepu::Vec<float> arr, float cons)
 {
 #if SKEPU_USING_BACKEND_CL
 	// This code is not parsed by precompiler, but retained in output program for OpenCL backend. >>For debugging<<
@@ -64,7 +64,7 @@ T min(T a, T b)
 }
 
 
-auto modifiedDotProduct = skepu2::MapReduce<2>(mult_f_i, plus<float>);
+auto modifiedDotProduct = skepu::MapReduce<2>(mult_f_i, plus<float>);
 
 
 int main(int argc, const char* argv[])
@@ -79,23 +79,23 @@ int main(int argc, const char* argv[])
 	const size_t size = std::stoul(argv[1]);
 	
 	// Used for "elwise" container arguments
-	skepu2::Vector<float> v0(size, 2.f);
-	skepu2::Vector<float> v1(size, 5.f);
+	skepu::Vector<float> v0(size, 2.f);
+	skepu::Vector<float> v1(size, 5.f);
 	
 	// Used for "any" container argument (cf. SkePU 1 MapArray)
-	skepu2::Vector<float> v2(1, 17.f);
+	skepu::Vector<float> v2(1, 17.f);
 	
 	
 	// Test MapReduce with two elwise operands, one array operand,
 	// one constant scalar operand and with element indexing.
 	
-	for (auto backend : skepu2::Backend::availableTypes())
+	for (auto backend : skepu::Backend::availableTypes())
 	{
 		std::cout << "---------[ " << backend << " ]---------\n";
 		
 		for (int i = 0; i < 2; ++i)
 		{
-			modifiedDotProduct.setBackend(skepu2::BackendSpec{backend});
+			modifiedDotProduct.setBackend(skepu::BackendSpec{backend});
 			milli::Reset();
 			float r = modifiedDotProduct(v0, v1, v2, 5.f);
 			double dur = milli::GetSeconds();
@@ -118,12 +118,12 @@ int main(int argc, const char* argv[])
 	
 	
 	// MapReduce with dense matrices
-	auto sumOfProducts = skepu2::MapReduce<2>(mult<float>, plus<float>);
+	auto sumOfProducts = skepu::MapReduce<2>(mult<float>, plus<float>);
 	
-	auto sumOfProducts2 = skepu2::MapReduce<2>(mult<float>, testfn);
+	auto sumOfProducts2 = skepu::MapReduce<2>(mult<float>, testfn);
 	
-	skepu2::Matrix<float> m0(4, 4, 2.f);
-	skepu2::Matrix<float> m1(4, 4, 5.f);
+	skepu::Matrix<float> m0(4, 4, 2.f);
+	skepu::Matrix<float> m1(4, 4, 5.f);
 	
 	milli::Reset();
 	r = sumOfProducts(m0, m1);
@@ -133,12 +133,12 @@ int main(int argc, const char* argv[])
 	std::cout << "Time: " << dur << " seconds.\n";
 	
 	
-	auto minCalc = skepu2::MapReduce<1>(identity<float>, min<float>);
+	auto minCalc = skepu::MapReduce<1>(identity<float>, min<float>);
 	
-	for (auto backend : skepu2::Backend::availableTypes())
+	for (auto backend : skepu::Backend::availableTypes())
 	{
 		std::cout << "---------[ " << backend << " ]---------\n";
-		minCalc.setBackend(skepu2::BackendSpec{backend});
+		minCalc.setBackend(skepu::BackendSpec{backend});
 		minCalc.setStartValue(FLT_MAX);
 		float r = minCalc(v0);
 		

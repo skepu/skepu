@@ -12,14 +12,14 @@
 namespace benchmark_mmmult {
 
 		template<typename T>
-		T seq_init_impl(skepu2::Index2D index) {
+		T seq_init_impl(skepu::Index2D index) {
 				return (T)(index.row + index.col);
 		}
 
-		auto seq_init = skepu2::Map<0>(seq_init_impl<float>);
+		auto seq_init = skepu::Map<0>(seq_init_impl<float>);
 
 template<typename T>
-T arr(skepu2::Index2D idx, const skepu2::Mat<T> lhs, const skepu2::Mat<T> rhs)
+T arr(skepu::Index2D idx, const skepu::Mat<T> lhs, const skepu::Mat<T> rhs)
 {
 	T res = 0;
 	for (size_t i = 0; i < lhs.cols; ++i)
@@ -29,7 +29,7 @@ T arr(skepu2::Index2D idx, const skepu2::Mat<T> lhs, const skepu2::Mat<T> rhs)
 
 // A helper function to calculate dense matrix-matrix product. Used to verify that the SkePU output is correct.
 template<typename T>
-void directMM(skepu2::Matrix<T> &lhs, skepu2::Matrix<T> &rhs, skepu2::Matrix<T> &res)
+void directMM(skepu::Matrix<T> &lhs, skepu::Matrix<T> &rhs, skepu::Matrix<T> &res)
 {
 	int rows = lhs.total_rows();
 	int cols = rhs.total_cols();
@@ -45,9 +45,9 @@ void directMM(skepu2::Matrix<T> &lhs, skepu2::Matrix<T> &rhs, skepu2::Matrix<T> 
 		}
 }
 
-auto mmprod = skepu2::Map<0>(arr<float>);
+auto mmprod = skepu::Map<0>(arr<float>);
 
-void mmmult(skepu2::Matrix<float> &lhs, skepu2::Matrix<float> &rhs, skepu2::Matrix<float> &res)
+void mmmult(skepu::Matrix<float> &lhs, skepu::Matrix<float> &rhs, skepu::Matrix<float> &res)
 {
 	mmprod(res, lhs, rhs);
 }
@@ -55,7 +55,7 @@ void mmmult(skepu2::Matrix<float> &lhs, skepu2::Matrix<float> &rhs, skepu2::Matr
 
 		TEST_CASE("Test mmmult") {
 				size_t size = 128;
-				skepu2::Matrix<float> lhs(size, size), rhs(size, size), res(size, size);//, res2(size, size);
+				skepu::Matrix<float> lhs(size, size), rhs(size, size), res(size, size);//, res2(size, size);
 				seq_init(lhs);
 				seq_init(rhs);
 				seq_init(res);

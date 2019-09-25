@@ -71,14 +71,14 @@ public:
 		if (initialized)
 			return;
 		
-		std::string source = skepu2::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
+		std::string source = skepu::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
 		
 		// Builds the code and creates kernel for all devices
 		size_t counter = 0;
-		for (skepu2::backend::Device_CL *device : skepu2::backend::Environment<int>::getInstance()->m_devices_CL)
+		for (skepu::backend::Device_CL *device : skepu::backend::Environment<int>::getInstance()->m_devices_CL)
 		{
 			cl_int err;
-			cl_program program = skepu2::backend::cl_helpers::buildProgram(device, source);
+			cl_program program = skepu::backend::cl_helpers::buildProgram(device, source);
 			cl_kernel kernel = clCreateKernel(program, "SKEPU_KERNEL_NAME", &err);
 			CL_CHECK_ERROR(err, "Error creating map kernel 'SKEPU_KERNEL_NAME'");
 			
@@ -90,9 +90,9 @@ public:
 	
 	static void reduce(size_t deviceID, size_t localSize, size_t globalSize, cl_mem input, cl_mem output, size_t n, size_t sharedMemSize)
 	{
-		skepu2::backend::cl_helpers::setKernelArgs(kernels(deviceID), input, output, n);
+		skepu::backend::cl_helpers::setKernelArgs(kernels(deviceID), input, output, n);
 		clSetKernelArg(kernels(deviceID), 3, sharedMemSize, NULL);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernels(deviceID), 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernels(deviceID), 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching Map kernel");
 	}
 };
@@ -163,14 +163,14 @@ public:
 		if (initialized)
 			return;
 		
-		std::string source = skepu2::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
+		std::string source = skepu::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
 		
 		// Builds the code and creates kernel for all devices
 		size_t counter = 0;
-		for (skepu2::backend::Device_CL *device : skepu2::backend::Environment<int>::getInstance()->m_devices_CL)
+		for (skepu::backend::Device_CL *device : skepu::backend::Environment<int>::getInstance()->m_devices_CL)
 		{
 			cl_int err;
-			cl_program program = skepu2::backend::cl_helpers::buildProgram(device, source);
+			cl_program program = skepu::backend::cl_helpers::buildProgram(device, source);
 
 			cl_kernel rowwisekernel = clCreateKernel(program, "SKEPU_KERNEL_NAME_RowWise", &err);
 			CL_CHECK_ERROR(err, "Error creating row-wise Reduce kernel 'SKEPU_KERNEL_NAME'");
@@ -189,18 +189,18 @@ public:
 	static void reduceRowWise(size_t deviceID, size_t localSize, size_t globalSize, cl_mem input, cl_mem output, size_t n, size_t sharedMemSize)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_ROWWISE);
-		skepu2::backend::cl_helpers::setKernelArgs(kernel, input, output, n);
+		skepu::backend::cl_helpers::setKernelArgs(kernel, input, output, n);
 		clSetKernelArg(kernel, 3, sharedMemSize, NULL);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching Map kernel");
 	}
 	
 	static void reduceColWise(size_t deviceID, size_t localSize, size_t globalSize, cl_mem input, cl_mem output, size_t n, size_t sharedMemSize)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_COLWISE);
-		skepu2::backend::cl_helpers::setKernelArgs(kernel, input, output, n);
+		skepu::backend::cl_helpers::setKernelArgs(kernel, input, output, n);
 		clSetKernelArg(kernel, 3, sharedMemSize, NULL);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching Map kernel");
 	}
 	

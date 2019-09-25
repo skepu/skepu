@@ -1,9 +1,9 @@
 [![pipeline status](https://gitlab.ida.liu.se/exa2pro/skepu/badges/master/pipeline.svg)](https://gitlab.ida.liu.se/exa2pro/skepu/commits/master)
 [![coverage report](https://gitlab.ida.liu.se/exa2pro/skepu/badges/master/coverage.svg)](https://gitlab.ida.liu.se/exa2pro/skepu/commits/master)
 
-# SkePU 2
+# SkePU 3
 
-SkePU 2 consists of four parts:
+SkePU 3 consists of four parts:
 
 1. A sequential interface and accompanying implementation for C++ skeleton programming.
 2. A source-to-source precompiler tool built on top of the Clang C-language compiler front-end,
@@ -70,7 +70,10 @@ Build the SkePU tool (once for SkePU users)
 
 `$ make skepu-tool` (in the `build` folder previously created)
 
-## Compatibility with SkePU 1
+## Compatibility with SkePU 1 and 2
+
+SkePU v3 is not compatible with version 2 nor with version 1. Check the user
+guide for more information.
 
 SkePU 1 code is not compatible with SkePU 2 and vice-versa. SkePU 2 is in large part based on concepts from SkePU 1, and the data structures are the same, so it should be fairly straightworward to port a SkePU 1 project to SkePU 2. It may require some effort to fit the SkePU 2 precompiler into a large project with non-trivial build system, however.
 
@@ -79,27 +82,27 @@ SkePU 1 code is not compatible with SkePU 2 and vice-versa. SkePU 2 is in large 
 
 ### `include`
 
-As SkePU 2 is a header library, this directory contains headers and source files for the SkePU runtime.
+As SkePU 3 is a header library, this directory contains headers and source files for the SkePU runtime.
 
-#### `include/skepu2`
+#### `include/skepu`
 
 Contains the serial skeleton interface (headers with inline implementations), along with headers for SkePU containers.
 
-##### `include/skepu2/impl`
+##### `include/skepu3/impl`
 
 Helpers.
 
-##### `include/skepu2/backend`
+##### `include/skepu3/backend`
 
 Contains header files for the SkePU skeleton backends.
 
-##### `include/skepu2/backend/impl`
+##### `include/skepu3/backend/impl`
 
 Contains implementations of the various SkePU skeleton backends and containers.
 
 ### `examples`
 
-Contains SkePU 2 example programs.
+Contains SkePU 3 example programs.
 
 ### `clang_precompiler`
 

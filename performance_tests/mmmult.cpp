@@ -5,7 +5,7 @@
 #include <iostream>
 #include <cmath>
 
-#include <skepu2.hpp>
+#include <skepu>
 #include "performance_tests_common.hpp"
 
 
@@ -14,7 +14,7 @@ std::string application = "mmmult";
 
 
 template<typename T>
-T arr(skepu2::Index2D idx, const skepu2::Mat<T> lhs, const skepu2::Mat<T> rhs)
+T arr(skepu::Index2D idx, const skepu::Mat<T> lhs, const skepu::Mat<T> rhs)
 {
 	T res = 0;
 	for (size_t i = 0; i < lhs.cols; ++i)
@@ -23,14 +23,14 @@ T arr(skepu2::Index2D idx, const skepu2::Mat<T> lhs, const skepu2::Mat<T> rhs)
 }
 
 
-auto mmprod = skepu2::Map<0>(arr<float>);
+auto mmprod = skepu::Map<0>(arr<float>);
 
 double mmmult() {
-	skepu2::Timer timer;
+	skepu::Timer timer;
 	for(size_t test = 0; test < NUM_REPEATS; ++test) {
-		skepu2::Matrix<float> lhs(N, N);
-		skepu2::Matrix<float> rhs(N, N);
-		skepu2::Matrix<float> res(N, N);
+		skepu::Matrix<float> lhs(N, N);
+		skepu::Matrix<float> rhs(N, N);
+		skepu::Matrix<float> res(N, N);
 		lhs.randomize();
 		rhs.randomize();
 		
@@ -44,12 +44,12 @@ double mmmult() {
 
 constexpr auto benchmarkFunc = mmmult;
 
-void setBackend(const skepu2::BackendSpec& spec) {
+void setBackend(const skepu::BackendSpec& spec) {
 	mmprod.setBackend(spec);
 }
 
 void tune() {
-	skepu2::backend::tuner::hybridTune(mmprod, 16, 1, 16, 512);
+	skepu::backend::tuner::hybridTune(mmprod, 16, 1, 16, 512);
 	mmprod.resetBackend();
 }
 
@@ -57,18 +57,18 @@ int main(int argc, char* argv[]) {
 	std::vector<double> times;
 	
 	std::cout << application << ": Running CPU backend" << std::endl;
-	skepu2::BackendSpec specCPU(skepu2::Backend::Type::CPU);
+	skepu::BackendSpec specCPU(skepu::Backend::Type::CPU);
 	setBackend(specCPU);
 	double cpuTime = benchmarkFunc();
 	
 	std::cout << application << ": Running OpenMP backend" << std::endl;
-	skepu2::BackendSpec specOpenMP(skepu2::Backend::Type::OpenMP);
+	skepu::BackendSpec specOpenMP(skepu::Backend::Type::OpenMP);
 	specOpenMP.setCPUThreads(16);
 	setBackend(specOpenMP);
 	times.push_back(benchmarkFunc());
 	
 	std::cout << application << ": Running CUDA GPU backend" << std::endl;
-	skepu2::BackendSpec specGPU(skepu2::Backend::Type::CUDA);
+	skepu::BackendSpec specGPU(skepu::Backend::Type::CUDA);
 	specGPU.setDevices(1);
 	setBackend(specGPU);
 	times.push_back(benchmarkFunc());
@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
 	
 	for(size_t ratio = 0; ratio <= 100; ratio += 5) {
 		double percentage = (double)ratio / 100.0;
-		skepu2::BackendSpec spec(skepu2::Backend::Type::Hybrid);
+		skepu::BackendSpec spec(skepu::Backend::Type::Hybrid);
 		spec.setDevices(1);
 		spec.setCPUThreads(16);
 		spec.setCPUPartitionRatio(percentage);

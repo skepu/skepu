@@ -1,9 +1,9 @@
 [submodule "clang"]
 	path = clang
-	url = https://gitlab.ida.liu.se/henhe459/clang-skepu.git
+	url = http://llvm.org/git/clang.git
 [submodule "llvm"]
 	path = llvm
-	url = http://llvm.org/git/llvm.git
+	url = https://github.com/llvm/llvm-project.git
 [submodule "include"]
 	path = include
 	url = ../skepu-headers.git

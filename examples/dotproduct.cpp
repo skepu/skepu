@@ -2,7 +2,7 @@
 #include <utility>
 #include <cfloat>
 
-#include <skepu2.hpp>
+#include <skepu>
 
 template<typename T>
 T mult(T a, T b)
@@ -19,8 +19,8 @@ T add(T a, T b)
 	return a + b;
 }
 
-auto dotprod = skepu2::MapReduce<2>(mult<float>, add<float>);
-float dotproduct(skepu2::Vector<float> &a, skepu2::Matrix<float> &b)
+auto dotprod = skepu::MapReduce<2>(mult<float>, add<float>);
+float dotproduct(skepu::Vector<float> &a, skepu::Matrix<float> &b)
 {
 	
 	return dotprod(a, b);
@@ -35,12 +35,12 @@ int main(int argc, char *argv[])
 	}
 	
 	const size_t size = atoi(argv[1]);
-	auto spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
 	dotprod.setBackend(spec);
 	
 	
-	skepu2::Vector<float> a(size), b(size);
-	skepu2::Matrix<float> c(sqrt(size), sqrt(size));
+	skepu::Vector<float> a(size), b(size);
+	skepu::Matrix<float> c(sqrt(size), sqrt(size));
 	a.randomize(0, 3);
 	b.randomize(0, 2);
 	c.randomize(0, 5);

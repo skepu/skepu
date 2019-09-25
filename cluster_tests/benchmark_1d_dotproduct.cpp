@@ -14,8 +14,8 @@ namespace benchmark_1d_dotproduct
 		{
 				return a + b;
 		}
-		auto dotprod = skepu2::MapReduce<2>(mult<size_t>, add<size_t>);
-		float dotproduct(skepu2::Vector<size_t> &a, skepu2::Vector<size_t> &b);
+		auto dotprod = skepu::MapReduce<2>(mult<size_t>, add<size_t>);
+		float dotproduct(skepu::Vector<size_t> &a, skepu::Vector<size_t> &b);
 
 		TEST_CASE("Benchmark 1D dotproduct")
 		{
@@ -25,10 +25,10 @@ namespace benchmark_1d_dotproduct
 				{
 						size_t res {};
 						{
-								skepu2::Vector<size_t> a(1024*n);
-								skepu2::Vector<size_t> b(1024*n);
+								skepu::Vector<size_t> a(1024*n);
+								skepu::Vector<size_t> b(1024*n);
 								SOFFA_BENCHMARK("1d_dotproduct.csv", {"nodes", "N"}, \
-																{std::to_string(skepu2::cluster::mpi_size()), std::to_string(1024*n)}, \
+																{std::to_string(skepu::cluster::mpi_size()), std::to_string(1024*n)}, \
 										"dotprod");
 								for (size_t i {}; i < iterations; ++i) {
 										res = dotprod(a,b);

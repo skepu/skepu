@@ -159,14 +159,14 @@ public:
 		if (initialized)
 			return;
 		
-		std::string source = skepu2::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
+		std::string source = skepu::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
 		
 		// Builds the code and creates kernel for all devices
 		size_t counter = 0;
-		for (skepu2::backend::Device_CL *device : skepu2::backend::Environment<int>::getInstance()->m_devices_CL)
+		for (skepu::backend::Device_CL *device : skepu::backend::Environment<int>::getInstance()->m_devices_CL)
 		{
 			cl_int err;
-			cl_program program = skepu2::backend::cl_helpers::buildProgram(device, source);
+			cl_program program = skepu::backend::cl_helpers::buildProgram(device, source);
 			cl_kernel kernel_scan = clCreateKernel(program, "SKEPU_KERNEL_NAME_Scan", &err);
 			CL_CHECK_ERROR(err, "Error creating Scan kernel 'SKEPU_KERNEL_NAME'");
 			
@@ -188,44 +188,44 @@ public:
 	static void scan
 	(
 		size_t deviceID, size_t localSize, size_t globalSize,
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_SCAN_TYPE> *input, skepu2::backend::DeviceMemPointer_CL<SKEPU_SCAN_TYPE> *output, skepu2::backend::DeviceMemPointer_CL<SKEPU_SCAN_TYPE> *blockSums,
+		skepu::backend::DeviceMemPointer_CL<SKEPU_SCAN_TYPE> *input, skepu::backend::DeviceMemPointer_CL<SKEPU_SCAN_TYPE> *output, skepu::backend::DeviceMemPointer_CL<SKEPU_SCAN_TYPE> *blockSums,
 		size_t n, size_t numElements, size_t sharedMemSize
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_SCAN);
-		skepu2::backend::cl_helpers::setKernelArgs(kernel, input->getDeviceDataPointer(), output->getDeviceDataPointer(), blockSums->getDeviceDataPointer(), n, numElements);
+		skepu::backend::cl_helpers::setKernelArgs(kernel, input->getDeviceDataPointer(), output->getDeviceDataPointer(), blockSums->getDeviceDataPointer(), n, numElements);
 		clSetKernelArg(kernel, 5, sharedMemSize, NULL);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching Scan kernel");
 	}
 	
 	static void scanUpdate
 	(
 		size_t deviceID, size_t localSize, size_t globalSize,
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_SCAN_TYPE> *data, skepu2::backend::DeviceMemPointer_CL<SKEPU_SCAN_TYPE> *sums,
+		skepu::backend::DeviceMemPointer_CL<SKEPU_SCAN_TYPE> *data, skepu::backend::DeviceMemPointer_CL<SKEPU_SCAN_TYPE> *sums,
 		int isInclusive, SKEPU_SCAN_TYPE init, size_t n,
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_SCAN_TYPE> *ret,
+		skepu::backend::DeviceMemPointer_CL<SKEPU_SCAN_TYPE> *ret,
 		size_t sharedMemSize
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_SCAN_UPDATE);
 		cl_mem retCL = (ret != nullptr) ? ret->getDeviceDataPointer() : NULL;
-		skepu2::backend::cl_helpers::setKernelArgs(kernel, data->getDeviceDataPointer(), sums->getDeviceDataPointer(), isInclusive, init, n, retCL);
+		skepu::backend::cl_helpers::setKernelArgs(kernel, data->getDeviceDataPointer(), sums->getDeviceDataPointer(), isInclusive, init, n, retCL);
 		clSetKernelArg(kernel, 6, sharedMemSize, NULL);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching Scan update kernel");
 	}
 	
 	static void scanAdd
 	(
 		size_t deviceID, size_t localSize, size_t globalSize,
-		skepu2::backend::DeviceMemPointer_CL<SKEPU_SCAN_TYPE> *data,
+		skepu::backend::DeviceMemPointer_CL<SKEPU_SCAN_TYPE> *data,
 		SKEPU_SCAN_TYPE sum, size_t n
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_SCAN_ADD);
-		skepu2::backend::cl_helpers::setKernelArgs(kernel, data->getDeviceDataPointer(), sum, n);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+		skepu::backend::cl_helpers::setKernelArgs(kernel, data->getDeviceDataPointer(), sum, n);
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching Scan add kernel");
 	}
 };

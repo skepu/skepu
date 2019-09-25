@@ -1,5 +1,5 @@
 #include <iostream>
-#include <skepu2.hpp>
+#include <skepu>
 
 int mult_f(int a, int b)
 {
@@ -15,12 +15,12 @@ int main(int argc, char *argv[])
 	}
 	
 	const size_t size = atoi(argv[1]);
-	auto spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
 	
-	auto square = skepu2::Map<2>(mult_f);
+	auto square = skepu::Map<2>(mult_f);
 	square.setBackend(spec);
 	
-	skepu2::Vector<int> v1(size, 3), v2(size, 7), r(size);
+	skepu::Vector<int> v1(size, 3), v2(size, 7), r(size);
 	std::cout << "v1: " << v1 << "\nv2: " << v2 << "\n";
 	
 	square(r, v1, v2);

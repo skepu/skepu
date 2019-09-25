@@ -5,7 +5,7 @@
 #include <iostream>
 #include <cmath>
 
-#include <skepu2.hpp>
+#include <skepu>
 #include "performance_tests_common.hpp"
 
 
@@ -14,7 +14,7 @@ const size_t N = 30000;
 std::string application = "Taylor";
 
 
-float nth_term(skepu2::Index1D index, float x)
+float nth_term(skepu::Index1D index, float x)
 {
 	int k = index.i + 1;
 	float temp_x = pow(x, k);
@@ -27,10 +27,10 @@ float plus(float a, float b)
 	return a + b;
 }
 
-auto taylor = skepu2::MapReduce<0>(nth_term, plus);
+auto taylor = skepu::MapReduce<0>(nth_term, plus);
 
 double taylor_approx() {
-	skepu2::Timer timer;
+	skepu::Timer timer;
 	for(size_t test = 0; test < NUM_REPEATS; ++test) {
 		taylor.setDefaultSize(N);
 		timer.start();
@@ -43,12 +43,12 @@ double taylor_approx() {
 
 constexpr auto benchmarkFunc = taylor_approx;
 
-void setBackend(const skepu2::BackendSpec& spec) {
+void setBackend(const skepu::BackendSpec& spec) {
 	taylor.setBackend(spec);
 }
 
 void tune() {
-	skepu2::backend::tuner::hybridTune(taylor);
+	skepu::backend::tuner::hybridTune(taylor);
 	taylor.resetBackend();
 }
 
@@ -56,18 +56,18 @@ int main(int argc, char* argv[]) {
 	std::vector<double> times;
 	
 	std::cout << application << ": Running CPU backend" << std::endl;
-	skepu2::BackendSpec specCPU(skepu2::Backend::Type::CPU);
+	skepu::BackendSpec specCPU(skepu::Backend::Type::CPU);
 	setBackend(specCPU);
 	double cpuTime = benchmarkFunc();
 	
 	std::cout << application << ": Running OpenMP backend" << std::endl;
-	skepu2::BackendSpec specOpenMP(skepu2::Backend::Type::OpenMP);
+	skepu::BackendSpec specOpenMP(skepu::Backend::Type::OpenMP);
 	specOpenMP.setCPUThreads(16);
 	setBackend(specOpenMP);
 	times.push_back(benchmarkFunc());
 	
 	std::cout << application << ": Running CUDA GPU backend" << std::endl;
-	skepu2::BackendSpec specGPU(skepu2::Backend::Type::CUDA);
+	skepu::BackendSpec specGPU(skepu::Backend::Type::CUDA);
 	specGPU.setDevices(1);
 	setBackend(specGPU);
 	times.push_back(benchmarkFunc());
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
 	
 	for(size_t ratio = 0; ratio <= 100; ratio += 5) {
 		double percentage = (double)ratio / 100.0;
-		skepu2::BackendSpec spec(skepu2::Backend::Type::Hybrid);
+		skepu::BackendSpec spec(skepu::Backend::Type::Hybrid);
 		spec.setDevices(1);
 		spec.setCPUThreads(16);
 		spec.setCPUPartitionRatio(percentage);

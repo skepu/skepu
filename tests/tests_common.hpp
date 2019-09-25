@@ -1,6 +1,6 @@
 #pragma once
 
-#include <skepu2.hpp>
+#include <skepu>
 #include <iostream>
 
 const size_t NUM_REPEATS = 7;
@@ -18,7 +18,7 @@ void printInfo(const std::string& msg) {
 	std::cout << "[INFO]" << msg << std::endl;
 }
 
-void printErrorMatrix(const skepu2::Matrix<int>& hybrid, const skepu2::Matrix<int>& seq) {
+void printErrorMatrix(const skepu::Matrix<int>& hybrid, const skepu::Matrix<int>& seq) {
 	for(size_t r = 0; r < hybrid.total_rows(); ++r) {
 		for(size_t c = 0; c < hybrid.total_cols(); ++c) {
 			if(hybrid(r, c) != seq(r, c))

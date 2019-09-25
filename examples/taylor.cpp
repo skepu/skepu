@@ -5,10 +5,10 @@
 #include <iostream>
 #include <cmath>
 
-#include <skepu2.hpp>
+#include <skepu>
 
 
-float nth_term(skepu2::Index1D index, float x)
+float nth_term(skepu::Index1D index, float x)
 {
 	int k = index.i + 1;
 	float temp_x = pow(x, k);
@@ -21,9 +21,9 @@ float plus(float a, float b)
 	return a + b;
 }
 
-auto taylor = skepu2::MapReduce<0>(nth_term, plus);
+auto taylor = skepu::MapReduce<0>(nth_term, plus);
 
-float taylor_approx(float x, size_t N, skepu2::BackendSpec *spec = nullptr)
+float taylor_approx(float x, size_t N, skepu::BackendSpec *spec = nullptr)
 {
 	
 	taylor.setDefaultSize(N);
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	
-	auto spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[3])};
+	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[3])};
 	float x = atof(argv[1]);
 	size_t N = std::stoul(argv[2]);
 	

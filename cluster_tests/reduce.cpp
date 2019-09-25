@@ -3,27 +3,27 @@
 
 namespace test_reduce
 {
-	size_t seq_init_impl(skepu2::Index2D index) {
+	size_t seq_init_impl(skepu::Index2D index) {
 		return index.col;
 	}
-	auto seq_init = skepu2::Map<0>(seq_init_impl);
+	auto seq_init = skepu::Map<0>(seq_init_impl);
 
 
 	size_t sum_impl(size_t x, size_t y) {
 		return x + y;
 	}
-	auto sum_reduce = skepu2::Reduce(sum_impl);
+	auto sum_reduce = skepu::Reduce(sum_impl);
 
 	TEST_CASE("Test Reduce") {
 
 		FOR_N {
-			skepu2::Vector<size_t> res(n);
-			skepu2::Matrix<size_t> m({n,n});
+			skepu::Vector<size_t> res(n);
+			skepu::Matrix<size_t> m({n,n});
 			seq_init(m);
 
 
 			SECTION("rowwise reduction") {
-				sum_reduce.setReduceMode(skepu2::ReduceMode::RowWise);
+				sum_reduce.setReduceMode(skepu::ReduceMode::RowWise);
 				sum_reduce(res, m);
 				for(size_t i {}; i < n; ++i) {
 					CHECK ( res[i] == (n*(n-1))/2);
@@ -31,7 +31,7 @@ namespace test_reduce
 			}
 
 			SECTION("colwise reduction") {
-				sum_reduce.setReduceMode(skepu2::ReduceMode::ColWise);
+				sum_reduce.setReduceMode(skepu::ReduceMode::ColWise);
 				sum_reduce(res, m);
 				for(size_t i {}; i < n; ++i) {
 					CHECK ( res[i] == n*i );

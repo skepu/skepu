@@ -4,10 +4,10 @@
 
 namespace test_map_vector
 {
-		size_t seq_init_impl(skepu2::Index1D index) {
+		size_t seq_init_impl(skepu::Index1D index) {
 				return index.i;
 		}
-		auto seq_init = skepu2::Map<0>(seq_init_impl);
+		auto seq_init = skepu::Map<0>(seq_init_impl);
 
 		size_t add_impl(size_t x, size_t y) {
 				return x + y;
@@ -16,12 +16,12 @@ namespace test_map_vector
 		size_t mult_impl(size_t x, size_t y) {
 				return x * y;
 		}
-		auto dotprod = skepu2::MapReduce<2>(mult_impl, add_impl);
+		auto dotprod = skepu::MapReduce<2>(mult_impl, add_impl);
 
-		TEST_CASE( "Map on skepu2::Vector" ) {
+		TEST_CASE( "Map on skepu::Vector" ) {
 				FOR_N {
-				skepu2::Vector<size_t> a(n);
-				skepu2::Vector<size_t> b(n);
+				skepu::Vector<size_t> a(n);
+				skepu::Vector<size_t> b(n);
 				seq_init(a);
 				seq_init(b);
 

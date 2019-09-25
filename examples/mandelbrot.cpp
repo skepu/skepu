@@ -27,7 +27,7 @@ application for data-parallel computations.
 #include <fstream>
 #include <cstdlib>
 
-#include <skepu2.hpp>
+#include <skepu>
 
 #include "bitmap_image.hpp"
 
@@ -80,7 +80,7 @@ cplx add_c(cplx lhs, cplx rhs)
 	return r;
 }
 
-size_t mandelbrot_f(skepu2::Index2D index, size_t height, size_t width)
+size_t mandelbrot_f(skepu::Index2D index, size_t height, size_t width)
 {
 	cplx a;
 	a.a = SCALE / height * (index.col - width/2.f) + CENTER_X;
@@ -98,9 +98,9 @@ size_t mandelbrot_f(skepu2::Index2D index, size_t height, size_t width)
 
 
 
-auto mandelbroter = skepu2::Map<0>(mandelbrot_f);
+auto mandelbroter = skepu::Map<0>(mandelbrot_f);
 
-void mandelbrot(skepu2::Matrix<size_t> &iterations, skepu2::BackendSpec *spec = nullptr)
+void mandelbrot(skepu::Matrix<size_t> &iterations, skepu::BackendSpec *spec = nullptr)
 {
 	const size_t width = iterations.total_cols();
 	const size_t height = iterations.total_rows();
@@ -122,9 +122,9 @@ int main(int argc, char* argv[])
 	
 	const size_t width = std::stoul(argv[1]);
 	const size_t height = std::stoul(argv[2]);
-	auto spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[3])};
+	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[3])};
 	
-	skepu2::Matrix<size_t> iterations(height, width);
+	skepu::Matrix<size_t> iterations(height, width);
 	
 	mandelbrot(iterations, &spec);
 	iterations.updateHost();

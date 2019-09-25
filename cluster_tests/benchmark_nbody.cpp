@@ -29,9 +29,9 @@ constexpr float delta_t = 0.1;
  * All elements from parr and a single element (named 'pi') are accessible
  * to produce one output element of the same type.
  */
-Particle move(skepu2::Index1D index,
+Particle move(skepu::Index1D index,
               Particle pi,
-              const skepu2::Vec<Particle> parr)
+              const skepu::Vec<Particle> parr)
 {
 	size_t i = index.i;
 
@@ -69,7 +69,7 @@ Particle move(skepu2::Index1D index,
 
 
 // Generate user-function that is used for initializing particles array.
-Particle init(skepu2::Index1D index, size_t np)
+Particle init(skepu::Index1D index, size_t np)
 {
 	int s = index.i;
 	int d = np / 2 + 1;
@@ -92,13 +92,13 @@ Particle init(skepu2::Index1D index, size_t np)
 	return p;
 }
 
-auto nbody_init = skepu2::Map<0>(init);
-auto nbody_simulate_step = skepu2::Map<1>(move);
+auto nbody_init = skepu::Map<0>(init);
+auto nbody_simulate_step = skepu::Map<1>(move);
 
-void nbody(skepu2::Vector<Particle> &particles, size_t iterations)
+void nbody(skepu::Vector<Particle> &particles, size_t iterations)
 {
 	size_t np = particles.size();
-	skepu2::Vector<Particle> doublebuffer(particles.size());
+	skepu::Vector<Particle> doublebuffer(particles.size());
 
 	// particle vectors initialization
 	nbody_init(particles, np);
@@ -116,9 +116,9 @@ void nbody(skepu2::Vector<Particle> &particles, size_t iterations)
 			const size_t iterations = 8;//std::stoul(argv[2]);
 			for(auto np : nps) {
 					SOFFA_BENCHMARK("nbody.csv", {"nodes", "N"}, \
-													{ std::to_string(skepu2::cluster::mpi_size()), \
+													{ std::to_string(skepu::cluster::mpi_size()), \
 														std::to_string(np*512)}, "nbody");
-				skepu2::Vector<Particle> particles(np*512);
+				skepu::Vector<Particle> particles(np*512);
 				nbody(particles, iterations);
 			}
 }

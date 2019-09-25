@@ -1,9 +1,9 @@
 #include <iostream>
-#include <skepu2.hpp>
+#include <skepu>
 
 
 template<typename T>
-T arr(skepu2::Index1D row, const skepu2::Mat<T> m, const skepu2::Vec<T> v)
+T arr(skepu::Index1D row, const skepu::Mat<T> m, const skepu::Vec<T> v)
 {
 	T res = 0;
 	for (size_t i = 0; i < v.size; ++i)
@@ -13,7 +13,7 @@ T arr(skepu2::Index1D row, const skepu2::Mat<T> m, const skepu2::Vec<T> v)
 
 // A helper function to calculate dense matrix-vector product. Used to verify that the SkePU output is correct.
 template<typename T>
-void directMV(skepu2::Vector<T> &v, skepu2::Matrix<T> &m, skepu2::Vector<T> &res)
+void directMV(skepu::Vector<T> &v, skepu::Matrix<T> &m, skepu::Vector<T> &res)
 {
 	int rows = m.total_rows();
 	int cols = m.total_cols();
@@ -29,9 +29,9 @@ void directMV(skepu2::Vector<T> &v, skepu2::Matrix<T> &m, skepu2::Vector<T> &res
 	}
 }
 
-auto mvprod = skepu2::Map<0>(arr<float>);
+auto mvprod = skepu::Map<0>(arr<float>);
 
-void mvmult(skepu2::Vector<float> &v, skepu2::Matrix<float> &m, skepu2::Vector<float> &res, skepu2::BackendSpec *spec = nullptr)
+void mvmult(skepu::Vector<float> &v, skepu::Matrix<float> &m, skepu::Vector<float> &res, skepu::BackendSpec *spec = nullptr)
 {
 	if (spec)
 		mvprod.setBackend(*spec);
@@ -48,10 +48,10 @@ int main(int argc, char *argv[])
 	}
 	
 	size_t size = atoi(argv[1]);
-	auto spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
 	
-	skepu2::Vector<float> v(size), r(size), r2(size);
-	skepu2::Matrix<float> m(size, size);
+	skepu::Vector<float> v(size), r(size), r2(size);
+	skepu::Matrix<float> m(size, size);
 	m.randomize(3, 9);
 	v.randomize(0, 9);
 	

@@ -1,7 +1,7 @@
 #pragma once
 #include "catch.hpp"
 
-#include <skepu2.hpp>
+#include <skepu>
 #include <iostream>
 #define N 1024
 

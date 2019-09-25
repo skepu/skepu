@@ -20,8 +20,7 @@
 
 # Default backend set for SkePU precompiler.
 .DEFAULT_GOAL := all-parallel
-# BACKENDS = -openmp -cuda # -opencl
-BACKENDS = -opencl
+BACKENDS = -openmp -cuda -opencl
 
 SKEPU_OPTIONS =
 PRECOMPILER_OPTIONS =

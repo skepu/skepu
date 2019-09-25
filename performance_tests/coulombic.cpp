@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cmath>
 
-#include <skepu2.hpp>
+#include <skepu>
 #include "performance_tests_common.hpp"
 
 const float gridspacing = 0.1;
@@ -49,7 +49,7 @@ std::ostream &operator<<(std::ostream &o, Atom &a)
 // potential values.
 //
 //
-float coulombPotential_f(skepu2::Index2D index, float energygridItem, const skepu2::Vec<Atom> atoms, float gridspacing)
+float coulombPotential_f(skepu::Index2D index, float energygridItem, const skepu::Vec<Atom> atoms, float gridspacing)
 {
 	float coory = gridspacing * index.col;
 	float coorx = gridspacing * index.row;
@@ -77,7 +77,7 @@ float coulombPotential_f(skepu2::Index2D index, float energygridItem, const skep
 
 
 // Function to initialize atoms
-void initatoms(skepu2::Vector<Atom> &atombuf, dimension3 volsize, double gridspacing)
+void initatoms(skepu::Vector<Atom> &atombuf, dimension3 volsize, double gridspacing)
 {
 	srand(0);
 	
@@ -101,17 +101,17 @@ void initatoms(skepu2::Vector<Atom> &atombuf, dimension3 volsize, double gridspa
 
 
 
-auto columbicPotential = skepu2::Map<1>(coulombPotential_f);
+auto columbicPotential = skepu::Map<1>(coulombPotential_f);
 
 double coulombic() {
-	skepu2::Timer timer;
+	skepu::Timer timer;
 	for(size_t test = 0; test < NUM_REPEATS; ++test) {
-		skepu2::Vector<Atom> atoms(N);
+		skepu::Vector<Atom> atoms(N);
 		dimension3 volsize {2048, 2048, 1};
 		initatoms(atoms, volsize, gridspacing);
 		
-		skepu2::Matrix<float> grid_in(matrixSize, matrixSize);
-		skepu2::Matrix<float> energy_out(matrixSize, matrixSize);
+		skepu::Matrix<float> grid_in(matrixSize, matrixSize);
+		skepu::Matrix<float> energy_out(matrixSize, matrixSize);
 		
 		timer.start();
 		columbicPotential(energy_out, grid_in, atoms, gridspacing);
@@ -124,12 +124,12 @@ double coulombic() {
 
 constexpr auto benchmarkFunc = coulombic;
 
-void setBackend(const skepu2::BackendSpec& spec) {
+void setBackend(const skepu::BackendSpec& spec) {
 	columbicPotential.setBackend(spec);
 }
 
 void tune() {
-	skepu2::backend::tuner::hybridTune(columbicPotential, 16, 1, 32, 1024);
+	skepu::backend::tuner::hybridTune(columbicPotential, 16, 1, 32, 1024);
 	columbicPotential.resetBackend();
 }
 
@@ -137,18 +137,18 @@ int main(int argc, char* argv[]) {
 	std::vector<double> times;
 	
 	std::cout << application << ": Running CPU backend" << std::endl;
-	skepu2::BackendSpec specCPU(skepu2::Backend::Type::CPU);
+	skepu::BackendSpec specCPU(skepu::Backend::Type::CPU);
 	setBackend(specCPU);
 	double cpuTime = benchmarkFunc();
 	
 	std::cout << application << ": Running OpenMP backend" << std::endl;
-	skepu2::BackendSpec specOpenMP(skepu2::Backend::Type::OpenMP);
+	skepu::BackendSpec specOpenMP(skepu::Backend::Type::OpenMP);
 	specOpenMP.setCPUThreads(16);
 	setBackend(specOpenMP);
 	times.push_back(benchmarkFunc());
 	
 	std::cout << application << ": Running CUDA GPU backend" << std::endl;
-	skepu2::BackendSpec specGPU(skepu2::Backend::Type::CUDA);
+	skepu::BackendSpec specGPU(skepu::Backend::Type::CUDA);
 	specGPU.setDevices(1);
 	setBackend(specGPU);
 	times.push_back(benchmarkFunc());
@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) {
 	
 	for(size_t ratio = 0; ratio <= 100; ratio += 5) {
 		double percentage = (double)ratio / 100.0;
-		skepu2::BackendSpec spec(skepu2::Backend::Type::Hybrid);
+		skepu::BackendSpec spec(skepu::Backend::Type::Hybrid);
 		spec.setDevices(1);
 		spec.setCPUThreads(16);
 		spec.setCPUPartitionRatio(percentage);

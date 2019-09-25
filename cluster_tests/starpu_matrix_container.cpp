@@ -6,7 +6,7 @@
 namespace test_starpu_matrix_container {
 		TEST_CASE ( "basic starpu_matrix_container functionality" ) {
 				for (size_t n : {33, 32, 17, 129}){
-						skepu2::cluster::starpu_matrix_container<int> a(n, n/2);
+						skepu::cluster::starpu_matrix_container<int> a(n, n/2);
 						CHECK(a.size() == n * (n/2));
 						CHECK(a.height() == n);
 						CHECK(a.width() == n/2);
@@ -25,7 +25,7 @@ namespace test_starpu_matrix_container {
 		}
 		TEST_CASE ( "'allgather' functionality" ) {
 				for (size_t n : {33, 32, 17, 129}){
-						skepu2::cluster::starpu_matrix_container<int> a(n, n/2);
+						skepu::cluster::starpu_matrix_container<int> a(n, n/2);
 						// Set data
 						for (size_t row {}; row < n; ++row) {
 								for (size_t col {}; col < n/2; ++col) {

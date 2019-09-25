@@ -1,22 +1,22 @@
 #include <iostream>
 #include <vector>
-#include <skepu2.hpp>
+#include <skepu>
 #include "tests_common.hpp"
 
 int add(int a, int b) {
 	return a + b;
 }
 
-auto skeleton = skepu2::Scan(add);
+auto skeleton = skepu::Scan(add);
 
 double runTest(const size_t size, const std::string& backend) {
-	skepu2::Timer timer;
+	skepu::Timer timer;
 	
 	skeleton.setStartValue(1);
 	
 	for(size_t iteration = 0; iteration < NUM_REPEATS; ++iteration) {
-		skepu2::Vector<int> in(size);
-		skepu2::Vector<int> out(size);
+		skepu::Vector<int> in(size);
+		skepu::Vector<int> out(size);
 		in.randomize();
 		
 		timer.start();
@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 		problemSizes.push_back(i);
 	
 	printInfo("Running OpenMP CPU backend");
-	skepu2::BackendSpec specCPU(skepu2::Backend::Type::OpenMP);
+	skepu::BackendSpec specCPU(skepu::Backend::Type::OpenMP);
 	specCPU.setCPUThreads(16);
 	skeleton.setBackend(specCPU);
 	for(size_t size : problemSizes) {
@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
 	}
 	
 	printInfo("Running CUDA GPU backend");
-	skepu2::BackendSpec specGPU(skepu2::Backend::Type::CUDA);
+	skepu::BackendSpec specGPU(skepu::Backend::Type::CUDA);
 	specGPU.setDevices(1);
 	skeleton.setBackend(specGPU);
 	for(size_t size : problemSizes) {
@@ -56,12 +56,12 @@ int main(int argc, char* argv[]) {
 	}
 	
 	printInfo("Running Hybrid backend");
-// 	skepu2::BackendSpec specHybrid(skepu2::Backend::Type::Hybrid);
+// 	skepu::BackendSpec specHybrid(skepu::Backend::Type::Hybrid);
 // 	specHybrid.setCPUThreads(16);
 // 	specHybrid.setDevices(1);
 // 	skeleton.setBackend(specHybrid);
 	
-	skepu2::backend::tuner::hybridTune(skeleton, 16, 1, 50000, 4000000);
+	skepu::backend::tuner::hybridTune(skeleton, 16, 1, 50000, 4000000);
 	skeleton.resetBackend();
 	for(size_t size : problemSizes) {
  		float percentage = 0.55;

@@ -1,5 +1,5 @@
 #include <iostream>
-#include <skepu2.hpp>
+#include <skepu>
 
 int main(int argc, char *argv[])
 {
@@ -10,28 +10,28 @@ int main(int argc, char *argv[])
 	}
 	
 	const size_t size = atoi(argv[1]);
-	auto spec = skepu2::BackendSpec{skepu2::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
 	
-	auto square = skepu2::Map<2>([](float a, float b) { return a * b; });
+	auto square = skepu::Map<2>([](float a, float b) { return a * b; });
 	square.setBackend(spec);
 	
-	auto dotprod = skepu2::MapReduce<2>(
+	auto dotprod = skepu::MapReduce<2>(
 		[](float a, float b) { return a * b; },
 		[](float a, float b) { return a + b; }
 	);
 	
 	
-	auto sum =  skepu2::Reduce([](float a, float b) { return a + b; });
+	auto sum =  skepu::Reduce([](float a, float b) { return a + b; });
 	sum.setBackend(spec);
 	
-	auto sum2d =  skepu2::Reduce([](float a, float b) { return a + b; }, [](float a, float b) { return a + b; });
+	auto sum2d =  skepu::Reduce([](float a, float b) { return a + b; }, [](float a, float b) { return a + b; });
 	sum2d.setBackend(spec);
 	
-	auto cum_sum = skepu2::Scan([](float a, float b) { return a + b; });
+	auto cum_sum = skepu::Scan([](float a, float b) { return a + b; });
 	cum_sum.setBackend(spec);
 	
 	
-	auto conv = skepu2::MapOverlap([](int o, size_t stride, const float *a)
+	auto conv = skepu::MapOverlap([](int o, size_t stride, const float *a)
 	{
 		const int s = (int)stride;
 		float sum = 0;
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	});
 	conv.setBackend(spec);
 	
-	auto conv2d = skepu2::MapOverlap([](int ox, int oy, size_t stride, const float *m, const skepu2::Mat<float> filter)
+	auto conv2d = skepu::MapOverlap([](int ox, int oy, size_t stride, const float *m, const skepu::Mat<float> filter)
 	{
 		float res = 0;
 		for (int y = -oy; y <= oy; ++y)
@@ -52,12 +52,12 @@ int main(int argc, char *argv[])
 	conv2d.setBackend(spec);
 	
 	
-	auto caller = skepu2::Call([](skepu2::Vec<float> r, float a, float b) { r[0] = a * b; });
+	auto caller = skepu::Call([](skepu::Vec<float> r, float a, float b) { r[0] = a * b; });
 	caller.setBackend(spec);
 	
 	
-	skepu2::Vector<float> v1(size, 3), v2(size, 7), r(size);
-	skepu2::Matrix<float> m1(size, size, 3);
+	skepu::Vector<float> v1(size, 3), v2(size, 7), r(size);
+	skepu::Matrix<float> m1(size, size, 3);
 	std::cout << "v1: " << v1 << "\nv2: " << v2 << "\n";
 	
 	square(r, v1, v2);
@@ -83,24 +83,24 @@ int main(int argc, char *argv[])
 	std::cout << "Scan: cum_sum(v1) = " << r << "\n";
 	
 	conv.setOverlap(2);
-	conv.setEdgeMode(skepu2::Edge::Pad);
+	conv.setEdgeMode(skepu::Edge::Pad);
 	conv.setPad(0);
 	conv(r, v1);
 	
 	std::cout << "MapOverlap1D: conv(r, v1) = " << r << "\n";
 	
 	int o = 1;
-	skepu2::Matrix<float> filter(2*o+1, 2*o+1, 1), m(size, size, 5), rm(size - 2*o, size - 2*o);
+	skepu::Matrix<float> filter(2*o+1, 2*o+1, 1), m(size, size, 5), rm(size - 2*o, size - 2*o);
 	
 	conv2d.setOverlap(o);
-	conv2d.setEdgeMode(skepu2::Edge::Pad);
+	conv2d.setEdgeMode(skepu::Edge::Pad);
 	conv2d.setPad(0);
 	conv2d(rm, m, filter);
 	
 	
 	std::cout << "MapOverlap2D: conv2d(rm, m, filter) = " << rm << "\n";
 	
-	skepu2::Vector<float> ans(1);
+	skepu::Vector<float> ans(1);
 	caller(ans, 4, 5);
 	std::cout << "Call: caller(ans, 4, 5) = " << ans[0] << "\n";
 	
