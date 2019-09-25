@@ -12,16 +12,16 @@
 # Override the variables set in Makefile here.
 
 # path to LLVM products directory
-LLVM_BIN =
+LLVM_BIN = $(PWD)/../skepu/bin
 
 # path to Clang source directory (repository root)
-CLANG_SRC =
+CLANG_INCLUDE = $(PWD)/../skepu/clang_headers
 
 # path to the SkePU sources
-SKEPU_SRC =
+SKEPU_INCLUDE = $(PWD)/../skepu/include
 
-CXX =
+CXX = g++
 
-OPENCL_FLAGS =
+OPENCL_FLAGS = -I /usr/local/cuda/include -L /usr/local/cuda/lib64/ -lOpenCL
 
 CLANGTOOL_USER_FLAGS =

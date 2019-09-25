@@ -133,10 +133,10 @@ public:
 			cl_int err;
 			cl_program program = skepu2::backend::cl_helpers::buildProgram(device, source);
 			cl_kernel kernel_mapreduce = clCreateKernel(program, "SKEPU_KERNEL_NAME", &err);
-			CL_CHECK_ERROR(err, "Error creating MapReduce kernel '" << "SKEPU_KERNEL_NAME" << "'");
+			CL_CHECK_ERROR(err, "Error creating MapReduce kernel 'SKEPU_KERNEL_NAME'");
 			
 			cl_kernel kernel_reduce = clCreateKernel(program, "SKEPU_KERNEL_NAME_ReduceOnly", &err);
-			CL_CHECK_ERROR(err, "Error creating MapReduce kernel '" << "SKEPU_KERNEL_NAME" << "'");
+			CL_CHECK_ERROR(err, "Error creating MapReduce kernel 'SKEPU_KERNEL_NAME'");
 			
 			kernels(counter, KERNEL_MAPREDUCE, &kernel_mapreduce);
 			kernels(counter, KERNEL_REDUCE,    &kernel_reduce);

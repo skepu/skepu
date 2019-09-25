@@ -54,7 +54,7 @@ public:
 			cl_int err;
 			cl_program program = skepu2::backend::cl_helpers::buildProgram(device, source);
 			cl_kernel kernel = clCreateKernel(program, "SKEPU_KERNEL_NAME", &err);
-			CL_CHECK_ERROR(err, "Error creating map kernel '" << "SKEPU_KERNEL_NAME" << "'");
+			CL_CHECK_ERROR(err, "Error creating map kernel 'SKEPU_KERNEL_NAME'");
 			
 			kernels(counter++, &kernel);
 		}

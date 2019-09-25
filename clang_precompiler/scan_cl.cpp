@@ -168,13 +168,13 @@ public:
 			cl_int err;
 			cl_program program = skepu2::backend::cl_helpers::buildProgram(device, source);
 			cl_kernel kernel_scan = clCreateKernel(program, "SKEPU_KERNEL_NAME_Scan", &err);
-			CL_CHECK_ERROR(err, "Error creating Scan kernel '" << "SKEPU_KERNEL_NAME" << "'");
+			CL_CHECK_ERROR(err, "Error creating Scan kernel 'SKEPU_KERNEL_NAME'");
 			
 			cl_kernel kernel_scan_update = clCreateKernel(program, "SKEPU_KERNEL_NAME_ScanUpdate", &err);
-			CL_CHECK_ERROR(err, "Error creating Scan update kernel '" << "SKEPU_KERNEL_NAME" << "'");
+			CL_CHECK_ERROR(err, "Error creating Scan update kernel 'SKEPU_KERNEL_NAME'");
 			
 			cl_kernel kernel_scan_add = clCreateKernel(program, "SKEPU_KERNEL_NAME_ScanAdd", &err);
-			CL_CHECK_ERROR(err, "Error creating Scan add kernel '" << "SKEPU_KERNEL_NAME" << "'");
+			CL_CHECK_ERROR(err, "Error creating Scan add kernel 'SKEPU_KERNEL_NAME'");
 			
 			kernels(counter, KERNEL_SCAN,        &kernel_scan);
 			kernels(counter, KERNEL_SCAN_UPDATE, &kernel_scan_update);

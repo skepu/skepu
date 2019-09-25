@@ -360,16 +360,16 @@ public:
 			cl_int err;
 			cl_program program = skepu2::backend::cl_helpers::buildProgram(device, source);
 			cl_kernel kernel_vector = clCreateKernel(program, "SKEPU_KERNEL_NAME_Vector", &err);
-			CL_CHECK_ERROR(err, "Error creating MapOverlap 1D vector kernel '" << "SKEPU_KERNEL_NAME" << "'");
+			CL_CHECK_ERROR(err, "Error creating MapOverlap 1D vector kernel 'SKEPU_KERNEL_NAME'");
 			
 			cl_kernel kernel_matrix_row = clCreateKernel(program, "SKEPU_KERNEL_NAME_MatRowWise", &err);
-			CL_CHECK_ERROR(err, "Error creating MapOverlap 1D matrix row-wise kernel '" << "SKEPU_KERNEL_NAME" << "'");
+			CL_CHECK_ERROR(err, "Error creating MapOverlap 1D matrix row-wise kernel 'SKEPU_KERNEL_NAME'");
 			
 			cl_kernel kernel_matrix_col = clCreateKernel(program, "SKEPU_KERNEL_NAME_MatColWise", &err);
-			CL_CHECK_ERROR(err, "Error creating MapOverlap 1D matrix col-wise kernel '" << "SKEPU_KERNEL_NAME" << "'");
+			CL_CHECK_ERROR(err, "Error creating MapOverlap 1D matrix col-wise kernel 'SKEPU_KERNEL_NAME'");
 			
 			cl_kernel kernel_matrix_col_multi = clCreateKernel(program, "SKEPU_KERNEL_NAME_MatColWiseMulti", &err);
-			CL_CHECK_ERROR(err, "Error creating MapOverlap 1D matrix col-wise multi kernel '" << "SKEPU_KERNEL_NAME" << "'");
+			CL_CHECK_ERROR(err, "Error creating MapOverlap 1D matrix col-wise multi kernel 'SKEPU_KERNEL_NAME'");
 			
 			kernels(counter, KERNEL_VECTOR,           &kernel_vector);
 			kernels(counter, KERNEL_MATRIX_ROW,       &kernel_matrix_row);
@@ -663,7 +663,7 @@ public:
 			cl_int err;
 			cl_program program = skepu2::backend::cl_helpers::buildProgram(device, source);
 			cl_kernel kernel = clCreateKernel(program, "SKEPU_KERNEL_NAME", &err);
-			CL_CHECK_ERROR(err, "Error creating MapOverlap 2D kernel '" << "SKEPU_KERNEL_NAME" << "'");
+			CL_CHECK_ERROR(err, "Error creating MapOverlap 2D kernel 'SKEPU_KERNEL_NAME'");
 			
 			kernels(counter++, &kernel);
 		}
