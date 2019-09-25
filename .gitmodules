@@ -6,4 +6,4 @@
 	url = http://llvm.org/git/llvm.git
 [submodule "include"]
 	path = include
-	url = git@gitlab.ida.liu.se:exa2pro/skepu-headers.git
+	url = ../skepu-headers.git
