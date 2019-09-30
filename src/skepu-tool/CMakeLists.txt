@@ -1,5 +1,6 @@
-set(LLVM_LINK_COMPONENTS support)
-set(LLVM_USED_LIBS clangTooling clangBasic clangAST)
+set(LLVM_LINK_COMPONENTS
+	Support
+)
 
 add_clang_executable(skepu-tool
   skepu.cpp
@@ -18,9 +19,11 @@ add_clang_executable(skepu-tool
   mapoverlap_cu.cpp
   call_cl.cpp
   call_cu.cpp
-  )
-target_link_libraries(skepu-tool
-  clangTooling
-  clangBasic
-  clangASTMatchers
-  )
+)
+clang_target_link_libraries(skepu-tool
+		PRIVATE
+		clangTooling
+		clangBasic
+#		clangAST
+		clangASTMatchers
+)

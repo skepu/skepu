@@ -71,6 +71,7 @@ class SkePUFrontendAction : public ASTFrontendAction
 {
 public:
 	
+/*
 	bool BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) override
 	{
 	//	if (Verbose) llvm::errs() << "** BeginSourceFileAction\n";
@@ -79,7 +80,7 @@ public:
 		
 		return true;
 	}
-	
+	*/
 	void EndSourceFileAction() override
 	{
 		SourceManager &SM = GlobalRewriter.getSourceMgr();
@@ -101,7 +102,8 @@ public:
 		
 		// Now emit the rewritten buffer.
 		std::error_code EC;
-		llvm::raw_fd_ostream OutFile(mainFileName, EC, llvm::sys::fs::F_RW);
+		llvm::raw_fd_ostream OutFile(
+			mainFileName, EC, llvm::sys::fs::FileAccess::FA_Write);
 		GlobalRewriter.getEditBuffer(SM.getMainFileID()).write(OutFile);
 		OutFile.close();
 	}
@@ -110,7 +112,7 @@ public:
 	{
 		if (Verbose) llvm::errs() << "** Creating AST consumer for: " << file << "\n";
 		GlobalRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
-		return llvm::make_unique<SkePUASTConsumer>(&CI.getASTContext(), this->SkeletonInstances);
+		return std::make_unique<SkePUASTConsumer>(&CI.getASTContext(), this->SkeletonInstances);
 	}
 	
 private:

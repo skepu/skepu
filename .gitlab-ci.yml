@@ -1,28 +1,41 @@
-before_script:
-  - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ida.liu.se/".insteadOf "git@gitlab.ida.liu.se:"
-  - git submodule sync --recursive
-  - git submodule update --init --recursive
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
-  - builds
-  - tests
-
+  - build
+  - build_examples
+  - test
 
 build_skepu:
-  stage: builds
+  stage: build
   artifacts:
     paths:
-      - build/bin/
+      - skepu
   script:
-    - make -j12
-  when: manual
-  allow_failure: false
+    - make
+    - make skepu
+  only:
+    - merge_requests
 
-test_skepu:
-  stage: tests
-  script:
-    - build/bin/skepu-tool --help
-  when: manual
-  allow_failure: false
+build_examples:
+  stage: build_examples
   dependencies:
     - build_skepu
+  artifacts:
+    paths:
+      - examples/sequential
+      - examples/parallel
+  script:
+    - cd examples
+    - make all
+  only:
+    - merge_requests
+
+test_skepu:
+  stage: test
+  dependencies:
+    - build_skepu
+  script:
+    - skepu/bin/skepu-tool --help
+  only:
+    - merge_requests

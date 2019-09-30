@@ -42,7 +42,7 @@ public:
 			bool allowed = std::find(AllowedFunctionNamesCalledInUFs.begin(), AllowedFunctionNamesCalledInUFs.end(), name)
 				!= AllowedFunctionNamesCalledInUFs.end();
 			if (!allowed)
-				GlobalRewriter.getSourceMgr().getDiagnostics().Report(c->getLocStart(), diag::err_skepu_userfunction_call) << name;
+				GlobalRewriter.getSourceMgr().getDiagnostics().Report(c->getBeginLoc(), diag::err_skepu_userfunction_call) << name;
 			
 			return allowed;
 		}
@@ -132,7 +132,7 @@ UserType::UserType(const CXXRecordDecl *t)
 	{
 		std::string typeNameFunc = RunTimeTypeNameFunc;
 		replaceTextInString(typeNameFunc, "TYPE_NAME", this->name);
-		GlobalRewriter.InsertText(t->getLocEnd().getLocWithOffset(2), typeNameFunc);
+		GlobalRewriter.InsertText(t->getEndLoc().getLocWithOffset(2), typeNameFunc);
 	}
 }
 

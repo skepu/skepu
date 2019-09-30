@@ -6,7 +6,7 @@ using namespace clang;
 void printParamList(std::ostream &o, const FunctionDecl *f)
 {
 	bool first = true;
-	for (const ParmVarDecl* Parm : f->params())
+	for (const ParmVarDecl* Parm : f->parameters())
 	{
 		// default arg?
 		if (!first) o << ", ";
@@ -101,10 +101,10 @@ std::string replaceReferencesToOtherUFs(UserFunction &UF, std::function<std::str
 		R.ReplaceText(ref.first->getTypeLoc().getSourceRange(), "struct " + ref.second->name);
 	
 	for (auto subscript : UF.containerSubscripts)
-		R.InsertText(subscript->getCallee()->getLocStart(), ".data");
+		R.InsertText(subscript->getCallee()->getBeginLoc(), ".data");
 	
 	const CompoundStmt *Body = dyn_cast<CompoundStmt>(f->getBody());
-	SourceRange SRBody = SourceRange(Body->getLocStart().getLocWithOffset(1), Body->getLocEnd().getLocWithOffset(-1));
+	SourceRange SRBody = SourceRange(Body->getBeginLoc().getLocWithOffset(1), Body->getEndLoc().getLocWithOffset(-1));
 	return R.getRewrittenText(SRBody);
 }
 

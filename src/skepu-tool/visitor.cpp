@@ -244,7 +244,7 @@ SkePUASTVisitor::SkePUASTVisitor(ASTContext *ctx, std::unordered_set<clang::VarD
 
 bool SkePUASTVisitor::VisitVarDecl(VarDecl *d)
 {
-	if (!this->Context->getSourceManager().isInMainFile(d->getLocStart()))
+	if (!this->Context->getSourceManager().isInMainFile(d->getBeginLoc()))
 		return RecursiveASTVisitor<SkePUASTVisitor>::VisitVarDecl(d);
 	
 	// Change this condition to check for skeleon class names, (and namespace too?)
