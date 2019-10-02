@@ -27,7 +27,7 @@ std::string createMapKernelProgram_CU(UserFunction &mapFunc, size_t arity, std::
 	std::stringstream sourceStream, SSKernelParamList, SSMapFuncParams;
 	std::string indexInitializer;
 	bool first = true;
-	
+
 	if (mapFunc.indexed1D)
 	{
 		SSMapFuncParams << "index";
@@ -40,7 +40,7 @@ std::string createMapKernelProgram_CU(UserFunction &mapFunc, size_t arity, std::
 		indexInitializer = "skepu::Index2D index;\n\t\tindex.row = (base + i) / w;\n\t\tindex.col = (base + i) % w;";
 		first = false;
 	}
-	
+
 	for (UserFunction::Param& param : mapFunc.elwiseParams)
 	{
 		if (!first) { SSMapFuncParams << ", "; }
@@ -48,7 +48,7 @@ std::string createMapKernelProgram_CU(UserFunction &mapFunc, size_t arity, std::
 		SSMapFuncParams << param.name << "[i]";
 		first = false;
 	}
-	
+
 	for (UserFunction::RandomAccessParam& param : mapFunc.anyContainerParams)
 	{
 		if (!first) { SSMapFuncParams << ", "; }
@@ -56,7 +56,7 @@ std::string createMapKernelProgram_CU(UserFunction &mapFunc, size_t arity, std::
 		SSMapFuncParams << param.name;
 		first = false;
 	}
-	
+
 	for (UserFunction::Param& param : mapFunc.anyScalarParams)
 	{
 		if (!first) { SSMapFuncParams << ", "; }
@@ -64,9 +64,9 @@ std::string createMapKernelProgram_CU(UserFunction &mapFunc, size_t arity, std::
 		SSMapFuncParams << param.name;
 		first = false;
 	}
-	
+
 	const std::string kernelName = ResultName + "_MapKernel_" + mapFunc.uniqueName;
-	
+
 	std::string kernelSource = MapKernelTemplate_CU;
 	replaceTextInString(kernelSource, PH_MapResultType, mapFunc.resolvedReturnTypeName);
 	replaceTextInString(kernelSource, PH_KernelName, kernelName);
@@ -74,7 +74,7 @@ std::string createMapKernelProgram_CU(UserFunction &mapFunc, size_t arity, std::
 	replaceTextInString(kernelSource, PH_KernelParams, SSKernelParamList.str());
 	replaceTextInString(kernelSource, PH_MapParams, SSMapFuncParams.str());
 	replaceTextInString(kernelSource, PH_IndexInitializer, indexInitializer);
-	
+
 	std::ofstream FSOutFile {dir + "/" + kernelName + ".cu"};
 	FSOutFile << kernelSource;
 	return kernelName;

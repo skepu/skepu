@@ -15,11 +15,11 @@ bool HandleSkeletonInstance(clang::VarDecl *d);
 class SkePUASTVisitor : public clang::RecursiveASTVisitor<SkePUASTVisitor>
 {
 public:
-	
+
 	SkePUASTVisitor(clang::ASTContext *ctx, std::unordered_set<clang::VarDecl *> &instanceSet);
-	
+
 	bool VisitVarDecl(clang::VarDecl *d);
-	
+
 	std::unordered_set<clang::VarDecl *> &SkeletonInstances;
 
 private:
@@ -30,13 +30,13 @@ private:
 class SkePUASTConsumer : public clang::ASTConsumer
 {
 public:
-	
+
 	SkePUASTConsumer(clang::ASTContext *ctx, std::unordered_set<clang::VarDecl *> &instanceSet);
-	
+
 	// Override the method that gets called for each parsed top-level declaration.
 	bool HandleTopLevelDecl(clang::DeclGroupRef DR) override;
 
 private:
 	SkePUASTVisitor Visitor;
-	
+
 };

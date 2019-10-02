@@ -8,16 +8,15 @@ SKEPU_TOOL=llvm/clang/tools/skepu-tool
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(LLVM_CLANG):
-	ln -rs llvm/clang llvm/llvm/tools/clang
-
 $(SKEPU_TOOL):
-	cd llvm; git apply ../llvm.patch
-	ln -rs src/skepu-tool llvm/clang/tools/skepu-tool
+	cd llvm; \
+		git apply ../llvm.patch;
 
-$(BUILD_DIR)/Makefile: $(BUILD_DIR) $(SKEPU_TOOL) $(LLVM_CLANG)
-	@cd build \
-		&& cmake -G "Unix Makefiles" ../llvm/llvm -DCMAKE_BUILD_TYPE=Release;
+$(BUILD_DIR)/Makefile: $(BUILD_DIR) $(SKEPU_TOOL)
+	@cd build; \
+	cmake -G "Unix Makefiles" ../llvm/llvm \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DLLVM_ENABLE_PROJECTS=clang
 
 skepu-tool: $(BUILD_DIR)/Makefile
 	$(MAKE) -C build skepu-tool

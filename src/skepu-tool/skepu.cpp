@@ -51,7 +51,7 @@ std::unordered_set<std::string> AllowedFunctionNamesCalledInUFs
 };
 
 // Skeleton types lookup from internal SkePU class template name
-const std::unordered_map<std::string, Skeleton> Skeletons = 
+const std::unordered_map<std::string, Skeleton> Skeletons =
 {
 	{"MapImpl",        {"Map",          Skeleton::Type::Map,          1, 1}},
 	{"Reduce1D",       {"Reduce1D",     Skeleton::Type::Reduce1D,     1, 1}},
@@ -70,14 +70,14 @@ Rewriter GlobalRewriter;
 class SkePUFrontendAction : public ASTFrontendAction
 {
 public:
-	
+
 /*
 	bool BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) override
 	{
 	//	if (Verbose) llvm::errs() << "** BeginSourceFileAction\n";
 	//	SourceManager &SM = CI.getSourceManager();
 		if (Verbose) llvm::errs() << "** BeginSourceFileAction for: " << Filename << "\n";
-		
+
 		return true;
 	}
 	*/
@@ -85,21 +85,21 @@ public:
 	{
 		SourceManager &SM = GlobalRewriter.getSourceMgr();
 		SourceLocation SLStart = SM.getLocForStartOfFile(SM.getMainFileID());
-		
+
 		GlobalRewriter.InsertText(SLStart, "#define SKEPU_PRECOMPILED\n");
 		if (GenOMP)  GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENMP\n");
 		if (GenCL)   GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENCL\n");
 		if (GenCUDA) GlobalRewriter.InsertText(SLStart, "#define SKEPU_CUDA\n");
-		
+
 		for (VarDecl *d : this->SkeletonInstances)
 			HandleSkeletonInstance(d);
-		
-		
-		
-		
-		
+
+
+
+
+
 		if (Verbose) llvm::errs() << "** EndSourceFileAction for: " << SM.getFileEntryForID(SM.getMainFileID())->getName() << "\n";
-		
+
 		// Now emit the rewritten buffer.
 		std::error_code EC;
 		llvm::raw_fd_ostream OutFile(
@@ -107,14 +107,14 @@ public:
 		GlobalRewriter.getEditBuffer(SM.getMainFileID()).write(OutFile);
 		OutFile.close();
 	}
-	
+
 	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override
 	{
 		if (Verbose) llvm::errs() << "** Creating AST consumer for: " << file << "\n";
 		GlobalRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
-		return std::make_unique<SkePUASTConsumer>(&CI.getASTContext(), this->SkeletonInstances);
+		return llvm::make_unique<SkePUASTConsumer>(&CI.getASTContext(), this->SkeletonInstances);
 	}
-	
+
 private:
 	std::unordered_set<clang::VarDecl *> SkeletonInstances;
 };
@@ -124,11 +124,11 @@ int main(int argc, const char **argv)
 {
 	tooling::CommonOptionsParser op(argc, argv, SkepuPrecompilerCategory);
 	tooling::ClangTool Tool(op.getCompilations(), op.getSourcePathList());
-	
+
 	if (ResultName == "")
 		ResultName = op.getSourcePathList()[0];
 	mainFileName = ResultDir + "/" + ResultName + (NoAddExtension ? "" : (GenCUDA ? ".cu" : ".cpp"));
-	
+
 	if (!Silent)
 	{
 		llvm::errs() << "# ======================================= #\n";
@@ -140,11 +140,11 @@ int main(int argc, const char **argv)
 		llvm::errs() << "   Main output file: " << mainFileName << "\n";
 		llvm::errs() << "# ======================================= #\n";
 	}
-	
+
 	std::istringstream SSNames(AllowedFuncNames);
 	std::vector<std::string> Names{std::istream_iterator<std::string>{SSNames}, std::istream_iterator<std::string>{}};
 	for (std::string &name : Names)
 		AllowedFunctionNamesCalledInUFs.insert(name);
-	
+
 	return Tool.run(tooling::newFrontendActionFactory<SkePUFrontendAction>().get());
 }

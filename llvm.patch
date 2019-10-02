@@ -1,8 +1,8 @@
 diff --git a/clang/include/clang/Basic/Attr.td b/clang/include/clang/Basic/Attr.td
-index 14834a1f541..d65c33641ce 100644
+index d39b16e62b7..46582a9342a 100644
 --- a/clang/include/clang/Basic/Attr.td
 +++ b/clang/include/clang/Basic/Attr.td
-@@ -3393,3 +3393,59 @@ def ObjCExternallyRetained : InheritableAttr {
+@@ -3274,3 +3274,59 @@ def ObjCExternallyRetained : InheritableAttr {
    let Subjects = SubjectList<[NonParmVar, Function, Block, ObjCMethod]>;
    let Documentation = [ObjCExternallyRetainedDocs];
  }
@@ -63,10 +63,10 @@ index 14834a1f541..d65c33641ce 100644
 +  let Documentation = [Undocumented];
 +}
 diff --git a/clang/include/clang/Basic/DiagnosticASTKinds.td b/clang/include/clang/Basic/DiagnosticASTKinds.td
-index f4eeebd73ab..4b70cdc9fdd 100644
+index 23502152b4a..ce998e3aefd 100644
 --- a/clang/include/clang/Basic/DiagnosticASTKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticASTKinds.td
-@@ -511,4 +511,22 @@ def warn_padded_struct_size : Warning<
+@@ -448,4 +448,22 @@ def warn_padded_struct_size : Warning<
    InGroup<Padded>, DefaultIgnore;
  def warn_unnecessary_packed : Warning<
    "packed attribute is unnecessary for %0">, InGroup<Packed>, DefaultIgnore;
@@ -90,21 +90,20 @@ index f4eeebd73ab..4b70cdc9fdd 100644
 +  "[SkePU] Explicit addressof-operator on userfunction argument">;
  }
 diff --git a/clang/lib/Sema/SemaDeclAttr.cpp b/clang/lib/Sema/SemaDeclAttr.cpp
-index d31b48c122f..f970eb6afe7 100644
+index ee06f8ae511..d069587bbc9 100644
 --- a/clang/lib/Sema/SemaDeclAttr.cpp
 +++ b/clang/lib/Sema/SemaDeclAttr.cpp
-@@ -6406,6 +6406,37 @@ static void handleMSAllocatorAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
+@@ -6593,6 +6593,40 @@ static void handleMSAllocatorAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
    handleSimpleAttribute<MSAllocatorAttr>(S, D, AL);
  }
  
-+/* SkePU accessmode attribute is special. */
++/* SkePU attribute handlers */
 +static void handleSkepuAccessModeAttr(Sema &S, Decl *D, const ParsedAttr &AL)
 +{
-+	// Check the attribute arguments.
 +	if (AL.getNumArgs() > 1)
 +	{
 +		S.Diag(AL.getLoc(), diag::err_attribute_too_many_arguments)
-+			<< AL.getAttrName() << 1;
++			<< AL.getName() << 1;
 +		return;
 +	}
 +
@@ -120,18 +119,22 @@ index d31b48c122f..f970eb6afe7 100644
 +	if (!SkepuAccessModeAttr::ConvertStrToAccessMode(Str, Mode))
 +	{
 +		S.Diag(AL.getLoc(), diag::warn_attribute_type_not_supported)
-+			<< AL.getAttrName() << Str << ArgLoc;
++			<< AL.getName() << Str << ArgLoc;
 +		return;
 +	}
 +
 +	D->addAttr(::new (S.Context)
-+		SkepuAccessModeAttr(S.Context, AL, Mode));
++		SkepuAccessModeAttr(
++			AL.getLoc(),
++			S.Context,
++			Mode,
++			AL.getAttributeSpellingListIndex()));
 +}
 +
  //===----------------------------------------------------------------------===//
  // Top Level Sema Entry Points
  //===----------------------------------------------------------------------===//
-@@ -7160,6 +7191,40 @@ static void ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D,
+@@ -7341,6 +7375,40 @@ static void ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D,
    case ParsedAttr::AT_MSAllocator:
      handleMSAllocatorAttr(S, D, AL);
      break;
@@ -183,3 +186,11 @@ index 223f1f74f3f..3a29eff0d2a 100644
 +
 +# Add the skepu-tool subdirectory
 +add_clang_subdirectory(skepu-tool)
+diff --git a/clang/tools/skepu-tool b/clang/tools/skepu-tool
+new file mode 120000
+index 00000000000..d9548cd2198
+--- /dev/null
++++ b/clang/tools/skepu-tool
+@@ -0,0 +1 @@
++../../../src/skepu-tool
+\ No newline at end of file
