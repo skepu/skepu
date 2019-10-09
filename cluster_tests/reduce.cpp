@@ -21,7 +21,6 @@ namespace test_reduce
 			skepu::Matrix<size_t> m({n,n});
 			seq_init(m);
 
-
 			SECTION("rowwise reduction") {
 				sum_reduce.setReduceMode(skepu::ReduceMode::RowWise);
 				sum_reduce(res, m);
@@ -39,9 +38,9 @@ namespace test_reduce
 			}
 
 			SECTION("elwise reduction") {
+					auto rank = skepu::cluster::mpi_rank();
 					auto r = sum_reduce(m);
-					auto expected = (n*(n-1))/2;
-					expected *= n;
+					auto expected = (n*n*(n-1))/2;
 
 					CHECK ( expected == r );
 			}

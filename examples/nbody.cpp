@@ -90,9 +90,19 @@ Particle init(skepu::Index1D index, size_t np)
 void save_step(skepu::Vector<Particle> &particles, std::ostream &os = std::cout)
 {
 	int i = 0;
+
+	os
+		<< std::setw(4) << "#" << "  "
+		<< std::setw(15) << "x"
+		<< std::setw(15) << "y"
+		<< std::setw(15) << "z"
+		<< std::setw(15) << "vx"
+		<< std::setw(15) << "vy"
+		<< std::setw(15) << "vz" << "\n"
+		<< std::string(96,'=') << "\n";
 	for (Particle &p : particles)
 	{
-		os << std::setw( 4) << i++
+		os << std::setw( 4) << i++ << ": "
 			<< std::setw(15) << p.x
 			<< std::setw(15) << p.y
 			<< std::setw(15) << p.z

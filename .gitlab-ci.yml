@@ -27,7 +27,8 @@ build_examples:
       - examples/parallel
   script:
     - cd examples
-    - make all
+    - make all-sequential
+    - make all-parallel
   only:
     - merge_requests
 

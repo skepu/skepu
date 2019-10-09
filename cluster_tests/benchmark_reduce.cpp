@@ -14,10 +14,9 @@ namespace benchmark_reduce {
 		auto sum_reduce = skepu::Reduce(sum_impl);
 
 		TEST_CASE("Benchmark reduce on skepu::Vector") {
-				std::vector<size_t> ns {1,8,64,512,4096,32768,262144};
-			const size_t iterations = 32;//std::stoul(argv[2]);
+			std::vector<size_t> ns {1,2,4,8};
 			for(auto n : ns) {
-					n *= 1024;
+					n *= 1000000;
 					size_t res {};
 				  skepu::Vector<size_t> v(n);
 				  seq_init(v);
@@ -25,11 +24,9 @@ namespace benchmark_reduce {
 						SOFFA_BENCHMARK("reduce.csv", {"nodes", "N"}, \
 														{std::to_string(skepu::cluster::mpi_size()), \
 														 std::to_string(n)}, "reduce");
-						for(size_t i {}; i < iterations; ++i) {
-								res += sum_reduce(v);
-						}
+						res += sum_reduce(v);
 					}
-					REQUIRE ( res == iterations*((n*(n-1))/2) );
+					REQUIRE(res == ((n*(n-1))/2));
 			}
 	}
 }

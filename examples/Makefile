@@ -7,19 +7,9 @@
 #                                                                              #
 #                          ~ SkePU 2 main Makefile ~                           #
 ################################################################################
-
-# NOTE:
-# This Makefile should be kept realtively platform-agnostic.
-# Only sensible default values are defined here.
-# Platform-specific include paths, user-local test programs etc.,
-# should be specified in Makefile.in or on the command line.
-
-
-# ---------------------------------------------------------------------------- #
-# Default values which can be changed in Makefile.in
+.DEFAULT_GOAL=all-mpi
 
 # Default backend set for SkePU precompiler.
-.DEFAULT_GOAL := all-parallel
 BACKENDS = -openmp -cuda -opencl
 
 SKEPU_OPTIONS =
@@ -29,11 +19,29 @@ PRECOMPILER_OPTIONS =
 BACKEND_FLAGS =
 
 # Default OpenCL specific flags (matching a CUDA-provided installation)
-OPENCL_FLAGS = -lOpenCL -I /usr/local/cuda/include/
+OPENCL_FLAGS = -I /opt/cuda/include -L /opt/cuda/lib64/ -lOpenCL
 
+# path to LLVM products directory
+LLVM_BIN = $(PWD)/../skepu/bin
 
-include Makefile.in
+# path to Clang source directory (repository root)
+CLANG_INCLUDE = $(PWD)/../llvm/clang/lib/Headers
 
+# path to the SkePU sources
+SKEPU_INCLUDE = $(PWD)/../include
+
+CXX = g++
+
+MPICXX=mpic++
+MPIBACKENDS=-openmp
+MPICXXFLAGS=-std=c++11 -fopenmp
+MPI_INLCUDE=$$(pkg-config --cflags starpu-1.3) \
+	$$(pkg-config --cflags starpumpi-1.3)
+
+MPI_SRC=nbody_mpi.cpp
+MPI_EXEC=nbody
+
+CLANGTOOL_USER_FLAGS =
 # ---------------------------------------------------------------------------- #
 # Compilers.
 
@@ -53,6 +61,7 @@ SKEPU = $(LLVM_BIN)/skepu-tool
 
 PAR_DIR = parallel
 SEQ_DIR = sequential
+MPI_DIR = mpi
 
 # All SkePU 2 exmple programs (used for 'make all-[parallel|sequential]' and 'make clean').
 PROGS = map reduce mapreduce scan mapoverlap call
@@ -61,13 +70,13 @@ PROGS += writeback dotproduct lambda
 
 TESTS = $(addprefix $(SEQ_DIR)/, $(PROGS))
 PTESTS = $(addprefix $(PAR_DIR)/, $(PROGS))
-
+MPITESTS=$(addprefix $(MPI_DIR)/, $(MPI_EXEC))
 
 # ---------------------------------------------------------------------------- #
 # Compiler flags begin here.
 
 # Flags for precompiler.
-SKEPU_FLAGS = $(BACKENDS) $(PRECOMPILER_OPTIONS)
+SKEPU_FLAGS = $(PRECOMPILER_OPTIONS)
 SKEPU_FLAGS += -- -std=c++11 -Wno-expansion-to-defined
 SKEPU_FLAGS += -I $(CLANG_INCLUDE)
 SKEPU_FLAGS += -I $(SKEPU_INCLUDE)
@@ -107,13 +116,18 @@ all-sequential: $(TESTS)
 # Builds all test programs, parallel implementations, using the precompiler.
 all-parallel: $(PTESTS)
 
-all: all-sequential all-parallel
+all-mpi: $(MPITESTS)
+
+all: all-sequential all-parallel all-mpi
 
 $(PAR_DIR):
 	@mkdir -p $(PAR_DIR)
 
 $(SEQ_DIR):
 	@mkdir -p $(SEQ_DIR)
+
+$(MPI_DIR):
+	@mkdir -p $(MPI_DIR)
 
 # Builds a single sequential test program.
 $(SEQ_DIR)/% : %.cpp $(SEQ_DIR)
@@ -125,16 +139,34 @@ $(SEQ_DIR)/median : median.cpp $(SEQ_DIR)
 
 # Precompiles and builds a single parallel test program.
 $(PAR_DIR)/%: %.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU) -name $*_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) -o $@ $(TARGET_FLAGS)
+	$(DBGR) $(SKEPU) $(BACKENDS) -name $*_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
+	$(DBGR) $(CXX) $(TARGET_FLAGS) $@_precompiled.$(FILETYPE) -o $@
 
 # Precompiles and builds a single parallel test program.
 $(PAR_DIR)/median: median.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU) -name median_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp -o $@ $(TARGET_FLAGS)
+	$(DBGR) $(SKEPU) $(BACKENDS) -name median_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
+	$(DBGR) $(CXX) $(TARGET_FLAGS) $@_precompiled.$(FILETYPE) lodepng.cpp -o $@
 
+$(MPI_DIR)/%.o: %_mpi.cpp $(MPI_DIR)
+	@echo "Precompiling $<"
+	@$(SKEPU) $(MPIBACKENDS) -dir=$(MPI_DIR) -name $*_precompiled $< \
+		-silent $(SKEPU_FLAGS) $(MPI_INLCUDE)
+	@echo "Compiling $<"
+	@$(MPICXX) -o $@ $(MPI_DIR)/$*_precompiled.cpp \
+		$(MPICXXFLAGS) -c -g -O0 \
+		-I$(SKEPU_INCLUDE) \
+		-DSKEPU_MPI_STARPU \
+		$$(pkg-config starpu-1.3 --cflags --libs) \
+		$$(pkg-config starpumpi-1.3 --cflags --libs)
+
+$(MPI_DIR)/%: $(MPI_DIR)/%.o
+	@echo "Linking $*"
+	@$(MPICXX) -std=c++11 -fopenmp -o $@ $< \
+		$$(pkg-config starpu-1.3 --libs) \
+		$$(pkg-config starpumpi-1.3 --libs)
 
 # Deletes all temporary files (including all precompiled sources) and binaries.
 clean:
 	$(RM) -R $(SEQ_DIR)
 	$(RM) -R $(PAR_DIR)
+	$(RM) -R $(MPI_DIR)

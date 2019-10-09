@@ -15,6 +15,7 @@ namespace test_vector
 			CHECK( v[0] == 5 );
 
 			seq_init(v);
+			//v.flush();
 
 			for (size_t i {}; i < n; ++i) {
 				CHECK ( v[i] == i );

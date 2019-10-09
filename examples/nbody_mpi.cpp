@@ -1,15 +1,13 @@
-#include <iostream>
+#include <cmath>
 #include <fstream>
 #include <iomanip>
-#include <cmath>
+#include <iostream>
+#include <string>
 #include <vector>
 
-#include "common.hpp"
+#include <skepu>
 
-#ifdef BENCHMARK_NBODY
-
-
-namespace benchmark_nbody {
+#include <starpu_mpi.h>
 
 // Particle data structure that is used as an element type.
 struct Particle
@@ -22,7 +20,6 @@ struct Particle
 
 constexpr float G = 1;
 constexpr float delta_t = 0.1;
-
 
 /*
  * Array user-function that is used for applying nbody computation,
@@ -92,41 +89,81 @@ Particle init(skepu::Index1D index, size_t np)
 	return p;
 }
 
+auto inline
+operator<<(std::ostream & os, Particle const & p)
+-> std::ostream &
+{
+	os
+		<< std::setw(15) << p.x
+		<< std::setw(15) << p.y
+		<< std::setw(15) << p.z
+		<< std::setw(15) << p.vx
+		<< std::setw(15) << p.vy
+		<< std::setw(15) << p.vz;
+
+	return os;
+}
+
+auto inline
+operator<<(std::fstream & os, skepu::Vector<Particle> & ps)
+-> std::ostream &
+{
+	os
+		<< std::setw(4) << "#" << "  "
+		<< std::setw(15) << "x"
+		<< std::setw(15) << "y"
+		<< std::setw(15) << "z"
+		<< std::setw(15) << "vx"
+		<< std::setw(15) << "vy"
+		<< std::setw(15) << "vz" << "\n"
+		<< std::string(96,'=') << "\n";
+	os << std::flush;
+	for(size_t i{0}; i < ps.size(); ++i)
+		os << std::setw(4) << i << ": " << ps[i] << "\n";
+
+	return os;
+}
+
 auto nbody_init = skepu::Map<0>(init);
 auto nbody_simulate_step = skepu::Map<1>(move);
 
 void nbody(skepu::Vector<Particle> &particles, size_t iterations)
 {
 	size_t np = particles.size();
-
 	skepu::Vector<Particle> doublebuffer(particles.size());
 
-	// particle vectors initialization
 	nbody_init(particles, np);
 
 	for (size_t i = 0; i < iterations; i += 2)
 	{
 		nbody_simulate_step(doublebuffer, particles, particles);
-		//doublebuffer.flush();
 		nbody_simulate_step(particles, doublebuffer, doublebuffer);
-		//particles.flush();
 	}
 }
 
-TEST_CASE("Benchmark nbody")
+int main(int argc, char** argv)
 {
-	std::vector<size_t> nps {1,2,4,8};//,16,32,64};
-	const size_t iterations = 8;//std::stoul(argv[2]);
-	for(auto np : nps)
+	if(argc != 3)
 	{
-		SOFFA_BENCHMARK("nbody.csv", {"nodes", "N"}, \
-			{ std::to_string(skepu::cluster::mpi_size()), \
-				std::to_string(np*512)}, "nbody");
-
-		skepu::Vector<Particle> particles(np*512);
-		nbody(particles, iterations);
+		std::cout << "Usage: " << argv[0] << " <particles> <interations>\n";
+		return 0;
 	}
-}
-}
 
-#endif
+	size_t np = std::stoul(argv[1]);
+	size_t iterations = std::stoul(argv[2]);
+
+	skepu::Vector<Particle> particles(np);
+	nbody(particles, iterations);
+	particles.flush();
+
+	auto rank = skepu::cluster::mpi_rank();
+	if(!rank)
+	{
+		std::string filename{"nbody.txt"};
+		std::fstream file(filename, std::ios_base::out);
+		assert(file.is_open());
+		file << particles;
+		file.close();
+	}
+	return 0;
+}
