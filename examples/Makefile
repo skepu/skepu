@@ -7,7 +7,7 @@
 #                                                                              #
 #                          ~ SkePU 2 main Makefile ~                           #
 ################################################################################
-.DEFAULT_GOAL=all-mpi
+.DEFAULT_GOAL=all
 
 # Default backend set for SkePU precompiler.
 BACKENDS = -openmp -cuda -opencl
@@ -28,7 +28,7 @@ LLVM_BIN = $(PWD)/../skepu/bin
 CLANG_INCLUDE = $(PWD)/../llvm/clang/lib/Headers
 
 # path to the SkePU sources
-SKEPU_INCLUDE = $(PWD)/../include
+SKEPU_INCLUDE = $(PWD)/../include/src
 
 CXX = g++
 

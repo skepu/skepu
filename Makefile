@@ -24,11 +24,10 @@ skepu-tool: $(BUILD_DIR)/Makefile
 all: skepu-tool
 
 $(PKG_DIR):
-	install -D build/bin/skepu-tool $(PKG_DIR)/bin/skepu-tool
-	cp -R llvm/clang/lib/Headers $(PKG_DIR)/
-	cd $(PKG_DIR) && mv Headers clang_headers
-	cp -R include $(PKG_DIR)
-	install -D PKG_README.in $(PKG_DIR)/README
+	install -Dm755 build/bin/skepu-tool $(PKG_DIR)/bin/skepu-tool
+	cp -R llvm/clang/lib/Headers $(PKG_DIR)/clang_headers
+	cp -R include/src $(PKG_DIR)/include
+	install -Dm644 PKG_README.in $(PKG_DIR)/README
 
 skepu.tgz: $(PKG_DIR)
 	tar cpzf skepu.tgz $(PKG_DIR)
