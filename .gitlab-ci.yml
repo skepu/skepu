@@ -15,6 +15,7 @@ build_skepu:
     - make
     - make skepu
   only:
+    - web
     - merge_requests
 
 build_examples:
@@ -30,6 +31,7 @@ build_examples:
     - make all-sequential
     - make all-parallel
   only:
+    - web
     - merge_requests
 
 test_skepu:
@@ -39,4 +41,5 @@ test_skepu:
   script:
     - skepu/bin/skepu-tool --help
   only:
+    - web
     - merge_requests
