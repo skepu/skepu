@@ -14,12 +14,19 @@
 
 enum class AccessMode
 {
-	Read, Write, ReadWrite
+	Read,
+	Write,
+	ReadWrite
 };
 
 enum class ContainerType
 {
-	Vector, Matrix, SparseMatrix
+	Vector,
+	Matrix,
+	MatRow,
+	Tensor3,
+	Tensor4,
+	SparseMatrix
 };
 
 
@@ -27,7 +34,17 @@ struct Skeleton
 {
 	enum class Type
 	{
-		Map, Reduce1D, Reduce2D, MapReduce, Scan, MapOverlap1D, MapOverlap2D, Call
+		Map,
+		Reduce1D,
+		Reduce2D,
+		MapReduce,
+		MapPairs,
+		Scan,
+		MapOverlap1D,
+		MapOverlap2D,
+		MapOverlap3D,
+		MapOverlap4D,
+		Call
 	};
 
 	std::string name;
@@ -152,6 +169,8 @@ public:
 	bool fromTemplate = false;
 	bool indexed1D = false;
 	bool indexed2D = false;
+	bool indexed3D = false;
+	bool indexed4D = false;
 	bool requiresDoublePrecision;
 
 	size_t numKernelArgsCL();

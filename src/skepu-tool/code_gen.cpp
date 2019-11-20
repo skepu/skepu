@@ -52,6 +52,25 @@ typedef struct {
 } skepu_mat_proxy_SKEPU_ESCAPED_TYPE_CL;
 )~~~";
 
+static const std::string OpenCLTensor3Template = R"~~~(
+typedef struct {
+	__global SKEPU_CONTAINED_TYPE_CL *data;
+	size_t size_i;
+	size_t size_j;
+	size_t size_k;
+} skepu_ten3_proxy_SKEPU_ESCAPED_TYPE_CL;
+)~~~";
+
+static const std::string OpenCLTensor4Template = R"~~~(
+typedef struct {
+	__global SKEPU_CONTAINED_TYPE_CL *data;
+	size_t size_i;
+	size_t size_j;
+	size_t size_k;
+	size_t size_l;
+} skepu_ten4_proxy_SKEPU_ESCAPED_TYPE_CL;
+)~~~";
+
 static const std::string OpenCLSparseMatrixTemplate = R"~~~(
 typedef struct {
 	__global SKEPU_CONTAINED_TYPE_CL *data;
@@ -80,6 +99,22 @@ std::string generateOpenCLMatrixProxy(std::string typeName)
 std::string generateOpenCLSparseMatrixProxy(std::string typeName)
 {
 	std::string retval = OpenCLSparseMatrixTemplate;
+	replaceTextInString(retval, "SKEPU_CONTAINED_TYPE_CL", typeName);
+	replaceTextInString(retval, "SKEPU_ESCAPED_TYPE_CL", transformToCXXIdentifier(typeName));
+	return retval;
+}
+
+std::string generateOpenCLTensor3Proxy(std::string typeName)
+{
+	std::string retval = OpenCLTensor3Template;
+	replaceTextInString(retval, "SKEPU_CONTAINED_TYPE_CL", typeName);
+	replaceTextInString(retval, "SKEPU_ESCAPED_TYPE_CL", transformToCXXIdentifier(typeName));
+	return retval;
+}
+
+std::string generateOpenCLTensor4Proxy(std::string typeName)
+{
+	std::string retval = OpenCLTensor4Template;
 	replaceTextInString(retval, "SKEPU_CONTAINED_TYPE_CL", typeName);
 	replaceTextInString(retval, "SKEPU_ESCAPED_TYPE_CL", transformToCXXIdentifier(typeName));
 	return retval;
@@ -142,7 +177,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName)
 			SSSkepuFunctorStruct << "using " << arg.paramName << " = " << arg.typeName << ";\n";
 
 	SSSkepuFunctorStruct << "constexpr static size_t totalArity = " << f->param_size() << ";\n";
-	SSSkepuFunctorStruct << "constexpr static bool indexed = " << (UF.indexed1D || UF.indexed2D) << ";\n";
+	SSSkepuFunctorStruct << "constexpr static bool indexed = " << (UF.indexed1D || UF.indexed2D || UF.indexed3D || UF.indexed4D) << ";\n";
 
 	SSSkepuFunctorStruct << "using ElwiseArgs = std::tuple<";
 	bool first = true;
@@ -352,6 +387,10 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
 			SSCallArgs << KernelName_CU;
 			break;
+		case Skeleton::Type::MapPairs:
+			SkePUAbort("MapPairs not implemented yet");
+			// TODO
+			break;
 
 		case Skeleton::Type::Reduce1D:
 			KernelName_CU = createReduce1DKernelProgram_CU(*FuncArgs[0], ResultDir);
@@ -426,6 +465,10 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		case Skeleton::Type::Map:
 			KernelName_CL = createMapKernelProgram_CL(*FuncArgs[0], arity, ResultDir);
 			break;
+		case Skeleton::Type::MapPairs:
+			// TODO
+			SkePUAbort("MapPairs not implemented yet");
+			break;
 
 		case Skeleton::Type::Reduce1D:
 			KernelName_CL = createReduce1DKernelProgram_CL(*FuncArgs[0], ResultDir);
@@ -440,10 +483,22 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			break;
 
 		case Skeleton::Type::MapOverlap1D:
+			SkePUAbort("MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
 			KernelName_CL = createMapOverlap1DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
 
 		case Skeleton::Type::MapOverlap2D:
+			SkePUAbort("MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
+			KernelName_CL = createMapOverlap2DKernelProgram_CL(*FuncArgs[0], ResultDir);
+			break;
+
+		case Skeleton::Type::MapOverlap3D:
+			SkePUAbort("MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
+			KernelName_CL = createMapOverlap1DKernelProgram_CL(*FuncArgs[0], ResultDir);
+			break;
+
+		case Skeleton::Type::MapOverlap4D:
+			SkePUAbort("MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
 			KernelName_CL = createMapOverlap2DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
 

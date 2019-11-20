@@ -6,15 +6,15 @@ using namespace clang;
 
 std::unordered_set<std::string> SkeletonInstances;
 
-// ------------------------------
-// AST visitor
-// ------------------------------
-
 [[noreturn]] void SkePUAbort(std::string msg)
 {
 	llvm::errs() << "[SKEPU] INTERNAL FATAL ERROR: " << msg << "\n";
 	exit(1);
 }
+
+// ------------------------------
+// AST visitor
+// ------------------------------
 
 UserFunction *HandleUserFunction(FunctionDecl *f)
 {
@@ -179,10 +179,19 @@ bool HandleSkeletonInstance(VarDecl *d)
 		assert(Callee->getTemplateSpecializationArgs()->size() > 0);
 		arity[0] = Callee->getTemplateSpecializationArgs()->get(0).getAsIntegral().getExtValue();
 		break;
+	case Skeleton::Type::MapPairs:
+		assert(Callee->getTemplateSpecializationArgs()->size() > 1);
+		arity[0] = Callee->getTemplateSpecializationArgs()->get(0).getAsIntegral().getExtValue();
+		arity[0] = Callee->getTemplateSpecializationArgs()->get(1).getAsIntegral().getExtValue();
+		break;
 	case Skeleton::Type::MapOverlap1D:
-		arity[0] = 3; break;
+		arity[0] = 1; break;
 	case Skeleton::Type::MapOverlap2D:
-		arity[0] = 4; break;
+		arity[0] = 1; break;
+	case Skeleton::Type::MapOverlap3D:
+		arity[0] = 1; break;
+	case Skeleton::Type::MapOverlap4D:
+		arity[0] = 1; break;
 	default:
 		break;
 	}
@@ -220,12 +229,15 @@ UserType *HandleUserType(const CXXRecordDecl *t)
 		return nullptr;
 
 	std::string name = t->getNameAsString();
-	if (Verbose) llvm::errs() << "Found user type: " << name << "\n";
 
 	// These types are handled separately
-	if (name == "Index1D" || name == "Index2D" || name == "Vec" || name == "Mat")
+	if (name == "Index1D" || name == "Index2D" || name == "Index3D" || name == "Index4D"
+		|| name == "Region1D" || name == "Region2D" || name == "Region3D" || name == "Region4D"
+		|| name == "Vec" || name == "Mat" || name == "Ten3" || name == "Ten4" || name == "MatRow")
 		return nullptr;
 
+	if (Verbose) llvm::errs() << "Found user type: " << name << "\n";
+	
 	if (!t->isCLike())
 		SkePUAbort("User type is not C-like and not supported (run verbose for more details)\n");
 

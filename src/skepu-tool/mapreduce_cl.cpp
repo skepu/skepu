@@ -222,15 +222,35 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->size(), ";
 				SSProxyInitializer << param.TypeNameOpenCL() << " " << param.name << " = { .data = " << name << ", .size = skepu_size_" << param.name << " };\n";
 				break;
+			
 			case ContainerType::Matrix:
 				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", size_t skepu_rows_" << param.name << ", size_t skepu_cols_" << param.name << ", ";
 				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_rows(), std::get<0>(" << name << ")->total_cols(), ";
 				SSProxyInitializer << param.TypeNameOpenCL() << " " << param.name << " = { .data = " << name
 					<< ", .rows = skepu_rows_" << param.name << ", .cols = skepu_cols_" << param.name << " };\n";
 				break;
+			
 			case ContainerType::SparseMatrix:
 				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", size_t skepu_size_" << param.name << ", ";
 				SSKernelArgs << "skepu_container_" << param.name << ".size(), ";
+				break;
+			
+			case ContainerType::Tensor3:
+				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", "
+					<< "size_t skepu_size_i_" << param.name << ", size_t skepu_size_j_" << param.name << ", size_t skepu_size_k_" << param.name << ", ";
+				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), "
+					<< "std::get<0>(" << name << ")->size_i(), std::get<0>(" << name << ")->size_j(), std::get<0>(" << name << ")->size_k(), ";
+				SSProxyInitializer << param.TypeNameOpenCL() << " " << param.name << " = { .data = " << name
+					<< ", .size_i = skepu_size_i_" << param.name << ", .size_j = skepu_size_j_" << param.name << ", .size_k = skepu_size_k_" << param.name << " };\n";
+				break;
+			
+			case ContainerType::Tensor4:
+				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", "
+					<< "size_t skepu_size_i_" << param.name << ", size_t skepu_size_j_" << param.name << ", size_t skepu_size_k_" << param.name << ", size_t skepu_size_l_" << param.name << ", ";
+				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), "
+					<< "std::get<0>(" << name << ")->size_i(), std::get<0>(" << name << ")->size_j(), std::get<0>(" << name << ")->size_k(), std::get<0>(" << name << ")->size_l(), ";
+				SSProxyInitializer << param.TypeNameOpenCL() << " " << param.name << " = { .data = " << name
+					<< ", .size_i = skepu_size_i_" << param.name << ", .size_j = skepu_size_j_" << param.name << ", .size_k = skepu_size_k_" << param.name << ", .size_l = skepu_size_l_" << param.name << " };\n";
 				break;
 		}
 		SSMapFuncParams << param.name;
@@ -260,6 +280,12 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 
 	for (const std::string &type : containerProxyTypes[ContainerType::SparseMatrix])
 		sourceStream << generateOpenCLSparseMatrixProxy(type);
+	
+	for (const std::string &type : containerProxyTypes[ContainerType::Tensor3])
+		sourceStream << generateOpenCLTensor3Proxy(type);
+	
+	for (const std::string &type : containerProxyTypes[ContainerType::Tensor4])
+		sourceStream << generateOpenCLTensor4Proxy(type);
 
 	// Include user constants as preprocessor macros
 	for (auto pair : UserConstants)

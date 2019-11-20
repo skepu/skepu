@@ -41,6 +41,19 @@ typedef struct {
 	size_t col;
 } index2_t;
 
+typedef struct {
+	size_t i;
+	size_t j;
+	size_t k;
+} index3_t;
+
+typedef struct {
+	size_t i;
+	size_t j;
+	size_t k;
+	size_t l;
+} index4_t;
+
 size_t get_device_id()
 {
 	return SKEPU_INTERNAL_DEVICE_ID;
@@ -54,15 +67,20 @@ size_t get_device_id()
 )~~~";
 
 void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName);
+
 std::string generateOpenCLVectorProxy(std::string typeName);
 std::string generateOpenCLMatrixProxy(std::string typeName);
 std::string generateOpenCLSparseMatrixProxy(std::string typeName);
+std::string generateOpenCLTensor3Proxy(std::string typeName);
+std::string generateOpenCLTensor4Proxy(std::string typeName);
+
 std::string replaceReferencesToOtherUFs(UserFunction &UF, std::function<std::string(UserFunction&)> nameFunc);
 bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, size_t arity, clang::VarDecl *d);
 
 // CUDA generators
 std::string createMapReduceKernelProgram_CU(UserFunction &mapFunc, UserFunction &reduceFunc, size_t arity, std::string dir);
 std::string createMapKernelProgram_CU(UserFunction &mapFunc, size_t arity, std::string dir);
+//std::string createMapPairsKernelProgram_CU(UserFunction &mapFunc, size_t Varity, size_t Harity, std::string dir);
 std::string createScanKernelProgram_CU(UserFunction &scanFunc, std::string dir);
 std::string createReduce1DKernelProgram_CU(UserFunction &reduceFunc, std::string dir);
 std::string createReduce2DKernelProgram_CU(UserFunction &rowWiseFunc, UserFunction &colWiseFunc, std::string dir);
@@ -77,6 +95,7 @@ std::string generateUserTypeCode_CL(UserType &Type);
 // OpenCL generators
 std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction &reduceFunc, size_t arity, std::string dir);
 std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::string dir);
+//std::string createMapPairsKernelProgram_CL(UserFunction &mapFunc, size_t Varity, size_t Harity, std::string dir);
 std::string createScanKernelProgram_CL(UserFunction &scanFunc, std::string dir);
 std::string createReduce1DKernelProgram_CL(UserFunction &reduceFunc, std::string dir);
 std::string createReduce2DKernelProgram_CL(UserFunction &rowWiseFunc, UserFunction &colWiseFunc, std::string dir);

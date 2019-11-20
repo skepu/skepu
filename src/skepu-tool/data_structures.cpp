@@ -230,10 +230,25 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 		this->containerType = ContainerType::Matrix;
 		if (Verbose) llvm::errs() << "Matrix of " << this->resolvedTypeName << "\n";
 	}
+	else if (templateName == "MatRow")
+	{
+		this->containerType = ContainerType::MatRow;
+		if (Verbose) llvm::errs() << "Matrix Row of " << this->resolvedTypeName << "\n";
+	}
 	else if (templateName == "Vec")
 	{
 		this->containerType = ContainerType::Vector;
 		if (Verbose) llvm::errs() << "Vector of " << this->resolvedTypeName << "\n";
+	}
+	else if (templateName == "Ten3")
+	{
+		this->containerType = ContainerType::Tensor3;
+		if (Verbose) llvm::errs() << "Tensor3 of " << this->resolvedTypeName << "\n";
+	}
+	else if (templateName == "Ten4")
+	{
+		this->containerType = ContainerType::Tensor4;
+		if (Verbose) llvm::errs() << "Tensor4 of " << this->resolvedTypeName << "\n";
 	}
 	else
 		llvm::errs() << "FATAL ERROR\n";
@@ -251,7 +266,8 @@ bool UserFunction::RandomAccessParam::constructibleFrom(const clang::ParmVarDecl
 	if (!templateType) return false;
 
 	std::string templateName = templateType->getTemplateName().getAsTemplateDecl()->getNameAsString();
-	return (templateName == "SparseMat") || (templateName == "Mat") || (templateName == "Vec");
+	return (templateName == "SparseMat") || (templateName == "Mat") || (templateName == "Vec")
+		|| (templateName == "Ten3")  || (templateName == "Ten4") || (templateName == "MatRow");
 }
 
 std::string UserFunction::RandomAccessParam::TypeNameOpenCL()
@@ -262,6 +278,10 @@ std::string UserFunction::RandomAccessParam::TypeNameOpenCL()
 			return "skepu_vec_proxy_" + this->escapedTypeName;
 		case ContainerType::Matrix:
 			return "skepu_mat_proxy_" + this->escapedTypeName;
+		case ContainerType::Tensor3:
+			return "skepu_ten3_proxy_" + this->escapedTypeName;
+		case ContainerType::Tensor4:
+			return "skepu_ten4_proxy_" + this->escapedTypeName;
 		case ContainerType::SparseMatrix:
 			return "skepu_sparse_mat_proxy_" + this->escapedTypeName;
 		default:
@@ -278,6 +298,10 @@ std::string UserFunction::RandomAccessParam::TypeNameHost()
 			return "std::tuple<skepu::Vector<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
 		case ContainerType::Matrix:
 			return "std::tuple<skepu::Matrix<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
+		case ContainerType::Tensor3:
+			return "std::tuple<skepu::Tensor3<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
+		case ContainerType::Tensor4:
+			return "std::tuple<skepu::Tensor4<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
 		case ContainerType::SparseMatrix:
 			return "std::tuple<skepu::SparseMatrix<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *, "
 				+ "skepu::backend::DeviceMemPointer_CL<size_t> *, skepu::backend::DeviceMemPointer_CL<size_t> *>";
@@ -295,6 +319,10 @@ size_t UserFunction::RandomAccessParam::numKernelArgsCL()
 			return 2;
 		case ContainerType::Matrix:
 			return 3;
+		case ContainerType::Tensor3:
+			return 4;
+		case ContainerType::Tensor4:
+			return 5;
 		case ContainerType::SparseMatrix:
 			return 4;
 		default:
@@ -372,10 +400,12 @@ UserFunction::UserFunction(FunctionDecl *f)
 	{
 		std::string name = (*it)->getOriginalType().getAsString();
 		this->indexed1D = (name == "skepu::Index1D" || name == "struct skepu::Index1D");
-		this->indexed2D = (name == "skepu::Index2D" || name == "struct skepu::Index1D");
+		this->indexed2D = (name == "skepu::Index2D" || name == "struct skepu::Index2D");
+		this->indexed3D = (name == "skepu::Index3D" || name == "struct skepu::Index3D");
+		this->indexed4D = (name == "skepu::Index4D" || name == "struct skepu::Index4D");
 	}
 
-	if (this->indexed1D || this->indexed2D)
+	if (this->indexed1D || this->indexed2D || this->indexed3D || this->indexed4D)
 		this->indexParam = new UserFunction::Param(*it++);
 
 	// Referenced functions and types
@@ -444,7 +474,7 @@ void UserFunction::updateArgLists(size_t arity)
 	auto it = this->astDeclNode->param_begin();
 	const auto end = this->astDeclNode->param_end();
 
-	if (this->indexed1D || this->indexed2D)
+	if (this->indexed1D || this->indexed2D || this->indexed3D || this->indexed4D)
 		it++;
 
 	auto elwise_end = it + arity;
