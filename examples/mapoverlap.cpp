@@ -2,20 +2,43 @@
 
 #include <skepu>
 
-float over_1d(int, size_t stride, const float *a, int scale)
+float over_1d(skepu::Region1D<float> r, int scale)
 {
-	const int s = (int)stride;
-	return (a[-2*s]*4 + a[-1*s]*2 + a[0]*1 + a[1*s]*2 + a[2*s]*4) / scale;
+	return (r(-2)*4 + r(-1)*2 + r(0) + r(1)*2 + r(2)*4) / scale;
 }
 
-float over_2d(int ox, int oy, size_t stride, const float *m, const skepu::Mat<float> filter)
+float over_2d(skepu::Region2D<float> r, const skepu::Mat<float> stencil)
 {
 	float res = 0;
-	for (int y = -oy; y <= oy; ++y)
-		for (int x = -ox; x <= ox; ++x)
-			res += m[y*(int)stride+x] * filter.data[(y+oy)*ox + (x+ox)];
+	for (int i = -r.oi; i <= r.oi; ++i)
+		for (int j = -r.oj; j <= r.oj; ++j)
+			res += r(i, j) * stencil(i + r.oi, j + r.oj);
 	return res;
 }
+
+float over_3d(skepu::Region3D<float> r, skepu::Ten3<float> stencil)
+{
+	float res = 0;
+	for (int i = -r.oi; i <= r.oi; ++i)
+		for (int j = -r.oj; j <= r.oj; ++j)
+			for (int k = -r.ok; k <= r.ok; ++k)
+				res += r(i, j, k) * stencil(i + r.oi, j + r.oj, k + r.ok);
+	return res;
+}
+
+float over_4d(skepu::Region4D<float> r, skepu::Ten4<float> stencil)
+{
+	float res = 0;
+	for (int i = -r.oi; i <= r.oi; ++i)
+		for (int j = -r.oj; j <= r.oj; ++j)
+			for (int k = -r.ok; k <= r.ok; ++k)
+				for (int l = -r.ol; l <= r.ol; ++l)
+					res += r(i, j, k, l) * stencil(i + r.oi, j + r.oj, k + r.ok, l + r.ol);
+	return res;
+}
+
+
+
 
 int main(int argc, char *argv[])
 {
@@ -33,6 +56,8 @@ int main(int argc, char *argv[])
 	conv.setOverlap(2);
 	
 	skepu::Vector<float> v(size, 10), rv(size);
+	for (size_t i = 0;  i < size; ++i)
+		v(i) = i;
 	
 	std::cout << "v: " << v <<"\n";
 	
@@ -131,13 +156,35 @@ int main(int argc, char *argv[])
 	auto conv2 = skepu::MapOverlap(over_2d);
 	conv2.setBackend(spec);
 	conv2.setOverlap(1, 1);
-	conv2.setEdgeMode(skepu::Edge::Pad);
-	conv2.setPad(0);
 	
 	skepu::Matrix<float> filter(2*1+1, 2*1+1, 1), rm2(size - 2*1, size - 2*1);
 	
 	conv2(rm2, m, filter);
 	std::cout << "Matrix 2D Pad 0:    rm = " << rm2 << "\n";
+	
+	
+	// Tensor3
+	
+	auto conv3 = skepu::MapOverlap(over_3d);
+	conv3.setBackend(spec);
+	conv3.setOverlap(1, 1, 1);
+	
+	skepu::Tensor3<float> ten3(size, size, size, 1), stencil3(2*1+1, 2*1+1, 2*1+1, 1), ret_ten3(size - 2*1, size - 2*1, size - 2*1);
+	
+	conv3(ret_ten3, ten3, stencil3);
+//	std::cout << "Tensor3D: " << ret_ten3 << "\n";
+	
+	
+	// Tensor4
+	
+	auto conv4 = skepu::MapOverlap(over_4d);
+	conv4.setBackend(spec);
+	conv4.setOverlap(1, 1, 1, 1);
+	
+	skepu::Tensor4<float> ten4(size, size, size, size, 1), stencil4(2*1+1, 2*1+1, 2*1+1, 2*1+1, 1), ret_ten4(size - 2*1, size - 2*1, size - 2*1, size - 2*1);
+	
+	conv4(ret_ten4, ten4, stencil4);
+//	std::cout << "Tensor4D: " << ret_ten4 << "\n";
 	
 	return 0;
 }

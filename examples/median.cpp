@@ -102,7 +102,7 @@ void WritePngFileMatrix(skepu::Matrix<unsigned char> imageData, std::string file
 
 
 // Kernel for filter with raduis R
-unsigned char median_kernel(int ox, int oy, size_t stride, const unsigned char *image, size_t elemPerPx)
+unsigned char median_kernel(skepu::Region2D<unsigned char> image, size_t elemPerPx)
 {
 	long fineHistogram[256], coarseHistogram[16];
 	
@@ -112,17 +112,17 @@ unsigned char median_kernel(int ox, int oy, size_t stride, const unsigned char *
 	for (int i = 0; i < 16; i++)
 		coarseHistogram[i] = 0;
 	
-	for (int row = -oy; row <= oy; row++)
+	for (int row = -image.oi; row <= image.oi; row++)
 	{
-		for (int column = -ox; column <= ox; column += elemPerPx)
+		for (int column = -image.oj; column <= image.oj; column += elemPerPx)
 		{ 
-			unsigned char imageValue = image[row * stride + column];
+			unsigned char imageValue = image(row, column);
 			fineHistogram[imageValue]++;
 			coarseHistogram[imageValue / 16]++;
 		}
 	}
 	
-	int count = 2 * oy * (oy + 1);
+	int count = 2 * image.oi * (image.oi + 1);
 	
 	unsigned char coarseIndex;
 	for (coarseIndex = 0; coarseIndex < 16; ++coarseIndex)

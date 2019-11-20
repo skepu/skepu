@@ -10,7 +10,7 @@
 .DEFAULT_GOAL=all
 
 # Default backend set for SkePU precompiler.
-BACKENDS = -openmp -cuda -opencl
+BACKENDS = -openmp # -opencl -cuda 
 
 SKEPU_OPTIONS =
 PRECOMPILER_OPTIONS =
@@ -66,7 +66,7 @@ MPI_DIR = mpi
 # All SkePU 2 exmple programs (used for 'make all-[parallel|sequential]' and 'make clean').
 PROGS = map reduce mapreduce scan mapoverlap call
 PROGS += mandelbrot mvmult mmmult cma ppmcc psnr taylor coulombic nbody median
-PROGS += writeback dotproduct lambda 
+PROGS += writeback dotproduct lambda containers
 
 TESTS = $(addprefix $(SEQ_DIR)/, $(PROGS))
 PTESTS = $(addprefix $(PAR_DIR)/, $(PROGS))

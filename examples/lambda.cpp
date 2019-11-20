@@ -31,22 +31,21 @@ int main(int argc, char *argv[])
 	cum_sum.setBackend(spec);
 	
 	
-	auto conv = skepu::MapOverlap([](int o, size_t stride, const float *a)
+	auto conv = skepu::MapOverlap([](skepu::Region1D<float> a)
 	{
-		const int s = (int)stride;
 		float sum = 0;
-		for (int i = -o; i <= o; i++)
-			sum += a[i];
+		for (int i = -a.oi; i <= a.oi; i++)
+			sum += a(i);
 		return sum;
 	});
 	conv.setBackend(spec);
 	
-	auto conv2d = skepu::MapOverlap([](int ox, int oy, size_t stride, const float *m, const skepu::Mat<float> filter)
+	auto conv2d = skepu::MapOverlap([](skepu::Region2D<float> m, const skepu::Mat<float> filter)
 	{
 		float res = 0;
-		for (int y = -oy; y <= oy; ++y)
-			for (int x = -ox; x <= ox; ++x)
-				res += m[y*(int)stride+x] * filter.data[(y+oy)*ox + (x+ox)];
+		for (int y = -m.oi; y <= m.oi; ++y)
+			for (int x = -m.oj; x <= m.oj; ++x)
+				res += m(y, x) * filter.data[(y+m.oi)*m.oj + (x+m.oj)];
 		return res;
 	});
 	conv2d.setBackend(spec);
