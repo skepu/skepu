@@ -10,10 +10,9 @@ build_skepu:
   stage: build
   artifacts:
     paths:
-      - skepu
+      - build/bin
   script:
     - make
-    - make skepu
   only:
     - web
     - merge_requests
@@ -39,7 +38,9 @@ test_skepu:
   dependencies:
     - build_skepu
   script:
-    - skepu/bin/skepu-tool --help
+    - build/bin/skepu-tool --help
   only:
     - web
     - merge_requests
+
+# vi:ts=2 sw=2 et

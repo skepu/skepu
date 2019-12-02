@@ -10,10 +10,10 @@
 .DEFAULT_GOAL=all
 
 # Default backend set for SkePU precompiler.
-BACKENDS = -openmp # -opencl -cuda 
+BACKENDS = -openmp -opencl -cuda 
 
 SKEPU_OPTIONS =
-PRECOMPILER_OPTIONS =
+PRECOMPILER_OPTIONS = --silent
 
 # Backend-specific flags
 BACKEND_FLAGS =
@@ -21,14 +21,11 @@ BACKEND_FLAGS =
 # Default OpenCL specific flags (matching a CUDA-provided installation)
 OPENCL_FLAGS = -I /opt/cuda/include -L /opt/cuda/lib64/ -lOpenCL
 
-# path to LLVM products directory
-LLVM_BIN = $(PWD)/../skepu/bin
-
 # path to Clang source directory (repository root)
 CLANG_INCLUDE = $(PWD)/../llvm/clang/lib/Headers
 
 # path to the SkePU sources
-SKEPU_INCLUDE = $(PWD)/../include/src
+SKEPU_INCLUDE = $(PWD)/../skepu-headers/src
 
 CXX = g++
 
@@ -53,7 +50,7 @@ CXX = nvcc
 endif
 
 # Location of SkePU precompiler binary.
-SKEPU = $(LLVM_BIN)/skepu-tool
+SKEPU = $(PWD)/../build/bin/skepu-tool
 
 
 # ---------------------------------------------------------------------------- #
@@ -64,9 +61,28 @@ SEQ_DIR = sequential
 MPI_DIR = mpi
 
 # All SkePU 2 exmple programs (used for 'make all-[parallel|sequential]' and 'make clean').
-PROGS = map reduce mapreduce scan mapoverlap call
-PROGS += mandelbrot mvmult mmmult cma ppmcc psnr taylor coulombic nbody median
-PROGS += writeback dotproduct lambda containers
+# MapOverlap skeleton disabled until OpenCL backend is resolved.
+PROGS=
+PROGS+=call
+PROGS+=cma
+# PROGS+=containers
+PROGS+=coulombic
+PROGS+=dotproduct
+# PROGS+=lambda
+PROGS+=mandelbrot
+# PROGS+=map
+# PROGS+=mapoverlap
+PROGS+=mapreduce
+# PROGS+=median
+PROGS+=mmmult
+PROGS+=mvmult
+PROGS+=nbody
+PROGS+=ppmcc
+PROGS+=psnr
+PROGS+=reduce
+PROGS+=scan
+PROGS+=taylor
+PROGS+=writeback
 
 TESTS = $(addprefix $(SEQ_DIR)/, $(PROGS))
 PTESTS = $(addprefix $(PAR_DIR)/, $(PROGS))
@@ -150,7 +166,7 @@ $(PAR_DIR)/median: median.cpp $(PAR_DIR)
 $(MPI_DIR)/%.o: %_mpi.cpp $(MPI_DIR)
 	@echo "Precompiling $<"
 	@$(SKEPU) $(MPIBACKENDS) -dir=$(MPI_DIR) -name $*_precompiled $< \
-		-silent $(SKEPU_FLAGS) $(MPI_INLCUDE)
+		$(SKEPU_FLAGS) $(MPI_INLCUDE)
 	@echo "Compiling $<"
 	@$(MPICXX) -o $@ $(MPI_DIR)/$*_precompiled.cpp \
 		$(MPICXXFLAGS) -c -g -O0 \

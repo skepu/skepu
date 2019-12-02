@@ -1,6 +1,6 @@
 [submodule "llvm"]
 	path = llvm
 	url = https://github.com/llvm/llvm-project.git
-[submodule "include"]
-	path = include
+[submodule "skepu-headers"]
+	path = skepu-headers
 	url = ../skepu-headers.git
