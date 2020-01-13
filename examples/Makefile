@@ -31,9 +31,8 @@ CXX = g++
 
 MPICXX=mpic++
 MPIBACKENDS=-openmp
-MPICXXFLAGS=-std=c++11 -fopenmp
-MPI_INLCUDE=$$(pkg-config --cflags starpu-1.3) \
-	$$(pkg-config --cflags starpumpi-1.3)
+MPICXXFLAGS=-std=c++11 -fopenmp $$(pkg-config --cflags starpu-1.3 starpumpi-1.3)
+MPILIBS=$$(pkg-config --libs starpu-1.3 starpumpi-1.3)
 
 MPI_SRC=nbody_mpi.cpp
 MPI_EXEC=nbody
@@ -166,20 +165,14 @@ $(PAR_DIR)/median: median.cpp $(PAR_DIR)
 $(MPI_DIR)/%.o: %_mpi.cpp $(MPI_DIR)
 	@echo "Precompiling $<"
 	@$(SKEPU) $(MPIBACKENDS) -dir=$(MPI_DIR) -name $*_precompiled $< \
-		$(SKEPU_FLAGS) $(MPI_INLCUDE)
+		$(SKEPU_FLAGS)
 	@echo "Compiling $<"
 	@$(MPICXX) -o $@ $(MPI_DIR)/$*_precompiled.cpp \
-		$(MPICXXFLAGS) -c -g -O0 \
-		-I$(SKEPU_INCLUDE) \
-		-DSKEPU_MPI_STARPU \
-		$$(pkg-config starpu-1.3 --cflags --libs) \
-		$$(pkg-config starpumpi-1.3 --cflags --libs)
+		$(MPICXXFLAGS) -c -g -O0 -I$(SKEPU_INCLUDE) -DSKEPU_MPI_STARPU
 
 $(MPI_DIR)/%: $(MPI_DIR)/%.o
 	@echo "Linking $*"
-	@$(MPICXX) -std=c++11 -fopenmp -o $@ $< \
-		$$(pkg-config starpu-1.3 --libs) \
-		$$(pkg-config starpumpi-1.3 --libs)
+	@$(MPICXX) -std=c++11 -fopenmp -o $@ $< $(MPILIBS)
 
 # Deletes all temporary files (including all precompiled sources) and binaries.
 clean:

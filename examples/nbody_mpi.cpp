@@ -1,4 +1,5 @@
 #include <cmath>
+#include <chrono>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -6,8 +7,6 @@
 #include <vector>
 
 #include <skepu>
-
-#include <starpu_mpi.h>
 
 // Particle data structure that is used as an element type.
 struct Particle
@@ -129,10 +128,7 @@ auto nbody_simulate_step = skepu::Map<1>(move);
 
 void nbody(skepu::Vector<Particle> &particles, size_t iterations)
 {
-	size_t np = particles.size();
 	skepu::Vector<Particle> doublebuffer(particles.size());
-
-	nbody_init(particles, np);
 
 	for (size_t i = 0; i < iterations; i += 2)
 	{
@@ -143,27 +139,68 @@ void nbody(skepu::Vector<Particle> &particles, size_t iterations)
 
 int main(int argc, char** argv)
 {
-	if(argc != 3)
+	if(argc != 3 && argc != 4)
 	{
-		std::cout << "Usage: " << argv[0] << " <particles> <interations>\n";
+		std::cout << "Usage: " << argv[0]
+			<< " <particles> <interations> [filename]\n";
 		return 0;
 	}
 
+	auto rank = skepu::cluster::mpi_rank();
 	size_t np = std::stoul(argv[1]);
 	size_t iterations = std::stoul(argv[2]);
-
 	skepu::Vector<Particle> particles(np);
-	nbody(particles, iterations);
-	particles.flush();
 
-	auto rank = skepu::cluster::mpi_rank();
+	skepu::cluster::barrier();
 	if(!rank)
 	{
-		std::string filename{"nbody.txt"};
-		std::fstream file(filename, std::ios_base::out);
-		assert(file.is_open());
-		file << particles;
-		file.close();
+		std::cout
+			<< "nbody simulation (StarPU MPI)\n"
+			<< "Particles: " << np << "\n"
+			<< "Iterations: " << iterations << "\n"
+			<< "MPI Ranks: " << skepu::cluster::mpi_size() << "\n"
+			<< "StarPU threads: " << skepu::cluster::starpu_ncpus() << "\n"
+			<< std::endl;
 	}
+
+	nbody_init(particles, np);
+
+	skepu::cluster::barrier();
+	auto start = std::chrono::high_resolution_clock::now();
+	nbody(particles, iterations);
+	skepu::cluster::barrier();
+	auto stop = std::chrono::high_resolution_clock::now();
+
+	auto time = stop - start;
+	auto hours =
+		std::chrono::duration_cast<std::chrono::hours>(time).count();
+	auto minutes =
+		std::chrono::duration_cast<std::chrono::minutes>(time).count() % 60;
+	auto seconds =
+		std::chrono::duration_cast<std::chrono::seconds>(time).count() % 60;
+	auto milliseconds =
+		std::chrono::duration_cast<std::chrono::milliseconds>(time).count() % 1000;
+
+	if(!rank)
+		std::cout << "Execution time: "
+			<< hours
+			<< ":" << minutes
+			<< ":" << seconds
+			<< "." << milliseconds
+			<< std::endl;
+
+	if(argc == 4)
+	{
+		particles.flush();
+		if(argc == 4 && !rank)
+		{
+			std::string filename{argv[3]};
+			std::fstream file(filename, std::ios_base::out);
+			assert(file.is_open());
+			file << particles;
+			file.close();
+		}
+	}
+
 	return 0;
 }
