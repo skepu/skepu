@@ -1,6 +1,4 @@
-set(LLVM_LINK_COMPONENTS
-	Support
-)
+set(LLVM_LINK_COMPONENTS Support)
 
 add_clang_executable(skepu-tool
   skepu.cpp
@@ -20,12 +18,19 @@ add_clang_executable(skepu-tool
   mappairs_cl.cpp
   mappairs_cu.cpp
   call_cl.cpp
-  call_cu.cpp
-)
+  call_cu.cpp)
+
 clang_target_link_libraries(skepu-tool
-		PRIVATE
+	PRIVATE
 		clangTooling
 		clangBasic
-#		clangAST
-		clangASTMatchers
-)
+		clangAST
+		clangASTMatchers)
+
+install(TARGETS skepu-tool
+	EXPORT skepu-toolTargets
+	RUNTIME
+	DESTINATION bin)
+install(EXPORT skepu-toolTargets
+	DESTINATION lib/cmake/SkePU
+	NAMESPACE SkePU::)

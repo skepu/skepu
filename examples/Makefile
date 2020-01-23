@@ -49,7 +49,7 @@ CXX = nvcc
 endif
 
 # Location of SkePU precompiler binary.
-SKEPU = $(PWD)/../build/bin/skepu-tool
+SKEPU = $(PWD)/../build/llvm/bin/skepu-tool
 
 
 # ---------------------------------------------------------------------------- #

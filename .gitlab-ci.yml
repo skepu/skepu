@@ -10,21 +10,23 @@ build_skepu:
   stage: build
   artifacts:
     paths:
-      - build/bin
+      - build
   script:
+    - mkdir build && cd build
+    - cmake -DSKEPU_HEADERS_ENABLE_TESTING=OFF ..
     - make
   only:
     - web
     - merge_requests
 
+# This step should really be baked into the normal build step, together with
+# building any tests. Also, that would require our CI server to actually have
+# some MPI package installed in the docker image, which it does not at the
+# moment.
 build_examples:
   stage: build_examples
   dependencies:
     - build_skepu
-  artifacts:
-    paths:
-      - examples/sequential
-      - examples/parallel
   script:
     - cd examples
     - make all-sequential
@@ -38,7 +40,9 @@ test_skepu:
   dependencies:
     - build_skepu
   script:
-    - build/bin/skepu-tool --help
+    # This should be ctest in the future, but we have no test cases that are
+    # added to ctest at this point.
+    - build/llvm/bin/skepu-tool --help
   only:
     - web
     - merge_requests
