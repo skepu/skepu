@@ -3,42 +3,25 @@ variables:
 
 stages:
   - build
-  - build_examples
   - test
 
-build_skepu:
+build:
   stage: build
   artifacts:
     paths:
       - build
   script:
     - mkdir build && cd build
-    - cmake -DSKEPU_HEADERS_ENABLE_TESTING=OFF ..
+    - cmake -DSKEPU_BUILD_EXAMPLES=ON -DSKEPU_HEADERS_ENABLE_TESTING=OFF ..
     - make
   only:
     - web
     - merge_requests
 
-# This step should really be baked into the normal build step, together with
-# building any tests. Also, that would require our CI server to actually have
-# some MPI package installed in the docker image, which it does not at the
-# moment.
-build_examples:
-  stage: build_examples
-  dependencies:
-    - build_skepu
-  script:
-    - cd examples
-    - make all-sequential
-    - make all-parallel
-  only:
-    - web
-    - merge_requests
-
-test_skepu:
+test:
   stage: test
   dependencies:
-    - build_skepu
+    - build
   script:
     # This should be ctest in the future, but we have no test cases that are
     # added to ctest at this point.

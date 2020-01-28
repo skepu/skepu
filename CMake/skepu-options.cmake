@@ -14,7 +14,7 @@ set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
 
 # In case this is a subproject, make sure that SKEPU_ENABLE_TESTING is set.
 # The default value is on iff we are in Debug mode, else the default is off.
-if(CMAKE_BUILD_TYPE EQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	option(SKEPU_ENABLE_TESTING
 		"Enable the SkePU test bed."
 		ON)
@@ -24,6 +24,16 @@ else()
 		OFF)
 endif()
 
+# Example directory options
 option(SKEPU_BUILD_EXAMPLES
 	"Build the SkePU example programs."
 	OFF)
+option(SKEPU_EXAMPLES_SEQ
+	"If building examples, build sequential examples."
+	ON)
+option(SKEPU_EXAMPLES_PAR
+	"If building examples, Build parallel examples (CUDA, OpenCL, and OpenMP)."
+	ON)
+option(SKEPU_EXAMPLES_MPI
+	"If building examples, build MPI examples."
+	ON)

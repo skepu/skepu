@@ -8,7 +8,8 @@ project(SkePU-tool VERSION 3.0.0.1
 include(CMakePackageConfigHelpers)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/CMake)
-include(skepu-tool-options)
+include(skepu-options)
+include(SkePUHelpers)
 
 # We need to apply our patches to the llvm work tree, if it has not alredy been
 # done.
@@ -53,11 +54,20 @@ ExternalProject_Add(skepu-tool-llvm
 		-DCMAKE_BUILD_TYPE=Release
 	BUILD_COMMAND $(MAKE) skepu-tool
 	BUILD_ALWAYS ON
-	BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/llvm/bin/skepu-tool
+	BUILD_BYPRODUCTS llvm/bin/skepu-tool
 	INSTALL_COMMAND "")
 
-# We don't have a skepu-tool target, but the binary position is known, so we
-# install it as a program.
+# The SkePUHelpers cmake script, which is used to generate targets for the
+# examples and the tests, depends on this variable being set. It is if SkePU
+# has been installed, but we need to set it for the build as well.
+set(SKEPU_EXECUTABLE ${CMAKE_BINARY_DIR}/llvm/bin/skepu-tool)
+
+add_executable(skepu-tool IMPORTED GLOBAL)
+add_dependencies(skepu-tool skepu-tool-llvm)
+add_executable(SkePU::skepu-tool IMPORTED GLOBAL)
+add_dependencies(SkePU::skepu-tool skepu-tool-llvm)
+# We don't have a native skepu-tool target, but the binary position is known,
+# so we install it as a program.
 install(PROGRAMS ${SKEPU_TOOL_BINARY_DIR}/skepu-tool
 	DESTINATION bin)
 
@@ -83,7 +93,7 @@ install(EXPORT clang-headersTargets
 # To make sure that -I<path_to_clang-headers> is added when linking with
 # SkePU::clang-headers
 target_include_directories(clang-headers INTERFACE
-	$<BUILD_INTERFACE:{CMAKE_CURRENT_LIST_DIR}/llvm/clang/lib/Headers>
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/llvm/clang/lib/Headers>
 	$<INSTALL_INTERFACE:lib/SkePU/clang-headers>)
 install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/llvm/clang/lib/Headers/
 	DESTINATION lib/SkePU/clang-headers/)
