@@ -7,7 +7,7 @@ using namespace clang;
 // ------------------------------
 
 const char *MapKernelTemplate_CL = R"~~~(
-__kernel void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS __global SKEPU_MAP_RESULT_TYPE* output, size_t w, size_t n, size_t base)
+__kernel void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS size_t w2, size_t w3, size_t w4, size_t n, size_t base)
 {
 	size_t i = get_global_id(0);
 	size_t gridSize = get_local_size(0) * get_num_groups(0);
@@ -16,7 +16,8 @@ __kernel void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS __global SKEPU_MAP_RESULT_TY
 	while (i < n)
 	{
 		SKEPU_INDEX_INITIALIZER
-		output[i] = SKEPU_FUNCTION_NAME_MAP(SKEPU_MAP_PARAMS);
+		SKEPU_CONTAINER_PROXIE_INNER
+		skepu_output[i] = SKEPU_FUNCTION_NAME_MAP(SKEPU_MAP_PARAMS);
 		i += gridSize;
 	}
 }
@@ -65,11 +66,11 @@ public:
 	static void map
 	(
 		size_t deviceID, size_t localSize, size_t globalSize,
-		SKEPU_HOST_KERNEL_PARAMS skepu::backend::DeviceMemPointer_CL<SKEPU_MAP_RESULT_TYPE> *output,
-		size_t w, size_t n, size_t base
+		SKEPU_HOST_KERNEL_PARAMS
+		size_t w2, size_t w3, size_t w4, size_t n, size_t base
 	)
 	{
-		skepu::backend::cl_helpers::setKernelArgs(kernels(deviceID), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(), w, n, base);
+		skepu::backend::cl_helpers::setKernelArgs(kernels(deviceID), SKEPU_KERNEL_ARGS w2, w3, w4, n, base);
 		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernels(deviceID), 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching Map kernel");
 	}
@@ -79,24 +80,63 @@ public:
 
 std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::string dir)
 {
-	std::stringstream sourceStream, SSMapFuncParams, SSKernelParamList, SSHostKernelParamList, SSKernelArgs, SSProxyInitializer;
+	std::stringstream sourceStream, SSMapFuncParams, SSKernelParamList, SSHostKernelParamList, SSKernelArgs, SSProxyInitializer, SSProxyInitializerInner;
 	std::string indexInitializer;
 	std::map<ContainerType, std::set<std::string>> containerProxyTypes;
 	bool first = true;
-
-	if (mapFunc.indexed1D)
+	
+	if (mapFunc.indexed1D || mapFunc.indexed2D || mapFunc.indexed3D || mapFunc.indexed4D)
 	{
 		SSMapFuncParams << "index";
-		indexInitializer = "index1_t index = { .i = base + i };";
 		first = false;
 	}
-	else if (mapFunc.indexed2D)
+	
+	if      (mapFunc.indexed1D) indexInitializer = "index1_t index = { .i = base + i };";
+	else if (mapFunc.indexed2D) indexInitializer = "index2_t index = { .row = (base + i) / w2, .col = (base + i) % w2 };";
+	else if (mapFunc.indexed3D) indexInitializer = R"~~~(
+		size_t cindex = base + i;
+		size_t ci = cindex / (w2 * w3);
+		cindex = cindex % (w2 * w3);
+		size_t cj = cindex / (w3);
+		cindex = cindex % (w3);
+		index3_t index = { .i = ci, .j = cj, .k = cindex };
+	)~~~";
+	
+	else if (mapFunc.indexed4D) indexInitializer = R"~~~(
+		size_t cindex = base + i;
+		
+		size_t ci = cindex / (w2 * w3 * w4);
+		cindex = cindex % (w2 * w3 * w4);
+		
+		size_t cj = cindex / (w3 * w4);
+		cindex = cindex % (w3 * w4);
+		
+		size_t ck = cindex / (w4);
+		cindex = cindex % (w4);
+		
+		index4_t index = { .i = ci, .j = cj, .k = ck, .l = cindex };
+	)~~~";
+	
+	// Output data
+	if (mapFunc.multipleReturnTypes.size() == 0)
 	{
-		SSMapFuncParams << "index";
-		indexInitializer = "index2_t index = { .row = (base + i) / w, .col = (base + i) % w };";
-		first = false;
+		SSKernelParamList << " __global " << mapFunc.resolvedReturnTypeName << "* skepu_output, ";
+		SSHostKernelParamList << " skepu::backend::DeviceMemPointer_CL<" << mapFunc.resolvedReturnTypeName << "> *skepu_output, ";
+		SSKernelArgs << " skepu_output->getDeviceDataPointer(), ";
+	}
+	else
+	{
+		size_t outCtr = 0;
+		for (std::string& outputType : mapFunc.multipleReturnTypes)
+		{
+			SSKernelParamList << "__global " << outputType << "* skepu_output_" << outCtr << ", ";
+			SSHostKernelParamList << " skepu::backend::DeviceMemPointer_CL<" << outputType << "> *skepu_output_" << outCtr << ", ";
+			SSKernelArgs << " skepu_output_" << outCtr << "->getDeviceDataPointer(), ";
+			outCtr++;
+		}
 	}
 
+	// Elementwise input data
 	for (UserFunction::Param& param : mapFunc.elwiseParams)
 	{
 		if (!first) { SSMapFuncParams << ", "; }
@@ -107,6 +147,7 @@ std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::
 		first = false;
 	}
 
+	// Random-access data
 	for (UserFunction::RandomAccessParam& param : mapFunc.anyContainerParams)
 	{
 		std::string name = "skepu_container_" + param.name;
@@ -126,6 +167,12 @@ std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::
 				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_rows(), std::get<0>(" << name << ")->total_cols(), ";
 				SSProxyInitializer << param.TypeNameOpenCL() << " " << param.name << " = { .data = " << name
 					<< ", .rows = skepu_rows_" << param.name << ", .cols = skepu_cols_" << param.name << " };\n";
+				break;
+			
+			case ContainerType::MatRow:
+				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", size_t skepu_cols_" << param.name << ", ";
+				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_cols(), ";
+				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + i * skepu_cols_" << param.name << "), .cols = skepu_cols_" << param.name << " };\n";
 				break;
 			
 			case ContainerType::Tensor3:
@@ -170,6 +217,7 @@ std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::
 		first = false;
 	}
 
+	// Scalar input data
 	for (UserFunction::Param& param : mapFunc.anyScalarParams)
 	{
 		if (!first) { SSMapFuncParams << ", "; }
@@ -179,6 +227,7 @@ std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::
 		SSMapFuncParams << param.name;
 		first = false;
 	}
+	
 
 	if (mapFunc.requiresDoublePrecision)
 		sourceStream << "#pragma OPENCL EXTENSION cl_khr_fp64: enable\n";
@@ -191,6 +240,9 @@ std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::
 
 	for (const std::string &type : containerProxyTypes[ContainerType::SparseMatrix])
 		sourceStream << generateOpenCLSparseMatrixProxy(type);
+	
+	for (const std::string &type : containerProxyTypes[ContainerType::MatRow])
+		sourceStream << generateOpenCLMatrixRowProxy(type);
 	
 	for (const std::string &type : containerProxyTypes[ContainerType::Tensor3])
 		sourceStream << generateOpenCLTensor3Proxy(type);
@@ -216,7 +268,7 @@ std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::
 
 	std::string finalSource = Constructor;
 	replaceTextInString(finalSource, "SKEPU_OPENCL_KERNEL", sourceStream.str());
-	replaceTextInString(finalSource, PH_MapResultType, mapFunc.resolvedReturnTypeName);
+//	replaceTextInString(finalSource, PH_MapResultType, mapFunc.resolvedReturnTypeName);
 	replaceTextInString(finalSource, PH_KernelName, kernelName);
 	replaceTextInString(finalSource, PH_MapFuncName, mapFunc.uniqueName);
 	replaceTextInString(finalSource, PH_KernelParams, SSKernelParamList.str());
@@ -226,6 +278,7 @@ std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::
 	replaceTextInString(finalSource, "SKEPU_KERNEL_CLASS", className);
 	replaceTextInString(finalSource, "SKEPU_KERNEL_ARGS", SSKernelArgs.str());
 	replaceTextInString(finalSource, "SKEPU_CONTAINER_PROXIES", SSProxyInitializer.str());
+	replaceTextInString(finalSource, "SKEPU_CONTAINER_PROXIE_INNER", SSProxyInitializerInner.str());
 
 	std::ofstream FSOutFile {dir + "/" + kernelName + "_cl_source.inl"};
 	FSOutFile << finalSource;

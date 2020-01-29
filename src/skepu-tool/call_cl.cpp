@@ -10,6 +10,7 @@ const char *CallKernelTemplate_CL = R"~~~(
 __kernel void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS)
 {
 	SKEPU_CONTAINER_PROXIES
+	SKEPU_CONTAINER_PROXIE_INNER
 
 	SKEPU_FUNCTION_NAME_CALL(SKEPU_CALL_ARGS);
 }
@@ -66,7 +67,7 @@ public:
 
 std::string createCallKernelProgram_CL(UserFunction &callFunc, std::string dir)
 {
-	std::stringstream sourceStream, SSCallFuncParams, SSKernelParamList, SSHostKernelParamList, SSKernelArgs, SSProxyInitializer;
+	std::stringstream sourceStream, SSCallFuncParams, SSKernelParamList, SSHostKernelParamList, SSKernelArgs, SSProxyInitializer, SSProxyInitializerInner;
 	std::map<ContainerType, std::set<std::string>> containerProxyTypes;
 	bool first = true;
 
@@ -94,6 +95,12 @@ std::string createCallKernelProgram_CL(UserFunction &callFunc, std::string dir)
 			case ContainerType::SparseMatrix:
 				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", size_t skepu_size_" << param.name;
 				SSKernelArgs << ", skepu_container_" << param.name << ".size()";
+				break;
+			
+			case ContainerType::MatRow:
+				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", size_t skepu_cols_" << param.name << ", ";
+				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_cols(), ";
+				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + i * skepu_cols_" << param.name << "), .cols = skepu_cols_" << param.name << " };\n";
 				break;
 			
 			case ContainerType::Tensor3:
@@ -149,6 +156,9 @@ std::string createCallKernelProgram_CL(UserFunction &callFunc, std::string dir)
 	for (const std::string &type : containerProxyTypes[ContainerType::SparseMatrix])
 		sourceStream << generateOpenCLSparseMatrixProxy(type);
 	
+	for (const std::string &type : containerProxyTypes[ContainerType::MatRow])
+		sourceStream << generateOpenCLMatrixRowProxy(type);
+	
 	for (const std::string &type : containerProxyTypes[ContainerType::Tensor3])
 		sourceStream << generateOpenCLTensor3Proxy(type);
 	
@@ -170,6 +180,7 @@ std::string createCallKernelProgram_CL(UserFunction &callFunc, std::string dir)
 	replaceTextInString(finalSource, "SKEPU_KERNEL_CLASS", className);
 	replaceTextInString(finalSource, "SKEPU_KERNEL_ARGS", SSKernelArgs.str());
 	replaceTextInString(finalSource, "SKEPU_CONTAINER_PROXIES", SSProxyInitializer.str());
+	replaceTextInString(finalSource, "SKEPU_CONTAINER_PROXIE_INNER", SSProxyInitializerInner.str());
 
 	std::ofstream FSOutFile {dir + "/" + kernelName + "_cl_source.inl"};
 	FSOutFile << finalSource;

@@ -25,6 +25,7 @@ __kernel void SKEPU_KERNEL_NAME_Vector(
 	size_t tid = get_local_id(0);
 	size_t i = get_group_id(0) * get_local_size(0) + get_local_id(0);
 	SKEPU_CONTAINER_PROXIES
+	SKEPU_CONTAINER_PROXIE_INNER
 
 	if (poly == 0)
 	{
@@ -89,6 +90,7 @@ __kernel void SKEPU_KERNEL_NAME_MatRowWise(
 	size_t tmp  = (get_group_id(0) % blocksPerRow);
 	size_t tmp2 = (get_group_id(0) / blocksPerRow);
 	SKEPU_CONTAINER_PROXIES
+	SKEPU_CONTAINER_PROXIE_INNER
 
 	if (poly == 0)
 	{
@@ -156,6 +158,7 @@ __kernel void SKEPU_KERNEL_NAME_MatColWise(
 	size_t tmp2= (get_group_id(0) / blocksPerCol);
 	size_t arrInd = (tid + tmp*get_local_size(0))*rowWidth + tmp2;
 	SKEPU_CONTAINER_PROXIES
+	SKEPU_CONTAINER_PROXIE_INNER
 
 	if (poly == 0)
 	{
@@ -224,6 +227,7 @@ __kernel void SKEPU_KERNEL_NAME_MatColWiseMulti(
 	size_t tmp2 = (get_group_id(0) / blocksPerCol);
 	size_t arrInd = (tid + tmp*get_local_size(0))*rowWidth + tmp2;
 	SKEPU_CONTAINER_PROXIES
+	SKEPU_CONTAINER_PROXIE_INNER
 
 	if (poly == 0)
 	{
@@ -493,7 +497,7 @@ std::string generateUserFunctionCode_MapOverlap_CL(UserFunction &Func, bool is2D
 
 std::string createMapOverlap1DKernelProgram_CL(UserFunction &mapOverlapFunc, std::string dir)
 {
-	std::stringstream sourceStream, SSMapOverlapFuncArgs, SSKernelParamList, SSHostKernelParamList, SSKernelArgs, SSProxyInitializer;
+	std::stringstream sourceStream, SSMapOverlapFuncArgs, SSKernelParamList, SSHostKernelParamList, SSKernelArgs, SSProxyInitializer, SSProxyInitializerInner;
 	std::map<ContainerType, std::set<std::string>> containerProxyTypes;
 
 	for (UserFunction::RandomAccessParam& param : mapOverlapFunc.anyContainerParams)
@@ -519,6 +523,12 @@ std::string createMapOverlap1DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 			case ContainerType::SparseMatrix:
 				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", size_t skepu_size_" << param.name << ", ";
 				SSKernelArgs << "skepu_container_" << param.name << ".size(), ";
+				break;
+			
+			case ContainerType::MatRow:
+				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", size_t skepu_cols_" << param.name << ", ";
+				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_cols(), ";
+				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + i * skepu_cols_" << param.name << "), .cols = skepu_cols_" << param.name << " };\n";
 				break;
 			
 			case ContainerType::Tensor3:
@@ -550,11 +560,26 @@ std::string createMapOverlap1DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 		SSMapOverlapFuncArgs << ", " << param.name;
 	}
 
-	const Type *type = mapOverlapFunc.elwiseParams[2].astDeclNode->getOriginalType().getTypePtr();
+/*	const Type *type = mapOverlapFunc.elwiseParams[2].astDeclNode->getOriginalType().getTypePtr(); // fix
 	const PointerType *pointer = dyn_cast<PointerType>(type);
 	QualType pointee = pointer->getPointeeType().getUnqualifiedType();
 	std::string elemType = pointee.getAsString();
+	*/
+	
+	
+	const Type *regionType = mapOverlapFunc.elwiseParams[0].astDeclNode->getOriginalType().getTypePtr();
 
+	if (auto *innertype = dyn_cast<ElaboratedType>(regionType))
+		regionType = innertype->getNamedType().getTypePtr();
+
+	const auto *templateType = dyn_cast<TemplateSpecializationType>(regionType);
+	const clang::TemplateArgument containedTypeArg = templateType->getArg(0);
+//	const Type *type = containedTypeArg.getAsType().getTypePtr();
+	
+	std::string elemType = containedTypeArg.getAsType().getAsString();
+	
+	sourceStream << generateOpenCLRegion(1, elemType);
+	
 	// Include user constants as preprocessor macros
 	for (auto pair : UserConstants)
 		sourceStream << "#define " << pair.second->name << " (" << pair.second->definition << ") // " << pair.second->typeName << "\n";
@@ -575,6 +600,9 @@ std::string createMapOverlap1DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 	for (const std::string &type : containerProxyTypes[ContainerType::SparseMatrix])
 		sourceStream << generateOpenCLSparseMatrixProxy(type);
 	
+	for (const std::string &type : containerProxyTypes[ContainerType::MatRow])
+		sourceStream << generateOpenCLMatrixRowProxy(type);
+	
 	for (const std::string &type : containerProxyTypes[ContainerType::Tensor3])
 		sourceStream << generateOpenCLTensor3Proxy(type);
 	
@@ -588,7 +616,7 @@ std::string createMapOverlap1DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 	const std::string kernelName = transformToCXXIdentifier(ResultName) + "_OverlapKernel_" + mapOverlapFunc.uniqueName;
 	const std::string className = "CLWrapperClass_" + kernelName;
 	std::stringstream SSKernelArgCount;
-	SSKernelArgCount << (mapOverlapFunc.numKernelArgsCL() - 3);
+	SSKernelArgCount << (mapOverlapFunc.numKernelArgsCL());
 
 	std::string finalSource = Constructor1D;
 	replaceTextInString(finalSource, "SKEPU_OPENCL_KERNEL", sourceStream.str());
@@ -603,6 +631,7 @@ std::string createMapOverlap1DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 	replaceTextInString(finalSource, "SKEPU_KERNEL_ARGS", SSKernelArgs.str());
 	replaceTextInString(finalSource, "SKEPU_KERNEL_ARG_COUNT", SSKernelArgCount.str());
 	replaceTextInString(finalSource, "SKEPU_CONTAINER_PROXIES", SSProxyInitializer.str());
+	replaceTextInString(finalSource, "SKEPU_CONTAINER_PROXIE_INNER", SSProxyInitializerInner.str());
 
 	std::ofstream FSOutFile {dir + "/" + kernelName + "_cl_source.inl"};
 	FSOutFile << finalSource;
@@ -628,6 +657,7 @@ __kernel void SKEPU_KERNEL_NAME(
 	size_t x = get_global_id(0);
 	size_t y = get_global_id(1);
 	SKEPU_CONTAINER_PROXIES
+	SKEPU_CONTAINER_PROXIE_INNER
 
 	if (x < out_cols + overlap_x * 2 && y < out_rows + overlap_y * 2)
 	{
@@ -719,7 +749,7 @@ public:
 
 std::string createMapOverlap2DKernelProgram_CL(UserFunction &mapOverlapFunc, std::string dir)
 {
-	std::stringstream sourceStream, SSMapOverlapFuncArgs, SSKernelParamList, SSHostKernelParamList, SSKernelArgs, SSProxyInitializer;
+	std::stringstream sourceStream, SSMapOverlapFuncArgs, SSKernelParamList, SSHostKernelParamList, SSKernelArgs, SSProxyInitializer, SSProxyInitializerInner;
 	std::map<ContainerType, std::set<std::string>> containerProxyTypes;
 
 	for (UserFunction::RandomAccessParam& param : mapOverlapFunc.anyContainerParams)
@@ -745,6 +775,12 @@ std::string createMapOverlap2DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 			case ContainerType::SparseMatrix:
 				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", size_t skepu_size_" << param.name << ", ";
 				SSKernelArgs << "skepu_container_" << param.name << ".size(), ";
+				break;
+			
+			case ContainerType::MatRow:
+				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", size_t skepu_cols_" << param.name << ", ";
+				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_cols(), ";
+				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + i * skepu_cols_" << param.name << "), .cols = skepu_cols_" << param.name << " };\n";
 				break;
 			
 			case ContainerType::Tensor3:
@@ -801,6 +837,9 @@ std::string createMapOverlap2DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 	for (const std::string &type : containerProxyTypes[ContainerType::SparseMatrix])
 		sourceStream << generateOpenCLSparseMatrixProxy(type);
 	
+	for (const std::string &type : containerProxyTypes[ContainerType::MatRow])
+		sourceStream << generateOpenCLMatrixRowProxy(type);
+	
 	for (const std::string &type : containerProxyTypes[ContainerType::Tensor3])
 		sourceStream << generateOpenCLTensor3Proxy(type);
 	
@@ -812,7 +851,7 @@ std::string createMapOverlap2DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 	const std::string kernelName = transformToCXXIdentifier(ResultName) + "_Overlap2DKernel_" + mapOverlapFunc.uniqueName;
 	const std::string className = "CLWrapperClass_" + kernelName;
 	std::stringstream SSKernelArgCount;
-	SSKernelArgCount << (mapOverlapFunc.numKernelArgsCL() - 4);
+	SSKernelArgCount << (mapOverlapFunc.numKernelArgsCL());
 
 	std::string finalSource = Constructor2D;
 	replaceTextInString(finalSource, "SKEPU_OPENCL_KERNEL", sourceStream.str());
@@ -827,6 +866,7 @@ std::string createMapOverlap2DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 	replaceTextInString(finalSource, "SKEPU_KERNEL_ARGS", SSKernelArgs.str());
 	replaceTextInString(finalSource, "SKEPU_KERNEL_ARG_COUNT", SSKernelArgCount.str());
 	replaceTextInString(finalSource, "SKEPU_CONTAINER_PROXIES", SSProxyInitializer.str());
+	replaceTextInString(finalSource, "SKEPU_CONTAINER_PROXIE_INNER", SSProxyInitializerInner.str());
 
 	std::ofstream FSOutFile {dir + "/" + kernelName + "_cl_source.inl"};
 	FSOutFile << finalSource;

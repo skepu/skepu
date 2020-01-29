@@ -6,20 +6,22 @@ add_library(lodepng STATIC lodepng.cpp)
 set(_skepu_programs
 	call
 	cma
-	# containers
+	containers
 	coulombic
 	dotproduct
+	# lambda
 	mandelbrot
 	map
 	# mapoverlap
-	# mappairs
+	mappairs
 	mapreduce
 	# maptuple
 	# median
 	mmmult
 	mvmult
-	# mvmult-row
+	mvmult_row
 	nbody
+	objectoriented
 	ppmcc
 	psnr
 	reduce
@@ -52,8 +54,9 @@ if(SKEPU_EXAMPLES_PAR)
 	add_custom_target(all-parallel)
 
 	foreach(program IN LISTS _skepu_programs)
+		# TODO: Add cuda when enabled in skepu-tool
 		skepu_add_executable(${program}_par
-			CUDA OpenCL OpenMP
+			OpenCL OpenMP
 			SKEPUSRC ${program}.cpp)
 		set_target_properties(${program}_par
 			PROPERTIES

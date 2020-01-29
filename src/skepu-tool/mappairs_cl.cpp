@@ -7,7 +7,7 @@ using namespace clang;
 // ------------------------------
 
 const char *MapPairsKernelTemplate_CL = R"~~~(
-__kernel void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS __global SKEPU_MAP_RESULT_TYPE* output, size_t w, size_t n, size_t base)
+__kernel void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS __global SKEPU_MAP_RESULT_TYPE* output, size_t w, size_t n, size_t Vsize, size_t Hsize, size_t base)
 {
 	size_t i = get_global_id(0);
 	size_t gridSize = get_local_size(0) * get_num_groups(0);
@@ -16,6 +16,7 @@ __kernel void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS __global SKEPU_MAP_RESULT_TY
 	while (i < n)
 	{
 		SKEPU_INDEX_INITIALIZER
+		SKEPU_CONTAINER_PROXIE_INNER
 		output[i] = SKEPU_FUNCTION_NAME_MAP(SKEPU_MAP_PARAMS);
 		i += gridSize;
 	}
@@ -45,14 +46,14 @@ public:
 		if (initialized)
 			return;
 		
-		std::string source = skepu2::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
+		std::string source = skepu::backend::cl_helpers::replaceSizeT(R"###(SKEPU_OPENCL_KERNEL)###");
 		
 		// Builds the code and creates kernel for all devices
 		size_t counter = 0;
-		for (skepu2::backend::Device_CL *device : skepu2::backend::Environment<int>::getInstance()->m_devices_CL)
+		for (skepu::backend::Device_CL *device : skepu::backend::Environment<int>::getInstance()->m_devices_CL)
 		{
 			cl_int err;
-			cl_program program = skepu2::backend::cl_helpers::buildProgram(device, source);
+			cl_program program = skepu::backend::cl_helpers::buildProgram(device, source);
 			cl_kernel kernel = clCreateKernel(program, "SKEPU_KERNEL_NAME", &err);
 			CL_CHECK_ERROR(err, "Error creating mappairs kernel 'SKEPU_KERNEL_NAME'");
 			
@@ -65,21 +66,21 @@ public:
 	static void map
 	(
 		size_t deviceID, size_t localSize, size_t globalSize,
-		SKEPU_HOST_KERNEL_PARAMS skepu2::backend::DeviceMemPointer_CL<SKEPU_MAP_RESULT_TYPE> *output,
-		size_t w, size_t n, size_t base
+		SKEPU_HOST_KERNEL_PARAMS skepu::backend::DeviceMemPointer_CL<SKEPU_MAP_RESULT_TYPE> *output,
+		size_t w, size_t n, size_t Vsize, size_t Hsize, size_t base
 	)
 	{
-		skepu2::backend::cl_helpers::setKernelArgs(kernels(deviceID), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(), w, n, base);
-		cl_int err = clEnqueueNDRangeKernel(skepu2::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernels(deviceID), 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+		skepu::backend::cl_helpers::setKernelArgs(kernels(deviceID), SKEPU_KERNEL_ARGS output->getDeviceDataPointer(), w, n, Vsize, Hsize, base);
+		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernels(deviceID), 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching Map kernel");
 	}
 };
 )~~~";
 
 
-std::string createMapPairsKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::string dir)
+std::string createMapPairsKernelProgram_CL(UserFunction &mapFunc, size_t Varity, size_t Harity, std::string dir)
 {
-	std::stringstream sourceStream, SSMapFuncParams, SSKernelParamList, SSHostKernelParamList, SSKernelArgs, SSProxyInitializer;
+	std::stringstream sourceStream, SSMapFuncParams, SSKernelParamList, SSHostKernelParamList, SSKernelArgs, SSProxyInitializer, SSProxyInitializerInner;
 	std::string indexInitializer;
 	std::map<ContainerType, std::set<std::string>> containerProxyTypes;
 	bool first = true;
@@ -97,13 +98,17 @@ std::string createMapPairsKernelProgram_CL(UserFunction &mapFunc, size_t arity, 
 		first = false;
 	}
 	
+	size_t ctr = 0;
 	for (UserFunction::Param& param : mapFunc.elwiseParams)
 	{
 		if (!first) { SSMapFuncParams << ", "; }
 		SSKernelParamList << "__global " << param.resolvedTypeName << " *" << param.name << ", ";
-		SSHostKernelParamList << "skepu2::backend::DeviceMemPointer_CL<" << param.resolvedTypeName << "> *" << param.name << ", ";
+		SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<" << param.resolvedTypeName << "> *" << param.name << ", ";
 		SSKernelArgs << param.name << "->getDeviceDataPointer(), ";
-		SSMapFuncParams << param.name << "[i]";
+		if (ctr++ < mapFunc.Varity) // vertical containers
+			SSMapFuncParams << param.name << "[i / Hsize]";
+		else // horizontal containers
+			SSMapFuncParams << param.name << "[i % Hsize]";
 		first = false;
 	}
 	
@@ -126,6 +131,12 @@ std::string createMapPairsKernelProgram_CL(UserFunction &mapFunc, size_t arity, 
 				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_rows(), std::get<0>(" << name << ")->total_cols(), ";
 				SSProxyInitializer << param.TypeNameOpenCL() << " " << param.name << " = { .data = " << name
 					<< ", .rows = skepu_rows_" << param.name << ", .cols = skepu_cols_" << param.name << " };\n";
+				break;
+			
+			case ContainerType::MatRow:
+				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", size_t skepu_cols_" << param.name << ", ";
+				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_cols(), ";
+				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + i * skepu_cols_" << param.name << "), .cols = skepu_cols_" << param.name << " };\n";
 				break;
 			
 			case ContainerType::Tensor3:
@@ -192,6 +203,9 @@ std::string createMapPairsKernelProgram_CL(UserFunction &mapFunc, size_t arity, 
 	for (const std::string &type : containerProxyTypes[ContainerType::SparseMatrix])
 		sourceStream << generateOpenCLSparseMatrixProxy(type);
 	
+	for (const std::string &type : containerProxyTypes[ContainerType::MatRow])
+		sourceStream << generateOpenCLMatrixRowProxy(type);
+	
 	for (const std::string &type : containerProxyTypes[ContainerType::Tensor3])
 		sourceStream << generateOpenCLTensor3Proxy(type);
 	
@@ -208,7 +222,7 @@ std::string createMapPairsKernelProgram_CL(UserFunction &mapFunc, size_t arity, 
 		sourceStream << generateUserTypeCode_CL(*RefType);
 	
 	std::stringstream SSKernelName;
-	SSKernelName << transformToCXXIdentifier(ResultName) << "_MapKernel_" << mapFunc.uniqueName << "_arity_" << arity;
+	SSKernelName << transformToCXXIdentifier(ResultName) << "_MapPairsKernel_" << mapFunc.uniqueName << "_Varity_" << Varity << "_Harity_" << Harity;
 	const std::string kernelName = SSKernelName.str();
 	const std::string className = "CLWrapperClass_" + kernelName;
 	
@@ -226,6 +240,7 @@ std::string createMapPairsKernelProgram_CL(UserFunction &mapFunc, size_t arity, 
 	replaceTextInString(finalSource, "SKEPU_KERNEL_CLASS", className);
 	replaceTextInString(finalSource, "SKEPU_KERNEL_ARGS", SSKernelArgs.str());
 	replaceTextInString(finalSource, "SKEPU_CONTAINER_PROXIES", SSProxyInitializer.str());
+	replaceTextInString(finalSource, "SKEPU_CONTAINER_PROXIE_INNER", SSProxyInitializerInner.str());
 	
 	std::ofstream FSOutFile {dir + "/" + kernelName + "_cl_source.inl"};
 	FSOutFile << finalSource;

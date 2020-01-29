@@ -46,6 +46,9 @@ std::unordered_set<std::string> AllowedFunctionNamesCalledInUFs
 	"exp",
 	"sqrt",
 	"abs",
+	"fabs",
+	"max",
+	"fmax",
 	"printf",
 	"pow",
 };
@@ -62,7 +65,7 @@ const std::unordered_map<std::string, Skeleton> Skeletons =
 	{"MapOverlap2D",   {"MapOverlap2D", Skeleton::Type::MapOverlap2D, 1, 1}},
 	{"MapOverlap3D",   {"MapOverlap3D", Skeleton::Type::MapOverlap3D, 1, 1}},
 	{"MapOverlap4D",   {"MapOverlap4D", Skeleton::Type::MapOverlap4D, 1, 1}},
-	{"MapPairs",       {"MapPairs",     Skeleton::Type::MapPairs,     1, 1}},
+	{"MapPairsImpl",   {"MapPairs",     Skeleton::Type::MapPairs,     1, 1}},
 	{"CallImpl",       {"Call",         Skeleton::Type::Call,         1, 1}},
 };
 

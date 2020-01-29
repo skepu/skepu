@@ -19,6 +19,7 @@ __kernel void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS __global SKEPU_REDUCE_RESULT
 	if (i < n)
 	{
 		SKEPU_INDEX_INITIALIZER
+		SKEPU_CONTAINER_PROXIE_INNER
 		result = SKEPU_FUNCTION_NAME_MAP(SKEPU_MAP_PARAMS);
 		i += gridSize;
 	}
@@ -26,6 +27,7 @@ __kernel void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS __global SKEPU_REDUCE_RESULT
 	while (i < n)
 	{
 		SKEPU_INDEX_INITIALIZER
+		SKEPU_CONTAINER_PROXIE_INNER
 		SKEPU_MAP_RESULT_TYPE tempMap = SKEPU_FUNCTION_NAME_MAP(SKEPU_MAP_PARAMS);
 		result = SKEPU_FUNCTION_NAME_REDUCE(result, tempMap);
 		i += gridSize;
@@ -181,7 +183,7 @@ public:
 
 std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction &reduceFunc, size_t arity, std::string dir)
 {
-	std::stringstream sourceStream, SSKernelParamList, SSMapFuncParams, SSHostKernelParamList, SSKernelArgs, SSProxyInitializer;
+	std::stringstream sourceStream, SSKernelParamList, SSMapFuncParams, SSHostKernelParamList, SSKernelArgs, SSProxyInitializer, SSProxyInitializerInner;
 	std::map<ContainerType, std::set<std::string>> containerProxyTypes;
 	std::string indexInitializer;
 	bool first = true;
@@ -235,6 +237,12 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 				SSKernelArgs << "skepu_container_" << param.name << ".size(), ";
 				break;
 			
+			case ContainerType::MatRow:
+				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", size_t skepu_cols_" << param.name << ", ";
+				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_cols(), ";
+				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + i * skepu_cols_" << param.name << "), .cols = skepu_cols_" << param.name << " };\n";
+				break;
+			
 			case ContainerType::Tensor3:
 				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", "
 					<< "size_t skepu_size_i_" << param.name << ", size_t skepu_size_j_" << param.name << ", size_t skepu_size_k_" << param.name << ", ";
@@ -281,6 +289,9 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 	for (const std::string &type : containerProxyTypes[ContainerType::SparseMatrix])
 		sourceStream << generateOpenCLSparseMatrixProxy(type);
 	
+	for (const std::string &type : containerProxyTypes[ContainerType::MatRow])
+		sourceStream << generateOpenCLMatrixRowProxy(type);
+	
 	for (const std::string &type : containerProxyTypes[ContainerType::Tensor3])
 		sourceStream << generateOpenCLTensor3Proxy(type);
 	
@@ -323,6 +334,7 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 	replaceTextInString(finalSource, "SKEPU_KERNEL_ARG_COUNT", SSKernelArgCount.str());
 	replaceTextInString(finalSource, "SKEPU_HOST_KERNEL_PARAMS", SSHostKernelParamList.str());
 	replaceTextInString(finalSource, "SKEPU_CONTAINER_PROXIES", SSProxyInitializer.str());
+	replaceTextInString(finalSource, "SKEPU_CONTAINER_PROXIE_INNER", SSProxyInitializerInner.str());
 	replaceTextInString(finalSource, PH_KernelParams, SSKernelParamList.str());
 	replaceTextInString(finalSource, PH_MapParams, SSMapFuncParams.str());
 	replaceTextInString(finalSource, PH_ReduceResultType, reduceFunc.resolvedReturnTypeName);

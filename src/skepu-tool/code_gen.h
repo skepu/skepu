@@ -70,12 +70,17 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName);
 
 std::string generateOpenCLVectorProxy(std::string typeName);
 std::string generateOpenCLMatrixProxy(std::string typeName);
+std::string generateOpenCLMatrixRowProxy(std::string typeName);
 std::string generateOpenCLSparseMatrixProxy(std::string typeName);
 std::string generateOpenCLTensor3Proxy(std::string typeName);
 std::string generateOpenCLTensor4Proxy(std::string typeName);
 
+std::string generateOpenCLRegion(size_t dim, std::string typeName);
+
+std::string generateOpenCLMultipleReturn(std::vector<std::string> &types);
+
 std::string replaceReferencesToOtherUFs(UserFunction &UF, std::function<std::string(UserFunction&)> nameFunc);
-bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, size_t arity, clang::VarDecl *d);
+bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, clang::VarDecl *d);
 
 // CUDA generators
 std::string createMapReduceKernelProgram_CU(UserFunction &mapFunc, UserFunction &reduceFunc, size_t arity, std::string dir);
@@ -95,7 +100,7 @@ std::string generateUserTypeCode_CL(UserType &Type);
 // OpenCL generators
 std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction &reduceFunc, size_t arity, std::string dir);
 std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::string dir);
-//std::string createMapPairsKernelProgram_CL(UserFunction &mapFunc, size_t Varity, size_t Harity, std::string dir);
+std::string createMapPairsKernelProgram_CL(UserFunction &mapPairsFunc, size_t Varity, size_t Harity, std::string dir);
 std::string createScanKernelProgram_CL(UserFunction &scanFunc, std::string dir);
 std::string createReduce1DKernelProgram_CL(UserFunction &reduceFunc, std::string dir);
 std::string createReduce2DKernelProgram_CL(UserFunction &rowWiseFunc, UserFunction &colWiseFunc, std::string dir);

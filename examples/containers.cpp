@@ -4,26 +4,24 @@
 
 int test1(skepu::Index1D in, int a)
 {
-//	std::cout << in.i << ", " << in.j << ", " << in.k << std::endl;
 	return a * 2 + in.i;
 }
 
 int test2(skepu::Index2D in, int a)
 {
-//	std::cout << in.i << ", " << in.j << ", " << in.k << ", " << in.l << std::endl;
 	return a * 2 + in.row + in.col;
 }
 
 int test3(skepu::Index3D in, int a)
 {
-//	std::cout << in.i << ", " << in.j << ", " << in.k << std::endl;
-	return a * 2;
+//	printf("(%d %d %d)\n", in.i, in.j, in.k);
+	return a * 2 + in.k;
 }
 
 int test4(skepu::Index4D in, int a)
 {
-//	std::cout << in.i << ", " << in.j << ", " << in.k << ", " << in.l << std::endl;
-	return a * 2;
+//	printf("(%d %d %d %d)\n", in.i, in.j, in.k, in.l);
+	return a * 2 + in.l;
 }
 
 

@@ -1,3 +1,5 @@
+#define SKEPU_DEBUG 1
+
 #include <iostream>
 #include <skepu>
 
@@ -38,7 +40,7 @@ void test1(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
 
 int uf2(skepu::Index2D i, int ve1, int ve2, int ve3, int he1, int he2, skepu::Vec<int> test, int u1, int u2)
 {
-	std:: cout << "(" << i.row << ", " << i.col << ")\n";
+//	std:: cout << "(" << i.row << ", " << i.col << ")\n";
 	return i.row + i.col + u1; // + ve1 + ve2 + ve3 + he1 + he2 + test.data[0] + u1 + u2;
 }
 

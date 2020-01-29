@@ -133,7 +133,7 @@ public:
 		static bool constructibleFrom(const clang::ParmVarDecl *p);
 	};
 
-	void updateArgLists(size_t arity);
+	void updateArgLists(size_t arity, size_t Harity = 0);
 
 	bool refersTo(UserFunction &other);
 
@@ -145,10 +145,14 @@ public:
 	std::string uniqueName;
 	std::string rawReturnTypeName;
 	std::string resolvedReturnTypeName;
+	
+	std::vector<std::string> multipleReturnTypes {};
 
 	std::string instanceName;
 
 	clang::SourceLocation codeLocation;
+	
+	size_t Varity = 0, Harity = 0;
 
 	std::vector<Param> elwiseParams{};
 	std::vector<RandomAccessParam> anyContainerParams {};
@@ -159,6 +163,9 @@ public:
 
 	std::vector<std::pair<const clang::CallExpr*, UserFunction*>> UFReferences{};
 	std::set<UserFunction*> ReferencedUFs{};
+	
+	
+	std::set<const clang::CallExpr*> ReferencedRets{};
 
 	std::vector<std::pair<const clang::TypeSourceInfo*, UserType*>> UTReferences{};
 	std::set<UserType*> ReferencedUTs{};

@@ -29,7 +29,7 @@ void directMV(skepu::Vector<T> &v, skepu::Matrix<T> &m, skepu::Vector<T> &res)
 	}
 }
 
-auto mvprod = skepu::MapTuple<0>(arr<float>);
+auto mvprod = skepu::Map<0>(arr<float>);
 
 void mvmult(skepu::Vector<float> &v, skepu::Matrix<float> &m, skepu::Vector<float> &res, skepu::BackendSpec *spec = nullptr)
 {

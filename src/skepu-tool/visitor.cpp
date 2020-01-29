@@ -171,7 +171,7 @@ bool HandleSkeletonInstance(VarDecl *d)
 	std::string InstanceName = d->getNameAsString();
 	SkeletonInstances.insert(InstanceName);
 
-	size_t arity[2] = { 0, 2 };
+	std::vector<size_t> arity = { 0, 2 };
 	switch (skeletonType)
 	{
 	case Skeleton::Type::Map:
@@ -182,7 +182,7 @@ bool HandleSkeletonInstance(VarDecl *d)
 	case Skeleton::Type::MapPairs:
 		assert(Callee->getTemplateSpecializationArgs()->size() > 1);
 		arity[0] = Callee->getTemplateSpecializationArgs()->get(0).getAsIntegral().getExtValue();
-		arity[0] = Callee->getTemplateSpecializationArgs()->get(1).getAsIntegral().getExtValue();
+		arity[1] = Callee->getTemplateSpecializationArgs()->get(1).getAsIntegral().getExtValue();
 		break;
 	case Skeleton::Type::MapOverlap1D:
 		arity[0] = 1; break;
@@ -195,31 +195,35 @@ bool HandleSkeletonInstance(VarDecl *d)
 	default:
 		break;
 	}
-
+	
 	std::vector<UserFunction*> FuncArgs;
 	size_t i = 0;
 	for (Expr *expr : CExpr->arguments())
 	{
 		UserFunction *UF;
-
+		
 		// The argument may be an implcit cast, get the underlying expression
 		if (ImplicitCastExpr *ImplExpr = dyn_cast<ImplicitCastExpr>(expr))
 			UF = HandleFunctionPointerArg(ImplExpr->IgnoreImpCasts());
-
+		
 		// It can also be an explicit cast, get the underlying expression
 		else if (UnaryOperator *UnaryCastExpr = dyn_cast<UnaryOperator>(expr))
 			UF = HandleFunctionPointerArg(UnaryCastExpr->getSubExpr());
-
+		
 		// The user function is probably defined as a lambda
 		else
 			UF = HandleLambdaArg(expr, d);
-
+		
 		FuncArgs.push_back(UF);
-		UF->updateArgLists(arity[i++]);
+		
+		if (skeletonType == Skeleton::Type::MapPairs)
+			UF->updateArgLists(arity[0], arity[1]);
+		else
+			UF->updateArgLists(arity[i++]);
 		generateUserFunctionStruct(*UF, InstanceName);
 	}
-
-	return transformSkeletonInvocation(Skeletons.at(TypeName), InstanceName, FuncArgs, arity[0], d);
+	
+	return transformSkeletonInvocation(Skeletons.at(TypeName), InstanceName, FuncArgs, arity, d);
 }
 
 // Returns nullptr if the user type can be ignored

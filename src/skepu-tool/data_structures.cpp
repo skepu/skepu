@@ -50,11 +50,15 @@ public:
 		FunctionDecl *Func = c->getDirectCallee();
 		std::string name = Func->getName();
 
-
-		if (std::find(AllowedFunctionNamesCalledInUFs.begin(), AllowedFunctionNamesCalledInUFs.end(), name) != AllowedFunctionNamesCalledInUFs.end())
+		if (name == "ret")
+		{
+			if (Verbose) llvm::errs() << "Ignored reference to special function: '" << name << "'\n";
+			ReferencedRets.insert(c);
+		}
+		else if (std::find(AllowedFunctionNamesCalledInUFs.begin(), AllowedFunctionNamesCalledInUFs.end(), name) != AllowedFunctionNamesCalledInUFs.end())
 		{
 			// Called function is explicitly allowed
-			if (Verbose) llvm::errs() << "Found reference to allowed function: '" << name << "'\n";
+			if (Verbose) llvm::errs() << "Ignored reference to whitelisted function: '" << name << "'\n";
 		}
 		else
 		{
@@ -87,6 +91,8 @@ public:
 
 	std::vector<std::pair<const CallExpr*, UserFunction*>> UFReferences{};
 	std::set<UserFunction*> ReferencedUFs{};
+	
+	std::set<const CallExpr*> ReferencedRets{};
 
 	std::vector<std::pair<const TypeSourceInfo*, UserType*>> UTReferences{};
 	std::set<UserType*> ReferencedUTs{};
@@ -278,6 +284,8 @@ std::string UserFunction::RandomAccessParam::TypeNameOpenCL()
 			return "skepu_vec_proxy_" + this->escapedTypeName;
 		case ContainerType::Matrix:
 			return "skepu_mat_proxy_" + this->escapedTypeName;
+		case ContainerType::MatRow:
+			return "skepu_matrow_proxy_" + this->escapedTypeName;
 		case ContainerType::Tensor3:
 			return "skepu_ten3_proxy_" + this->escapedTypeName;
 		case ContainerType::Tensor4:
@@ -297,6 +305,7 @@ std::string UserFunction::RandomAccessParam::TypeNameHost()
 		case ContainerType::Vector:
 			return "std::tuple<skepu::Vector<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
 		case ContainerType::Matrix:
+		case ContainerType::MatRow:
 			return "std::tuple<skepu::Matrix<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
 		case ContainerType::Tensor3:
 			return "std::tuple<skepu::Tensor3<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
@@ -380,18 +389,38 @@ UserFunction::UserFunction(FunctionDecl *f)
 	}
 
 	this->uniqueName = SSUniqueName.str();
-	if (Verbose) llvm::errs() << "Created UserFunction object with unique name '" << this->uniqueName << "'\n";
+	if (Verbose) llvm::errs() << "### [UF] Created UserFunction object with unique name '" << this->uniqueName << "'\n";
 
 	if (!f->doesThisDeclarationHaveABody())
-		GlobalRewriter.getSourceMgr().getDiagnostics().Report(f->getSourceRange().getEnd(), diag::err_skepu_no_userfunction_body) << this->rawName;
+		SkePUAbort("Fatal error: Did not find a body for function '" + this->rawName + "' called inside user function. If this is a common library function, you can override SkePU transformation check by using the -fnames argument.");
+	//	GlobalRewriter.getSourceMgr().getDiagnostics().Report(f->getSourceRange().getEnd(), diag::err_skepu_no_userfunction_body) << this->rawName; // Segfault here
 
 	// Type name as string
 	this->rawReturnTypeName = f->getReturnType().getAsString();
 	this->resolvedReturnTypeName = this->rawReturnTypeName;
-
-	for (UserFunction::TemplateArgument &arg : templateArguments)
-		if (this->rawReturnTypeName == arg.paramName)
-			this->resolvedReturnTypeName = arg.typeName;
+	
+	if (Verbose) llvm::errs() << "  [UF " << this->uniqueName << "] Return type: " << this->rawReturnTypeName << "\n";
+	
+	// Look for multiple return values (skepu::multiple)
+	if (this->rawReturnTypeName.find("skepu::multiple") == 0)
+	{
+		if (Verbose) llvm::errs() << "  [UF " << this->uniqueName << "] Identified multi-valued return!\n";
+		
+		const auto *templateType = f->getReturnType().getTypePtr()->getAs<clang::TemplateSpecializationType>();
+		for (const clang::TemplateArgument &arg : *templateType)
+		{
+			std::string argType = arg.getAsType().getAsString();
+			if (Verbose) llvm::errs() << "    [UF " << this->uniqueName << "] Multi-return type: " << argType << "\n";
+			this->multipleReturnTypes.push_back(argType);
+		}
+	}
+	else
+	{
+		// Returning a templated type, resolve it
+		for (UserFunction::TemplateArgument &arg : this->templateArguments)
+			if (this->rawReturnTypeName == arg.paramName)
+				this->resolvedReturnTypeName = arg.typeName;
+	}
 
 	// Argument lists
 	auto it = f->param_begin();
@@ -417,6 +446,8 @@ UserFunction::UserFunction(FunctionDecl *f)
 
 	this->ReferencedUTs = UFVisitor.ReferencedUTs;
 	this->UTReferences = UFVisitor.UTReferences;
+	
+	this->ReferencedRets = UFVisitor.ReferencedRets;
 
 	this->containerSubscripts = UFVisitor.containerSubscripts;
 
@@ -463,9 +494,12 @@ bool UserFunction::refersTo(UserFunction &other)
 	return false;
 }
 
-void UserFunction::updateArgLists(size_t arity)
+void UserFunction::updateArgLists(size_t arity, size_t Harity)
 {
 	if (Verbose) llvm::errs() << "Trying with arity: " << arity << "\n";
+	
+	this->Varity = arity;
+	this->Harity = Harity;
 
 	this->elwiseParams.clear();
 	this->anyContainerParams.clear();
@@ -477,7 +511,7 @@ void UserFunction::updateArgLists(size_t arity)
 	if (this->indexed1D || this->indexed2D || this->indexed3D || this->indexed4D)
 		it++;
 
-	auto elwise_end = it + arity;
+	auto elwise_end = it + arity + Harity;
 	while (it != end && it != elwise_end && UserFunction::Param::constructibleFrom(*it))
 		this->elwiseParams.emplace_back(*it++);
 
