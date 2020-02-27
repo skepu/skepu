@@ -2,6 +2,11 @@
 #include <skepu>
 #include <math.h>
 
+int test0(int a)
+{
+	return a + 1;
+}
+
 int test1(skepu::Index1D in, int a)
 {
 	return a * 2 + in.i;
@@ -63,10 +68,12 @@ int main(int argc, char *argv[])
 	const size_t size = atoi(argv[1]);
 	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
 	
+	auto skel0 = skepu::Map<1>(test0);
 	auto skel1 = skepu::Map<1>(test1);
 	auto skel2 = skepu::Map<1>(test2);
 	auto skel3 = skepu::Map<1>(test3);
 	auto skel4 = skepu::Map<1>(test4);
+	skel0.setBackend(spec);
 	skel1.setBackend(spec);
 	skel2.setBackend(spec);
 	skel3.setBackend(spec);
@@ -124,11 +131,18 @@ int main(int argc, char *argv[])
 	std::cout << in4.i << ", " << in4.j << ", " << in4.k << ", " << in4.l << std::endl;
 	
 	
+	skel0(vec, vec);
+	skel0(mat, mat);
+	skel0(ten3, ten3);
+	skel0(ten4, ten4);
+	
 	skel1(vec, vec);
 	skel2(mat, mat);
 	skel3(ten3, ten3);
 	skel4(ten4, ten4);
 	
+//	std::cout << vec << std::endl;
+//	std::cout << mat << std::endl;
 //	std::cout << ten3 << std::endl;
 //	std::cout << ten4 << std::endl;
 	
