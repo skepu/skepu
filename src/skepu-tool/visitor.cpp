@@ -21,7 +21,7 @@ UserFunction *HandleUserFunction(FunctionDecl *f)
 	// Check so that this userfunction has not been treated already
 	if (UserFunctions.find(f) != UserFunctions.end())
 	{
-		if (Verbose) llvm::errs() << "UF already handled!\n";
+		SkePULog() << "UF already handled!\n";
 		return UserFunctions[f];
 	}
 
@@ -240,7 +240,7 @@ UserType *HandleUserType(const CXXRecordDecl *t)
 		|| name == "Vec" || name == "Mat" || name == "Ten3" || name == "Ten4" || name == "MatRow")
 		return nullptr;
 
-	if (Verbose) llvm::errs() << "Found user type: " << name << "\n";
+	SkePULog() << "Found user type: " << name << "\n";
 	
 	if (!t->isCLike())
 		SkePUAbort("User type is not C-like and not supported (run verbose for more details)\n");
@@ -267,16 +267,16 @@ bool SkePUASTVisitor::VisitVarDecl(VarDecl *d)
 //	if (d->hasAttr<SkepuInstanceAttr>())
 	if (DeclIsValidSkeleton(d))
 	{
-		if (Verbose) llvm::errs() << "Found instance: " << d->getNameAsString() << "\n";
+		SkePULog() << "Found instance: " << d->getNameAsString() << "\n";
 
 		SkeletonInstances.insert(d);
 	}
 	else if (d->hasAttr<SkepuUserConstantAttr>())
 	{
-		if (Verbose) llvm::errs() << "Found user constant: " << d->getNameAsString() << "\n";
+		SkePULog() << "Found user constant: " << d->getNameAsString() << "\n";
 		if (!(d->isConstexpr() && d->hasDefinition() == VarDecl::Definition))
 		{
-			llvm::errs() << "Invalid!\n"; // TODO: diagnostic
+			SkePULog() << "Invalid!\n"; // TODO: diagnostic
 		}
 		UserConstants[d] = new UserConstant(d);
 	}

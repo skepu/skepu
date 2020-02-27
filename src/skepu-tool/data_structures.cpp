@@ -37,7 +37,7 @@ public:
 		if (auto *UnresolvedLookup = dyn_cast<UnresolvedLookupExpr>(c->getCallee()))
 		{
 			std::string name = UnresolvedLookup->getName().getAsString();
-			if (Verbose) llvm::errs() << "Found unresolved lookup expr " << UnresolvedLookup->getName() <<"\n";
+			SkePULog() << "Found unresolved lookup expr " << UnresolvedLookup->getName() <<"\n";
 
 			bool allowed = std::find(AllowedFunctionNamesCalledInUFs.begin(), AllowedFunctionNamesCalledInUFs.end(), name)
 				!= AllowedFunctionNamesCalledInUFs.end();
@@ -52,17 +52,17 @@ public:
 
 		if (name == "ret")
 		{
-			if (Verbose) llvm::errs() << "Ignored reference to special function: '" << name << "'\n";
+			SkePULog() << "Ignored reference to special function: '" << name << "'\n";
 			ReferencedRets.insert(c);
 		}
 		else if (std::find(AllowedFunctionNamesCalledInUFs.begin(), AllowedFunctionNamesCalledInUFs.end(), name) != AllowedFunctionNamesCalledInUFs.end())
 		{
 			// Called function is explicitly allowed
-			if (Verbose) llvm::errs() << "Ignored reference to whitelisted function: '" << name << "'\n";
+			SkePULog() << "Ignored reference to whitelisted function: '" << name << "'\n";
 		}
 		else
 		{
-			if (Verbose) llvm::errs() << "Found reference to other userfunction: '" << name << "'\n";
+			SkePULog() << "Found reference to other userfunction: '" << name << "'\n";
 			UserFunction *UF = HandleUserFunction(Func);
 			UF->updateArgLists(0);
 			UFReferences.emplace_back(c, UF);
@@ -123,7 +123,7 @@ UserType::UserType(const CXXRecordDecl *t)
 		{
 			std::string fieldName = f->getNameAsString();
 			std::string typeName = f->getType().getAsString();
-			if (Verbose) llvm::errs() << "User type '" << this->name << "': found field '" << fieldName << "' of type " << typeName << "\n";
+			SkePULog() << "User type '" << this->name << "': found field '" << fieldName << "' of type " << typeName << "\n";
 
 			if (typeName == "double")
 				this->requiresDoublePrecision = true;
@@ -168,7 +168,7 @@ UserFunction::Param::Param(const clang::ParmVarDecl *p)
 	this->resolvedTypeName = this->rawTypeName;
 	this->escapedTypeName = transformToCXXIdentifier(this->resolvedTypeName);
 
-	if (Verbose) llvm::errs() << "Param: " << this->name << " of type " << this->rawTypeName << " resolving to " << this->resolvedTypeName << "\n";
+	SkePULog() << "Param: " << this->name << " of type " << this->rawTypeName << " resolving to " << this->resolvedTypeName << "\n";
 }
 
 bool UserFunction::Param::constructibleFrom(const clang::ParmVarDecl *p)
@@ -199,17 +199,17 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 		}
 
 		this->accessMode = AccessMode::Read;
-		if (Verbose) llvm::errs() << "Read only access mode\n";
+		SkePULog() << "Read only access mode\n";
 	}
 	else if (p->hasAttr<SkepuOutAttr>())
 	{
 		this->accessMode = AccessMode::Write;
-		if (Verbose) llvm::errs() << "Write only access mode\n";
+		SkePULog() << "Write only access mode\n";
 	}
 	else
 	{
 		this->accessMode = AccessMode::ReadWrite;
-		if (Verbose) llvm::errs() << "ReadWrite access mode\n";
+		SkePULog() << "ReadWrite access mode\n";
 	}
 
 	auto *type = underlying.getTypePtr();
@@ -229,37 +229,37 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 	{
 		this->containerType = ContainerType::SparseMatrix;
 		this->accessMode = AccessMode::Read; // Override for sparse matrices
-		if (Verbose) llvm::errs() << "Sparse Matrix of " << this->resolvedTypeName << "\n";
+		SkePULog() << "Sparse Matrix of " << this->resolvedTypeName << "\n";
 	}
 	else if (templateName == "Mat")
 	{
 		this->containerType = ContainerType::Matrix;
-		if (Verbose) llvm::errs() << "Matrix of " << this->resolvedTypeName << "\n";
+		SkePULog() << "Matrix of " << this->resolvedTypeName << "\n";
 	}
 	else if (templateName == "MatRow")
 	{
 		this->containerType = ContainerType::MatRow;
-		if (Verbose) llvm::errs() << "Matrix Row of " << this->resolvedTypeName << "\n";
+		SkePULog() << "Matrix Row of " << this->resolvedTypeName << "\n";
 	}
 	else if (templateName == "Vec")
 	{
 		this->containerType = ContainerType::Vector;
-		if (Verbose) llvm::errs() << "Vector of " << this->resolvedTypeName << "\n";
+		SkePULog() << "Vector of " << this->resolvedTypeName << "\n";
 	}
 	else if (templateName == "Ten3")
 	{
 		this->containerType = ContainerType::Tensor3;
-		if (Verbose) llvm::errs() << "Tensor3 of " << this->resolvedTypeName << "\n";
+		SkePULog() << "Tensor3 of " << this->resolvedTypeName << "\n";
 	}
 	else if (templateName == "Ten4")
 	{
 		this->containerType = ContainerType::Tensor4;
-		if (Verbose) llvm::errs() << "Tensor4 of " << this->resolvedTypeName << "\n";
+		SkePULog() << "Tensor4 of " << this->resolvedTypeName << "\n";
 	}
 	else
-		llvm::errs() << "FATAL ERROR\n";
+		SkePUAbort("Unhandled proxy type");
 
-	if (Verbose) llvm::errs() << "Param: " << this->name << " of type " << this->rawTypeName << " resolving to " << this->resolvedTypeName << " (or fully: " << this->fullTypeName << ")\n";
+	SkePULog() << "Param: " << this->name << " of type " << this->rawTypeName << " resolving to " << this->resolvedTypeName << " (or fully: " << this->fullTypeName << ")\n";
 }
 
 bool UserFunction::RandomAccessParam::constructibleFrom(const clang::ParmVarDecl *p)
@@ -293,7 +293,7 @@ std::string UserFunction::RandomAccessParam::TypeNameOpenCL()
 		case ContainerType::SparseMatrix:
 			return "skepu_sparse_mat_proxy_" + this->escapedTypeName;
 		default:
-			llvm::errs() << "ERROR: TypeNameOpenCL: Invalid switch value\n";
+			SkePUAbort("ERROR: TypeNameOpenCL: Invalid switch value");
 			return "";
 	}
 }
@@ -315,7 +315,7 @@ std::string UserFunction::RandomAccessParam::TypeNameHost()
 			return "std::tuple<skepu::SparseMatrix<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *, "
 				+ "skepu::backend::DeviceMemPointer_CL<size_t> *, skepu::backend::DeviceMemPointer_CL<size_t> *>";
 		default:
-			llvm::errs() << "ERROR: TypeNameHost: Invalid switch value\n";
+			SkePUAbort("ERROR: TypeNameHost: Invalid switch value");
 			return "";
 	}
 }
@@ -335,7 +335,7 @@ size_t UserFunction::RandomAccessParam::numKernelArgsCL()
 		case ContainerType::SparseMatrix:
 			return 4;
 		default:
-			llvm::errs() << "ERROR: numKernelArgsCL: Invalid switch value\n";
+			SkePUAbort("ERROR: numKernelArgsCL: Invalid switch value");
 			return 0;
 	}
 }
@@ -384,33 +384,33 @@ UserFunction::UserFunction(FunctionDecl *f)
 			std::string argName = TAList->get(i).getAsType().getAsString();
 			this->templateArguments.emplace_back(paramName, argName);
 			SSUniqueName << "_" << transformToCXXIdentifier(argName);
-			if (Verbose) llvm::errs() << "Template param: " << paramName << " = " << argName << "\n";
+			SkePULog() << "Template param: " << paramName << " = " << argName << "\n";
 		}
 	}
 
 	this->uniqueName = SSUniqueName.str();
-	if (Verbose) llvm::errs() << "### [UF] Created UserFunction object with unique name '" << this->uniqueName << "'\n";
+	SkePULog() << "### [UF] Created UserFunction object with unique name '" << this->uniqueName << "'\n";
 
 	if (!f->doesThisDeclarationHaveABody())
 		SkePUAbort("Fatal error: Did not find a body for function '" + this->rawName + "' called inside user function. If this is a common library function, you can override SkePU transformation check by using the -fnames argument.");
 	//	GlobalRewriter.getSourceMgr().getDiagnostics().Report(f->getSourceRange().getEnd(), diag::err_skepu_no_userfunction_body) << this->rawName; // Segfault here
 
 	// Type name as string
-	this->rawReturnTypeName = f->getReturnType().getAsString();
+	this->rawReturnTypeName = f->getReturnType().getCanonicalType().getAsString();
 	this->resolvedReturnTypeName = this->rawReturnTypeName;
 	
-	if (Verbose) llvm::errs() << "  [UF " << this->uniqueName << "] Return type: " << this->rawReturnTypeName << "\n";
+	SkePULog() << "  [UF " << this->uniqueName << "] Return type: " << this->rawReturnTypeName << "\n";
 	
 	// Look for multiple return values (skepu::multiple)
 	if (this->rawReturnTypeName.find("skepu::multiple") == 0)
 	{
-		if (Verbose) llvm::errs() << "  [UF " << this->uniqueName << "] Identified multi-valued return!\n";
+		SkePULog() << "  [UF " << this->uniqueName << "] Identified multi-valued return!\n";
 		
 		const auto *templateType = f->getReturnType().getTypePtr()->getAs<clang::TemplateSpecializationType>();
 		for (const clang::TemplateArgument &arg : *templateType)
 		{
 			std::string argType = arg.getAsType().getAsString();
-			if (Verbose) llvm::errs() << "    [UF " << this->uniqueName << "] Multi-return type: " << argType << "\n";
+			SkePULog() << "    [UF " << this->uniqueName << "] Multi-return type: " << argType << "\n";
 			this->multipleReturnTypes.push_back(argType);
 		}
 	}
@@ -496,7 +496,7 @@ bool UserFunction::refersTo(UserFunction &other)
 
 void UserFunction::updateArgLists(size_t arity, size_t Harity)
 {
-	if (Verbose) llvm::errs() << "Trying with arity: " << arity << "\n";
+	SkePULog() << "Trying with arity: " << arity << "\n";
 	
 	this->Varity = arity;
 	this->Harity = Harity;
@@ -537,11 +537,8 @@ void UserFunction::updateArgLists(size_t arity, size_t Harity)
 	for (auto &param : this->anyScalarParams)
 		scanForType(param.type);
 
-	if (Verbose)
-	{
-		llvm::errs() << "Deduced indexed: " << (this->indexParam ? "yes" : "no") << "\n";
-		llvm::errs() << "Deduced elementwise arity: " << this->elwiseParams.size() << "\n";
-		llvm::errs() << "Deduced random access arity: " << this->anyContainerParams.size() << "\n";
-		llvm::errs() << "Deduced scalar arity: " << this->anyScalarParams.size() << "\n";
-	}
+	SkePULog() << "Deduced indexed: " << (this->indexParam ? "yes" : "no") << "\n"
+		<< "Deduced elementwise arity: " << this->elwiseParams.size() << "\n"
+		<< "Deduced random access arity: " << this->anyContainerParams.size() << "\n"
+		<< "Deduced scalar arity: " << this->anyScalarParams.size() << "\n";
 }

@@ -71,6 +71,14 @@ const std::unordered_map<std::string, Skeleton> Skeletons =
 
 Rewriter GlobalRewriter;
 
+llvm::raw_ostream& SkePULog()
+{
+	if (Verbose)
+		return llvm::outs();
+	else
+		return llvm::nulls();
+}
+
 
 // For each source file provided to the tool, a new FrontendAction is created.
 class SkePUFrontendAction : public ASTFrontendAction

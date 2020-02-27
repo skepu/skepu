@@ -552,7 +552,7 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 
 bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, VarDecl *d)
 {
-	if (Verbose) llvm::errs() << "Name of skeleton: " << skeleton.name << "\n";
+	SkePULog() << "Name of skeleton: " << skeleton.name << "\n";
 
 	GlobalRewriter.RemoveText(d->getSourceRange());
 
