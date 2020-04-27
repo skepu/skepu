@@ -15,22 +15,27 @@ int main(int argc, char *argv[])
 {
 	if (argc < 3)
 	{
-		std::cout << "Usage: " << argv[0] << " size backend\n";
+		if(!skepu::cluster::mpi_rank())
+			std::cout << "Usage: " << argv[0] << " size backend\n";
 		exit(1);
 	}
 	
 	const size_t size = atoi(argv[1]);
 	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
 	
-	
 	skepu::Matrix<float> m(size / 2, size / 2);
 	skepu::Vector<float> v(size), rv(size / 2);
 	m.randomize(0, 10);
 	v.randomize(0, 10);
 	
-	std::cout << "v: " << v << "\n";
-	std::cout << "m: " << m << "\n";
-	
+	m.flush();
+	v.flush();
+	if(!skepu::cluster::mpi_rank())
+	{
+		std::cout << "v: " << v << "\n";
+		std::cout << "m: " << m << "\n";
+	}
+
 	auto sum = skepu::Reduce(plus_f);
 	sum.setBackend(spec);
 	
@@ -39,33 +44,41 @@ int main(int argc, char *argv[])
 	
 	// With containers
 	float r = sum(v);
-	std::cout << "Reduce: r = " << r << "\n";
+	if(!skepu::cluster::mpi_rank())
+		std::cout << "Reduce: r = " << r << "\n";
 	
 	r = sum(m);
-	std::cout << "Reduce: r = " << r << "\n";
+	if(!skepu::cluster::mpi_rank())
+		std::cout << "Reduce: r = " << r << "\n";
 	
 	sum.setReduceMode(skepu::ReduceMode::RowWise);
 	sum(rv, m);
-	std::cout << "Reduce: r = " << rv << "\n";
+	rv.flush();
+	if(!skepu::cluster::mpi_rank())
+		std::cout << "Reduce: r = " << rv << "\n";
 	
 	sum.setReduceMode(skepu::ReduceMode::ColWise);
 	sum(rv, m);
-	std::cout << "Reduce: r = " << rv << "\n";
+	rv.flush();
+	if(!skepu::cluster::mpi_rank())
+		std::cout << "Reduce: r = " << rv << "\n";
 	
 	
 	
 	// 2D reduce
 	max_sum.setReduceMode(skepu::ReduceMode::RowWise);
 	r = max_sum(m);
-	std::cout << "Reduce 2D max row-sum: r = " << r << "\n";
+	if(!skepu::cluster::mpi_rank())
+		std::cout << "Reduce 2D max row-sum: r = " << r << "\n";
 	
 	max_sum.setReduceMode(skepu::ReduceMode::ColWise);
 	r = max_sum(m);
-	std::cout << "Reduce 2D max col-sum: r = " << r << "\n";
+	if(!skepu::cluster::mpi_rank())
+		std::cout << "Reduce 2D max col-sum: r = " << r << "\n";
 	
 	r = max_sum(v);
-	std::cout << "Reduce: r = " << r << "\n";
-	
+	if(!skepu::cluster::mpi_rank())
+		std::cout << "Reduce: r = " << r << "\n";
 	
 	return 0;
 }

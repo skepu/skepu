@@ -196,10 +196,9 @@ function(skepu_add_executable name)
 		list(APPEND _skepu_targets ${_target_name})
 	endforeach()
 
-	# Finally add a standar executable target with both the procompiled source
-	# and standard C++ source (if any). Cmake will use the file extension to
-	# figure out if we are dealing with CUDA or standard C++, so we do not have
-	# to care about that.
+	# Finally add an executable target with both the procompiled source and C++
+	# source (if any). Cmake will use the file extension to figure out if we are
+	# dealing with CUDA or C++, so we do not have to care about that.
 	add_executable(${name} ${_exclude_from_all} ${_precompiled_src} ${_src})
 	target_include_directories(${name} PRIVATE ${_output_dir})
 	target_link_libraries(${name} PRIVATE ${_target_libs})

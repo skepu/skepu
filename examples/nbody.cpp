@@ -152,7 +152,8 @@ int main(int argc, char *argv[])
 {
 	if (argc < 4)
 	{
-		std::cout << "Usage: " << argv[0] << " particles-per-dim iterations backend\n";
+		if(!skepu::cluster::mpi_rank())
+			std::cout << "Usage: " << argv[0] << " particles-per-dim iterations backend\n";
 		exit(1);
 	}
 	
@@ -167,7 +168,10 @@ int main(int argc, char *argv[])
 	
 	std::stringstream outfile2;
 	outfile2 << "output" << spec.backend() << ".txt";
-	save_step(particles, outfile2.str());
+
+	particles.flush();
+	if(!skepu::cluster::mpi_rank())
+		save_step(particles, outfile2.str());
 	
 	return 0;
 }

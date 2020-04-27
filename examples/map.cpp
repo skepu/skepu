@@ -10,7 +10,8 @@ int main(int argc, char *argv[])
 {
 	if (argc < 3)
 	{
-		std::cout << "Usage: " << argv[0] << " size backend\n";
+		if(!skepu::cluster::mpi_rank())
+			std::cout << "Usage: " << argv[0] << " size backend\n";
 		exit(1);
 	}
 	
@@ -21,19 +22,30 @@ int main(int argc, char *argv[])
 	square.setBackend(spec);
 	
 	skepu::Vector<int> v1(size, 3), v2(size, 7), r(size);
-	std::cout << "v1: " << v1 << "\nv2: " << v2 << "\n";
+	v1.flush();
+	v2.flush();
+	if(!skepu::cluster::mpi_rank())
+		std::cout << "v1: " << v1 << "\nv2: " << v2 << "\n";
 	
 	square(r, v1, v2);
-	std::cout << "Map: r = " << r << "\n";
+	r.flush();
+	if(!skepu::cluster::mpi_rank())
+		std::cout << "Map: r = " << r << "\n";
 	
 	square(r.begin(), r.end(), v1.begin(), v2.begin());
-	std::cout << "Map: r = " << r << "\n";
+	r.flush();
+	if(!skepu::cluster::mpi_rank())
+		std::cout << "Map: r = " << r << "\n";
 	
 	square(r.begin(), r.end(), v1, v2);
-	std::cout << "Map: r = " << r << "\n";
+	r.flush();
+	if(!skepu::cluster::mpi_rank())
+		std::cout << "Map: r = " << r << "\n";
 	
 	square(r, v1.begin(), v2);
-	std::cout << "Map: r = " << r << "\n";
+	r.flush();
+	if(!skepu::cluster::mpi_rank())
+		std::cout << "Map: r = " << r << "\n";
 	
 	return 0;
 }
