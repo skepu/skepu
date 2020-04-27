@@ -396,7 +396,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName)
 	SSSkepuFunctorStruct << ">;\n";
 
 	// Proxy tags
-	SSSkepuFunctorStruct << "constexpr static std::tuple<";
+	SSSkepuFunctorStruct << "typedef std::tuple<";
 	first = true;
 	for (UserFunction::Param& param : UF.anyContainerParams)
 	{
@@ -406,7 +406,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName)
 		else
 			SSSkepuFunctorStruct << "skepu::ProxyTag::Default";
 	}
-	SSSkepuFunctorStruct << "> ProxyTags{};\n";
+	SSSkepuFunctorStruct << "> ProxyTags;\n";
 
 	// Access modes
 	SSSkepuFunctorStruct << "constexpr static skepu::AccessMode anyAccessMode[] = {\n";
