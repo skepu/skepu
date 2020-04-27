@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iomanip>
 #include <cmath>
+#include <sstream>
 
 #include <skepu>
 
