@@ -7,7 +7,7 @@ using namespace clang;
 // ------------------------------
 
 const char *MapReduceKernelTemplate_CU = R"~~~(
-__global__ void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS SKEPU_REDUCE_RESULT_TYPE *output, size_t w, size_t n, size_t base)
+__global__ void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS SKEPU_REDUCE_RESULT_TYPE *output,  size_t w2, size_t w3, size_t w4, size_t n, size_t base)
 {
 	extern __shared__ SKEPU_REDUCE_RESULT_TYPE sdata[];
 	// extern __shared__ alignas(SKEPU_REDUCE_RESULT_TYPE) char _sdata[];
@@ -128,18 +128,36 @@ std::string createMapReduceKernelProgram_CU(UserFunction &mapFunc, UserFunction 
 	std::string indexInitializer;
 	bool first = true;
 
-	if (mapFunc.indexed1D)
+	if (mapFunc.indexed1D || mapFunc.indexed2D || mapFunc.indexed3D || mapFunc.indexed4D)
 	{
 		SSMapFuncParams << "index";
-		indexInitializer = "skepu::Index1D index;\n\t\tindex.i = base + i;";
 		first = false;
 	}
-	else if (mapFunc.indexed2D)
-	{
-		SSMapFuncParams << "index";
-		indexInitializer = "skepu::Index2D index;\n\t\tindex.row = (base + i) / w;\n\t\tindex.col = (base + i) % w;";
-		first = false;
-	}
+	
+	if      (mapFunc.indexed1D) indexInitializer = "skepu::Index1D index;\nindex.i = base + i;";
+	else if (mapFunc.indexed2D) indexInitializer = "skepu::Index2D index;\nindex.row = (base + i) / w2;\nindex.col = (base + i) % w2;";
+	else if (mapFunc.indexed3D) indexInitializer = R"~~~(
+		skepu::Index3D index;
+		size_t cindex = base + i;
+		index.i = cindex / (w2 * w3);
+		cindex = cindex % (w2 * w3);
+		index.j = cindex / (w3);
+		index.k = cindex % (w3);
+	)~~~";
+	
+	else if (mapFunc.indexed4D) indexInitializer = R"~~~(
+		skepu::Index4D index;
+		size_t cindex = base + i;
+		
+		index.i = cindex / (w2 * w3 * w4);
+		cindex = cindex % (w2 * w3 * w4);
+		
+		index.j = cindex / (w3 * w4);
+		cindex = cindex % (w3 * w4);
+		
+		index.k = cindex / (w4);
+		index.l = cindex % (w4);
+	)~~~";
 
 	for (UserFunction::Param& param : mapFunc.elwiseParams)
 	{

@@ -193,9 +193,9 @@ int main(int argc, char *argv[])
 	
 	
 	size_t L = size;
-	auto seed = skepu::Scan([](uint64_t x, uint64_t y){ return x+y; });
-	skepu::Tensor4<uint64_t> temp(L, L, L, L, 1); // all entries 1
-	skepu::Tensor4<uint64_t> prng_lcg(L, L, L, L);
+	auto seed = skepu::Scan([](int x, int y){ return x+y; });
+	skepu::Tensor4<int> temp(L, L, L, L, 1); // all entries 1
+	skepu::Tensor4<int> prng_lcg(L, L, L, L);
 	seed(prng_lcg, temp);
 	
 	std::cout << temp << ", " << prng_lcg << "\n";

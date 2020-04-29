@@ -606,10 +606,6 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			SkePUAbort("CUDA MapPairs/Reduce not implemented yet");
 			// TODO
 			break;
-		case Skeleton::Type::MapPairsReduce:
-				SkePUAbort("CUDA MapPairsReduce not implemented yet");
-				// TODO
-				break;
 
 		case Skeleton::Type::Reduce1D:
 			KernelName_CU = createReduce1DKernelProgram_CU(*FuncArgs[0], ResultDir);
@@ -696,12 +692,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		case Skeleton::Type::MapPairs:
 		case Skeleton::Type::MapPairsReduce:
 			SkePUAbort("MapPairs for OpenCL is not complete yet. Disable OpenCL code-gen for now.");
-			KernelName_CL = createMapPairsKernelProgram_CL(*FuncArgs[0], arity[0], arity[1], ResultDir);
-			break;
-		
-		case Skeleton::Type::MapPairsReduce:
-			KernelName_CL = createMapPairsReduceKernelProgram_CL(*FuncArgs[0], *FuncArgs[1], arity[0], arity[1], ResultDir);
-			break;
+		//	KernelName_CL = createMapPairsKernelProgram_CL(*FuncArgs[0], arity[0], arity[1], ResultDir);
 
 		case Skeleton::Type::Reduce1D:
 			KernelName_CL = createReduce1DKernelProgram_CL(*FuncArgs[0], ResultDir);
