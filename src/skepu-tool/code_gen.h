@@ -64,6 +64,18 @@ size_t get_device_id()
 #define VARIANT_OPENMP(block)
 #define VARIANT_CUDA(block)
 
+// Size of basic integer types defined in OpenCL standard.
+// Emulate stdint.h based on this.
+typedef uchar    uint8_t;
+typedef ushort   uint16_t;
+typedef uint     uint32_t;
+typedef ulong    uint64_t;
+
+typedef char     int8_t;
+typedef short    int16_t;
+typedef int      int32_t;
+typedef long     int64_t;
+
 )~~~";
 
 void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName);
@@ -86,6 +98,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 std::string createMapReduceKernelProgram_CU(UserFunction &mapFunc, UserFunction &reduceFunc, size_t arity, std::string dir);
 std::string createMapKernelProgram_CU(UserFunction &mapFunc, size_t arity, std::string dir);
 //std::string createMapPairsKernelProgram_CU(UserFunction &mapFunc, size_t Varity, size_t Harity, std::string dir);
+//std::string createMapPairsKernelProgram_CU(UserFunction &mapFunc, UserFunction &reduceFunc, size_t Varity, size_t Harity, std::string dir);
 std::string createScanKernelProgram_CU(UserFunction &scanFunc, std::string dir);
 std::string createReduce1DKernelProgram_CU(UserFunction &reduceFunc, std::string dir);
 std::string createReduce2DKernelProgram_CU(UserFunction &rowWiseFunc, UserFunction &colWiseFunc, std::string dir);
@@ -101,6 +114,7 @@ std::string generateUserTypeCode_CL(UserType &Type);
 std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction &reduceFunc, size_t arity, std::string dir);
 std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::string dir);
 std::string createMapPairsKernelProgram_CL(UserFunction &mapPairsFunc, size_t Varity, size_t Harity, std::string dir);
+std::string createMapPairsReduceKernelProgram_CL(UserFunction &mapPairsFunc, UserFunction &reduceFunc, size_t Varity, size_t Harity, std::string dir);
 std::string createScanKernelProgram_CL(UserFunction &scanFunc, std::string dir);
 std::string createReduce1DKernelProgram_CL(UserFunction &reduceFunc, std::string dir);
 std::string createReduce2DKernelProgram_CL(UserFunction &rowWiseFunc, UserFunction &colWiseFunc, std::string dir);

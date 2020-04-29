@@ -367,6 +367,13 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName)
 	SSSkepuFunctorStruct << "constexpr static size_t totalArity = " << f->param_size() << ";\n";
 	SSSkepuFunctorStruct << "constexpr static size_t outArity = " << outArity << ";\n";
 	SSSkepuFunctorStruct << "constexpr static bool indexed = " << (UF.indexed1D || UF.indexed2D || UF.indexed3D || UF.indexed4D) << ";\n";
+	
+	SSSkepuFunctorStruct << "using IndexType = ";
+	if (UF.indexed1D) SSSkepuFunctorStruct << "skepu::Index1D;\n";
+	else if (UF.indexed2D) SSSkepuFunctorStruct << "skepu::Index2D;\n";
+	else if (UF.indexed3D) SSSkepuFunctorStruct << "skepu::Index3D;\n";
+	else if (UF.indexed4D) SSSkepuFunctorStruct << "skepu::Index4D;\n";
+	else SSSkepuFunctorStruct << "void;\n";
 
 	SSSkepuFunctorStruct << "using ElwiseArgs = std::tuple<";
 	bool first = true;
@@ -396,7 +403,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName)
 	SSSkepuFunctorStruct << ">;\n";
 
 	// Proxy tags
-	SSSkepuFunctorStruct << "constexpr static std::tuple<";
+	SSSkepuFunctorStruct << "typedef std::tuple<";
 	first = true;
 	for (UserFunction::Param& param : UF.anyContainerParams)
 	{
@@ -406,7 +413,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName)
 		else
 			SSSkepuFunctorStruct << "skepu::ProxyTag::Default";
 	}
-	SSSkepuFunctorStruct << "> ProxyTags{};\n";
+	SSSkepuFunctorStruct << "> ProxyTags;\n";
 
 	// Access modes
 	SSSkepuFunctorStruct << "constexpr static skepu::AccessMode anyAccessMode[] = {\n";
@@ -552,7 +559,7 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 
 bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, VarDecl *d)
 {
-	if (Verbose) llvm::errs() << "Name of skeleton: " << skeleton.name << "\n";
+	SkePULog() << "Name of skeleton: " << skeleton.name << "\n";
 
 	GlobalRewriter.RemoveText(d->getSourceRange());
 
@@ -564,7 +571,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		SSTemplateArgs << arity[0];
 		first = false;
 	}
-	else if (skeleton.type == Skeleton::Type::MapPairs)
+	else if (skeleton.type == Skeleton::Type::MapPairs || skeleton.type == Skeleton::Type::MapPairsReduce)
 	{
 		SSTemplateArgs << arity[0] << ", " << arity[1];
 		first = false;
@@ -599,6 +606,10 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			SkePUAbort("CUDA MapPairs/Reduce not implemented yet");
 			// TODO
 			break;
+		case Skeleton::Type::MapPairsReduce:
+				SkePUAbort("CUDA MapPairsReduce not implemented yet");
+				// TODO
+				break;
 
 		case Skeleton::Type::Reduce1D:
 			KernelName_CU = createReduce1DKernelProgram_CU(*FuncArgs[0], ResultDir);
@@ -686,6 +697,10 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		case Skeleton::Type::MapPairsReduce:
 			SkePUAbort("MapPairs for OpenCL is not complete yet. Disable OpenCL code-gen for now.");
 			KernelName_CL = createMapPairsKernelProgram_CL(*FuncArgs[0], arity[0], arity[1], ResultDir);
+			break;
+		
+		case Skeleton::Type::MapPairsReduce:
+			KernelName_CL = createMapPairsReduceKernelProgram_CL(*FuncArgs[0], *FuncArgs[1], arity[0], arity[1], ResultDir);
 			break;
 
 		case Skeleton::Type::Reduce1D:

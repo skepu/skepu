@@ -83,6 +83,7 @@ void initatoms(skepu::Vector<Atom> &atombuf, dimension3 volsize, double gridspac
 	size.z = gridspacing * volsize.z;
 	
 	size_t count = atombuf.size();
+	atombuf.flush();
 	for (size_t i = 0; i < count; i++)
 	{
 		Atom a;
@@ -90,7 +91,7 @@ void initatoms(skepu::Vector<Atom> &atombuf, dimension3 volsize, double gridspac
 		a.x = (rand() / (double) RAND_MAX);// * size.x;
 		a.y = (rand() / (double) RAND_MAX);// * size.y;
 		a.z = (rand() / (double) RAND_MAX);// * size.z;
-		atombuf[i] = a;
+		atombuf(i) = a;
 	}
 }
 
@@ -116,7 +117,8 @@ int main(int argc, char* argv[])
 {
 	if (argc < 3)
 	{
-		std::cout << "Usage: " << argv[0] << " input_size backend\n";
+		if(!skepu::cluster::mpi_rank())
+			std::cout << "Usage: " << argv[0] << " input_size backend\n";
 		exit(1);
 	}
 	
@@ -133,7 +135,9 @@ int main(int argc, char* argv[])
 	coulombic(energy_out, atoms, &spec);
 	
 	// can print and compare. output is exactly same for cpu, openmp, cuda for 1 and 2 gpus.
-	std::cout << "Energy out: " << energy_out << "\n";
+	energy_out.flush();
+	if(!skepu::cluster::mpi_rank())
+		std::cout << "Energy out: " << energy_out << "\n";
 	
 	return 0;
 }

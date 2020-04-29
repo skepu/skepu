@@ -55,6 +55,7 @@ extern clang::Rewriter GlobalRewriter;
 const std::string SkePU_UF_Prefix {"skepu_userfunction_"};
 
 [[noreturn]] void SkePUAbort(std::string msg);
+llvm::raw_ostream& SkePULog();
 
 void replaceTextInString(std::string& text, const std::string &find, const std::string &replace);
 std::string transformToCXXIdentifier(std::string &in);

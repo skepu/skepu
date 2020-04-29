@@ -7,9 +7,6 @@
 template<typename T>
 T mult(T a, T b)
 {
-#if SKEPU_USING_BACKEND_CPU
-	std::cout << "Mult " << a << " and " << b << "\n";
-#endif
 	return a * b;
 }
 
@@ -19,12 +16,6 @@ T add(T a, T b)
 	return a + b;
 }
 
-auto dotprod = skepu::MapReduce<2>(mult<float>, add<float>);
-float dotproduct(skepu::Vector<float> &a, skepu::Matrix<float> &b)
-{
-	
-	return dotprod(a, b);
-}
 
 int main(int argc, char *argv[])
 {
@@ -36,22 +27,20 @@ int main(int argc, char *argv[])
 	
 	const size_t size = atoi(argv[1]);
 	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
+	
+	auto dotprod = skepu::MapReduce<2>(mult<float>, add<float>);
 	dotprod.setBackend(spec);
 	
-	
 	skepu::Vector<float> a(size), b(size);
-	skepu::Matrix<float> c(sqrt(size), sqrt(size));
 	a.randomize(0, 3);
 	b.randomize(0, 2);
-	c.randomize(0, 5);
 	
 	std::cout << a << "\n";
-	std::cout << c << "\n";
+	std::cout << b << "\n";
 	
-	float res = dotproduct(a, c);
+	float res = dotprod(a, b);
 	
 	std::cout << res << "\n";
 	
 	return 0;
 }
-

@@ -15,17 +15,17 @@ T arr(skepu::Index1D row, const skepu::Mat<T> m, const skepu::Vec<T> v)
 template<typename T>
 void directMV(skepu::Vector<T> &v, skepu::Matrix<T> &m, skepu::Vector<T> &res)
 {
-	int rows = m.total_rows();
-	int cols = m.total_cols();
+	int rows = m.size_i();
+	int cols = m.size_j();
 	
 	for (int r = 0; r < rows; ++r)
 	{
 		T sum = T();
 		for (int i = 0; i < cols; ++i)
 		{
-			sum += m(r*cols+i) * v(i);
+			sum += m(r,i) * v(i);
 		}
-		res[r] = sum;
+		res(r) = sum;
 	}
 }
 
@@ -43,7 +43,8 @@ int main(int argc, char *argv[])
 {
 	if (argc < 2)
 	{
-		std::cout << "Usage: " << argv[0] << " size backend\n";
+		if(!skepu::cluster::mpi_rank())
+			std::cout << "Usage: " << argv[0] << " size backend\n";
 		exit(1);
 	}
 	
@@ -55,18 +56,30 @@ int main(int argc, char *argv[])
 	m.randomize(3, 9);
 	v.randomize(0, 9);
 	
+	m.flush();
+	v.flush();
+	if(!skepu::cluster::mpi_rank())
+	{
 	std::cout << "v: " << v << "\n";
 	std::cout << "m: " << m << "\n";
-	
+	}
+
+	r.flush();
 	directMV(v, m, r);
 	mvmult(v, m, r2, &spec);
 	
-	std::cout << "r: " << r << "\n";
-	std::cout << "r2: " << r2 << "\n";
-	
-	for (size_t i = 0; i < size; i++)
-		if (r[i] != r2[i])
-			std::cout << "Output error at index " << i << ": " << r2[i] << " vs " << r[i] << "\n";
-	
+	r.flush();
+	r2.flush();
+
+	if(!skepu::cluster::mpi_rank())
+	{
+		std::cout << "r: " << r << "\n";
+		std::cout << "r2: " << r2 << "\n";
+		
+		for (size_t i = 0; i < size; i++)
+			if (r(i) != r2(i))
+				std::cout << "Output error at index " << i << ": " << r2(i) << " vs " << r(i) << "\n";
+	}
+
 	return 0;
 }

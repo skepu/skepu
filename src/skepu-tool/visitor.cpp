@@ -21,7 +21,7 @@ UserFunction *HandleUserFunction(FunctionDecl *f)
 	// Check so that this userfunction has not been treated already
 	if (UserFunctions.find(f) != UserFunctions.end())
 	{
-		if (Verbose) llvm::errs() << "UF already handled!\n";
+		SkePULog() << "UF already handled!\n";
 		return UserFunctions[f];
 	}
 
@@ -180,6 +180,7 @@ bool HandleSkeletonInstance(VarDecl *d)
 		arity[0] = Callee->getTemplateSpecializationArgs()->get(0).getAsIntegral().getExtValue();
 		break;
 	case Skeleton::Type::MapPairs:
+	case Skeleton::Type::MapPairsReduce:
 		assert(Callee->getTemplateSpecializationArgs()->size() > 1);
 		arity[0] = Callee->getTemplateSpecializationArgs()->get(0).getAsIntegral().getExtValue();
 		arity[1] = Callee->getTemplateSpecializationArgs()->get(1).getAsIntegral().getExtValue();
@@ -216,7 +217,7 @@ bool HandleSkeletonInstance(VarDecl *d)
 		
 		FuncArgs.push_back(UF);
 		
-		if (skeletonType == Skeleton::Type::MapPairs)
+		if (skeletonType == Skeleton::Type::MapPairs || skeletonType == Skeleton::Type::MapPairsReduce)
 			UF->updateArgLists(arity[0], arity[1]);
 		else
 			UF->updateArgLists(arity[i++]);
@@ -240,7 +241,7 @@ UserType *HandleUserType(const CXXRecordDecl *t)
 		|| name == "Vec" || name == "Mat" || name == "Ten3" || name == "Ten4" || name == "MatRow")
 		return nullptr;
 
-	if (Verbose) llvm::errs() << "Found user type: " << name << "\n";
+	SkePULog() << "Found user type: " << name << "\n";
 	
 	if (!t->isCLike())
 		SkePUAbort("User type is not C-like and not supported (run verbose for more details)\n");
@@ -267,16 +268,16 @@ bool SkePUASTVisitor::VisitVarDecl(VarDecl *d)
 //	if (d->hasAttr<SkepuInstanceAttr>())
 	if (DeclIsValidSkeleton(d))
 	{
-		if (Verbose) llvm::errs() << "Found instance: " << d->getNameAsString() << "\n";
+		SkePULog() << "Found instance: " << d->getNameAsString() << "\n";
 
 		SkeletonInstances.insert(d);
 	}
 	else if (d->hasAttr<SkepuUserConstantAttr>())
 	{
-		if (Verbose) llvm::errs() << "Found user constant: " << d->getNameAsString() << "\n";
+		SkePULog() << "Found user constant: " << d->getNameAsString() << "\n";
 		if (!(d->isConstexpr() && d->hasDefinition() == VarDecl::Definition))
 		{
-			llvm::errs() << "Invalid!\n"; // TODO: diagnostic
+			SkePULog() << "Invalid!\n"; // TODO: diagnostic
 		}
 		UserConstants[d] = new UserConstant(d);
 	}

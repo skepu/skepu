@@ -17,7 +17,7 @@ llvm::cl::opt<bool> Verbose("verbose",  llvm::cl::desc("Verbose logging printout
 llvm::cl::opt<bool> Silent("silent",  llvm::cl::desc("Disable normal printouts"), llvm::cl::cat(SkepuPrecompilerCategory));
 llvm::cl::opt<bool> NoAddExtension("override-extension",  llvm::cl::desc("Do not automatically add file extension to output file (good for headers)"), llvm::cl::cat(SkepuPrecompilerCategory));
 
-llvm::cl::opt<std::string> AllowedFuncNames("fnames", llvm::cl::desc("Function names which are allowed to be called from user functions"), llvm::cl::cat(SkepuPrecompilerCategory));
+llvm::cl::opt<std::string> AllowedFuncNames("fnames", llvm::cl::desc("Function names which are allowed to be called from user functions (separated by space, e.g. -fnames \"conj csqrt\")"), llvm::cl::cat(SkepuPrecompilerCategory));
 
 // Should be required
 llvm::cl::opt<std::string> ResultDir("dir", llvm::cl::desc("Directory of output files"), llvm::cl::cat(SkepuPrecompilerCategory));
@@ -56,20 +56,29 @@ std::unordered_set<std::string> AllowedFunctionNamesCalledInUFs
 // Skeleton types lookup from internal SkePU class template name
 const std::unordered_map<std::string, Skeleton> Skeletons =
 {
-	{"MapImpl",        {"Map",          Skeleton::Type::Map,          1, 1}},
-	{"Reduce1D",       {"Reduce1D",     Skeleton::Type::Reduce1D,     1, 1}},
-	{"Reduce2D",       {"Reduce2D",     Skeleton::Type::Reduce2D,     2, 2}},
-	{"MapReduceImpl",  {"MapReduce",    Skeleton::Type::MapReduce,    2, 2}},
-	{"ScanImpl",       {"Scan",         Skeleton::Type::Scan,         1, 3}},
-	{"MapOverlap1D",   {"MapOverlap1D", Skeleton::Type::MapOverlap1D, 1, 4}},
-	{"MapOverlap2D",   {"MapOverlap2D", Skeleton::Type::MapOverlap2D, 1, 1}},
-	{"MapOverlap3D",   {"MapOverlap3D", Skeleton::Type::MapOverlap3D, 1, 1}},
-	{"MapOverlap4D",   {"MapOverlap4D", Skeleton::Type::MapOverlap4D, 1, 1}},
-	{"MapPairsImpl",   {"MapPairs",     Skeleton::Type::MapPairs,     1, 1}},
-	{"CallImpl",       {"Call",         Skeleton::Type::Call,         1, 1}},
+	{"MapImpl",              {"Map",                Skeleton::Type::Map,                1, 1}},
+	{"Reduce1D",             {"Reduce1D",           Skeleton::Type::Reduce1D,           1, 1}},
+	{"Reduce2D",             {"Reduce2D",           Skeleton::Type::Reduce2D,           2, 2}},
+	{"MapReduceImpl",        {"MapReduce",          Skeleton::Type::MapReduce,          2, 2}},
+	{"ScanImpl",             {"Scan",               Skeleton::Type::Scan,               1, 3}},
+	{"MapOverlap1D",         {"MapOverlap1D",       Skeleton::Type::MapOverlap1D,       1, 4}},
+	{"MapOverlap2D",         {"MapOverlap2D",       Skeleton::Type::MapOverlap2D,       1, 1}},
+	{"MapOverlap3D",         {"MapOverlap3D",       Skeleton::Type::MapOverlap3D,       1, 1}},
+	{"MapOverlap4D",         {"MapOverlap4D",       Skeleton::Type::MapOverlap4D,       1, 1}},
+	{"MapPairsImpl",         {"MapPairs",           Skeleton::Type::MapPairs,           1, 1}},
+	{"MapPairsReduceImpl",   {"MapPairsReduce",     Skeleton::Type::MapPairsReduce,     2, 2}},
+	{"CallImpl",             {"Call",               Skeleton::Type::Call,               1, 1}},
 };
 
 Rewriter GlobalRewriter;
+
+llvm::raw_ostream& SkePULog()
+{
+	if (Verbose)
+		return llvm::outs();
+	else
+		return llvm::nulls();
+}
 
 
 // For each source file provided to the tool, a new FrontendAction is created.

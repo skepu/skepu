@@ -29,7 +29,8 @@ int main(int argc, char *argv[])
 {
 	if (argc < 3)
 	{
-		std::cout << "Usage: " << argv[0] << " size backend\n";
+		if(!skepu::cluster::mpi_rank())
+			std::cout << "Usage: " << argv[0] << " size backend\n";
 		exit(1);
 	}
 	
@@ -39,6 +40,7 @@ int main(int argc, char *argv[])
 	
 	skepu::Vector<int> v1(size);
 	
+	v1.flush();
 	for (size_t i = 0; i < size; ++i)
 	{
 		v1(i) = i;
@@ -48,7 +50,10 @@ int main(int argc, char *argv[])
 	
 	auto res = test.scale(v1);
 	
-	std::cout << "v1: " << v1 << "\nres: " << res << "\n\n";
+	v1.flush();
+	res.flush();
+	if(!skepu::cluster::mpi_rank())
+		std::cout << "v1: " << v1 << "\nres: " << res << "\n\n";
 	
 	return 0;
 }

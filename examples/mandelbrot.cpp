@@ -102,8 +102,8 @@ auto mandelbroter = skepu::Map<0>(mandelbrot_f);
 
 void mandelbrot(skepu::Matrix<size_t> &iterations, skepu::BackendSpec *spec = nullptr)
 {
-	const size_t width = iterations.total_cols();
-	const size_t height = iterations.total_rows();
+	const size_t width = iterations.size_i();
+	const size_t height = iterations.size_j();
 	
 	
 	if (spec)
@@ -116,7 +116,8 @@ int main(int argc, char* argv[])
 {
 	if (argc < 4)
 	{
-		std::cout << "Usage: " << argv[0] << " width height backend\n";
+		if(!skepu::cluster::mpi_rank())
+			std::cout << "Usage: " << argv[0] << " width height backend\n";
 		exit(1);
 	}
 	
@@ -127,7 +128,8 @@ int main(int argc, char* argv[])
 	skepu::Matrix<size_t> iterations(height, width);
 	
 	mandelbrot(iterations, &spec);
-	iterations.updateHost();
+	iterations.flush();
 	
-	save_image(width, height, iterations.getAddress(), MAX_ITERS);
+	if(!skepu::cluster::mpi_rank())
+		save_image(width, height, iterations.getAddress(), MAX_ITERS);
 }

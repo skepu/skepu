@@ -15,8 +15,8 @@ T arr(skepu::Index2D idx, const skepu::Mat<T> lhs, const skepu::Mat<T> rhs)
 template<typename T>
 void directMM(skepu::Matrix<T> &lhs, skepu::Matrix<T> &rhs, skepu::Matrix<T> &res)
 {
-	int rows = lhs.total_rows();
-	int cols = rhs.total_cols();
+	int rows = lhs.size_i();
+	int cols = rhs.size_j();
 	
 	for (int i = 0; i < rows; ++i)
 		for (int j = 0; j < rows; ++j)
@@ -43,7 +43,8 @@ int main(int argc, char *argv[])
 {
 	if (argc < 2)
 	{
-		std::cout << "Usage: " << argv[0] << " size backend\n";
+		if(!skepu::cluster::mpi_rank())
+			std::cout << "Usage: " << argv[0] << " size backend\n";
 		exit(1);
 	}
 	
@@ -54,19 +55,30 @@ int main(int argc, char *argv[])
 	lhs.randomize(3, 9);
 	rhs.randomize(0, 9);
 	
-	std::cout << "lhs: " << lhs << "\n";
-	std::cout << "rhs: " << rhs << "\n";
-	
+	lhs.flush();
+	rhs.flush();
+	if(!skepu::cluster::mpi_rank())
+	{
+		std::cout << "lhs: " << lhs << "\n";
+		std::cout << "rhs: " << rhs << "\n";
+	}
+
+	res2.flush();
 	directMM(lhs, rhs, res2);
 	mmmult(lhs, rhs, res, &spec);
 	
-	std::cout << "res: " << res << "\n";
-	std::cout << "res2: " << res2 << "\n";
-	
-	for (size_t i = 0; i < size; i++)
-		for (size_t j = 0; j < size; j++)
-			if (res(i, j) != res2(i, j))
-				std::cout << "Output error at index (" << i << "," << j << "): " << res2(i, j) << " vs " << res(i, j) << "\n";
-	
+	res.flush();
+	res2.flush();
+	if(!skepu::cluster::mpi_rank())
+	{
+		std::cout << "res: " << res << "\n";
+		std::cout << "res2: " << res2 << "\n";
+		
+		for (size_t i = 0; i < size; i++)
+			for (size_t j = 0; j < size; j++)
+				if (res(i, j) != res2(i, j))
+					std::cout << "Output error at index (" << i << "," << j << "): " << res2(i, j) << " vs " << res(i, j) << "\n";
+	}
+
 	return 0;
 }

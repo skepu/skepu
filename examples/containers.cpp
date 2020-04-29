@@ -2,6 +2,11 @@
 #include <skepu>
 #include <math.h>
 
+int test0(int a)
+{
+	return a + 1;
+}
+
 int test1(skepu::Index1D in, int a)
 {
 	return a * 2 + in.i;
@@ -47,6 +52,11 @@ int test4_proxy(skepu::Ten4<int> ten4)
 	return ten4.size_i + ten4.size_j + ten4.size_k + ten4.size_l + 1000 * ten4.data[1];
 }
 
+int redfn(int lhs, int rhs)
+{
+	return lhs + rhs;
+}
+
 int test_combo()
 {
 	return 0;
@@ -61,16 +71,14 @@ int main(int argc, char *argv[])
 	}
 	
 	const size_t size = atoi(argv[1]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{argv[2]};
+	skepu::setGlobalBackendSpec(spec);
 	
+	auto skel0 = skepu::Map<1>(test0);
 	auto skel1 = skepu::Map<1>(test1);
 	auto skel2 = skepu::Map<1>(test2);
 	auto skel3 = skepu::Map<1>(test3);
 	auto skel4 = skepu::Map<1>(test4);
-	skel1.setBackend(spec);
-	skel2.setBackend(spec);
-	skel3.setBackend(spec);
-	skel4.setBackend(spec);
 	
 	
 	skepu::Vector<int> vec(size);
@@ -124,11 +132,18 @@ int main(int argc, char *argv[])
 	std::cout << in4.i << ", " << in4.j << ", " << in4.k << ", " << in4.l << std::endl;
 	
 	
+	skel0(vec, vec);
+	skel0(mat, mat);
+	skel0(ten3, ten3);
+	skel0(ten4, ten4);
+	
 	skel1(vec, vec);
 	skel2(mat, mat);
 	skel3(ten3, ten3);
 	skel4(ten4, ten4);
 	
+//	std::cout << vec << std::endl;
+//	std::cout << mat << std::endl;
 //	std::cout << ten3 << std::endl;
 //	std::cout << ten4 << std::endl;
 	
@@ -139,10 +154,6 @@ int main(int argc, char *argv[])
 	auto skel2_p = skepu::Map<0>(test2_proxy);
 	auto skel3_p = skepu::Map<0>(test3_proxy);
 	auto skel4_p = skepu::Map<0>(test4_proxy);
-	skel1_p.setBackend(spec);
-	skel2_p.setBackend(spec);
-	skel3_p.setBackend(spec);
-	skel4_p.setBackend(spec);
 	
 	skepu::Vector<int> dummy(1);
 	
@@ -160,6 +171,34 @@ int main(int argc, char *argv[])
 	skel4_p(dummy, ten4);
 	std::cout << dummy << std::endl;
 	
+	
+	// Test MapReduce
+	
+	auto mapred1 = skepu::MapReduce<0>(test1, redfn);
+	auto mapred2 = skepu::MapReduce<0>(test2, redfn);
+	auto mapred3 = skepu::MapReduce<0>(test3, redfn);
+	auto mapred4 = skepu::MapReduce<0>(test4, redfn);
+	
+	mapred1.setDefaultSize(2);
+	mapred2.setDefaultSize(2, 4);
+	mapred3.setDefaultSize(2, 4, 6);
+	mapred4.setDefaultSize(2, 4, 6, 8);
+	
+	int res1 = mapred1(1);
+	int res2 = mapred2(1);
+	int res3 = mapred3(1);
+	int res4 = mapred4(1);
+	
+	std::cout << res1 << ", " << res2 << ", " << res3 << ", " << res4 << "\n";
+	
+	
+	size_t L = size;
+	auto seed = skepu::Scan([](uint64_t x, uint64_t y){ return x+y; });
+	skepu::Tensor4<uint64_t> temp(L, L, L, L, 1); // all entries 1
+	skepu::Tensor4<uint64_t> prng_lcg(L, L, L, L);
+	seed(prng_lcg, temp);
+	
+	std::cout << temp << ", " << prng_lcg << "\n";
+	
 	return 0;
 }
-
