@@ -180,6 +180,7 @@ bool HandleSkeletonInstance(VarDecl *d)
 		arity[0] = Callee->getTemplateSpecializationArgs()->get(0).getAsIntegral().getExtValue();
 		break;
 	case Skeleton::Type::MapPairs:
+	case Skeleton::Type::MapPairsReduce:
 		assert(Callee->getTemplateSpecializationArgs()->size() > 1);
 		arity[0] = Callee->getTemplateSpecializationArgs()->get(0).getAsIntegral().getExtValue();
 		arity[1] = Callee->getTemplateSpecializationArgs()->get(1).getAsIntegral().getExtValue();
@@ -216,7 +217,7 @@ bool HandleSkeletonInstance(VarDecl *d)
 		
 		FuncArgs.push_back(UF);
 		
-		if (skeletonType == Skeleton::Type::MapPairs)
+		if (skeletonType == Skeleton::Type::MapPairs || skeletonType == Skeleton::Type::MapPairsReduce)
 			UF->updateArgLists(arity[0], arity[1]);
 		else
 			UF->updateArgLists(arity[i++]);

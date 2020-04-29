@@ -39,6 +39,7 @@ struct Skeleton
 		Reduce2D,
 		MapReduce,
 		MapPairs,
+		MapPairsReduce,
 		Scan,
 		MapOverlap1D,
 		MapOverlap2D,
@@ -185,4 +186,3 @@ public:
 	UserFunction(clang::FunctionDecl *f);
 	UserFunction(clang::CXXMethodDecl *f, clang::VarDecl *d);
 };
-
