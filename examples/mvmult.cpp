@@ -51,8 +51,8 @@ int main(int argc, char *argv[])
 	size_t size = atoi(argv[1]);
 	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
 	
-	skepu::Vector<float> v(size), r(size), r2(size);
 	skepu::Matrix<float> m(size, size);
+	skepu::Vector<float> v(size), r(size), r2(size);
 	m.randomize(3, 9);
 	v.randomize(0, 9);
 	
