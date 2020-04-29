@@ -10,7 +10,7 @@
 .DEFAULT_GOAL=all
 
 # Default backend set for SkePU precompiler.
-BACKENDS = -openmp -opencl -cuda 
+BACKENDS = -openmp -cuda # -opencl
 
 SKEPU_OPTIONS =
 PRECOMPILER_OPTIONS = --silent
@@ -19,7 +19,7 @@ PRECOMPILER_OPTIONS = --silent
 BACKEND_FLAGS =
 
 # Default OpenCL specific flags (matching a CUDA-provided installation)
-OPENCL_FLAGS = -I /opt/cuda/include -L /opt/cuda/lib64/ -lOpenCL
+OPENCL_FLAGS = -I /usr/local/cuda/include -L /usr/local/cuda/lib64/ -lOpenCL
 
 # path to Clang source directory (repository root)
 CLANG_INCLUDE = $(PWD)/../llvm/clang/lib/Headers
@@ -27,7 +27,7 @@ CLANG_INCLUDE = $(PWD)/../llvm/clang/lib/Headers
 # path to the SkePU sources
 SKEPU_INCLUDE = $(PWD)/../skepu-headers/src
 
-CXX = g++
+CXX = g++-7
 
 MPICXX=mpic++
 MPIBACKENDS=-openmp
@@ -36,6 +36,8 @@ MPILIBS=$$(pkg-config --libs starpu-1.3 starpumpi-1.3)
 
 MPI_SRC=nbody_mpi.cpp
 MPI_EXEC=nbody
+
+DBGR = # gdb --args
 
 CLANGTOOL_USER_FLAGS =
 # ---------------------------------------------------------------------------- #
@@ -64,15 +66,15 @@ MPI_DIR = mpi
 PROGS=
 PROGS+=call
 PROGS+=cma
-# PROGS+=containers
+PROGS+=containers
 PROGS+=coulombic
 PROGS+=dotproduct
 # PROGS+=lambda
 PROGS+=mandelbrot
-# PROGS+=map
-# PROGS+=mapoverlap
+PROGS+=map
+PROGS+=mapoverlap
 PROGS+=mapreduce
-# PROGS+=median
+PROGS+=median
 PROGS+=mmmult
 PROGS+=mvmult
 PROGS+=nbody
@@ -120,7 +122,7 @@ endif
 TARGET_FLAGS = -g -O3 -std=c++11 $(SKEPU_OPTIONS) -I $(SKEPU_INCLUDE) -I ./  $(NVCCPASS) -Wno-attributes $(BACKEND_FLAGS)
 
 # Flags for non-preprocessed compilation.
-SEQ_FLAGS = -std=c++11 -O3 -I $(SKEPU_INCLUDE) # -Wno-attributes # -fno-rtti -fno-exceptions 
+SEQ_FLAGS = -std=c++11 -O3 -I $(SKEPU_INCLUDE) # -Wno-attributes # -fno-rtti -fno-exceptions
 
 # ---------------------------------------------------------------------------- #
 # Make recipies begin here.
@@ -155,12 +157,12 @@ $(SEQ_DIR)/median : median.cpp $(SEQ_DIR)
 # Precompiles and builds a single parallel test program.
 $(PAR_DIR)/%: %.cpp $(PAR_DIR)
 	$(DBGR) $(SKEPU) $(BACKENDS) -name $*_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) $(TARGET_FLAGS) $@_precompiled.$(FILETYPE) -o $@
+	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE)  $(TARGET_FLAGS) -o $@
 
 # Precompiles and builds a single parallel test program.
 $(PAR_DIR)/median: median.cpp $(PAR_DIR)
 	$(DBGR) $(SKEPU) $(BACKENDS) -name median_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) $(TARGET_FLAGS) $@_precompiled.$(FILETYPE) lodepng.cpp -o $@
+	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS)  -o $@
 
 $(MPI_DIR)/%.o: %_mpi.cpp $(MPI_DIR)
 	@echo "Precompiling $<"
