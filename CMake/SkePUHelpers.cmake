@@ -1,5 +1,6 @@
 # Function to filter sources and build options from argument list.
 macro(skepu_filter_args)
+	set(_fnames_arg OFF)
 	set(_skepu_src_arg OFF)
 	set(_src_arg OFF)
 	foreach(arg ${ARGN})
@@ -18,14 +19,22 @@ macro(skepu_filter_args)
 			set(_skepu_opencl ON)
 		elseif(${arg} STREQUAL "OpenMP")
 			set(_skepu_openmp ON)
+		elseif(${arg} STREQUAL "FNAMES")
+			set(_fnames_arg ON)
+			set(_src_arg OFF)
+			set(_skepu_src_arg OFF)
 		elseif(${arg} STREQUAL "SKEPUSRC")
+			set(_fnames_arg OFF)
 			set(_skepu_src_arg ON)
 			set(_src_arg OFF)
 		elseif(${arg} STREQUAL "SRC")
+			set(_fnames_arg OFF)
 			set(_src_arg ON)
 			set(_skepu_src_arg OFF)
 		else()
-			if(_skepu_src_arg)
+			if(_fnames_arg)
+				list(APPEND _skepu_fnames ${arg})
+			elseif(_skepu_src_arg)
 				list(APPEND _skepu_src ${arg})
 			elseif(_src_arg)
 				list(APPEND _src ${arg})
@@ -169,6 +178,7 @@ function(skepu_add_executable name)
 		get_filename_component(_file_name ${_file} NAME_WE)
 		set(_target_name "${name}_${_file_name}_precompiled")
 		set(_target_byprod "${name}_${_file_name}_precompiled${_skepu_ext}")
+		set(_skepu_fnames "${_skepu_fnames}")
 		skepu_generate_include_generators()
 		add_custom_command(OUTPUT ${_output_dir}/${_target_byprod}
 			COMMAND
@@ -177,6 +187,7 @@ function(skepu_add_executable name)
 					-silent
 					-name ${_target_name}
 					-dir=${_output_dir}
+					-fnames="${_skepu_fnames}"
 					${CMAKE_CURRENT_LIST_DIR}/${_file}
 					--
 					-std=c++11
@@ -184,7 +195,7 @@ function(skepu_add_executable name)
 			DEPENDS ${CMAKE_CURRENT_LIST_DIR}/${_file}
 			BYPRODUCTS ${_output_dir}/${_target_byprod}
 			COMMAND_EXPAND_LISTS
-			VERBATIM)
+			)
 		set_source_files_properties(${_output_dir}/${_target_byprod}
 			PROPERTIES
 				GENERATED TRUE)
