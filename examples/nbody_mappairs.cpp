@@ -2,7 +2,6 @@
 #include <fstream>
 #include <iomanip>
 #include <cmath>
-#include <sstream>
 
 #include <skepu>
 
@@ -18,51 +17,58 @@ struct Particle
 constexpr float G [[skepu::userconstant]] = 1;
 constexpr float delta_t [[skepu::userconstant]] = 0.1;
 
-
-/*
- * Array user-function that is used for applying nbody computation,
- * All elements from parr and a single element (named 'pi') are accessible
- * to produce one output element of the same type.
- */
-Particle move(skepu::Index1D index, Particle pi, const skepu::Vec<Particle> parr)
+struct Acceleration
 {
-	size_t i = index.i;
+	float x, y, z;
+};
+
+Acceleration influence(skepu::Index2D index, Particle pi, Particle pj)
+{
+	Acceleration acc;
 	
-	float ax = 0.0, ay = 0.0, az = 0.0;
-	size_t np = parr.size;
-	
-	for (size_t j = 0; j < np; ++j)
+	if (index.row != index.col)
 	{
-		if (i != j)
-		{
-			Particle pj = parr[j];
-			
-			float rij = sqrt((pi.x - pj.x) * (pi.x - pj.x)
-			               + (pi.y - pj.y) * (pi.y - pj.y)
-			               + (pi.z - pj.z) * (pi.z - pj.z));
-			
-			float dum = G * pi.m * pj.m / pow(rij, 3);
-			
-			ax += dum * (pi.x - pj.x);
-			ay += dum * (pi.y - pj.y);
-			az += dum * (pi.z - pj.z);
-		}
+		float rij = sqrt((pi.x - pj.x) * (pi.x - pj.x) + (pi.y - pj.y) * (pi.y - pj.y) + (pi.z - pj.z) * (pi.z - pj.z));
+		float dum = G * pi.m * pj.m / pow(rij, 3);
+		
+		acc.x = dum * (pi.x - pj.x);
+		acc.y = dum * (pi.y - pj.y);
+		acc.z = dum * (pi.z - pj.z);
+		
+	//	std::cout << "rij: " << rij << ", dum: " << dum;
+	//	std::cout << ", (" << index.row << ", " << index.col << "): ax = " << acc.x << ", ay = " << acc.y << ", az = " << acc.z << "\n";
 	}
+	else
+	{
+		acc.x = 0;
+		acc.y = 0;
+		acc.z = 0;
+	}
+	return acc;
+}
+
+Acceleration sum(Acceleration lhs, Acceleration rhs)
+{
+	Acceleration res = lhs;
+	res.x += rhs.x;
+	res.y += rhs.y;
+	res.z += rhs.z;
+	return res;
+}
+
+Particle update(Particle p, Acceleration a)
+{
+	Particle res = p;
 	
-//	std::cout << "i = " << i << ": ax = " << ax << ", ay = " << ay << ", az = " << az << "\n";
+	res.x += delta_t * p.vx + delta_t * delta_t / 2 * a.x;
+	res.y += delta_t * p.vy + delta_t * delta_t / 2 * a.y;
+	res.z += delta_t * p.vz + delta_t * delta_t / 2 * a.z;
 	
-	Particle newp;
-	newp.m = pi.m;
+	res.vx += delta_t * a.x;
+	res.vy += delta_t * a.y;
+	res.vz += delta_t * a.z;
 	
-	newp.x = pi.x + delta_t * pi.vx + delta_t * delta_t / 2 * ax;
-	newp.y = pi.y + delta_t * pi.vy + delta_t * delta_t / 2 * ay;
-	newp.z = pi.z + delta_t * pi.vz + delta_t * delta_t / 2 * az;
-	
-	newp.vx = pi.vx + delta_t * ax;
-	newp.vy = pi.vy + delta_t * ay;
-	newp.vz = pi.vz + delta_t * az;
-	
-	return newp;
+	return res;
 }
 
 
@@ -131,22 +137,23 @@ void save_step(skepu::Vector<Particle> &particles, const std::string &filename)
 
 
 auto nbody_init = skepu::Map<0>(init);
-auto nbody_simulate_step = skepu::Map<1>(move);
+auto nbody_influence = skepu::MapPairsReduce<1, 1>(influence, sum);
+auto nbody_update = skepu::Map<2>(update);
 
 void nbody(skepu::Vector<Particle> &particles, size_t iterations, skepu::BackendSpec *spec = nullptr)
 {
 	size_t np = particles.size();
-	skepu::Vector<Particle> doublebuffer(particles.size());
+	skepu::Vector<Acceleration> accel(np);
 	
 	if (spec) skepu::setGlobalBackendSpec(*spec);
 	
 	// particle vectors initialization
 	nbody_init(particles, np);
 	
-	for (size_t i = 0; i < iterations; i += 2)
+	for (size_t i = 0; i < iterations; ++i)
 	{
-		nbody_simulate_step(doublebuffer, particles, particles);
-		nbody_simulate_step(particles, doublebuffer, doublebuffer);
+		nbody_influence(accel, particles, particles);
+		nbody_update(particles, particles, accel);
 	}
 }
 
@@ -154,8 +161,7 @@ int main(int argc, char *argv[])
 {
 	if (argc < 4)
 	{
-		if(!skepu::cluster::mpi_rank())
-			std::cout << "Usage: " << argv[0] << " particles-per-dim iterations backend\n";
+		std::cout << "Usage: " << argv[0] << " particles-per-dim iterations backend\n";
 		exit(1);
 	}
 	
@@ -170,10 +176,7 @@ int main(int argc, char *argv[])
 	
 	std::stringstream outfile2;
 	outfile2 << "output" << spec.backend() << ".txt";
-
-	particles.flush();
-	if(!skepu::cluster::mpi_rank())
-		save_step(particles, outfile2.str());
+	save_step(particles, outfile2.str());
 	
 	return 0;
 }
