@@ -4,23 +4,25 @@ include_directories(${CMAKE_CURRENT_LIST_DIR})
 add_library(lodepng STATIC lodepng.cpp)
 
 set(_skepu_examples
+	backendspec
 	call
 	cma
 	containers
 	coulombic
 	dotproduct
-	# lambda
+	lambda
 	mandelbrot
 	map
-	# mapoverlap
+	mapoverlap
 	mappairs
 	mapreduce
 	# maptuple
-	# median
+	median
 	mmmult
 	mvmult
 	mvmult_row
 	nbody
+	nbody_mappairs
 	objectoriented
 	ppmcc
 	psnr
@@ -37,7 +39,6 @@ set(_skepu_mpi_examples
 	coulombic
 	# dotproduct
 	# lambda
-	# lodepng
 	mandelbrot
 	map
 	# mapoverlap
@@ -49,6 +50,7 @@ set(_skepu_mpi_examples
 	mvmult
 	mvmult_row
 	nbody
+	# nbody_mappairs
 	objectoriented
 	# ppmcc
 	# psnr
@@ -82,9 +84,10 @@ if(SKEPU_EXAMPLES_PAR)
 	add_custom_target(all-parallel)
 
 	foreach(example IN LISTS _skepu_examples)
-		# TODO: Add cuda when enabled in skepu-tool
+		# TODO: Add CUDA when enabled in skepu-tool
+		# TODO: Add OpenCL when enabled in skepu-tool
 		skepu_add_executable(${example}_par
-			OpenCL OpenMP
+			OpenMP
 			SKEPUSRC ${example}.cpp)
 		set_target_properties(${example}_par
 			PROPERTIES
