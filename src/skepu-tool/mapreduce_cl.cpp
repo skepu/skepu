@@ -7,7 +7,7 @@ using namespace clang;
 // ------------------------------
 
 const char *MapReduceKernelTemplate_CL = R"~~~(
-__kernel void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS __global SKEPU_REDUCE_RESULT_TYPE* skepu_output, size_t skepu_w, size_t skepu_n, size_t skepu_base, __local SKEPU_REDUCE_RESULT_TYPE* skepu_sdata)
+__kernel void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS __global SKEPU_REDUCE_RESULT_TYPE* skepu_output, size_t skepu_w2, size_t skepu_w3, size_t skepu_w4, size_t skepu_n, size_t skepu_base, __local SKEPU_REDUCE_RESULT_TYPE* skepu_sdata)
 {
 	size_t skepu_blockSize = get_local_size(0);
 	size_t skepu_tid = get_local_id(0);
@@ -153,13 +153,13 @@ public:
 		size_t skepu_deviceID, size_t skepu_localSize, size_t skepu_globalSize,
 		SKEPU_HOST_KERNEL_PARAMS
 		skepu::backend::DeviceMemPointer_CL<SKEPU_REDUCE_RESULT_TYPE> *skepu_output,
-		size_t skepu_w, size_t skepu_n, size_t skepu_base,
+		size_t skepu_w2, size_t skepu_w3, size_t skepu_w4, size_t skepu_n, size_t skepu_base,
 		size_t skepu_sharedMemSize
 	)
 	{
 		cl_kernel skepu_kernel = kernels(skepu_deviceID, KERNEL_MAPREDUCE);
-		skepu::backend::cl_helpers::setKernelArgs(skepu_kernel, SKEPU_KERNEL_ARGS skepu_output->getDeviceDataPointer(), skepu_w, skepu_n, skepu_base);
-		clSetKernelArg(skepu_kernel, SKEPU_KERNEL_ARG_COUNT + 4, skepu_sharedMemSize, NULL);
+		skepu::backend::cl_helpers::setKernelArgs(skepu_kernel, SKEPU_KERNEL_ARGS skepu_output->getDeviceDataPointer(), skepu_w2, skepu_w3, skepu_w4, skepu_n, skepu_base);
+		clSetKernelArg(skepu_kernel, SKEPU_KERNEL_ARG_COUNT + 6, skepu_sharedMemSize, NULL);
 		cl_int skepu_err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(skepu_deviceID)->getQueue(), skepu_kernel, 1, NULL, &skepu_globalSize, &skepu_localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(skepu_err, "Error launching MapReduce kernel");
 	}
@@ -195,27 +195,27 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 	}
 	
 	if      (mapFunc.indexed1D) indexInitializer = "index1_t skepu_index = { .i = skepu_base + skepu_i };";
-	else if (mapFunc.indexed2D) indexInitializer = "index2_t skepu_index = { .row = (skepu_base + skepu_i) / w2, .col = (skepu_base + skepu_i) % w2 };";
+	else if (mapFunc.indexed2D) indexInitializer = "index2_t skepu_index = { .row = (skepu_base + skepu_i) / skepu_w2, .col = (skepu_base + skepu_i) % skepu_w2 };";
 	else if (mapFunc.indexed3D) indexInitializer = R"~~~(
 		size_t cindex = skepu_base + skepu_i;
-		size_t ci = cindex / (w2 * w3);
-		cindex = cindex % (w2 * w3);
-		size_t cj = cindex / (w3);
-		cindex = cindex % (w3);
+		size_t ci = cindex / (skepu_w2 * skepu_w3);
+		cindex = cindex % (skepu_w2 * skepu_w3);
+		size_t cj = cindex / (skepu_w3);
+		cindex = cindex % (skepu_w3);
 		index3_t skepu_index = { .i = ci, .j = cj, .k = cindex };
 	)~~~";
 	
 	else if (mapFunc.indexed4D) indexInitializer = R"~~~(
 		size_t cindex = skepu_base + skepu_i;
 		
-		size_t ci = cindex / (w2 * w3 * w4);
-		cindex = cindex % (w2 * w3 * w4);
+		size_t ci = cindex / (skepu_w2 * skepu_w3 * skepu_w4);
+		cindex = cindex % (skepu_w2 * skepu_w3 * skepu_w4);
 		
-		size_t cj = cindex / (w3 * w4);
-		cindex = cindex % (w3 * w4);
+		size_t cj = cindex / (skepu_w3 * skepu_w4);
+		cindex = cindex % (skepu_w3 * skepu_w4);
 		
-		size_t ck = cindex / (w4);
-		cindex = cindex % (w4);
+		size_t ck = cindex / (skepu_w4);
+		cindex = cindex % (skepu_w4);
 		
 		index4_t skepu_index = { .i = ci, .j = cj, .k = ck, .l = cindex };
 	)~~~";
@@ -226,7 +226,7 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 		SSKernelParamList << "__global " << param.resolvedTypeName << " * user_" << param.name << ", ";
 		SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<const " << param.resolvedTypeName << "> * user_" << param.name << ", ";
 		SSKernelArgs << "user_" << param.name << "->getDeviceDataPointer(), ";
-		SSMapFuncParams << "user_" << param.name << "[i]";
+		SSMapFuncParams << "user_" << param.name << "[skepu_i]";
 		first = false;
 	}
 
