@@ -14,6 +14,7 @@ int test1(skepu::Index1D in, int a)
 
 int test2(skepu::Index2D in, int a)
 {
+//	printf("(%d %d)\n", in.row, in.col);
 	return a * 2 + in.row + in.col;
 }
 
@@ -174,20 +175,32 @@ int main(int argc, char *argv[])
 	
 	// Test MapReduce
 	
-	auto mapred1 = skepu::MapReduce<0>(test1, redfn);
-	auto mapred2 = skepu::MapReduce<0>(test2, redfn);
-	auto mapred3 = skepu::MapReduce<0>(test3, redfn);
-	auto mapred4 = skepu::MapReduce<0>(test4, redfn);
+	auto mapred1 = skepu::MapReduce<1>(test1, redfn);
+	auto mapred2 = skepu::MapReduce<1>(test2, redfn);
+	auto mapred3 = skepu::MapReduce<1>(test3, redfn);
+	auto mapred4 = skepu::MapReduce<1>(test4, redfn);
 	
-	mapred1.setDefaultSize(2);
-	mapred2.setDefaultSize(2, 4);
-	mapred3.setDefaultSize(2, 4, 6);
-	mapred4.setDefaultSize(2, 4, 6, 8);
+	int res1 = mapred1(vec);
+	int res2 = mapred2(mat);
+	int res3 = mapred3(ten3);
+	int res4 = mapred4(ten4);
 	
-	int res1 = mapred1(1);
-	int res2 = mapred2(1);
-	int res3 = mapred3(1);
-	int res4 = mapred4(1);
+	std::cout << res1 << ", " << res2 << ", " << res3 << ", " << res4 << "\n";
+	
+	auto mapred0_1 = skepu::MapReduce<0>(test1, redfn);
+	auto mapred0_2 = skepu::MapReduce<0>(test2, redfn);
+	auto mapred0_3 = skepu::MapReduce<0>(test3, redfn);
+	auto mapred0_4 = skepu::MapReduce<0>(test4, redfn);
+	
+	mapred0_1.setDefaultSize(2);
+	mapred0_2.setDefaultSize(2, 4);
+	mapred0_3.setDefaultSize(2, 4, 6);
+	mapred0_4.setDefaultSize(2, 4, 6, 8);
+	
+	res1 = mapred0_1(1);
+	res2 = mapred0_2(1);
+	res3 = mapred0_3(1);
+	res4 = mapred0_4(1);
 	
 	std::cout << res1 << ", " << res2 << ", " << res3 << ", " << res4 << "\n";
 	

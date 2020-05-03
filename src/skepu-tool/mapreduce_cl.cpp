@@ -7,7 +7,7 @@ using namespace clang;
 // ------------------------------
 
 const char *MapReduceKernelTemplate_CL = R"~~~(
-__kernel void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS __global SKEPU_REDUCE_RESULT_TYPE* skepu_output, size_t skepu_w2, size_t skepu_w3, size_t skepu_w4, size_t skepu_n, size_t skepu_base, __local SKEPU_REDUCE_RESULT_TYPE* skepu_sdata)
+__kernel void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS __global SKEPU_REDUCE_RESULT_TYPE* skepu_output, SKEPU_SIZE_PARAMS size_t skepu_n, size_t skepu_base, __local SKEPU_REDUCE_RESULT_TYPE* skepu_sdata)
 {
 	size_t skepu_blockSize = get_local_size(0);
 	size_t skepu_tid = get_local_id(0);
@@ -148,18 +148,19 @@ public:
 		initialized = true;
 	}
 
+	TEMPLATE_HEADER
 	static void mapReduce
 	(
 		size_t skepu_deviceID, size_t skepu_localSize, size_t skepu_globalSize,
 		SKEPU_HOST_KERNEL_PARAMS
 		skepu::backend::DeviceMemPointer_CL<SKEPU_REDUCE_RESULT_TYPE> *skepu_output,
-		size_t skepu_w2, size_t skepu_w3, size_t skepu_w4, size_t skepu_n, size_t skepu_base,
+		SKEPU_SIZES_TUPLE_PARAM size_t skepu_n, size_t skepu_base,
 		size_t skepu_sharedMemSize
 	)
 	{
 		cl_kernel skepu_kernel = kernels(skepu_deviceID, KERNEL_MAPREDUCE);
-		skepu::backend::cl_helpers::setKernelArgs(skepu_kernel, SKEPU_KERNEL_ARGS skepu_output->getDeviceDataPointer(), skepu_w2, skepu_w3, skepu_w4, skepu_n, skepu_base);
-		clSetKernelArg(skepu_kernel, SKEPU_KERNEL_ARG_COUNT + 6, skepu_sharedMemSize, NULL);
+		skepu::backend::cl_helpers::setKernelArgs(skepu_kernel, SKEPU_KERNEL_ARGS skepu_output->getDeviceDataPointer(), SKEPU_SIZE_ARGS skepu_n, skepu_base);
+		clSetKernelArg(skepu_kernel, SKEPU_KERNEL_ARG_COUNT, skepu_sharedMemSize, NULL);
 		cl_int skepu_err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(skepu_deviceID)->getQueue(), skepu_kernel, 1, NULL, &skepu_globalSize, &skepu_localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(skepu_err, "Error launching MapReduce kernel");
 	}
@@ -180,45 +181,121 @@ public:
 };
 )~~~";
 
+struct IndexCodeGen
+{
+	std::string sizesTupleParam;
+	std::string sizeParams;
+	std::string sizeArgs;
+	std::string indexInit;
+	std::string mapFuncParam;
+	std::string templateHeader;
+	bool hasIndex = false;
+	size_t dim;
+};
+
+IndexCodeGen indexInitHelper_CL(UserFunction &uf)
+{
+	IndexCodeGen res;
+	res.dim = 0;
+	
+	if (uf.indexed1D || uf.indexed2D || uf.indexed3D || uf.indexed4D)
+	{
+		res.mapFuncParam = "skepu_index";
+		res.hasIndex = true;
+	}
+	else
+	{
+		res.templateHeader = "template<typename Ignore>";
+		res.sizesTupleParam = "Ignore, ";
+	}
+	
+	if (uf.indexed1D)
+	{
+		res.dim = 1;
+		res.sizeParams = "";
+		res.sizeArgs = "";
+		res.sizesTupleParam = "std::tuple<size_t> skepu_sizes, ";
+		res.indexInit = "index1_t skepu_index = { .i = skepu_base + skepu_i };";
+	}
+	else if (uf.indexed2D)
+	{
+		res.dim = 2;
+		res.sizeParams = "size_t skepu_w2, ";
+		res.sizeArgs = "std::get<1>(skepu_sizes), ";
+		res.sizesTupleParam = "std::tuple<size_t, size_t> skepu_sizes, ";
+		res.indexInit = "index2_t skepu_index = { .row = (skepu_base + skepu_i) / skepu_w2, .col = (skepu_base + skepu_i) % skepu_w2 };";
+	}
+	else if (uf.indexed3D)
+	{
+		res.dim = 3;
+		res.sizeParams = "size_t skepu_w2, size_t skepu_w3, ";
+		res.sizeArgs = "std::get<1>(skepu_sizes), std::get<2>(skepu_sizes), ";
+		res.sizesTupleParam = "std::tuple<size_t, size_t, size_t> skepu_sizes, ";
+		res.indexInit = R"~~~(
+			size_t cindex = skepu_base + skepu_i;
+			size_t ci = cindex / (skepu_w2 * skepu_w3);
+			cindex = cindex % (skepu_w2 * skepu_w3);
+			size_t cj = cindex / (skepu_w3);
+			cindex = cindex % (skepu_w3);
+			index3_t skepu_index = { .i = ci, .j = cj, .k = cindex };
+		)~~~";
+	}
+	else if (uf.indexed4D)
+	{
+		res.dim = 4;
+		res.sizeParams = "size_t skepu_w2, size_t skepu_w3, size_t skepu_w4, ";
+		res.sizeArgs = "std::get<1>(skepu_sizes), std::get<2>(skepu_sizes), std::get<3>(skepu_sizes), ";
+		res.sizesTupleParam = "std::tuple<size_t, size_t, size_t, size_t> skepu_sizes, ";
+		res.indexInit = R"~~~(
+			size_t cindex = skepu_base + skepu_i;
+			
+			size_t ci = cindex / (skepu_w2 * skepu_w3 * skepu_w4);
+			cindex = cindex % (skepu_w2 * skepu_w3 * skepu_w4);
+			
+			size_t cj = cindex / (skepu_w3 * skepu_w4);
+			cindex = cindex % (skepu_w3 * skepu_w4);
+			
+			size_t ck = cindex / (skepu_w4);
+			cindex = cindex % (skepu_w4);
+			
+			index4_t skepu_index = { .i = ci, .j = cj, .k = ck, .l = cindex };
+		)~~~";
+	}
+	
+	return res;
+}
+
+
+void proxyCodeGenHelper_CL(std::map<ContainerType, std::set<std::string>> containerProxyTypes, std::stringstream &sourceStream)
+{
+	for (const std::string &type : containerProxyTypes[ContainerType::Vector])
+		sourceStream << generateOpenCLVectorProxy(type);
+
+	for (const std::string &type : containerProxyTypes[ContainerType::Matrix])
+		sourceStream << generateOpenCLMatrixProxy(type);
+
+	for (const std::string &type : containerProxyTypes[ContainerType::SparseMatrix])
+		sourceStream << generateOpenCLSparseMatrixProxy(type);
+	
+	for (const std::string &type : containerProxyTypes[ContainerType::MatRow])
+		sourceStream << generateOpenCLMatrixRowProxy(type);
+	
+	for (const std::string &type : containerProxyTypes[ContainerType::Tensor3])
+		sourceStream << generateOpenCLTensor3Proxy(type);
+	
+	for (const std::string &type : containerProxyTypes[ContainerType::Tensor4])
+		sourceStream << generateOpenCLTensor4Proxy(type);
+}
+
 
 std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction &reduceFunc, size_t arity, std::string dir)
 {
 	std::stringstream sourceStream, SSKernelParamList, SSMapFuncParams, SSHostKernelParamList, SSKernelArgs, SSProxyInitializer, SSProxyInitializerInner;
 	std::map<ContainerType, std::set<std::string>> containerProxyTypes;
-	std::string indexInitializer;
-	bool first = true;
-
-	if (mapFunc.indexed1D || mapFunc.indexed2D || mapFunc.indexed3D || mapFunc.indexed4D)
-	{
-		SSMapFuncParams << "skepu_index";
-		first = false;
-	}
 	
-	if      (mapFunc.indexed1D) indexInitializer = "index1_t skepu_index = { .i = skepu_base + skepu_i };";
-	else if (mapFunc.indexed2D) indexInitializer = "index2_t skepu_index = { .row = (skepu_base + skepu_i) / skepu_w2, .col = (skepu_base + skepu_i) % skepu_w2 };";
-	else if (mapFunc.indexed3D) indexInitializer = R"~~~(
-		size_t cindex = skepu_base + skepu_i;
-		size_t ci = cindex / (skepu_w2 * skepu_w3);
-		cindex = cindex % (skepu_w2 * skepu_w3);
-		size_t cj = cindex / (skepu_w3);
-		cindex = cindex % (skepu_w3);
-		index3_t skepu_index = { .i = ci, .j = cj, .k = cindex };
-	)~~~";
-	
-	else if (mapFunc.indexed4D) indexInitializer = R"~~~(
-		size_t cindex = skepu_base + skepu_i;
-		
-		size_t ci = cindex / (skepu_w2 * skepu_w3 * skepu_w4);
-		cindex = cindex % (skepu_w2 * skepu_w3 * skepu_w4);
-		
-		size_t cj = cindex / (skepu_w3 * skepu_w4);
-		cindex = cindex % (skepu_w3 * skepu_w4);
-		
-		size_t ck = cindex / (skepu_w4);
-		cindex = cindex % (skepu_w4);
-		
-		index4_t skepu_index = { .i = ci, .j = cj, .k = ck, .l = cindex };
-	)~~~";
+	IndexCodeGen indexInfo = indexInitHelper_CL(mapFunc);
+	bool first = !indexInfo.hasIndex;
+	SSMapFuncParams << indexInfo.mapFuncParam;
 
 	for (UserFunction::Param& param : mapFunc.elwiseParams)
 	{
@@ -298,24 +375,8 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 
 	if (mapFunc.requiresDoublePrecision || reduceFunc.requiresDoublePrecision)
 		sourceStream << "#pragma OPENCL EXTENSION cl_khr_fp64: enable\n";
-
-	for (const std::string &type : containerProxyTypes[ContainerType::Vector])
-		sourceStream << generateOpenCLVectorProxy(type);
-
-	for (const std::string &type : containerProxyTypes[ContainerType::Matrix])
-		sourceStream << generateOpenCLMatrixProxy(type);
-
-	for (const std::string &type : containerProxyTypes[ContainerType::SparseMatrix])
-		sourceStream << generateOpenCLSparseMatrixProxy(type);
 	
-	for (const std::string &type : containerProxyTypes[ContainerType::MatRow])
-		sourceStream << generateOpenCLMatrixRowProxy(type);
-	
-	for (const std::string &type : containerProxyTypes[ContainerType::Tensor3])
-		sourceStream << generateOpenCLTensor3Proxy(type);
-	
-	for (const std::string &type : containerProxyTypes[ContainerType::Tensor4])
-		sourceStream << generateOpenCLTensor4Proxy(type);
+	proxyCodeGenHelper_CL(containerProxyTypes, sourceStream);
 
 	// Include user constants as preprocessor macros
 	for (auto pair : UserConstants)
@@ -333,7 +394,7 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 	const std::string kernelName = SSKernelName.str();
 	const std::string className = "CLWrapperClass_" + kernelName;
 	std::stringstream SSKernelArgCount;
-	SSKernelArgCount << mapFunc.numKernelArgsCL();
+	SSKernelArgCount << mapFunc.numKernelArgsCL() + 3 + std::max<int>(0, indexInfo.dim - 1);
 
 	sourceStream << KernelPredefinedTypes_CL;
 
@@ -361,7 +422,11 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 	replaceTextInString(finalSource, PH_MapFuncName, mapFunc.uniqueName);
 	replaceTextInString(finalSource, PH_ReduceFuncName, reduceFunc.uniqueName);
 	replaceTextInString(finalSource, PH_KernelName, kernelName);
-	replaceTextInString(finalSource, PH_IndexInitializer, indexInitializer);
+	replaceTextInString(finalSource, PH_IndexInitializer, indexInfo.indexInit);
+	replaceTextInString(finalSource, "SKEPU_SIZE_PARAMS", indexInfo.sizeParams);
+	replaceTextInString(finalSource, "SKEPU_SIZE_ARGS", indexInfo.sizeArgs);
+	replaceTextInString(finalSource, "SKEPU_SIZES_TUPLE_PARAM", indexInfo.sizesTupleParam);
+	replaceTextInString(finalSource, "TEMPLATE_HEADER", indexInfo.templateHeader);
 
 	std::ofstream FSOutFile {dir + "/" + kernelName + "_cl_source.inl"};
 	FSOutFile << finalSource;
