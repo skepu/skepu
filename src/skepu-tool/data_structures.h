@@ -98,40 +98,36 @@ public:
 	{
 		const clang::ParmVarDecl *astDeclNode;
 		const clang::Type *type;
-
+		
 		std::string name;
-
 		std::string rawTypeName;
 		std::string resolvedTypeName;
 		std::string escapedTypeName;
 		std::string fullTypeName;
-
-		virtual size_t numKernelArgsCL();
-
-		Param(const clang::ParmVarDecl *p);
-
-		virtual ~Param() = default;
-
+		
 		static bool constructibleFrom(const clang::ParmVarDecl *p);
+		
+		Param(const clang::ParmVarDecl *p);
+		virtual ~Param() = default;
+		
+		std::string templateInstantiationType() const;
+		virtual size_t numKernelArgsCL() const;
 	};
 
 	struct RandomAccessParam: Param
 	{
 		AccessMode accessMode;
 		ContainerType containerType;
-
 		const clang::Type *containedType;
-
+		
+		static bool constructibleFrom(const clang::ParmVarDecl *p);
+		
+		RandomAccessParam(const clang::ParmVarDecl *p);
+		virtual ~RandomAccessParam() = default;
+		
+		virtual size_t numKernelArgsCL() const override;
 		std::string TypeNameOpenCL();
 		std::string TypeNameHost();
-
-		virtual size_t numKernelArgsCL() override;
-
-		RandomAccessParam(const clang::ParmVarDecl *p);
-
-		virtual ~RandomAccessParam() = default;
-
-		static bool constructibleFrom(const clang::ParmVarDecl *p);
 	};
 
 	void updateArgLists(size_t arity, size_t Harity = 0);

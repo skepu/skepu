@@ -1,10 +1,9 @@
 #include <iostream>
 #include <skepu>
 
-
-int uf(int a, int b)
+skepu::multiple<int, float> uf(int a, int b)
 {
-	return a * b;
+	return skepu::ret(a * b, (float)a / b);
 }
 
 void test1(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
@@ -18,19 +17,22 @@ void test1(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
 	
 	std::cout << "\nv1: " << v1 << "\nh1: " << h1 << "\n\n";
 	
-	skepu::Matrix<int> res(Vsize, Hsize);
+	skepu::Matrix<int> resA(Vsize, Hsize);
+	skepu::Matrix<float> resB(Vsize, Hsize);
 	
-	pairs(res, v1, h1);
+	pairs(resA, resB, v1, h1);
 	
-	std::cout << "\ntest 1 res: " << res;
+	std::cout << "\ntest 1 resA: " << resA;
+	std::cout << "\ntest 1 resB: " << resB;
 }
 
 
 
-int uf2(skepu::Index2D i, int ve1, int ve2, int ve3, int he1, int he2, skepu::Vec<int> test, int u1, int u2)
+skepu::multiple<int, int, float>
+uf2(skepu::Index2D i, int ve1, int ve2, int ve3, int he1, int he2, skepu::Vec<int> test, int u1, int u2)
 {
 //	std:: cout << "(" << i.row << ", " << i.col << ")\n";
-	return i.row + i.col + u1; // + ve1 + ve2 + ve3 + he1 + he2 + test.data[0] + u1 + u2;
+	return skepu::ret(i.row, i.col, ve1 + ve2 + ve3 + he1 + he2 + test.data[0] + u1 + u2);
 }
 
 void test2(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
@@ -40,16 +42,20 @@ void test2(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
 	skepu::Vector<int> v1(Vsize), v2(Vsize), v3(Vsize);
 	skepu::Vector<int> h1(Hsize), h2(Hsize);
 	skepu::Vector<int> testarg(10);
-	skepu::Matrix<int> res(Vsize, Hsize);
+	skepu::Matrix<int> resA(Vsize, Hsize);
+	skepu::Matrix<int> resB(Vsize, Hsize);
+	skepu::Matrix<float> resC(Vsize, Hsize);
 	
-	pairs2(res, v1, v2, v3, h1, h2, testarg, 10, 2);
+	pairs2(resA, resB, resC, v1, v2, v3, h1, h2, testarg, 10, 2);
 	
-	std::cout << "\ntest 2 res: " << res << "\n";
+	std::cout << "\ntest 2 resA: " << resA << "\n";
+	std::cout << "\ntest 3 resB: " << resB << "\n";
+	std::cout << "\ntest 3 resC: " << resC << "\n";
 }
 
 
 
-int uf3(skepu::Index2D i, int u)
+skepu::multiple<int> uf3(skepu::Index2D i, int u)
 {
 	return i.row + i.col + u;
 }
@@ -75,43 +81,7 @@ int uf4(skepu::Index2D i, skepu::Vec<int> test, int u)
 {
 	return i.row + i.col + u;
 }
-/*
-void testReduce(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
-{
-	auto pairs = skepu::MapPairsReduce(uf, sum);
-	
-	skepu::Vector<int> v1(Vsize, 3), h1(Hsize, 7);
-	skepu::Vector<int> resV(Vsize), resH(Hsize);
-	
-	for (int i = 0; i < Vsize; ++i) v1(i) = i+1;
-	for (int i = 0; i < Hsize; ++i) h1(i) = (i+1)*10;
-	
-	std::cout << "\nv1: " << v1 << "\nh1: " << h1 << "\n\n";
-	
-	pairs.setReduceMode(skepu::ReduceMode::ColWise);
-	pairs(resH, v1, h1);
-	std::cout << "\nresH: " << resH << "\n";
-	
-	pairs.setReduceMode(skepu::ReduceMode::RowWise);
-	pairs(resV, v1, h1);
-	std::cout << "\nresV: " << resV << "\n";
-	
-	
-	// Test implicit dimensions
-	{
-		auto pairs4 = skepu::MapPairsReduce<0, 0>(uf4, sum);
-		pairs4.setDefaultSize(Hsize, Vsize);
-		
-		pairs4.setReduceMode(skepu::ReduceMode::ColWise);
-		pairs4(resH, v1, 0);
-		std::cout << "\nresH: " << resH << "\n";
-		
-		pairs4.setReduceMode(skepu::ReduceMode::RowWise);
-		pairs4(resV, v1, 0);
-		std::cout << "\nresV: " << resV << "\n";
-	}
-}
-*/
+
 
 
 
@@ -134,8 +104,6 @@ int main(int argc, char *argv[])
 	test2(Vsize, Hsize, spec);
 	
 	test3(Vsize, Hsize, spec);
-	
-//	testReduce(Vsize, Hsize, spec);
 	
 	return 0;
 }

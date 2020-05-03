@@ -165,18 +165,18 @@ int main(int argc, char *argv[])
 	
 	// Tensor3
 	
-	auto conv3 = skepu::MapOverlap(over_3d);
+/*	auto conv3 = skepu::MapOverlap(over_3d);
 	conv3.setBackend(spec);
 	conv3.setOverlap(1, 1, 1);
 	
 	skepu::Tensor3<float> ten3(size, size, size, 1), stencil3(2*1+1, 2*1+1, 2*1+1, 1), ret_ten3(size - 2*1, size - 2*1, size - 2*1);
 	
 	conv3(ret_ten3, ten3, stencil3);
-//	std::cout << "Tensor3D: " << ret_ten3 << "\n";
-	
+	std::cout << "Tensor3D: " << ret_ten3 << "\n";
+	*/
 	
 	// Tensor4
-	
+	/*
 	auto conv4 = skepu::MapOverlap(over_4d);
 	conv4.setBackend(spec);
 	conv4.setOverlap(1, 1, 1, 1);
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
 	
 	conv4(ret_ten4, ten4, stencil4);
 //	std::cout << "Tensor4D: " << ret_ten4 << "\n";
-	
+	*/
 	return 0;
 }
 

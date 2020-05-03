@@ -595,58 +595,60 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "), decltype(&" << KernelName_CU << "_ReduceOnly)";
 			SSCallArgs << KernelName_CU << ", " << KernelName_CU << "_ReduceOnly";
 			break;
-
+			
 		case Skeleton::Type::Map:
 			KernelName_CU = createMapKernelProgram_CU(*FuncArgs[0], arity[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
 			SSCallArgs << KernelName_CU;
 			break;
+			
 		case Skeleton::Type::MapPairs:
+			KernelName_CU = createMapPairsKernelProgram_CU(*FuncArgs[0], ResultDir);
+			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
+			SSCallArgs << KernelName_CU;
+			break;
+			
 		case Skeleton::Type::MapPairsReduce:
-			SkePUAbort("CUDA MapPairs/Reduce not implemented yet");
+			SkePUAbort("CUDA MapPairsReduce not implemented yet");
 			// TODO
 			break;
-
+			
 		case Skeleton::Type::Reduce1D:
 			KernelName_CU = createReduce1DKernelProgram_CU(*FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
 			SSCallArgs << KernelName_CU;
 			break;
-
+			
 		case Skeleton::Type::Reduce2D:
 			KernelName_CU = createReduce2DKernelProgram_CU(*FuncArgs[0], *FuncArgs[1], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_RowWise), decltype(&" << KernelName_CU << "_ColWise)";
 			SSCallArgs << KernelName_CU << "_RowWise, " << KernelName_CU << "_ColWise";
 			break;
-
+			
 		case Skeleton::Type::Scan:
 			KernelName_CU = createScanKernelProgram_CU(*FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_ScanKernel), decltype(&" << KernelName_CU << "_ScanUpdate), decltype(&" << KernelName_CU << "_ScanAdd)";
 			SSCallArgs << KernelName_CU << "_ScanKernel, " << KernelName_CU << "_ScanUpdate, " << KernelName_CU << "_ScanAdd";
 			break;
-
+			
 		case Skeleton::Type::MapOverlap1D:
-			SkePUAbort("CUDA MapOverlap disabled in this release");
-			// TODO
 			KernelName_CU = createMapOverlap1DKernelProgram_CU(*FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_MapOverlapKernel_CU), decltype(&" << KernelName_CU << "_MapOverlapKernel_CU_Matrix_Row), decltype(&"
 				<< KernelName_CU << "_MapOverlapKernel_CU_Matrix_Col), decltype(&" << KernelName_CU << "_MapOverlapKernel_CU_Matrix_ColMulti)";
 			SSCallArgs << KernelName_CU << "_MapOverlapKernel_CU, " << KernelName_CU << "_MapOverlapKernel_CU_Matrix_Row, "
 				<< KernelName_CU << "_MapOverlapKernel_CU_Matrix_Col, " << KernelName_CU << "_MapOverlapKernel_CU_Matrix_ColMulti";
 			break;
-
+			
 		case Skeleton::Type::MapOverlap2D:
-			SkePUAbort("CUDA MapOverlap disabled in this release");
-			// TODO
 			KernelName_CU = createMapOverlap2DKernelProgram_CU(*FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_conv_cuda_2D_kernel)";
 			SSCallArgs << KernelName_CU << "_conv_cuda_2D_kernel";
 			break;
-		
+			
 		case Skeleton::Type::MapOverlap3D:
 		case Skeleton::Type::MapOverlap4D:
 			SkePUAbort("CUDA MapOverlap disabled in this release");
-
+			
 		case Skeleton::Type::Call:
 			KernelName_CU = createCallKernelProgram_CU(*FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
@@ -684,48 +686,51 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		case Skeleton::Type::MapReduce:
 			KernelName_CL = createMapReduceKernelProgram_CL(*FuncArgs[0], *FuncArgs[1], arity[0], ResultDir);
 			break;
-
+			
 		case Skeleton::Type::Map:
 			KernelName_CL = createMapKernelProgram_CL(*FuncArgs[0], arity[0], ResultDir);
 			break;
-		
+			
 		case Skeleton::Type::MapPairs:
+			KernelName_CL = createMapPairsKernelProgram_CL(*FuncArgs[0], ResultDir);
+			break;
+			
 		case Skeleton::Type::MapPairsReduce:
-			SkePUAbort("MapPairs for OpenCL is not complete yet. Disable OpenCL code-gen for now.");
-		//	KernelName_CL = createMapPairsKernelProgram_CL(*FuncArgs[0], arity[0], arity[1], ResultDir);
-
+			SkePUAbort("MapPairsReduce for OpenCL is not complete yet. Disable OpenCL code-gen for now.");
+			break;
+			
 		case Skeleton::Type::Reduce1D:
 			KernelName_CL = createReduce1DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
-
+			
 		case Skeleton::Type::Reduce2D:
 			KernelName_CL = createReduce2DKernelProgram_CL(*FuncArgs[0], *FuncArgs[1], ResultDir);
 			break;
-
+			
 		case Skeleton::Type::Scan:
 			KernelName_CL = createScanKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
-
+			
 		case Skeleton::Type::MapOverlap1D:
 			SkePUAbort("MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
 			KernelName_CL = createMapOverlap1DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
-
+			
 		case Skeleton::Type::MapOverlap2D:
 			SkePUAbort("MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
 			KernelName_CL = createMapOverlap2DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
-
+			
 		case Skeleton::Type::MapOverlap3D:
 			SkePUAbort("MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
 		//	KernelName_CL = createMapOverlap3DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
-
+			
 		case Skeleton::Type::MapOverlap4D:
 			SkePUAbort("MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
 		//	KernelName_CL = createMapOverlap4DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
-
+			
 		case Skeleton::Type::Call:
 			KernelName_CL = createCallKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;

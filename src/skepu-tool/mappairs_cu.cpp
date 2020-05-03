@@ -7,72 +7,88 @@ using namespace clang;
 // ------------------------------
 
 const char *MapPairsKernelTemplate_CU = R"~~~(
-__global__ void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS SKEPU_MAP_RESULT_TYPE *output, size_t w, size_t n, size_t base)
+__global__ void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS size_t Vsize, size_t Hsize, size_t skepu_base)
 {
-	size_t i = blockIdx.x * blockDim.x + threadIdx.x;
-	size_t gridSize = blockDim.x * gridDim.x;
+	size_t skepu_n = Vsize * Hsize;
+	size_t skepu_i = blockIdx.x * blockDim.x + threadIdx.x;
+	size_t skepu_gridSize = blockDim.x * gridDim.x;
 
-	while (i < n)
+	while (skepu_i < skepu_n)
 	{
 		SKEPU_INDEX_INITIALIZER
-		output[i] = SKEPU_FUNCTION_NAME_MAP(SKEPU_MAP_PARAMS);
-		i += gridSize;
+		skepu_output[skepu_i] = SKEPU_FUNCTION_NAME_MAPPAIRS(SKEPU_MAPPAIRS_PARAMS);
+		skepu_i += skepu_gridSize;
 	}
 }
 )~~~";
 
 
-std::string createMapPairsKernelProgram_CU(UserFunction &mapFunc, size_t arity, std::string dir)
+std::string createMapPairsKernelProgram_CU(UserFunction &mapPairsFunc, std::string dir)
 {
-	std::stringstream sourceStream, SSKernelParamList, SSMapFuncParams;
+	std::stringstream sourceStream, SSKernelParamList, SSMapPairsFuncParams;
 	std::string indexInitializer;
 	bool first = true;
 	
-	if (mapFunc.indexed1D)
+	if (mapPairsFunc.indexed1D)
 	{
-		SSMapFuncParams << "index";
-		indexInitializer = "skepu2::Index1D index;\n\t\tindex.i = base + i;";
+		SSMapPairsFuncParams << "skepu_index";
+		indexInitializer = "skepu::Index1D skepu_index;\n\t\tskepu_index.i = base + skepu_i;";
 		first = false;
 	}
-	else if (mapFunc.indexed2D)
+	else if (mapPairsFunc.indexed2D)
 	{
-		SSMapFuncParams << "index";
-		indexInitializer = "skepu2::Index2D index;\n\t\tindex.row = (base + i) / w;\n\t\tindex.col = (base + i) % w;";
+		SSMapPairsFuncParams << "skepu_index";
+		indexInitializer = "skepu::Index2D skepu_index;\n\t\tskepu_index.row = (skepu_base + skepu_i) / Hsize;\n\t\tskepu_index.col = (skepu_base + skepu_i) % Hsize;";
 		first = false;
 	}
 	
-	for (UserFunction::Param& param : mapFunc.elwiseParams)
+	// Output data
+	if (mapPairsFunc.multipleReturnTypes.size() == 0)
+		SSKernelParamList << mapPairsFunc.resolvedReturnTypeName << "* skepu_output, ";
+	else
 	{
-		if (!first) { SSMapFuncParams << ", "; }
+		size_t outCtr = 0;
+		for (std::string& outputType : mapPairsFunc.multipleReturnTypes)
+			SSKernelParamList << outputType << "* skepu_output_" << outCtr++ << ", ";
+	}
+	
+	size_t ctr = 0;
+	for (UserFunction::Param& param : mapPairsFunc.elwiseParams)
+	{
+		if (!first) { SSMapPairsFuncParams << ", "; }
 		SSKernelParamList << param.resolvedTypeName << " *" << param.name << ", ";
-		SSMapFuncParams << param.name << "[i]";
+		if (ctr++ < mapPairsFunc.Varity) // vertical containers
+			SSMapPairsFuncParams << param.name << "[skepu_i / Hsize]";
+		else // horizontal containers
+			SSMapPairsFuncParams << param.name << "[skepu_i % Hsize]";
 		first = false;
 	}
 	
-	for (UserFunction::RandomAccessParam& param : mapFunc.anyContainerParams)
+	for (UserFunction::RandomAccessParam& param : mapPairsFunc.anyContainerParams)
 	{
-		if (!first) { SSMapFuncParams << ", "; }
+		if (!first) { SSMapPairsFuncParams << ", "; }
 		SSKernelParamList << param.fullTypeName << " " << param.name << ", ";
-		SSMapFuncParams << param.name;
+		SSMapPairsFuncParams << param.name;
 		first = false;
 	}
 	
-	for (UserFunction::Param& param : mapFunc.anyScalarParams)
+	for (UserFunction::Param& param : mapPairsFunc.anyScalarParams)
 	{
-		if (!first) { SSMapFuncParams << ", "; }
+		if (!first) { SSMapPairsFuncParams << ", "; }
 		SSKernelParamList << param.resolvedTypeName << " " << param.name << ", ";
-		SSMapFuncParams << param.name;
+		SSMapPairsFuncParams << param.name;
 		first = false;
 	}
 	
-	const std::string kernelName = ResultName + "_MapKernel_" + mapFunc.uniqueName;
+	std::stringstream SSKernelName;
+	SSKernelName << transformToCXXIdentifier(ResultName) << "_MapPairsKernel_" << mapPairsFunc.uniqueName << "_Varity_" << mapPairsFunc.Varity << "_Harity_" << mapPairsFunc.Harity;
+	const std::string kernelName = SSKernelName.str();
 	
 	std::string kernelSource = MapPairsKernelTemplate_CU;
-	replaceTextInString(kernelSource, PH_MapResultType, mapFunc.resolvedReturnTypeName);
 	replaceTextInString(kernelSource, PH_KernelName, kernelName);
-	replaceTextInString(kernelSource, PH_MapFuncName, mapFunc.funcNameCUDA());
+	replaceTextInString(kernelSource, PH_MapPairsFuncName, mapPairsFunc.funcNameCUDA());
 	replaceTextInString(kernelSource, PH_KernelParams, SSKernelParamList.str());
-	replaceTextInString(kernelSource, PH_MapParams, SSMapFuncParams.str());
+	replaceTextInString(kernelSource, PH_MapPairsParams, SSMapPairsFuncParams.str());
 	replaceTextInString(kernelSource, PH_IndexInitializer, indexInitializer);
 	
 	std::ofstream FSOutFile {dir + "/" + kernelName + ".cu"};
