@@ -30,6 +30,29 @@ int test4(skepu::Index4D in, int a)
 	return a * 2 + in.l;
 }
 
+int test1_ver2(skepu::Index1D in, int a)
+{
+	return a * 2 + in.i;
+}
+
+int test2_ver2(skepu::Index2D in, int a)
+{
+//	printf("(%d %d)\n", in.row, in.col);
+	return a * 2 + in.row + in.col;
+}
+
+int test3_ver2(skepu::Index3D in, int a)
+{
+//	printf("(%d %d %d)\n", in.i, in.j, in.k);
+	return a * 2 + in.k;
+}
+
+int test4_ver2(skepu::Index4D in, int a)
+{
+//	printf("(%d %d %d %d)\n", in.i, in.j, in.k, in.l);
+	return a * 2 + in.l;
+}
+
 
 // TEST PROXIES
 
@@ -187,10 +210,10 @@ int main(int argc, char *argv[])
 	
 	std::cout << res1 << ", " << res2 << ", " << res3 << ", " << res4 << "\n";
 	
-	auto mapred0_1 = skepu::MapReduce<0>(test1, redfn);
-	auto mapred0_2 = skepu::MapReduce<0>(test2, redfn);
-	auto mapred0_3 = skepu::MapReduce<0>(test3, redfn);
-	auto mapred0_4 = skepu::MapReduce<0>(test4, redfn);
+	auto mapred0_1 = skepu::MapReduce<0>(test1_ver2, redfn);
+	auto mapred0_2 = skepu::MapReduce<0>(test2_ver2, redfn);
+	auto mapred0_3 = skepu::MapReduce<0>(test3_ver2, redfn);
+	auto mapred0_4 = skepu::MapReduce<0>(test4_ver2, redfn);
 	
 	mapred0_1.setDefaultSize(2);
 	mapred0_2.setDefaultSize(2, 4);
