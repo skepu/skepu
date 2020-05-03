@@ -88,7 +88,7 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU(
 
       //Compute and store data
       if( (i >= out_offset) && (i < out_offset+out_numelements) )
-      	 output[i-out_offset] = SKEPU_FUNCTION_NAME_MAPOVERLAP(overlap, 1, &sdata[tid + overlap] SKEPU_MAPOVERLAP_ARGS);
+      	 output[i-out_offset] = SKEPU_FUNCTION_NAME_MAPOVERLAP({(int)overlap, 1, &sdata[tid + overlap]} SKEPU_MAPOVERLAP_ARGS);
 
       i += gridSize;
 
@@ -184,7 +184,7 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_Row(
 
    //Compute and store data
    if( (i >= out_offset) && (i < out_offset+out_numelements) )
-   	output[i-out_offset] = SKEPU_FUNCTION_NAME_MAPOVERLAP(overlap, 1, &sdata[tid + overlap] SKEPU_MAPOVERLAP_ARGS);
+   	output[i-out_offset] = SKEPU_FUNCTION_NAME_MAPOVERLAP({(int)overlap, 1, &sdata[tid + overlap]} SKEPU_MAPOVERLAP_ARGS);
 }
 )~~~";
 
@@ -278,7 +278,7 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_Col(
    //Compute and store data
    if( (arrInd >= out_offset) && (arrInd < out_offset+out_numelements) )
    {
-      output[arrInd-out_offset] = SKEPU_FUNCTION_NAME_MAPOVERLAP(overlap, 1, &sdata[tid + overlap] SKEPU_MAPOVERLAP_ARGS);
+      output[arrInd-out_offset] = SKEPU_FUNCTION_NAME_MAPOVERLAP({(int)overlap, 1, &sdata[tid + overlap]} SKEPU_MAPOVERLAP_ARGS);
    }
 }
 )~~~";
@@ -441,48 +441,10 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_ColMulti(
    //Compute and store data
    if( arrInd < out_numelements )
    {
-      output[arrInd] = SKEPU_FUNCTION_NAME_MAPOVERLAP(overlap, 1, &sdata[tid + overlap] SKEPU_MAPOVERLAP_ARGS);
+      output[arrInd] = SKEPU_FUNCTION_NAME_MAPOVERLAP({(int)overlap, 1, &sdata[tid + overlap]} SKEPU_MAPOVERLAP_ARGS);
    }
 }
 )~~~";
-
-
-std::string createMapOverlap1DKernelProgram_CU(UserFunction &mapOverlapFunc, std::string dir)
-{
-	const std::string kernelName = ResultName + "_OverlapKernel_" + mapOverlapFunc.uniqueName;
-
-	std::stringstream SSMapOverlapFuncArgs, SSKernelParamList;
-
-	for (UserFunction::RandomAccessParam& param : mapOverlapFunc.anyContainerParams)
-	{
-		SSKernelParamList << param.fullTypeName << " " << param.name << ", ";
-		SSMapOverlapFuncArgs << ", " << param.name;
-	}
-
-	for (UserFunction::Param& param : mapOverlapFunc.anyScalarParams)
-	{
-		SSKernelParamList << param.resolvedTypeName << " " << param.name << ", ";
-		SSMapOverlapFuncArgs << ", " << param.name;
-	}
-
-	const Type *type = mapOverlapFunc.elwiseParams[2].astDeclNode->getOriginalType().getTypePtr();
-	const PointerType *pointer = dyn_cast<PointerType>(type);
-	QualType pointee = pointer->getPointeeType().getUnqualifiedType();
-	std::string elemType = pointee.getAsString();
-
-	std::string kernelSource = MapOverlapKernel_CU + MapOverlapKernel_CU_Matrix_Row + MapOverlapKernel_CU_Matrix_Col + MapOverlapKernel_CU_Matrix_ColMulti;
-	replaceTextInString(kernelSource, PH_MapOverlapInputType, elemType);
-	replaceTextInString(kernelSource, PH_MapOverlapResultType, mapOverlapFunc.resolvedReturnTypeName);
-	replaceTextInString(kernelSource, PH_KernelName, kernelName);
-	replaceTextInString(kernelSource, PH_MapOverlapFuncName, mapOverlapFunc.funcNameCUDA());
-	replaceTextInString(kernelSource, PH_KernelParams, SSKernelParamList.str());
-	replaceTextInString(kernelSource, PH_MapOverlapArgs, SSMapOverlapFuncArgs.str());
-
-	std::ofstream FSOutFile {dir + "/" + kernelName + ".cu"};
-	FSOutFile << kernelSource;
-	return kernelName;
-}
-
 
 
 
@@ -525,44 +487,118 @@ __global__ void SKEPU_KERNEL_NAME_conv_cuda_2D_kernel(
 	__syncthreads();
 
 	if (x < out_cols && y < out_rows)
-		output[y*out_pitch+x] = SKEPU_FUNCTION_NAME_MAPOVERLAP(overlap_x, overlap_y,
-			sharedCols, &sdata[(threadIdx.y + overlap_y) * sharedCols + (threadIdx.x + overlap_x)] SKEPU_MAPOVERLAP_ARGS);
+		output[y*out_pitch+x] = SKEPU_FUNCTION_NAME_MAPOVERLAP({(int)overlap_x, (int)overlap_y,
+			sharedCols, &sdata[(threadIdx.y + overlap_y) * sharedCols + (threadIdx.x + overlap_x)]} SKEPU_MAPOVERLAP_ARGS);
 }
 )~~~";
 
 
-std::string createMapOverlap2DKernelProgram_CU(UserFunction &mapOverlapFunc, std::string dir)
+
+/*!
+* The mapoverlap OpenCL kernel to apply a user function on neighbourhood of each element in the matrix.
+*/
+static const std::string MatrixConvol3D_CU = R"~~~(
+__global__ void SKEPU_KERNEL_NAME_conv_cuda_2D_kernel(
+	SKEPU_MAPOVERLAP_INPUT_TYPE* input, SKEPU_KERNEL_PARAMS SKEPU_MAPOVERLAP_RESULT_TYPE* output,
+	const size_t out_i, const size_t out_j, size_t out_k,
+	size_t overlap_i, size_t overlap_j, size_t overlap_k,
+	size_t in_pitch, size_t out_pitch,
+	const size_t sharedRows, const size_t sharedCols
+)
 {
-	const std::string kernelName = ResultName + "_Overlap2DKernel_" + mapOverlapFunc.uniqueName;
+	extern __shared__ SKEPU_MAPOVERLAP_INPUT_TYPE sdata[]; // will also contain extra (overlap data)
+	// extern __shared__ char _sdata[];
+	// SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata); // will also contain extra (overlap data)
+	
+	size_t ii = blockIdx.x * blockDim.x;
+	size_t jj = blockIdx.y * blockDim.y;
+	
+	size_t i = ii + threadIdx.x;
+	size_t j = jj + threadIdx.y;
+	
+	if (i < out_cols + overlap_i * 2 && j < out_rows + overlap_j * 2)
+	{
+		sdata[threadIdx.y * sharedCols + threadIdx.x] = input[j * in_pitch + i];
+		
+		// To load data in shared memory including neighbouring elements...
+		for (size_t shared_j = threadIdx.y; shared_j < sharedRows; shared_j += blockDim.y)
+		{
+			for (size_t shared_i = threadIdx.x; shared_i < sharedCols; shared_i += blockDim.x)
+			{
+				size_t global_base = (yy + shared_j) * in_pitch + xx + shared_i;
+				size_t shared_base = (shared_j * sharedCols + shared_i) * out_k;
+				for (size_t k = 0; k < in_k; ++k)
+				{
+					sdata[] = input[];
+				}
+			}
+		}
+	}
+	
+	__syncthreads();
+	
+	if (x < out_cols && y < out_rows)
+		output[y*out_pitch+x] = SKEPU_FUNCTION_NAME_MAPOVERLAP({(int)overlap_i, (int)overlap_j, (int)overlap_k,
+			sharedCols, &sdata[(threadIdx.y + overlap_y) * sharedCols + (threadIdx.x + overlap_x)]} SKEPU_MAPOVERLAP_ARGS);
+}
+)~~~";
 
+static const std::string MatrixConvol4D_CU = R"~~~()~~~";
+
+
+std::string createMapOverlapKernelProgramHelper_CU(UserFunction &mapOverlapFunc, std::string dir, std::string kernelSource, std::string kernelTag)
+{
 	std::stringstream SSMapOverlapFuncArgs, SSKernelParamList;
-
+	
 	for (UserFunction::RandomAccessParam& param : mapOverlapFunc.anyContainerParams)
 	{
 		SSKernelParamList << param.fullTypeName << " " << param.name << ", ";
 		SSMapOverlapFuncArgs << ", " << param.name;
 	}
-
+	
 	for (UserFunction::Param& param : mapOverlapFunc.anyScalarParams)
 	{
 		SSKernelParamList << param.resolvedTypeName << " " << param.name << ", ";
 		SSMapOverlapFuncArgs << ", " << param.name;
 	}
-
-	const Type *type = mapOverlapFunc.elwiseParams[3].astDeclNode->getOriginalType().getTypePtr();
-	const PointerType *pointer = dyn_cast<PointerType>(type);
-	QualType pointee = pointer->getPointeeType().getUnqualifiedType();
-	std::string elemType = pointee.getAsString();
-
-	std::string kernelSource = MatrixConvol2D_CU;
-	replaceTextInString(kernelSource, PH_MapOverlapInputType, elemType);
+	
+	const std::string kernelName = ResultName + "_" + kernelTag + "_" + mapOverlapFunc.uniqueName;
+	replaceTextInString(kernelSource, PH_MapOverlapInputType, mapOverlapFunc.elwiseParams[0].templateInstantiationType());
 	replaceTextInString(kernelSource, PH_MapOverlapResultType, mapOverlapFunc.resolvedReturnTypeName);
 	replaceTextInString(kernelSource, PH_KernelName, kernelName);
 	replaceTextInString(kernelSource, PH_MapOverlapFuncName, mapOverlapFunc.funcNameCUDA());
 	replaceTextInString(kernelSource, PH_KernelParams, SSKernelParamList.str());
 	replaceTextInString(kernelSource, PH_MapOverlapArgs, SSMapOverlapFuncArgs.str());
-
+	
 	std::ofstream FSOutFile {dir + "/" + kernelName + ".cu"};
 	FSOutFile << kernelSource;
 	return kernelName;
 }
+
+std::string createMapOverlap1DKernelProgram_CU(UserFunction &mapOverlapFunc, std::string dir)
+{
+	return createMapOverlapKernelProgramHelper_CU(mapOverlapFunc, dir, 
+		MapOverlapKernel_CU + MapOverlapKernel_CU_Matrix_Row + MapOverlapKernel_CU_Matrix_Col + MapOverlapKernel_CU_Matrix_ColMulti, 
+		"Overlap1DKernel");
+}
+
+std::string createMapOverlap2DKernelProgram_CU(UserFunction &mapOverlapFunc, std::string dir)
+{
+	return createMapOverlapKernelProgramHelper_CU(mapOverlapFunc, dir, MatrixConvol2D_CU, "Overlap2DKernel");
+}
+
+std::string createMapOverlap3DKernelProgram_CU(UserFunction &mapOverlapFunc, std::string dir)
+{
+	return createMapOverlapKernelProgramHelper_CU(mapOverlapFunc, dir, MatrixConvol3D_CU, "Overlap3DKernel");
+}
+
+std::string createMapOverlap4DKernelProgram_CU(UserFunction &mapOverlapFunc, std::string dir)
+{
+	return createMapOverlapKernelProgramHelper_CU(mapOverlapFunc, dir, MatrixConvol4D_CU, "Overlap4DKernel");
+}
+
+
+
+
+
+

@@ -176,9 +176,18 @@ bool UserFunction::Param::constructibleFrom(const clang::ParmVarDecl *p)
 	return !UserFunction::RandomAccessParam::constructibleFrom(p);
 }
 
-size_t UserFunction::Param::numKernelArgsCL()
+size_t UserFunction::Param::numKernelArgsCL() const
 {
 	return 1;
+}
+
+std::string UserFunction::Param::templateInstantiationType() const
+{
+	auto *type = this->astDeclNode->getOriginalType().getTypePtr();
+	if (auto *innertype = dyn_cast<ElaboratedType>(type))
+		type = innertype->getNamedType().getTypePtr();
+	const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
+	return templateType->getArg(0).getAsType().getAsString();
 }
 
 
@@ -320,7 +329,7 @@ std::string UserFunction::RandomAccessParam::TypeNameHost()
 	}
 }
 
-size_t UserFunction::RandomAccessParam::numKernelArgsCL()
+size_t UserFunction::RandomAccessParam::numKernelArgsCL() const
 {
 	switch (this->containerType)
 	{
@@ -402,9 +411,12 @@ UserFunction::UserFunction(FunctionDecl *f)
 	SkePULog() << "  [UF " << this->uniqueName << "] Return type: " << this->rawReturnTypeName << "\n";
 	
 	// Look for multiple return values (skepu::multiple)
-	if (this->rawReturnTypeName.find("skepu::multiple") == 0)
+	if (this->rawReturnTypeName.find("skepu::multiple") != std::string::npos || this->rawReturnTypeName.find("std::tuple") != std::string::npos)
 	{
 		SkePULog() << "  [UF " << this->uniqueName << "] Identified multi-valued return!\n";
+		
+		if (GenCUDA || GenCL)
+			SkePUAbort("Multi-valued return is not enabled for GPU backends.");
 		
 		const auto *templateType = f->getReturnType().getTypePtr()->getAs<clang::TemplateSpecializationType>();
 		for (const clang::TemplateArgument &arg : *templateType)
