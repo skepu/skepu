@@ -1,0 +1,15 @@
+SkePU Contributors since 2010
+
+(as far as contributions are part of the public SkePU
+ software distribution; for further contributors see our
+ publications and the SkePU web page.)
+
+Names are listed in chronological order of earliest contribution.
+
+- Johan Enmyren
+- Usman Dastgeer
+- Lu Li
+- Oskar Sjöström
+- August Ernstsson
+- Henrik Henriksson
+- Johan Ahlqvist
