@@ -106,6 +106,15 @@ endif()
 # We need the SkePU headers.
 add_subdirectory(skepu-headers)
 
+# TODO: Fix this mess...
+if(SKEPU_ENABLE_TESTING AND NOT TARGET catch2_main)
+	enable_language(CUDA)
+	find_package(Catch2)
+	add_subdirectory(${CMAKE_SOURCE_DIR}/skepu-headers/tests/catch2_main)
+	add_subdirectory(tests)
+endif()
+
+
 # This is for the future when the utility functions has been added.
 if(SKEPU_BUILD_EXAMPLES)
 	add_subdirectory(examples)

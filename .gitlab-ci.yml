@@ -23,9 +23,8 @@ test:
   dependencies:
     - build
   script:
-    # This should be ctest in the future, but we have no test cases that are
-    # added to ctest at this point.
-    - build/llvm/bin/skepu-tool --help
+    - cd build
+    - ctest -VV
   only:
     - web
     - merge_requests
