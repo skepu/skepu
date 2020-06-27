@@ -100,8 +100,8 @@ void testReduce(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
 	// Test implicit dimensions
 	{
 		auto pairs4 = skepu::MapPairsReduce<0, 0>(uf4, sum);
-		pairs4.setDefaultSize(Hsize, Vsize);
 		
+		pairs4.setDefaultSize(Vsize, Hsize);
 		pairs4.setReduceMode(skepu::ReduceMode::ColWise);
 		pairs4(resH, v1, 0);
 		std::cout << "\nresH: " << resH << "\n";
