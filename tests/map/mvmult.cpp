@@ -45,7 +45,7 @@ TEST_CASE("Matrix vector multiplication")
 	directMV(v, m, expected);
 	REQUIRE_NOTHROW(mvprod(res, m, v));
 
-	skepu::external(res, expected, [&]{
+	skepu::external(skepu::read(res, expected), [&]{
 		for(size_t i = 0; i < N; ++i)
 			REQUIRE(res(i) == Approx(expected(i)).epsilon(1E-3));
 	});
