@@ -34,15 +34,8 @@ T clamp_sum(T a, T b)
 auto clamped_sum = skepu::Map<2>(clamp_sum<int>);
 auto squared_diff_sum = skepu::MapReduce<2>(diff_squared, sum<float>);
 
-float psnr(skepu::Matrix<int> &img, skepu::Matrix<int> noise, skepu::BackendSpec *spec = nullptr)
+float psnr(skepu::Matrix<int> &img, skepu::Matrix<int> noise)
 {
-	
-	if (spec)
-	{
-		clamped_sum.setBackend(*spec);
-		squared_diff_sum.setBackend(*spec);
-	}
-	
 	const size_t rows = img.total_rows();
 	const size_t cols = img.total_cols();
 	
@@ -59,7 +52,7 @@ float psnr(skepu::Matrix<int> &img, skepu::Matrix<int> noise, skepu::BackendSpec
 
 int main(int argc, char *argv[])
 {
-	if (argc < 3)
+	if (argc < 4)
 	{
 		std::cout << "Usage: " << argv[0] << " rows cols backend\n";
 		exit(1);
@@ -68,6 +61,7 @@ int main(int argc, char *argv[])
 	const size_t rows = std::stoul(argv[1]);
 	const size_t cols = std::stoul(argv[2]);
 	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[3])};
+	skepu::setGlobalBackendSpec(spec);
 	
 	skepu::Matrix<int> img(rows, cols), noise(rows, cols);
 	
@@ -77,7 +71,7 @@ int main(int argc, char *argv[])
 	
 	std::cout << "Actual image: " << img << "\n";
 	
-	float psnrval = psnr(img, noise, &spec);
+	float psnrval = psnr(img, noise);
 	
 	std::cout << "PSNR of two images: " << psnrval << "\n";
 	

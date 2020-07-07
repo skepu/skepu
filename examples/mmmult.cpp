@@ -29,16 +29,6 @@ void directMM(skepu::Matrix<T> &lhs, skepu::Matrix<T> &rhs, skepu::Matrix<T> &re
 		}
 }
 
-auto mmprod = skepu::Map<0>(arr<float>);
-
-void mmmult(skepu::Matrix<float> &lhs, skepu::Matrix<float> &rhs, skepu::Matrix<float> &res, skepu::BackendSpec *spec = nullptr)
-{
-	if (spec)
-		mmprod.setBackend(*spec);
-	
-	mmprod(res, lhs, rhs);
-}
-
 int main(int argc, char *argv[])
 {
 	if (argc < 2)
@@ -50,6 +40,7 @@ int main(int argc, char *argv[])
 	
 	size_t size = atoi(argv[1]);
 	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
+	skepu::setGlobalBackendSpec(spec);
 	
 	skepu::Matrix<float> lhs(size, size), rhs(size, size), res(size, size), res2(size, size);
 	lhs.randomize(3, 9);
@@ -57,22 +48,24 @@ int main(int argc, char *argv[])
 	
 	lhs.flush();
 	rhs.flush();
-	if(!skepu::cluster::mpi_rank())
+/*	if(!skepu::cluster::mpi_rank())
 	{
 		std::cout << "lhs: " << lhs << "\n";
 		std::cout << "rhs: " << rhs << "\n";
-	}
+	}*/
 
 	res2.flush();
 	directMM(lhs, rhs, res2);
-	mmmult(lhs, rhs, res, &spec);
+		
+	auto mmprod = skepu::Map<0>(arr<float>);
+	mmprod(res, lhs, rhs);
 	
 	res.flush();
 	res2.flush();
 	if(!skepu::cluster::mpi_rank())
 	{
-		std::cout << "res: " << res << "\n";
-		std::cout << "res2: " << res2 << "\n";
+	//	std::cout << "res: " << res << "\n";
+	//	std::cout << "res2: " << res2 << "\n";
 		
 		for (size_t i = 0; i < size; i++)
 			for (size_t j = 0; j < size; j++)

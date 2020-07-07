@@ -80,7 +80,7 @@ cplx add_c(cplx lhs, cplx rhs)
 	return r;
 }
 
-size_t mandelbrot_f(skepu::Index2D index, size_t height, size_t width)
+size_t mandelbrot_f(skepu::Index2D index, float height, float width)
 {
 	cplx a;
 	a.a = SCALE / height * (index.col - width/2.f) + CENTER_X;
@@ -96,22 +96,6 @@ size_t mandelbrot_f(skepu::Index2D index, size_t height, size_t width)
 	return MAX_ITERS;
 }
 
-
-
-auto mandelbroter = skepu::Map<0>(mandelbrot_f);
-
-void mandelbrot(skepu::Matrix<size_t> &iterations, skepu::BackendSpec *spec = nullptr)
-{
-	const size_t width = iterations.size_i();
-	const size_t height = iterations.size_j();
-	
-	
-	if (spec)
-		mandelbroter.setBackend(*spec);
-	
-	mandelbroter(iterations, height, width);
-}
-
 int main(int argc, char* argv[])
 {
 	if (argc < 4)
@@ -124,10 +108,12 @@ int main(int argc, char* argv[])
 	const size_t width = std::stoul(argv[1]);
 	const size_t height = std::stoul(argv[2]);
 	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[3])};
+	skepu::setGlobalBackendSpec(spec);
 	
 	skepu::Matrix<size_t> iterations(height, width);
 	
-	mandelbrot(iterations, &spec);
+	auto mandelbroter = skepu::Map<0>(mandelbrot_f);
+	mandelbroter(iterations, height, width);
 	iterations.flush();
 	
 	if(!skepu::cluster::mpi_rank())
