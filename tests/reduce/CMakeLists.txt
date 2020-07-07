@@ -1,0 +1,15 @@
+skepu_add_executable(startval_cpu_test SKEPUSRC startval.cpp)
+target_link_libraries(startval_cpu_test PRIVATE catch2_main)
+add_test(startval_cpu startval_cpu_test)
+
+skepu_add_executable(startval_openmp_test OpenMP SKEPUSRC startval.cpp)
+target_link_libraries(startval_openmp_test PRIVATE catch2_main)
+add_test(startval_openmp startval_openmp_test)
+
+skepu_add_executable(startval_cuda_test CUDA SKEPUSRC startval.cpp)
+target_link_libraries(startval_cuda_test PRIVATE catch2_main)
+add_test(startval_cuda startval_cuda_test)
+
+skepu_add_executable(startval_opencl_test OpenCL SKEPUSRC startval.cpp)
+target_link_libraries(startval_opencl_test PRIVATE catch2_main)
+add_test(startval_opencl startval_opencl_test)
