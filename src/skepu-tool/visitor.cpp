@@ -221,7 +221,6 @@ bool HandleSkeletonInstance(VarDecl *d)
 			UF->updateArgLists(arity[0], arity[1]);
 		else
 			UF->updateArgLists(arity[i++]);
-		generateUserFunctionStruct(*UF, InstanceName);
 	}
 	
 	return transformSkeletonInvocation(Skeletons.at(TypeName), InstanceName, FuncArgs, arity, d);

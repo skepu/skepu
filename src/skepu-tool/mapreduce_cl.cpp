@@ -13,7 +13,7 @@ __kernel void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS __global SKEPU_REDUCE_RESULT
 	size_t skepu_tid = get_local_id(0);
 	size_t skepu_i = get_group_id(0) * skepu_blockSize + skepu_tid;
 	size_t skepu_gridSize = skepu_blockSize * get_num_groups(0);
-	SKEPU_REDUCE_RESULT_TYPE skepu_result = 0;
+	SKEPU_REDUCE_RESULT_TYPE skepu_result;
 	SKEPU_CONTAINER_PROXIES
 
 	if (skepu_i < skepu_n)
@@ -61,7 +61,7 @@ __kernel void SKEPU_KERNEL_NAME_ReduceOnly(__global SKEPU_REDUCE_RESULT_TYPE* sk
 	size_t skepu_tid = get_local_id(0);
 	size_t skepu_i = get_group_id(0) * skepu_blockSize + get_local_id(0);
 	size_t skepu_gridSize = skepu_blockSize * get_num_groups(0);
-	SKEPU_REDUCE_RESULT_TYPE skepu_result = 0;
+	SKEPU_REDUCE_RESULT_TYPE skepu_result;
 
 	if (skepu_i < skepu_n)
 	{
@@ -153,7 +153,7 @@ public:
 	(
 		size_t skepu_deviceID, size_t skepu_localSize, size_t skepu_globalSize,
 		SKEPU_HOST_KERNEL_PARAMS
-		skepu::backend::DeviceMemPointer_CL<SKEPU_REDUCE_RESULT_TYPE> *skepu_output,
+		skepu::backend::DeviceMemPointer_CL<SKEPU_REDUCE_RESULT_CPU> *skepu_output,
 		SKEPU_SIZES_TUPLE_PARAM size_t skepu_n, size_t skepu_base,
 		size_t skepu_sharedMemSize
 	)
@@ -168,7 +168,7 @@ public:
 	static void reduceOnly
 	(
 		size_t skepu_deviceID, size_t skepu_localSize, size_t skepu_globalSize,
-		skepu::backend::DeviceMemPointer_CL<SKEPU_REDUCE_RESULT_TYPE> *skepu_input, skepu::backend::DeviceMemPointer_CL<SKEPU_REDUCE_RESULT_TYPE> *skepu_output,
+		skepu::backend::DeviceMemPointer_CL<SKEPU_REDUCE_RESULT_CPU> *skepu_input, skepu::backend::DeviceMemPointer_CL<SKEPU_REDUCE_RESULT_CPU> *skepu_output,
 		size_t skepu_n, size_t skepu_sharedMemSize
 	)
 	{
@@ -300,7 +300,7 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 	for (UserFunction::Param& param : mapFunc.elwiseParams)
 	{
 		if (!first) { SSMapFuncParams << ", "; }
-		SSKernelParamList << "__global " << param.resolvedTypeName << " * user_" << param.name << ", ";
+		SSKernelParamList << "__global " << param.rawTypeName << " * user_" << param.name << ", ";
 		SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<const " << param.resolvedTypeName << "> * user_" << param.name << ", ";
 		SSKernelArgs << "user_" << param.name << "->getDeviceDataPointer(), ";
 		SSMapFuncParams << "user_" << param.name << "[skepu_i]";
@@ -382,12 +382,10 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 	for (auto pair : UserConstants)
 		sourceStream << "#define " << pair.second->name << " (" << pair.second->definition << ") // " << pair.second->typeName << "\n";
 
-	// check for extra user-supplied opencl code for custome datatype
-	for (UserType *RefType : mapFunc.ReferencedUTs)
-	{
-		Rewriter R(GlobalRewriter.getSourceMgr(), LangOptions());
-		sourceStream << R.getRewrittenText(RefType->astDeclNode->getSourceRange()) << ";\n\n";
-	}
+		// check for extra user-supplied opencl code for custom datatype
+		// TODO: Also check the referenced UFs for referenced UTs skepu::userstruct
+		for (UserType *RefType : mapFunc.ReferencedUTs)
+			sourceStream << generateUserTypeCode_CL(*RefType);
 
 	std::stringstream SSKernelName;
 	SSKernelName << transformToCXXIdentifier(ResultName) << "_MapReduceKernel_" << mapFunc.uniqueName << "_" << reduceFunc.uniqueName << "_arity_" << arity;
@@ -417,8 +415,9 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 	replaceTextInString(finalSource, "SKEPU_CONTAINER_PROXIE_INNER", SSProxyInitializerInner.str());
 	replaceTextInString(finalSource, PH_KernelParams, SSKernelParamList.str());
 	replaceTextInString(finalSource, PH_MapParams, SSMapFuncParams.str());
-	replaceTextInString(finalSource, PH_ReduceResultType, reduceFunc.resolvedReturnTypeName);
-	replaceTextInString(finalSource, PH_MapResultType, mapFunc.resolvedReturnTypeName);
+	replaceTextInString(finalSource, PH_ReduceResultType, reduceFunc.rawReturnTypeName);
+	replaceTextInString(finalSource, "SKEPU_REDUCE_RESULT_CPU", reduceFunc.resolvedReturnTypeName);
+	replaceTextInString(finalSource, PH_MapResultType, mapFunc.rawReturnTypeName);
 	replaceTextInString(finalSource, PH_MapFuncName, mapFunc.uniqueName);
 	replaceTextInString(finalSource, PH_ReduceFuncName, reduceFunc.uniqueName);
 	replaceTextInString(finalSource, PH_KernelName, kernelName);

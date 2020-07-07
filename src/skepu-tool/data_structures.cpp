@@ -167,7 +167,14 @@ UserFunction::Param::Param(const clang::ParmVarDecl *p)
 	this->rawTypeName = p->getOriginalType().getAsString();
 	this->resolvedTypeName = this->rawTypeName;
 	this->escapedTypeName = transformToCXXIdentifier(this->resolvedTypeName);
-
+	
+	if (auto *userType = p->getOriginalType().getTypePtr()->getAs<clang::RecordType>())
+		this->rawTypeName = userType->getDecl()->getNameAsString();
+		
+	// Remove 'struct'
+	if (this->resolvedTypeName.find("struct ") != std::string::npos)
+		this->resolvedTypeName = this->resolvedTypeName.substr(7, this->resolvedTypeName.size());
+	
 	SkePULog() << "Param: " << this->name << " of type " << this->rawTypeName << " resolving to " << this->resolvedTypeName << "\n";
 }
 
@@ -352,8 +359,8 @@ size_t UserFunction::RandomAccessParam::numKernelArgsCL() const
 
 
 
-UserFunction::TemplateArgument::TemplateArgument(std::string name, std::string type)
-: paramName(name), typeName(type)
+UserFunction::TemplateArgument::TemplateArgument(std::string name, std::string rawType, std::string resolvedType)
+: paramName(name), rawTypeName(rawType), resolvedTypeName(resolvedType)
 {}
 
 
@@ -390,10 +397,18 @@ UserFunction::UserFunction(FunctionDecl *f)
 		for (unsigned i = 0; i < TPList->size(); ++i)
 		{
 			std::string paramName = TPList->getParam(i)->getNameAsString();
-			std::string argName = TAList->get(i).getAsType().getAsString();
-			this->templateArguments.emplace_back(paramName, argName);
-			SSUniqueName << "_" << transformToCXXIdentifier(argName);
-			SkePULog() << "Template param: " << paramName << " = " << argName << "\n";
+			std::string rawArgName = TAList->get(i).getAsType().getAsString();
+			std::string resolvedArgName = rawArgName;
+			if (auto *userType = TAList->get(i).getAsType().getTypePtr()->getAs<clang::RecordType>())
+				rawArgName = userType->getDecl()->getNameAsString();
+			
+			// Remove 'struct'
+			if (resolvedArgName.find("struct ") != std::string::npos)
+				resolvedArgName = resolvedArgName.substr(7, resolvedArgName.size());
+			
+			this->templateArguments.emplace_back(paramName, rawArgName, resolvedArgName);
+			SSUniqueName << "_" << transformToCXXIdentifier(rawArgName);
+			SkePULog() << "Template param: " << paramName << " = " << rawArgName << " resolving to " << resolvedArgName << "\n";
 		}
 	}
 
@@ -406,12 +421,12 @@ UserFunction::UserFunction(FunctionDecl *f)
 
 	// Type name as string
 	this->rawReturnTypeName = f->getReturnType().getCanonicalType().getAsString();
-	this->resolvedReturnTypeName = this->rawReturnTypeName;
 	
-	SkePULog() << "  [UF " << this->uniqueName << "] Return type: " << this->rawReturnTypeName << "\n";
+	
+	
 	
 	// Look for multiple return values (skepu::multiple)
-	if (this->rawReturnTypeName.find("skepu::multiple") != std::string::npos || this->rawReturnTypeName.find("std::tuple") != std::string::npos)
+	if (this->rawReturnTypeName.find("skepu::multiple") != std::string::npos || this->rawReturnTypeName.find("::tuple<") != std::string::npos)
 	{
 		SkePULog() << "  [UF " << this->uniqueName << "] Identified multi-valued return!\n";
 		
@@ -425,14 +440,34 @@ UserFunction::UserFunction(FunctionDecl *f)
 			SkePULog() << "    [UF " << this->uniqueName << "] Multi-return type: " << argType << "\n";
 			this->multipleReturnTypes.push_back(argType);
 		}
+		
+		std::string resolvedCompoundTypeName = "std::tuple<";
+		for (size_t i = 0; i < this->multipleReturnTypes.size(); ++i)
+		{
+			resolvedCompoundTypeName += this->multipleReturnTypes[i];
+			if (i != multipleReturnTypes.size() - 1) resolvedCompoundTypeName += ",";
+		}
+		resolvedCompoundTypeName += ">";
+		this->resolvedReturnTypeName = resolvedCompoundTypeName;
 	}
 	else
 	{
+		this->resolvedReturnTypeName = this->rawReturnTypeName;
+		
+		if (auto *userType = f->getReturnType().getTypePtr()->getAs<clang::RecordType>())
+			this->rawReturnTypeName = userType->getDecl()->getNameAsString();
+		
 		// Returning a templated type, resolve it
 		for (UserFunction::TemplateArgument &arg : this->templateArguments)
 			if (this->rawReturnTypeName == arg.paramName)
-				this->resolvedReturnTypeName = arg.typeName;
+				this->resolvedReturnTypeName = arg.resolvedTypeName;
 	}
+	
+	// remove "struct"
+	if (this->resolvedReturnTypeName.find("struct ") != std::string::npos)
+		this->resolvedReturnTypeName = this->resolvedReturnTypeName.substr(7, this->resolvedReturnTypeName.size());
+	
+	SkePULog() << "  [UF " << this->uniqueName << "] Return type: " << this->rawReturnTypeName << " resolving to " << this->resolvedReturnTypeName << "\n";
 
 	// Argument lists
 	auto it = f->param_begin();

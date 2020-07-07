@@ -480,7 +480,7 @@ std::string generateUserFunctionCode_MapOverlap_CL(UserFunction &Func, bool is2D
 	for (UserFunction::Param& param : Func.anyScalarParams)
 		SSFuncParamList << ", " << param.resolvedTypeName << " " << param.name;
 
-	std::string transformedSource = replaceReferencesToOtherUFs(Func, [] (UserFunction &UF) { return UF.uniqueName; });
+	std::string transformedSource;// = replaceReferencesToOtherUFs(Func, [] (UserFunction &UF) { return UF.uniqueName; });
 
 	std::stringstream SSFuncSource;
 
@@ -488,8 +488,8 @@ std::string generateUserFunctionCode_MapOverlap_CL(UserFunction &Func, bool is2D
 		SSFuncSource << generateUserFunctionCode_CL(*RefFunc);
 
 	SSFuncSource << "static " << Func.resolvedReturnTypeName << " " << Func.uniqueName << "(" << SSFuncParamList.str() << ")\n{";
-	for (UserFunction::TemplateArgument &arg : Func.templateArguments)
-		SSFuncSource << "typedef " << arg.typeName << " " << arg.paramName << ";\n";
+//	for (UserFunction::TemplateArgument &arg : Func.templateArguments)
+//		SSFuncSource << "typedef " << arg.typeName << " " << arg.paramName << ";\n";
 
 	SSFuncSource << transformedSource << "\n}\n\n";
 	return SSFuncSource.str();

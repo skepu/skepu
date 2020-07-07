@@ -43,14 +43,18 @@ std::unordered_map<const VarDecl*, UserConstant*> UserConstants;
 // Explicitly allowed functions to call from user functions
 std::unordered_set<std::string> AllowedFunctionNamesCalledInUFs
 {
-	"exp",
+	"exp", "exp2", "exp2f",
 	"sqrt",
-	"abs",
-	"fabs",
-	"max",
-	"fmax",
-	"printf",
+	"abs", "fabs",
+	"max", "fmax",
 	"pow",
+	"log", "log2", "log10",
+	"sin", "sinh", "asin", "asinh",
+	"cos", "cosh", "acos", "acosh",
+	"tan", "tanh", "atan", "atanh",
+	"round", "ceil", "floor",
+	"erf",
+	"printf",
 };
 
 // Skeleton types lookup from internal SkePU class template name
@@ -147,7 +151,7 @@ int main(int argc, const char **argv)
 	if (!Silent)
 	{
 		llvm::errs() << "# ======================================= #\n";
-		llvm::errs() << "~  SkePU source-to-source compiler v 0.1  ~\n";
+		llvm::errs() << "~   SkePU source-to-source compiler v3    ~\n";
 		llvm::errs() << "# --------------------------------------- #\n";
 		llvm::errs() << "   CUDA gen:\t" << (GenCUDA ? "ON" : "OFF") << "\n";
 		llvm::errs() << "   OpenCL gen:\t" << (GenCL ? "ON" : "OFF") << "\n";

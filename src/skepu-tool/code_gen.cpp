@@ -17,9 +17,9 @@ std::string getSourceAsString(SourceRange range)
 	return exprString;
 }
 
-void printParamList(std::ostream &o, const FunctionDecl *f)
+void printParamList(std::ostream &o, UserFunction &Func)
 {
-	bool first = true;
+/*	bool first = true;
 	for (const ParmVarDecl* Parm : f->parameters())
 	{
 		// default arg?
@@ -29,7 +29,54 @@ void printParamList(std::ostream &o, const FunctionDecl *f)
 		SourceRange SRParm = Parm->getSourceRange();
 		std::string ParmText = Lexer::getSourceText(CharSourceRange::getTokenRange(SRParm), GlobalRewriter.getSourceMgr(), LangOptions(), 0);
 		o << ParmText;
+	}*/
+	
+	bool first = true;
+
+	if (Func.indexed1D)
+	{
+		o << "skepu::Index1D " << Func.indexParam->name;
+		first = false;
 	}
+	else if (Func.indexed2D)
+	{
+		o << "skepu::Index2D " << Func.indexParam->name;
+		first = false;
+	}
+	else if (Func.indexed3D)
+	{
+		o << "skepu::Index3D " << Func.indexParam->name;
+		first = false;
+	}
+	else if (Func.indexed4D)
+	{
+		o << "skepu::Index4D " << Func.indexParam->name;
+		first = false;
+	}
+
+	for (UserFunction::Param& param : Func.elwiseParams)
+	{
+		if (!first) { o << ", "; }
+		o << param.resolvedTypeName << " " << param.name; // HERE1
+		first = false;
+	}
+
+	for (UserFunction::RandomAccessParam& param : Func.anyContainerParams)
+	{
+		if (!first) { o << ", "; }
+		o << param.fullTypeName << " " << param.name;
+		first = false;
+	}
+
+	for (UserFunction::Param& param : Func.anyScalarParams)
+	{
+		if (!first) { o << ", "; }
+		if (param.astDeclNode->getOriginalType()->isPointerType())
+			o << "__global ";
+		o << param.resolvedTypeName << " " << param.name;
+		first = false;
+	}
+	
 }
 
 
@@ -48,6 +95,7 @@ std::string transformToCXXIdentifier(std::string &in)
 	std::string out = in;
 	replaceTextInString(out, ".", "__dot__");
 	replaceTextInString(out, " ", "__space__");
+	replaceTextInString(out, ":", "__colon__");
 	return out;
 }
 
@@ -262,7 +310,7 @@ std::string generateOpenCLMultipleReturn(UserFunction &UF)
 				{{SKEPU_MULTIPLE_RETURN_TYPE_DEF}}
 			} {{SKEPU_MULTIPLE_RETURN_TYPE}};
 			
-			{{SKEPU_MULTIPLE_RETURN_TYPE}} make_{{SKEPU_MULTIPLE_RETURN_TYPE}} ({{SKEPU_MULTIPLE_RETURN_MAKE_PARAMS}})
+			static {{SKEPU_MULTIPLE_RETURN_TYPE}} make_{{SKEPU_MULTIPLE_RETURN_TYPE}} ({{SKEPU_MULTIPLE_RETURN_MAKE_PARAMS}})
 			{
 				{{SKEPU_MULTIPLE_RETURN_TYPE}} retval = { {{SKEPU_MULTIPLE_RETURN_MAKE_STRUCT}} };
 				return retval;
@@ -280,7 +328,7 @@ std::string generateOpenCLMultipleReturn(UserFunction &UF)
 	return "";
 }
 
-std::string replaceReferencesToOtherUFs(UserFunction &UF, std::function<std::string(UserFunction&)> nameFunc)
+std::string replaceReferencesToOtherUFs(UserFunction &UF, std::function<std::string(UserFunction&)> nameFunc, bool isGPU = false)
 {
 	const FunctionDecl *f = UF.astDeclNode;
 	if (f->getTemplatedKind() == FunctionDecl::TK_FunctionTemplateSpecialization)
@@ -299,15 +347,12 @@ std::string replaceReferencesToOtherUFs(UserFunction &UF, std::function<std::str
 		R.InsertText(subscript->getCallee()->getBeginLoc(), ".data");
 		
 	
-	if (UF.multipleReturnTypes.size() > 0)
+	if (isGPU && UF.multipleReturnTypes.size() > 0)
 	{
 		std::stringstream SSmultiReturnType, SSmultiReturnTypeDef, SSmultiReturnMakeStruct, SSmultiReturnMakeParams;
 		SSmultiReturnType << "skepu_multiple";
 		for (std::string &type : UF.multipleReturnTypes)
 			SSmultiReturnType << "_" << type;
-		
-		if (GenCL)
-			SkePUAbort("Multiple return values for OpenCL is not activated in this release.");
 		
 		for (auto *ref : UF.ReferencedRets)
 		{
@@ -336,13 +381,14 @@ bool testAndSet(bool &arg, bool newVal = true)
 	return oldVal;
 }
 
-void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName)
+void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clang::SourceLocation loc)
 {
 	static std::set<std::string> generatedStructs;
+	static std::set<std::string> usingDecls;
 
 	// Start by recursively generate functors for referenced user functions
 	for (auto *referenced : UF.ReferencedUFs)
-		generateUserFunctionStruct(*referenced, InstanceName);
+		generateUserFunctionStruct(*referenced, InstanceName, loc);
 
 	// Continue generating functor for this user function
 	const FunctionDecl *f = UF.astDeclNode;
@@ -358,9 +404,20 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName)
 	SSSkepuFunctorStruct << "\nstruct " << FunctorName;
 	SSSkepuFunctorStruct << "\n{\n";
 
+	// Code generation specific to templated user functions
 	if (UF.fromTemplate)
 		for (const UserFunction::TemplateArgument &arg : UF.templateArguments)
-			SSSkepuFunctorStruct << "using " << arg.paramName << " = " << arg.typeName << ";\n";
+		{
+			// If the template argument type is a nested namespace type, bring the namespace into scope
+			if (arg.rawTypeName != arg.resolvedTypeName)
+			{
+				SSSkepuFunctorStruct << "using " << arg.rawTypeName << " = " << arg.resolvedTypeName << ";\n";
+				usingDecls.insert(arg.rawTypeName);
+			}
+			
+			// Resolve the template parameter type occurences by a type alias to the argument type
+			SSSkepuFunctorStruct << "using " << arg.paramName << " = " << arg.rawTypeName << ";\n";
+		}
 	
 	size_t outArity = std::max<size_t>(1, UF.multipleReturnTypes.size());
 
@@ -430,6 +487,8 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName)
 	SSSkepuFunctorStruct << "};\n\n";
 
 	SSSkepuFunctorStruct << "using Ret = " << UF.resolvedReturnTypeName << ";\n\n";
+	if (UF.multipleReturnTypes.size() == 0 && UF.rawReturnTypeName != UF.resolvedReturnTypeName && (std::find(usingDecls.begin(), usingDecls.end(), UF.rawReturnTypeName) == usingDecls.end()))
+		SSSkepuFunctorStruct << "using " << UF.rawReturnTypeName << " = " << UF.resolvedReturnTypeName << ";\n\n";
 	SSSkepuFunctorStruct << "constexpr static bool prefersMatrix = " << (UF.indexed2D) << ";\n\n";
 
 	// CUDA code
@@ -443,7 +502,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName)
 		SSSkepuFunctorStruct << "#define VARIANT_OPENMP(block)\n";
 		SSSkepuFunctorStruct << "#define VARIANT_CUDA(block) block\n";
 		SSSkepuFunctorStruct << "static inline SKEPU_ATTRIBUTE_FORCE_INLINE " << "__device__ " << UF.resolvedReturnTypeName << " CU(";
-		printParamList(SSSkepuFunctorStruct, f);
+		printParamList(SSSkepuFunctorStruct, UF);
 		SSSkepuFunctorStruct << ")\n{" << replaceReferencesToOtherUFs(UF, [InstanceName] (UserFunction &UF) { return SkePU_UF_Prefix + InstanceName + "_" + UF.uniqueName + "::CU"; }) << "\n}\n";
 		SSSkepuFunctorStruct << "#undef SKEPU_USING_BACKEND_CUDA\n\n";
 	}
@@ -458,7 +517,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName)
 		SSSkepuFunctorStruct << "#define VARIANT_OPENMP(block) block\n";
 		SSSkepuFunctorStruct << "#define VARIANT_CUDA(block)\n";
 		SSSkepuFunctorStruct << "static inline SKEPU_ATTRIBUTE_FORCE_INLINE " << UF.resolvedReturnTypeName << " OMP(";
-		printParamList(SSSkepuFunctorStruct, f);
+		printParamList(SSSkepuFunctorStruct, UF);
 		SSSkepuFunctorStruct << ")\n{" << replaceReferencesToOtherUFs(UF, [InstanceName] (UserFunction &UF) { return SkePU_UF_Prefix + InstanceName + "_" + UF.uniqueName + "::OMP"; }) << "\n}\n";
 		SSSkepuFunctorStruct << "#undef SKEPU_USING_BACKEND_OMP\n\n";
 	}
@@ -472,14 +531,12 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName)
 	SSSkepuFunctorStruct << "#define VARIANT_OPENMP(block)\n";
 	SSSkepuFunctorStruct << "#define VARIANT_CUDA(block) block\n";
 	SSSkepuFunctorStruct << "static inline SKEPU_ATTRIBUTE_FORCE_INLINE " << UF.resolvedReturnTypeName << " CPU(";
-	printParamList(SSSkepuFunctorStruct, f);
+	printParamList(SSSkepuFunctorStruct, UF);
 	SSSkepuFunctorStruct << ")\n{" << replaceReferencesToOtherUFs(UF, [InstanceName] (UserFunction &UF) { return SkePU_UF_Prefix + InstanceName + "_" + UF.uniqueName + "::CPU"; }) << "\n}\n";
 	SSSkepuFunctorStruct << "#undef SKEPU_USING_BACKEND_CPU\n};\n\n";
-
-
-
-
-	GlobalRewriter.InsertText(UF.codeLocation, SSSkepuFunctorStruct.str(), true, true);
+	
+	if (GlobalRewriter.InsertTextAfter(loc, SSSkepuFunctorStruct.str()))
+		SkePUAbort("Code gen target source loc not rewritable: UF " + UF.uniqueName + " for instance" + InstanceName);
 }
 
 
@@ -522,7 +579,7 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 	for (UserFunction::Param& param : Func.elwiseParams)
 	{
 		if (!first) { SSFuncParamList << ", "; }
-		SSFuncParamList << param.resolvedTypeName << " " << param.name;
+		SSFuncParamList << param.rawTypeName << " " << param.name; // HERE1
 		first = false;
 	}
 
@@ -542,15 +599,15 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 		first = false;
 	}
 
-	std::string transformedSource = replaceReferencesToOtherUFs(Func, [] (UserFunction &UF) { return UF.uniqueName; });
+	std::string transformedSource = replaceReferencesToOtherUFs(Func, [] (UserFunction &UF) { return UF.uniqueName; }, true);
 
 	// Recursive call, potential for circular loop: TODO FIX!!
 	for (UserFunction *RefFunc : Func.ReferencedUFs)
 		SSFuncSource << generateUserFunctionCode_CL(*RefFunc);
 
-	SSFuncSource << "static " << Func.resolvedReturnTypeName << " " << Func.uniqueName << "(" << SSFuncParamList.str() << ")\n{";
+	SSFuncSource << "static " << Func.rawReturnTypeName << " " << Func.uniqueName << "(" << SSFuncParamList.str() << ")\n{";
 	for (UserFunction::TemplateArgument &arg : Func.templateArguments)
-		SSFuncSource << "typedef " << arg.typeName << " " << arg.paramName << ";\n";
+		SSFuncSource << "typedef " << arg.rawTypeName << " " << arg.paramName << ";\n";
 
 	SSFuncSource << transformedSource << "\n}\n\n";
 	return SSFuncSource.str();
@@ -560,8 +617,22 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, VarDecl *d)
 {
 	SkePULog() << "Name of skeleton: " << skeleton.name << "\n";
+	
+	if (GlobalRewriter.RemoveText(d->getSourceRange()))
+		SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
+	
+	for (UserFunction* UF : FuncArgs)
+	{
+		const DeclContext *DeclCtx = d->getDeclContext();
+		SourceLocation loc = d->getSourceRange().getBegin();
+		if (isa<FunctionDecl>(DeclCtx))
+		{
+			loc = dyn_cast<FunctionDecl>(DeclCtx)->getSourceRange().getBegin();
+		}
+		
+		generateUserFunctionStruct(*UF, InstanceName, loc);
+	}
 
-	GlobalRewriter.RemoveText(d->getSourceRange());
 
 	std::stringstream SSTemplateArgs, SSCallArgs, SSNewDecl;
 
@@ -663,7 +734,8 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		{
 			loc = dyn_cast<FunctionDecl>(DeclCtx)->getSourceRange().getBegin();
 		}
-		GlobalRewriter.InsertText(loc, "#include \"" + KernelName_CU + ".cu\"\n");
+		if (GlobalRewriter.InsertText(loc, "#include \"" + KernelName_CU + ".cu\"\n"))
+			SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
 	}
 	else
 	{
@@ -741,7 +813,8 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		if (const FunctionDecl *DeclCtx = dyn_cast<FunctionDecl>(d->getDeclContext()))
 			loc = DeclCtx->getSourceRange().getBegin();
 
-		GlobalRewriter.InsertText(loc, "#include \"" + KernelName_CL + "_cl_source.inl\"\n");
+		if (GlobalRewriter.InsertText(loc, "#include \"" + KernelName_CL + "_cl_source.inl\"\n"))
+			SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
 
 		SSTemplateArgs << ", CLWrapperClass_" << KernelName_CL;
 	}
@@ -754,7 +827,8 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		SSNewDecl << "static ";
 	SSNewDecl << "skepu::backend::" << skeleton.name << "<" << SSTemplateArgs.str() << "> " << InstanceName << "(" << SSCallArgs.str() << ")";
 
-	GlobalRewriter.InsertText(d->getSourceRange().getBegin(), SSNewDecl.str());
+	if (GlobalRewriter.InsertText(d->getSourceRange().getBegin(), SSNewDecl.str()))
+		SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
 
 	return true;
 }

@@ -89,9 +89,10 @@ public:
 	struct TemplateArgument
 	{
 		const std::string paramName;
-		const std::string typeName;
+		const std::string rawTypeName;
+		const std::string resolvedTypeName;
 
-		TemplateArgument(std::string name, std::string type);
+		TemplateArgument(std::string name, std::string rawType, std::string resolvedType);
 	};
 
 	struct Param

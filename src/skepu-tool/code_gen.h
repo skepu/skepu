@@ -57,7 +57,7 @@ typedef struct {
 	size_t l;
 } index4_t;
 
-size_t get_device_id()
+static size_t get_device_id()
 {
 	return SKEPU_INTERNAL_DEVICE_ID;
 }
@@ -81,7 +81,7 @@ typedef long     int64_t;
 
 )~~~";
 
-void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName);
+void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clang::SourceLocation loc);
 
 std::string generateOpenCLVectorProxy(std::string typeName);
 std::string generateOpenCLMatrixProxy(std::string typeName);
@@ -94,7 +94,6 @@ std::string generateOpenCLRegion(size_t dim, std::string typeName);
 
 std::string generateOpenCLMultipleReturn(std::vector<std::string> &types);
 
-std::string replaceReferencesToOtherUFs(UserFunction &UF, std::function<std::string(UserFunction&)> nameFunc);
 bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, clang::VarDecl *d);
 
 // CUDA generators

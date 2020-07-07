@@ -120,7 +120,7 @@ std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::
 	// Output data
 	if (mapFunc.multipleReturnTypes.size() == 0)
 	{
-		SSKernelParamList << " __global " << mapFunc.resolvedReturnTypeName << "* skepu_output, ";
+		SSKernelParamList << " __global " << mapFunc.rawReturnTypeName << "* skepu_output, ";
 		SSHostKernelParamList << " skepu::backend::DeviceMemPointer_CL<" << mapFunc.resolvedReturnTypeName << "> *skepu_output, ";
 		SSKernelArgs << " skepu_output->getDeviceDataPointer(), ";
 	}
@@ -140,7 +140,7 @@ std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::
 	for (UserFunction::Param& param : mapFunc.elwiseParams)
 	{
 		if (!first) { SSMapFuncParams << ", "; }
-		SSKernelParamList << "__global " << param.resolvedTypeName << " *" << param.name << ", ";
+		SSKernelParamList << "__global " << param.rawTypeName << " *" << param.name << ", ";
 		SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<" << param.resolvedTypeName << "> *" << param.name << ", ";
 		SSKernelArgs << param.name << "->getDeviceDataPointer(), ";
 		SSMapFuncParams << param.name << "[i]";
@@ -254,7 +254,7 @@ std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::
 	for (auto pair : UserConstants)
 		sourceStream << "#define " << pair.second->name << " (" << pair.second->definition << ") // " << pair.second->typeName << "\n";
 
-	// check for extra user-supplied opencl code for custome datatype
+	// check for extra user-supplied opencl code for custom datatype
 	// TODO: Also check the referenced UFs for referenced UTs skepu::userstruct
 	for (UserType *RefType : mapFunc.ReferencedUTs)
 		sourceStream << generateUserTypeCode_CL(*RefType);
