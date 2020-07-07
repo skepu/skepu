@@ -5,7 +5,7 @@ add_library(lodepng STATIC lodepng.cpp)
 
 set(_skepu_examples
 	backendspec
-	call
+	# call
 	cma
 	containers
 	coulombic
