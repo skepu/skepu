@@ -21,7 +21,7 @@ __global__ void SKEPU_KERNEL_NAME(SKEPU_REDUCE_RESULT_TYPE *input, SKEPU_REDUCE_
 	size_t i = blockIdx.x * blockSize * 2 + threadIdx.x;
 	size_t gridSize = blockSize * 2 * gridDim.x;
 
-	SKEPU_REDUCE_RESULT_TYPE result = 0;
+	SKEPU_REDUCE_RESULT_TYPE result;
 
 	if (i < n)
 	{
