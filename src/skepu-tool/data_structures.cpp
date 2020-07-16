@@ -164,7 +164,7 @@ UserFunction::Param::Param(const clang::ParmVarDecl *p)
 		this->name = "unused_" + random_string(10);
 
 	this->type = p->getOriginalType().getTypePtr();
-	this->rawTypeName = p->getOriginalType().getAsString();
+	this->rawTypeName = p->getOriginalType().getCanonicalType().getAsString();
 	this->resolvedTypeName = this->rawTypeName;
 	this->escapedTypeName = transformToCXXIdentifier(this->resolvedTypeName);
 	
