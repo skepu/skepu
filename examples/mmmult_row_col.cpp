@@ -3,11 +3,11 @@
 
 
 template<typename T>
-T arr(skepu::Index2D idx, const skepu::Mat<T> lhs, const skepu::Mat<T> rhs)
+T mmmult_f(const skepu::MatRow<T> ar, const skepu::MatCol<T> bc)
 {
 	T res = 0;
-	for (size_t i = 0; i < lhs.cols; ++i)
-		res += lhs.data[idx.row * lhs.cols + i] * rhs.data[i * rhs.cols + idx.col];
+	for (size_t k = 0; k < ar.cols; ++k)
+		res += ar(k) * bc(k);
 	return res;
 }
 
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 	res2.flush();
 	directMM(lhs, rhs, res2);
 		
-	auto mmprod = skepu::Map<0>(arr<float>);
+	auto mmprod = skepu::Map<0>(mmmult_f<float>);
 	mmprod(res, lhs, rhs);
 	
 	res.flush();

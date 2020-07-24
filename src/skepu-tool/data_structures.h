@@ -24,6 +24,7 @@ enum class ContainerType
 	Vector,
 	Matrix,
 	MatRow,
+	MatCol,
 	Tensor3,
 	Tensor4,
 	SparseMatrix

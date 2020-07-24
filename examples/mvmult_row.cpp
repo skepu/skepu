@@ -3,7 +3,7 @@
 
 
 template<typename T>
-T arr(const skepu::MatRow<T> mr, const skepu::Vec<T> v)
+T mvmult_f(const skepu::MatRow<T> mr, const skepu::Vec<T> v)
 {
 	T res = 0;
 	for (size_t i = 0; i < v.size; ++i)
@@ -29,16 +29,6 @@ void directMV(skepu::Vector<T> &v, skepu::Matrix<T> &m, skepu::Vector<T> &res)
 	}
 }
 
-auto mvprod = skepu::Map<0>(arr<float>);
-
-void mvmult(skepu::Vector<float> &v, skepu::Matrix<float> &m, skepu::Vector<float> &res, skepu::BackendSpec *spec = nullptr)
-{
-	if (spec)
-		mvprod.setBackend(*spec);
-	
-	mvprod(res, m, v);
-}
-
 int main(int argc, char *argv[])
 {
 	if (argc < 2)
@@ -50,6 +40,7 @@ int main(int argc, char *argv[])
 	
 	size_t size = atoi(argv[1]);
 	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
+	skepu::setGlobalBackendSpec(spec);
 	
 	skepu::Vector<float> v(size), r(size), r2(size);
 	skepu::Matrix<float> m(size, size);
@@ -66,7 +57,8 @@ int main(int argc, char *argv[])
 
 	r.flush();
 	directMV(v, m, r);
-	mvmult(v, m, r2, &spec);
+	auto mvprod = skepu::Map<0>(mvmult_f<float>);
+	mvprod(r2, m, v);
 	
 	r.flush();
 	r2.flush();

@@ -86,6 +86,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 std::string generateOpenCLVectorProxy(std::string typeName);
 std::string generateOpenCLMatrixProxy(std::string typeName);
 std::string generateOpenCLMatrixRowProxy(std::string typeName);
+std::string generateOpenCLMatrixColProxy(std::string typeName);
 std::string generateOpenCLSparseMatrixProxy(std::string typeName);
 std::string generateOpenCLTensor3Proxy(std::string typeName);
 std::string generateOpenCLTensor4Proxy(std::string typeName);

@@ -44,6 +44,11 @@ int main(int argc, char *argv[])
 	conjreduce.setStartValue(skepu::experimental::complex::FOne);
 	Complex res = conjreduce(r);
 	std::cout << "Res: " << res << "\n";
+	
+	
+	auto divider = skepu::Map<2>(cplx::real_div<Complex>);
+	divider(r, v1, w);
+	std::cout << "Res: " << r << "\n";
 
 	return 0;
 }

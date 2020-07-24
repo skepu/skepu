@@ -172,8 +172,7 @@ UserFunction::Param::Param(const clang::ParmVarDecl *p)
 		this->rawTypeName = userType->getDecl()->getNameAsString();
 		
 	// Remove 'struct'
-	if (this->resolvedTypeName.find("struct ") != std::string::npos)
-		this->resolvedTypeName = this->resolvedTypeName.substr(7, this->resolvedTypeName.size());
+	replaceTextInString(this->resolvedTypeName, "struct ", "");
 	
 	SkePULog() << "Param: " << this->name << " of type " << this->rawTypeName << " resolving to " << this->resolvedTypeName << "\n";
 }
@@ -257,6 +256,11 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 		this->containerType = ContainerType::MatRow;
 		SkePULog() << "Matrix Row of " << this->resolvedTypeName << "\n";
 	}
+	else if (templateName == "MatCol")
+	{
+		this->containerType = ContainerType::MatCol;
+		SkePULog() << "Matrix Column of " << this->resolvedTypeName << "\n";
+	}
 	else if (templateName == "Vec")
 	{
 		this->containerType = ContainerType::Vector;
@@ -289,7 +293,7 @@ bool UserFunction::RandomAccessParam::constructibleFrom(const clang::ParmVarDecl
 
 	std::string templateName = templateType->getTemplateName().getAsTemplateDecl()->getNameAsString();
 	return (templateName == "SparseMat") || (templateName == "Mat") || (templateName == "Vec")
-		|| (templateName == "Ten3")  || (templateName == "Ten4") || (templateName == "MatRow");
+		|| (templateName == "Ten3")  || (templateName == "Ten4") || (templateName == "MatRow") || (templateName == "MatCol");
 }
 
 std::string UserFunction::RandomAccessParam::TypeNameOpenCL()
@@ -302,6 +306,8 @@ std::string UserFunction::RandomAccessParam::TypeNameOpenCL()
 			return "skepu_mat_proxy_" + this->escapedTypeName;
 		case ContainerType::MatRow:
 			return "skepu_matrow_proxy_" + this->escapedTypeName;
+		case ContainerType::MatCol:
+				return "skepu_matcol_proxy_" + this->escapedTypeName;
 		case ContainerType::Tensor3:
 			return "skepu_ten3_proxy_" + this->escapedTypeName;
 		case ContainerType::Tensor4:
@@ -322,6 +328,7 @@ std::string UserFunction::RandomAccessParam::TypeNameHost()
 			return "std::tuple<skepu::Vector<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
 		case ContainerType::Matrix:
 		case ContainerType::MatRow:
+		case ContainerType::MatCol:
 			return "std::tuple<skepu::Matrix<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
 		case ContainerType::Tensor3:
 			return "std::tuple<skepu::Tensor3<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
@@ -403,8 +410,7 @@ UserFunction::UserFunction(FunctionDecl *f)
 				rawArgName = userType->getDecl()->getNameAsString();
 			
 			// Remove 'struct'
-			if (resolvedArgName.find("struct ") != std::string::npos)
-				resolvedArgName = resolvedArgName.substr(7, resolvedArgName.size());
+			replaceTextInString(resolvedArgName, "struct ", "");
 			
 			this->templateArguments.emplace_back(paramName, rawArgName, resolvedArgName);
 			SSUniqueName << "_" << transformToCXXIdentifier(rawArgName);
@@ -463,9 +469,8 @@ UserFunction::UserFunction(FunctionDecl *f)
 				this->resolvedReturnTypeName = arg.resolvedTypeName;
 	}
 	
-	// remove "struct"
-	if (this->resolvedReturnTypeName.find("struct ") != std::string::npos)
-		this->resolvedReturnTypeName = this->resolvedReturnTypeName.substr(7, this->resolvedReturnTypeName.size());
+	// remove 'struct'
+	replaceTextInString(this->resolvedReturnTypeName, "struct ", "");
 	
 	SkePULog() << "  [UF " << this->uniqueName << "] Return type: " << this->rawReturnTypeName << " resolving to " << this->resolvedReturnTypeName << "\n";
 

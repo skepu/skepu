@@ -175,6 +175,12 @@ std::string createMapKernelProgram_CL(UserFunction &mapFunc, size_t arity, std::
 				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + i * skepu_cols_" << param.name << "), .cols = skepu_cols_" << param.name << " };\n";
 				break;
 			
+			case ContainerType::MatCol:
+				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", size_t skepu_rows_" << param.name << ", ";
+				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_rows(), ";
+				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + i), .rows = skepu_rows_" << param.name << " };\n";
+				break;
+			
 			case ContainerType::Tensor3:
 				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", "
 					<< "size_t skepu_size_i_" << param.name << ", size_t skepu_size_j_" << param.name << ", size_t skepu_size_k_" << param.name << ", ";

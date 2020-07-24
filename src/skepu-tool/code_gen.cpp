@@ -19,18 +19,6 @@ std::string getSourceAsString(SourceRange range)
 
 void printParamList(std::ostream &o, UserFunction &Func)
 {
-/*	bool first = true;
-	for (const ParmVarDecl* Parm : f->parameters())
-	{
-		// default arg?
-		if (!first) o << ", ";
-		first = false;
-
-		SourceRange SRParm = Parm->getSourceRange();
-		std::string ParmText = Lexer::getSourceText(CharSourceRange::getTokenRange(SRParm), GlobalRewriter.getSourceMgr(), LangOptions(), 0);
-		o << ParmText;
-	}*/
-	
 	bool first = true;
 
 	if (Func.indexed1D)
@@ -57,7 +45,7 @@ void printParamList(std::ostream &o, UserFunction &Func)
 	for (UserFunction::Param& param : Func.elwiseParams)
 	{
 		if (!first) { o << ", "; }
-		o << param.resolvedTypeName << " " << param.name; // HERE1
+		o << param.resolvedTypeName << " " << param.name;
 		first = false;
 	}
 
@@ -71,8 +59,6 @@ void printParamList(std::ostream &o, UserFunction &Func)
 	for (UserFunction::Param& param : Func.anyScalarParams)
 	{
 		if (!first) { o << ", "; }
-		if (param.astDeclNode->getOriginalType()->isPointerType())
-			o << "__global ";
 		o << param.resolvedTypeName << " " << param.name;
 		first = false;
 	}
@@ -119,6 +105,13 @@ typedef struct {
 	__global SKEPU_CONTAINED_TYPE_CL *data;
 	size_t cols;
 } skepu_matrow_proxy_SKEPU_ESCAPED_TYPE_CL;
+)~~~";
+
+static const std::string OpenCLMatrixColTemplate = R"~~~(
+typedef struct {
+	__global SKEPU_CONTAINED_TYPE_CL *data;
+	size_t rows;
+} skepu_matcol_proxy_SKEPU_ESCAPED_TYPE_CL;
 )~~~";
 
 static const std::string OpenCLTensor3Template = R"~~~(
@@ -168,6 +161,14 @@ std::string generateOpenCLMatrixProxy(std::string typeName)
 std::string generateOpenCLMatrixRowProxy(std::string typeName)
 {
 	std::string retval = OpenCLMatrixRowTemplate;
+	replaceTextInString(retval, "SKEPU_CONTAINED_TYPE_CL", typeName);
+	replaceTextInString(retval, "SKEPU_ESCAPED_TYPE_CL", transformToCXXIdentifier(typeName));
+	return retval;
+}
+
+std::string generateOpenCLMatrixColProxy(std::string typeName)
+{
+	std::string retval = OpenCLMatrixColTemplate;
 	replaceTextInString(retval, "SKEPU_CONTAINED_TYPE_CL", typeName);
 	replaceTextInString(retval, "SKEPU_ESCAPED_TYPE_CL", transformToCXXIdentifier(typeName));
 	return retval;
@@ -467,6 +468,8 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 		if (!testAndSet(first, false)) SSSkepuFunctorStruct << ", ";
 		if (param.fullTypeName.find("MatRow") != std::string::npos)
 			SSSkepuFunctorStruct << "skepu::ProxyTag::MatRow";
+		else if (param.fullTypeName.find("MatCol") != std::string::npos)
+			SSSkepuFunctorStruct << "skepu::ProxyTag::MatCol";
 		else
 			SSSkepuFunctorStruct << "skepu::ProxyTag::Default";
 	}
@@ -579,7 +582,7 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 	for (UserFunction::Param& param : Func.elwiseParams)
 	{
 		if (!first) { SSFuncParamList << ", "; }
-		SSFuncParamList << param.rawTypeName << " " << param.name; // HERE1
+		SSFuncParamList << param.rawTypeName << " " << param.name;
 		first = false;
 	}
 
@@ -593,8 +596,8 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 	for (UserFunction::Param& param : Func.anyScalarParams)
 	{
 		if (!first) { SSFuncParamList << ", "; }
-		if (param.astDeclNode->getOriginalType()->isPointerType())
-			SSFuncParamList << "__global ";
+//	if (param.astDeclNode->getOriginalType()->isPointerType())
+//		SSFuncParamList << "__global ";
 		SSFuncParamList << param.resolvedTypeName << " " << param.name;
 		first = false;
 	}

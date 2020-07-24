@@ -237,7 +237,7 @@ UserType *HandleUserType(const CXXRecordDecl *t)
 	// These types are handled separately
 	if (name == "Index1D" || name == "Index2D" || name == "Index3D" || name == "Index4D"
 		|| name == "Region1D" || name == "Region2D" || name == "Region3D" || name == "Region4D"
-		|| name == "Vec" || name == "Mat" || name == "Ten3" || name == "Ten4" || name == "MatRow")
+		|| name == "Vec" || name == "Mat" || name == "Ten3" || name == "Ten4" || name == "MatRow" || name == "MatCol")
 		return nullptr;
 
 	SkePULog() << "Found user type: " << name << "\n";

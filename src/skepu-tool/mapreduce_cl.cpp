@@ -280,6 +280,9 @@ void proxyCodeGenHelper_CL(std::map<ContainerType, std::set<std::string>> contai
 	for (const std::string &type : containerProxyTypes[ContainerType::MatRow])
 		sourceStream << generateOpenCLMatrixRowProxy(type);
 	
+	for (const std::string &type : containerProxyTypes[ContainerType::MatCol])
+		sourceStream << generateOpenCLMatrixColProxy(type);
+	
 	for (const std::string &type : containerProxyTypes[ContainerType::Tensor3])
 		sourceStream << generateOpenCLTensor3Proxy(type);
 	
@@ -337,6 +340,12 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", size_t skepu_cols_" << param.name << ", ";
 				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_cols(), ";
 				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + i * skepu_cols_" << param.name << "), .cols = skepu_cols_" << param.name << " };\n";
+				break;
+			
+			case ContainerType::MatCol:
+				SSKernelParamList << "__global " << param.resolvedTypeName << " *" << name << ", size_t skepu_rows_" << param.name << ", ";
+				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_rows(), ";
+				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + i), .rows = skepu_rows_" << param.name << " };\n";
 				break;
 			
 			case ContainerType::Tensor3:
