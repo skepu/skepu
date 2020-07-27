@@ -26,9 +26,9 @@ int main(int argc, char *argv[])
 	}
 	
 	const size_t size = atoi(argv[1]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{argv[2]};
 	
-	auto dotprod = skepu::MapReduce<2>(mult<float>, add<float>);
+	auto dotprod = skepu::MapReduce(mult<float>, add<float>);
 	dotprod.setBackend(spec);
 	
 	skepu::Vector<float> a(size), b(size);

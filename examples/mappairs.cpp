@@ -2,14 +2,14 @@
 #include <skepu>
 
 
-int uf(int a, int b)
+int uf1(int a, int b)
 {
 	return a * b;
 }
 
-void test1(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
+void test1(size_t Vsize, size_t Hsize)
 {
-	auto pairs = skepu::MapPairs(uf);
+	auto pairs = skepu::MapPairs(uf1);
 	
 	skepu::Vector<int> v1(Vsize, 3), h1(Hsize, 7);
 	
@@ -33,7 +33,7 @@ int uf2(skepu::Index2D i, int ve1, int ve2, int ve3, int he1, int he2, skepu::Ve
 	return i.row + i.col + u1; // + ve1 + ve2 + ve3 + he1 + he2 + test.data[0] + u1 + u2;
 }
 
-void test2(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
+void test2(size_t Vsize, size_t Hsize)
 {
 	auto pairs2 = skepu::MapPairs<3, 2>(uf2);
 	
@@ -54,7 +54,7 @@ int uf3(skepu::Index2D i, int u)
 	return i.row + i.col + u;
 }
 
-void test3(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
+void test3(size_t Vsize, size_t Hsize)
 {
 	auto pairs3 = skepu::MapPairs<0, 0>(uf3);
 	
@@ -66,7 +66,12 @@ void test3(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
 }
 
 
-int sum(int lhs, int rhs)
+int uf5(int a, int b)
+{
+	return a * b;
+}
+
+int sumd(int lhs, int rhs)
 {
 	return lhs + rhs;
 }
@@ -75,10 +80,11 @@ int uf4(skepu::Index2D i, skepu::Vec<int> test, int u)
 {
 	return i.row + i.col + u;
 }
+
 /*
-void testReduce(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
+void testReduce(size_t Vsize, size_t Hsize)
 {
-	auto pairs = skepu::MapPairsReduce(uf, sum);
+	auto pairs = skepu::MapPairsReduce(uf5, sumd);
 	
 	skepu::Vector<int> v1(Vsize, 3), h1(Hsize, 7);
 	skepu::Vector<int> resV(Vsize), resH(Hsize);
@@ -99,7 +105,7 @@ void testReduce(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
 	
 	// Test implicit dimensions
 	{
-		auto pairs4 = skepu::MapPairsReduce<0, 0>(uf4, sum);
+		auto pairs4 = skepu::MapPairsReduce<0, 0>(uf4, sumd);
 		
 		pairs4.setDefaultSize(Vsize, Hsize);
 		pairs4.setReduceMode(skepu::ReduceMode::ColWise);
@@ -112,7 +118,6 @@ void testReduce(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
 	}
 }
 */
-
 
 
 
@@ -129,13 +134,13 @@ int main(int argc, char *argv[])
 	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[3])};
 	skepu::setGlobalBackendSpec(spec);
 	
-	test1(Vsize, Hsize, spec);
+	test1(Vsize, Hsize);
 	for (int i = 0; i < 10; ++i) std::cout << std::endl;
-	test2(Vsize, Hsize, spec);
+	test2(Vsize, Hsize);
 	
-	test3(Vsize, Hsize, spec);
+	test3(Vsize, Hsize);
 	
-//	testReduce(Vsize, Hsize, spec);
+//	testReduce(Vsize, Hsize);
 	
 	return 0;
 }

@@ -25,7 +25,7 @@ MaxMin max_min_f(MaxMin a, MaxMin b)
 
 void find_max_min(skepu::Vector<float> floats)
 {
-	auto maxmin = skepu::MapReduce<1>(preprocess, max_min_f);
+	auto maxmin = skepu::MapReduce(preprocess, max_min_f);
 	maxmin.setStartValue({-INFINITY, INFINITY});
 	MaxMin result = maxmin(floats);
 	

@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 	nbody(particles, iterations, &spec);
 	
 	std::stringstream outfile2;
-	outfile2 << "output" << spec.backend() << ".txt";
+	outfile2 << "output" << spec.type() << ".txt";
 	save_step(particles, outfile2.str());
 	
 	return 0;

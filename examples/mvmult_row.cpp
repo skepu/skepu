@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 
 	r.flush();
 	directMV(v, m, r);
-	auto mvprod = skepu::Map<0>(mvmult_f<float>);
+	auto mvprod = skepu::Map(mvmult_f<float>);
 	mvprod(r2, m, v);
 	
 	r.flush();

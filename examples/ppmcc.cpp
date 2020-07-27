@@ -32,22 +32,14 @@ T plus(T a, T b)
 	return a + b;
 }
 
-
 using T = float;
 
-// Skeleton definitions
-auto sum = skepu::Reduce(plus<T>);
-auto dotProduct = skepu::MapReduce<2>(mult<T>, plus<T>);
-auto sumSquare = skepu::MapReduce<1>(square<T>, plus<T>);
-
-T ppmcc(skepu::Vector<T> &x, skepu::Vector<T> &y, skepu::BackendSpec *spec = nullptr)
+T ppmcc(skepu::Vector<T> &x, skepu::Vector<T> &y)
 {
-	if (spec)
-	{
-		sum.setBackend(*spec);
-		dotProduct.setBackend(*spec);
-		sumSquare.setBackend(*spec);
-	}
+	// Skeleton definitions
+	auto sum = skepu::Reduce(plus<T>);
+	auto dotProduct = skepu::MapReduce(mult<T>, plus<T>);
+	auto sumSquare = skepu::MapReduce(square<T>, plus<T>);
 	
 	size_t N = x.size();
 	T sumX = sum(x);
@@ -67,6 +59,7 @@ int main(int argc, char *argv[])
 	
 	const size_t size = std::stoul(argv[1]);
 	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
+	skepu::setGlobalBackendSpec(spec);
 	
 	// Vector operands
 	skepu::Vector<T> x(size), y(size);
@@ -76,7 +69,7 @@ int main(int argc, char *argv[])
 	std::cout << "X: " << x << "\n";
 	std::cout << "Y: " << y << "\n";
 	
-	T res = ppmcc(x, y, &spec);
+	T res = ppmcc(x, y);
 	
 	std::cout << "res: " << res << "\n";
 	

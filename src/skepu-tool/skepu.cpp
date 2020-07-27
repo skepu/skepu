@@ -117,7 +117,7 @@ public:
 
 
 
-		if (Verbose) llvm::errs() << "** EndSourceFileAction for: " << SM.getFileEntryForID(SM.getMainFileID())->getName() << "\n";
+//		if (Verbose) llvm::errs() << "** EndSourceFileAction for: " << SM.getFileEntryForID(SM.getMainFileID())->getName() << "\n";
 
 		// Now emit the rewritten buffer.
 		std::error_code EC;

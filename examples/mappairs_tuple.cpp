@@ -6,7 +6,7 @@ skepu::multiple<int, float> uf(int a, int b)
 	return skepu::ret(a * b, (float)a / b);
 }
 
-void test1(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
+void test1(size_t Vsize, size_t Hsize)
 {
 	auto pairs = skepu::MapPairs(uf);
 	
@@ -35,7 +35,7 @@ uf2(skepu::Index2D i, int ve1, int ve2, int ve3, int he1, int he2, skepu::Vec<in
 	return skepu::ret(i.row, i.col, ve1 + ve2 + ve3 + he1 + he2 + test.data[0] + u1 + u2);
 }
 
-void test2(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
+void test2(size_t Vsize, size_t Hsize)
 {
 	auto pairs2 = skepu::MapPairs<3, 2>(uf2);
 	
@@ -60,7 +60,7 @@ skepu::multiple<int> uf3(skepu::Index2D i, int u)
 	return i.row + i.col + u;
 }
 
-void test3(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
+void test3(size_t Vsize, size_t Hsize)
 {
 	auto pairs3 = skepu::MapPairs<0, 0>(uf3);
 	
@@ -72,15 +72,62 @@ void test3(size_t Vsize, size_t Hsize, skepu::BackendSpec spec)
 }
 
 
-int sum(int lhs, int rhs)
+
+int sum_multi(int lhs, int rhs)
 {
 	return lhs + rhs;
 }
 
-int uf4(skepu::Index2D i, skepu::Vec<int> test, int u)
+skepu::multiple<int, int> uf_multi(int a, int b)
 {
-	return i.row + i.col + u;
+	return skepu::ret(a * b, a + b);
 }
+
+skepu::multiple<int, int> uf4_multi(skepu::Index2D i, skepu::Vec<int> test, int u)
+{
+	return skepu::ret(i.row + i.col + u, test(0));
+}
+
+void testReduceMultiReturn(size_t Vsize, size_t Hsize)
+{
+	auto pairs = skepu::MapPairsReduce(uf_multi, sum_multi);
+	
+	skepu::Vector<int> v1(Vsize, 3), h1(Hsize, 7);
+	skepu::Vector<int> resV1(Vsize), resV2(Vsize), resH1(Hsize), resH2(Hsize);
+	
+	for (int i = 0; i < Vsize; ++i) v1(i) = i+1;
+	for (int i = 0; i < Hsize; ++i) h1(i) = (i+1)*10;
+	
+	std::cout << "\nv1: " << v1 << "\nh1: " << h1 << "\n\n";
+	
+	pairs.setReduceMode(skepu::ReduceMode::ColWise);
+	pairs(resH1, resH2, v1, h1);
+	std::cout << "\nresH1: " << resH1 << "\n";
+	std::cout << "\nresH2: " << resH2 << "\n";
+	
+	pairs.setReduceMode(skepu::ReduceMode::RowWise);
+	pairs(resV1, resV2, v1, h1);
+	std::cout << "\nresV1: " << resV1 << "\n";
+	std::cout << "\nresV2: " << resV2 << "\n";
+	
+	
+	// Test implicit dimensions
+	{
+		auto pairs4 = skepu::MapPairsReduce<0, 0>(uf4_multi, sum_multi);
+		
+		pairs4.setDefaultSize(Vsize, Hsize);
+		pairs4.setReduceMode(skepu::ReduceMode::ColWise);
+		pairs4(resH1, resH2, v1, 0);
+		std::cout << "\nresH1: " << resH1 << "\n";
+		std::cout << "\nresH2: " << resH2 << "\n";
+		
+		pairs4.setReduceMode(skepu::ReduceMode::RowWise);
+		pairs4(resV1, resV2, v1, 0);
+		std::cout << "\nresV1: " << resV1 << "\n";
+		std::cout << "\nresV2: " << resV2 << "\n";
+	}
+}
+
 
 
 
@@ -99,11 +146,13 @@ int main(int argc, char *argv[])
 	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[3])};
 	skepu::setGlobalBackendSpec(spec);
 	
-	test1(Vsize, Hsize, spec);
+	test1(Vsize, Hsize);
 	for (int i = 0; i < 10; ++i) std::cout << std::endl;
-	test2(Vsize, Hsize, spec);
+	test2(Vsize, Hsize);
 	
-	test3(Vsize, Hsize, spec);
+	test3(Vsize, Hsize);
+	
+	testReduceMultiReturn(Vsize, Hsize);
 	
 	return 0;
 }

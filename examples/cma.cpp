@@ -15,16 +15,10 @@ U avg(skepu::Index1D index, T sum)
 
 
 auto prefix_sum = skepu::Scan(sum<int>);
-auto average = skepu::Map<1>(avg<int, float>);
+auto average = skepu::Map(avg<int, float>);
 
-void cma(skepu::Vector<int> &in, skepu::Vector<float> &out, skepu::BackendSpec *spec = nullptr)
+void cma(skepu::Vector<int> &in, skepu::Vector<float> &out)
 {
-	if (spec)
-	{
-		prefix_sum.setBackend(*spec);
-		average.setBackend(*spec);
-	}
-	
 	prefix_sum(in, in);
 	average(out, in);
 }
@@ -38,7 +32,8 @@ int main(int argc, char *argv[])
 	}
 	
 	const size_t size = atoi(argv[1]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{argv[2]};
+	skepu::setGlobalBackendSpec(spec);
 	
 	skepu::Vector<int> in(size);
 	skepu::Vector<float> out(size);
@@ -47,7 +42,7 @@ int main(int argc, char *argv[])
 	if (size <= 50)
 		std::cout << "Elements: " << in << "\n";
 	
-	cma(in, out, &spec);
+	cma(in, out);
 	
 	if (size <= 50)
 		std::cout << "Cumulative moving average: " << out << "\n";

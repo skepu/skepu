@@ -164,8 +164,8 @@ bool HandleSkeletonInstance(VarDecl *d)
 	if (isa<DecltypeType>(RetType))
 		RetType = dyn_cast<DecltypeType>(RetType)->getUnderlyingType().getTypePtr();
 
-	const TemplateDecl *Template = RetType->getAs<TemplateSpecializationType>()->getTemplateName().getAsTemplateDecl();
-	std::string TypeName = Template->getNameAsString();
+	const TemplateSpecializationType *Template = RetType->getAs<TemplateSpecializationType>();
+	std::string TypeName = Template->getTemplateName().getAsTemplateDecl()->getNameAsString();
 	Skeleton::Type skeletonType = Skeletons.at(TypeName).type;
 
 	std::string InstanceName = d->getNameAsString();
@@ -176,14 +176,14 @@ bool HandleSkeletonInstance(VarDecl *d)
 	{
 	case Skeleton::Type::Map:
 	case Skeleton::Type::MapReduce:
-		assert(Callee->getTemplateSpecializationArgs()->size() > 0);
-		arity[0] = Callee->getTemplateSpecializationArgs()->get(0).getAsIntegral().getExtValue();
+		assert(Template->getNumArgs() > 0);
+		arity[0] = Template->getArg(0).getAsExpr()->EvaluateKnownConstInt(d->getASTContext()).getExtValue();
 		break;
 	case Skeleton::Type::MapPairs:
 	case Skeleton::Type::MapPairsReduce:
-		assert(Callee->getTemplateSpecializationArgs()->size() > 1);
-		arity[0] = Callee->getTemplateSpecializationArgs()->get(0).getAsIntegral().getExtValue();
-		arity[1] = Callee->getTemplateSpecializationArgs()->get(1).getAsIntegral().getExtValue();
+		assert(Template->getNumArgs() > 1);
+		arity[0] = Template->getArg(0).getAsExpr()->EvaluateKnownConstInt(d->getASTContext()).getExtValue();
+		arity[1] = Template->getArg(1).getAsExpr()->EvaluateKnownConstInt(d->getASTContext()).getExtValue();
 		break;
 	case Skeleton::Type::MapOverlap1D:
 		arity[0] = 1; break;

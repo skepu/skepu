@@ -64,7 +64,7 @@ T min(T a, T b)
 }
 
 
-auto modifiedDotProduct = skepu::MapReduce<2>(mult_f_i, plus<float>);
+auto modifiedDotProduct = skepu::MapReduce(mult_f_i, plus<float>);
 
 
 int main(int argc, const char* argv[])
@@ -118,9 +118,9 @@ int main(int argc, const char* argv[])
 	
 	
 	// MapReduce with dense matrices
-	auto sumOfProducts = skepu::MapReduce<2>(mult<float>, plus<float>);
+	auto sumOfProducts = skepu::MapReduce(mult<float>, plus<float>);
 	
-	auto sumOfProducts2 = skepu::MapReduce<2>(mult<float>, testfn);
+	auto sumOfProducts2 = skepu::MapReduce(mult<float>, testfn);
 	
 	skepu::Matrix<float> m0(4, 4, 2.f);
 	skepu::Matrix<float> m1(4, 4, 5.f);

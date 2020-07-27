@@ -131,7 +131,7 @@ void save_step(skepu::Vector<Particle> &particles, const std::string &filename)
 
 
 auto nbody_init = skepu::Map<0>(init);
-auto nbody_simulate_step = skepu::Map<1>(move);
+auto nbody_simulate_step = skepu::Map(move);
 
 void nbody(skepu::Vector<Particle> &particles, size_t iterations, skepu::BackendSpec *spec = nullptr)
 {
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 	nbody(particles, iterations, &spec);
 	
 	std::stringstream outfile2;
-	outfile2 << "output" << spec.backend() << ".txt";
+	outfile2 << "output" << spec.type() << ".txt";
 
 	particles.flush();
 	if(!skepu::cluster::mpi_rank())

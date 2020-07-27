@@ -30,15 +30,13 @@ T clamp_sum(T a, T b)
 	return temp < 0 ? 0 : (temp > MAX ? MAX : temp);
 }
 
-
-auto clamped_sum = skepu::Map<2>(clamp_sum<int>);
-auto squared_diff_sum = skepu::MapReduce<2>(diff_squared, sum<float>);
-
 float psnr(skepu::Matrix<int> &img, skepu::Matrix<int> noise)
 {
 	const size_t rows = img.total_rows();
 	const size_t cols = img.total_cols();
 	
+	auto clamped_sum = skepu::Map(clamp_sum<int>);
+	auto squared_diff_sum = skepu::MapReduce(diff_squared, sum<float>);
 	skepu::Matrix<int> comp_img(rows, cols);
 	
 	// Add noise

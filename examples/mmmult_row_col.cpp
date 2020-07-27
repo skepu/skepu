@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 	res2.flush();
 	directMM(lhs, rhs, res2);
 		
-	auto mmprod = skepu::Map<0>(mmmult_f<float>);
+	auto mmprod = skepu::Map(mmmult_f<float>);
 	mmprod(res, lhs, rhs);
 	
 	res.flush();

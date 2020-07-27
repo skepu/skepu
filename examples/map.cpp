@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 	const size_t size = atoi(argv[1]);
 	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
 	
-	auto square = skepu::Map<2>(mult_f);
+	auto square = skepu::Map(mult_f);
 	square.setBackend(spec);
 	
 	skepu::Vector<int> v1(size, 3), v2(size, 7), r(size);

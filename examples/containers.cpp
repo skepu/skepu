@@ -98,11 +98,11 @@ int main(int argc, char *argv[])
 	auto spec = skepu::BackendSpec{argv[2]};
 	skepu::setGlobalBackendSpec(spec);
 	
-	auto skel0 = skepu::Map<1>(test0);
-	auto skel1 = skepu::Map<1>(test1);
-	auto skel2 = skepu::Map<1>(test2);
-	auto skel3 = skepu::Map<1>(test3);
-	auto skel4 = skepu::Map<1>(test4);
+	auto skel0 = skepu::Map(test0);
+	auto skel1 = skepu::Map(test1);
+	auto skel2 = skepu::Map(test2);
+	auto skel3 = skepu::Map(test3);
+	auto skel4 = skepu::Map(test4);
 	
 	
 	skepu::Vector<int> vec(size);
@@ -174,10 +174,10 @@ int main(int argc, char *argv[])
 	
 	// TEST PROXIES
 	
-	auto skel1_p = skepu::Map<0>(test1_proxy);
-	auto skel2_p = skepu::Map<0>(test2_proxy);
-	auto skel3_p = skepu::Map<0>(test3_proxy);
-	auto skel4_p = skepu::Map<0>(test4_proxy);
+	auto skel1_p = skepu::Map(test1_proxy);
+	auto skel2_p = skepu::Map(test2_proxy);
+	auto skel3_p = skepu::Map(test3_proxy);
+	auto skel4_p = skepu::Map(test4_proxy);
 	
 	skepu::Vector<int> dummy(1);
 	
@@ -198,10 +198,10 @@ int main(int argc, char *argv[])
 	
 	// Test MapReduce
 	
-	auto mapred1 = skepu::MapReduce<1>(test1, redfn);
-	auto mapred2 = skepu::MapReduce<1>(test2, redfn);
-	auto mapred3 = skepu::MapReduce<1>(test3, redfn);
-	auto mapred4 = skepu::MapReduce<1>(test4, redfn);
+	auto mapred1 = skepu::MapReduce(test1, redfn);
+	auto mapred2 = skepu::MapReduce(test2, redfn);
+	auto mapred3 = skepu::MapReduce(test3, redfn);
+	auto mapred4 = skepu::MapReduce(test4, redfn);
 	
 	int res1 = mapred1(vec);
 	int res2 = mapred2(mat);
