@@ -35,7 +35,7 @@ endif()
 set(SKEPU_TOOL_LLVM_DIR "${CMAKE_CURRENT_BINARY_DIR}/llvm")
 set(SKEPU_TOOL_BINARY_DIR "${SKEPU_TOOL_LLVM_DIR}/bin")
 set(SKEPU_TOOL_TARGETS_DIR
-	"/tools/clang/tools/skepu-tool/CMakeFiles/Export/lib/cmake/SkePU")
+	"tools/clang/tools/skepu-tool/CMakeFiles/Export/lib/cmake/SkePU")
 
 # We need to build SkePU-tool as an external project for these reasons:
 # 1.	If llvm is added as a subproject, all it's targets would be added to make
@@ -99,6 +99,7 @@ install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/llvm/clang/lib/Headers/
 	DESTINATION lib/SkePU/clang-headers/)
 # TODO: We should probably install the clang licence in that directory.
 
+# Enable testing first in case skepu headers tests are enabled.
 if(SKEPU_ENABLE_TESTING)
 	enable_testing()
 endif()
@@ -106,11 +107,16 @@ endif()
 # We need the SkePU headers.
 add_subdirectory(skepu-headers)
 
-# TODO: Fix this mess...
-if(SKEPU_ENABLE_TESTING AND NOT TARGET catch2_main)
+# Now add the skepu-tool tests
+if(SKEPU_ENABLE_TESTING)
 	enable_language(CUDA)
 	find_package(Catch2)
-	add_subdirectory(${CMAKE_SOURCE_DIR}/skepu-headers/tests/catch2_main)
+
+	# If skepu headers tests were not enabled, we add the catch2_main target here.
+	if(NOT TARGET catch2_main)
+		add_subdirectory(${CMAKE_SOURCE_DIR}/skepu-headers/tests/catch2_main)
+	endif()
+
 	add_subdirectory(tests)
 endif()
 
