@@ -9,7 +9,9 @@ build:
   stage: build
   artifacts:
     paths:
-      - build
+      - build/tests
+      - build/CTestTestfile.cmake
+    expire_in: 60 mins
   script:
     - mkdir build && cd build
     - cmake -DSKEPU_BUILD_EXAMPLES=ON -DSKEPU_HEADERS_ENABLE_TESTING=OFF ..
@@ -24,7 +26,7 @@ test:
     - build
   script:
     - cd build
-    - ctest -VV
+    - ctest
   only:
     - web
     - merge_requests
