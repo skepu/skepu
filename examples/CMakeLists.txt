@@ -42,7 +42,7 @@ set(_skepu_mpi_examples
 	mandelbrot
 	map
 	# mapoverlap
-	# mappairs
+	mappairs
 	# mapreduce
 	# maptuple
 	# median
@@ -50,7 +50,7 @@ set(_skepu_mpi_examples
 	mvmult
 	mvmult_row
 	nbody
-	# nbody_mappairs
+	nbody_mappairs
 	objectoriented
 	# ppmcc
 	# psnr
