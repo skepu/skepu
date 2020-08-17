@@ -32,8 +32,8 @@ T clamp_sum(T a, T b)
 
 float psnr(skepu::Matrix<int> &img, skepu::Matrix<int> noise)
 {
-	const size_t rows = img.total_rows();
-	const size_t cols = img.total_cols();
+	const size_t rows = img.size_i();
+	const size_t cols = img.size_j();
 	
 	auto clamped_sum = skepu::Map(clamp_sum<int>);
 	auto squared_diff_sum = skepu::MapReduce(diff_squared, sum<float>);
@@ -52,7 +52,8 @@ int main(int argc, char *argv[])
 {
 	if (argc < 4)
 	{
-		std::cout << "Usage: " << argv[0] << " rows cols backend\n";
+		skepu::external([&]{
+			std::cout << "Usage: " << argv[0] << " rows cols backend\n";});
 		exit(1);
 	}
 	
@@ -67,11 +68,16 @@ int main(int argc, char *argv[])
 	img.randomize(0, MAX);
 	noise.randomize(-NOISE, NOISE);
 	
-	std::cout << "Actual image: " << img << "\n";
+	skepu::external(
+		skepu::read(img),
+		[&]{
+			std::cout << "Actual image: " << img << "\n";
+		});
 	
 	float psnrval = psnr(img, noise);
 	
-	std::cout << "PSNR of two images: " << psnrval << "\n";
+	skepu::external([&]{
+		std::cout << "PSNR of two images: " << psnrval << "\n";});
 	
 	return 0;
 }

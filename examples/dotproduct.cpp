@@ -35,12 +35,17 @@ int main(int argc, char *argv[])
 	a.randomize(0, 3);
 	b.randomize(0, 2);
 	
-	std::cout << a << "\n";
-	std::cout << b << "\n";
+	skepu::external(
+		skepu::read(a,b),
+		[&]{
+			std::cout << a << "\n";
+			std::cout << b << "\n";
+		});
 	
 	float res = dotprod(a, b);
 	
-	std::cout << res << "\n";
+	skepu::external(
+		[&]{ std::cout << res << "\n"; });
 	
 	return 0;
 }

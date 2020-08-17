@@ -34,8 +34,9 @@ int main(int argc, char *argv[])
 {
 	if (argc < 4)
 	{
-		if(!skepu::cluster::mpi_rank())
+		skepu::external([&]{
 			std::cout << "Usage: " << argv[0] << " height width inner backend\n";
+		});
 		exit(1);
 	}
 	
@@ -49,32 +50,38 @@ int main(int argc, char *argv[])
 	lhs.randomize(3, 9);
 	rhs.randomize(0, 9);
 	
-	lhs.flush();
-	rhs.flush();
-/*	if(!skepu::cluster::mpi_rank())
-	{
-		std::cout << "lhs: " << lhs << "\n";
-		std::cout << "rhs: " << rhs << "\n";
-	}*/
+	skepu::external(
+		skepu::read(lhs,rhs),
+		[&]{
+			if(!skepu::cluster::mpi_rank())
+			{
+				std::cout << "lhs: " << lhs << "\n";
+				std::cout << "rhs: " << rhs << "\n";
+			}
+		});
 
-	res2.flush();
-	directMM(lhs, rhs, res2);
+	skepu::external(
+		skepu::read(lhs,rhs),
+		[&]{
+			directMM(lhs, rhs, res2);
+		},
+		skepu::write(res2));
 		
 	auto mmprod = skepu::Map(mmmult_f<float>);
 	mmprod(res, lhs, rhs);
 	
-	res.flush();
-	res2.flush();
-	if(!skepu::cluster::mpi_rank())
-	{
-	//	std::cout << "res: " << res << "\n";
-	//	std::cout << "res2: " << res2 << "\n";
-		
-		for (size_t i = 0; i < height; i++)
-			for (size_t j = 0; j < width; j++)
-				if (res(i, j) != res2(i, j))
-					std::cout << "Output error at index (" << i << "," << j << "): " << res2(i, j) << " vs " << res(i, j) << "\n";
-	}
+	skepu::external(
+		skepu::read(res, res2),
+		[&]{
+			if(!skepu::cluster::mpi_rank())
+			{
+				for (size_t i = 0; i < height; i++)
+					for (size_t j = 0; j < width; j++)
+						if (res(i, j) != res2(i, j))
+							std::cout << "Output error at index (" << i << "," << j << "): "
+								<< res2(i, j) << " vs " << res(i, j) << "\n";
+			}
+		});
 
 	return 0;
 }

@@ -5,7 +5,7 @@ add_library(lodepng STATIC lodepng.cpp)
 
 set(_skepu_examples
 	backendspec
-	# call
+	call
 	cma
 	containers
 	coulombic
@@ -16,9 +16,10 @@ set(_skepu_examples
 	mapoverlap
 	mappairs
 	mapreduce
-	# maptuple
+	maptuple
 	median
 	mmmult
+	mmmult_row_col
 	mvmult
 	mvmult_row
 	nbody
@@ -35,25 +36,29 @@ set(_skepu_examples
 set(_skepu_mpi_examples
 	# call
 	# cma
+	# complex
 	# containers
 	coulombic
-	# dotproduct
+	dotproduct
 	# lambda
 	mandelbrot
 	map
 	# mapoverlap
 	mappairs
-	# mapreduce
-	# maptuple
+	# mappairs_tuple
+	mapreduce
+	maptuple
+	maxmin
 	# median
 	mmmult
+	# mmmult_row_col
 	mvmult
 	mvmult_row
 	nbody
 	nbody_mappairs
 	objectoriented
-	# ppmcc
-	# psnr
+	ppmcc
+	psnr
 	reduce
 	# scan
 	# taylor

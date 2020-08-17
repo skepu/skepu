@@ -53,7 +53,10 @@ int main(int argc, char *argv[])
 {
 	if (argc < 3)
 	{
-		std::cout << "Usage: " << argv[0] << " input_size backend\n";
+		skepu::external(
+			[&]{
+				std::cout << "Usage: " << argv[0] << " input_size backend\n";
+			});
 		exit(1);
 	}
 	
@@ -66,12 +69,17 @@ int main(int argc, char *argv[])
 	x.randomize(1, 3);
 	y.randomize(2, 4);
 	
-	std::cout << "X: " << x << "\n";
-	std::cout << "Y: " << y << "\n";
-	
+	skepu::external(
+		skepu::read(x,y),
+		[&]{
+			std::cout << "X: " << x << "\n";
+			std::cout << "Y: " << y << "\n";
+		});
+
 	T res = ppmcc(x, y);
 	
-	std::cout << "res: " << res << "\n";
+	skepu::external([&]{
+		std::cout << "res: " << res << "\n";});
 	
 	return 0;
 }
