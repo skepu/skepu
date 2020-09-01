@@ -382,11 +382,11 @@ bool testAndSet(bool &arg, bool newVal = true)
 	return oldVal;
 }
 
+static std::set<std::string> generatedStructs;
+static std::set<std::string> usingDecls;
+
 void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clang::SourceLocation loc)
 {
-	static std::set<std::string> generatedStructs;
-	static std::set<std::string> usingDecls;
-
 	// Start by recursively generate functors for referenced user functions
 	for (auto *referenced : UF.ReferencedUFs)
 		generateUserFunctionStruct(*referenced, InstanceName, loc);
@@ -616,10 +616,16 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 	return SSFuncSource.str();
 }
 
+static int skeletonCounter = 0;
 
 bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, VarDecl *d)
 {
-	SkePULog() << "Name of skeleton: " << skeleton.name << "\n";
+	generatedStructs = {};
+	std::stringstream ss;
+	ss << "skepu_skel_" << skeletonCounter++;
+	std::string skeletonID = ss.str();
+	
+	SkePULog() << "Name of skeleton: " << skeleton.name << ", Unique ID: " << skeletonID << "\n";
 	
 	if (GlobalRewriter.RemoveText(d->getSourceRange()))
 		SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
@@ -633,7 +639,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			loc = dyn_cast<FunctionDecl>(DeclCtx)->getSourceRange().getBegin();
 		}
 		
-		generateUserFunctionStruct(*UF, InstanceName, loc);
+		generateUserFunctionStruct(*UF, skeletonID + InstanceName, loc);
 	}
 
 
@@ -655,7 +661,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 	{
 		if (!first)
 			SSTemplateArgs << ", ";
-		SSTemplateArgs << SkePU_UF_Prefix << InstanceName << "_" << func->uniqueName;
+		SSTemplateArgs << SkePU_UF_Prefix << skeletonID << InstanceName << "_" << func->uniqueName;
 		first = false;
 	}
 
