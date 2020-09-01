@@ -50,9 +50,9 @@ int main(int argc, char *argv[])
 	
 	const size_t size = atoi(argv[1]);
 	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
+	skepu::setGlobalBackendSpec(spec);
 	
 	auto conv = skepu::MapOverlap(over_1d);
-	conv.setBackend(spec);
 	conv.setOverlap(2);
 	
 	skepu::Vector<float> v(size, 10), rv(size);
@@ -154,7 +154,6 @@ int main(int argc, char *argv[])
 	
 	
 	auto conv2 = skepu::MapOverlap(over_2d);
-	conv2.setBackend(spec);
 	conv2.setOverlap(1, 1);
 	
 	skepu::Matrix<float> filter(2*1+1, 2*1+1, 1), rm2(size - 2*1, size - 2*1);
@@ -162,30 +161,28 @@ int main(int argc, char *argv[])
 	conv2(rm2, m, filter);
 	std::cout << "Matrix 2D Pad 0:    rm = " << rm2 << "\n";
 	
-	
+	/*
 	// Tensor3
 	
-/*	auto conv3 = skepu::MapOverlap(over_3d);
-	conv3.setBackend(spec);
+	auto conv3 = skepu::MapOverlap(over_3d);
 	conv3.setOverlap(1, 1, 1);
 	
 	skepu::Tensor3<float> ten3(size, size, size, 1), stencil3(2*1+1, 2*1+1, 2*1+1, 1), ret_ten3(size - 2*1, size - 2*1, size - 2*1);
 	
 	conv3(ret_ten3, ten3, stencil3);
 	std::cout << "Tensor3D: " << ret_ten3 << "\n";
-	*/
+	
 	
 	// Tensor4
-	/*
+	
 	auto conv4 = skepu::MapOverlap(over_4d);
-	conv4.setBackend(spec);
 	conv4.setOverlap(1, 1, 1, 1);
 	
 	skepu::Tensor4<float> ten4(size, size, size, size, 1), stencil4(2*1+1, 2*1+1, 2*1+1, 2*1+1, 1), ret_ten4(size - 2*1, size - 2*1, size - 2*1, size - 2*1);
 	
 	conv4(ret_ten4, ten4, stencil4);
-//	std::cout << "Tensor4D: " << ret_ten4 << "\n";
-	*/
+	std::cout << "Tensor4D: " << ret_ten4 << "\n";*/
+	
 	return 0;
 }
 

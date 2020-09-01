@@ -92,8 +92,6 @@ int main(int argc, char *argv[])
 	skepu::Matrix<float> filter(2*o+1, 2*o+1, 1), m(size, size, 5), rm(size - 2*o, size - 2*o);
 	
 	conv2d.setOverlap(o);
-	conv2d.setEdgeMode(skepu::Edge::Pad);
-	conv2d.setPad(0);
 	conv2d(rm, m, filter);
 	
 	
