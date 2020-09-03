@@ -1,4 +1,3 @@
-
 # ------------------------------------------------
 #   Built-in math functions
 # ------------------------------------------------
@@ -6,17 +5,23 @@ skepu_add_executable(builtins_cpu_test SKEPUSRC builtins.cpp)
 target_link_libraries(builtins_cpu_test PRIVATE catch2_main)
 add_test(builtins_cpu builtins_cpu_test)
 
+if(SKEPU_OPENMP)
 skepu_add_executable(builtins_openmp_test OpenMP SKEPUSRC builtins.cpp)
 target_link_libraries(builtins_openmp_test PRIVATE catch2_main)
 add_test(builtins_openmp builtins_openmp_test)
+endif()
 
-skepu_add_executable(builtins_cuda_test CUDA SKEPUSRC builtins.cpp)
-target_link_libraries(builtins_cuda_test PRIVATE catch2_main)
-add_test(builtins_cuda builtins_cuda_test)
+if(SKEPU_CUDA)
+	skepu_add_executable(builtins_cuda_test CUDA SKEPUSRC builtins.cpp)
+	target_link_libraries(builtins_cuda_test PRIVATE catch2_main)
+	add_test(builtins_cuda builtins_cuda_test)
+endif()
 
-skepu_add_executable(builtins_opencl_test OpenCL SKEPUSRC builtins.cpp)
-target_link_libraries(builtins_opencl_test PRIVATE catch2_main)
-add_test(builtins_opencl builtins_opencl_test)
+if(SKEPU_OPENCL)
+	skepu_add_executable(builtins_opencl_test OpenCL SKEPUSRC builtins.cpp)
+	target_link_libraries(builtins_opencl_test PRIVATE catch2_main)
+	add_test(builtins_opencl builtins_opencl_test)
+endif()
 
 # ------------------------------------------------
 #   Linking multiple precompiled files

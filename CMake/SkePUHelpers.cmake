@@ -65,19 +65,22 @@ macro(skepu_configure)
 	set(_target_libs SkePU::SkePU)
 
 	if(_skepu_cuda)
+		if(NOT CMAKE_CUDA_COMPILER)
+			message(FATAL_ERROR "[SKEPU] No CUDA compiler enabled")
+		endif()
 		list(APPEND _skepu_backends "-cuda")
 		set(_skepu_ext ".cu")
 	endif()
 
 	if(_skepu_mpi)
-		if(NOT MPI_FOUND)
+		if(NOT STARPU_FOUND)
 			find_package(MPI REQUIRED)
 			find_package(PkgConfig REQUIRED)
-			pkg_check_modules(starpu REQUIRED IMPORTED_TARGET
+			pkg_check_modules(STARPU REQUIRED IMPORTED_TARGET
 				starpu-1.3 starpumpi-1.3)
 		endif()
 		list(APPEND _target_cxxflags -DSKEPU_MPI_STARPU)
-		list(APPEND _target_libs OpenMP::OpenMP_CXX MPI::MPI_CXX PkgConfig::starpu)
+		list(APPEND _target_libs OpenMP::OpenMP_CXX MPI::MPI_CXX PkgConfig::STARPU)
 	endif()
 
 	if(_skepu_opencl)

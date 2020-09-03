@@ -1,4 +1,8 @@
-project(skepu-examples LANGUAGES CXX CUDA)
+project(skepu-examples LANGUAGES CXX)
+
+if(SKEPU_CUDA)
+	enable_language(CUDA)
+endif()
 
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 add_library(lodepng STATIC lodepng.cpp)
@@ -88,11 +92,24 @@ if(SKEPU_EXAMPLES_PAR)
 	# Meta target for all parallel programs
 	add_custom_target(all-parallel)
 
+#TODO: Enalbe when able
+#	if(SKEPU_CUDA)
+#		list(APPEND SKEPU_BACKENDS CUDA)
+#	endif()
+#	if(SKEPU_OPENCL)
+#		list(APPEND SKEPU_BACKENDS OpenCL)
+#	endif()
+	if(SKEPU_OPENMP)
+		list(APPEND SKEPU_BACKENDS OpenMP)
+	endif()
+
+	if(NOT SKEPU_BACKENDS)
+		message(FATAL_ERROR "[SKEPU] Could not enable any parallel backends")
+	endif()
+
 	foreach(example IN LISTS _skepu_examples)
-		# TODO: Add CUDA when enabled in skepu-tool
-		# TODO: Add OpenCL when enabled in skepu-tool
 		skepu_add_executable(${example}_par
-			OpenMP
+			${SKEPU_BACKENDS}
 			SKEPUSRC ${example}.cpp)
 		set_target_properties(${example}_par
 			PROPERTIES

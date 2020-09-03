@@ -1,10 +1,16 @@
 cmake_minimum_required(VERSION 3.10)
 find_package(Patch REQUIRED)
 
-project(SkePU-tool VERSION 3.0.0.1
+project(SkePU VERSION 3.0.0.1
 	DESCRIPTION
 		"A C++11/CUDA/OpenCL skeleton framework with smart containers"
 	LANGUAGES CXX)
+
+# Initialize CMAKE_CUDA_ARCHITECTURES automatically if cmake version >= 3.18
+if(POLICY CMP0104)
+	cmake_policy(SET CMP0104 NEW)
+endif()
+
 include(CMakePackageConfigHelpers)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/CMake)
@@ -109,7 +115,6 @@ add_subdirectory(skepu-headers)
 
 # Now add the skepu-tool tests
 if(SKEPU_ENABLE_TESTING)
-	enable_language(CUDA)
 	find_package(Catch2)
 
 	# If skepu headers tests were not enabled, we add the catch2_main target here.
@@ -142,3 +147,6 @@ install(
 install(FILES ${CMAKE_CURRENT_LIST_DIR}/CMake/SkePUConfig.cmake.in
 	DESTINATION lib/cmake/SkePU
 	RENAME SkePUConfig.cmake)
+
+skepu_print_config()
+skepu_headers_print_config()
