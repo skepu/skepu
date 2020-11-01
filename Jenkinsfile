@@ -38,4 +38,12 @@ pipeline {
          }
       }
    }
+   post {
+        success {
+            mail bcc: '', body: "<b>Build status: Success</b><br>Jenkins pipeline: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> GitLab project: skepu-clang <br> Branch: master", cc: '', from: 'jenkins@gitlab.seis.iti.gr', replyTo: '', subject: "JENKINS EMAIL NOTIFICATION: Project name -> ${env.JOB_NAME}", to: 'theioak@iti.gr,johan.ahlqvist@liu.se,august.ernstsson@liu.se', charset: 'UTF-8', mimeType: 'text/html'
+        }
+        failure {
+            mail bcc: '', body: "<b>Build status: Failed</b><br>Jenkins pipeline: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> GitLab project: skepu-clang <br> Branch: master", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "JENKINS EMAIL NOTIFICATION (CI ERROR): Project name -> ${env.JOB_NAME}", to: "theioak@iti.gr,johan.ahlqvist@liu.se,august.ernstsson@liu.se"
+        }
+   }
 }
