@@ -7,7 +7,7 @@ T mvmult_f(const skepu::MatRow<T> mr, const skepu::Vec<T> v)
 {
 	T res = 0;
 	for (size_t i = 0; i < v.size; ++i)
-		res += mr.data[i] * v.data[i];
+		res += mr(i) * v(i);
 	return res;
 }
 

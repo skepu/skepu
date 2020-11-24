@@ -21,17 +21,6 @@ float plus(float a, float b)
 	return a + b;
 }
 
-auto taylor = skepu::MapReduce<0>(nth_term, plus);
-
-float taylor_approx(float x, size_t N, skepu::BackendSpec *spec = nullptr)
-{
-	
-	taylor.setDefaultSize(N);
-	if (spec) taylor.setBackend(*spec);
-	
-	return taylor(x);
-}
-
 int main(int argc, char *argv[])
 {
 	if (argc < 4)
@@ -41,10 +30,14 @@ int main(int argc, char *argv[])
 	}
 	
 	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[3])};
+	skepu::setGlobalBackendSpec(spec);
 	float x = atof(argv[1]);
 	size_t N = std::stoul(argv[2]);
 	
-	std::cout << "Result: ln(" << x << ") = " << taylor_approx(x - 1, N, &spec) << "\n";
+	auto taylor = skepu::MapReduce<0>(nth_term, plus);
+	taylor.setDefaultSize(N);
+	
+	std::cout << "Result: ln(" << x << ") = " << taylor(x - 1) << "\n";
 	
 	return 0;
 }

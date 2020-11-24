@@ -69,7 +69,7 @@ void test2(size_t Vsize, size_t Hsize)
 
 skepu::multiple<int> uf3(skepu::Index2D i, int u)
 {
-	return i.row + i.col + u;
+	return skepu::ret(i.row + i.col + u);
 }
 
 void test3(size_t Vsize, size_t Hsize)
@@ -99,7 +99,7 @@ skepu::multiple<int, int> uf4_multi(skepu::Index2D i, skepu::Vec<int> test, int 
 {
 	return skepu::ret(i.row + i.col + u, test(0));
 }
-
+/*
 void testReduceMultiReturn(size_t Vsize, size_t Hsize)
 {
 	auto pairs = skepu::MapPairsReduce(uf_multi, sum_multi);
@@ -161,6 +161,11 @@ void testReduceMultiReturn(size_t Vsize, size_t Hsize)
 			});
 	}
 }
+*/
+
+
+
+
 
 int main(int argc, char *argv[])
 {
@@ -181,8 +186,8 @@ int main(int argc, char *argv[])
 	test2(Vsize, Hsize);
 
 	test3(Vsize, Hsize);
-
-	testReduceMultiReturn(Vsize, Hsize);
-
+	
+//	testReduceMultiReturn(Vsize, Hsize);
+	
 	return 0;
 }

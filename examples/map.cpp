@@ -16,10 +16,10 @@ int main(int argc, char *argv[])
 	}
 	
 	const size_t size = atoi(argv[1]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{argv[2]};
+	skepu::setGlobalBackendSpec(spec);
 	
-	auto square = skepu::Map(mult_f);
-	square.setBackend(spec);
+	auto mult = skepu::Map(mult_f);
 	
 	skepu::Vector<int> v1(size, 3), v2(size, 7), r(size);
 	v1.flush();
@@ -27,22 +27,22 @@ int main(int argc, char *argv[])
 	if(!skepu::cluster::mpi_rank())
 		std::cout << "v1: " << v1 << "\nv2: " << v2 << "\n";
 	
-	square(r, v1, v2);
+	mult(r, v1, v2);
 	r.flush();
 	if(!skepu::cluster::mpi_rank())
 		std::cout << "Map: r = " << r << "\n";
 	
-	square(r.begin(), r.end(), v1.begin(), v2.begin());
+	mult(r.begin(), r.end(), v1.begin(), v2.begin());
 	r.flush();
 	if(!skepu::cluster::mpi_rank())
 		std::cout << "Map: r = " << r << "\n";
 	
-	square(r.begin(), r.end(), v1, v2);
+	mult(r.begin(), r.end(), v1, v2);
 	r.flush();
 	if(!skepu::cluster::mpi_rank())
 		std::cout << "Map: r = " << r << "\n";
 	
-	square(r, v1.begin(), v2);
+	mult(r, v1.begin(), v2);
 	r.flush();
 	if(!skepu::cluster::mpi_rank())
 		std::cout << "Map: r = " << r << "\n";

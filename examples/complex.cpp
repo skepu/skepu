@@ -32,11 +32,11 @@ int main(int argc, char *argv[])
 	std::cout << "Map: v1 = " << v1 << "\n";
 	std::cout << "Map: v2 = " << v2 << "\n";
 	
-	auto adder = skepu::Map<2>(cplx::add<Complex>);
+	auto adder = skepu::Map(cplx::add<Complex>);
 	adder(r, v1, v2);
 	std::cout << "Map: r = " << r << "\n";
 	
-	auto sqnorms = skepu::Map<1>(cplx::sq_norm<Complex>);
+	auto sqnorms = skepu::Map(cplx::sq_norm<Complex>);
 	sqnorms(w, v1);
 	std::cout << "Map: w = " << w << "\n";
 	
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 	std::cout << "Res: " << res << "\n";
 	
 	
-	auto divider = skepu::Map<2>(cplx::real_div<Complex>);
+	auto divider = skepu::Map(cplx::real_div<Complex>);
 	divider(r, v1, w);
 	std::cout << "Res: " << r << "\n";
 

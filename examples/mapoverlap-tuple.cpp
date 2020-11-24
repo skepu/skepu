@@ -21,7 +21,7 @@ skepu::multiple<float, int> over_3d_multi(skepu::Index3D idx, skepu::Region3D<fl
 		for (int j = -r.oj; j <= r.oj; ++j)
 			for (int k = -r.ok; k <= r.ok; ++k)
 				res += r(i, j, k) * stencil(i + r.oi, j + r.oj, k + r.ok);
-	return skepu::ret(res, idx.i + idx.j + idx.k);;
+	return skepu::ret(res, idx.i + idx.j + idx.k);
 }
 
 skepu::multiple<float, int> over_4d_multi(skepu::Index4D idx, skepu::Region4D<float> r, skepu::Ten4<float> stencil)
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 	conv2_m(rm2, ret_m_int, m, filter);
 	std::cout << "Tensor2D: " << rm2 << "\n" << ret_m_int << "\n";
 	
-	
+	/*
 	// Tensor3
 	
 	skepu::Tensor3<float> ten3(size, size, size, 1), stencil3(2*1+1, 2*1+1, 2*1+1, 1), ret_ten3(size - 2*1, size - 2*1, size - 2*1);
@@ -80,7 +80,6 @@ int main(int argc, char *argv[])
 	
 	auto conv4_m = skepu::MapOverlap(over_4d_multi);
 	conv4_m.setOverlap(1, 1, 1, 1);
-	conv4_m(ret_ten4, ret_ten4_int, ten4, stencil4);
 	std::cout << "Tensor4D: " << ret_ten4 << "\n" << ret_ten4_int << "\n";
 	
 	
@@ -93,7 +92,7 @@ int main(int argc, char *argv[])
 					for (int l = -r.ol; l <= r.ol; ++l)
 						res += r(i, j, k, l) * stencil(i + r.oi, j + r.oj, k + r.ok, l + r.ol);
 		return skepu::ret(res, idx.i + idx.j + idx.k + idx.l);
-	});
+	});*/
 	
 	return 0;
 }
