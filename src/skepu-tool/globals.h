@@ -58,4 +58,5 @@ const std::string SkePU_UF_Prefix {"skepu_userfunction_"};
 llvm::raw_ostream& SkePULog();
 
 void replaceTextInString(std::string& text, const std::string &find, const std::string &replace);
+std::string templateString(std::string templ, std::vector<std::pair<std::string, std::string>> replacements);
 std::string transformToCXXIdentifier(std::string &in);

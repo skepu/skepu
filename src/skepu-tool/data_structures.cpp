@@ -33,8 +33,14 @@ public:
 	{
 		if (isa<CXXOperatorCallExpr>(c))
 			return true;
+		
+		auto callee = c->getCallee();
+		
+		if (ImplicitCastExpr *ImplExpr = dyn_cast<ImplicitCastExpr>(callee))
+			callee = ImplExpr->IgnoreImpCasts();
+		
 
-		if (auto *UnresolvedLookup = dyn_cast<UnresolvedLookupExpr>(c->getCallee()))
+		if (auto *UnresolvedLookup = dyn_cast<UnresolvedLookupExpr>(callee))
 		{
 			std::string name = UnresolvedLookup->getName().getAsString();
 			SkePULog() << "Found unresolved lookup expr " << UnresolvedLookup->getName() <<"\n";
@@ -76,7 +82,8 @@ public:
 	{
 		if (c->getOperator() == OO_Subscript)
 			this->containerSubscripts.push_back(c);
-
+		if (c->getOperator() == OO_Call /* further check the type? */)
+			this->containerCalls.push_back(c);
 		return true;
 	}
 
@@ -97,7 +104,7 @@ public:
 	std::vector<std::pair<const TypeSourceInfo*, UserType*>> UTReferences{};
 	std::set<UserType*> ReferencedUTs{};
 
-	std::vector<CXXOperatorCallExpr*> containerSubscripts{};
+	std::vector<CXXOperatorCallExpr*> containerSubscripts{}, containerCalls{};
 };
 
 
@@ -165,6 +172,10 @@ UserFunction::Param::Param(const clang::ParmVarDecl *p)
 
 	this->type = p->getOriginalType().getTypePtr();
 	this->rawTypeName = p->getOriginalType().getCanonicalType().getAsString();
+	
+	if (this->rawTypeName == "_Bool")
+		this->rawTypeName = "bool";
+	
 	this->resolvedTypeName = this->rawTypeName;
 	this->escapedTypeName = transformToCXXIdentifier(this->resolvedTypeName);
 	
@@ -179,7 +190,7 @@ UserFunction::Param::Param(const clang::ParmVarDecl *p)
 
 bool UserFunction::Param::constructibleFrom(const clang::ParmVarDecl *p)
 {
-	return !UserFunction::RandomAccessParam::constructibleFrom(p);
+	return !UserFunction::RegionParam::constructibleFrom(p) && !UserFunction::RandomAccessParam::constructibleFrom(p);
 }
 
 size_t UserFunction::Param::numKernelArgsCL() const
@@ -276,6 +287,26 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 		this->containerType = ContainerType::Tensor4;
 		SkePULog() << "Tensor4 of " << this->resolvedTypeName << "\n";
 	}
+	else if (templateName == "Region1D")
+	{
+		this->containerType = ContainerType::Region1D;
+		SkePULog() << "Region1D of " << this->resolvedTypeName << "\n";
+	}
+	else if (templateName == "Region2D")
+	{
+		this->containerType = ContainerType::Region2D;
+		SkePULog() << "Region2D of " << this->resolvedTypeName << "\n";
+	}
+	else if (templateName == "Region3D")
+	{
+		this->containerType = ContainerType::Region3D;
+		SkePULog() << "Region3D of " << this->resolvedTypeName << "\n";
+	}
+	else if (templateName == "Region4D")
+	{
+		this->containerType = ContainerType::Region4D;
+		SkePULog() << "Region4D of " << this->resolvedTypeName << "\n";
+	}
 	else
 		SkePUAbort("Unhandled proxy type");
 
@@ -294,6 +325,24 @@ bool UserFunction::RandomAccessParam::constructibleFrom(const clang::ParmVarDecl
 	std::string templateName = templateType->getTemplateName().getAsTemplateDecl()->getNameAsString();
 	return (templateName == "SparseMat") || (templateName == "Mat") || (templateName == "Vec")
 		|| (templateName == "Ten3")  || (templateName == "Ten4") || (templateName == "MatRow") || (templateName == "MatCol");
+}
+
+UserFunction::RegionParam::RegionParam(const ParmVarDecl *p)
+: RandomAccessParam(p)
+{}
+
+bool UserFunction::RegionParam::constructibleFrom(const clang::ParmVarDecl *p)
+{
+	auto *type = p->getOriginalType().getTypePtr();
+	if (auto *innertype = dyn_cast<ElaboratedType>(type))
+		type = innertype->getNamedType().getTypePtr();
+
+	const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
+	if (!templateType) return false;
+
+	std::string templateName = templateType->getTemplateName().getAsTemplateDecl()->getNameAsString();
+	return (templateName == "Region1D") || (templateName == "Region2D") || (templateName == "Region3D")
+		|| (templateName == "Region4D");
 }
 
 std::string UserFunction::RandomAccessParam::TypeNameOpenCL()
@@ -386,6 +435,8 @@ UserFunction::UserFunction(FunctionDecl *f)
 {
 	// Function name
 	this->rawName = f->getNameInfo().getName().getAsString();
+	
+//	f->dump();
 
 	// Code location
 	this->codeLocation = f->getSourceRange().getEnd().getLocWithOffset(1);
@@ -428,6 +479,8 @@ UserFunction::UserFunction(FunctionDecl *f)
 	// Type name as string
 	this->rawReturnTypeName = f->getReturnType().getCanonicalType().getAsString();
 	
+	if (this->rawReturnTypeName == "_Bool")
+		this->rawReturnTypeName = "bool";
 	
 	
 	
@@ -436,8 +489,8 @@ UserFunction::UserFunction(FunctionDecl *f)
 	{
 		SkePULog() << "  [UF " << this->uniqueName << "] Identified multi-valued return!\n";
 		
-		if (GenCUDA || GenCL)
-			SkePUAbort("Multi-valued return is not enabled for GPU backends.");
+	//	if (GenCUDA || GenCL)
+	//		SkePUAbort("Multi-valued return is not enabled for GPU backends.");
 		
 		const auto *templateType = f->getReturnType().getTypePtr()->getAs<clang::TemplateSpecializationType>();
 		for (const clang::TemplateArgument &arg : *templateType)
@@ -502,6 +555,7 @@ UserFunction::UserFunction(FunctionDecl *f)
 	this->ReferencedRets = UFVisitor.ReferencedRets;
 
 	this->containerSubscripts = UFVisitor.containerSubscripts;
+	this->containerCalls = UFVisitor.containerCalls;
 
 	// Set requires double precision (TODO: more cases like parameters etc...)
 	if (this->resolvedReturnTypeName == "double")
@@ -517,10 +571,21 @@ std::string UserFunction::funcNameCUDA()
 	return SkePU_UF_Prefix + this->instanceName + "_" + this->uniqueName + "::CU";
 }
 
+std::string UserFunction::multiReturnTypeNameGPU()
+{
+	std::string multiReturnType = "skepu_multiple";
+		for (std::string &type : this->multipleReturnTypes)
+			multiReturnType += "_" + type;
+	return multiReturnType;
+}
+
 
 size_t UserFunction::numKernelArgsCL()
 {
-	size_t count = 0;
+	size_t count = std::max<size_t>(1, this->multipleReturnTypes.size());
+	
+	if (this->regionParam)
+		count += 1;
 
 	for (Param &p : this->elwiseParams)
 		count += p.numKernelArgsCL();
@@ -553,6 +618,7 @@ void UserFunction::updateArgLists(size_t arity, size_t Harity)
 	this->Varity = arity;
 	this->Harity = Harity;
 
+	this->regionParam = nullptr;
 	this->elwiseParams.clear();
 	this->anyContainerParams.clear();
 	this->anyScalarParams.clear();
@@ -562,8 +628,12 @@ void UserFunction::updateArgLists(size_t arity, size_t Harity)
 
 	if (this->indexed1D || this->indexed2D || this->indexed3D || this->indexed4D)
 		it++;
-
+	
 	auto elwise_end = it + arity + Harity;
+	
+	if (it != end && UserFunction::RegionParam::constructibleFrom(*it))
+		this->regionParam = new UserFunction::RegionParam(*it++);
+	
 	while (it != end && it != elwise_end && UserFunction::Param::constructibleFrom(*it))
 		this->elwiseParams.emplace_back(*it++);
 
@@ -590,6 +660,7 @@ void UserFunction::updateArgLists(size_t arity, size_t Harity)
 		scanForType(param.type);
 
 	SkePULog() << "Deduced indexed: " << (this->indexParam ? "yes" : "no") << "\n"
+		<< "Found region parameter: " << (this->regionParam ? "yes" : "no") << "\n" 
 		<< "Deduced elementwise arity: " << this->elwiseParams.size() << "\n"
 		<< "Deduced random access arity: " << this->anyContainerParams.size() << "\n"
 		<< "Deduced scalar arity: " << this->anyScalarParams.size() << "\n";

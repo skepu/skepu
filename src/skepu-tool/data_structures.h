@@ -27,7 +27,11 @@ enum class ContainerType
 	MatCol,
 	Tensor3,
 	Tensor4,
-	SparseMatrix
+	SparseMatrix,
+	Region1D,
+	Region2D,
+	Region3D,
+	Region4D
 };
 
 
@@ -131,12 +135,21 @@ public:
 		std::string TypeNameOpenCL();
 		std::string TypeNameHost();
 	};
+	
+	struct RegionParam: RandomAccessParam
+	{
+		static bool constructibleFrom(const clang::ParmVarDecl *p);
+		
+		RegionParam(const clang::ParmVarDecl *p);
+	};
 
 	void updateArgLists(size_t arity, size_t Harity = 0);
 
 	bool refersTo(UserFunction &other);
 
 	std::string funcNameCUDA();
+	size_t numKernelArgsCL();
+	std::string multiReturnTypeNameGPU();
 
 	clang::FunctionDecl *astDeclNode;
 
@@ -153,6 +166,7 @@ public:
 	
 	size_t Varity = 0, Harity = 0;
 
+	RegionParam* regionParam = nullptr;
 	std::vector<Param> elwiseParams{};
 	std::vector<RandomAccessParam> anyContainerParams {};
 	std::vector<Param> anyScalarParams {};
@@ -170,7 +184,7 @@ public:
 	std::set<UserType*> ReferencedUTs{};
 
 
-	std::vector<clang::CXXOperatorCallExpr*> containerSubscripts{};
+	std::vector<clang::CXXOperatorCallExpr*> containerSubscripts{}, containerCalls{};
 
 	bool fromTemplate = false;
 	bool indexed1D = false;
@@ -179,8 +193,8 @@ public:
 	bool indexed4D = false;
 	bool requiresDoublePrecision;
 
-	size_t numKernelArgsCL();
 
 	UserFunction(clang::FunctionDecl *f);
 	UserFunction(clang::CXXMethodDecl *f, clang::VarDecl *d);
+	
 };

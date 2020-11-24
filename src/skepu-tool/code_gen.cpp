@@ -41,6 +41,13 @@ void printParamList(std::ostream &o, UserFunction &Func)
 		o << "skepu::Index4D " << Func.indexParam->name;
 		first = false;
 	}
+	
+	if (UserFunction::RegionParam *param = Func.regionParam)
+	{
+		if (!first) { o << ", "; }
+		o << param->fullTypeName << " " << param->name;
+		first = false;
+	}
 
 	for (UserFunction::Param& param : Func.elwiseParams)
 	{
@@ -76,216 +83,21 @@ void replaceTextInString(std::string& text, const std::string &find, const std::
 	}
 }
 
+std::string templateString(std::string templ, std::vector<std::pair<std::string, std::string>> replacements)
+{
+	for(std::pair<std::string, std::string> &element : replacements)
+		replaceTextInString(templ, element.first, element.second);
+	return templ;
+}
+
 std::string transformToCXXIdentifier(std::string &in)
 {
 	std::string out = in;
 	replaceTextInString(out, ".", "__dot__");
 	replaceTextInString(out, " ", "__space__");
 	replaceTextInString(out, ":", "__colon__");
+	replaceTextInString(out, "-", "__hyphen__");
 	return out;
-}
-
-static const std::string OpenCLVectorTemplate = R"~~~(
-typedef struct {
-	__global SKEPU_CONTAINED_TYPE_CL *data;
-	size_t size;
-} skepu_vec_proxy_SKEPU_ESCAPED_TYPE_CL;
-)~~~";
-
-static const std::string OpenCLMatrixTemplate = R"~~~(
-typedef struct {
-	__global SKEPU_CONTAINED_TYPE_CL *data;
-	size_t rows;
-	size_t cols;
-} skepu_mat_proxy_SKEPU_ESCAPED_TYPE_CL;
-)~~~";
-
-static const std::string OpenCLMatrixRowTemplate = R"~~~(
-typedef struct {
-	__global SKEPU_CONTAINED_TYPE_CL *data;
-	size_t cols;
-} skepu_matrow_proxy_SKEPU_ESCAPED_TYPE_CL;
-)~~~";
-
-static const std::string OpenCLMatrixColTemplate = R"~~~(
-typedef struct {
-	__global SKEPU_CONTAINED_TYPE_CL *data;
-	size_t rows;
-} skepu_matcol_proxy_SKEPU_ESCAPED_TYPE_CL;
-)~~~";
-
-static const std::string OpenCLTensor3Template = R"~~~(
-typedef struct {
-	__global SKEPU_CONTAINED_TYPE_CL *data;
-	size_t size_i;
-	size_t size_j;
-	size_t size_k;
-} skepu_ten3_proxy_SKEPU_ESCAPED_TYPE_CL;
-)~~~";
-
-static const std::string OpenCLTensor4Template = R"~~~(
-typedef struct {
-	__global SKEPU_CONTAINED_TYPE_CL *data;
-	size_t size_i;
-	size_t size_j;
-	size_t size_k;
-	size_t size_l;
-} skepu_ten4_proxy_SKEPU_ESCAPED_TYPE_CL;
-)~~~";
-
-static const std::string OpenCLSparseMatrixTemplate = R"~~~(
-typedef struct {
-	__global SKEPU_CONTAINED_TYPE_CL *data;
-	__global size_t *row_offsets;
-	__global size_t *col_indices;
-	size_t count;
-} skepu_sparse_mat_proxy_SKEPU_ESCAPED_TYPE_CL;
-)~~~";
-
-std::string generateOpenCLVectorProxy(std::string typeName)
-{
-	std::string retval = OpenCLVectorTemplate;
-	replaceTextInString(retval, "SKEPU_CONTAINED_TYPE_CL", typeName);
-	replaceTextInString(retval, "SKEPU_ESCAPED_TYPE_CL", transformToCXXIdentifier(typeName));
-	return retval;
-}
-
-std::string generateOpenCLMatrixProxy(std::string typeName)
-{
-	std::string retval = OpenCLMatrixTemplate;
-	replaceTextInString(retval, "SKEPU_CONTAINED_TYPE_CL", typeName);
-	replaceTextInString(retval, "SKEPU_ESCAPED_TYPE_CL", transformToCXXIdentifier(typeName));
-	return retval;
-}
-
-std::string generateOpenCLMatrixRowProxy(std::string typeName)
-{
-	std::string retval = OpenCLMatrixRowTemplate;
-	replaceTextInString(retval, "SKEPU_CONTAINED_TYPE_CL", typeName);
-	replaceTextInString(retval, "SKEPU_ESCAPED_TYPE_CL", transformToCXXIdentifier(typeName));
-	return retval;
-}
-
-std::string generateOpenCLMatrixColProxy(std::string typeName)
-{
-	std::string retval = OpenCLMatrixColTemplate;
-	replaceTextInString(retval, "SKEPU_CONTAINED_TYPE_CL", typeName);
-	replaceTextInString(retval, "SKEPU_ESCAPED_TYPE_CL", transformToCXXIdentifier(typeName));
-	return retval;
-}
-
-std::string generateOpenCLSparseMatrixProxy(std::string typeName)
-{
-	std::string retval = OpenCLSparseMatrixTemplate;
-	replaceTextInString(retval, "SKEPU_CONTAINED_TYPE_CL", typeName);
-	replaceTextInString(retval, "SKEPU_ESCAPED_TYPE_CL", transformToCXXIdentifier(typeName));
-	return retval;
-}
-
-std::string generateOpenCLTensor3Proxy(std::string typeName)
-{
-	std::string retval = OpenCLTensor3Template;
-	replaceTextInString(retval, "SKEPU_CONTAINED_TYPE_CL", typeName);
-	replaceTextInString(retval, "SKEPU_ESCAPED_TYPE_CL", transformToCXXIdentifier(typeName));
-	return retval;
-}
-
-std::string generateOpenCLTensor4Proxy(std::string typeName)
-{
-	std::string retval = OpenCLTensor4Template;
-	replaceTextInString(retval, "SKEPU_CONTAINED_TYPE_CL", typeName);
-	replaceTextInString(retval, "SKEPU_ESCAPED_TYPE_CL", transformToCXXIdentifier(typeName));
-	return retval;
-}
-
-
-
-
-std::string generateOpenCLRegion(size_t dim, std::string typeName)
-{
-static const std::string OpenCLRegion1DTemplate = R"~~~(
-typedef struct {
-	__global SKEPU_CONTAINED_TYPE_CL *data;
-	int oi;
-	size_t stride;
-} skepu_region1d_SKEPU_ESCAPED_TYPE_CL;
-
-SKEPU_CONTAINED_TYPE_CL region_access_1d_SKEPU_ESCAPED_TYPE_CL(skepu_region1d_SKEPU_ESCAPED_TYPE_CL r, int i)
-{ return r.data[i * r.stride]; }
-)~~~";
-
-static const std::string OpenCLRegion2DTemplate = R"~~~(
-typedef struct {
-	__global SKEPU_CONTAINED_TYPE_CL *data;
-	int oi, oj;
-	size_t stride;
-} skepu_region2d_SKEPU_ESCAPED_TYPE_CL;
-
-SKEPU_CONTAINED_TYPE_CL region_access_2d_SKEPU_ESCAPED_TYPE_CL(skepu_region2d_SKEPU_ESCAPED_TYPE_CL r, int i, int j)
-{ return r.data[i * r.stride + j]; }
-)~~~";
-
-static const std::string OpenCLRegion3DTemplate = R"~~~(
-typedef struct {
-	__global SKEPU_CONTAINED_TYPE_CL *data;
-	int oi, oj, ok;
-	size_t stride1, stride2;
-} skepu_region3d_SKEPU_ESCAPED_TYPE_CL;
-
-SKEPU_CONTAINED_TYPE_CL region_access_3d_SKEPU_ESCAPED_TYPE_CL(skepu_region3d_SKEPU_ESCAPED_TYPE_CL r, int i, int j, int k)
-{ return r.data[i * r.stride1 * r.stride2 + j * r.stride2 + k; }
-)~~~";
-
-static const std::string OpenCLRegion4DTemplate = R"~~~(
-typedef struct {
-	__global SKEPU_CONTAINED_TYPE_CL *data;
-	int oi, oj, ok, ol;
-	size_t stride1, stride2, stride3;
-} skepu_region4d_SKEPU_ESCAPED_TYPE_CL;
-
-SKEPU_CONTAINED_TYPE_CL region_access_4d_SKEPU_ESCAPED_TYPE_CL(skepu_region4d_SKEPU_ESCAPED_TYPE_CL r, int i, int j, int k, int l)
-{ return r.data[i * r.stride1 * r.stride2 * r.stride3 + j * r.stride2 * r.stride3 + k * r.stride3 + l]; }
-)~~~";
-	
-	std::string retval;
-	switch (dim)
-	{
-	case 1: retval = OpenCLRegion1DTemplate; break;
-	case 2: retval = OpenCLRegion2DTemplate; break;
-	case 3: retval = OpenCLRegion3DTemplate; break;
-	case 4: retval = OpenCLRegion4DTemplate; break;
-	};
-	replaceTextInString(retval, "SKEPU_CONTAINED_TYPE_CL", typeName);
-	replaceTextInString(retval, "SKEPU_ESCAPED_TYPE_CL", transformToCXXIdentifier(typeName));
-	return retval;
-}
-
-
-std::string generateOpenCLMultipleReturn(std::vector<std::string> &types)
-{
-	std::string retval = R"~~~(
-		// MULTI-VALUED RETURN SUPPORTING CODE
-		typedef struct {
-			{{SKEPU_MULTIPLE_FIELDS}}
-		} skepu_multiple_{{SKEPU_MULTIPLE_UID}};
-		
-		SKEPU_CONTAINED_TYPE_CL region_access_1d_SKEPU_ESCAPED_TYPE_CL(skepu_region1d_SKEPU_ESCAPED_TYPE_CL r, int i)
-		{ return r.data[i * r.stride]; }
-	)~~~";
-
-	
-	std::stringstream fieldString, uidString;
-	
-	size_t i = 0;
-	for (auto &type : types)
-	{
-		fieldString << "\n" << type << " e" << i << ";";
-		uidString << type << "_";
-	}
-	
-	replaceTextInString(retval, "{{SKEPU_MULTIPLE_FIELDS}}", fieldString.str());
-	replaceTextInString(retval, "{{SKEPU_MULTIPLE_UID}}", uidString.str());
-	return retval;
 }
 
 
@@ -329,45 +141,60 @@ std::string generateOpenCLMultipleReturn(UserFunction &UF)
 	return "";
 }
 
+std::map<std::string, std::pair<int, std::string>> proxyInfo = {
+	{"Vec",      {2, "skepu_vec_proxy_access_"}},
+	{"Mat",      {3, "skepu_mat_proxy_access_"}},
+	{"MatRow",   {2, "skepu_matrow_proxy_access_"}},
+	{"MatCol",   {2, "skepu_matcol_proxy_access_"}},
+	{"Ten3",     {4, "skepu_ten3_proxy_access_"}},
+	{"Ten4",     {5, "skepu_ten4_proxy_access_"}},
+	{"Region1D", {2, "skepu_region_access_1d_"}},
+	{"Region2D", {3, "skepu_region_access_2d_"}},
+	{"Region3D", {4, "skepu_region_access_3d_"}},
+	{"Region4D", {5, "skepu_region_access_4d_"}},
+};
 std::string replaceReferencesToOtherUFs(UserFunction &UF, std::function<std::string(UserFunction&)> nameFunc, bool isGPU = false)
 {
 	const FunctionDecl *f = UF.astDeclNode;
 	if (f->getTemplatedKind() == FunctionDecl::TK_FunctionTemplateSpecialization)
 		f = f->getTemplateInstantiationPattern();
-
-// Find references to other userfunctions
+	
+	// Find references to other userfunctions
 	Rewriter R(GlobalRewriter.getSourceMgr(), LangOptions());
-
-	for (auto &ref : UF.UFReferences)
-		R.ReplaceText(ref.first->getCallee()->getSourceRange(), nameFunc(*ref.second));
-
-	for (auto &ref : UF.UTReferences)
-		R.ReplaceText(ref.first->getTypeLoc().getSourceRange(), "struct " + ref.second->name);
-
-	for (auto subscript : UF.containerSubscripts)
-		R.InsertText(subscript->getCallee()->getBeginLoc(), ".data");
-		
 	
 	if (isGPU && UF.multipleReturnTypes.size() > 0)
-	{
-		std::stringstream SSmultiReturnType, SSmultiReturnTypeDef, SSmultiReturnMakeStruct, SSmultiReturnMakeParams;
-		SSmultiReturnType << "skepu_multiple";
-		for (std::string &type : UF.multipleReturnTypes)
-			SSmultiReturnType << "_" << type;
-		
 		for (auto *ref : UF.ReferencedRets)
-		{
-			clang::SourceRange args(ref->getArg(0)->getBeginLoc(), ref->getArg(ref->getNumArgs()-1)->getEndLoc());
-			std::string argString = getSourceAsString(args);
-			
-			
-		//	llvm::errs() << "MAKE_FN(" << argString << ")\n";
-			
-		//	ref->dump();
-		//	R.InsertText(ref->getBeginLoc(), "make_" + SSmultiReturnType.str() + "(" + argString + ")");
-		}
-	}
+			R.ReplaceText(ref->getCallee()->getSourceRange(), "make_" + UF.multiReturnTypeNameGPU());
 	
+	for (auto &ref : UF.UFReferences)
+		R.ReplaceText(ref.first->getCallee()->getSourceRange(), nameFunc(*ref.second));
+	
+	for (auto &ref : UF.UTReferences)
+		R.ReplaceText(ref.first->getTypeLoc().getSourceRange(), "struct " + ref.second->name);
+	
+	for (auto subscript : UF.containerSubscripts)
+		R.InsertText(subscript->getCallee()->getBeginLoc(), ".data");
+	
+	if (isGPU /* only for CL? */)
+		for (auto subscript : UF.containerCalls)
+		{
+			DeclRefExpr* container = dyn_cast<clang::DeclRefExpr>(subscript->getArg(0));
+			auto type = container->getDecl()->getType().getTypePtr();
+			if (auto *innertype = dyn_cast<ElaboratedType>(type))
+				type = innertype->getNamedType().getTypePtr();
+			const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
+			
+			std::string templateName = templateType->getTemplateName().getAsTemplateDecl()->getNameAsString();
+			std::string varname = container->getNameInfo().getAsString();
+			std::string typeName = templateType->getArg(0).getAsType().getAsString();
+			
+			int numArgs;
+			std::string fname;
+			std::tie(numArgs, fname) = proxyInfo[templateName];
+			fname += transformToCXXIdentifier(typeName);
+			std::string args = getSourceAsString(clang::SourceRange(subscript->getArg(1)->getBeginLoc(), subscript->getArg(numArgs-1)->getEndLoc()));
+			R.ReplaceText(subscript->getSourceRange(), fname + "(" + varname + "," + args + ")");
+		}
 	
 	const CompoundStmt *Body = dyn_cast<CompoundStmt>(f->getBody());
 	SourceRange SRBody = SourceRange(Body->getBeginLoc().getLocWithOffset(1), Body->getEndLoc().getLocWithOffset(-1));
@@ -578,6 +405,20 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 		SSFuncParamList << "index4_t " << Func.indexParam->name;
 		first = false;
 	}
+	
+	if (UserFunction::RegionParam *param = Func.regionParam)
+	{
+		if (!first) { SSFuncParamList << ", "; }
+		if (param->containerType == ContainerType::Region1D)
+			SSFuncParamList << "skepu_region1d_" << transformToCXXIdentifier(param->resolvedTypeName) << " " << param->name;
+		else if (param->containerType == ContainerType::Region2D)
+			SSFuncParamList << "skepu_region2d_" << transformToCXXIdentifier(param->resolvedTypeName) << " " << param->name;
+		else if (param->containerType == ContainerType::Region3D)
+			SSFuncParamList << "skepu_region3d_" << transformToCXXIdentifier(param->resolvedTypeName) << " " << param->name;
+		else if (param->containerType == ContainerType::Region4D)
+			SSFuncParamList << "skepu_region4d_" << transformToCXXIdentifier(param->resolvedTypeName) << " " << param->name;
+		first = false;
+	}
 
 	for (UserFunction::Param& param : Func.elwiseParams)
 	{
@@ -607,8 +448,17 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 	// Recursive call, potential for circular loop: TODO FIX!!
 	for (UserFunction *RefFunc : Func.ReferencedUFs)
 		SSFuncSource << generateUserFunctionCode_CL(*RefFunc);
-
-	SSFuncSource << "static " << Func.rawReturnTypeName << " " << Func.uniqueName << "(" << SSFuncParamList.str() << ")\n{";
+	
+		
+	// The function itself
+	
+	SSFuncSource << "static ";
+	if (Func.multipleReturnTypes.size() > 0)
+		SSFuncSource << Func.multiReturnTypeNameGPU();
+	else
+		SSFuncSource << Func.rawReturnTypeName;
+	
+	SSFuncSource << " " << Func.uniqueName << "(" << SSFuncParamList.str() << ")\n{";
 	for (UserFunction::TemplateArgument &arg : Func.templateArguments)
 		SSFuncSource << "typedef " << arg.rawTypeName << " " << arg.paramName << ";\n";
 
@@ -765,11 +615,11 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		switch (skeleton.type)
 		{
 		case Skeleton::Type::MapReduce:
-			KernelName_CL = createMapReduceKernelProgram_CL(*FuncArgs[0], *FuncArgs[1], arity[0], ResultDir);
+			KernelName_CL = createMapReduceKernelProgram_CL(*FuncArgs[0], *FuncArgs[1], ResultDir);
 			break;
 			
 		case Skeleton::Type::Map:
-			KernelName_CL = createMapKernelProgram_CL(*FuncArgs[0], arity[0], ResultDir);
+			KernelName_CL = createMapKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
 			
 		case Skeleton::Type::MapPairs:
@@ -793,22 +643,20 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			break;
 			
 		case Skeleton::Type::MapOverlap1D:
-			SkePUAbort("MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
 			KernelName_CL = createMapOverlap1DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
 			
 		case Skeleton::Type::MapOverlap2D:
-			SkePUAbort("MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
 			KernelName_CL = createMapOverlap2DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
 			
 		case Skeleton::Type::MapOverlap3D:
-			SkePUAbort("MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
+			SkePUAbort("3D MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
 		//	KernelName_CL = createMapOverlap3DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
 			
 		case Skeleton::Type::MapOverlap4D:
-			SkePUAbort("MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
+			SkePUAbort("4D MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
 		//	KernelName_CL = createMapOverlap4DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
 			

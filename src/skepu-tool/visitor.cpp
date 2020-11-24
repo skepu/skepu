@@ -130,6 +130,8 @@ const Skeleton::Type* DeclIsValidSkeleton(VarDecl *d)
 
 	if (Skeletons.find(TypeName) == Skeletons.end())
 		return nullptr;
+	
+//	d->dump();
 
 	return &Skeletons.at(TypeName).type;
 }
