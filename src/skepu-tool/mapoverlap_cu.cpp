@@ -563,7 +563,7 @@ std::string createMapOverlapKernelProgramHelper_CU(UserFunction &mapOverlapFunc,
 	}
 	
 	const std::string kernelName = ResultName + "_" + kernelTag + "_" + mapOverlapFunc.uniqueName;
-	replaceTextInString(kernelSource, PH_MapOverlapInputType, mapOverlapFunc.elwiseParams[0].templateInstantiationType());
+	replaceTextInString(kernelSource, PH_MapOverlapInputType, mapOverlapFunc.regionParam->templateInstantiationType());
 	replaceTextInString(kernelSource, PH_MapOverlapResultType, mapOverlapFunc.resolvedReturnTypeName);
 	replaceTextInString(kernelSource, PH_KernelName, kernelName);
 	replaceTextInString(kernelSource, PH_MapOverlapFuncName, mapOverlapFunc.funcNameCUDA());
