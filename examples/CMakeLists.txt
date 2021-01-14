@@ -93,9 +93,9 @@ if(SKEPU_EXAMPLES_PAR)
 	add_custom_target(all-parallel)
 
 #TODO: Enalbe when able
-#	if(SKEPU_CUDA)
-#		list(APPEND SKEPU_BACKENDS CUDA)
-#	endif()
+# 	if(SKEPU_CUDA)
+# 		list(APPEND SKEPU_BACKENDS CUDA)
+# 	endif()
 #	if(SKEPU_OPENCL)
 #		list(APPEND SKEPU_BACKENDS OpenCL)
 #	endif()
@@ -137,4 +137,16 @@ if(SKEPU_EXAMPLES_MPI)
 				RUNTIME_OUTPUT_NAME ${example})
 		add_dependencies(all-mpi ${example}_mpi)
 	endforeach()
+
+	if(FALSE)# SKEPU_CUDA)
+		skepu_add_executable(nbody_mpi_cu
+			MPI
+			CUDA
+			SKEPUSRC nbody.cpp)
+		set_target_properties(nbody_mpi_cu
+			PROPERTIES
+				RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mpi
+				RUNTIME_OUTPUT_NAME nbody_cu)
+		add_dependencies(all-mpi nbody_mpi_cu)
+	endif()
 endif()

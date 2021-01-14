@@ -45,9 +45,9 @@ macro(skepu_filter_args)
 		endif()
 	endforeach()
 
-	if(_skepu_mpi AND (_skepu_cuda OR _skepu_opencl))
+	if(_skepu_mpi AND _skepu_opencl)
 		message(FATAL_ERROR
-			"[SkePU] OpenMPI cannot be enabled with other backends except OpenMP.")
+			"[SkePU] StarPU-MPI backend does not have support for OpenCL")
 	endif()
 
 	# Check that there are some SkePU sources in the argument list
