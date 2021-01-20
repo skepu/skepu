@@ -1,4 +1,5 @@
 #include "code_gen.h"
+#include "code_gen_cu.h"
 
 using namespace clang;
 
@@ -7,16 +8,18 @@ using namespace clang;
 // ------------------------------
 
 const char *MapPairsKernelTemplate_CU = R"~~~(
-__global__ void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS size_t Vsize, size_t Hsize, size_t skepu_base)
+__global__ void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_Vsize, size_t skepu_Hsize, size_t skepu_base)
 {
-	size_t skepu_n = Vsize * Hsize;
+	size_t skepu_n = skepu_Vsize * skepu_Hsize;
 	size_t skepu_i = blockIdx.x * blockDim.x + threadIdx.x;
 	size_t skepu_gridSize = blockDim.x * gridDim.x;
+	size_t skepu_w2 = skepu_Hsize;
 
 	while (skepu_i < skepu_n)
 	{
-		SKEPU_INDEX_INITIALIZER
-		skepu_output[skepu_i] = SKEPU_FUNCTION_NAME_MAPPAIRS(SKEPU_MAPPAIRS_PARAMS);
+		{{INDEX_INITIALIZER}}
+		auto skepu_res = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
+		{{OUTPUT_BINDINGS}}
 		skepu_i += skepu_gridSize;
 	}
 }
@@ -25,73 +28,40 @@ __global__ void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS size_t Vsize, size_t Hsize
 
 std::string createMapPairsKernelProgram_CU(UserFunction &mapPairsFunc, std::string dir)
 {
-	std::stringstream sourceStream, SSKernelParamList, SSMapPairsFuncParams;
-	std::string indexInitializer;
-	bool first = true;
-	
-	if (mapPairsFunc.indexed1D)
-	{
-		SSMapPairsFuncParams << "skepu_index";
-		indexInitializer = "skepu::Index1D skepu_index;\n\t\tskepu_index.i = base + skepu_i;";
-		first = false;
-	}
-	else if (mapPairsFunc.indexed2D)
-	{
-		SSMapPairsFuncParams << "skepu_index";
-		indexInitializer = "skepu::Index2D skepu_index;\n\t\tskepu_index.row = (skepu_base + skepu_i) / Hsize;\n\t\tskepu_index.col = (skepu_base + skepu_i) % Hsize;";
-		first = false;
-	}
-	
-	// Output data
-	if (mapPairsFunc.multipleReturnTypes.size() == 0)
-		SSKernelParamList << mapPairsFunc.resolvedReturnTypeName << "* skepu_output, ";
-	else
-	{
-		size_t outCtr = 0;
-		for (std::string& outputType : mapPairsFunc.multipleReturnTypes)
-			SSKernelParamList << outputType << "* skepu_output_" << outCtr++ << ", ";
-	}
+	std::stringstream sourceStream, SSKernelParamList, SSMapPairsFuncArgs;
+	IndexCodeGen indexInfo = indexInitHelper_CU(mapPairsFunc);
+	bool first = !indexInfo.hasIndex;
+	SSMapPairsFuncArgs << indexInfo.mapFuncParam;
+	std::string multiOutputAssign = handleOutputs_CU(mapPairsFunc, SSKernelParamList);
 	
 	size_t ctr = 0;
 	for (UserFunction::Param& param : mapPairsFunc.elwiseParams)
 	{
-		if (!first) { SSMapPairsFuncParams << ", "; }
+		if (!first) { SSMapPairsFuncArgs << ", "; }
 		SSKernelParamList << param.resolvedTypeName << " *" << param.name << ", ";
 		if (ctr++ < mapPairsFunc.Varity) // vertical containers
-			SSMapPairsFuncParams << param.name << "[skepu_i / Hsize]";
+			SSMapPairsFuncArgs << param.name << "[skepu_i / skepu_Hsize]";
 		else // horizontal containers
-			SSMapPairsFuncParams << param.name << "[skepu_i % Hsize]";
+			SSMapPairsFuncArgs << param.name << "[skepu_i % skepu_Hsize]";
 		first = false;
 	}
-	
-	for (UserFunction::RandomAccessParam& param : mapPairsFunc.anyContainerParams)
-	{
-		if (!first) { SSMapPairsFuncParams << ", "; }
-		SSKernelParamList << param.fullTypeName << " " << param.name << ", ";
-		SSMapPairsFuncParams << param.name;
-		first = false;
-	}
-	
-	for (UserFunction::Param& param : mapPairsFunc.anyScalarParams)
-	{
-		if (!first) { SSMapPairsFuncParams << ", "; }
-		SSKernelParamList << param.resolvedTypeName << " " << param.name << ", ";
-		SSMapPairsFuncParams << param.name;
-		first = false;
-	}
+	auto argsInfo = handleRandomAccessAndUniforms_CU(mapPairsFunc, SSMapPairsFuncArgs, SSKernelParamList, first);
 	
 	std::stringstream SSKernelName;
 	SSKernelName << transformToCXXIdentifier(ResultName) << "_MapPairsKernel_" << mapPairsFunc.uniqueName << "_Varity_" << mapPairsFunc.Varity << "_Harity_" << mapPairsFunc.Harity;
 	const std::string kernelName = SSKernelName.str();
 	
-	std::string kernelSource = MapPairsKernelTemplate_CU;
-	replaceTextInString(kernelSource, PH_KernelName, kernelName);
-	replaceTextInString(kernelSource, PH_MapPairsFuncName, mapPairsFunc.funcNameCUDA());
-	replaceTextInString(kernelSource, PH_KernelParams, SSKernelParamList.str());
-	replaceTextInString(kernelSource, PH_MapPairsParams, SSMapPairsFuncParams.str());
-	replaceTextInString(kernelSource, PH_IndexInitializer, indexInitializer);
-	
 	std::ofstream FSOutFile {dir + "/" + kernelName + ".cu"};
-	FSOutFile << kernelSource;
+	FSOutFile << templateString(MapPairsKernelTemplate_CU,
+	{
+		{"{{KERNEL_NAME}}",            kernelName},
+		{"{{FUNCTION_NAME_MAPPAIRS}}", mapPairsFunc.funcNameCUDA()},
+		{"{{KERNEL_PARAMS}}",          SSKernelParamList.str()},
+		{"{{MAPPAIRS_ARGS}}",          SSMapPairsFuncArgs.str()},
+		{"{{INDEX_INITIALIZER}}",      indexInfo.indexInit},
+		{"{{OUTPUT_BINDINGS}}",        multiOutputAssign},
+		{"{{PROXIES_UPDATE}}",         argsInfo.proxyInitializerInner},
+		{"{{PROXIES_INIT}}",           argsInfo.proxyInitializer}
+	});
 	return kernelName;
 }

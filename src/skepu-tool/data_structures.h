@@ -110,6 +110,7 @@ public:
 		std::string resolvedTypeName;
 		std::string escapedTypeName;
 		std::string fullTypeName;
+		std::string unqualifiedFullTypeName;
 		
 		static bool constructibleFrom(const clang::ParmVarDecl *p);
 		

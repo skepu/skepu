@@ -2,6 +2,11 @@
 
 using namespace clang;
 
+enum class Backend
+{
+	CPU, OpenMP, CUDA, OpenCL,
+};
+
 std::string getSourceAsString(SourceRange range)
 {
 	int rangeSize = GlobalRewriter.getRangeSize(range);
@@ -141,6 +146,49 @@ std::string generateOpenCLMultipleReturn(UserFunction &UF)
 	return "";
 }
 
+
+std::string generateCUDAMultipleReturn(UserFunction &UF)
+{
+	if (UF.multipleReturnTypes.size() > 0)
+	{
+		std::stringstream SSmultiReturnType, SSmultiReturnTypeDef, SSmultiReturnMakeStruct, SSmultiReturnMakeParams;
+		SSmultiReturnType << "skepu_multiple";
+		size_t ctr = 0;
+		for (std::string &type : UF.multipleReturnTypes)
+		{
+			std::string divider = (ctr != UF.multipleReturnTypes.size() - 1) ? ", " : "";
+			SSmultiReturnType << "_" << type;
+			SSmultiReturnTypeDef << type << " e" << ctr << ";\n";
+			SSmultiReturnMakeParams << type << " arg" << ctr << divider;
+			SSmultiReturnMakeStruct << "arg" << ctr << divider;
+			ctr++;
+		}
+		
+		std::string codeTemplate = R"~~~(
+			struct {{SKEPU_MULTIPLE_RETURN_TYPE}}
+			{
+				{{SKEPU_MULTIPLE_RETURN_TYPE_DEF}}
+				
+				static __device__ {{SKEPU_MULTIPLE_RETURN_TYPE}} make({{SKEPU_MULTIPLE_RETURN_MAKE_PARAMS}})
+				{
+					{{SKEPU_MULTIPLE_RETURN_TYPE}} retval = { {{SKEPU_MULTIPLE_RETURN_MAKE_STRUCT}} };
+					return retval;
+				}
+			};
+		)~~~";
+		
+		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_TYPE}}", SSmultiReturnType.str());
+		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_TYPE_DEF}}", SSmultiReturnTypeDef.str());
+		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_MAKE_PARAMS}}", SSmultiReturnMakeParams.str());
+		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_MAKE_STRUCT}}", SSmultiReturnMakeStruct.str());
+		
+		return codeTemplate;
+	}
+	return "";
+}
+
+
+
 std::map<std::string, std::pair<int, std::string>> proxyInfo = {
 	{"Vec",      {2, "skepu_vec_proxy_access_"}},
 	{"Mat",      {3, "skepu_mat_proxy_access_"}},
@@ -153,7 +201,7 @@ std::map<std::string, std::pair<int, std::string>> proxyInfo = {
 	{"Region3D", {4, "skepu_region_access_3d_"}},
 	{"Region4D", {5, "skepu_region_access_4d_"}},
 };
-std::string replaceReferencesToOtherUFs(UserFunction &UF, std::function<std::string(UserFunction&)> nameFunc, bool isGPU = false)
+std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::function<std::string(UserFunction&)> nameFunc)
 {
 	const FunctionDecl *f = UF.astDeclNode;
 	if (f->getTemplatedKind() == FunctionDecl::TK_FunctionTemplateSpecialization)
@@ -162,9 +210,19 @@ std::string replaceReferencesToOtherUFs(UserFunction &UF, std::function<std::str
 	// Find references to other userfunctions
 	Rewriter R(GlobalRewriter.getSourceMgr(), LangOptions());
 	
-	if (isGPU && UF.multipleReturnTypes.size() > 0)
-		for (auto *ref : UF.ReferencedRets)
-			R.ReplaceText(ref->getCallee()->getSourceRange(), "make_" + UF.multiReturnTypeNameGPU());
+	if (UF.multipleReturnTypes.size() > 0)
+	{
+		if (backend == Backend::OpenCL)
+		{
+			for (auto *ref : UF.ReferencedRets)
+				R.ReplaceText(ref->getCallee()->getSourceRange(), "make_" + UF.multiReturnTypeNameGPU());
+		}
+		else if (backend == Backend::CUDA)
+		{
+			for (auto *ref : UF.ReferencedRets)
+				R.ReplaceText(ref->getCallee()->getSourceRange(), UF.multiReturnTypeNameGPU() + "::make");
+		}
+	}
 	
 	for (auto &ref : UF.UFReferences)
 		R.ReplaceText(ref.first->getCallee()->getSourceRange(), nameFunc(*ref.second));
@@ -175,7 +233,7 @@ std::string replaceReferencesToOtherUFs(UserFunction &UF, std::function<std::str
 	for (auto subscript : UF.containerSubscripts)
 		R.InsertText(subscript->getCallee()->getBeginLoc(), ".data");
 	
-	if (isGPU /* only for CL? */)
+	if (backend == Backend::OpenCL)
 		for (auto subscript : UF.containerCalls)
 		{
 			DeclRefExpr* container = dyn_cast<clang::DeclRefExpr>(subscript->getArg(0));
@@ -320,7 +378,10 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 	if (UF.multipleReturnTypes.size() == 0 && UF.rawReturnTypeName != UF.resolvedReturnTypeName && (std::find(usingDecls.begin(), usingDecls.end(), UF.rawReturnTypeName) == usingDecls.end()))
 		SSSkepuFunctorStruct << "using " << UF.rawReturnTypeName << " = " << UF.resolvedReturnTypeName << ";\n\n";
 	SSSkepuFunctorStruct << "constexpr static bool prefersMatrix = " << (UF.indexed2D) << ";\n\n";
-
+	
+	
+	SSSkepuFunctorStruct << generateCUDAMultipleReturn(UF);
+	
 	// CUDA code
 	if (GenCUDA)
 	{
@@ -331,9 +392,14 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 		SSSkepuFunctorStruct << "#define VARIANT_CPU(block)\n";
 		SSSkepuFunctorStruct << "#define VARIANT_OPENMP(block)\n";
 		SSSkepuFunctorStruct << "#define VARIANT_CUDA(block) block\n";
-		SSSkepuFunctorStruct << "static inline SKEPU_ATTRIBUTE_FORCE_INLINE " << "__device__ " << UF.resolvedReturnTypeName << " CU(";
+		SSSkepuFunctorStruct << "static inline SKEPU_ATTRIBUTE_FORCE_INLINE " << "__device__ ";
+		if (UF.multipleReturnTypes.size() > 0)
+			SSSkepuFunctorStruct << UF.multiReturnTypeNameGPU();
+		else
+			SSSkepuFunctorStruct << UF.resolvedReturnTypeName;
+		SSSkepuFunctorStruct << " CU(";
 		printParamList(SSSkepuFunctorStruct, UF);
-		SSSkepuFunctorStruct << ")\n{" << replaceReferencesToOtherUFs(UF, [InstanceName] (UserFunction &UF) { return SkePU_UF_Prefix + InstanceName + "_" + UF.uniqueName + "::CU"; }) << "\n}\n";
+		SSSkepuFunctorStruct << ")\n{" << replaceReferencesToOtherUFs(Backend::CUDA, UF, [InstanceName] (UserFunction &UF) { return SkePU_UF_Prefix + InstanceName + "_" + UF.uniqueName + "::CU"; }) << "\n}\n";
 		SSSkepuFunctorStruct << "#undef SKEPU_USING_BACKEND_CUDA\n\n";
 	}
 
@@ -348,7 +414,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 		SSSkepuFunctorStruct << "#define VARIANT_CUDA(block)\n";
 		SSSkepuFunctorStruct << "static inline SKEPU_ATTRIBUTE_FORCE_INLINE " << UF.resolvedReturnTypeName << " OMP(";
 		printParamList(SSSkepuFunctorStruct, UF);
-		SSSkepuFunctorStruct << ")\n{" << replaceReferencesToOtherUFs(UF, [InstanceName] (UserFunction &UF) { return SkePU_UF_Prefix + InstanceName + "_" + UF.uniqueName + "::OMP"; }) << "\n}\n";
+		SSSkepuFunctorStruct << ")\n{" << replaceReferencesToOtherUFs(Backend::OpenMP, UF, [InstanceName] (UserFunction &UF) { return SkePU_UF_Prefix + InstanceName + "_" + UF.uniqueName + "::OMP"; }) << "\n}\n";
 		SSSkepuFunctorStruct << "#undef SKEPU_USING_BACKEND_OMP\n\n";
 	}
 
@@ -362,7 +428,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 	SSSkepuFunctorStruct << "#define VARIANT_CUDA(block) block\n";
 	SSSkepuFunctorStruct << "static inline SKEPU_ATTRIBUTE_FORCE_INLINE " << UF.resolvedReturnTypeName << " CPU(";
 	printParamList(SSSkepuFunctorStruct, UF);
-	SSSkepuFunctorStruct << ")\n{" << replaceReferencesToOtherUFs(UF, [InstanceName] (UserFunction &UF) { return SkePU_UF_Prefix + InstanceName + "_" + UF.uniqueName + "::CPU"; }) << "\n}\n";
+	SSSkepuFunctorStruct << ")\n{" << replaceReferencesToOtherUFs(Backend::CPU, UF, [InstanceName] (UserFunction &UF) { return SkePU_UF_Prefix + InstanceName + "_" + UF.uniqueName + "::CPU"; }) << "\n}\n";
 	SSSkepuFunctorStruct << "#undef SKEPU_USING_BACKEND_CPU\n};\n\n";
 	
 	if (GlobalRewriter.InsertTextAfter(loc, SSSkepuFunctorStruct.str()))
@@ -443,7 +509,7 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 		first = false;
 	}
 
-	std::string transformedSource = replaceReferencesToOtherUFs(Func, [] (UserFunction &UF) { return UF.uniqueName; }, true);
+	std::string transformedSource = replaceReferencesToOtherUFs(Backend::OpenCL, Func, [] (UserFunction &UF) { return UF.uniqueName; });
 
 	// Recursive call, potential for circular loop: TODO FIX!!
 	for (UserFunction *RefFunc : Func.ReferencedUFs)
@@ -451,13 +517,11 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 	
 		
 	// The function itself
-	
 	SSFuncSource << "static ";
 	if (Func.multipleReturnTypes.size() > 0)
 		SSFuncSource << Func.multiReturnTypeNameGPU();
 	else
 		SSFuncSource << Func.rawReturnTypeName;
-	
 	SSFuncSource << " " << Func.uniqueName << "(" << SSFuncParamList.str() << ")\n{";
 	for (UserFunction::TemplateArgument &arg : Func.templateArguments)
 		SSFuncSource << "typedef " << arg.rawTypeName << " " << arg.paramName << ";\n";

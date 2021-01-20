@@ -214,6 +214,7 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 : Param(p)
 {
 	this->fullTypeName = this->resolvedTypeName;
+	this->unqualifiedFullTypeName = p->getOriginalType().getUnqualifiedType().getCanonicalType().getAsString();
 	QualType underlying = p->getOriginalType();
 	std::string qualifier;
 

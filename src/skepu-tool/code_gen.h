@@ -3,7 +3,7 @@
 #include "globals.h"
 
 extern llvm::cl::opt<std::string> ResultName;
-
+/*
 const std::string PH_KernelName {"SKEPU_KERNEL_NAME"};
 const std::string PH_KernelParams {"SKEPU_KERNEL_PARAMS"};
 
@@ -28,7 +28,7 @@ const std::string PH_MapOverlapArgs {"SKEPU_MAPOVERLAP_ARGS"};
 const std::string PH_CallArgs {"SKEPU_CALL_ARGS"};
 
 const std::string PH_IndexInitializer {"SKEPU_INDEX_INITIALIZER"};
-
+*/
 
 void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clang::SourceLocation loc);
 

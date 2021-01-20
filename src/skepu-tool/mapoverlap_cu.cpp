@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "code_gen.h"
+#include "code_gen_cu.h"
 
 using namespace clang;
 
@@ -16,17 +17,13 @@ using namespace clang;
  *  overlap to < 256.
  */
 static const std::string MapOverlapKernel_CU = R"~~~(
-__global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU(
-	SKEPU_MAPOVERLAP_INPUT_TYPE* input, SKEPU_KERNEL_PARAMS SKEPU_MAPOVERLAP_RESULT_TYPE* output,
-	SKEPU_MAPOVERLAP_INPUT_TYPE* wrap, size_t n,
+__global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU({{KERNEL_PARAMS}}
+	{{MAPOVERLAP_INPUT_TYPE}}* wrap, size_t n,
 	size_t out_offset, size_t out_numelements,
-	int poly, SKEPU_MAPOVERLAP_INPUT_TYPE pad, size_t overlap
+	int poly, {{MAPOVERLAP_INPUT_TYPE}} pad, size_t overlap
 )
 {
-   extern __shared__ SKEPU_MAPOVERLAP_INPUT_TYPE sdata[];
-   // extern __shared__ char _sdata[];
-   // SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata);
-
+   extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} sdata[];
    size_t tid = threadIdx.x;
    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
    size_t gridSize = blockDim.x*gridDim.x;
@@ -34,61 +31,61 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU(
    while(i<(n+overlap-1))
    {
       //Copy data to shared memory
-      if(poly == 0) // constant policy
+      if (poly == 0) // constant policy
       {
-         sdata[overlap+tid] = (i < n) ? input[i] : pad;
+         sdata[overlap+tid] = (i < n) ? skepu_input[i] : pad;
 
-         if(tid < overlap)
+         if (tid < overlap)
          {
-            sdata[tid] = (i<overlap) ? pad : input[i-overlap];
+            sdata[tid] = (i<overlap) ? pad : skepu_input[i-overlap];
          }
 
-         if(tid >= (blockDim.x-overlap))
+         if (tid >= (blockDim.x-overlap))
          {
-            sdata[tid+2*overlap] = (i+overlap < n) ? input[i+overlap] : pad;
+            sdata[tid+2*overlap] = (i+overlap < n) ? skepu_input[i+overlap] : pad;
          }
       }
-      else if(poly == 1)
+      else if (poly == 1)
       {
-         if(i < n)
+         if (i < n)
          {
-            sdata[overlap+tid] = input[i];
+            sdata[overlap+tid] = skepu_input[i];
          }
          else
          {
-            sdata[overlap+tid] = wrap[overlap+(i-n)];
+            sdata[overlap + tid] = wrap[overlap + (i - n)];
          }
 
-         if(tid < overlap)
+         if (tid < overlap)
          {
-            sdata[tid] = (i<overlap) ? wrap[tid] : input[i-overlap];
+            sdata[tid] = (i < overlap) ? wrap[tid] : skepu_input[i - overlap];
          }
 
-         if(tid >= (blockDim.x-overlap))
+         if (tid >= (blockDim.x - overlap))
          {
-            sdata[tid+2*overlap] = (i+overlap < n) ? input[i+overlap] : wrap[overlap+(i+overlap-n)];
+            sdata[tid + 2 * overlap] = (i + overlap < n) ? skepu_input[i + overlap] : wrap[overlap + (i + overlap - n)];
          }
       }
-      else if(poly == 2) // DUPLICATE
+      else if (poly == 2) // DUPLICATE
       {
-         sdata[overlap+tid] = (i < n) ? input[i] : input[n-1];
+         sdata[overlap + tid] = (i < n) ? skepu_input[i] : skepu_input[n - 1];
 
-         if(tid < overlap)
+         if (tid < overlap)
          {
-            sdata[tid] = (i<overlap) ? input[0] : input[i-overlap];
+            sdata[tid] = (i < overlap) ? skepu_input[0] : skepu_input[i - overlap];
          }
 
-         if(tid >= (blockDim.x-overlap))
+         if (tid >= (blockDim.x - overlap))
          {
-            sdata[tid+2*overlap] = (i+overlap < n) ? input[i+overlap] : input[n-1];
+            sdata[tid+2*overlap] = (i + overlap < n) ? skepu_input[i + overlap] : skepu_input[n - 1];
          }
       }
 
       __syncthreads();
 
       //Compute and store data
-      if( (i >= out_offset) && (i < out_offset+out_numelements) )
-      	 output[i-out_offset] = SKEPU_FUNCTION_NAME_MAPOVERLAP({(int)overlap, 1, &sdata[tid + overlap]} SKEPU_MAPOVERLAP_ARGS);
+      if ( (i >= out_offset) && (i < out_offset + out_numelements) )
+      	 skepu_output[i-out_offset] = {{FUNCTION_NAME_MAPOVERLAP}}({(int)overlap, 1, &sdata[tid + overlap]}, {{MAPOVERLAP_ARGS}});
 
       i += gridSize;
 
@@ -107,84 +104,80 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU(
  *  overlap to < 256.
  */
 static const std::string MapOverlapKernel_CU_Matrix_Row = R"~~~(
-__global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_Row(
-	SKEPU_MAPOVERLAP_INPUT_TYPE* input, SKEPU_KERNEL_PARAMS SKEPU_MAPOVERLAP_RESULT_TYPE* output,
-	SKEPU_MAPOVERLAP_INPUT_TYPE* wrap, size_t n, size_t out_offset, size_t out_numelements,
-	int poly, SKEPU_MAPOVERLAP_INPUT_TYPE pad, size_t overlap, size_t blocksPerRow, size_t rowWidth
+__global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Row({{KERNEL_PARAMS}}
+	{{MAPOVERLAP_INPUT_TYPE}}* wrap, size_t n, size_t out_offset, size_t out_numelements,
+	int poly, {{MAPOVERLAP_INPUT_TYPE}} pad, size_t overlap, size_t blocksPerRow, size_t rowWidth
 )
 {
-   extern __shared__ SKEPU_MAPOVERLAP_INPUT_TYPE sdata[];
-   // extern __shared__ char _sdata[];
-   // SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata);
-
+   extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} sdata[];
    size_t tid = threadIdx.x;
    size_t i = blockIdx.x * blockDim.x + tid;
 
-   size_t wrapIndex= 2 * overlap * (int)(blockIdx.x/blocksPerRow);
-   size_t tmp= (blockIdx.x % blocksPerRow);
-   size_t tmp2= (blockIdx.x / blocksPerRow);
+   size_t wrapIndex = 2 * overlap * (int)(blockIdx.x / blocksPerRow);
+   size_t tmp = (blockIdx.x % blocksPerRow);
+   size_t tmp2 = (blockIdx.x / blocksPerRow);
 
 
-   //Copy data to shared memory
-   if(poly == 0)
+   // Copy data to shared memory
+   if (poly == 0)
    {
-      sdata[overlap+tid] = (i < n) ? input[i] : pad;
+      sdata[overlap+tid] = (i < n) ? skepu_input[i] : pad;
 
-      if(tid < overlap)
+      if (tid < overlap)
       {
-         sdata[tid] = (tmp==0) ? pad : input[i-overlap];
+         sdata[tid] = (tmp==0) ? pad : skepu_input[i-overlap];
       }
 
-      if(tid >= (blockDim.x-overlap))
+      if (tid >= (blockDim.x-overlap))
       {
-         sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && (i+overlap < n) && tmp!=(blocksPerRow-1)) ? input[i+overlap] : pad;
+         sdata[tid+2*overlap] = (blockIdx.x != gridDim.x - 1 && (i+overlap < n) && tmp != (blocksPerRow - 1)) ? skepu_input[i + overlap] : pad;
       }
    }
-   else if(poly == 1)
+   else if (poly == 1)
    {
-      if(i < n)
+      if (i < n)
       {
-         sdata[overlap+tid] = input[i];
+         sdata[overlap + tid] = skepu_input[i];
       }
-      else if(i-n < overlap)
+      else if (i - n < overlap)
       {
-         sdata[overlap+tid] = wrap[(overlap+(i-n))+ wrapIndex];
+         sdata[overlap + tid] = wrap[(overlap + (i - n)) + wrapIndex];
       }
       else
       {
-         sdata[overlap+tid] = pad;
+         sdata[overlap + tid] = pad;
       }
 
-      if(tid < overlap)
+      if (tid < overlap)
       {
-         sdata[tid] = (tmp==0) ? wrap[tid+wrapIndex] : input[i-overlap];
+         sdata[tid] = (tmp == 0) ? wrap[tid + wrapIndex] : skepu_input[i - overlap];
       }
 
-      if(tid >= (blockDim.x-overlap))
+      if (tid >= (blockDim.x-overlap))
       {
-         sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && i+overlap < n && tmp!=(blocksPerRow-1)) ? input[i+overlap] : wrap[overlap+wrapIndex+(tid+overlap-blockDim.x)];
+         sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && i+overlap < n && tmp!=(blocksPerRow-1)) ? skepu_input[i+overlap] : wrap[overlap+wrapIndex+(tid+overlap-blockDim.x)];
       }
    }
-   else if(poly == 2)
+   else if (poly == 2)
    {
-      sdata[overlap+tid] = (i < n) ? input[i] : input[n-1];
+      sdata[overlap+tid] = (i < n) ? skepu_input[i] : skepu_input[n-1];
 
-      if(tid < overlap)
+      if (tid < overlap)
       {
-         sdata[tid] = (tmp==0) ? input[tmp2*rowWidth] : input[i-overlap];
+         sdata[tid] = (tmp==0) ? skepu_input[tmp2*rowWidth] : skepu_input[i-overlap];
       }
 
-      if(tid >= (blockDim.x-overlap))
+      if (tid >= (blockDim.x-overlap))
       {
-         sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && (i+overlap < n) && (tmp!=(blocksPerRow-1))) ? input[i+overlap] : input[(tmp2+1)*rowWidth-1];
+         sdata[tid + 2 * overlap] = (blockIdx.x != gridDim.x-1 && (i + overlap < n) && (tmp != (blocksPerRow - 1))) ? skepu_input[i + overlap] : skepu_input[(tmp2 + 1) * rowWidth - 1];
       }
    }
 
    __syncthreads();
 
    //Compute and store data
-   if( (i >= out_offset) && (i < out_offset+out_numelements) )
-   	output[i-out_offset] = SKEPU_FUNCTION_NAME_MAPOVERLAP({(int)overlap, 1, &sdata[tid + overlap]} SKEPU_MAPOVERLAP_ARGS);
+   if ( (i >= out_offset) && (i < out_offset + out_numelements) )
+   	skepu_output[i - out_offset] = {{FUNCTION_NAME_MAPOVERLAP}}({(int)overlap, 1, &sdata[tid + overlap]}, {{MAPOVERLAP_ARGS}});
 }
 )~~~";
 
@@ -199,16 +192,12 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_Row(
  *  overlap to < 256.
  */
 static const std::string MapOverlapKernel_CU_Matrix_Col = R"~~~(
-__global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_Col(
-	SKEPU_MAPOVERLAP_INPUT_TYPE* input, SKEPU_KERNEL_PARAMS SKEPU_MAPOVERLAP_RESULT_TYPE* output,
-	SKEPU_MAPOVERLAP_INPUT_TYPE* wrap, size_t n, size_t out_offset, size_t out_numelements,
-	int poly, SKEPU_MAPOVERLAP_INPUT_TYPE pad, size_t overlap, size_t blocksPerCol, size_t rowWidth, size_t colWidth
+__global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Col({{KERNEL_PARAMS}}
+	{{MAPOVERLAP_INPUT_TYPE}}* wrap, size_t n, size_t out_offset, size_t out_numelements,
+	int poly, {{MAPOVERLAP_INPUT_TYPE}} pad, size_t overlap, size_t blocksPerCol, size_t rowWidth, size_t colWidth
 )
 {
-   extern __shared__ SKEPU_MAPOVERLAP_INPUT_TYPE sdata[];
-   // extern __shared__ char _sdata[];
-   // SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata);
-
+   extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} sdata[];
    size_t tid = threadIdx.x;
    size_t i = blockIdx.x * blockDim.x + tid;
 
@@ -219,27 +208,27 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_Col(
    size_t arrInd = (threadIdx.x + tmp*blockDim.x)*rowWidth + ((blockIdx.x)/blocksPerCol);
 
    //Copy data to shared memory
-   if(poly == 0)
+   if (poly == 0)
    {
-      sdata[overlap+tid] = (i < n) ? input[arrInd] : pad;
+      sdata[overlap+tid] = (i < n) ? skepu_input[arrInd] : pad;
 
-      if(tid < overlap)
+      if (tid < overlap)
       {
-         sdata[tid] = (tmp==0) ? pad : input[(arrInd-(overlap*rowWidth))];
+         sdata[tid] = (tmp==0) ? pad : skepu_input[(arrInd-(overlap*rowWidth))];
       }
 
-      if(tid >= (blockDim.x-overlap))
+      if (tid >= (blockDim.x-overlap))
       {
-         sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && (arrInd+(overlap*rowWidth)) < n && (tmp!=(blocksPerCol-1))) ? input[(arrInd+(overlap*rowWidth))] : pad;
+         sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && (arrInd+(overlap*rowWidth)) < n && (tmp!=(blocksPerCol-1))) ? skepu_input[(arrInd+(overlap*rowWidth))] : pad;
       }
    }
-   else if(poly == 1)
+   else if (poly == 1)
    {
-      if(i < n)
+      if (i < n)
       {
-         sdata[overlap+tid] = input[arrInd];
+         sdata[overlap+tid] = skepu_input[arrInd];
       }
-      else if(i-n < overlap)
+      else if (i-n < overlap)
       {
          sdata[overlap+tid] = wrap[(overlap+(i-n))+ wrapIndex];
       }
@@ -248,37 +237,37 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_Col(
          sdata[overlap+tid] = pad;
       }
 
-      if(tid < overlap)
+      if (tid < overlap)
       {
-         sdata[tid] = (tmp==0) ? wrap[tid+wrapIndex] : input[(arrInd-(overlap*rowWidth))];
+         sdata[tid] = (tmp==0) ? wrap[tid+wrapIndex] : skepu_input[(arrInd-(overlap*rowWidth))];
       }
 
-      if(tid >= (blockDim.x-overlap))
+      if (tid >= (blockDim.x-overlap))
       {
-         sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && (arrInd+(overlap*rowWidth)) < n && (tmp!=(blocksPerCol-1))) ? input[(arrInd+(overlap*rowWidth))] : wrap[overlap+wrapIndex+(tid+overlap-blockDim.x)];
+         sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && (arrInd+(overlap*rowWidth)) < n && (tmp!=(blocksPerCol-1))) ? skepu_input[(arrInd+(overlap*rowWidth))] : wrap[overlap+wrapIndex+(tid+overlap-blockDim.x)];
       }
    }
-   else if(poly == 2)
+   else if (poly == 2)
    {
-      sdata[overlap+tid] = (i < n) ? input[arrInd] : input[n-1];
+      sdata[overlap+tid] = (i < n) ? skepu_input[arrInd] : skepu_input[n-1];
 
-      if(tid < overlap)
+      if (tid < overlap)
       {
-         sdata[tid] = (tmp==0) ? input[tmp2] : input[(arrInd-(overlap*rowWidth))];
+         sdata[tid] = (tmp==0) ? skepu_input[tmp2] : skepu_input[(arrInd-(overlap*rowWidth))];
       }
 
-      if(tid >= (blockDim.x-overlap))
+      if (tid >= (blockDim.x-overlap))
       {
-         sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && (arrInd+(overlap*rowWidth)) < n && (tmp!=(blocksPerCol-1))) ? input[(arrInd+(overlap*rowWidth))] : input[tmp2+(colWidth-1)*rowWidth];
+         sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && (arrInd+(overlap*rowWidth)) < n && (tmp!=(blocksPerCol-1))) ? skepu_input[(arrInd+(overlap*rowWidth))] : skepu_input[tmp2+(colWidth-1)*rowWidth];
       }
    }
 
    __syncthreads();
 
    //Compute and store data
-   if( (arrInd >= out_offset) && (arrInd < out_offset+out_numelements) )
+   if ( (arrInd >= out_offset) && (arrInd < out_offset+out_numelements) )
    {
-      output[arrInd-out_offset] = SKEPU_FUNCTION_NAME_MAPOVERLAP({(int)overlap, 1, &sdata[tid + overlap]} SKEPU_MAPOVERLAP_ARGS);
+      skepu_output[arrInd-out_offset] = {{FUNCTION_NAME_MAPOVERLAP}}({(int)overlap, 1, &sdata[tid + overlap]}, {{MAPOVERLAP_ARGS}});
    }
 }
 )~~~";
@@ -294,15 +283,12 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_Col(
  *  overlap to < 256.
  */
 static const std::string MapOverlapKernel_CU_Matrix_ColMulti = R"~~~(
-__global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_ColMulti(
-	SKEPU_MAPOVERLAP_INPUT_TYPE* input, SKEPU_KERNEL_PARAMS SKEPU_MAPOVERLAP_RESULT_TYPE* output,
-	SKEPU_MAPOVERLAP_INPUT_TYPE* wrap, size_t n, size_t in_offset, size_t out_numelements,
-	int poly, int deviceType, SKEPU_MAPOVERLAP_INPUT_TYPE pad, size_t overlap, size_t blocksPerCol, size_t rowWidth, size_t colWidth
+__global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_ColMulti({{KERNEL_PARAMS}}
+	{{MAPOVERLAP_INPUT_TYPE}}* wrap, size_t n, size_t in_offset, size_t out_numelements,
+	int poly, int deviceType, {{MAPOVERLAP_INPUT_TYPE}} pad, size_t overlap, size_t blocksPerCol, size_t rowWidth, size_t colWidth
 )
 {
-   extern __shared__ SKEPU_MAPOVERLAP_INPUT_TYPE sdata[];
-   // extern __shared__ char _sdata[];
-   // SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata);
+   extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} sdata[];
 
    size_t tid = threadIdx.x;
    size_t i = blockIdx.x * blockDim.x + tid;
@@ -312,136 +298,136 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_ColMulti(
 
    size_t arrInd = (threadIdx.x + tmp*blockDim.x)*rowWidth + tmp2; //((blockIdx.x)/blocksPerCol);
 
-   if(poly == 0) //IF overlap policy is CONSTANT
+   if (poly == 0) //IF overlap policy is CONSTANT
    {
-      sdata[overlap+tid] = (i < n) ? input[arrInd+in_offset] : pad; // in_offset
+      sdata[overlap+tid] = (i < n) ? skepu_input[arrInd+in_offset] : pad; // in_offset
 
-      if(deviceType == -1) // first device, i.e. in_offset=0
+      if (deviceType == -1) // first device, i.e. in_offset=0
       {
-         if(tid < overlap)
+         if (tid < overlap)
          {
-            sdata[tid] = (tmp==0) ? pad : input[(arrInd-(overlap*rowWidth))];
+            sdata[tid] = (tmp==0) ? pad : skepu_input[(arrInd-(overlap*rowWidth))];
          }
 
-         if(tid >= (blockDim.x-overlap))
+         if (tid >= (blockDim.x-overlap))
          {
-            sdata[tid+2*overlap] = input[(arrInd+in_offset+(overlap*rowWidth))];
+            sdata[tid+2*overlap] = skepu_input[(arrInd+in_offset+(overlap*rowWidth))];
          }
       }
-      else if(deviceType == 0) // middle device
+      else if (deviceType == 0) // middle device
       {
-         if(tid < overlap)
+         if (tid < overlap)
          {
-            sdata[tid] = input[arrInd];
+            sdata[tid] = skepu_input[arrInd];
          }
 
-         if(tid >= (blockDim.x-overlap))
+         if (tid >= (blockDim.x-overlap))
          {
-            sdata[tid+2*overlap] = input[(arrInd+in_offset+(overlap*rowWidth))];
+            sdata[tid+2*overlap] = skepu_input[(arrInd+in_offset+(overlap*rowWidth))];
          }
       }
-      else if(deviceType == 1) // last device
+      else if (deviceType == 1) // last device
       {
-         if(tid < overlap)
+         if (tid < overlap)
          {
-            sdata[tid] = input[arrInd];
+            sdata[tid] = skepu_input[arrInd];
          }
 
-         if(tid >= (blockDim.x-overlap))
+         if (tid >= (blockDim.x-overlap))
          {
-            sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && (arrInd+in_offset+(overlap*rowWidth)) < n && (tmp!=(blocksPerCol-1))) ? input[(arrInd+in_offset+(overlap*rowWidth))] : pad;
+            sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && (arrInd+in_offset+(overlap*rowWidth)) < n && (tmp!=(blocksPerCol-1))) ? skepu_input[(arrInd+in_offset+(overlap*rowWidth))] : pad;
          }
       }
    }
-   else if(poly == 1) //IF overlap policy is CYCLIC
+   else if (poly == 1) //IF overlap policy is CYCLIC
    {
-      sdata[overlap+tid] = (i < n) ? input[arrInd+in_offset] : ((i-n < overlap) ? wrap[(i-n)+ (overlap * tmp2)] : pad);
+      sdata[overlap+tid] = (i < n) ? skepu_input[arrInd+in_offset] : ((i-n < overlap) ? wrap[(i-n)+ (overlap * tmp2)] : pad);
 
-      if(deviceType == -1) // first device, i.e. in_offset=0
+      if (deviceType == -1) // first device, i.e. in_offset=0
       {
-         if(tid < overlap)
+         if (tid < overlap)
          {
-            sdata[tid] = (tmp==0) ? wrap[tid+(overlap * tmp2)] : input[(arrInd-(overlap*rowWidth))];
+            sdata[tid] = (tmp==0) ? wrap[tid+(overlap * tmp2)] : skepu_input[(arrInd-(overlap*rowWidth))];
          }
 
-         if(tid >= (blockDim.x-overlap))
+         if (tid >= (blockDim.x-overlap))
          {
-            sdata[tid+2*overlap] = input[(arrInd+in_offset+(overlap*rowWidth))];
+            sdata[tid+2*overlap] = skepu_input[(arrInd+in_offset+(overlap*rowWidth))];
          }
       }
-      else if(deviceType == 0) // middle device
+      else if (deviceType == 0) // middle device
       {
-         if(tid < overlap)
+         if (tid < overlap)
          {
-            sdata[tid] = input[arrInd];
+            sdata[tid] = skepu_input[arrInd];
          }
 
-         if(tid >= (blockDim.x-overlap))
+         if (tid >= (blockDim.x-overlap))
          {
-            sdata[tid+2*overlap] = input[(arrInd+in_offset+(overlap*rowWidth))];
+            sdata[tid+2*overlap] = skepu_input[(arrInd+in_offset+(overlap*rowWidth))];
          }
       }
-      else if(deviceType == 1) // last device
+      else if (deviceType == 1) // last device
       {
-         if(tid < overlap)
+         if (tid < overlap)
          {
-            sdata[tid] = input[arrInd];
+            sdata[tid] = skepu_input[arrInd];
          }
 
-         if(tid >= (blockDim.x-overlap))
+         if (tid >= (blockDim.x-overlap))
          {
-            sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && (arrInd+(overlap*rowWidth)) < n && (tmp!=(blocksPerCol-1))) ? input[(arrInd+in_offset+(overlap*rowWidth))] : wrap[(overlap * tmp2)+(tid+overlap-blockDim.x)];
+            sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && (arrInd+(overlap*rowWidth)) < n && (tmp!=(blocksPerCol-1))) ? skepu_input[(arrInd+in_offset+(overlap*rowWidth))] : wrap[(overlap * tmp2)+(tid+overlap-blockDim.x)];
          }
       }
    }
-   else if(poly == 2) //IF overlap policy is DUPLICATE
+   else if (poly == 2) //IF overlap policy is DUPLICATE
    {
-      sdata[overlap+tid] = (i < n) ? input[arrInd+in_offset] : input[n+in_offset-1];
+      sdata[overlap+tid] = (i < n) ? skepu_input[arrInd+in_offset] : skepu_input[n+in_offset-1];
 
-      if(deviceType == -1) // first device, i.e. in_offset=0
+      if (deviceType == -1) // first device, i.e. in_offset=0
       {
-         if(tid < overlap)
+         if (tid < overlap)
          {
-            sdata[tid] = (tmp==0) ? input[tmp2] : input[(arrInd-(overlap*rowWidth))];
+            sdata[tid] = (tmp==0) ? skepu_input[tmp2] : skepu_input[(arrInd-(overlap*rowWidth))];
          }
 
-         if(tid >= (blockDim.x-overlap))
+         if (tid >= (blockDim.x-overlap))
          {
-            sdata[tid+2*overlap] = input[(arrInd+in_offset+(overlap*rowWidth))];
+            sdata[tid+2*overlap] = skepu_input[(arrInd+in_offset+(overlap*rowWidth))];
          }
       }
-      else if(deviceType == 0) // middle device
+      else if (deviceType == 0) // middle device
       {
-         if(tid < overlap)
+         if (tid < overlap)
          {
-            sdata[tid] = input[arrInd];
+            sdata[tid] = skepu_input[arrInd];
          }
 
-         if(tid >= (blockDim.x-overlap))
+         if (tid >= (blockDim.x-overlap))
          {
-            sdata[tid+2*overlap] = input[(arrInd+in_offset+(overlap*rowWidth))];
+            sdata[tid+2*overlap] = skepu_input[(arrInd+in_offset+(overlap*rowWidth))];
          }
       }
-      else if(deviceType == 1) // last device
+      else if (deviceType == 1) // last device
       {
-         if(tid < overlap)
+         if (tid < overlap)
          {
-            sdata[tid] = input[arrInd];
+            sdata[tid] = skepu_input[arrInd];
          }
 
-         if(tid >= (blockDim.x-overlap))
+         if (tid >= (blockDim.x-overlap))
          {
-            sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && (arrInd+in_offset+(overlap*rowWidth)) < n && (tmp!=(blocksPerCol-1))) ? input[(arrInd+in_offset+(overlap*rowWidth))] : input[tmp2+in_offset+(colWidth-1)*rowWidth];
+            sdata[tid+2*overlap] = (blockIdx.x != gridDim.x-1 && (arrInd+in_offset+(overlap*rowWidth)) < n && (tmp!=(blocksPerCol-1))) ? skepu_input[(arrInd+in_offset+(overlap*rowWidth))] : skepu_input[tmp2+in_offset+(colWidth-1)*rowWidth];
          }
       }
    }
 
    __syncthreads();
 
-   //Compute and store data
-   if( arrInd < out_numelements )
+   // Compute and store data
+   if ( arrInd < out_numelements )
    {
-      output[arrInd] = SKEPU_FUNCTION_NAME_MAPOVERLAP({(int)overlap, 1, &sdata[tid + overlap]} SKEPU_MAPOVERLAP_ARGS);
+      skepu_output[arrInd] = {{FUNCTION_NAME_MAPOVERLAP}}({(int)overlap, 1, &sdata[tid + overlap]}, {{MAPOVERLAP_ARGS}});
    }
 }
 )~~~";
@@ -452,18 +438,14 @@ __global__ void SKEPU_KERNEL_NAME_MapOverlapKernel_CU_Matrix_ColMulti(
 * The mapoverlap OpenCL kernel to apply a user function on neighbourhood of each element in the matrix.
 */
 static const std::string MatrixConvol2D_CU = R"~~~(
-__global__ void SKEPU_KERNEL_NAME_conv_cuda_2D_kernel(
-	SKEPU_MAPOVERLAP_INPUT_TYPE* input, SKEPU_KERNEL_PARAMS SKEPU_MAPOVERLAP_RESULT_TYPE* output,
+__global__ void {{KERNEL_NAME}}_conv_cuda_2D_kernel({{KERNEL_PARAMS}}
 	const size_t out_rows, const size_t out_cols,
 	size_t overlap_y, size_t overlap_x,
 	size_t in_pitch, size_t out_pitch,
 	const size_t sharedRows, const size_t sharedCols
 )
 {
-   extern __shared__ SKEPU_MAPOVERLAP_INPUT_TYPE sdata[]; // will also contain extra (overlap data)
-	// extern __shared__ char _sdata[];
-	// SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata); // will also contain extra (overlap data)
-
+  extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} sdata[]; // will also contain extra (overlap data)
 	size_t xx = blockIdx.x * blockDim.x;
 	size_t yy = blockIdx.y * blockDim.y;
 
@@ -472,23 +454,32 @@ __global__ void SKEPU_KERNEL_NAME_conv_cuda_2D_kernel(
 
 	if (x < out_cols + overlap_x * 2 && y < out_rows + overlap_y * 2)
 	{
-		sdata[threadIdx.y * sharedCols + threadIdx.x] = input[y * in_pitch + x];
+		sdata[threadIdx.y * sharedCols + threadIdx.x] = skepu_input[y * in_pitch + x];
 
 		// To load data in shared memory including neighbouring elements...
 		for (size_t shared_y = threadIdx.y; shared_y < sharedRows; shared_y += blockDim.y)
 		{
 			for (size_t shared_x = threadIdx.x; shared_x < sharedCols; shared_x += blockDim.x)
 			{
-				sdata[shared_y * sharedCols + shared_x] = input[(yy + shared_y) * in_pitch + xx + shared_x];
+				sdata[shared_y * sharedCols + shared_x] = skepu_input[(yy + shared_y) * in_pitch + xx + shared_x];
 			}
 		}
 	}
 
 	__syncthreads();
+	
+	{{PROXIES_INIT}}
 
 	if (x < out_cols && y < out_rows)
-		output[y*out_pitch+x] = SKEPU_FUNCTION_NAME_MAPOVERLAP({(int)overlap_x, (int)overlap_y,
-			sharedCols, &sdata[(threadIdx.y + overlap_y) * sharedCols + (threadIdx.x + overlap_x)]} SKEPU_MAPOVERLAP_ARGS);
+	{
+		size_t skepu_w2 = out_cols;
+		size_t skepu_i = y * out_cols + x;
+		size_t skepu_base = 0;
+		{{INDEX_INITIALIZER}}
+		{{PROXIES_UPDATE}}
+		auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
+		{{OUTPUT_BINDINGS}}
+	}
 }
 )~~~";
 
@@ -497,51 +488,7 @@ __global__ void SKEPU_KERNEL_NAME_conv_cuda_2D_kernel(
 /*!
 * The mapoverlap OpenCL kernel to apply a user function on neighbourhood of each element in the matrix.
 */
-static const std::string MatrixConvol3D_CU = R"~~~(
-__global__ void SKEPU_KERNEL_NAME_conv_cuda_2D_kernel(
-	SKEPU_MAPOVERLAP_INPUT_TYPE* input, SKEPU_KERNEL_PARAMS SKEPU_MAPOVERLAP_RESULT_TYPE* output,
-	const size_t out_i, const size_t out_j, size_t out_k,
-	size_t overlap_i, size_t overlap_j, size_t overlap_k,
-	size_t in_pitch, size_t out_pitch,
-	const size_t sharedRows, const size_t sharedCols
-)
-{
-	extern __shared__ SKEPU_MAPOVERLAP_INPUT_TYPE sdata[]; // will also contain extra (overlap data)
-	// extern __shared__ char _sdata[];
-	// SKEPU_MAPOVERLAP_INPUT_TYPE* sdata = reinterpret_cast<SKEPU_MAPOVERLAP_INPUT_TYPE*>(_sdata); // will also contain extra (overlap data)
-	
-	size_t ii = blockIdx.x * blockDim.x;
-	size_t jj = blockIdx.y * blockDim.y;
-	
-	size_t i = ii + threadIdx.x;
-	size_t j = jj + threadIdx.y;
-	
-	if (i < out_cols + overlap_i * 2 && j < out_rows + overlap_j * 2)
-	{
-		sdata[threadIdx.y * sharedCols + threadIdx.x] = input[j * in_pitch + i];
-		
-		// To load data in shared memory including neighbouring elements...
-		for (size_t shared_j = threadIdx.y; shared_j < sharedRows; shared_j += blockDim.y)
-		{
-			for (size_t shared_i = threadIdx.x; shared_i < sharedCols; shared_i += blockDim.x)
-			{
-				size_t global_base = (yy + shared_j) * in_pitch + xx + shared_i;
-				size_t shared_base = (shared_j * sharedCols + shared_i) * out_k;
-				for (size_t k = 0; k < in_k; ++k)
-				{
-					sdata[] = input[];
-				}
-			}
-		}
-	}
-	
-	__syncthreads();
-	
-	if (x < out_cols && y < out_rows)
-		output[y*out_pitch+x] = SKEPU_FUNCTION_NAME_MAPOVERLAP({(int)overlap_i, (int)overlap_j, (int)overlap_k,
-			sharedCols, &sdata[(threadIdx.y + overlap_y) * sharedCols + (threadIdx.x + overlap_x)]} SKEPU_MAPOVERLAP_ARGS);
-}
-)~~~";
+static const std::string MatrixConvol3D_CU = R"~~~()~~~";
 
 static const std::string MatrixConvol4D_CU = R"~~~()~~~";
 
@@ -549,29 +496,30 @@ static const std::string MatrixConvol4D_CU = R"~~~()~~~";
 std::string createMapOverlapKernelProgramHelper_CU(UserFunction &mapOverlapFunc, std::string dir, std::string kernelSource, std::string kernelTag)
 {
 	std::stringstream SSMapOverlapFuncArgs, SSKernelParamList;
+	IndexCodeGen indexInfo = indexInitHelper_CU(mapOverlapFunc);
+	bool first = false;
+	SSMapOverlapFuncArgs << indexInfo.mapFuncParam << ", ";
+	std::string multiOutputAssign = handleOutputs_CU(mapOverlapFunc, SSKernelParamList, "y * out_pitch + x");
 	
-	for (UserFunction::RandomAccessParam& param : mapOverlapFunc.anyContainerParams)
-	{
-		SSKernelParamList << param.fullTypeName << " " << param.name << ", ";
-		SSMapOverlapFuncArgs << ", " << param.name;
-	}
+	SSMapOverlapFuncArgs << "{(int)overlap_x, (int)overlap_y, sharedCols, &sdata[(threadIdx.y + overlap_y) * sharedCols + (threadIdx.x + overlap_x)]}";
+	SSKernelParamList << mapOverlapFunc.regionParam->templateInstantiationType() << " *skepu_input, ";
 	
-	for (UserFunction::Param& param : mapOverlapFunc.anyScalarParams)
-	{
-		SSKernelParamList << param.resolvedTypeName << " " << param.name << ", ";
-		SSMapOverlapFuncArgs << ", " << param.name;
-	}
+	auto argsInfo = handleRandomAccessAndUniforms_CU(mapOverlapFunc, SSMapOverlapFuncArgs, SSKernelParamList, first);
 	
-	const std::string kernelName = ResultName + "_" + kernelTag + "_" + mapOverlapFunc.uniqueName;
-	replaceTextInString(kernelSource, PH_MapOverlapInputType, mapOverlapFunc.regionParam->templateInstantiationType());
-	replaceTextInString(kernelSource, PH_MapOverlapResultType, mapOverlapFunc.resolvedReturnTypeName);
-	replaceTextInString(kernelSource, PH_KernelName, kernelName);
-	replaceTextInString(kernelSource, PH_MapOverlapFuncName, mapOverlapFunc.funcNameCUDA());
-	replaceTextInString(kernelSource, PH_KernelParams, SSKernelParamList.str());
-	replaceTextInString(kernelSource, PH_MapOverlapArgs, SSMapOverlapFuncArgs.str());
-	
+	const std::string kernelName = transformToCXXIdentifier(ResultName) + "_" + kernelTag + "_" + mapOverlapFunc.uniqueName;
 	std::ofstream FSOutFile {dir + "/" + kernelName + ".cu"};
-	FSOutFile << kernelSource;
+	FSOutFile << templateString(kernelSource,
+	{
+		{"{{MAPOVERLAP_INPUT_TYPE}}",    mapOverlapFunc.regionParam->templateInstantiationType()},
+		{"{{KERNEL_NAME}}",              kernelName},
+		{"{{FUNCTION_NAME_MAPOVERLAP}}", mapOverlapFunc.funcNameCUDA()},
+		{"{{KERNEL_PARAMS}}",            SSKernelParamList.str()},
+		{"{{MAPOVERLAP_ARGS}}",          SSMapOverlapFuncArgs.str()},
+		{"{{INDEX_INITIALIZER}}",        indexInfo.indexInit},
+		{"{{OUTPUT_BINDINGS}}",          multiOutputAssign},
+		{"{{PROXIES_UPDATE}}",           argsInfo.proxyInitializerInner},
+		{"{{PROXIES_INIT}}",             argsInfo.proxyInitializer}
+	});
 	return kernelName;
 }
 

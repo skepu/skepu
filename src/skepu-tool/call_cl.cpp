@@ -173,10 +173,10 @@ std::string createCallKernelProgram_CL(UserFunction &callFunc, std::string dir)
 
 	std::string finalSource = Constructor;
 	replaceTextInString(finalSource, "SKEPU_OPENCL_KERNEL", sourceStream.str());
-	replaceTextInString(finalSource, PH_KernelName, kernelName);
-	replaceTextInString(finalSource, PH_CallFuncName, callFunc.uniqueName);
-	replaceTextInString(finalSource, PH_KernelParams, SSKernelParamList.str());
-	replaceTextInString(finalSource, PH_CallArgs, SSCallFuncParams.str());
+	replaceTextInString(finalSource, "SKEPU_KERNEL_NAME", kernelName);
+	replaceTextInString(finalSource, "SKEPU_FUNCTION_NAME_CALL", callFunc.uniqueName);
+	replaceTextInString(finalSource, "SKEPU_KERNEL_PARAMS", SSKernelParamList.str());
+	replaceTextInString(finalSource, "SKEPU_CALL_ARGS", SSCallFuncParams.str());
 	replaceTextInString(finalSource, "SKEPU_HOST_KERNEL_PARAMS", SSHostKernelParamList.str());
 	replaceTextInString(finalSource, "SKEPU_KERNEL_CLASS", className);
 	replaceTextInString(finalSource, "SKEPU_KERNEL_ARGS", SSKernelArgs.str());

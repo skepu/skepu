@@ -1,4 +1,5 @@
 #include "code_gen.h"
+#include "code_gen_cu.h"
 
 using namespace clang;
 
@@ -7,203 +8,155 @@ using namespace clang;
 // ------------------------------
 
 const char *MapReduceKernelTemplate_CU = R"~~~(
-__global__ void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS SKEPU_REDUCE_RESULT_TYPE *output,  size_t w2, size_t w3, size_t w4, size_t n, size_t base)
+__global__ void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_w2, size_t skepu_w3, size_t skepu_w4, size_t skepu_n, size_t skepu_base)
 {
-	extern __shared__ SKEPU_REDUCE_RESULT_TYPE sdata[];
-	// extern __shared__ alignas(SKEPU_REDUCE_RESULT_TYPE) char _sdata[];
-	// SKEPU_REDUCE_RESULT_TYPE *sdata = reinterpret_cast<SKEPU_REDUCE_RESULT_TYPE*>(_sdata);
+	extern __shared__ {{REDUCE_RESULT_TYPE}} skepu_sdata[];
 
-	size_t blockSize = blockDim.x;
-	size_t tid = threadIdx.x;
-	size_t i = blockIdx.x * blockSize + tid;
-	size_t gridSize = blockSize * gridDim.x;
-	SKEPU_REDUCE_RESULT_TYPE result;
+	size_t skepu_blockSize = blockDim.x;
+	size_t skepu_tid = threadIdx.x;
+	size_t skepu_i = blockIdx.x * skepu_blockSize + skepu_tid;
+	size_t skepu_gridSize = skepu_blockSize * gridDim.x;
+	{{REDUCE_RESULT_TYPE}} skepu_result;
 
-	if (i < n)
+	if (skepu_i < skepu_n)
 	{
-		SKEPU_INDEX_INITIALIZER
-		result = SKEPU_FUNCTION_NAME_MAP(SKEPU_MAP_PARAMS);
-		i += gridSize;
+		{{INDEX_INITIALIZER}}
+		skepu_result = {{FUNCTION_NAME_MAP}}({{MAP_ARGS}});
+		//{{OUTPUT_BINDINGS}}
+		skepu_i += skepu_gridSize;
 	}
 
-	while (i < n)
+	while (skepu_i < skepu_n)
 	{
-		SKEPU_INDEX_INITIALIZER
-		SKEPU_MAP_RESULT_TYPE tempMap = SKEPU_FUNCTION_NAME_MAP(SKEPU_MAP_PARAMS);
-		result = SKEPU_FUNCTION_NAME_REDUCE(result, tempMap);
-		i += gridSize;
+		{{INDEX_INITIALIZER}}
+		auto skepu_tempMap = {{FUNCTION_NAME_MAP}}({{MAP_ARGS}});
+		skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_tempMap);
+		skepu_i += skepu_gridSize;
 	}
 
-	sdata[tid] = result;
+	skepu_sdata[skepu_tid] = skepu_result;
 	__syncthreads();
 
-	if (blockSize >= 1024) { if (tid < 512 && tid + 512 < n) { sdata[tid] = SKEPU_FUNCTION_NAME_REDUCE(sdata[tid], sdata[tid + 512]); } __syncthreads(); }
-	if (blockSize >=  512) { if (tid < 256 && tid + 256 < n) { sdata[tid] = SKEPU_FUNCTION_NAME_REDUCE(sdata[tid], sdata[tid + 256]); } __syncthreads(); }
-	if (blockSize >=  256) { if (tid < 128 && tid + 128 < n) { sdata[tid] = SKEPU_FUNCTION_NAME_REDUCE(sdata[tid], sdata[tid + 128]); } __syncthreads(); }
-	if (blockSize >=  128) { if (tid <  64 && tid +  64 < n) { sdata[tid] = SKEPU_FUNCTION_NAME_REDUCE(sdata[tid], sdata[tid +  64]); } __syncthreads(); }
-	if (blockSize >=   64) { if (tid <  32 && tid +  32 < n) { sdata[tid] = SKEPU_FUNCTION_NAME_REDUCE(sdata[tid], sdata[tid +  32]); } __syncthreads(); }
-	if (blockSize >=   32) { if (tid <  16 && tid +  16 < n) { sdata[tid] = SKEPU_FUNCTION_NAME_REDUCE(sdata[tid], sdata[tid +  16]); } __syncthreads(); }
-	if (blockSize >=   16) { if (tid <   8 && tid +   8 < n) { sdata[tid] = SKEPU_FUNCTION_NAME_REDUCE(sdata[tid], sdata[tid +   8]); } __syncthreads(); }
-	if (blockSize >=    8) { if (tid <   4 && tid +   4 < n) { sdata[tid] = SKEPU_FUNCTION_NAME_REDUCE(sdata[tid], sdata[tid +   4]); } __syncthreads(); }
-	if (blockSize >=    4) { if (tid <   2 && tid +   2 < n) { sdata[tid] = SKEPU_FUNCTION_NAME_REDUCE(sdata[tid], sdata[tid +   2]); } __syncthreads(); }
-	if (blockSize >=    2) { if (tid <   1 && tid +   1 < n) { sdata[tid] = SKEPU_FUNCTION_NAME_REDUCE(sdata[tid], sdata[tid +   1]); } __syncthreads(); }
+	if (skepu_blockSize >= 1024) { if (skepu_tid < 512 && skepu_tid + 512 < skepu_n) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid + 512]); } __syncthreads(); }
+	if (skepu_blockSize >=  512) { if (skepu_tid < 256 && skepu_tid + 256 < skepu_n) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid + 256]); } __syncthreads(); }
+	if (skepu_blockSize >=  256) { if (skepu_tid < 128 && skepu_tid + 128 < skepu_n) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid + 128]); } __syncthreads(); }
+	if (skepu_blockSize >=  128) { if (skepu_tid <  64 && skepu_tid +  64 < skepu_n) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +  64]); } __syncthreads(); }
+	if (skepu_blockSize >=   64) { if (skepu_tid <  32 && skepu_tid +  32 < skepu_n) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +  32]); } __syncthreads(); }
+	if (skepu_blockSize >=   32) { if (skepu_tid <  16 && skepu_tid +  16 < skepu_n) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +  16]); } __syncthreads(); }
+	if (skepu_blockSize >=   16) { if (skepu_tid <   8 && skepu_tid +   8 < skepu_n) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +   8]); } __syncthreads(); }
+	if (skepu_blockSize >=    8) { if (skepu_tid <   4 && skepu_tid +   4 < skepu_n) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +   4]); } __syncthreads(); }
+	if (skepu_blockSize >=    4) { if (skepu_tid <   2 && skepu_tid +   2 < skepu_n) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +   2]); } __syncthreads(); }
+	if (skepu_blockSize >=    2) { if (skepu_tid <   1 && skepu_tid +   1 < skepu_n) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +   1]); } __syncthreads(); }
 
-	if (tid == 0)
-		output[blockIdx.x] = sdata[tid];
+	if (skepu_tid == 0)
+		skepu_output[blockIdx.x] = skepu_sdata[skepu_tid];
 }
 )~~~";
 
 const char *ReduceKernelTemplate_CU = R"~~~(
-__global__ void SKEPU_KERNEL_NAME(SKEPU_REDUCE_RESULT_TYPE *input, SKEPU_REDUCE_RESULT_TYPE *output, size_t n, size_t blockSize, bool nIsPow2)
+__global__ void {{KERNEL_NAME}}({{REDUCE_RESULT_TYPE}} *skepu_input, {{REDUCE_RESULT_TYPE}} *skepu_output, size_t skepu_n, size_t skepu_blockSize, bool skepu_nIsPow2)
 {
-	extern __shared__ SKEPU_REDUCE_RESULT_TYPE sdata[];
-	// extern __shared__ alignas(SKEPU_REDUCE_RESULT_TYPE) char _sdata[];
-	// SKEPU_REDUCE_RESULT_TYPE* sdata = reinterpret_cast<SKEPU_REDUCE_RESULT_TYPE*>(_sdata);
+	extern __shared__ {{REDUCE_RESULT_TYPE}} skepu_sdata[];
 
 	// perform first level of reduction,
 	// reading from global memory, writing to shared memory
-	size_t tid = threadIdx.x;
-	size_t i = blockIdx.x*blockSize*2 + threadIdx.x;
-	size_t gridSize = blockSize*2*gridDim.x;
-	SKEPU_REDUCE_RESULT_TYPE result;
+	size_t skepu_tid = threadIdx.x;
+	size_t skepu_i = blockIdx.x * skepu_blockSize*2 + threadIdx.x;
+	size_t skepu_gridSize = skepu_blockSize * 2 * gridDim.x;
+	{{REDUCE_RESULT_TYPE}} skepu_result;
 
-	if(i < n)
+	if(skepu_i < skepu_n)
 	{
-		result = input[i];
+		skepu_result = skepu_input[skepu_i];
 		// ensure we don't read out of bounds -- this is optimized away for powerOf2 sized arrays
 		//This nIsPow2 opt is not valid when we use this kernel for sparse matrices as well where we
 		// dont exactly now the elements when calculating thread- and block-size and nIsPow2 assum becomes invalid in some cases there which results in sever problems.
 		// There we pass it always false
-		if (nIsPow2 || i + blockSize < n)
-			result = SKEPU_FUNCTION_NAME_REDUCE(result, input[i+blockSize]);
-		i += gridSize;
+		if (skepu_nIsPow2 || skepu_i + skepu_blockSize < skepu_n)
+			skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_input[skepu_i + skepu_blockSize]);
+		skepu_i += skepu_gridSize;
 	}
 
 	// we reduce multiple elements per thread.  The number is determined by the
 	// number of active thread blocks (via gridDim).  More blocks will result
 	// in a lParamer gridSize and therefore fewer elements per thread
-	while(i < n)
+	while(skepu_i < skepu_n)
 	{
-		result = SKEPU_FUNCTION_NAME_REDUCE(result, input[i]);
+		skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_input[skepu_i]);
 		// ensure we don't read out of bounds -- this is optimized away for powerOf2 sized arrays
-		if (nIsPow2 || i + blockSize < n)
-			result = SKEPU_FUNCTION_NAME_REDUCE(result, input[i+blockSize]);
-		i += gridSize;
+		if (skepu_nIsPow2 || skepu_i + skepu_blockSize < skepu_n)
+			skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_input[skepu_i + skepu_blockSize]);
+		skepu_i += skepu_gridSize;
 	}
 
 	// each thread puts its local sum into shared memory
-	sdata[tid] = result;
+	skepu_sdata[skepu_tid] = skepu_result;
 	__syncthreads();
 
 	// do reduction in shared mem
-	if (blockSize >= 1024) { if (tid < 512) { sdata[tid] = result = SKEPU_FUNCTION_NAME_REDUCE(result, sdata[tid + 512]); } __syncthreads(); }
-	if (blockSize >=  512) { if (tid < 256) { sdata[tid] = result = SKEPU_FUNCTION_NAME_REDUCE(result, sdata[tid + 256]); } __syncthreads(); }
-	if (blockSize >=  256) { if (tid < 128) { sdata[tid] = result = SKEPU_FUNCTION_NAME_REDUCE(result, sdata[tid + 128]); } __syncthreads(); }
-	if (blockSize >=  128) { if (tid <  64) { sdata[tid] = result = SKEPU_FUNCTION_NAME_REDUCE(result, sdata[tid +  64]); } __syncthreads(); }
+	if (skepu_blockSize >= 1024) { if (skepu_tid < 512) { skepu_sdata[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_sdata[skepu_tid + 512]); } __syncthreads(); }
+	if (skepu_blockSize >=  512) { if (skepu_tid < 256) { skepu_sdata[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_sdata[skepu_tid + 256]); } __syncthreads(); }
+	if (skepu_blockSize >=  256) { if (skepu_tid < 128) { skepu_sdata[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_sdata[skepu_tid + 128]); } __syncthreads(); }
+	if (skepu_blockSize >=  128) { if (skepu_tid <  64) { skepu_sdata[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_sdata[skepu_tid +  64]); } __syncthreads(); }
 
-	if (tid < 32)
+	if (skepu_tid < 32)
 	{
 		// now that we are using warp-synchronous programming (below)
 		// we need to declare our shared memory volatile so that the compiler
 		// doesn't reorder stores to it and induce incorrect behavior.
-		volatile SKEPU_REDUCE_RESULT_TYPE* smem = sdata;
-		if (blockSize >=  64) { smem[tid] = result = SKEPU_FUNCTION_NAME_REDUCE(result, smem[tid + 32]); }
-		if (blockSize >=  32) { smem[tid] = result = SKEPU_FUNCTION_NAME_REDUCE(result, smem[tid + 16]); }
-		if (blockSize >=  16) { smem[tid] = result = SKEPU_FUNCTION_NAME_REDUCE(result, smem[tid +  8]); }
-		if (blockSize >=   8) { smem[tid] = result = SKEPU_FUNCTION_NAME_REDUCE(result, smem[tid +  4]); }
-		if (blockSize >=   4) { smem[tid] = result = SKEPU_FUNCTION_NAME_REDUCE(result, smem[tid +  2]); }
-		if (blockSize >=   2) { smem[tid] = result = SKEPU_FUNCTION_NAME_REDUCE(result, smem[tid +  1]); }
+		volatile {{REDUCE_RESULT_TYPE}}* skepu_smem = skepu_sdata;
+		if (skepu_blockSize >=  64) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid + 32]); }
+		if (skepu_blockSize >=  32) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid + 16]); }
+		if (skepu_blockSize >=  16) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  8]); }
+		if (skepu_blockSize >=   8) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  4]); }
+		if (skepu_blockSize >=   4) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  2]); }
+		if (skepu_blockSize >=   2) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  1]); }
 	}
 
 	// write result for this block to global mem
-	if (tid == 0)
-		output[blockIdx.x] = sdata[0];
+	if (skepu_tid == 0)
+		skepu_output[blockIdx.x] = skepu_sdata[0];
 }
 )~~~";
 
 
 std::string createMapReduceKernelProgram_CU(UserFunction &mapFunc, UserFunction &reduceFunc, size_t arity, std::string dir)
 {
-	std::stringstream sourceStream, SSKernelParamList, SSMapFuncParams;
-	std::string indexInitializer;
-	bool first = true;
-
-	if (mapFunc.indexed1D || mapFunc.indexed2D || mapFunc.indexed3D || mapFunc.indexed4D)
-	{
-		SSMapFuncParams << "index";
-		first = false;
-	}
-	
-	if      (mapFunc.indexed1D) indexInitializer = "skepu::Index1D index;\nindex.i = base + i;";
-	else if (mapFunc.indexed2D) indexInitializer = "skepu::Index2D index;\nindex.row = (base + i) / w2;\nindex.col = (base + i) % w2;";
-	else if (mapFunc.indexed3D) indexInitializer = R"~~~(
-		skepu::Index3D index;
-		size_t cindex = base + i;
-		index.i = cindex / (w2 * w3);
-		cindex = cindex % (w2 * w3);
-		index.j = cindex / (w3);
-		index.k = cindex % (w3);
-	)~~~";
-	
-	else if (mapFunc.indexed4D) indexInitializer = R"~~~(
-		skepu::Index4D index;
-		size_t cindex = base + i;
-		
-		index.i = cindex / (w2 * w3 * w4);
-		cindex = cindex % (w2 * w3 * w4);
-		
-		index.j = cindex / (w3 * w4);
-		cindex = cindex % (w3 * w4);
-		
-		index.k = cindex / (w4);
-		index.l = cindex % (w4);
-	)~~~";
+	std::stringstream sourceStream, SSKernelParamList, SSMapFuncArgs;
+	IndexCodeGen indexInfo = indexInitHelper_CU(mapFunc);
+	bool first = !indexInfo.hasIndex;
+	SSMapFuncArgs << indexInfo.mapFuncParam;
+	std::string multiOutputAssign = handleOutputs_CU(mapFunc, SSKernelParamList);
 
 	for (UserFunction::Param& param : mapFunc.elwiseParams)
 	{
-		if (!first) { SSMapFuncParams << ", "; }
+		if (!first) { SSMapFuncArgs << ", "; }
 		SSKernelParamList << param.resolvedTypeName << " *" << param.name << ", ";
-		SSMapFuncParams << param.name << "[i]";
+		SSMapFuncArgs << param.name << "[skepu_i]";
 		first = false;
 	}
+	auto argsInfo = handleRandomAccessAndUniforms_CU(mapFunc, SSMapFuncArgs, SSKernelParamList, first);
 
-	for (UserFunction::RandomAccessParam& param : mapFunc.anyContainerParams)
-	{
-		if (!first) { SSMapFuncParams << ", "; }
-		SSKernelParamList << param.fullTypeName << " " << param.name << ", ";
-		SSMapFuncParams << param.name;
-		first = false;
-	}
-
-	for (UserFunction::Param& param : mapFunc.anyScalarParams)
-	{
-		if (!first) { SSMapFuncParams << ", "; }
-		SSKernelParamList << param.resolvedTypeName << " " << param.name << ", ";
-		SSMapFuncParams << param.name;
-		first = false;
-	}
-
-	const std::string kernelName = ResultName + "_MapReduceKernel_" + mapFunc.uniqueName + "_" + reduceFunc.uniqueName;
-	const std::string reduceKernelName = kernelName + "_ReduceOnly";
-
-	std::string kernelSource = MapReduceKernelTemplate_CU;
-	replaceTextInString(kernelSource, PH_MapResultType, mapFunc.resolvedReturnTypeName);
-	replaceTextInString(kernelSource, PH_ReduceResultType, reduceFunc.resolvedReturnTypeName);
-	replaceTextInString(kernelSource, PH_KernelName, kernelName);
-	replaceTextInString(kernelSource, PH_MapFuncName, mapFunc.funcNameCUDA());
-	replaceTextInString(kernelSource, PH_ReduceFuncName, reduceFunc.funcNameCUDA());
-	replaceTextInString(kernelSource, PH_KernelParams, SSKernelParamList.str());
-	replaceTextInString(kernelSource, PH_MapParams, SSMapFuncParams.str());
-	replaceTextInString(kernelSource, PH_IndexInitializer, indexInitializer);
-
-	std::string reduceKernelSource = ReduceKernelTemplate_CU;
-	replaceTextInString(reduceKernelSource, PH_ReduceResultType, reduceFunc.resolvedReturnTypeName);
-	replaceTextInString(reduceKernelSource, PH_KernelName, reduceKernelName);
-	replaceTextInString(reduceKernelSource, PH_ReduceFuncName, reduceFunc.funcNameCUDA());
-
-	std::string totalSource = kernelSource + reduceKernelSource;
-
+	const std::string kernelName = transformToCXXIdentifier(ResultName) + "_MapReduceKernel_" + mapFunc.uniqueName + "_" + reduceFunc.uniqueName;
 	std::ofstream FSOutFile {dir + "/" + kernelName + ".cu"};
-	FSOutFile << totalSource;
+	FSOutFile << templateString(MapReduceKernelTemplate_CU,
+	{
+		{"{{REDUCE_RESULT_TYPE}}",   reduceFunc.resolvedReturnTypeName},
+		{"{{KERNEL_NAME}}",          kernelName},
+		{"{{FUNCTION_NAME_MAP}}",    mapFunc.funcNameCUDA()},
+		{"{{FUNCTION_NAME_REDUCE}}", reduceFunc.funcNameCUDA()},
+		{"{{KERNEL_PARAMS}}",        SSKernelParamList.str()},
+		{"{{MAP_ARGS}}",             SSMapFuncArgs.str()},
+		{"{{INDEX_INITIALIZER}}",    indexInfo.indexInit},
+		{"{{OUTPUT_BINDINGS}}",      multiOutputAssign},
+		{"{{PROXIES_UPDATE}}",       argsInfo.proxyInitializerInner},
+		{"{{PROXIES_INIT}}",         argsInfo.proxyInitializer}
+	});
+	FSOutFile << templateString(ReduceKernelTemplate_CU,
+	{
+		{"{{REDUCE_RESULT_TYPE}}",   reduceFunc.resolvedReturnTypeName},
+		{"{{KERNEL_NAME}}",          kernelName + "_ReduceOnly"},
+		{"{{FUNCTION_NAME_REDUCE}}", reduceFunc.funcNameCUDA()}
+	});
 	return kernelName;
 }

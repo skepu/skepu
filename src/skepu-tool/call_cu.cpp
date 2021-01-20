@@ -38,10 +38,10 @@ std::string createCallKernelProgram_CU(UserFunction &callFunc, std::string dir)
 	}
 
 	std::string kernelSource = CallKernelTemplate_CU;
-	replaceTextInString(kernelSource, PH_KernelName, kernelName);
-	replaceTextInString(kernelSource, PH_CallFuncName, callFunc.funcNameCUDA());
-	replaceTextInString(kernelSource, PH_KernelParams, SSKernelParamList.str());
-	replaceTextInString(kernelSource, PH_CallArgs, SSCallFuncParams.str());
+	replaceTextInString(kernelSource, "SKEPU_KERNEL_NAME", kernelName);
+	replaceTextInString(kernelSource, "SKEPU_FUNCTION_NAME_CALL", callFunc.funcNameCUDA());
+	replaceTextInString(kernelSource, "SKEPU_KERNEL_PARAMS", SSKernelParamList.str());
+	replaceTextInString(kernelSource, "SKEPU_CALL_ARGS", SSCallFuncParams.str());
 
 	std::ofstream FSOutFile {dir + "/" + kernelName + ".cu"};
 	FSOutFile << kernelSource;
