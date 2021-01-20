@@ -478,10 +478,9 @@ std::string createMapOverlap1DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 	
 	std::string proxy = "skepu_region1d_" + transformToCXXIdentifier(overlapParam.resolvedTypeName) + " skepu_region = { .data = &sdata[tid+skepu_overlap], .oi = skepu_overlap, .stride = 1 };\n";
 	
-	sourceStream << generateOpenCLRegion(1, overlapParam.resolvedTypeName);
-	
-	auto argsInfo = handleRandomAccessAndUniforms_CL(mapOverlapFunc, SSMapOverlapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
 	handleUserTypesConstantsAndPrecision_CL({&mapOverlapFunc}, sourceStream);
+	sourceStream << generateOpenCLRegion(1, overlapParam.resolvedTypeName);
+	auto argsInfo = handleRandomAccessAndUniforms_CL(mapOverlapFunc, SSMapOverlapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
 	proxyCodeGenHelper_CL(argsInfo.containerProxyTypes, sourceStream);
 	sourceStream << generateUserFunctionCode_CL(mapOverlapFunc)
 	             << MapOverlapKernel_CL << MapOverlapKernel_CL_Matrix_Row
@@ -656,10 +655,9 @@ std::string createMapOverlap2DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 	
 	std::string proxy = "skepu_region2d_" + transformToCXXIdentifier(overlapParam.resolvedTypeName) + " skepu_region = { .data = &sdata[(get_local_id(1) + skepu_overlap_y) * sharedCols + (get_local_id(0) + skepu_overlap_x)], .oi = skepu_overlap_y, .oj = skepu_overlap_x, .stride = sharedCols };\n";
 	
-	sourceStream << generateOpenCLRegion(2, overlapParam.resolvedTypeName);
-	
-	auto argsInfo = handleRandomAccessAndUniforms_CL(mapOverlapFunc, SSMapOverlapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
 	handleUserTypesConstantsAndPrecision_CL({&mapOverlapFunc}, sourceStream);
+	sourceStream << generateOpenCLRegion(2, overlapParam.resolvedTypeName);
+	auto argsInfo = handleRandomAccessAndUniforms_CL(mapOverlapFunc, SSMapOverlapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
 	proxyCodeGenHelper_CL(argsInfo.containerProxyTypes, sourceStream);
 	sourceStream << generateUserFunctionCode_CL(mapOverlapFunc) << MatrixConvol2D_CL;
 

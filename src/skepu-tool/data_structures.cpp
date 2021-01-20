@@ -138,13 +138,15 @@ UserType::UserType(const CXXRecordDecl *t)
 	}
 
 	static const std::string RunTimeTypeNameFunc = R"~~~(
-	namespace skepu { template<> std::string getDataTypeCL<TYPE_NAME>() { return "struct TYPE_NAME"; } }
+	namespace skepu { template<> std::string getDataTypeCL<{{TYPE_NAME}}>() { return "struct {{TYPE_NAME}}"; } }
+	namespace skepu { template<> std::string getDataTypeDefCL<{{TYPE_NAME}}>() { return {{TYPE_DEF}}; } }
 	)~~~";
 
 	if (GenCL)
 	{
 		std::string typeNameFunc = RunTimeTypeNameFunc;
-		replaceTextInString(typeNameFunc, "TYPE_NAME", this->name);
+		replaceTextInString(typeNameFunc, "{{TYPE_NAME}}", this->name);
+		replaceTextInString(typeNameFunc, "{{TYPE_DEF}}", "R\"~~~(" + generateUserTypeCode_CL(*this) + ")~~~\"");
 		GlobalRewriter.InsertText(t->getEndLoc().getLocWithOffset(2), typeNameFunc);
 	}
 }
