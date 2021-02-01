@@ -64,7 +64,7 @@ ExternalProject_Add(skepu-tool-llvm
 	INSTALL_COMMAND "")
 
 # The SkePUHelpers cmake script, which is used to generate targets for the
-# examples and the tests, depends on this variable being set. It is if SkePU
+# examples and the tests, depends on this variable being set. It is set if SkePU
 # has been installed, but we need to set it for the build as well.
 set(SKEPU_EXECUTABLE ${CMAKE_BINARY_DIR}/llvm/bin/skepu-tool)
 
@@ -144,9 +144,13 @@ install(
 		${CMAKE_CURRENT_BINARY_DIR}/skepu-toolConfigVersion.cmake
 	DESTINATION
 		lib/cmake/SkePU)
-install(FILES ${CMAKE_CURRENT_LIST_DIR}/CMake/SkePUConfig.cmake.in
+install(
+	FILES ${CMAKE_CURRENT_LIST_DIR}/CMake/SkePUConfig.cmake.in
 	DESTINATION lib/cmake/SkePU
 	RENAME SkePUConfig.cmake)
+install(
+	FILES ${CMAKE_CURRENT_LIST_DIR}/CMake/SkePUHelpers.cmake
+	DESTINATION lib/cmake/SkePU)
 
 skepu_print_config()
 skepu_headers_print_config()
