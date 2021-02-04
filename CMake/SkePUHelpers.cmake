@@ -73,11 +73,11 @@ macro(skepu_configure)
 	endif()
 
 	if(_skepu_mpi)
-		if(NOT STARPU_FOUND)
+		if(NOT TARGET PkgConfig::STARPU)
 			find_package(MPI REQUIRED)
 			find_package(PkgConfig REQUIRED)
 			pkg_check_modules(STARPU REQUIRED IMPORTED_TARGET
-				starpu-1.3 starpumpi-1.3)
+				starpumpi-1.3)
 		endif()
 		list(APPEND _target_cxxflags -DSKEPU_MPI_STARPU)
 		list(APPEND _target_libs OpenMP::OpenMP_CXX MPI::MPI_CXX PkgConfig::STARPU)

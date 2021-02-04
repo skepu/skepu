@@ -174,8 +174,6 @@ int main(int argc, char *argv[])
 		[&]{
 			std::stringstream outfile2;
 			outfile2 << "output" << spec.type() << ".txt";
-
-			particles.flush();
 			save_step(particles, outfile2.str());
 		});
 	return 0;
