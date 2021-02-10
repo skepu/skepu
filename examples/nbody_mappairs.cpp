@@ -15,13 +15,15 @@ struct Particle
 
 
 constexpr float G [[skepu::userconstant]] = 1;
-constexpr float delta_t [[skepu::userconstant]] = 0.1;
+constexpr float DELTA_T [[skepu::userconstant]] = 0.1;
 
 struct Acceleration
 {
 	float x, y, z;
 };
 
+// User function computing the acceleration influence on
+// a particle p from another particle pj
 Acceleration influence(skepu::Index2D index, Particle pi, Particle pj)
 {
 	Acceleration acc;
@@ -34,9 +36,6 @@ Acceleration influence(skepu::Index2D index, Particle pi, Particle pj)
 		acc.x = dum * (pi.x - pj.x);
 		acc.y = dum * (pi.y - pj.y);
 		acc.z = dum * (pi.z - pj.z);
-
-	//	std::cout << "rij: " << rij << ", dum: " << dum;
-	//	std::cout << ", (" << index.row << ", " << index.col << "): ax = " << acc.x << ", ay = " << acc.y << ", az = " << acc.z << "\n";
 	}
 	else
 	{
@@ -47,6 +46,7 @@ Acceleration influence(skepu::Index2D index, Particle pi, Particle pj)
 	return acc;
 }
 
+// User function computing the sum of two sets of acceleration influences
 Acceleration sum(Acceleration lhs, Acceleration rhs)
 {
 	Acceleration res = lhs;
@@ -56,23 +56,24 @@ Acceleration sum(Acceleration lhs, Acceleration rhs)
 	return res;
 }
 
+// User function updating a particle p with acceleration influence a
 Particle update(Particle p, Acceleration a)
 {
 	Particle res = p;
 
-	res.x += delta_t * p.vx + delta_t * delta_t / 2 * a.x;
-	res.y += delta_t * p.vy + delta_t * delta_t / 2 * a.y;
-	res.z += delta_t * p.vz + delta_t * delta_t / 2 * a.z;
+	res.x += DELTA_T * p.vx + DELTA_T * DELTA_T / 2 * a.x;
+	res.y += DELTA_T * p.vy + DELTA_T * DELTA_T / 2 * a.y;
+	res.z += DELTA_T * p.vz + DELTA_T * DELTA_T / 2 * a.z;
 
-	res.vx += delta_t * a.x;
-	res.vy += delta_t * a.y;
-	res.vz += delta_t * a.z;
+	res.vx += DELTA_T * a.x;
+	res.vy += DELTA_T * a.y;
+	res.vz += DELTA_T * a.z;
 
 	return res;
 }
 
 
-// Generate user-function that is used for initializing particles array.
+// User-function that is used for initializing particles array
 Particle init(skepu::Index1D index, size_t np)
 {
 	int s = index.i;
@@ -136,20 +137,22 @@ void save_step(skepu::Vector<Particle> &particles, const std::string &filename)
 }
 
 
-auto nbody_init = skepu::Map<0>(init);
-auto nbody_influence = skepu::MapPairsReduce<1, 1>(influence, sum);
-auto nbody_update = skepu::Map<2>(update);
 
-void nbody(skepu::Vector<Particle> &particles, size_t iterations, skepu::BackendSpec *spec = nullptr)
+void nbody(skepu::Vector<Particle> &particles, size_t iterations)
 {
+	// Skeleton instances
+	auto nbody_init = skepu::Map<0>(init);
+	auto nbody_influence = skepu::MapPairsReduce<1, 1>(influence, sum);
+	auto nbody_update = skepu::Map<2>(update);
+	
+	// Itermediate data
 	size_t np = particles.size();
 	skepu::Vector<Acceleration> accel(np);
 
-	if (spec) skepu::setGlobalBackendSpec(*spec);
+	// Particle vector initialization
+	nbody_init(particles, std::cbrt(np));
 
-	// particle vectors initialization
-	nbody_init(particles, np);
-
+	// Iterative computation loop
 	for (size_t i = 0; i < iterations; ++i)
 	{
 		nbody_influence(accel, particles, particles);
@@ -164,26 +167,29 @@ int main(int argc, char *argv[])
 		skepu::external(
 		[&]{
 			std::cout << "Usage: " << argv[0]
-				<< " particles-per-dim iterations backend\n";
+				<< " particles iterations backend\n";
 		});
 		exit(1);
 	}
 
+	// Handle arguments
 	const size_t np = std::stoul(argv[1]);
 	const size_t iterations = std::stoul(argv[2]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[3])};
+	auto spec = skepu::BackendSpec{argv[3]};
+	skepu::setGlobalBackendSpec(spec);
 
-	// Particle vectors....
+	// Particle vector
 	skepu::Vector<Particle> particles(np);
 
-	nbody(particles, iterations, &spec);
+	nbody(particles, iterations);
 
+	// Write out result
 	skepu::external(
 		skepu::read(particles),
 		[&]{
-			std::stringstream outfile2;
-			outfile2 << "output" << spec.type() << ".txt";
-			save_step(particles, outfile2.str());
+			std::stringstream outfile;
+			outfile << "output" << spec.type() << ".txt";
+			save_step(particles, outfile.str());
 		});
 
 	return 0;

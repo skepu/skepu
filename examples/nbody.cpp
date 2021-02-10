@@ -16,11 +16,11 @@ struct Particle
 
 
 constexpr float G [[skepu::userconstant]] = 1;
-constexpr float delta_t [[skepu::userconstant]] = 0.1;
+constexpr float DELTA_T [[skepu::userconstant]] = 0.1;
 
 
 /*
- * Array user-function that is used for applying nbody computation,
+ * User-function for applying Nbody computation.
  * All elements from parr and a single element (named 'pi') are accessible
  * to produce one output element of the same type.
  */
@@ -49,24 +49,22 @@ Particle move(skepu::Index1D index, Particle pi, const skepu::Vec<Particle> parr
 		}
 	}
 
-//	std::cout << "i = " << i << ": ax = " << ax << ", ay = " << ay << ", az = " << az << "\n";
-
 	Particle newp;
 	newp.m = pi.m;
 
-	newp.x = pi.x + delta_t * pi.vx + delta_t * delta_t / 2 * ax;
-	newp.y = pi.y + delta_t * pi.vy + delta_t * delta_t / 2 * ay;
-	newp.z = pi.z + delta_t * pi.vz + delta_t * delta_t / 2 * az;
+	newp.x = pi.x + DELTA_T * pi.vx + DELTA_T * DELTA_T / 2 * ax;
+	newp.y = pi.y + DELTA_T * pi.vy + DELTA_T * DELTA_T / 2 * ay;
+	newp.z = pi.z + DELTA_T * pi.vz + DELTA_T * DELTA_T / 2 * az;
 
-	newp.vx = pi.vx + delta_t * ax;
-	newp.vy = pi.vy + delta_t * ay;
-	newp.vz = pi.vz + delta_t * az;
+	newp.vx = pi.vx + DELTA_T * ax;
+	newp.vy = pi.vy + DELTA_T * ay;
+	newp.vz = pi.vz + DELTA_T * az;
 
 	return newp;
 }
 
 
-// Generate user-function that is used for initializing particles array.
+// User-function that is used for initializing particles array
 Particle init(skepu::Index1D index, size_t np)
 {
 	int s = index.i;
@@ -91,7 +89,6 @@ Particle init(skepu::Index1D index, size_t np)
 }
 
 
-
 // A helper function to write particle output values to standard output stream.
 void save_step(skepu::Vector<Particle> &particles, std::ostream &os = std::cout)
 {
@@ -108,7 +105,7 @@ void save_step(skepu::Vector<Particle> &particles, std::ostream &os = std::cout)
 		<< std::string(96,'=') << "\n";
 	for (Particle &p : particles)
 	{
-		os << std::setw( 4) << i++ << ": "
+		os << std::setw(4) << i++ << ": "
 			<< std::setw(15) << p.x
 			<< std::setw(15) << p.y
 			<< std::setw(15) << p.z
@@ -130,19 +127,20 @@ void save_step(skepu::Vector<Particle> &particles, const std::string &filename)
 }
 
 
-auto nbody_init = skepu::Map<0>(init);
-auto nbody_simulate_step = skepu::Map(move);
-
-void nbody(skepu::Vector<Particle> &particles, size_t iterations, skepu::BackendSpec *spec = nullptr)
+void nbody(skepu::Vector<Particle> &particles, size_t iterations)
 {
+	// Skeleton instances
+	auto nbody_init = skepu::Map<0>(init);
+	auto nbody_simulate_step = skepu::Map(move);
+	
+	// Itermediate data
 	size_t np = particles.size();
-	skepu::Vector<Particle> doublebuffer(particles.size());
+	skepu::Vector<Particle> doublebuffer(np);
 
-	if (spec) skepu::setGlobalBackendSpec(*spec);
+	// Particle vector initialization
+	nbody_init(particles, std::cbrt(np));
 
-	// particle vectors initialization
-	nbody_init(particles, np);
-
+	// Iterative computation loop
 	for (size_t i = 0; i < iterations; i += 2)
 	{
 		nbody_simulate_step(doublebuffer, particles, particles);
@@ -156,25 +154,30 @@ int main(int argc, char *argv[])
 	{
 		skepu::external([&]{
 			std::cout << "Usage: " << argv[0]
-				<< " particles-per-dim iterations backend\n";});
+				<< " particles iterations backend\n";}
+		);
 		exit(1);
 	}
 
+	// Handle arguments
 	const size_t np = std::stoul(argv[1]);
 	const size_t iterations = std::stoul(argv[2]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[3])};
+	auto spec = skepu::BackendSpec{argv[3]};
+	skepu::setGlobalBackendSpec(spec);
 
-	// Particle vectors....
+	// Particle vector
 	skepu::Vector<Particle> particles(np);
 
-	nbody(particles, iterations, &spec);
+	nbody(particles, iterations);
 
+	// Write out result
 	skepu::external(
 		skepu::read(particles),
 		[&]{
-			std::stringstream outfile2;
-			outfile2 << "output" << spec.type() << ".txt";
-			save_step(particles, outfile2.str());
-		});
+			std::stringstream outfile;
+			outfile << "output" << spec.type() << ".txt";
+			save_step(particles, outfile.str());
+		}
+	);
 	return 0;
 }
