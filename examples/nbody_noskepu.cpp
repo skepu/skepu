@@ -32,16 +32,12 @@ void nbody_simulate_step(std::vector<Particle> &parr_out, std::vector<Particle> 
 			if (i != j)
 			{
 				Particle &pj = parr_in[j];
-				std::cout << "---" << i << " " << j << "------\n";
-				std::cout << 0 << " " << pi.x << " " << pi.y << " " << pi.z << "\n";
-				std::cout << 0 << " " << pj.x << " " << pj.y << " " << pj.z << "\n";
 
 				float rij = sqrt((pi.x - pj.x) * (pi.x - pj.x)
 				               + (pi.y - pj.y) * (pi.y - pj.y)
 				               + (pi.z - pj.z) * (pi.z - pj.z));
 
 				float dum = G * pi.m * pj.m / pow(rij, 3);
-				std::cout << dum << " " << ax << " " << ay << " " << az << "\n";
 
 				ax += dum * (pi.x - pj.x);
 				ay += dum * (pi.y - pj.y);
@@ -51,8 +47,6 @@ void nbody_simulate_step(std::vector<Particle> &parr_out, std::vector<Particle> 
 
 		Particle &newp = parr_out[i];
 		newp.m = pi.m;
-		
-		std::cout << ax << " " << ay << " " << az << "\n";
 
 		newp.x = pi.x + DELTA_T * pi.vx + DELTA_T * DELTA_T / 2 * ax;
 		newp.y = pi.y + DELTA_T * pi.vy + DELTA_T * DELTA_T / 2 * ay;
