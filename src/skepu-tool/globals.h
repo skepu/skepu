@@ -29,11 +29,14 @@
 extern llvm::cl::opt<bool> GenCUDA;
 extern llvm::cl::opt<bool> GenOMP;
 extern llvm::cl::opt<bool> GenCL;
+extern llvm::cl::opt<bool> DoNotGenLineDirectives;
 
 extern llvm::cl::opt<std::string> ResultName;
 extern llvm::cl::opt<std::string> ResultDir;
 
 extern llvm::cl::opt<bool> Verbose;
+
+extern std::string inputFileName;
 
 // User functions, name maps to AST entry and indexed indicator
 extern std::unordered_map<const clang::FunctionDecl*, UserFunction*> UserFunctions;

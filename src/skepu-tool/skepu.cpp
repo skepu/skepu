@@ -7,24 +7,28 @@ using namespace clang;
 // Precompiler options
 // ------------------------------
 
-llvm::cl::OptionCategory SkepuPrecompilerCategory("SkePU source-to-source compiler");
 
-llvm::cl::opt<bool> GenCUDA("cuda",  llvm::cl::desc("Generate CUDA backend"),   llvm::cl::cat(SkepuPrecompilerCategory));
-llvm::cl::opt<bool> GenOMP("openmp", llvm::cl::desc("Generate OpenMP backend"), llvm::cl::cat(SkepuPrecompilerCategory));
-llvm::cl::opt<bool> GenCL("opencl",  llvm::cl::desc("Generate OpenCL backend"), llvm::cl::cat(SkepuPrecompilerCategory));
+llvm::cl::OptionCategory SkePUCategory("SkePU precompiler options");
 
-llvm::cl::opt<bool> Verbose("verbose",  llvm::cl::desc("Verbose logging printout"), llvm::cl::cat(SkepuPrecompilerCategory));
-llvm::cl::opt<bool> Silent("silent",  llvm::cl::desc("Disable normal printouts"), llvm::cl::cat(SkepuPrecompilerCategory));
-llvm::cl::opt<bool> NoAddExtension("override-extension",  llvm::cl::desc("Do not automatically add file extension to output file (good for headers)"), llvm::cl::cat(SkepuPrecompilerCategory));
+llvm::cl::opt<std::string> ResultDir("dir", llvm::cl::desc("Directory of output files"), llvm::cl::cat(SkePUCategory));
+llvm::cl::opt<std::string> ResultName("name", llvm::cl::desc("File name of main output file (without extension, e.g., .cpp or .cu)"), llvm::cl::cat(SkePUCategory));
 
-llvm::cl::opt<std::string> AllowedFuncNames("fnames", llvm::cl::desc("Function names which are allowed to be called from user functions (separated by space, e.g. -fnames \"conj csqrt\")"), llvm::cl::cat(SkepuPrecompilerCategory));
+llvm::cl::opt<bool> GenCUDA("cuda",  llvm::cl::desc("Generate CUDA backend"),   llvm::cl::cat(SkePUCategory));
+llvm::cl::opt<bool> GenOMP("openmp", llvm::cl::desc("Generate OpenMP backend"), llvm::cl::cat(SkePUCategory));
+llvm::cl::opt<bool> GenCL("opencl",  llvm::cl::desc("Generate OpenCL backend"), llvm::cl::cat(SkePUCategory));
+llvm::cl::opt<bool> GenStarPUMPI("starpu-mpi",  llvm::cl::desc("Generate StarPU-MPI backend"), llvm::cl::cat(SkePUCategory));
 
-// Should be required
-llvm::cl::opt<std::string> ResultDir("dir", llvm::cl::desc("Directory of output files"), llvm::cl::cat(SkepuPrecompilerCategory));
-llvm::cl::opt<std::string> ResultName("name", llvm::cl::desc("File name of main output file (without extension, e.g., .cpp or .cu)"), llvm::cl::cat(SkepuPrecompilerCategory));
+llvm::cl::opt<bool> Verbose("verbose",  llvm::cl::desc("Verbose logging printout"), llvm::cl::cat(SkePUCategory));
+llvm::cl::opt<bool> Silent("silent",  llvm::cl::desc("Disable normal printouts"), llvm::cl::cat(SkePUCategory));
+llvm::cl::opt<bool> NoAddExtension("override-extension",  llvm::cl::desc("Do not automatically add file extension to output file (good for headers)"), llvm::cl::cat(SkePUCategory));
+
+llvm::cl::opt<bool> DoNotGenLineDirectives("no-preserve-lines", llvm::cl::desc("Do not try to preserve line numbers from source file"),   llvm::cl::cat(SkePUCategory));
+
+llvm::cl::opt<std::string> AllowedFuncNames("fnames", llvm::cl::desc("Function names which are allowed to be called from user functions (separated by space, e.g. -fnames \"conj csqrt\")"), llvm::cl::cat(SkePUCategory));
 
 // Derived
 static std::string mainFileName;
+std::string inputFileName;
 
 
 // ------------------------------
@@ -90,34 +94,30 @@ class SkePUFrontendAction : public ASTFrontendAction
 {
 public:
 
-/*
-	bool BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) override
+	bool BeginSourceFileAction(CompilerInstance &CI) override
 	{
-	//	if (Verbose) llvm::errs() << "** BeginSourceFileAction\n";
-	//	SourceManager &SM = CI.getSourceManager();
-		if (Verbose) llvm::errs() << "** BeginSourceFileAction for: " << Filename << "\n";
-
+		inputFileName = this->getCurrentFile().str();
+		if (Verbose) SkePULog() << "** BeginSourceFileAction for: " << inputFileName << "\n";
 		return true;
 	}
-	*/
+	
 	void EndSourceFileAction() override
 	{
 		SourceManager &SM = GlobalRewriter.getSourceMgr();
 		SourceLocation SLStart = SM.getLocForStartOfFile(SM.getMainFileID());
 
-		GlobalRewriter.InsertText(SLStart, "#define SKEPU_PRECOMPILED\n");
-		if (GenOMP)  GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENMP\n");
-		if (GenCL)   GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENCL\n");
-		if (GenCUDA) GlobalRewriter.InsertText(SLStart, "#define SKEPU_CUDA\n");
-
+		GlobalRewriter.InsertText(SLStart, "#define SKEPU_PRECOMPILED 1\n");
+		if (GenOMP)  GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENMP 1\n");
+		if (GenCL)   GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENCL 1\n");
+		if (GenCUDA) GlobalRewriter.InsertText(SLStart, "#define SKEPU_CUDA 1\n");
+		if (GenStarPUMPI) GlobalRewriter.InsertText(SLStart, "#define SKEPU_STARPU_MPI 1\n");
+		if (!DoNotGenLineDirectives)
+			GlobalRewriter.InsertText(SLStart, "#line 1 \"" + inputFileName + "\"\n");
+		
 		for (VarDecl *d : this->SkeletonInstances)
 			HandleSkeletonInstance(d);
 
-
-
-
-
-//		if (Verbose) llvm::errs() << "** EndSourceFileAction for: " << SM.getFileEntryForID(SM.getMainFileID())->getName() << "\n";
+		if (Verbose) SkePULog() << "** EndSourceFileAction for: " << inputFileName << "\n";
 
 		// Now emit the rewritten buffer.
 		std::error_code EC;
@@ -129,7 +129,7 @@ public:
 
 	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override
 	{
-		if (Verbose) llvm::errs() << "** Creating AST consumer for: " << file << "\n";
+		if (Verbose) SkePULog() << "** Creating AST consumer for: " << file << "\n";
 		GlobalRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
 		return llvm::make_unique<SkePUASTConsumer>(&CI.getASTContext(), this->SkeletonInstances);
 	}
@@ -141,7 +141,7 @@ private:
 
 int main(int argc, const char **argv)
 {
-	tooling::CommonOptionsParser op(argc, argv, SkepuPrecompilerCategory);
+	tooling::CommonOptionsParser op(argc, argv, SkePUCategory);
 	tooling::ClangTool Tool(op.getCompilations(), op.getSourcePathList());
 
 	if (ResultName == "")
@@ -150,14 +150,15 @@ int main(int argc, const char **argv)
 
 	if (!Silent)
 	{
-		llvm::errs() << "# ======================================= #\n";
-		llvm::errs() << "~   SkePU source-to-source compiler v3    ~\n";
-		llvm::errs() << "# --------------------------------------- #\n";
-		llvm::errs() << "   CUDA gen:\t" << (GenCUDA ? "ON" : "OFF") << "\n";
-		llvm::errs() << "   OpenCL gen:\t" << (GenCL ? "ON" : "OFF") << "\n";
-		llvm::errs() << "   OpenMP gen:\t" << (GenOMP ? "ON" : "OFF") << "\n";
-		llvm::errs() << "   Main output file: " << mainFileName << "\n";
-		llvm::errs() << "# ======================================= #\n";
+		SkePULog() << "# ======================================= #\n";
+		SkePULog() << "~   SkePU source-to-source compiler v3    ~\n";
+		SkePULog() << "# --------------------------------------- #\n";
+		SkePULog() << "   OpenMP gen:       " << (GenOMP ? "ON" : "OFF") << "\n";
+		SkePULog() << "   CUDA gen:         " << (GenCUDA ? "ON" : "OFF") << "\n";
+		SkePULog() << "   OpenCL gen:       " << (GenCL ? "ON" : "OFF") << "\n";
+		SkePULog() << "   StarPU-MPI gen:   " << (GenStarPUMPI ? "ON" : "OFF") << "\n";
+		SkePULog() << "   Main output file: " << mainFileName << "\n";
+		SkePULog() << "# ======================================= #\n";
 	}
 
 	std::istringstream SSNames(AllowedFuncNames);
