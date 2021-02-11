@@ -144,13 +144,14 @@ void nbody(skepu::Vector<Particle> &particles, size_t iterations)
 	auto nbody_init = skepu::Map<0>(init);
 	auto nbody_influence = skepu::MapPairsReduce<1, 1>(influence, sum);
 	auto nbody_update = skepu::Map<2>(update);
-	
+
 	// Itermediate data
 	size_t np = particles.size();
 	skepu::Vector<Acceleration> accel(np);
 
 	// Particle vector initialization
-	nbody_init(particles, std::cbrt(np));
+	size_t cbrt_np = std::cbrt(np);
+	nbody_init(particles, cbrt_np);
 
 	// Iterative computation loop
 	for (size_t i = 0; i < iterations; ++i)

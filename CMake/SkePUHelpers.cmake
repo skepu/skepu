@@ -79,8 +79,17 @@ macro(skepu_configure)
 			pkg_check_modules(STARPU REQUIRED IMPORTED_TARGET
 				starpumpi-1.3)
 		endif()
+		if((NOT SKEPU_MPI_FIX) AND (CMAKE_VERSION VERSION_LESS 3.18))
+			get_target_property(_mpi_ldflags MPI::MPI_CXX INTERFACE_LINK_LIBRARIES)
+			string(REPLACE "-pthread" "" _mpi_ldflags "${_mpi_ldflags}")
+			string(REPLACE " ;" ";" _mpi_ldflags "${_mpi_ldflags}")
+			set_property(TARGET MPI::MPI_CXX PROPERTY
+				INTERFACE_LINK_LIBRARIES ${_mpi_ldflags})
+			unset(_mpi_ldflags)
+			set(SKEPU_MPI_FIX TRUE PARENT_SCOPE)
+		endif()
 		list(APPEND _target_cxxflags -DSKEPU_MPI_STARPU)
-		list(APPEND _target_libs OpenMP::OpenMP_CXX MPI::MPI_CXX PkgConfig::STARPU)
+		list(APPEND _target_libs MPI::MPI_CXX PkgConfig::STARPU)
 	endif()
 
 	if(_skepu_opencl)
@@ -100,12 +109,9 @@ macro(skepu_configure)
 		# We need to be a bit careful with the OpenMP flags and libraries if CUDA is
 		# enabled...
 		if(_skepu_cuda)
-			list(APPEND _target_cxxflags
-				-Xcompiler $<JOIN:${OpenMP_CXX_FLAGS}, -Xcompiler >)
-			list(APPEND _target_libs ${OpenMP_CXX_LIBRARIES})
-		else()
-			list(APPEND _target_libs OpenMP::OpenMP_CXX)
+			list(APPEND _target_cxxflags "SHELL:-Xcompiler -fopenmp")
 		endif()
+		list(APPEND _target_libs OpenMP::OpenMP_CXX)
 	endif()
 endmacro(skepu_configure)
 

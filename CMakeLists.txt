@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 find_package(Patch REQUIRED)
 
 project(SkePU VERSION 3.0.0.1

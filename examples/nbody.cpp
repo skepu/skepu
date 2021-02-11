@@ -132,13 +132,14 @@ void nbody(skepu::Vector<Particle> &particles, size_t iterations)
 	// Skeleton instances
 	auto nbody_init = skepu::Map<0>(init);
 	auto nbody_simulate_step = skepu::Map(move);
-	
+
 	// Itermediate data
 	size_t np = particles.size();
 	skepu::Vector<Particle> doublebuffer(np);
 
 	// Particle vector initialization
-	nbody_init(particles, std::cbrt(np));
+	size_t cbrt_np = std::cbrt(np);
+	nbody_init(particles, cbrt_np);
 
 	// Iterative computation loop
 	for (size_t i = 0; i < iterations; i += 2)
