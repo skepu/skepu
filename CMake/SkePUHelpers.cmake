@@ -88,7 +88,7 @@ macro(skepu_configure)
 			unset(_mpi_ldflags)
 			set(SKEPU_MPI_FIX TRUE PARENT_SCOPE)
 		endif()
-		list(APPEND _target_cxxflags -DSKEPU_MPI_STARPU)
+		list(APPEND _skepu_backends "-starpu-mpi")
 		list(APPEND _target_libs MPI::MPI_CXX PkgConfig::STARPU)
 	endif()
 
