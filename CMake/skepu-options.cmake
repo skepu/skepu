@@ -24,6 +24,11 @@ else()
 		OFF)
 endif()
 
+option(SKEPU_TOOL_STATIC
+	"Static linking of skepu-tool."
+	OFF)
+mark_as_advanced(SKEPU_TOOL_STATIC)
+
 # Check for languages and options
 include(CheckLanguage)
 check_language(CUDA)

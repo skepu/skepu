@@ -52,12 +52,16 @@ set(SKEPU_TOOL_TARGETS_DIR
 # 3.	If llvm is one subproject, and skepu-tool another, all linking information
 #			from llvm is lost and skepu-tool will not be able to build at all.
 include(ExternalProject)
+if(SKEPU_TOOL_STATIC)
+	set(SKEPU_STATIC_FLAGS "-DCMAKE_EXE_LINKER_FLAGS=\"-static\"")
+endif()
 ExternalProject_Add(skepu-tool-llvm
 	SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/llvm/llvm
 	BINARY_DIR ${SKEPU_TOOL_LLVM_DIR}
 	CMAKE_ARGS
 		-DLLVM_ENABLE_PROJECTS=clang
 		-DCMAKE_BUILD_TYPE=Release
+		${SKEPU_STATIC_FLAGS}
 	BUILD_COMMAND $(MAKE) skepu-tool
 	BUILD_ALWAYS ON
 	BUILD_BYPRODUCTS llvm/bin/skepu-tool
