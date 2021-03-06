@@ -34,6 +34,16 @@ public:
 		if (isa<CXXOperatorCallExpr>(c))
 			return true;
 		
+		// The visitor may sometimes visit the same expression twice (unclear why)
+		for (auto &ref : this->UFReferences)
+		{
+			// Ignore repeated visits
+			if (ref.first == c)
+			{
+				return true;
+			}
+		}
+		
 		auto callee = c->getCallee();
 		
 		if (ImplicitCastExpr *ImplExpr = dyn_cast<ImplicitCastExpr>(callee))
@@ -559,6 +569,14 @@ UserFunction::UserFunction(FunctionDecl *f)
 
 	this->containerSubscripts = UFVisitor.containerSubscripts;
 	this->containerCalls = UFVisitor.containerCalls;
+	
+	SkePULog() << "| Traversal analysis summary for UF " << this->uniqueName << "\n";
+	SkePULog() << "| " << this->ReferencedUFs.size() << " unique referenced UFs\n";
+	SkePULog() << "| " << this->UFReferences.size() << " total UF references\n";
+	SkePULog() << "| " << this->ReferencedUTs.size() << " unique referenced UTs\n";
+	SkePULog() << "| " << this->UTReferences.size() << " total UT references\n";
+	SkePULog() << "| " << this->ReferencedRets.size() << " ret() expressions\n";
+	SkePULog() << "| " << this->containerCalls.size() << " container indexing calls\n";
 
 	// Set requires double precision (TODO: more cases like parameters etc...)
 	if (this->resolvedReturnTypeName == "double")

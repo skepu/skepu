@@ -211,6 +211,7 @@ std::map<std::string, std::pair<int, std::string>> proxyInfo = {
 };
 std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::function<std::string(UserFunction&)> nameFunc)
 {
+	SkePULog() << "Modifying UF code for " << nameFunc(UF) << "\n";
 	const FunctionDecl *f = UF.astDeclNode;
 	if (f->getTemplatedKind() == FunctionDecl::TK_FunctionTemplateSpecialization)
 		f = f->getTemplateInstantiationPattern();
@@ -233,7 +234,10 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 	}
 	
 	for (auto &ref : UF.UFReferences)
+	{
+		SkePULog() << "--> Replacing UF reference with " << nameFunc(*ref.second) << "\n";
 		R.ReplaceText(ref.first->getCallee()->getSourceRange(), nameFunc(*ref.second));
+	}
 	
 	for (auto &ref : UF.UTReferences)
 		R.ReplaceText(ref.first->getTypeLoc().getSourceRange(), "struct " + ref.second->name);
@@ -551,15 +555,25 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 	if (GlobalRewriter.RemoveText(d->getSourceRange()))
 		SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
 	
+	// Find location to insert transformed user function code
+	const DeclContext *DeclCtx = d->getDeclContext();
+	SourceLocation loc = d->getSourceRange().getBegin();
+	if (isa<FunctionDecl>(DeclCtx))
+	{
+		const FunctionDecl *f = dyn_cast<FunctionDecl>(DeclCtx);
+		if (f->getTemplatedKind() == FunctionDecl::TK_FunctionTemplateSpecialization)
+		{
+			// If it is a template, we need to place the code before the template begins
+			loc = f->getPrimaryTemplate()->getBeginLoc(); 
+		}
+		else
+		{
+			loc = f->getSourceRange().getBegin();
+		}
+	}
+	
 	for (UserFunction* UF : FuncArgs)
 	{
-		const DeclContext *DeclCtx = d->getDeclContext();
-		SourceLocation loc = d->getSourceRange().getBegin();
-		if (isa<FunctionDecl>(DeclCtx))
-		{
-			loc = dyn_cast<FunctionDecl>(DeclCtx)->getSourceRange().getBegin();
-		}
-		
 		generateUserFunctionStruct(*UF, skeletonID + InstanceName, loc);
 	}
 
@@ -735,11 +749,6 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			KernelName_CL = createCallKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
 		}
-
-		// Insert the code at the proper place
-		SourceLocation loc = d->getSourceRange().getBegin();
-		if (const FunctionDecl *DeclCtx = dyn_cast<FunctionDecl>(d->getDeclContext()))
-			loc = DeclCtx->getSourceRange().getBegin();
 
 		if (GlobalRewriter.InsertText(loc, "#include \"" + KernelName_CL + "_cl_source.inl\"\n" + lineDirectiveForSourceLoc(loc)))
 			SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
