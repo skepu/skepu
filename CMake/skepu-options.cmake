@@ -83,31 +83,33 @@ option(SKEPU_EXAMPLES_MPI
 	${SKEPU_MPI})
 
 macro(skepu_print_config)
-message("
-   +=====================+
-   | SkePU configuration |
-   +=====================+
+	message("
+    +=====================+
+    | SkePU configuration |
+    +=====================+
 
-   Buid type           ${CMAKE_BUILD_TYPE}
-   Install prefix      ${CMAKE_INSTALL_PREFIX}
-   Build examples      ${SKEPU_BUILD_EXAMPLES}
-   Test suite enabled  ${SKEPU_ENABLE_TESTING}")
+    Buid type           ${CMAKE_BUILD_TYPE}
+    Install prefix      ${CMAKE_INSTALL_PREFIX}
+    Build examples      ${SKEPU_BUILD_EXAMPLES}
+    Test suite enabled  ${SKEPU_ENABLE_TESTING}")
 
-message("
-   Backends for examples and test suite
-   ------------------------------------
-   CUDA    ${SKEPU_CUDA}
-   OpenCL  ${SKEPU_OPENCL}
-   OpenMP  ${SKEPU_OPENMP}")
+	if(SKEPU_BUILD_EXAMPLES OR SKEPU_ENABLE_TESTING)
+		message("
+    Backends for examples and test suite
+    ------------------------------------
+    CUDA        ${SKEPU_CUDA}
+    OpenCL      ${SKEPU_OPENCL}
+    OpenMP      ${SKEPU_OPENMP}
+    StarPU-MPI  ${SKEPU_MPI}")
+	endif()
 
-if(SKEPU_BUILD_EXAMPLES)
-message("
-   Examples
-   --------
-   Sequential  ${SKEPU_EXAMPLES_SEQ}
-   Parallel    ${SKEPU_EXAMPLES_PAR}
-   StarPU-MPI  ${SKEPU_EXAMPLES_MPI}")
-endif()
-
-message("")
+	if(SKEPU_BUILD_EXAMPLES)
+		message("
+    Examples
+    --------
+    Sequential  ${SKEPU_EXAMPLES_SEQ}
+    Parallel    ${SKEPU_EXAMPLES_PAR}
+    StarPU-MPI  ${SKEPU_EXAMPLES_MPI}")
+	endif()
+	message("")
 endmacro(skepu_print_config)
