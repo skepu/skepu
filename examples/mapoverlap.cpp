@@ -2,12 +2,12 @@
 
 #include <skepu>
 
-float over_1d(skepu::Region1D<float> r, int scale)
+float over_1d(skepu::Region1D<int> r, int scale)
 {
 	return (r(-2)*4 + r(-1)*2 + r(0) + r(1)*2 + r(2)*4) / scale;
 }
 
-float over_2d(skepu::Region2D<float> r, const skepu::Mat<float> stencil)
+float over_2d(skepu::Region2D<int> r, const skepu::Mat<float> stencil)
 {
 	float res = 0;
 	for (int i = -r.oi; i <= r.oi; ++i)
@@ -137,43 +137,6 @@ int main(int argc, char *argv[])
 	conv(rm, m, 13);
 	skepu::external(skepu::read(rm), [&]{
 		std::cout << "Matrix Col-wise Pad 0:     rm = " << rm << "\n";});
-
-
-	/* TODO: Remove or add support in SkePU StarPU-MPI
-	conv.setOverlap(2);
-	conv.setOverlapMode(skepu::Overlap::RowColWise);
-
-	conv.setEdgeMode(skepu::Edge::Cyclic);
-	conv(rm, m, 13);
-	std::cout << "Matrix Row-col-wise Cyclic:    rm = " << rm << "\n";
-
-	conv.setEdgeMode(skepu::Edge::Duplicate);
-	conv(rm, m, 13);
-	std::cout << "Matrix Row-col-wise Duplicate  rm = " << rm << "\n";
-
-	conv.setEdgeMode(skepu::Edge::Pad);
-	conv.setPad(0);
-	conv(rm, m, 13);
-	std::cout << "Matrix Row-col-wise Pad 0:     rm = " << rm << "\n";
-
-
-	conv.setOverlap(2);
-	conv.setOverlapMode(skepu::Overlap::ColRowWise);
-
-	conv.setEdgeMode(skepu::Edge::Cyclic);
-	conv(rm, m, 13);
-	std::cout << "Matrix Col-row-wise Cyclic:    rm = " << rm << "\n";
-
-	conv.setEdgeMode(skepu::Edge::Duplicate);
-	conv(rm, m, 13);
-	std::cout << "Matrix Col-row-wise Duplicate  rm = " << rm << "\n";
-
-	conv.setEdgeMode(skepu::Edge::Pad);
-	conv.setPad(0);
-	conv(rm, m, 13);
-	std::cout << "Matrix Col-row-wise Pad 0:     rm = " << rm << "\n";
-	*/
-
 	auto conv2 = skepu::MapOverlap(over_2d);
 	conv2.setOverlap(1, 1);
 

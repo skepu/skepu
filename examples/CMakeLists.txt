@@ -20,7 +20,7 @@ set(_skepu_examples
 	mandelbrot
 	map
 	mapoverlap
-	mapoverlap-tuple
+	mapoverlap_tuple
 	mappairs
 	mappairs_tuple
 	mapreduce
