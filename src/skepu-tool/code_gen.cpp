@@ -54,7 +54,7 @@ void printParamList(std::ostream &o, UserFunction &Func)
 		o << "skepu::Index4D " << Func.indexParam->name;
 		first = false;
 	}
-	
+
 	if (UserFunction::RegionParam *param = Func.regionParam)
 	{
 		if (!first) { o << ", "; }
@@ -82,7 +82,7 @@ void printParamList(std::ostream &o, UserFunction &Func)
 		o << param.resolvedTypeName << " " << param.name;
 		first = false;
 	}
-	
+
 }
 
 
@@ -130,25 +130,25 @@ std::string generateOpenCLMultipleReturn(UserFunction &UF)
 			SSmultiReturnMakeStruct << " .e" << ctr << " = arg" << ctr << divider;
 			ctr++;
 		}
-		
+
 		std::string codeTemplate = R"~~~(
 			typedef struct {
 				{{SKEPU_MULTIPLE_RETURN_TYPE_DEF}}
 			} {{SKEPU_MULTIPLE_RETURN_TYPE}};
-			
+
 			static {{SKEPU_MULTIPLE_RETURN_TYPE}} make_{{SKEPU_MULTIPLE_RETURN_TYPE}} ({{SKEPU_MULTIPLE_RETURN_MAKE_PARAMS}})
 			{
 				{{SKEPU_MULTIPLE_RETURN_TYPE}} retval = { {{SKEPU_MULTIPLE_RETURN_MAKE_STRUCT}} };
 				return retval;
 			}
 		)~~~";
-		
-		
+
+
 		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_TYPE}}", SSmultiReturnType.str());
 		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_TYPE_DEF}}", SSmultiReturnTypeDef.str());
 		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_MAKE_PARAMS}}", SSmultiReturnMakeParams.str());
 		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_MAKE_STRUCT}}", SSmultiReturnMakeStruct.str());
-		
+
 		return codeTemplate;
 	}
 	return "";
@@ -171,12 +171,12 @@ std::string generateCUDAMultipleReturn(UserFunction &UF)
 			SSmultiReturnMakeStruct << "arg" << ctr << divider;
 			ctr++;
 		}
-		
+
 		std::string codeTemplate = R"~~~(
 			struct {{SKEPU_MULTIPLE_RETURN_TYPE}}
 			{
 				{{SKEPU_MULTIPLE_RETURN_TYPE_DEF}}
-				
+
 				static __device__ {{SKEPU_MULTIPLE_RETURN_TYPE}} make({{SKEPU_MULTIPLE_RETURN_MAKE_PARAMS}})
 				{
 					{{SKEPU_MULTIPLE_RETURN_TYPE}} retval = { {{SKEPU_MULTIPLE_RETURN_MAKE_STRUCT}} };
@@ -184,12 +184,12 @@ std::string generateCUDAMultipleReturn(UserFunction &UF)
 				}
 			};
 		)~~~";
-		
+
 		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_TYPE}}", SSmultiReturnType.str());
 		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_TYPE_DEF}}", SSmultiReturnTypeDef.str());
 		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_MAKE_PARAMS}}", SSmultiReturnMakeParams.str());
 		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_MAKE_STRUCT}}", SSmultiReturnMakeStruct.str());
-		
+
 		return codeTemplate;
 	}
 	return "";
@@ -215,10 +215,10 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 	const FunctionDecl *f = UF.astDeclNode;
 	if (f->getTemplatedKind() == FunctionDecl::TK_FunctionTemplateSpecialization)
 		f = f->getTemplateInstantiationPattern();
-	
+
 	// Find references to other userfunctions
 	Rewriter R(GlobalRewriter.getSourceMgr(), LangOptions());
-	
+
 	if (UF.multipleReturnTypes.size() > 0)
 	{
 		if (backend == Backend::OpenCL)
@@ -232,19 +232,19 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 				R.ReplaceText(ref->getCallee()->getSourceRange(), UF.multiReturnTypeNameGPU() + "::make");
 		}
 	}
-	
+
 	for (auto &ref : UF.UFReferences)
 	{
 		SkePULog() << "--> Replacing UF reference with " << nameFunc(*ref.second) << "\n";
 		R.ReplaceText(ref.first->getCallee()->getSourceRange(), nameFunc(*ref.second));
 	}
-	
+
 	for (auto &ref : UF.UTReferences)
 		R.ReplaceText(ref.first->getTypeLoc().getSourceRange(), "struct " + ref.second->name);
-	
+
 	for (auto subscript : UF.containerSubscripts)
 		R.InsertText(subscript->getCallee()->getBeginLoc(), ".data");
-	
+
 	if (backend == Backend::OpenCL)
 		for (auto subscript : UF.containerCalls)
 		{
@@ -253,11 +253,11 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 			if (auto *innertype = dyn_cast<ElaboratedType>(type))
 				type = innertype->getNamedType().getTypePtr();
 			const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
-			
+
 			std::string templateName = templateType->getTemplateName().getAsTemplateDecl()->getNameAsString();
 			std::string varname = container->getNameInfo().getAsString();
 			std::string typeName = templateType->getArg(0).getAsType().getAsString();
-			
+
 			int numArgs;
 			std::string fname;
 			std::tie(numArgs, fname) = proxyInfo[templateName];
@@ -265,7 +265,7 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 			std::string args = getSourceAsString(clang::SourceRange(subscript->getArg(1)->getBeginLoc(), subscript->getArg(numArgs-1)->getEndLoc()));
 			R.ReplaceText(subscript->getSourceRange(), fname + "(" + varname + "," + args + ")");
 		}
-	
+
 	const CompoundStmt *Body = dyn_cast<CompoundStmt>(f->getBody());
 	SourceRange SRBody = SourceRange(Body->getBeginLoc().getLocWithOffset(1), Body->getEndLoc().getLocWithOffset(-1));
 	return R.getRewrittenText(SRBody);
@@ -312,17 +312,17 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 				SSSkepuFunctorStruct << "using " << arg.rawTypeName << " = " << arg.resolvedTypeName << ";\n";
 				usingDecls.insert(arg.rawTypeName);
 			}
-			
+
 			// Resolve the template parameter type occurences by a type alias to the argument type
 			SSSkepuFunctorStruct << "using " << arg.paramName << " = " << arg.rawTypeName << ";\n";
 		}
-	
+
 	size_t outArity = std::max<size_t>(1, UF.multipleReturnTypes.size());
 
 	SSSkepuFunctorStruct << "constexpr static size_t totalArity = " << f->param_size() << ";\n";
 	SSSkepuFunctorStruct << "constexpr static size_t outArity = " << outArity << ";\n";
 	SSSkepuFunctorStruct << "constexpr static bool indexed = " << (UF.indexed1D || UF.indexed2D || UF.indexed3D || UF.indexed4D) << ";\n";
-	
+
 	SSSkepuFunctorStruct << "using IndexType = ";
 	if (UF.indexed1D) SSSkepuFunctorStruct << "skepu::Index1D;\n";
 	else if (UF.indexed2D) SSSkepuFunctorStruct << "skepu::Index2D;\n";
@@ -390,7 +390,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 	if (UF.multipleReturnTypes.size() == 0 && UF.rawReturnTypeName != UF.resolvedReturnTypeName && (std::find(usingDecls.begin(), usingDecls.end(), UF.rawReturnTypeName) == usingDecls.end()))
 		SSSkepuFunctorStruct << "using " << UF.rawReturnTypeName << " = " << UF.resolvedReturnTypeName << ";\n\n";
 	SSSkepuFunctorStruct << "constexpr static bool prefersMatrix = " << (UF.indexed2D) << ";\n\n";
-	
+
 	// CUDA code
 	if (GenCUDA)
 	{
@@ -441,7 +441,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 	SSSkepuFunctorStruct << ")\n{" << replaceReferencesToOtherUFs(Backend::CPU, UF, [InstanceName] (UserFunction &UF) { return SkePU_UF_Prefix + InstanceName + "_" + UF.uniqueName + "::CPU"; }) << "\n}\n";
 	SSSkepuFunctorStruct << "#undef SKEPU_USING_BACKEND_CPU\n};\n\n";
 	SSSkepuFunctorStruct << lineDirectiveForSourceLoc(loc);
-	
+
 	if (GlobalRewriter.InsertTextAfter(loc, SSSkepuFunctorStruct.str()))
 		SkePUAbort("Code gen target source loc not rewritable: UF " + UF.uniqueName + " for instance" + InstanceName);
 }
@@ -457,9 +457,9 @@ std::string generateUserTypeCode_CL(UserType &Type)
 std::string generateUserFunctionCode_CL(UserFunction &Func)
 {
 	std::stringstream SSFuncParamList, SSFuncParams, SSFuncSource;
-	
+
 	SSFuncSource << generateOpenCLMultipleReturn(Func);
-	
+
 	bool first = true;
 
 	if (Func.indexed1D)
@@ -482,7 +482,7 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 		SSFuncParamList << "index4_t " << Func.indexParam->name;
 		first = false;
 	}
-	
+
 	if (UserFunction::RegionParam *param = Func.regionParam)
 	{
 		if (!first) { SSFuncParamList << ", "; }
@@ -525,8 +525,8 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 	// Recursive call, potential for circular loop: TODO FIX!!
 	for (UserFunction *RefFunc : Func.ReferencedUFs)
 		SSFuncSource << generateUserFunctionCode_CL(*RefFunc);
-	
-		
+
+
 	// The function itself
 	SSFuncSource << "static ";
 	if (Func.multipleReturnTypes.size() > 0)
@@ -549,12 +549,12 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 	std::stringstream ss;
 	ss << "skepu_skel_" << skeletonCounter++;
 	std::string skeletonID = ss.str();
-	
+
 	SkePULog() << "Name of skeleton: " << skeleton.name << ", Unique ID: " << skeletonID << "\n";
-	
+
 	if (GlobalRewriter.RemoveText(d->getSourceRange()))
 		SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
-	
+
 	// Find location to insert transformed user function code
 	const DeclContext *DeclCtx = d->getDeclContext();
 	SourceLocation loc = d->getSourceRange().getBegin();
@@ -564,14 +564,14 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		if (f->getTemplatedKind() == FunctionDecl::TK_FunctionTemplateSpecialization)
 		{
 			// If it is a template, we need to place the code before the template begins
-			loc = f->getPrimaryTemplate()->getBeginLoc(); 
+			loc = f->getPrimaryTemplate()->getBeginLoc();
 		}
 		else
 		{
 			loc = f->getSourceRange().getBegin();
 		}
 	}
-	
+
 	for (UserFunction* UF : FuncArgs)
 	{
 		generateUserFunctionStruct(*UF, skeletonID + InstanceName, loc);
@@ -610,42 +610,42 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "), decltype(&" << KernelName_CU << "_ReduceOnly)";
 			SSCallArgs << KernelName_CU << ", " << KernelName_CU << "_ReduceOnly";
 			break;
-			
+
 		case Skeleton::Type::Map:
 			KernelName_CU = createMapKernelProgram_CU(*FuncArgs[0], arity[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
 			SSCallArgs << KernelName_CU;
 			break;
-			
+
 		case Skeleton::Type::MapPairs:
 			KernelName_CU = createMapPairsKernelProgram_CU(*FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
 			SSCallArgs << KernelName_CU;
 			break;
-			
+
 		case Skeleton::Type::MapPairsReduce:
 			SkePUAbort("CUDA MapPairsReduce not implemented yet");
 			// TODO
 			break;
-			
+
 		case Skeleton::Type::Reduce1D:
 			KernelName_CU = createReduce1DKernelProgram_CU(*FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
 			SSCallArgs << KernelName_CU;
 			break;
-			
+
 		case Skeleton::Type::Reduce2D:
 			KernelName_CU = createReduce2DKernelProgram_CU(*FuncArgs[0], *FuncArgs[1], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_RowWise), decltype(&" << KernelName_CU << "_ColWise)";
 			SSCallArgs << KernelName_CU << "_RowWise, " << KernelName_CU << "_ColWise";
 			break;
-			
+
 		case Skeleton::Type::Scan:
 			KernelName_CU = createScanKernelProgram_CU(*FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_ScanKernel), decltype(&" << KernelName_CU << "_ScanUpdate), decltype(&" << KernelName_CU << "_ScanAdd)";
 			SSCallArgs << KernelName_CU << "_ScanKernel, " << KernelName_CU << "_ScanUpdate, " << KernelName_CU << "_ScanAdd";
 			break;
-			
+
 		case Skeleton::Type::MapOverlap1D:
 			KernelName_CU = createMapOverlap1DKernelProgram_CU(*FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_MapOverlapKernel_CU), decltype(&" << KernelName_CU << "_MapOverlapKernel_CU_Matrix_Row), decltype(&"
@@ -653,17 +653,17 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			SSCallArgs << KernelName_CU << "_MapOverlapKernel_CU, " << KernelName_CU << "_MapOverlapKernel_CU_Matrix_Row, "
 				<< KernelName_CU << "_MapOverlapKernel_CU_Matrix_Col, " << KernelName_CU << "_MapOverlapKernel_CU_Matrix_ColMulti";
 			break;
-			
+
 		case Skeleton::Type::MapOverlap2D:
 			KernelName_CU = createMapOverlap2DKernelProgram_CU(*FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_conv_cuda_2D_kernel)";
 			SSCallArgs << KernelName_CU << "_conv_cuda_2D_kernel";
 			break;
-			
+
 		case Skeleton::Type::MapOverlap3D:
 		case Skeleton::Type::MapOverlap4D:
 			SkePUAbort("CUDA MapOverlap disabled in this release");
-			
+
 		case Skeleton::Type::Call:
 			KernelName_CU = createCallKernelProgram_CU(*FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
@@ -702,49 +702,49 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		case Skeleton::Type::MapReduce:
 			KernelName_CL = createMapReduceKernelProgram_CL(*FuncArgs[0], *FuncArgs[1], ResultDir);
 			break;
-			
+
 		case Skeleton::Type::Map:
 			KernelName_CL = createMapKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
-			
+
 		case Skeleton::Type::MapPairs:
 			KernelName_CL = createMapPairsKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
-			
+
 		case Skeleton::Type::MapPairsReduce:
 			SkePUAbort("MapPairsReduce for OpenCL is not complete yet. Disable OpenCL code-gen for now.");
 			break;
-			
+
 		case Skeleton::Type::Reduce1D:
 			KernelName_CL = createReduce1DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
-			
+
 		case Skeleton::Type::Reduce2D:
 			KernelName_CL = createReduce2DKernelProgram_CL(*FuncArgs[0], *FuncArgs[1], ResultDir);
 			break;
-			
+
 		case Skeleton::Type::Scan:
 			KernelName_CL = createScanKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
-			
+
 		case Skeleton::Type::MapOverlap1D:
 			KernelName_CL = createMapOverlap1DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
-			
+
 		case Skeleton::Type::MapOverlap2D:
 			KernelName_CL = createMapOverlap2DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
-			
+
 		case Skeleton::Type::MapOverlap3D:
 			SkePUAbort("3D MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
 		//	KernelName_CL = createMapOverlap3DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
-			
+
 		case Skeleton::Type::MapOverlap4D:
 			SkePUAbort("4D MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
 		//	KernelName_CL = createMapOverlap4DKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
-			
+
 		case Skeleton::Type::Call:
 			KernelName_CL = createCallKernelProgram_CL(*FuncArgs[0], ResultDir);
 			break;
@@ -760,7 +760,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		SSTemplateArgs << ", void";
 	}
 
-	if (d->isStaticLocal())
+	if(d->getStorageClass() == clang::StorageClass::SC_Static)
 		SSNewDecl << "static ";
 	SSNewDecl << "skepu::backend::" << skeleton.name << "<" << SSTemplateArgs.str() << "> " << InstanceName << "(" << SSCallArgs.str() << ")";
 
