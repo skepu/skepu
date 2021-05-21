@@ -19,6 +19,7 @@ public:
 	SkePUASTVisitor(clang::ASTContext *ctx, std::unordered_set<clang::VarDecl *> &instanceSet);
 
 	bool VisitVarDecl(clang::VarDecl *d);
+	bool VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr *c);
 
 	std::unordered_set<clang::VarDecl *> &SkeletonInstances;
 

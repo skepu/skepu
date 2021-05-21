@@ -117,7 +117,7 @@ int sum(int a, int b)
 	return a + b;
 }
 
-
+/*
 void test_mapreduce_multi(size_t size)
 {
 	skepu::Vector<int> v1(size), v2(size);
@@ -140,7 +140,7 @@ void test_mapreduce_multi(size_t size)
 		[&]{
 			std::cout << "sum1: " << sum1 << ", sum2: " << sum2 << std::endl;
 		});
-}
+}*/
 
 int main(int argc, char *argv[])
 {
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 
 	test_map_multi(size);
 
-	test_mapreduce_multi(size);
+//	test_mapreduce_multi(size);
 
 	return 0;
 }

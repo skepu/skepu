@@ -12,6 +12,7 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} __global {{REDUCE_RESULT_TYPE}}*
 {
 	size_t skepu_blockSize = get_local_size(0);
 	size_t skepu_tid = get_local_id(0);
+	size_t skepu_global_id = get_group_id(0) * skepu_blockSize + skepu_tid;
 	size_t skepu_i = get_group_id(0) * skepu_blockSize + skepu_tid;
 	size_t skepu_gridSize = skepu_blockSize * get_num_groups(0);
 	{{REDUCE_RESULT_TYPE}} skepu_result;
@@ -189,6 +190,19 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 	IndexCodeGen indexInfo = indexInitHelper_CL(mapFunc);
 	bool first = !indexInfo.hasIndex;
 	SSMapFuncArgs << indexInfo.mapFuncParam;
+	
+	// PRNG
+	if (UserFunction::RandomParam *param = mapFunc.randomParam)
+	{
+		sourceStream << generateOpenCLRandom();
+		if (!first) { SSMapFuncArgs << ", "; }
+		first = false;
+		SSMapFuncArgs << "&" << param->name << "[skepu_global_id]";
+		SSKernelArgs << "user_" << param->name << "->getDeviceDataPointer(), ";
+		SSKernelParamList << "__global skepu_random* " << param->name << ", ";
+	//	SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<skepu::Random<" << param->randomCount << ">> * user_" << param->name << ", ";
+		SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<skepu::RandomForCL> * user_" << param->name << ", ";
+	}
 
 	for (UserFunction::Param& param : mapFunc.elwiseParams)
 	{
@@ -201,7 +215,8 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 	}
 	
 	auto argsInfo = handleRandomAccessAndUniforms_CL(mapFunc, SSMapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
-	handleUserTypesConstantsAndPrecision_CL({&mapFunc, &reduceFunc}, sourceStream);	
+	handleUserTypesConstantsAndPrecision_CL({&mapFunc, &reduceFunc}, sourceStream);
+	
 	proxyCodeGenHelper_CL(argsInfo.containerProxyTypes, sourceStream);
 
 	if (mapFunc.refersTo(reduceFunc))
@@ -217,7 +232,7 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 	SSKernelName << transformToCXXIdentifier(ResultName) << "_MapReduceKernel_" << mapFunc.uniqueName << "_" << reduceFunc.uniqueName << "_arity_" << mapFunc.Varity;
 	const std::string kernelName = SSKernelName.str();
 	std::stringstream SSKernelArgCount;
-	SSKernelArgCount << mapFunc.numKernelArgsCL() + 2 + std::max<int>(0, indexInfo.dim - 1);
+	SSKernelArgCount << mapFunc.numKernelArgsCL() + 2 + std::max<int>(0, indexInfo.dim - 1) + (mapFunc.randomParam ? 1 : 0);
 	
 	std::ofstream FSOutFile {dir + "/" + kernelName + "_cl_source.inl"};
 	FSOutFile << templateString(Constructor,

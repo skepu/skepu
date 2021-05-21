@@ -257,6 +257,37 @@ static {{CONTAINED_TYPE_CL}} skepu_region_access_4d_{{ESCAPED_TYPE_CL}}(skepu_re
 }
 
 
+std::string generateOpenCLRandom()
+{
+static const std::string OpenCLRandomTemplate = R"~~~(
+#define RND_STATE_T ulong
+#define RND_NORMALIZED_T double
+	
+#define RND_MOD (1LL << 48)
+#define RND_EXP 1
+#define RND_BASE 0x5deece66d
+#define RND_INC 5
+
+typedef struct {
+	RND_STATE_T m_state;
+} skepu_random;
+
+RND_STATE_T skepu_random_get(__global skepu_random *prng)
+{
+	for (size_t i = 0; i < RND_EXP; ++i)
+		prng->m_state = (prng->m_state * RND_BASE + RND_INC) % RND_MOD;
+	return prng->m_state;
+}
+
+RND_NORMALIZED_T skepu_random_get_normalized(__global skepu_random *prng)
+{
+	return (RND_NORMALIZED_T)skepu_random_get(prng) / RND_MOD;
+}
+)~~~";
+	return OpenCLRandomTemplate;
+};
+
+
 
 void proxyCodeGenHelper_CL(std::map<ContainerType, std::set<std::string>> containerProxyTypes, std::stringstream &sourceStream)
 {

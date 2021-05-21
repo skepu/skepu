@@ -16,6 +16,7 @@ std::string generateOpenCLTensor3Proxy(std::string typeName);
 std::string generateOpenCLTensor4Proxy(std::string typeName);
 
 std::string generateOpenCLRegion(size_t dim, std::string typeName);
+std::string generateOpenCLRandom();
 
 std::string generateOpenCLMultipleReturn(std::vector<std::string> &types);
 

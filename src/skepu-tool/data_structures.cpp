@@ -66,10 +66,20 @@ public:
 		FunctionDecl *Func = c->getDirectCallee();
 		std::string name = Func->getName();
 
-		if (name == "ret")
+		if (name == "")
+		{
+			// CXXConversionDecl?
+			SkePULog() << "Ignored reference to function without known name.'\n";
+		}
+		else if (name == "ret")
 		{
 			SkePULog() << "Ignored reference to special function: '" << name << "'\n";
 			ReferencedRets.insert(c);
+		}
+		else if (name == "get" || name == "getNormalized")
+		{
+			SkePULog() << "Ignored reference to special function: '" << name << "'\n";
+			ReferencedGets.insert(dyn_cast<CXXMemberCallExpr>(c));
 		}
 		else if (std::find(AllowedFunctionNamesCalledInUFs.begin(), AllowedFunctionNamesCalledInUFs.end(), name) != AllowedFunctionNamesCalledInUFs.end())
 		{
@@ -110,6 +120,7 @@ public:
 	std::set<UserFunction*> ReferencedUFs{};
 	
 	std::set<const CallExpr*> ReferencedRets{};
+	std::set<CXXMemberCallExpr*> ReferencedGets{};
 
 	std::vector<std::pair<const TypeSourceInfo*, UserType*>> UTReferences{};
 	std::set<UserType*> ReferencedUTs{};
@@ -183,6 +194,15 @@ UserFunction::Param::Param(const clang::ParmVarDecl *p)
 		this->name = "unused_" + random_string(10);
 
 	this->type = p->getOriginalType().getTypePtr();
+	
+	if (auto *referenceType = dyn_cast<ReferenceType>(type))
+	{
+		this->isReferenceType = true;
+		if (isa<RValueReferenceType>(type)) this->isRValueReference = true;
+		if (isa<LValueReferenceType>(type)) this->isLValueReference = true;
+		type = referenceType->getPointeeType().getTypePtr();
+	}
+	
 	this->rawTypeName = p->getOriginalType().getCanonicalType().getAsString();
 	
 	if (this->rawTypeName == "_Bool")
@@ -202,7 +222,7 @@ UserFunction::Param::Param(const clang::ParmVarDecl *p)
 
 bool UserFunction::Param::constructibleFrom(const clang::ParmVarDecl *p)
 {
-	return !UserFunction::RegionParam::constructibleFrom(p) && !UserFunction::RandomAccessParam::constructibleFrom(p);
+	return !UserFunction::RandomParam::constructibleFrom(p) && !UserFunction::RegionParam::constructibleFrom(p) && !UserFunction::RandomAccessParam::constructibleFrom(p);
 }
 
 size_t UserFunction::Param::numKernelArgsCL() const
@@ -329,6 +349,10 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 bool UserFunction::RandomAccessParam::constructibleFrom(const clang::ParmVarDecl *p)
 {
 	auto *type = p->getOriginalType().getTypePtr();
+	
+	if (auto *referenceType = dyn_cast<ReferenceType>(type))
+		type = referenceType->getPointeeType().getTypePtr();
+	
 	if (auto *innertype = dyn_cast<ElaboratedType>(type))
 		type = innertype->getNamedType().getTypePtr();
 
@@ -347,6 +371,10 @@ UserFunction::RegionParam::RegionParam(const ParmVarDecl *p)
 bool UserFunction::RegionParam::constructibleFrom(const clang::ParmVarDecl *p)
 {
 	auto *type = p->getOriginalType().getTypePtr();
+	
+	if (auto *referenceType = dyn_cast<ReferenceType>(type))
+		type = referenceType->getPointeeType().getTypePtr();
+	
 	if (auto *innertype = dyn_cast<ElaboratedType>(type))
 		type = innertype->getNamedType().getTypePtr();
 
@@ -354,8 +382,50 @@ bool UserFunction::RegionParam::constructibleFrom(const clang::ParmVarDecl *p)
 	if (!templateType) return false;
 
 	std::string templateName = templateType->getTemplateName().getAsTemplateDecl()->getNameAsString();
+	SkePULog() << templateName << "\n";
 	return (templateName == "Region1D") || (templateName == "Region2D") || (templateName == "Region3D")
 		|| (templateName == "Region4D");
+}
+
+UserFunction::RandomParam::RandomParam(const ParmVarDecl *p)
+: Param(p)
+{
+	if (!this->isReferenceType)
+		SkePUAbort("Random parameter must be of reference type.");
+	
+	auto *type = p->getOriginalType().getTypePtr();
+	type->dump();
+	
+	if (auto *referenceType = dyn_cast<ReferenceType>(type))
+		type = referenceType->getPointeeType().getTypePtr();
+	
+	if (auto *innertype = dyn_cast<ElaboratedType>(type))
+		type = innertype->getNamedType().getTypePtr();
+	
+	const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
+	templateType->dump();
+	if (templateType->getNumArgs() > 0)
+		this->randomCount = templateType->getArg(0).getAsExpr()->EvaluateKnownConstInt(p->getASTContext()).getExtValue();
+	else
+		this->randomCount = 0;
+}
+
+bool UserFunction::RandomParam::constructibleFrom(const clang::ParmVarDecl *p)
+{
+	auto *type = p->getOriginalType().getTypePtr();
+	
+	if (auto *referenceType = dyn_cast<ReferenceType>(type))
+		type = referenceType->getPointeeType().getTypePtr();
+	
+	if (auto *innertype = dyn_cast<ElaboratedType>(type))
+		type = innertype->getNamedType().getTypePtr();
+		
+	const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
+	if (!templateType) return false;
+
+	std::string templateName = templateType->getTemplateName().getAsTemplateDecl()->getNameAsString();
+	SkePULog() << templateName << "\n";
+	return templateName == "Random";
 }
 
 std::string UserFunction::RandomAccessParam::TypeNameOpenCL()
@@ -448,8 +518,6 @@ UserFunction::UserFunction(FunctionDecl *f)
 {
 	// Function name
 	this->rawName = f->getNameInfo().getName().getAsString();
-	
-//	f->dump();
 
 	// Code location
 	this->codeLocation = f->getSourceRange().getEnd().getLocWithOffset(1);
@@ -566,6 +634,7 @@ UserFunction::UserFunction(FunctionDecl *f)
 	this->UTReferences = UFVisitor.UTReferences;
 	
 	this->ReferencedRets = UFVisitor.ReferencedRets;
+	this->ReferencedGets = UFVisitor.ReferencedGets;
 
 	this->containerSubscripts = UFVisitor.containerSubscripts;
 	this->containerCalls = UFVisitor.containerCalls;
@@ -576,6 +645,7 @@ UserFunction::UserFunction(FunctionDecl *f)
 	SkePULog() << "| " << this->ReferencedUTs.size() << " unique referenced UTs\n";
 	SkePULog() << "| " << this->UTReferences.size() << " total UT references\n";
 	SkePULog() << "| " << this->ReferencedRets.size() << " ret() expressions\n";
+	SkePULog() << "| " << this->ReferencedGets.size() << " get() expressions (PRNG)\n";
 	SkePULog() << "| " << this->containerCalls.size() << " container indexing calls\n";
 
 	// Set requires double precision (TODO: more cases like parameters etc...)
@@ -639,6 +709,7 @@ void UserFunction::updateArgLists(size_t arity, size_t Harity)
 	this->Varity = arity;
 	this->Harity = Harity;
 
+	this->randomParam = nullptr;
 	this->regionParam = nullptr;
 	this->elwiseParams.clear();
 	this->anyContainerParams.clear();
@@ -649,6 +720,12 @@ void UserFunction::updateArgLists(size_t arity, size_t Harity)
 
 	if (this->indexed1D || this->indexed2D || this->indexed3D || this->indexed4D)
 		it++;
+	
+	if (it != end && UserFunction::RandomParam::constructibleFrom(*it))
+	{
+		this->randomParam = new UserFunction::RandomParam(*it++);
+		this->randomCount = this->randomParam->randomCount;
+	}
 	
 	auto elwise_end = it + arity + Harity;
 	
@@ -681,6 +758,7 @@ void UserFunction::updateArgLists(size_t arity, size_t Harity)
 		scanForType(param.type);
 
 	SkePULog() << "Deduced indexed: " << (this->indexParam ? "yes" : "no") << "\n"
+		<< "Found random parameter: " << (this->randomParam ? "yes" : "no") << "\n" 
 		<< "Found region parameter: " << (this->regionParam ? "yes" : "no") << "\n" 
 		<< "Deduced elementwise arity: " << this->elwiseParams.size() << "\n"
 		<< "Deduced random access arity: " << this->anyContainerParams.size() << "\n"

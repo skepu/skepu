@@ -76,6 +76,12 @@ const std::unordered_map<std::string, Skeleton> Skeletons =
 	{"MapPairsImpl",         {"MapPairs",           Skeleton::Type::MapPairs,           1, 1}},
 	{"MapPairsReduceImpl",   {"MapPairsReduce",     Skeleton::Type::MapPairsReduce,     2, 2}},
 	{"CallImpl",             {"Call",               Skeleton::Type::Call,               1, 1}},
+	{"MapRandomImpl",        {"Map",                Skeleton::Type::Map,                1, 1}},
+	{"MapRandomReduceImpl",  {"MapReduce",          Skeleton::Type::MapReduce,          2, 2}},
+	{"MapRandomOverlap1D",   {"MapOverlap1D",       Skeleton::Type::MapOverlap1D,       1, 4}},
+	{"MapRandomOverlap2D",   {"MapOverlap2D",       Skeleton::Type::MapOverlap2D,       1, 1}},
+	{"MapRandomOverlap3D",   {"MapOverlap3D",       Skeleton::Type::MapOverlap3D,       1, 1}},
+	{"MapRandomOverlap4D",   {"MapOverlap4D",       Skeleton::Type::MapOverlap4D,       1, 1}},
 };
 
 Rewriter GlobalRewriter;

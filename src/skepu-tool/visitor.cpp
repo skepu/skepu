@@ -285,6 +285,40 @@ bool SkePUASTVisitor::VisitVarDecl(VarDecl *d)
 	return RecursiveASTVisitor<SkePUASTVisitor>::VisitVarDecl(d);
 }
 
+bool SkePUASTVisitor::VisitCXXOperatorCallExpr(CXXOperatorCallExpr *c)
+{
+	if (c->getOperator() == OO_Call)
+	{
+	//	c->dump();
+	}
+	
+	/*return RecursiveASTVisitor<SkePUASTVisitor>::VisitCallExpr(c);
+	
+	auto callee = c->getCallee();
+	
+	if (ImplicitCastExpr *ImplExpr = dyn_cast<ImplicitCastExpr>(callee))
+		callee = ImplExpr->IgnoreImpCasts();
+	
+
+	if (auto *UnresolvedLookup = dyn_cast<UnresolvedLookupExpr>(callee))
+	{
+		std::string name = UnresolvedLookup->getName().getAsString();
+		SkePULog() << "Found unresolved lookup expr " << UnresolvedLookup->getName() <<"\n";
+
+		bool allowed = std::find(AllowedFunctionNamesCalledInUFs.begin(), AllowedFunctionNamesCalledInUFs.end(), name)
+			!= AllowedFunctionNamesCalledInUFs.end();
+		if (!allowed)
+			GlobalRewriter.getSourceMgr().getDiagnostics().Report(c->getBeginLoc(), diag::err_skepu_userfunction_call) << name;
+
+		return allowed;
+	}
+
+	FunctionDecl *Func = c->getDirectCallee();
+	std::string name = Func->getName();*/
+
+	return RecursiveASTVisitor<SkePUASTVisitor>::VisitCallExpr(c);
+}
+
 
 // Implementation of the ASTConsumer interface for reading an AST produced by the Clang parser.
 SkePUASTConsumer::SkePUASTConsumer(ASTContext *ctx, std::unordered_set<clang::VarDecl *> &instanceSet)

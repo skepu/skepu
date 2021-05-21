@@ -111,6 +111,9 @@ public:
 		std::string escapedTypeName;
 		std::string fullTypeName;
 		std::string unqualifiedFullTypeName;
+		bool isReferenceType = false;
+		bool isRValueReference = false;
+		bool isLValueReference = false;
 		
 		static bool constructibleFrom(const clang::ParmVarDecl *p);
 		
@@ -143,6 +146,15 @@ public:
 		
 		RegionParam(const clang::ParmVarDecl *p);
 	};
+	
+	struct RandomParam: Param
+	{
+		static bool constructibleFrom(const clang::ParmVarDecl *p);
+		
+		size_t randomCount;
+		
+		RandomParam(const clang::ParmVarDecl *p);
+	};
 
 	void updateArgLists(size_t arity, size_t Harity = 0);
 
@@ -166,7 +178,10 @@ public:
 	clang::SourceLocation codeLocation;
 	
 	size_t Varity = 0, Harity = 0;
-
+	
+	RandomParam* randomParam = nullptr;
+	size_t randomCount;
+	
 	RegionParam* regionParam = nullptr;
 	std::vector<Param> elwiseParams{};
 	std::vector<RandomAccessParam> anyContainerParams {};
@@ -180,6 +195,7 @@ public:
 	
 	
 	std::set<const clang::CallExpr*> ReferencedRets{};
+	std::set<clang::CXXMemberCallExpr*> ReferencedGets{};
 
 	std::vector<std::pair<const clang::TypeSourceInfo*, UserType*>> UTReferences{};
 	std::set<UserType*> ReferencedUTs{};

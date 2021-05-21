@@ -54,7 +54,17 @@ void printParamList(std::ostream &o, UserFunction &Func)
 		o << "skepu::Index4D " << Func.indexParam->name;
 		first = false;
 	}
-
+	
+	if (UserFunction::RandomParam *param = Func.randomParam)
+	{
+		if (!first) { o << ", "; }
+		o << "skepu::Random<" << param->randomCount << "> ";
+		if (param->isLValueReference) o << "& ";
+		if (param->isRValueReference) o << "&& ";
+		o << param->name;
+		first = false;
+	}
+	
 	if (UserFunction::RegionParam *param = Func.regionParam)
 	{
 		if (!first) { o << ", "; }
@@ -232,7 +242,25 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 				R.ReplaceText(ref->getCallee()->getSourceRange(), UF.multiReturnTypeNameGPU() + "::make");
 		}
 	}
-
+	
+	if (backend == Backend::OpenCL)
+	{
+		for (auto *ref : UF.ReferencedGets)
+		{
+			auto* object = ref->getImplicitObjectArgument();
+			if (auto *expr = dyn_cast<ImplicitCastExpr>(object))
+				object = expr->getSubExpr();
+			DeclRefExpr* object2 = dyn_cast<clang::DeclRefExpr>(object);
+			std::string varname = object2->getNameInfo().getAsString();
+			
+			FunctionDecl *Func = ref->getDirectCallee();
+			std::string name = Func->getName();
+			std::string variant = ((name == "get") ? "get" : "get_normalized");
+			
+			R.ReplaceText(ref->getSourceRange(), "skepu_random_" + variant + "(" + varname + ")");
+		}
+	}
+	
 	for (auto &ref : UF.UFReferences)
 	{
 		SkePULog() << "--> Replacing UF reference with " << nameFunc(*ref.second) << "\n";
@@ -322,7 +350,9 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 	SSSkepuFunctorStruct << "constexpr static size_t totalArity = " << f->param_size() << ";\n";
 	SSSkepuFunctorStruct << "constexpr static size_t outArity = " << outArity << ";\n";
 	SSSkepuFunctorStruct << "constexpr static bool indexed = " << (UF.indexed1D || UF.indexed2D || UF.indexed3D || UF.indexed4D) << ";\n";
-
+	SSSkepuFunctorStruct << "constexpr static bool usesPRNG = " << (UF.randomParam != nullptr) << ";\n";
+	SSSkepuFunctorStruct << "constexpr static size_t randomCount = " << ((UF.randomParam != nullptr) ? UF.randomCount : 0) << ";\n";
+	
 	SSSkepuFunctorStruct << "using IndexType = ";
 	if (UF.indexed1D) SSSkepuFunctorStruct << "skepu::Index1D;\n";
 	else if (UF.indexed2D) SSSkepuFunctorStruct << "skepu::Index2D;\n";
@@ -482,7 +512,14 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 		SSFuncParamList << "index4_t " << Func.indexParam->name;
 		first = false;
 	}
-
+	
+	if (UserFunction::RandomParam *param = Func.randomParam)
+	{
+		if (!first) { SSFuncParamList << ", "; }
+		SSFuncParamList << "__global skepu_random *" << param->name;
+		first = false;
+	}
+	
 	if (UserFunction::RegionParam *param = Func.regionParam)
 	{
 		if (!first) { SSFuncParamList << ", "; }

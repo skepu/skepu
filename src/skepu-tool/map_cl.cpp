@@ -11,6 +11,7 @@ const char *MapKernelTemplate_CL = R"~~~(
 __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} {{SIZE_PARAMS}} size_t skepu_n, size_t skepu_base)
 {
 	size_t skepu_i = get_global_id(0);
+	size_t skepu_global_id = get_global_id(0);
 	size_t skepu_gridSize = get_local_size(0) * get_num_groups(0);
 	{{CONTAINER_PROXIES}}
 
@@ -92,6 +93,19 @@ std::string createMapKernelProgram_CL(UserFunction &mapFunc, std::string dir)
 	bool first = !indexInfo.hasIndex;
 	SSMapFuncArgs << indexInfo.mapFuncParam;
 	std::string multiOutputAssign = handleOutputs_CL(mapFunc, SSHostKernelParamList, SSKernelParamList, SSKernelArgs);
+	
+	// PRNG
+	if (UserFunction::RandomParam *param = mapFunc.randomParam)
+	{
+		sourceStream << generateOpenCLRandom();
+		if (!first) { SSMapFuncArgs << ", "; }
+		first = false;
+		SSMapFuncArgs << "&" << param->name << "[skepu_global_id]";
+		SSKernelArgs << "user_" << param->name << "->getDeviceDataPointer(), ";
+		SSKernelParamList << "__global skepu_random* " << param->name << ", ";
+	//	SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<skepu::Random<" << param->randomCount << ">> * user_" << param->name << ", ";
+		SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<skepu::RandomForCL> * user_" << param->name << ", ";
+	}
 	
 	// Elementwise input data
 	for (UserFunction::Param& param : mapFunc.elwiseParams)
