@@ -76,7 +76,7 @@ public:
 			SkePULog() << "Ignored reference to special function: '" << name << "'\n";
 			ReferencedRets.insert(c);
 		}
-		else if (name == "get" || name == "getNormalized")
+		else if (name == "get" || name == "getNormalized")
 		{
 			SkePULog() << "Ignored reference to special function: '" << name << "'\n";
 			ReferencedGets.insert(dyn_cast<CXXMemberCallExpr>(c));
