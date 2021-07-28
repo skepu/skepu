@@ -1,4 +1,5 @@
-#include <iostream>
+#include <catch2/catch.hpp>
+
 #include <skepu>
 
 
@@ -25,18 +26,9 @@ public:
 
 
 
-int main(int argc, char *argv[])
+TEST_CASE("Object-oriented SkePU usage")
 {
-	if (argc < 3)
-	{
-		if(!skepu::cluster::mpi_rank())
-			std::cout << "Usage: " << argv[0] << " size backend\n";
-		exit(1);
-	}
-	
-	const size_t size = atoi(argv[1]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
-	
+	const size_t size{100};
 	
 	skepu::Vector<int> v1(size);
 	
@@ -50,10 +42,7 @@ int main(int argc, char *argv[])
 	
 	auto res = test.scale(v1);
 	
-	v1.flush();
 	res.flush();
-	if(!skepu::cluster::mpi_rank())
-		std::cout << "v1: " << v1 << "\nres: " << res << "\n\n";
+	std::cout << "v1: " << v1 << "\nres: " << res << "\n\n";
 	
-	return 0;
 }

@@ -9,22 +9,11 @@ include_directories(${CMAKE_CURRENT_LIST_DIR})
 add_library(lodepng STATIC lodepng.cpp)
 
 set(_skepu_examples
-	backendspec
 	call
 	cma
-	complex
-	containers
 	coulombic
 	dotproduct
-	lambda
 	mandelbrot
-	map
-	mapoverlap
-	mapoverlap_tuple
-	mappairs
-	mappairs_tuple
-	mapreduce
-	maptuple
 	maxmin
 	median
 	mmmult
@@ -33,13 +22,9 @@ set(_skepu_examples
 	mvmult_row
 	nbody
 	nbody_mappairs
-	objectoriented
 	ppmcc
 	psnr
-	reduce
-	scan
 	taylor
-	writeback
 )
 
 if(SKEPU_EXAMPLES_SEQ)

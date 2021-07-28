@@ -233,7 +233,7 @@ public:
 )~~~";
 
 
-std::string createScanKernelProgram_CL(UserFunction &scanFunc, std::string dir)
+std::string createScanKernelProgram_CL(SkeletonInstance &instance, UserFunction &scanFunc, std::string dir)
 {
 	std::stringstream sourceStream;
 
@@ -251,7 +251,7 @@ std::string createScanKernelProgram_CL(UserFunction &scanFunc, std::string dir)
 
 	sourceStream << KernelPredefinedTypes_CL << generateUserFunctionCode_CL(scanFunc) << ScanKernel_CL << ScanUpdate_CL << ScanAdd_CL;
 
-	const std::string kernelName = transformToCXXIdentifier(ResultName) + "_ScanKernel_" + scanFunc.uniqueName;
+	const std::string kernelName = instance + "_" + transformToCXXIdentifier(ResultName) + "_ScanKernel_" + scanFunc.uniqueName;
 	std::ofstream FSOutFile {dir + "/" + kernelName + "_cl_source.inl"};
 	FSOutFile << templateString(Constructor,
 	{

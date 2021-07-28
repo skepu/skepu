@@ -1,3 +1,5 @@
+#include <catch2/catch.hpp>
+
 #include <iostream>
 #include <skepu>
 
@@ -38,8 +40,17 @@ T test_row_2_f(skepu::Index1D row, T a, T b, const skepu::MatRow<T> mr, const sk
 }
 
 
-void test_map_multi(size_t size)
+
+auto test1 = skepu::Map(test1_f);
+auto test2 = skepu::Map(test2_f);
+auto test_row_1 = skepu::Map(test_row_1_f<int>);
+auto test_single = skepu::Map(test_single_f);
+auto test_row_2 = skepu::Map(test_row_2_f<int>);
+
+TEST_CASE("Map with variadic return")
 {
+	constexpr size_t size{100};
+	
 	skepu::Vector<int> v1(size), v2(size), r1(size);
 	skepu::Vector<float> r2(size);
 	skepu::Vector<float> e = {2, 7};
@@ -58,7 +69,6 @@ void test_map_multi(size_t size)
 			std::cout << "v1: " << v1 << "\nv2: " << v2 << "\n\n";
 		});
 
-	auto test1 = skepu::Map(test1_f);
 	test1(r1, r2, v1, v2, e, 10);
 
 	skepu::external(
@@ -67,7 +77,6 @@ void test_map_multi(size_t size)
 			std::cout << "Test 1: r1 = " << r1 << "\nr2 = " << r2 << "\n\n";
 		});
 
-	auto test2 = skepu::Map(test2_f);
 	test2(r1, r2, e);
 
 	skepu::external(
@@ -76,7 +85,6 @@ void test_map_multi(size_t size)
 			std::cout << "Test 2: r1 = " << r1 << "\nr2 = " << r2 << "\n\n";
 		});
 
-	auto test_single = skepu::Map(test_single_f);
 	test_single(r1, v1, v2, e, 10);
 	skepu::external(
 		skepu::read(r1,r2),
@@ -86,7 +94,6 @@ void test_map_multi(size_t size)
 
 	skepu::Matrix<int> m(size, size);
 
-	auto test_row_1 = skepu::Map(test_row_1_f<int>);
 	test_row_1(r1, m, v1);
 	skepu::external(
 		skepu::read(r1),
@@ -94,7 +101,6 @@ void test_map_multi(size_t size)
 			std::cout << "Test Row 1: r1 = " << r1 << "\n\n";
 		});
 
-	auto test_row_2 = skepu::Map(test_row_2_f<int>);
 	test_row_2(r1, v1, v2, m, m, v1, 1);
 
 	skepu::external(
@@ -141,26 +147,4 @@ void test_mapreduce_multi(size_t size)
 			std::cout << "sum1: " << sum1 << ", sum2: " << sum2 << std::endl;
 		});
 }*/
-
-int main(int argc, char *argv[])
-{
-	if (argc < 3)
-	{
-		skepu::external(
-			[&]{
-				std::cout << "Usage: " << argv[0] << " size backend\n";
-			});
-		exit(1);
-	}
-
-	const size_t size = atoi(argv[1]);
-	auto spec = skepu::BackendSpec{argv[2]};
-	skepu::setGlobalBackendSpec(spec);
-
-	test_map_multi(size);
-
-//	test_mapreduce_multi(size);
-
-	return 0;
-}
 

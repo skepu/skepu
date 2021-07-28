@@ -6,40 +6,18 @@
  *   r = ( (n*sum(X.Y)-sum(X)*sum(Y))/((n*sum(X^2)-(sum(X))^2)*(n*sum(Y^2)-(sum(Y))^2)) )
  */
 
-#include <iostream>
-#include <cmath>
-
 #include <skepu>
-
-// Unary user-function used for mapping
-template<typename T>
-T square(T a)
-{
-	return a * a;
-}
-
-// Binary user-function used for mapping
-template<typename T>
-T mult(T a, T b)
-{
-	return a * b;
-}
-
-// User-function used for reduction
-template<typename T>
-T plus(T a, T b)
-{
-	return a + b;
-}
+#include <skepu-lib/util.hpp>
+#include <skepu-lib/io.hpp>
 
 using T = float;
 
 T ppmcc(skepu::Vector<T> &x, skepu::Vector<T> &y)
 {
 	// Skeleton definitions
-	auto sum = skepu::Reduce(plus<T>);
-	auto dotProduct = skepu::MapReduce(mult<T>, plus<T>);
-	auto sumSquare = skepu::MapReduce(square<T>, plus<T>);
+	auto sum = skepu::Reduce(skepu::util::add<T>);
+	auto dotProduct = skepu::MapReduce(skepu::util::mul<T>, skepu::util::add<T>);
+	auto sumSquare = skepu::MapReduce(skepu::util::square<T>, skepu::util::add<T>);
 	
 	size_t N = x.size();
 	T sumX = sum(x);
@@ -53,15 +31,12 @@ int main(int argc, char *argv[])
 {
 	if (argc < 3)
 	{
-		skepu::external(
-			[&]{
-				std::cout << "Usage: " << argv[0] << " input_size backend\n";
-			});
+		skepu::io::cout << "Usage: " << argv[0] << " input_size backend\n";
 		exit(1);
 	}
 	
 	const size_t size = std::stoul(argv[1]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{argv[2]};
 	skepu::setGlobalBackendSpec(spec);
 	
 	// Vector operands
@@ -69,17 +44,11 @@ int main(int argc, char *argv[])
 	x.randomize(1, 3);
 	y.randomize(2, 4);
 	
-	skepu::external(
-		skepu::read(x,y),
-		[&]{
-			std::cout << "X: " << x << "\n";
-			std::cout << "Y: " << y << "\n";
-		});
+	skepu::io::cout << "X: " << x << "\nY: " << y << "\n";
 
 	T res = ppmcc(x, y);
 	
-	skepu::external([&]{
-		std::cout << "res: " << res << "\n";});
+	skepu::io::cout << "res: " << res << "\n";
 	
 	return 0;
 }

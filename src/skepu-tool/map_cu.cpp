@@ -26,7 +26,7 @@ __global__ void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_w2, size_t skepu_
 )~~~";
 
 
-std::string createMapKernelProgram_CU(UserFunction &mapFunc, size_t arity, std::string dir)
+std::string createMapKernelProgram_CU(SkeletonInstance &instance, UserFunction &mapFunc, size_t arity, std::string dir)
 {
 	std::stringstream sourceStream, SSKernelParamList, SSMapFuncArgs;
 	IndexCodeGen indexInfo = indexInitHelper_CU(mapFunc);

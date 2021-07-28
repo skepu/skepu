@@ -14,7 +14,7 @@ __global__ void SKEPU_KERNEL_NAME(SKEPU_KERNEL_PARAMS)
 )~~~";
 
 
-std::string createCallKernelProgram_CU(UserFunction &callFunc, std::string dir)
+std::string createCallKernelProgram_CU(SkeletonInstance &instance, UserFunction &callFunc, std::string dir)
 {
 	const std::string kernelName = ResultName + "_CallKernel_" + callFunc.uniqueName + "_";;
 

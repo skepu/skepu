@@ -28,6 +28,7 @@ application for data-parallel computations.
 #include <cstdlib>
 
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 #include "bitmap_image.hpp"
 
@@ -100,22 +101,21 @@ int main(int argc, char* argv[])
 {
 	if (argc < 4)
 	{
-		if(!skepu::cluster::mpi_rank())
-			std::cout << "Usage: " << argv[0] << " width height backend\n";
+		skepu::io::cout << "Usage: " << argv[0] << " width height backend\n";
 		exit(1);
 	}
 	
 	const size_t width = std::stoul(argv[1]);
 	const size_t height = std::stoul(argv[2]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[3])};
+	auto spec = skepu::BackendSpec{argv[3]};
 	skepu::setGlobalBackendSpec(spec);
 	
 	skepu::Matrix<size_t> iterations(height, width);
 	
 	auto mandelbroter = skepu::Map<0>(mandelbrot_f);
 	mandelbroter(iterations, height, width);
-	iterations.flush();
 	
-	if(!skepu::cluster::mpi_rank())
+	skepu::external(skepu::read(iterations), [&]{
 		save_image(width, height, iterations.getAddress(), MAX_ITERS);
+	});
 }

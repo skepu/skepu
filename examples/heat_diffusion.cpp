@@ -1,9 +1,10 @@
-#include <iostream>
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 #define ENABLE_1D_EXAMPLE 1
 #define ENABLE_2D_EXAMPLE 1
 #define ENABLE_3D_EXAMPLE 1
+#define ENABLE_4D_EXAMPLE 1
 #define ENABLE_DEBUG 1
 
 float heat1D(skepu::Region1D<float> r)
@@ -39,12 +40,26 @@ float heat3D(skepu::Region3D<float> r)
 	return newval;
 }
 
+float heat4D(skepu::Region4D<float> r)
+{
+	float newval = 0;
+	newval += r(-1,  0,  0,  0);
+	newval += r( 1,  0,  0,  0);
+	newval += r(0,  -1,  0,  0);
+	newval += r(0,   1,  0,  0);
+	newval += r(0,   0, -1,  0);
+	newval += r(0,   0,  1,  0);
+	newval += r(0,   0,  0, -1);
+	newval += r(0,   0,  0,  1);
+	newval /= 8;
+	return newval;
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc < 5)
 	{
-		if(!skepu::cluster::mpi_rank())
-			std::cout << "Usage: " << argv[0] << " dim size iterations backend\n";
+		skepu::io::cout << "Usage: " << argv[0] << " dim size iterations backend\n";
 		exit(1);
 	}
 	
@@ -53,8 +68,6 @@ int main(int argc, char *argv[])
 	const float iters = atof(argv[3]);
 	auto spec = skepu::BackendSpec{argv[4]};
 	skepu::setGlobalBackendSpec(spec);
-	
-//	std::cout << "Integral from " << start << " to " << end << " in " << samples << " samples...\n";
 
 #if ENABLE_1D_EXAMPLE
 	if (dim == 1)
@@ -71,13 +84,9 @@ int main(int argc, char *argv[])
 		for (size_t i = 0; i < iters; ++i)
 		{
 			update(domain, domain);
-			
-#if ENABLE_DEBUG
-			std::cout << domain << "\n";
-#endif
 		}
 		
-		std::cout << domain << "\n";
+		skepu::io::cout << domain << "\n";
 		exit(0);
 	}
 #endif
@@ -106,13 +115,9 @@ int main(int argc, char *argv[])
 		for (size_t i = 0; i < iters; ++i)
 		{
 			update(domain, domain);
-			
-#if ENABLE_DEBUG
-			std::cout << domain << "\n";
-#endif
 		}
 		
-		std::cout << domain << "\n";
+		skepu::io::cout << domain << "\n";
 		exit(0);
 	}
 #endif
@@ -140,17 +145,45 @@ int main(int argc, char *argv[])
 		for (size_t i = 0; i < iters; ++i)
 		{
 			update(domain, domain);
-			
-#if ENABLE_DEBUG
-			std::cout << domain << "\n";
-#endif
 		}
 		
-		std::cout << domain << "\n";
+		skepu::io::cout << domain << "\n";
 		exit(0);
 	}
 #endif
-	
+
+#if ENABLE_4D_EXAMPLE
+	if (dim == 4)
+	{
+		auto update = skepu::MapOverlap(heat4D);
+		update.setOverlap(1, 1, 1, 1);
+		update.setEdgeMode(skepu::Edge::None);
+		update.setUpdateMode(skepu::UpdateMode::RedBlack);
+		skepu::Tensor4<float> domain(size, size, size, size, 0);
+		
+		for (size_t i = 0; i < size; ++i)
+		{
+			for (size_t j = 0; j < size; ++j)
+			{
+				for (size_t k = 0; k < size; ++k)
+				{
+					domain(0, i, j, k) = 1;
+					domain(size-1, i, j, k) = 5;
+					domain(i, 0, j, k) = 2;
+					domain(i, size-1, j, k) = 2;
+				}
+			}
+		}
+		
+		for (size_t i = 0; i < iters; ++i)
+		{
+			update(domain, domain);
+		}
+		
+		skepu::io::cout << domain << "\n";
+		exit(0);
+	}
+#endif
 	
 	return 0;
 }

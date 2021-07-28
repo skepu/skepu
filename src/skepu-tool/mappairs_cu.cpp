@@ -26,7 +26,7 @@ __global__ void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_Vsize, size_t ske
 )~~~";
 
 
-std::string createMapPairsKernelProgram_CU(UserFunction &mapPairsFunc, std::string dir)
+std::string createMapPairsKernelProgram_CU(SkeletonInstance &instance, UserFunction &mapPairsFunc, std::string dir)
 {
 	std::stringstream sourceStream, SSKernelParamList, SSMapPairsFuncArgs;
 	IndexCodeGen indexInfo = indexInitHelper_CU(mapPairsFunc);

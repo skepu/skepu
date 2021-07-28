@@ -120,7 +120,7 @@ __global__ void {{KERNEL_NAME}}({{REDUCE_RESULT_TYPE}} *skepu_input, {{REDUCE_RE
 )~~~";
 
 
-std::string createMapReduceKernelProgram_CU(UserFunction &mapFunc, UserFunction &reduceFunc, size_t arity, std::string dir)
+std::string createMapReduceKernelProgram_CU(SkeletonInstance &instance, UserFunction &mapFunc, UserFunction &reduceFunc, size_t arity, std::string dir)
 {
 	std::stringstream sourceStream, SSKernelParamList, SSMapFuncArgs;
 	IndexCodeGen indexInfo = indexInitHelper_CU(mapFunc);

@@ -1,11 +1,11 @@
-#include <iostream>
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 #define ENABLE_1D_EXAMPLE 1
 #define ENABLE_2D_EXAMPLE 1
 #define ENABLE_DEBUG 1
 
-bool automaton1D(skepu::Region1D<bool> r, skepu::Mat<bool> updateRules)
+char automaton1D(skepu::Region1D<char> r, skepu::Mat<char> updateRules)
 {
 	float newval = 0;
 	for (int i = -r.oi; i <= r.oi; ++i)
@@ -14,7 +14,7 @@ bool automaton1D(skepu::Region1D<bool> r, skepu::Mat<bool> updateRules)
 	return updateRules(r(0), newval) ? 1 : 0;
 }
 
-bool automaton2D(skepu::Region2D<bool> r, skepu::Mat<bool> updateRules)
+char automaton2D(skepu::Region2D<char> r, skepu::Mat<char> updateRules)
 {
 	float newval = 0;
 	for (int i = -r.oi; i <= r.oi; ++i)
@@ -29,8 +29,7 @@ int main(int argc, char *argv[])
 {
 	if (argc < 5)
 	{
-		if(!skepu::cluster::mpi_rank())
-			std::cout << "Usage: " << argv[0] << " dim size iterations backend\n";
+		skepu::io::cout << "Usage: " << argv[0] << " dim size iterations backend\n";
 		exit(1);
 	}
 	
@@ -48,8 +47,8 @@ int main(int argc, char *argv[])
 		update.setOverlap(1);
 		update.setEdgeMode(skepu::Edge::Pad);
 		update.setPad(0);
-		skepu::Vector<bool> domainA(size, 0), domainB(size);
-		skepu::Matrix<bool> updateRules(2, 2);
+		skepu::Vector<char> domainA(size, 0), domainB(size);
+		skepu::Matrix<char> updateRules(2, 2);
 		updateRules(0, 1) = true;
 		
 		domainA.randomize(0, 2);
@@ -60,12 +59,12 @@ int main(int argc, char *argv[])
 			update(domainA, domainB, updateRules);
 			
 #if ENABLE_DEBUG
-			std::cout << domainB << "\n";
-			std::cout << domainA << "\n";
+			skepu::io::cout << domainB << "\n";
+			skepu::io::cout << domainA << "\n";
 #endif
 		}
 		
-		std::cout << domainA << "\n";
+		skepu::io::cout << domainA << "\n";
 		exit(0);
 	}
 #endif
@@ -77,8 +76,8 @@ int main(int argc, char *argv[])
 		update.setOverlap(1, 1);
 		update.setEdgeMode(skepu::Edge::Pad);
 		update.setPad(0);
-		skepu::Matrix<bool> domainA(size, size, 0), domainB(size, size);
-		skepu::Matrix<bool> updateRules(2, 8);
+		skepu::Matrix<char> domainA(size, size, 0), domainB(size, size);
+		skepu::Matrix<char> updateRules(2, 8);
 		
 		// Each empty cell with three neighbors becomes populated.
 		updateRules(0, 3) = true;
@@ -95,12 +94,12 @@ int main(int argc, char *argv[])
 			update(domainA, domainB, updateRules);
 			
 #if ENABLE_DEBUG
-			std::cout << domainB << "\n";
-			std::cout << domainA << "\n";
+			skepu::io::cout << domainB << "\n";
+			skepu::io::cout << domainA << "\n";
 #endif
 		}
 		
-		std::cout << domainA << "\n";
+		skepu::io::cout << domainA << "\n";
 		exit(0);
 	}
 #endif

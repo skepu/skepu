@@ -2,11 +2,6 @@
 
 using namespace clang;
 
-enum class Backend
-{
-	CPU, OpenMP, CUDA, OpenCL,
-};
-
 std::string lineDirectiveForSourceLoc(SourceLocation &loc)
 {
 	std::stringstream directive;
@@ -18,6 +13,7 @@ std::string lineDirectiveForSourceLoc(SourceLocation &loc)
 std::string getSourceAsString(SourceRange range)
 {
 	int rangeSize = GlobalRewriter.getRangeSize(range);
+	SkePULog() << "Range size: " << rangeSize << "\n";
 	if (rangeSize == -1)
 		return "";
 
@@ -28,6 +24,11 @@ std::string getSourceAsString(SourceRange range)
 	exprString.assign(strStart, rangeSize);
 
 	return exprString;
+}
+
+int getRangeSize(SourceRange range)
+{
+	return GlobalRewriter.getRangeSize(range);
 }
 
 void printParamList(std::ostream &o, UserFunction &Func)
@@ -121,47 +122,6 @@ std::string transformToCXXIdentifier(std::string &in)
 	replaceTextInString(out, ":", "__colon__");
 	replaceTextInString(out, "-", "__hyphen__");
 	return out;
-}
-
-
-std::string generateOpenCLMultipleReturn(UserFunction &UF)
-{
-	if (UF.multipleReturnTypes.size() > 0)
-	{
-		std::stringstream SSmultiReturnType, SSmultiReturnTypeDef, SSmultiReturnMakeStruct, SSmultiReturnMakeParams;
-		SSmultiReturnType << "skepu_multiple";
-		size_t ctr = 0;
-		for (std::string &type : UF.multipleReturnTypes)
-		{
-			std::string divider = (ctr != UF.multipleReturnTypes.size() - 1) ? ", " : "";
-			SSmultiReturnType << "_" << type;
-			SSmultiReturnTypeDef << type << " e" << ctr << ";\n";
-			SSmultiReturnMakeParams << type << " arg" << ctr << divider;
-			SSmultiReturnMakeStruct << " .e" << ctr << " = arg" << ctr << divider;
-			ctr++;
-		}
-
-		std::string codeTemplate = R"~~~(
-			typedef struct {
-				{{SKEPU_MULTIPLE_RETURN_TYPE_DEF}}
-			} {{SKEPU_MULTIPLE_RETURN_TYPE}};
-
-			static {{SKEPU_MULTIPLE_RETURN_TYPE}} make_{{SKEPU_MULTIPLE_RETURN_TYPE}} ({{SKEPU_MULTIPLE_RETURN_MAKE_PARAMS}})
-			{
-				{{SKEPU_MULTIPLE_RETURN_TYPE}} retval = { {{SKEPU_MULTIPLE_RETURN_MAKE_STRUCT}} };
-				return retval;
-			}
-		)~~~";
-
-
-		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_TYPE}}", SSmultiReturnType.str());
-		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_TYPE_DEF}}", SSmultiReturnTypeDef.str());
-		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_MAKE_PARAMS}}", SSmultiReturnMakeParams.str());
-		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_MAKE_STRUCT}}", SSmultiReturnMakeStruct.str());
-
-		return codeTemplate;
-	}
-	return "";
 }
 
 
@@ -269,14 +229,18 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 
 	for (auto &ref : UF.UTReferences)
 		R.ReplaceText(ref.first->getTypeLoc().getSourceRange(), "struct " + ref.second->name);
-
+	
 	for (auto subscript : UF.containerSubscripts)
 		R.InsertText(subscript->getCallee()->getBeginLoc(), ".data");
-
+	
 	if (backend == Backend::OpenCL)
 		for (auto subscript : UF.containerCalls)
 		{
-			DeclRefExpr* container = dyn_cast<clang::DeclRefExpr>(subscript->getArg(0));
+			Expr *arg0 = subscript->getArg(0);
+			if (auto *expr = dyn_cast<ImplicitCastExpr>(arg0))
+				arg0 = expr->getSubExpr();
+			DeclRefExpr* container = dyn_cast<clang::DeclRefExpr>(arg0);
+			
 			auto type = container->getDecl()->getType().getTypePtr();
 			if (auto *innertype = dyn_cast<ElaboratedType>(type))
 				type = innertype->getNamedType().getTypePtr();
@@ -285,13 +249,72 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 			std::string templateName = templateType->getTemplateName().getAsTemplateDecl()->getNameAsString();
 			std::string varname = container->getNameInfo().getAsString();
 			std::string typeName = templateType->getArg(0).getAsType().getAsString();
-
+			replaceTextInString(typeName, "struct ", "");
+			
 			int numArgs;
 			std::string fname;
 			std::tie(numArgs, fname) = proxyInfo[templateName];
 			fname += transformToCXXIdentifier(typeName);
 			std::string args = getSourceAsString(clang::SourceRange(subscript->getArg(1)->getBeginLoc(), subscript->getArg(numArgs-1)->getEndLoc()));
 			R.ReplaceText(subscript->getSourceRange(), fname + "(" + varname + "," + args + ")");
+		}
+	
+	if (backend == Backend::OpenCL)
+		for (auto overload : UF.operatorOverloads)
+		{
+			auto ooc = overload->getOperator();
+	//		overload->dump();
+			std::string functionName;
+			int operatorLength = 1;
+			if (ooc == OO_Plus)
+			{
+				functionName = "complex_add"; // add inner type, differentiate between add, addr, addr2
+				operatorLength = 1;
+			}
+			else if (ooc == OO_Minus)
+			{
+				functionName = "complex_sub"; // add inner type, differentiate between add, addr, addr2
+				operatorLength = 1;
+			}
+			else if (ooc == OO_Star)
+			{
+				functionName = "complex_mul"; // add inner type, differentiate between add, addr, addr2
+				operatorLength = 1;
+			}
+			else if (ooc == OO_Slash)
+			{
+				functionName = "complex_div"; // add inner type, differentiate between add, addr, addr2
+				operatorLength = 1;
+			}
+			else if (ooc == OO_EqualEqual)
+			{
+				functionName = "complex_equal"; // add inner type, differentiate between add, addr, addr2
+				operatorLength = 2;
+			}
+			else if (ooc == OO_ExclaimEqual)
+			{
+				functionName = "complex_notequal"; // add inner type, differentiate between add, addr, addr2
+				operatorLength = 2;
+			}
+			else if (ooc == OO_PlusEqual)
+			{
+				functionName = "complex_assign_add"; // add inner type, differentiate between add, addr, addr2
+				operatorLength = 2;
+			}
+			else if (ooc == OO_MinusEqual)
+			{
+				functionName = "complex_assign_sub"; // add inner type, differentiate between add, addr, addr2
+				operatorLength = 2;
+			}
+			else if (ooc == OO_StarEqual)
+			{
+				functionName = "complex_assign_mul"; // add inner type, differentiate between add, addr, addr2
+				operatorLength = 2;
+			}
+			
+			R.InsertText(overload->getBeginLoc(), functionName + "(");
+			R.InsertText(overload->getArg(1)->getBeginLoc().getLocWithOffset(getRangeSize(overload->getArg(1)->getSourceRange())), ")");
+			R.ReplaceText(clang::SourceRange(overload->getOperatorLoc(), overload->getOperatorLoc().getLocWithOffset(operatorLength)), ",");
 		}
 
 	const CompoundStmt *Body = dyn_cast<CompoundStmt>(f->getBody());
@@ -308,10 +331,11 @@ bool testAndSet(bool &arg, bool newVal = true)
 }
 
 static std::set<std::string> generatedStructs;
-static std::set<std::string> usingDecls;
 
 void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clang::SourceLocation loc)
 {
+	std::set<std::string> usingDecls;
+	
 	// Start by recursively generate functors for referenced user functions
 	for (auto *referenced : UF.ReferencedUFs)
 		generateUserFunctionStruct(*referenced, InstanceName, loc);
@@ -335,7 +359,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 		for (const UserFunction::TemplateArgument &arg : UF.templateArguments)
 		{
 			// If the template argument type is a nested namespace type, bring the namespace into scope
-			if (arg.rawTypeName != arg.resolvedTypeName)
+			if (arg.rawTypeName != arg.resolvedTypeName && (std::find(usingDecls.begin(), usingDecls.end(), arg.rawTypeName) == usingDecls.end()))
 			{
 				SSSkepuFunctorStruct << "using " << arg.rawTypeName << " = " << arg.resolvedTypeName << ";\n";
 				usingDecls.insert(arg.rawTypeName);
@@ -351,7 +375,8 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 	SSSkepuFunctorStruct << "constexpr static size_t outArity = " << outArity << ";\n";
 	SSSkepuFunctorStruct << "constexpr static bool indexed = " << (UF.indexed1D || UF.indexed2D || UF.indexed3D || UF.indexed4D) << ";\n";
 	SSSkepuFunctorStruct << "constexpr static bool usesPRNG = " << (UF.randomParam != nullptr) << ";\n";
-	SSSkepuFunctorStruct << "constexpr static size_t randomCount = " << ((UF.randomParam != nullptr) ? UF.randomCount : 0) << ";\n";
+	if (UF.randomParam != nullptr) SSSkepuFunctorStruct << "constexpr static size_t randomCount = " << UF.randomCount << ";\n";
+	else SSSkepuFunctorStruct << "constexpr static size_t randomCount = SKEPU_NO_RANDOM;\n";
 	
 	SSSkepuFunctorStruct << "using IndexType = ";
 	if (UF.indexed1D) SSSkepuFunctorStruct << "skepu::Index1D;\n";
@@ -476,108 +501,6 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 		SkePUAbort("Code gen target source loc not rewritable: UF " + UF.uniqueName + " for instance" + InstanceName);
 }
 
-
-
-std::string generateUserTypeCode_CL(UserType &Type)
-{
-	std::string def = getSourceAsString(Type.astDeclNode->getSourceRange());
-	return "typedef " + def + " " + Type.name + ";\n";
-}
-
-std::string generateUserFunctionCode_CL(UserFunction &Func)
-{
-	std::stringstream SSFuncParamList, SSFuncParams, SSFuncSource;
-
-	SSFuncSource << generateOpenCLMultipleReturn(Func);
-
-	bool first = true;
-
-	if (Func.indexed1D)
-	{
-		SSFuncParamList << "index1_t " << Func.indexParam->name;
-		first = false;
-	}
-	else if (Func.indexed2D)
-	{
-		SSFuncParamList << "index2_t " << Func.indexParam->name;
-		first = false;
-	}
-	else if (Func.indexed3D)
-	{
-		SSFuncParamList << "index3_t " << Func.indexParam->name;
-		first = false;
-	}
-	else if (Func.indexed4D)
-	{
-		SSFuncParamList << "index4_t " << Func.indexParam->name;
-		first = false;
-	}
-	
-	if (UserFunction::RandomParam *param = Func.randomParam)
-	{
-		if (!first) { SSFuncParamList << ", "; }
-		SSFuncParamList << "__global skepu_random *" << param->name;
-		first = false;
-	}
-	
-	if (UserFunction::RegionParam *param = Func.regionParam)
-	{
-		if (!first) { SSFuncParamList << ", "; }
-		if (param->containerType == ContainerType::Region1D)
-			SSFuncParamList << "skepu_region1d_" << transformToCXXIdentifier(param->resolvedTypeName) << " " << param->name;
-		else if (param->containerType == ContainerType::Region2D)
-			SSFuncParamList << "skepu_region2d_" << transformToCXXIdentifier(param->resolvedTypeName) << " " << param->name;
-		else if (param->containerType == ContainerType::Region3D)
-			SSFuncParamList << "skepu_region3d_" << transformToCXXIdentifier(param->resolvedTypeName) << " " << param->name;
-		else if (param->containerType == ContainerType::Region4D)
-			SSFuncParamList << "skepu_region4d_" << transformToCXXIdentifier(param->resolvedTypeName) << " " << param->name;
-		first = false;
-	}
-
-	for (UserFunction::Param& param : Func.elwiseParams)
-	{
-		if (!first) { SSFuncParamList << ", "; }
-		SSFuncParamList << param.rawTypeName << " " << param.name;
-		first = false;
-	}
-
-	for (UserFunction::RandomAccessParam& param : Func.anyContainerParams)
-	{
-		if (!first) { SSFuncParamList << ", "; }
-		SSFuncParamList << param.TypeNameOpenCL() << " " << param.name;
-		first = false;
-	}
-
-	for (UserFunction::Param& param : Func.anyScalarParams)
-	{
-		if (!first) { SSFuncParamList << ", "; }
-//	if (param.astDeclNode->getOriginalType()->isPointerType())
-//		SSFuncParamList << "__global ";
-		SSFuncParamList << param.resolvedTypeName << " " << param.name;
-		first = false;
-	}
-
-	std::string transformedSource = replaceReferencesToOtherUFs(Backend::OpenCL, Func, [] (UserFunction &UF) { return UF.uniqueName; });
-
-	// Recursive call, potential for circular loop: TODO FIX!!
-	for (UserFunction *RefFunc : Func.ReferencedUFs)
-		SSFuncSource << generateUserFunctionCode_CL(*RefFunc);
-
-
-	// The function itself
-	SSFuncSource << "static ";
-	if (Func.multipleReturnTypes.size() > 0)
-		SSFuncSource << Func.multiReturnTypeNameGPU();
-	else
-		SSFuncSource << Func.rawReturnTypeName;
-	SSFuncSource << " " << Func.uniqueName << "(" << SSFuncParamList.str() << ")\n{";
-	for (UserFunction::TemplateArgument &arg : Func.templateArguments)
-		SSFuncSource << "typedef " << arg.rawTypeName << " " << arg.paramName << ";\n";
-
-	SSFuncSource << transformedSource << "\n}\n\n";
-	return SSFuncSource.str();
-}
-
 static int skeletonCounter = 0;
 
 bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, VarDecl *d)
@@ -643,19 +566,19 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		switch (skeleton.type)
 		{
 		case Skeleton::Type::MapReduce:
-			KernelName_CU = createMapReduceKernelProgram_CU(*FuncArgs[0], *FuncArgs[1], arity[0], ResultDir);
+			KernelName_CU = createMapReduceKernelProgram_CU(skeletonID, *FuncArgs[0], *FuncArgs[1], arity[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "), decltype(&" << KernelName_CU << "_ReduceOnly)";
 			SSCallArgs << KernelName_CU << ", " << KernelName_CU << "_ReduceOnly";
 			break;
 
 		case Skeleton::Type::Map:
-			KernelName_CU = createMapKernelProgram_CU(*FuncArgs[0], arity[0], ResultDir);
+			KernelName_CU = createMapKernelProgram_CU(skeletonID, *FuncArgs[0], arity[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
 			SSCallArgs << KernelName_CU;
 			break;
 
 		case Skeleton::Type::MapPairs:
-			KernelName_CU = createMapPairsKernelProgram_CU(*FuncArgs[0], ResultDir);
+			KernelName_CU = createMapPairsKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
 			SSCallArgs << KernelName_CU;
 			break;
@@ -666,25 +589,25 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			break;
 
 		case Skeleton::Type::Reduce1D:
-			KernelName_CU = createReduce1DKernelProgram_CU(*FuncArgs[0], ResultDir);
+			KernelName_CU = createReduce1DKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
 			SSCallArgs << KernelName_CU;
 			break;
 
 		case Skeleton::Type::Reduce2D:
-			KernelName_CU = createReduce2DKernelProgram_CU(*FuncArgs[0], *FuncArgs[1], ResultDir);
+			KernelName_CU = createReduce2DKernelProgram_CU(skeletonID, *FuncArgs[0], *FuncArgs[1], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_RowWise), decltype(&" << KernelName_CU << "_ColWise)";
 			SSCallArgs << KernelName_CU << "_RowWise, " << KernelName_CU << "_ColWise";
 			break;
 
 		case Skeleton::Type::Scan:
-			KernelName_CU = createScanKernelProgram_CU(*FuncArgs[0], ResultDir);
+			KernelName_CU = createScanKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_ScanKernel), decltype(&" << KernelName_CU << "_ScanUpdate), decltype(&" << KernelName_CU << "_ScanAdd)";
 			SSCallArgs << KernelName_CU << "_ScanKernel, " << KernelName_CU << "_ScanUpdate, " << KernelName_CU << "_ScanAdd";
 			break;
 
 		case Skeleton::Type::MapOverlap1D:
-			KernelName_CU = createMapOverlap1DKernelProgram_CU(*FuncArgs[0], ResultDir);
+			KernelName_CU = createMapOverlap1DKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_MapOverlapKernel_CU), decltype(&" << KernelName_CU << "_MapOverlapKernel_CU_Matrix_Row), decltype(&"
 				<< KernelName_CU << "_MapOverlapKernel_CU_Matrix_Col), decltype(&" << KernelName_CU << "_MapOverlapKernel_CU_Matrix_ColMulti)";
 			SSCallArgs << KernelName_CU << "_MapOverlapKernel_CU, " << KernelName_CU << "_MapOverlapKernel_CU_Matrix_Row, "
@@ -692,7 +615,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			break;
 
 		case Skeleton::Type::MapOverlap2D:
-			KernelName_CU = createMapOverlap2DKernelProgram_CU(*FuncArgs[0], ResultDir);
+			KernelName_CU = createMapOverlap2DKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_conv_cuda_2D_kernel)";
 			SSCallArgs << KernelName_CU << "_conv_cuda_2D_kernel";
 			break;
@@ -702,7 +625,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			SkePUAbort("CUDA MapOverlap disabled in this release");
 
 		case Skeleton::Type::Call:
-			KernelName_CU = createCallKernelProgram_CU(*FuncArgs[0], ResultDir);
+			KernelName_CU = createCallKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
 			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
 			SSCallArgs << KernelName_CU;
 			break;
@@ -737,53 +660,51 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		switch (skeleton.type)
 		{
 		case Skeleton::Type::MapReduce:
-			KernelName_CL = createMapReduceKernelProgram_CL(*FuncArgs[0], *FuncArgs[1], ResultDir);
+			KernelName_CL = createMapReduceKernelProgram_CL(skeletonID, *FuncArgs[0], *FuncArgs[1], ResultDir);
 			break;
 
 		case Skeleton::Type::Map:
-			KernelName_CL = createMapKernelProgram_CL(*FuncArgs[0], ResultDir);
+			KernelName_CL = createMapKernelProgram_CL(skeletonID, *FuncArgs[0], ResultDir);
 			break;
 
 		case Skeleton::Type::MapPairs:
-			KernelName_CL = createMapPairsKernelProgram_CL(*FuncArgs[0], ResultDir);
+			KernelName_CL = createMapPairsKernelProgram_CL(skeletonID, *FuncArgs[0], ResultDir);
 			break;
 
 		case Skeleton::Type::MapPairsReduce:
-			SkePUAbort("MapPairsReduce for OpenCL is not complete yet. Disable OpenCL code-gen for now.");
+			KernelName_CL = createMapPairsReduceKernelProgram_CL(skeletonID, *FuncArgs[0], *FuncArgs[1], ResultDir);
 			break;
 
 		case Skeleton::Type::Reduce1D:
-			KernelName_CL = createReduce1DKernelProgram_CL(*FuncArgs[0], ResultDir);
+			KernelName_CL = createReduce1DKernelProgram_CL(skeletonID, *FuncArgs[0], ResultDir);
 			break;
 
 		case Skeleton::Type::Reduce2D:
-			KernelName_CL = createReduce2DKernelProgram_CL(*FuncArgs[0], *FuncArgs[1], ResultDir);
+			KernelName_CL = createReduce2DKernelProgram_CL(skeletonID, *FuncArgs[0], *FuncArgs[1], ResultDir);
 			break;
 
 		case Skeleton::Type::Scan:
-			KernelName_CL = createScanKernelProgram_CL(*FuncArgs[0], ResultDir);
+			KernelName_CL = createScanKernelProgram_CL(skeletonID, *FuncArgs[0], ResultDir);
 			break;
 
 		case Skeleton::Type::MapOverlap1D:
-			KernelName_CL = createMapOverlap1DKernelProgram_CL(*FuncArgs[0], ResultDir);
+			KernelName_CL = createMapOverlap1DKernelProgram_CL(skeletonID, *FuncArgs[0], ResultDir);
 			break;
 
 		case Skeleton::Type::MapOverlap2D:
-			KernelName_CL = createMapOverlap2DKernelProgram_CL(*FuncArgs[0], ResultDir);
+			KernelName_CL = createMapOverlap2DKernelProgram_CL(skeletonID, *FuncArgs[0], ResultDir);
 			break;
 
 		case Skeleton::Type::MapOverlap3D:
-			SkePUAbort("3D MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
-		//	KernelName_CL = createMapOverlap3DKernelProgram_CL(*FuncArgs[0], ResultDir);
+			KernelName_CL = createMapOverlap3DKernelProgram_CL(skeletonID, *FuncArgs[0], ResultDir);
 			break;
 
 		case Skeleton::Type::MapOverlap4D:
-			SkePUAbort("4D MapOverlap for OpenCL is disabled in this release. De-select OpenCL backend for this program.");
-		//	KernelName_CL = createMapOverlap4DKernelProgram_CL(*FuncArgs[0], ResultDir);
+			KernelName_CL = createMapOverlap4DKernelProgram_CL(skeletonID, *FuncArgs[0], ResultDir);
 			break;
 
 		case Skeleton::Type::Call:
-			KernelName_CL = createCallKernelProgram_CL(*FuncArgs[0], ResultDir);
+			KernelName_CL = createCallKernelProgram_CL(skeletonID, *FuncArgs[0], ResultDir);
 			break;
 		}
 

@@ -56,6 +56,7 @@ extern clang::Rewriter GlobalRewriter;
 //extern clang::SourceManager *SM;
 
 const std::string SkePU_UF_Prefix {"skepu_userfunction_"};
+extern size_t GlobalSkeletonIndex;
 
 [[noreturn]] void SkePUAbort(std::string msg);
 llvm::raw_ostream& SkePULog();
@@ -63,3 +64,9 @@ llvm::raw_ostream& SkePULog();
 void replaceTextInString(std::string& text, const std::string &find, const std::string &replace);
 std::string templateString(std::string templ, std::vector<std::pair<std::string, std::string>> replacements);
 std::string transformToCXXIdentifier(std::string &in);
+std::string getSourceAsString(clang::SourceRange range);
+
+
+// Library markers
+extern bool didFindBlas;
+extern clang::SourceLocation blasBegin, blasEnd;

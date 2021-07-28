@@ -1,6 +1,7 @@
-#include <iostream>
+#include <catch2/catch.hpp>
 
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 float over_1d(skepu::Region1D<int> r, int scale)
 {
@@ -9,6 +10,7 @@ float over_1d(skepu::Region1D<int> r, int scale)
 
 float over_2d(skepu::Region2D<int> r, const skepu::Mat<float> stencil)
 {
+	return r(1,0);
 	float res = 0;
 	for (int i = -r.oi; i <= r.oi; ++i)
 		for (int j = -r.oj; j <= r.oj; ++j)
@@ -16,8 +18,9 @@ float over_2d(skepu::Region2D<int> r, const skepu::Mat<float> stencil)
 	return res;
 }
 
-float over_3d(skepu::Region3D<float> r, skepu::Ten3<float> stencil)
+float over_3d(skepu::Region3D<int> r, skepu::Ten3<float> stencil)
 {
+	return r(1,0,0);
 	float res = 0;
 	for (int i = -r.oi; i <= r.oi; ++i)
 		for (int j = -r.oj; j <= r.oj; ++j)
@@ -26,8 +29,9 @@ float over_3d(skepu::Region3D<float> r, skepu::Ten3<float> stencil)
 	return res;
 }
 
-float over_4d(skepu::Region4D<float> r, skepu::Ten4<float> stencil)
+float over_4d(skepu::Region4D<int> r, skepu::Ten4<float> stencil)
 {
+	return r(1,0,0,0);
 	float res = 0;
 	for (int i = -r.oi; i <= r.oi; ++i)
 		for (int j = -r.oj; j <= r.oj; ++j)
@@ -39,25 +43,19 @@ float over_4d(skepu::Region4D<float> r, skepu::Ten4<float> stencil)
 }
 
 
+auto conv = skepu::MapOverlap(over_1d);
+auto conv2 = skepu::MapOverlap(over_2d);
+auto conv3 = skepu::MapOverlap(over_3d);
+auto conv4 = skepu::MapOverlap(over_4d);
 
 
-int main(int argc, char *argv[])
+TEST_CASE("MapOverlap fundamentals")
 {
-	if (argc < 3)
-	{
-		skepu::external([&]{
-			std::cout << "Usage: " << argv[0] << " size backend\n";});
-		exit(1);
-	}
+	const size_t size{20};
 
-	const size_t size = atoi(argv[1]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
-	skepu::setGlobalBackendSpec(spec);
+	conv.setOverlap(1);
 
-	auto conv = skepu::MapOverlap(over_1d);
-	conv.setOverlap(2);
-
-	skepu::Vector<float> v(size);
+	skepu::Vector<int> v(size);
 	skepu::Vector<float> rv(size);
 	skepu::external(
 		skepu::read(v),
@@ -73,26 +71,22 @@ int main(int argc, char *argv[])
 	
 	conv.setEdgeMode(skepu::Edge::None);
 	conv(rv, v, 13);
-	skepu::external(skepu::read(rv), [&]{
-		std::cout << "Vector None:    rv = " << rv << "\n";});
+	skepu::io::cout << "Vector None:    rv = " << rv << "\n";
 	
 	conv.setEdgeMode(skepu::Edge::Cyclic);
 	conv(rv, v, 13);
-	skepu::external(skepu::read(rv), [&]{
-		std::cout << "Vector Cyclic:    rv = " << rv << "\n";});
+	skepu::io::cout << "Vector Cyclic:    rv = " << rv << "\n";
 
 	conv.setEdgeMode(skepu::Edge::Duplicate);
 	conv(rv, v, 13);
-	skepu::external(skepu::read(rv), [&]{
-		std::cout << "Vector Duplicate  rv = " << rv << "\n";});
+	skepu::io::cout << "Vector Duplicate  rv = " << rv << "\n";
 
 	conv.setEdgeMode(skepu::Edge::Pad);
 	conv.setPad(0);
 	conv(rv, v, 13);
-	skepu::external(skepu::read(rv), [&]{
-		std::cout << "Vector Pad 0:     rv = " << rv << "\n";});
+	skepu::io::cout << "Vector Pad 0:     rv = " << rv << "\n";
 
-	skepu::Matrix<float> m(size, size);
+	skepu::Matrix<int> m(size, size);
 	skepu::Matrix<float> rm(size, size);
 	skepu::external(
 		skepu::read(m),
@@ -107,86 +101,75 @@ int main(int argc, char *argv[])
 		skepu::write(m)
 	);
 	
-	conv.setOverlap(2);
+	conv.setOverlap(1);
 	conv.setOverlapMode(skepu::Overlap::RowWise);
 	
 	conv.setEdgeMode(skepu::Edge::None);
 	conv(rm, m, 13);
-	skepu::external(skepu::read(rm), [&]{
-		std::cout << "Matrix Row-wise None:    rm = " << rm << "\n"; });
+	skepu::io::cout << "Matrix Row-wise None:    rm = " << rm << "\n";
 	
 	conv.setEdgeMode(skepu::Edge::Cyclic);
 	conv(rm, m, 13);
-	skepu::external(skepu::read(rm), [&]{
-		std::cout << "Matrix Row-wise Cyclic:    rm = " << rm << "\n"; });
+	skepu::io::cout << "Matrix Row-wise Cyclic:    rm = " << rm << "\n";
 
 	conv.setEdgeMode(skepu::Edge::Duplicate);
 	conv(rm, m, 13);
-	skepu::external(skepu::read(rm), [&]{
-		std::cout << "Matrix Row-wise Duplicate  rm = " << rm << "\n";});
+	skepu::io::cout << "Matrix Row-wise Duplicate  rm = " << rm << "\n";
 
 	conv.setEdgeMode(skepu::Edge::Pad);
 	conv.setPad(0);
 	conv(rm, m, 13);
-	skepu::external(skepu::read(rm), [&]{
-		std::cout << "Matrix Row-wise Pad 0:     rm = " << rm << "\n";});
+	skepu::io::cout << "Matrix Row-wise Pad 0:     rm = " << rm << "\n";
 
 
-	conv.setOverlap(2);
+	conv.setOverlap(1);
 	conv.setOverlapMode(skepu::Overlap::ColWise);
 	
 	conv.setEdgeMode(skepu::Edge::None);
 	conv(rm, m, 13);
-	std::cout << "Matrix Col-wise None:    rm = " << rm << "\n";
+	skepu::io::cout << "Matrix Col-wise None:    rm = " << rm << "\n";
 	conv.setEdgeMode(skepu::Edge::Cyclic);
 	conv(rm, m, 13);
-	skepu::external(skepu::read(rm), [&]{
-		std::cout << "Matrix Col-wise Cyclic:    rm = " << rm << "\n";});
+	skepu::io::cout << "Matrix Col-wise Cyclic:    rm = " << rm << "\n";
 
 	conv.setEdgeMode(skepu::Edge::Duplicate);
 	conv(rm, m, 13);
-	skepu::external(skepu::read(rm), [&]{
-		std::cout << "Matrix Col-wise Duplicate  rm = " << rm << "\n";});
+	skepu::io::cout << "Matrix Col-wise Duplicate  rm = " << rm << "\n";
 
 	conv.setEdgeMode(skepu::Edge::Pad);
 	conv.setPad(0);
 	conv(rm, m, 13);
-	skepu::external(skepu::read(rm), [&]{
-		std::cout << "Matrix Col-wise Pad 0:     rm = " << rm << "\n";});
+	skepu::io::cout << "Matrix Col-wise Pad 0:     rm = " << rm << "\n";
 	
 	
-	auto conv2 = skepu::MapOverlap(over_2d);
 	conv2.setOverlap(1, 1);
+	conv2.setPad(-5);
 
 	skepu::Matrix<float> filter(2*1+1, 2*1+1, 1);
 	skepu::Matrix<float> rm2(size, size);
 	
 	conv2.setEdgeMode(skepu::Edge::None);
 	conv2(rm2, m, filter);
-	skepu::external(skepu::read(rm2), [&]{
-		std::cout << "Matrix 2D None:    rm = " << rm2 << "\n"; });
+	skepu::io::cout << "Matrix 2D None:    rm = " << rm2 << "\n";
 
 	conv2.setEdgeMode(skepu::Edge::Cyclic);
 	conv2(rm2, m, filter);
-	skepu::external(skepu::read(rm2), [&]{
-		std::cout << "Matrix 2D Cyclic:    rm = " << rm2 << "\n"; });
+	skepu::io::cout << "Matrix 2D Cyclic:    rm = " << rm2 << "\n";
 
 	conv2.setEdgeMode(skepu::Edge::Duplicate);
 	conv2(rm2, m, filter);
-	skepu::external(skepu::read(rm2), [&]{
-		std::cout << "Matrix 2D Duplicate:    rm = " << rm2 << "\n"; });
+	skepu::io::cout << "Matrix 2D Duplicate:    rm = " << rm2 << "\n";
 
 	conv2.setEdgeMode(skepu::Edge::Pad);
 	conv2(rm2, m, filter);
-	skepu::external(skepu::read(rm2), [&]{
-		std::cout << "Matrix 2D Pad 0:    rm = " << rm2 << "\n"; });
+	skepu::io::cout << "Matrix 2D Pad 0:    rm = " << rm2 << "\n";
 	
 	
 	// Tensor3
-	auto conv3 = skepu::MapOverlap(over_3d);
 	conv3.setOverlap(1, 1, 1);
+	conv3.setPad(-5);
 
-	skepu::Tensor3<float> ten3(size, size, size, 1);
+	skepu::Tensor3<int> ten3(size, size, size, 1);
 	skepu::Tensor3<float> ret_ten3(size, size, size);
 	skepu::Tensor3<float> stencil3(2*1+1, 2*1+1, 2*1+1, 1);
 
@@ -199,27 +182,28 @@ int main(int argc, char *argv[])
 			std::cout << "ten3: " << ten3 << "\n";
 		},
 		skepu::write(ten3));
+	
+	conv3.setEdgeMode(skepu::Edge::None);
+	conv3(ret_ten3, ten3, stencil3);
+	skepu::io::cout << "Tensor3D None: " << ret_ten3 << "\n";
 
 	conv3.setEdgeMode(skepu::Edge::Cyclic);
 	conv3(ret_ten3, ten3, stencil3);
-	skepu::external(skepu::read(ret_ten3), [&]{
-		std::cout << "Tensor3D Cyclic: " << ret_ten3 << "\n";});
+	skepu::io::cout << "Tensor3D Cyclic: " << ret_ten3 << "\n";
 
 	conv3.setEdgeMode(skepu::Edge::Duplicate);
 	conv3(ret_ten3, ten3, stencil3);
-	skepu::external(skepu::read(ret_ten3), [&]{
-		std::cout << "Tensor3D Duplicate: " << ret_ten3 << "\n";});
+	skepu::io::cout << "Tensor3D Duplicate: " << ret_ten3 << "\n";
 
 	conv3.setEdgeMode(skepu::Edge::Pad);
 	conv3(ret_ten3, ten3, stencil3);
-	skepu::external(skepu::read(ret_ten3), [&]{
-		std::cout << "Tensor3D Pad 0: " << ret_ten3 << "\n";});
-
+	skepu::io::cout << "Tensor3D Pad 0: " << ret_ten3 << "\n";
+		
 	// Tensor4
-	auto conv4 = skepu::MapOverlap(over_4d);
 	conv4.setOverlap(1, 1, 1, 1);
+	conv4.setPad(-5);
 
-	skepu::Tensor4<float> ten4(size, size, size, size);
+	skepu::Tensor4<int> ten4(size, size, size, size);
 	skepu::Tensor4<float> ret_ten4(size, size, size, size);
 	skepu::Tensor4<float> stencil4(2*1+1, 2*1+1, 2*1+1, 2*1+1, 1);
 
@@ -236,29 +220,15 @@ int main(int argc, char *argv[])
 	conv4.setEdgeMode(skepu::Edge::Cyclic);
 	conv4(ret_ten4, ten4, stencil4);
 	
-	skepu::external(skepu::read(ret_ten4), [&]{
-		std::cout << "Tensor4D Cyclic: " << ret_ten4 << "\n";});
+	skepu::io::cout << "Tensor4D Cyclic: " << ret_ten4 << "\n";
 
 	conv4.setEdgeMode(skepu::Edge::Duplicate);
 	conv4(ret_ten4, ten4, stencil4);
-	skepu::external(skepu::read(ret_ten4), [&]{
-		std::cout << "Tensor4D Duplicate: " << ret_ten4 << "\n";});
+	skepu::io::cout << "Tensor4D Duplicate: " << ret_ten4 << "\n";
 
 	conv4.setEdgeMode(skepu::Edge::Pad);
 	conv4(ret_ten4, ten4, stencil4);
-	skepu::external(skepu::read(ret_ten4), [&]{
-		std::cout << "Tensor4D Pad 0: " << ret_ten4 << "\n";});
+	skepu::io::cout << "Tensor4D Pad 0: " << ret_ten4 << "\n";
 	
-	
-	// Red-black update mode
-	{
-		conv2.setUpdateMode(skepu::UpdateMode::RedBlack);
-		
-		conv2.setEdgeMode(skepu::Edge::None);
-		conv2(m, m, filter);
-		std::cout << "Matrix 2D None:    rm = " << m << "\n";
-	}
-	
-	return 0;
 }
 

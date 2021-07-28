@@ -1,5 +1,5 @@
-#include <iostream>
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 struct MaxMin
 {
@@ -29,34 +29,26 @@ void find_max_min(skepu::Vector<float> floats)
 	maxmin.setStartValue({-INFINITY, INFINITY});
 	MaxMin result = maxmin(floats);
 	
-	skepu::external([&]{
-			std::cout << "Max: " << result.max << "\n";
-			std::cout << "Min: " << result.min << "\n";
-	});
+	skepu::io::cout << "Max: " << result.max << "\n";
+	skepu::io::cout << "Min: " << result.min << "\n";
 }
 
 int main(int argc, char *argv[])
 {
 	if (argc < 3)
 	{
-		skepu::external([&]{
-			std::cout << "Usage: " << argv[0] << " size backend\n";
-		});
+		skepu::io::cout << "Usage: " << argv[0] << " size backend\n";
 		exit(1);
 	}
 	
 	const size_t size = atoi(argv[1]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{argv[2]};
 	skepu::setGlobalBackendSpec(spec);
 	
 	skepu::Vector<float> floats(size);
 	floats.randomize(0, 10000);
 
-	skepu::external(
-		skepu::read(floats),
-		[&]{
-			std::cout << "Input: " << floats << "\n";
-		});
+	skepu::io::cout << "Input: " << floats << "\n";
 
 	find_max_min(floats);
 	

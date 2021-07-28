@@ -1,99 +1,50 @@
-#include <stdio.h>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <time.h>
-#include <iterator>
 
 #include <skepu>
+#include <skepu-lib/io.hpp>
+#include <skepu-lib/filter.hpp>
+
 #include "lodepng.h"
 
-// Information about the image. Used to rebuild the image after filtering.
-struct ImageInfo
+template<typename T>
+struct PixelInfo {};
+
+template<>
+struct PixelInfo<skepu::filter::GrayscalePixel>
 {
-	int width;
-	int height;
-	int elementsPerPixel;
+	static constexpr LodePNGColorType type = LCT_GREY;
+	static constexpr size_t bytes = 1;
+};
+
+template<>
+struct PixelInfo<skepu::filter::RGBPixel>
+{
+	static constexpr LodePNGColorType type = LCT_RGB;
+	static constexpr size_t bytes = 3;
 };
 
 // Reads a file from png and retuns it as a skepu::Matrix. Uses a library called LodePNG.
-// Also returns information about the image as an out variable in imageInformation.
-skepu::Matrix<unsigned char> ReadAndPadPngFileToMatrix(std::string filePath, int kernelRadius, LodePNGColorType colorType, ImageInfo& imageInformation)
+template<typename Pixel>
+void ReadPngFileToMatrix(skepu::Matrix<Pixel> &inputMatrix, std::string filePath)
 {
-	std::vector<unsigned char> fileContents, image;
+	std::vector<unsigned char> image;
 	unsigned imageWidth, imageHeight;
-	unsigned error = lodepng::decode(image, imageWidth, imageHeight, filePath, colorType);
+	unsigned error = lodepng::decode(image, imageWidth, imageHeight, filePath, PixelInfo<Pixel>::type);
 	if (error)
 		std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
 	
-	int elementsPerPixel = (colorType == LCT_GREY) ? 1 : 3;
-	
-	// Create a matrix which fits the image and the padding needed.
-	skepu::Matrix<unsigned char> inputMatrix(imageHeight + 2*kernelRadius, (imageWidth + 2*kernelRadius) * elementsPerPixel);
-	
-	int nonEdgeStartX = kernelRadius * elementsPerPixel;
-	int nonEdgeEndX = inputMatrix.total_cols() - kernelRadius * elementsPerPixel;
-	int nonEdgeStartY = kernelRadius;
-	int nonEdgeEndY = inputMatrix.total_rows() - kernelRadius;
-	
-	// Initialize the inner real image values. The image is placed in the middle of the matrix, 
-	// surrounded by the padding.
-	for (int i = nonEdgeStartY; i < nonEdgeEndY; i++)
-		for (int j = nonEdgeStartX; j < nonEdgeEndX; j++)
-			inputMatrix(i, j)= image[(i - nonEdgeStartY) * imageWidth * elementsPerPixel + (j - nonEdgeStartX)];
-	
-	// Initialize padding. // Init topmost rows
-	for (int row = 0;row < kernelRadius; row++)
-	{
-		for (int col = 0; col < inputMatrix.total_cols(); col++)
-		{
-			int minClampEdgeX = nonEdgeStartX + col % elementsPerPixel; 
-			int maxClampEdgeX = nonEdgeEndX - elementsPerPixel + col % elementsPerPixel; 
-			int xIndex = std::min(maxClampEdgeX, std::max(col, minClampEdgeX));
-			int yIndex = std::min(nonEdgeEndY - 1, std::max(row, nonEdgeStartY));
-			inputMatrix(row, col) = inputMatrix(yIndex, xIndex);
-		}
-	}
-	
-	// Init middle rows
-	for (int row = kernelRadius; row < nonEdgeEndY; row++)
-	{
-		for (int col = 0; col < nonEdgeStartX; col++)
-		{
-			int minClampEdgeX = nonEdgeStartX + col % elementsPerPixel; 
-			int maxClampEdgeX = nonEdgeEndX - elementsPerPixel + col % elementsPerPixel; 
-			inputMatrix(row, col) = inputMatrix(row, minClampEdgeX);
-			inputMatrix(row, col + nonEdgeEndX) = inputMatrix(row, maxClampEdgeX);
-		}
-	}
-	
-	// Init bottom rows
-	for (int row = nonEdgeEndY; row < inputMatrix.total_rows(); row++)
-	{
-		for (int col = 0; col < inputMatrix.total_cols(); col++)
-		{
-			int minClampEdgeX = nonEdgeStartX + col % elementsPerPixel; 
-			int maxClampEdgeX = nonEdgeEndX - elementsPerPixel + col % elementsPerPixel; 
-			int xIndex = std::min(maxClampEdgeX, std::max(col, minClampEdgeX));
-			int yIndex = std::min(nonEdgeEndY - 1, std::max(row, nonEdgeStartY));
-			inputMatrix(row, col) = inputMatrix(yIndex, xIndex);
-		}
-	}
-	
-	imageInformation.height = imageHeight;
-	imageInformation.width = imageWidth;
-	imageInformation.elementsPerPixel = elementsPerPixel;
-	return inputMatrix;
+	inputMatrix.init(imageHeight, imageWidth);
+	Pixel *imgView = reinterpret_cast<Pixel*>(image.data());
+	std::copy(imgView, imgView + imageHeight * imageWidth, inputMatrix.data());
 }
 
-void WritePngFileMatrix(skepu::Matrix<unsigned char> imageData, std::string filePath, LodePNGColorType colorType, ImageInfo& imageInformation)
+template<typename Pixel>
+void WritePngFileMatrix(skepu::Matrix<Pixel> &imageData, std::string filePath)
 {
-	std::vector<unsigned char> imageDataVector; 
-	for (int i = 0; i < imageData.total_rows(); i++)
-		for (int j = 0; j < imageData.total_cols() ;j++)
-			imageDataVector.push_back(imageData(i, j));
-	
-	unsigned error = lodepng::encode(filePath, &imageDataVector[0], imageInformation.width, imageInformation.height, colorType);
+	imageData.updateHost();
+	unsigned error = lodepng::encode(filePath, reinterpret_cast<unsigned char*>(&imageData[0]), imageData.total_cols(), imageData.total_rows(), PixelInfo<Pixel>::type);
 	if(error)
 		std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
 }
@@ -101,110 +52,47 @@ void WritePngFileMatrix(skepu::Matrix<unsigned char> imageData, std::string file
 
 
 
-// Kernel for filter with raduis R
-unsigned char median_kernel(skepu::Region2D<unsigned char> image, size_t elemPerPx)
-{
-	long fineHistogram[256], coarseHistogram[16];
-	
-	for (int i = 0; i < 256; i++)
-		fineHistogram[i] = 0;
-	
-	for (int i = 0; i < 16; i++)
-		coarseHistogram[i] = 0;
-	
-	for (int row = -image.oi; row <= image.oi; row++)
-	{
-		for (int column = -image.oj; column <= image.oj; column += elemPerPx)
-		{ 
-			unsigned char imageValue = image(row, column);
-			fineHistogram[imageValue]++;
-			coarseHistogram[imageValue / 16]++;
-		}
-	}
-	
-	int count = 2 * image.oi * (image.oi + 1);
-	
-	unsigned char coarseIndex;
-	for (coarseIndex = 0; coarseIndex < 16; ++coarseIndex)
-	{
-		if ((long)count - coarseHistogram[coarseIndex] < 0) break;
-		count -= coarseHistogram[coarseIndex];
-	}
-	
-//	int coarseIndex = 0;
-//	while (count - coarseHistogram[coarseIndex] >= 0)
-//		count -= coarseHistogram[coarseIndex++];
-	
-	unsigned char fineIndex = coarseIndex * 16;
-	while ((long)count - fineHistogram[fineIndex] >= 0)
-		count -= fineHistogram[fineIndex++];
-	
-	return fineIndex;
-}
 
 int main(int argc, char* argv[])
 {
-	LodePNGColorType colorType = LCT_RGB;
-	
-	if (argc < 3)
+	if (argc < 4)
 	{
-		std::cout << "Usage: " << argv[0] << "input-image output-image start-radius increment-radius count [backend]\n";
+		skepu::io::cout << "Usage: " << argv[0] << "input-image output-image radius [backend]\n";
 		exit(1);
 	}
 	
 	std::string inputFileName = argv[1];
 	std::string outputFileName = argv[2];
+	const int radius = atoi(argv[3]);
 	skepu::BackendSpec spec;
-	if (argc > 3) spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[6])};
+	if (argc > 4) spec = skepu::BackendSpec{argv[4]};
+	skepu::setGlobalBackendSpec(spec);
 	
-	auto calculateMedian = skepu::MapOverlap(median_kernel);
-	calculateMedian.setBackend(spec);
+	auto calculateMedian = skepu::MapOverlap(skepu::filter::median_kernel);
+	calculateMedian.setEdgeMode(skepu::Edge::Duplicate);
 	
-	const int startRadius = atoi(argv[3]);
-	const int incrementRadius = atoi(argv[4]);
-	const int finalRadius = startRadius + incrementRadius * atoi(argv[5]);
+	// Create the full path for writing the image.
+	std::stringstream ss;
+	ss << (2 * radius + 1) << "x" << (2 * radius + 1);
+	std::string outputFileNamePad = outputFileName + ss.str() + ".png";
 	
-	// Loop through all different kernel radiuses we will test.
-	for (int kernelRadius = startRadius; kernelRadius < finalRadius; kernelRadius += incrementRadius)
-	{
-		// Create the full path for writing the image.
-		std::stringstream ss;
-		ss << (2 * kernelRadius + 1) << "x" << (2 * kernelRadius + 1);
-		std::string outputFileNamePad = outputFileName + ss.str() + ".png";
-		
-		// Read the padded image into a matrix. Create the output matrix without padding.
-		ImageInfo imageInfo;
-		skepu::Matrix<unsigned char> inputMatrix = ReadAndPadPngFileToMatrix(inputFileName, kernelRadius, colorType, imageInfo);
-		skepu::Matrix<unsigned char> outputMatrix(imageInfo.height, imageInfo.width * imageInfo.elementsPerPixel, 120);
-		
-		int testRuns = 1;
-		double timeTaken = 0;
-		
-		// Run the filtering multiple times using the same kernel and average the values.
-		for (int j = 0; j < testRuns; j++)
-		{
-			// Launch different kernels depending on filtersize.
-			calculateMedian.setOverlap(kernelRadius, kernelRadius  * imageInfo.elementsPerPixel);
-			clock_t t1 = clock();
-			calculateMedian(outputMatrix, inputMatrix, imageInfo.elementsPerPixel);
-			
-			// The kernel is run with lazy evaluation, so we need to access the output matrix
-			outputMatrix.updateHost();
-			
-			clock_t t2 = clock();
-			timeTaken += t2 - t1;
-		}
-		
-		timeTaken /= CLOCKS_PER_SEC;
-		timeTaken /= testRuns;
-		timeTaken *= 1000;
-		std::cout << "--------------------------------------------------------\n";
-		std::cout << "Inputfile : " << inputFileName << std::endl;
-		std::cout << "Filtersize : " << (2 * kernelRadius + 1) << "x" << (2 * kernelRadius + 1) << std::endl;
-		std::cout << "Time taken : " << timeTaken << " ms" << std::endl;
-		
-		WritePngFileMatrix(outputMatrix, outputFileNamePad, colorType, imageInfo);
-	}
+	// Read the padded image into a matrix. Create the output matrix without padding.
+	skepu::Matrix<skepu::filter::RGBPixel> inputImg;
+	skepu::external([&]{
+		ReadPngFileToMatrix<skepu::filter::RGBPixel>(inputImg, inputFileName);
+	}, skepu::write(inputImg));
+	skepu::Matrix<skepu::filter::RGBPixel> outputMatrix(inputImg.total_rows(), inputImg.total_cols());
+	
+	// Launch different kernels depending on filtersize.
+	calculateMedian.setOverlap(radius, radius  * 3);
+	calculateMedian(outputMatrix, inputImg, 3);
+
+	skepu::io::cout << "Inputfile : " << inputFileName << "\n";
+	skepu::io::cout << "Filtersize : " << (2 * radius + 1) << "x" << (2 * radius + 1) << "\n";
+	
+	skepu::external(skepu::read(outputMatrix), [&]{
+		WritePngFileMatrix(outputMatrix, outputFileNamePad);
+	});
 	
 	return 0;
 }

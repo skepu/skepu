@@ -239,13 +239,14 @@ UserType *HandleUserType(const CXXRecordDecl *t)
 	// These types are handled separately
 	if (name == "Index1D" || name == "Index2D" || name == "Index3D" || name == "Index4D"
 		|| name == "Region1D" || name == "Region2D" || name == "Region3D" || name == "Region4D"
-		|| name == "Vec" || name == "Mat" || name == "Ten3" || name == "Ten4" || name == "MatRow" || name == "MatCol")
+		|| name == "Vec" || name == "Mat" || name == "Ten3" || name == "Ten4" || name == "MatRow" || name == "MatCol"
+		|| name == "complex")
 		return nullptr;
 
 	SkePULog() << "Found user type: " << name << "\n";
 	
-	if (!t->isCLike())
-		SkePUAbort("User type is not C-like and not supported (run verbose for more details)\n");
+//	if (!t->isCLike())
+//		SkePUAbort("User type is not C-like and not supported (run verbose for more details)\n");
 
 	// Check if already handled, otherwise construct and add
 	if (UserTypes.find(t) == UserTypes.end())
@@ -255,16 +256,34 @@ UserType *HandleUserType(const CXXRecordDecl *t)
 }
 
 
-
 SkePUASTVisitor::SkePUASTVisitor(ASTContext *ctx, std::unordered_set<clang::VarDecl *> &instanceSet)
 : SkeletonInstances(instanceSet), Context(ctx)
 {}
 
 bool SkePUASTVisitor::VisitVarDecl(VarDecl *d)
 {
-	if (!this->Context->getSourceManager().isInMainFile(d->getBeginLoc()))
-		return RecursiveASTVisitor<SkePUASTVisitor>::VisitVarDecl(d);
-
+//	if (!this->Context->getSourceManager().isInMainFile(d->getBeginLoc()))
+//		return RecursiveASTVisitor<SkePUASTVisitor>::VisitVarDecl(d);
+	
+	std::string typeName = d->getType().getAsString();
+	if (typeName.find("skepu::PrecompilerMarker") != std::string::npos)
+	{
+		std::string varName = d->getNameAsString();
+		if (varName == "startOfBlasHPP")
+		{
+			blasBegin = d->getSourceRange().getEnd();
+			didFindBlas = true;
+		}
+		else if (varName == "endOfBlasHPP")
+			blasEnd = d->getSourceRange().getEnd();
+//		d->dump();
+	}
+	
+	
+	
+	
+	
+	
 	// Change this condition to check for skeleon class names, (and namespace too?)
 //	if (d->hasAttr<SkepuInstanceAttr>())
 	if (DeclIsValidSkeleton(d))

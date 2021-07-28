@@ -75,7 +75,7 @@ __global__ void {{KERNEL_NAME}}({{REDUCE_RESULT_TYPE}} *skepu_input, {{REDUCE_RE
 )~~~";
 
 
-std::string createReduce1DKernelProgram_CU(UserFunction &reduceFunc, std::string dir)
+std::string createReduce1DKernelProgram_CU(SkeletonInstance &instance, UserFunction &reduceFunc, std::string dir)
 {
 	const std::string kernelName = ResultName + "_ReduceKernel_" + reduceFunc.uniqueName;
 	std::ofstream FSOutFile {dir + "/" + kernelName + ".cu"};
@@ -89,7 +89,7 @@ std::string createReduce1DKernelProgram_CU(UserFunction &reduceFunc, std::string
 }
 
 
-std::string createReduce2DKernelProgram_CU(UserFunction &rowWiseFunc, UserFunction &colWiseFunc, std::string dir)
+std::string createReduce2DKernelProgram_CU(SkeletonInstance &instance, UserFunction &rowWiseFunc, UserFunction &colWiseFunc, std::string dir)
 {
 	const std::string kernelName = transformToCXXIdentifier(ResultName) + "_ReduceKernel_" + rowWiseFunc.uniqueName + "_" + colWiseFunc.uniqueName;
 	std::ofstream FSOutFile {dir + "/" + kernelName + ".cu"};

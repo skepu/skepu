@@ -1,11 +1,6 @@
-#include <iostream>
 #include <skepu>
-
-template<typename T>
-T sum(T a, T b)
-{
-	return a + b;
-}
+#include <skepu-lib/util.hpp>
+#include <skepu-lib/io.hpp>
 
 template<typename T, typename U>
 U avg(skepu::Index1D index, T sum)
@@ -14,7 +9,7 @@ U avg(skepu::Index1D index, T sum)
 }
 
 
-auto prefix_sum = skepu::Scan(sum<int>);
+auto prefix_sum = skepu::Scan(skepu::util::add<int>);
 auto average = skepu::Map(avg<int, float>);
 
 void cma(skepu::Vector<int> &in, skepu::Vector<float> &out)
@@ -27,7 +22,7 @@ int main(int argc, char *argv[])
 {
 	if (argc < 3)
 	{
-		std::cout << "Usage: " << argv[0] << " size backend\n";
+		skepu::io::cout << "Usage: " << argv[0] << " size backend\n";
 		exit(1);
 	}
 	
@@ -40,14 +35,14 @@ int main(int argc, char *argv[])
 	in.randomize(0, 10);
 	
 	if (size <= 50)
-		std::cout << "Elements: " << in << "\n";
+		skepu::io::cout << "Elements: " << in << "\n";
 	
 	cma(in, out);
 	
 	if (size <= 50)
-		std::cout << "Cumulative moving average: " << out << "\n";
+		skepu::io::cout << "Cumulative moving average: " << out << "\n";
 	else
-		std::cout << "Average: " << out[size-1] << "\n";
+		skepu::io::cout << "Average: " << out[size-1] << "\n";
 	
 	return 0;
 }

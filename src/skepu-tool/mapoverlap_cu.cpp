@@ -530,7 +530,7 @@ static const std::string MatrixConvol3D_CU = R"~~~()~~~";
 static const std::string MatrixConvol4D_CU = R"~~~()~~~";
 
 
-std::string createMapOverlapKernelProgramHelper_CU(UserFunction &mapOverlapFunc, int dim, std::string dir, std::string kernelSource, std::string kernelTag)
+std::string createMapOverlapKernelProgramHelper_CU(SkeletonInstance &instance, UserFunction &mapOverlapFunc, int dim, std::string dir, std::string kernelSource, std::string kernelTag)
 {
 	std::stringstream SSMapOverlapFuncArgs, SSKernelParamList;
 	IndexCodeGen indexInfo = indexInitHelper_CU(mapOverlapFunc);
@@ -566,26 +566,26 @@ std::string createMapOverlapKernelProgramHelper_CU(UserFunction &mapOverlapFunc,
 	return kernelName;
 }
 
-std::string createMapOverlap1DKernelProgram_CU(UserFunction &mapOverlapFunc, std::string dir)
+std::string createMapOverlap1DKernelProgram_CU(SkeletonInstance &instance, UserFunction &mapOverlapFunc, std::string dir)
 {
-	return createMapOverlapKernelProgramHelper_CU(mapOverlapFunc, 1, dir, 
+	return createMapOverlapKernelProgramHelper_CU(instance, mapOverlapFunc, 1, dir, 
 		MapOverlapKernel_CU + MapOverlapKernel_CU_Matrix_Row + MapOverlapKernel_CU_Matrix_Col + MapOverlapKernel_CU_Matrix_ColMulti, 
 		"Overlap1DKernel");
 }
 
-std::string createMapOverlap2DKernelProgram_CU(UserFunction &mapOverlapFunc, std::string dir)
+std::string createMapOverlap2DKernelProgram_CU(SkeletonInstance &instance, UserFunction &mapOverlapFunc, std::string dir)
 {
-	return createMapOverlapKernelProgramHelper_CU(mapOverlapFunc, 2, dir, MatrixConvol2D_CU, "Overlap2DKernel");
+	return createMapOverlapKernelProgramHelper_CU(instance, mapOverlapFunc, 2, dir, MatrixConvol2D_CU, "Overlap2DKernel");
 }
 
-std::string createMapOverlap3DKernelProgram_CU(UserFunction &mapOverlapFunc, std::string dir)
+std::string createMapOverlap3DKernelProgram_CU(SkeletonInstance &instance, UserFunction &mapOverlapFunc, std::string dir)
 {
-	return createMapOverlapKernelProgramHelper_CU(mapOverlapFunc, 3, dir, MatrixConvol3D_CU, "Overlap3DKernel");
+	return createMapOverlapKernelProgramHelper_CU(instance, mapOverlapFunc, 3, dir, MatrixConvol3D_CU, "Overlap3DKernel");
 }
 
-std::string createMapOverlap4DKernelProgram_CU(UserFunction &mapOverlapFunc, std::string dir)
+std::string createMapOverlap4DKernelProgram_CU(SkeletonInstance &instance, UserFunction &mapOverlapFunc, std::string dir)
 {
-	return createMapOverlapKernelProgramHelper_CU(mapOverlapFunc, 4, dir, MatrixConvol4D_CU, "Overlap4DKernel");
+	return createMapOverlapKernelProgramHelper_CU(instance, mapOverlapFunc, 4, dir, MatrixConvol4D_CU, "Overlap4DKernel");
 }
 
 

@@ -8,8 +8,9 @@ using namespace clang;
 // ------------------------------
 
 const char *MapReduceKernelTemplate_CL = R"~~~(
-__kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} __global {{REDUCE_RESULT_TYPE}}* skepu_output, {{SIZE_PARAMS}} size_t skepu_n, size_t skepu_base, __local {{REDUCE_RESULT_TYPE}}* skepu_sdata)
+__kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} __global {{REDUCE_RESULT_TYPE}}* skepu_output, {{SIZE_PARAMS}} {{STRIDE_PARAMS}} size_t skepu_n, size_t skepu_base, __local {{REDUCE_RESULT_TYPE}}* skepu_sdata)
 {
+	size_t skepu_global_prng_id = get_global_id(0);
 	size_t skepu_blockSize = get_local_size(0);
 	size_t skepu_tid = get_local_id(0);
 	size_t skepu_global_id = get_group_id(0) * skepu_blockSize + skepu_tid;
@@ -17,6 +18,7 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} __global {{REDUCE_RESULT_TYPE}}*
 	size_t skepu_gridSize = skepu_blockSize * get_num_groups(0);
 	{{REDUCE_RESULT_TYPE}} skepu_result;
 	{{CONTAINER_PROXIES}}
+	{{STRIDE_INIT}}
 
 	if (skepu_i < skepu_n)
 	{
@@ -156,12 +158,12 @@ public:
 		size_t skepu_deviceID, size_t skepu_localSize, size_t skepu_globalSize,
 		{{HOST_KERNEL_PARAMS}}
 		skepu::backend::DeviceMemPointer_CL<{{REDUCE_RESULT_CPU}}> *skepu_output,
-		{{SIZES_TUPLE_PARAM}} size_t skepu_n, size_t skepu_base,
+		{{SIZES_TUPLE_PARAM}} size_t skepu_n, size_t skepu_base, skepu::StrideList<{{STRIDE_COUNT}}> skepu_strides,
 		size_t skepu_sharedMemSize
 	)
 	{
 		cl_kernel skepu_kernel = kernels(skepu_deviceID, KERNEL_MAPREDUCE);
-		skepu::backend::cl_helpers::setKernelArgs(skepu_kernel, {{KERNEL_ARGS}} skepu_output->getDeviceDataPointer(), {{SIZE_ARGS}} skepu_n, skepu_base);
+		skepu::backend::cl_helpers::setKernelArgs(skepu_kernel, {{KERNEL_ARGS}} skepu_output->getDeviceDataPointer(), {{SIZE_ARGS}} {{STRIDE_ARGS}} skepu_n, skepu_base);
 		clSetKernelArg(skepu_kernel, {{KERNEL_ARG_COUNT}}, skepu_sharedMemSize, NULL);
 		cl_int skepu_err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(skepu_deviceID)->getQueue(), skepu_kernel, 1, NULL, &skepu_globalSize, &skepu_localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(skepu_err, "Error launching MapReduce kernel");
@@ -184,33 +186,27 @@ public:
 )~~~";
 
 
-std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction &reduceFunc, std::string dir)
+std::string createMapReduceKernelProgram_CL(SkeletonInstance &instance, UserFunction &mapFunc, UserFunction &reduceFunc, std::string dir)
 {
 	std::stringstream sourceStream, SSKernelParamList, SSMapFuncArgs, SSHostKernelParamList, SSKernelArgs;
+	std::stringstream SSStrideParams, SSStrideArgs, SSStrideInit;
 	IndexCodeGen indexInfo = indexInitHelper_CL(mapFunc);
 	bool first = !indexInfo.hasIndex;
 	SSMapFuncArgs << indexInfo.mapFuncParam;
 	
-	// PRNG
-	if (UserFunction::RandomParam *param = mapFunc.randomParam)
-	{
-		sourceStream << generateOpenCLRandom();
-		if (!first) { SSMapFuncArgs << ", "; }
-		first = false;
-		SSMapFuncArgs << "&" << param->name << "[skepu_global_id]";
-		SSKernelArgs << "user_" << param->name << "->getDeviceDataPointer(), ";
-		SSKernelParamList << "__global skepu_random* " << param->name << ", ";
-	//	SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<skepu::Random<" << param->randomCount << ">> * user_" << param->name << ", ";
-		SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<skepu::RandomForCL> * user_" << param->name << ", ";
-	}
-
+	handleRandomParam_CL(mapFunc, sourceStream, SSMapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
+	
+	size_t stride_counter = 0;
 	for (UserFunction::Param& param : mapFunc.elwiseParams)
 	{
 		if (!first) { SSMapFuncArgs << ", "; }
-		SSKernelParamList << "__global " << param.rawTypeName << " * user_" << param.name << ", ";
-		SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<const " << param.resolvedTypeName << "> * user_" << param.name << ", ";
-		SSKernelArgs << "user_" << param.name << "->getDeviceDataPointer(), ";
-		SSMapFuncArgs << "user_" << param.name << "[skepu_i]";
+		SSStrideParams << "int skepu_stride_" << stride_counter << ", ";
+		SSStrideArgs << "skepu_strides[" << stride_counter << "], ";
+		SSStrideInit << "if (skepu_stride_" << stride_counter << " < 0) { " << param.name << " += (-skepu_n + 1) * skepu_stride_" << stride_counter << "; }\n";
+		SSKernelParamList << "__global " << param.typeNameOpenCL() << " * " << param.name << ", ";
+		SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<const " << param.resolvedTypeName << "> * " << param.name << ", ";
+		SSKernelArgs << param.name << "->getDeviceDataPointer(), ";
+		SSMapFuncArgs << param.name << "[skepu_i * skepu_stride_" << stride_counter++ << "]";
 		first = false;
 	}
 	
@@ -229,10 +225,13 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 	sourceStream << MapReduceKernelTemplate_CL << ReduceKernelTemplate_CL;
 	
 	std::stringstream SSKernelName;
-	SSKernelName << transformToCXXIdentifier(ResultName) << "_MapReduceKernel_" << mapFunc.uniqueName << "_" << reduceFunc.uniqueName << "_arity_" << mapFunc.Varity;
+	SSKernelName << instance << "_" << transformToCXXIdentifier(ResultName) << "_MapReduceKernel_" << mapFunc.uniqueName << "_" << reduceFunc.uniqueName << "_arity_" << mapFunc.Varity << "uid_" << GlobalSkeletonIndex++;
 	const std::string kernelName = SSKernelName.str();
 	std::stringstream SSKernelArgCount;
-	SSKernelArgCount << mapFunc.numKernelArgsCL() + 2 + std::max<int>(0, indexInfo.dim - 1) + (mapFunc.randomParam ? 1 : 0);
+	SSKernelArgCount << mapFunc.numKernelArgsCL() + 2 + std::max<int>(0, indexInfo.dim - 1) + (mapFunc.randomParam ? 1 : 0) + stride_counter;
+	
+	std::stringstream SSStrideCount;
+	SSStrideCount << mapFunc.elwiseParams.size();
 	
 	std::ofstream FSOutFile {dir + "/" + kernelName + "_cl_source.inl"};
 	FSOutFile << templateString(Constructor,
@@ -256,6 +255,10 @@ std::string createMapReduceKernelProgram_CL(UserFunction &mapFunc, UserFunction 
 		{"{{SIZE_PARAMS}}",            indexInfo.sizeParams},
 		{"{{SIZE_ARGS}}",              indexInfo.sizeArgs},
 		{"{{SIZES_TUPLE_PARAM}}",      indexInfo.sizesTupleParam},
+		{"{{STRIDE_PARAMS}}",          SSStrideParams.str()},
+		{"{{STRIDE_ARGS}}",            SSStrideArgs.str()},
+		{"{{STRIDE_COUNT}}",           SSStrideCount.str()},
+		{"{{STRIDE_INIT}}",            SSStrideInit.str()},
 		{"{{TEMPLATE_HEADER}}",        indexInfo.templateHeader}
 	});
 

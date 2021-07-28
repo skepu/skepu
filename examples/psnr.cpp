@@ -3,10 +3,9 @@
 * It is clsely related to MSE which represents the cumulative squared error between the compressed and the original image.
 */
 
-#include <iostream>
-#include <cmath>
-
 #include <skepu>
+#include <skepu-lib/util.hpp>
+#include <skepu-lib/io.hpp>
 
 [[skepu::userconstant]] constexpr int
 	MAX = 255,
@@ -15,12 +14,6 @@
 float diff_squared(int a, int b)
 {
 	return (a - b) * (a - b);
-}
-
-template<typename T>
-T sum(T a, T b)
-{
-	return a + b;
 }
 
 template<typename T>
@@ -36,13 +29,11 @@ float psnr(skepu::Matrix<int> &img, skepu::Matrix<int> noise)
 	const size_t cols = img.size_j();
 	
 	auto clamped_sum = skepu::Map(clamp_sum<int>);
-	auto squared_diff_sum = skepu::MapReduce(diff_squared, sum<float>);
+	auto squared_diff_sum = skepu::MapReduce(diff_squared, skepu::util::add<float>);
 	skepu::Matrix<int> comp_img(rows, cols);
 	
 	// Add noise
 	clamped_sum(comp_img, img, noise);
-	
-//	std::cout << "Compressed image: " << comp_img << "\n";
 	
 	float mse = squared_diff_sum(img, comp_img) / (rows * cols);
 	return 10 * log10((MAX * MAX) / mse);
@@ -52,14 +43,13 @@ int main(int argc, char *argv[])
 {
 	if (argc < 4)
 	{
-		skepu::external([&]{
-			std::cout << "Usage: " << argv[0] << " rows cols backend\n";});
+		skepu::io::cout << "Usage: " << argv[0] << " rows cols backend\n";
 		exit(1);
 	}
 	
 	const size_t rows = std::stoul(argv[1]);
 	const size_t cols = std::stoul(argv[2]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[3])};
+	auto spec = skepu::BackendSpec{argv[3]};
 	skepu::setGlobalBackendSpec(spec);
 	
 	skepu::Matrix<int> img(rows, cols), noise(rows, cols);
@@ -68,16 +58,11 @@ int main(int argc, char *argv[])
 	img.randomize(0, MAX);
 	noise.randomize(-NOISE, NOISE);
 	
-	skepu::external(
-		skepu::read(img),
-		[&]{
-			std::cout << "Actual image: " << img << "\n";
-		});
+	skepu::io::cout << "Actual image: " << img << "\n";
 	
 	float psnrval = psnr(img, noise);
 	
-	skepu::external([&]{
-		std::cout << "PSNR of two images: " << psnrval << "\n";});
+	skepu::io::cout << "PSNR of two images: " << psnrval << "\n";
 	
 	return 0;
 }

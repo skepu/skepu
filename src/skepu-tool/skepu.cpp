@@ -85,6 +85,13 @@ const std::unordered_map<std::string, Skeleton> Skeletons =
 };
 
 Rewriter GlobalRewriter;
+size_t GlobalSkeletonIndex = 0;
+
+// Library markers
+bool didFindBlas = false;
+clang::SourceLocation blasBegin, blasEnd;
+
+
 
 llvm::raw_ostream& SkePULog()
 {
@@ -122,6 +129,20 @@ public:
 		
 		for (VarDecl *d : this->SkeletonInstances)
 			HandleSkeletonInstance(d);
+		
+		if (didFindBlas)
+		{
+			std::string blasTransformedCode = GlobalRewriter.getRewrittenText(SourceRange(blasBegin, blasEnd));
+			blasTransformedCode = "\n/* BEGIN BLAS.HPP INJECTION */\n//" + blasTransformedCode + ";\n/* END BLAS.HPP INJECTION*/\n";
+			
+			
+			FileID blasFile = GlobalRewriter.getSourceMgr().getFileID(blasBegin);
+			SourceLocation blasIncludeLoc = GlobalRewriter.getSourceMgr().getIncludeLoc(blasFile);
+			unsigned blasIncludeLine = GlobalRewriter.getSourceMgr().getSpellingLineNumber(blasIncludeLoc);
+			blasIncludeLoc = GlobalRewriter.getSourceMgr().translateLineCol(SM.getMainFileID(), blasIncludeLine, 0);
+			
+			GlobalRewriter.InsertText(blasIncludeLoc, blasTransformedCode);
+		}
 
 		if (Verbose) SkePULog() << "** EndSourceFileAction for: " << inputFileName << "\n";
 

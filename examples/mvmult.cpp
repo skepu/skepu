@@ -1,5 +1,6 @@
 #include <iostream>
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 
 template<typename T>
@@ -33,13 +34,12 @@ int main(int argc, char *argv[])
 {
 	if (argc < 2)
 	{
-		if(!skepu::cluster::mpi_rank())
-			std::cout << "Usage: " << argv[0] << " size backend\n";
+		skepu::io::cout << "Usage: " << argv[0] << " size backend\n";
 		exit(1);
 	}
 	
 	size_t size = atoi(argv[1]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{argv[2]};
 	skepu::setGlobalBackendSpec(spec);
 	
 	skepu::Matrix<float> m(size, size);
@@ -47,31 +47,22 @@ int main(int argc, char *argv[])
 	m.randomize(3, 9);
 	v.randomize(0, 9);
 	
-	m.flush();
-	v.flush();
-	if(!skepu::cluster::mpi_rank())
-	{
-	std::cout << "v: " << v << "\n";
-	std::cout << "m: " << m << "\n";
-	}
-
-	r.flush();
+	skepu::io::cout << "v: " << v << "\n";
+	skepu::io::cout << "m: " << m << "\n";
+	
 	directMV(v, m, r);
 	auto mvprod = skepu::Map(mvmult_f<float>);
 	mvprod(r2, m, v);
 	
-	r.flush();
-	r2.flush();
-
-	if(!skepu::cluster::mpi_rank())
-	{
+	skepu::external(skepu::read(r, r2), [&]
+	{ 
 		std::cout << "r: " << r << "\n";
 		std::cout << "r2: " << r2 << "\n";
 		
 		for (size_t i = 0; i < size; i++)
 			if (r(i) != r2(i))
 				std::cout << "Output error at index " << i << ": " << r2(i) << " vs " << r(i) << "\n";
-	}
+	});
 
 	return 0;
 }

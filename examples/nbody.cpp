@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 // Particle data structure that is used as an element type.
 struct Particle
@@ -35,7 +36,7 @@ Particle move(skepu::Index1D index, Particle pi, const skepu::Vec<Particle> parr
 	{
 		if (i != j)
 		{
-			Particle pj = parr[j];
+			Particle pj = parr(j);
 
 			float rij = sqrt((pi.x - pj.x) * (pi.x - pj.x)
 			               + (pi.y - pj.y) * (pi.y - pj.y)
@@ -153,10 +154,7 @@ int main(int argc, char *argv[])
 {
 	if (argc < 4)
 	{
-		skepu::external([&]{
-			std::cout << "Usage: " << argv[0]
-				<< " particles iterations backend\n";}
-		);
+		skepu::io::cout << "Usage: " << argv[0] << " particles iterations backend\n";
 		exit(1);
 	}
 
@@ -172,13 +170,11 @@ int main(int argc, char *argv[])
 	nbody(particles, iterations);
 
 	// Write out result
-	skepu::external(
-		skepu::read(particles),
-		[&]{
-			std::stringstream outfile;
-			outfile << "output" << spec.type() << ".txt";
-			save_step(particles, outfile.str());
-		}
-	);
+	skepu::external(skepu::read(particles), [&]{
+		std::stringstream outfile;
+		outfile << "output" << spec.type() << ".txt";
+		save_step(particles, outfile.str());
+	});
+	
 	return 0;
 }

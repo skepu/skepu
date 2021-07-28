@@ -2,11 +2,9 @@
  * Taylor series calculation, natural log(1+x)  sum(1:N) (((-1)^(i+1))/i)*x^i
  */
 
-#include <iostream>
-#include <cmath>
-
 #include <skepu>
-
+#include <skepu-lib/util.hpp>
+#include <skepu-lib/io.hpp>
 
 float nth_term(skepu::Index1D index, float x)
 {
@@ -16,28 +14,23 @@ float nth_term(skepu::Index1D index, float x)
 	return sign * temp_x / k;
 }
 
-float plus(float a, float b)
-{
-	return a + b;
-}
-
 int main(int argc, char *argv[])
 {
 	if (argc < 4)
 	{
-		std::cout << "Usage: " << argv[0] << " x-value number-of-terms backend\n";
+		skepu::io::cout << "Usage: " << argv[0] << " x-value number-of-terms backend\n";
 		exit(1);
 	}
 	
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[3])};
-	skepu::setGlobalBackendSpec(spec);
 	float x = atof(argv[1]);
 	size_t N = std::stoul(argv[2]);
+	auto spec = skepu::BackendSpec{argv[3]};
+	skepu::setGlobalBackendSpec(spec);
 	
-	auto taylor = skepu::MapReduce<0>(nth_term, plus);
+	auto taylor = skepu::MapReduce<0>(nth_term, skepu::util::add<float>);
 	taylor.setDefaultSize(N);
 	
-	std::cout << "Result: ln(" << x << ") = " << taylor(x - 1) << "\n";
+	skepu::io::cout << "Result: ln(" << x << ") = " << taylor(x - 1) << "\n";
 	
 	return 0;
 }

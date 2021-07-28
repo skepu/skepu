@@ -1,5 +1,6 @@
 #include <iostream>
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 void swap_f(int *a, int *b)
 {
@@ -51,19 +52,19 @@ int main(int argc, char *argv[])
 {
 	if (argc < 2)
 	{
-		std::cout << "Usage: " << argv[0] << " size backend\n";
+		skepu::io::cout << "Usage: " << argv[0] << " size backend\n";
 		exit(1);
 	}
 	
 	size_t size = std::stoul(argv[1]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{argv[2]};
 	
 	skepu::Vector<int> v(size);
 	v.randomize(0, 100);
 	
 	sort(v, spec);
 	
-	std::cout << v << "\n";
+	skepu::io::cout << v << "\n";
 	
 	return 0;
 }

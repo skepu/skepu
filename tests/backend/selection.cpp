@@ -11,7 +11,7 @@ int uf()
 	return 0;
 }
 
-auto skel = skepu::Map<0>(uf);
+auto skel = skepu::Map(uf);
 
 TEST_CASE("OpenMP selection")
 {

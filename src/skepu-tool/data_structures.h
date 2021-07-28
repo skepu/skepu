@@ -12,6 +12,11 @@
 // Data structures
 // ------------------------------
 
+enum class Backend
+{
+	CPU, OpenMP, CUDA, OpenCL,
+};
+
 enum class AccessMode
 {
 	Read,
@@ -79,6 +84,8 @@ public:
 	const clang::CXXRecordDecl *astDeclNode;
 
 	std::string name;
+	const clang::Type *type;
+	std::string typeNameOpenCL;
 	bool requiresDoublePrecision;
 
 	UserType(const clang::CXXRecordDecl *t);
@@ -122,6 +129,7 @@ public:
 		
 		std::string templateInstantiationType() const;
 		virtual size_t numKernelArgsCL() const;
+		std::string typeNameOpenCL() const;
 	};
 
 	struct RandomAccessParam: Param
@@ -136,8 +144,9 @@ public:
 		virtual ~RandomAccessParam() = default;
 		
 		virtual size_t numKernelArgsCL() const override;
-		std::string TypeNameOpenCL();
-		std::string TypeNameHost();
+		std::string TypeNameOpenCL() const;
+		std::string innerTypeNameOpenCL() const;
+		std::string TypeNameHost() const;
 	};
 	
 	struct RegionParam: RandomAccessParam
@@ -171,6 +180,8 @@ public:
 	std::string rawReturnTypeName;
 	std::string resolvedReturnTypeName;
 	
+	std::string returnTypeNameOpenCL();
+	
 	std::vector<std::string> multipleReturnTypes {};
 
 	std::string instanceName;
@@ -202,6 +213,7 @@ public:
 
 
 	std::vector<clang::CXXOperatorCallExpr*> containerSubscripts{}, containerCalls{};
+	std::vector<clang::CXXOperatorCallExpr*> operatorOverloads{};
 
 	bool fromTemplate = false;
 	bool indexed1D = false;

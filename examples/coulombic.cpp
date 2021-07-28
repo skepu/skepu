@@ -2,6 +2,7 @@
 #include <cmath>
 
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 #define RAND_MAX_LOC 100
 
@@ -49,8 +50,6 @@ float coulombPotential_f(skepu::Index2D index, float energygridItem, const skepu
 	float coory = gridspacing * index.col;
 	float coorx = gridspacing * index.row;
 	
-//	std::cout << "X: " << coorx << " Y: " << coory << "\n";
-	
 	float energyvalx1 = 0;
 	float energycomp1 = 0;
 	size_t numatoms = atoms.size;
@@ -59,8 +58,6 @@ float coulombPotential_f(skepu::Index2D index, float energygridItem, const skepu
 		float dy = coory - atoms.data[atomid].y;
 		float dx = coorx - atoms.data[atomid].x;
 		float s = atoms.data[atomid].charge / sqrt(dx*dx + dy*dy);
-		
-	//	std::cout << "s: " << s << "\n";
 		
 		float y = s - energycomp1;
 		float t = energyvalx1 + y;
@@ -117,13 +114,12 @@ int main(int argc, char* argv[])
 {
 	if (argc < 3)
 	{
-		if(!skepu::cluster::mpi_rank())
-			std::cout << "Usage: " << argv[0] << " input_size backend\n";
+		skepu::io::cout << "Usage: " << argv[0] << " input_size backend\n";
 		exit(1);
 	}
 	
 	const size_t atomcount = std::stoul(argv[1]);
-	auto spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
+	auto spec = skepu::BackendSpec{argv[2]};
 	
 	skepu::Vector<Atom> atoms(atomcount);
 	skepu::Matrix<float> energy_out(matrixSize, matrixSize);
@@ -135,9 +131,7 @@ int main(int argc, char* argv[])
 	coulombic(energy_out, atoms, &spec);
 	
 	// can print and compare. output is exactly same for cpu, openmp, cuda for 1 and 2 gpus.
-	energy_out.flush();
-	if(!skepu::cluster::mpi_rank())
-		std::cout << "Energy out: " << energy_out << "\n";
+	skepu::io::cout << "Energy out: " << energy_out << "\n";
 	
 	return 0;
 }

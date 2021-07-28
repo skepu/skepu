@@ -17,11 +17,6 @@ int main(int argc, char *argv[])
 {
 	size_t size = 2048;
 	skepu::BackendSpec spec{skepu::Backend::Type::CPU};
-	if (argc >= 2)
-	{
-		size = atoi(argv[1]);
-		spec = skepu::BackendSpec{skepu::Backend::typeFromString(argv[2])};
-	}
 	skepu::setGlobalBackendSpec(spec);
 	
 	skepu::Matrix<float> m(size, size);

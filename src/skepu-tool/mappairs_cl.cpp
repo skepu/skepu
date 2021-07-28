@@ -11,6 +11,7 @@ const char *MapPairsKernelTemplate_CL = R"~~~(
 #define skepu_w2 skepu_Hsize
 __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_Vsize, size_t skepu_Hsize, size_t skepu_base)
 {
+	size_t skepu_global_prng_id = get_global_id(0);
 	size_t skepu_i = get_global_id(0);
 	size_t skepu_gridSize = get_local_size(0) * get_num_groups(0);
 	{{CONTAINER_PROXIES}}
@@ -84,19 +85,20 @@ public:
 )~~~";
 
 
-std::string createMapPairsKernelProgram_CL(UserFunction &mapPairsFunc, std::string dir)
+std::string createMapPairsKernelProgram_CL(SkeletonInstance &instance, UserFunction &mapPairsFunc, std::string dir)
 {
 	std::stringstream sourceStream, SSMapPairsFuncArgs, SSKernelParamList, SSHostKernelParamList, SSKernelArgs;
 	IndexCodeGen indexInfo = indexInitHelper_CL(mapPairsFunc);
 	bool first = !indexInfo.hasIndex;
 	SSMapPairsFuncArgs << indexInfo.mapFuncParam;
 	std::string multiOutputAssign = handleOutputs_CL(mapPairsFunc, SSHostKernelParamList, SSKernelParamList, SSKernelArgs);
+	handleRandomParam_CL(mapPairsFunc, sourceStream, SSMapPairsFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
 	
 	size_t ctr = 0;
 	for (UserFunction::Param& param : mapPairsFunc.elwiseParams)
 	{
 		if (!first) { SSMapPairsFuncArgs << ", "; }
-		SSKernelParamList << "__global " << param.resolvedTypeName << " *" << param.name << ", ";
+		SSKernelParamList << "__global " << param.typeNameOpenCL() << " *" << param.name << ", ";
 		SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<" << param.resolvedTypeName << "> *" << param.name << ", ";
 		SSKernelArgs << param.name << "->getDeviceDataPointer(), ";
 		if (ctr++ < mapPairsFunc.Varity) // vertical containers
@@ -112,7 +114,7 @@ std::string createMapPairsKernelProgram_CL(UserFunction &mapPairsFunc, std::stri
 	sourceStream << generateUserFunctionCode_CL(mapPairsFunc) << MapPairsKernelTemplate_CL;
 	
 	std::stringstream SSKernelName;
-	SSKernelName << transformToCXXIdentifier(ResultName) << "_MapPairsKernel_" << mapPairsFunc.uniqueName << "_Varity_" << mapPairsFunc.Varity << "_Harity_" << mapPairsFunc.Harity;
+	SSKernelName << instance << "_" << transformToCXXIdentifier(ResultName) << "_MapPairsKernel_" << mapPairsFunc.uniqueName << "_Varity_" << mapPairsFunc.Varity << "_Harity_" << mapPairsFunc.Harity;
 	const std::string kernelName = SSKernelName.str();
 	
 	std::ofstream FSOutFile {dir + "/" + kernelName + "_cl_source.inl"};

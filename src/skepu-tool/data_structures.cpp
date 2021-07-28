@@ -16,6 +16,7 @@
 #include "globals.h"
 #include "data_structures.h"
 #include "visitor.h"
+#include "code_gen_cl.h"
 
 using namespace clang;
 using namespace clang::ast_matchers;
@@ -100,10 +101,19 @@ public:
 
 	bool VisitCXXOperatorCallExpr(CXXOperatorCallExpr *c)
 	{
-		if (c->getOperator() == OO_Subscript)
+		auto ooc = c->getOperator();
+		if (ooc == OO_Subscript)
 			this->containerSubscripts.push_back(c);
-		if (c->getOperator() == OO_Call /* further check the type? */)
+		if (ooc== OO_Call /* further check the type? */)
 			this->containerCalls.push_back(c);
+		else if (ooc == OO_Plus || ooc == OO_Minus || ooc == OO_Star || ooc == OO_Slash
+			|| ooc == OO_EqualEqual || ooc == OO_ExclaimEqual
+			|| ooc == OO_PlusEqual || ooc == OO_MinusEqual || ooc == OO_StarEqual || ooc == OO_SlashEqual
+		)
+		{
+			// We start handling overloaded complex type operators here
+			this->operatorOverloads.push_back(c);
+		}
 		return true;
 	}
 
@@ -126,6 +136,7 @@ public:
 	std::set<UserType*> ReferencedUTs{};
 
 	std::vector<CXXOperatorCallExpr*> containerSubscripts{}, containerCalls{};
+	std::vector<CXXOperatorCallExpr*> operatorOverloads{};
 };
 
 
@@ -144,7 +155,20 @@ UserConstant::UserConstant(const VarDecl *v)
 UserType::UserType(const CXXRecordDecl *t)
 : astDeclNode(t), name(t->getNameAsString()), requiresDoublePrecision(false)
 {
+	this->type = t->getTypeForDecl();
+	
+	// Same as Param
+	std::string rawTypeName = this->type->getCanonicalTypeInternal().getAsString();
+	
+	std::string resolvedTypeName = rawTypeName;
+	
+	// Remove 'struct'
+	replaceTextInString(resolvedTypeName, "struct ", "");
 
+	this->typeNameOpenCL = transformToCXXIdentifier(resolvedTypeName);
+	// End same as Param
+	
+	
 	if (const RecordDecl *r = dyn_cast<RecordDecl>(t))
 	{
 		for (const FieldDecl *f : r->fields())
@@ -203,21 +227,30 @@ UserFunction::Param::Param(const clang::ParmVarDecl *p)
 		type = referenceType->getPointeeType().getTypePtr();
 	}
 	
+//	p->dump();
+//	this->type->dump();
+	
 	this->rawTypeName = p->getOriginalType().getCanonicalType().getAsString();
 	
 	if (this->rawTypeName == "_Bool")
 		this->rawTypeName = "bool";
 	
 	this->resolvedTypeName = this->rawTypeName;
-	this->escapedTypeName = transformToCXXIdentifier(this->resolvedTypeName);
 	
-	if (auto *userType = p->getOriginalType().getTypePtr()->getAs<clang::RecordType>())
-		this->rawTypeName = userType->getDecl()->getNameAsString();
-		
 	// Remove 'struct'
 	replaceTextInString(this->resolvedTypeName, "struct ", "");
+
+	this->escapedTypeName = transformToCXXIdentifier(this->resolvedTypeName);
 	
-	SkePULog() << "Param: " << this->name << " of type " << this->rawTypeName << " resolving to " << this->resolvedTypeName << "\n";
+	// TODO: link with UserType
+	if (auto *userType = p->getOriginalType().getTypePtr()->getAs<clang::RecordType>())
+		this->rawTypeName = userType->getDecl()->getNameAsString();
+	
+	SkePULog() << "#================#\n";
+	SkePULog() << "Param [Elwise]: " << this->name << " of type " << this->rawTypeName << " resolving to " << this->resolvedTypeName << "\n";
+	SkePULog() << "Escaped type name: " << this->escapedTypeName << "\n";
+	SkePULog() << "Type name OpenCL: " << this->typeNameOpenCL() << "\n";
+	SkePULog() << "#================#\n";
 }
 
 bool UserFunction::Param::constructibleFrom(const clang::ParmVarDecl *p)
@@ -281,9 +314,24 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 
 	std::string templateName = templateType->getTemplateName().getAsTemplateDecl()->getNameAsString();
 	this->containedType = containedTypeArg.getAsType().getTypePtr();
-	this->rawTypeName = this->resolvedTypeName = containedTypeArg.getAsType().getAsString();
+	
+	
+//	this->containedType->dump();
+	
+	if (auto *typedeft = dyn_cast<TypedefType>(this->containedType))
+		this->containedType = typedeft->desugar().getTypePtr();
+		
+	if (auto *innertype = dyn_cast<ElaboratedType>(this->containedType))
+		this->containedType = innertype->getNamedType().getTypePtr();
+		
+//	this->containedType->dump();
+	this->resolvedTypeName = this->containedType->getCanonicalTypeInternal().getAsString();
+	SkePULog() << "Candidate type name: '" << this->resolvedTypeName << "'\n";
+	replaceTextInString(this->resolvedTypeName, "struct ", "");
+	this->rawTypeName = this->resolvedTypeName;
+	
 	this->escapedTypeName = transformToCXXIdentifier(this->resolvedTypeName);
-
+	
 	if (templateName == "SparseMat")
 	{
 		this->containerType = ContainerType::SparseMatrix;
@@ -343,7 +391,11 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 	else
 		SkePUAbort("Unhandled proxy type");
 
-	SkePULog() << "Param: " << this->name << " of type " << this->rawTypeName << " resolving to " << this->resolvedTypeName << " (or fully: " << this->fullTypeName << ")\n";
+	SkePULog() << "#----------------#\n";
+	SkePULog() << "Param [RandomAccess]: " << this->name << " of type " << this->rawTypeName << " resolving to " << this->resolvedTypeName << " (or fully: " << this->fullTypeName << ")\n";
+	SkePULog() << "Escaped type name: " << this->escapedTypeName << "\n";
+	SkePULog() << "Type name OpenCL: " << this->typeNameOpenCL() << "\n";
+	SkePULog() << "#----------------#\n";
 }
 
 bool UserFunction::RandomAccessParam::constructibleFrom(const clang::ParmVarDecl *p)
@@ -385,6 +437,10 @@ bool UserFunction::RegionParam::constructibleFrom(const clang::ParmVarDecl *p)
 	SkePULog() << templateName << "\n";
 	return (templateName == "Region1D") || (templateName == "Region2D") || (templateName == "Region3D")
 		|| (templateName == "Region4D");
+	
+	SkePULog() << "#++++++++++++++++#\n";
+	SkePULog() << "Param [Region] \n";
+	SkePULog() << "#++++++++++++++++#\n";
 }
 
 UserFunction::RandomParam::RandomParam(const ParmVarDecl *p)
@@ -394,7 +450,6 @@ UserFunction::RandomParam::RandomParam(const ParmVarDecl *p)
 		SkePUAbort("Random parameter must be of reference type.");
 	
 	auto *type = p->getOriginalType().getTypePtr();
-	type->dump();
 	
 	if (auto *referenceType = dyn_cast<ReferenceType>(type))
 		type = referenceType->getPointeeType().getTypePtr();
@@ -403,7 +458,6 @@ UserFunction::RandomParam::RandomParam(const ParmVarDecl *p)
 		type = innertype->getNamedType().getTypePtr();
 	
 	const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
-	templateType->dump();
 	if (templateType->getNumArgs() > 0)
 		this->randomCount = templateType->getArg(0).getAsExpr()->EvaluateKnownConstInt(p->getASTContext()).getExtValue();
 	else
@@ -428,31 +482,61 @@ bool UserFunction::RandomParam::constructibleFrom(const clang::ParmVarDecl *p)
 	return templateName == "Random";
 }
 
-std::string UserFunction::RandomAccessParam::TypeNameOpenCL()
+std::string UserFunction::RandomAccessParam::TypeNameOpenCL() const
 {
 	switch (this->containerType)
 	{
 		case ContainerType::Vector:
-			return "skepu_vec_proxy_" + this->escapedTypeName;
+			return "skepu_vec_proxy_" + this->innerTypeNameOpenCL();
 		case ContainerType::Matrix:
-			return "skepu_mat_proxy_" + this->escapedTypeName;
+			return "skepu_mat_proxy_" + this->innerTypeNameOpenCL();
 		case ContainerType::MatRow:
-			return "skepu_matrow_proxy_" + this->escapedTypeName;
+			return "skepu_matrow_proxy_" + this->innerTypeNameOpenCL();
 		case ContainerType::MatCol:
-				return "skepu_matcol_proxy_" + this->escapedTypeName;
+				return "skepu_matcol_proxy_" + this->innerTypeNameOpenCL();
 		case ContainerType::Tensor3:
-			return "skepu_ten3_proxy_" + this->escapedTypeName;
+			return "skepu_ten3_proxy_" + this->innerTypeNameOpenCL();
 		case ContainerType::Tensor4:
-			return "skepu_ten4_proxy_" + this->escapedTypeName;
+			return "skepu_ten4_proxy_" + this->innerTypeNameOpenCL();
 		case ContainerType::SparseMatrix:
-			return "skepu_sparse_mat_proxy_" + this->escapedTypeName;
+			return "skepu_sparse_mat_proxy_" + this->innerTypeNameOpenCL();
 		default:
 			SkePUAbort("ERROR: TypeNameOpenCL: Invalid switch value");
 			return "";
 	}
 }
 
-std::string UserFunction::RandomAccessParam::TypeNameHost()
+
+
+
+std::string UserFunction::Param::typeNameOpenCL() const
+{
+	if (this->resolvedTypeName.find("skepu::complex") != std::string::npos)
+	{
+		return "skepu_complex_float"; // todo fix templated type
+	}
+	
+	
+	
+	return this->escapedTypeName;
+}
+
+std::string UserFunction::RandomAccessParam::innerTypeNameOpenCL() const
+{
+	if (this->resolvedTypeName.find("skepu::complex") != std::string::npos)
+	{
+		return "skepu_complex_float"; // todo fix templated type
+	}
+	
+	
+	
+	return this->escapedTypeName;
+}
+
+
+
+
+std::string UserFunction::RandomAccessParam::TypeNameHost() const
 {
 	switch (this->containerType)
 	{
@@ -480,6 +564,8 @@ size_t UserFunction::RandomAccessParam::numKernelArgsCL() const
 	switch (this->containerType)
 	{
 		case ContainerType::Vector:
+		case ContainerType::MatRow:
+		case ContainerType::MatCol:
 			return 2;
 		case ContainerType::Matrix:
 			return 3;
@@ -535,6 +621,13 @@ UserFunction::UserFunction(FunctionDecl *f)
 
 		for (unsigned i = 0; i < TPList->size(); ++i)
 		{
+			if (TAList->get(i).getKind() != clang::TemplateArgument::ArgKind::Type)
+			{
+				SkePULog() << "Note: Ignored non-type template parameter\n";
+		//		TPList->getParam(i)->dump();
+				continue;
+			}
+			
 			std::string paramName = TPList->getParam(i)->getNameAsString();
 			std::string rawArgName = TAList->get(i).getAsType().getAsString();
 			std::string resolvedArgName = rawArgName;
@@ -639,6 +732,8 @@ UserFunction::UserFunction(FunctionDecl *f)
 	this->containerSubscripts = UFVisitor.containerSubscripts;
 	this->containerCalls = UFVisitor.containerCalls;
 	
+	this->operatorOverloads = UFVisitor.operatorOverloads;
+	
 	SkePULog() << "| Traversal analysis summary for UF " << this->uniqueName << "\n";
 	SkePULog() << "| " << this->ReferencedUFs.size() << " unique referenced UFs\n";
 	SkePULog() << "| " << this->UFReferences.size() << " total UF references\n";
@@ -660,6 +755,16 @@ UserFunction::UserFunction(FunctionDecl *f)
 std::string UserFunction::funcNameCUDA()
 {
 	return SkePU_UF_Prefix + this->instanceName + "_" + this->uniqueName + "::CU";
+}
+
+std::string UserFunction::returnTypeNameOpenCL()
+{
+	if (this->resolvedReturnTypeName.find("skepu::complex") != std::string::npos)
+	{
+		return "skepu_complex_float"; // todo fix templated type
+	}
+	
+	return this->rawReturnTypeName;
 }
 
 std::string UserFunction::multiReturnTypeNameGPU()

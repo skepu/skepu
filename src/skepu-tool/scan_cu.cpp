@@ -134,7 +134,7 @@ __global__ void {{KERNEL_NAME}}_ScanAdd({{SCAN_TYPE}} *data, {{SCAN_TYPE}} sum, 
 )~~~";
 
 
-std::string createScanKernelProgram_CU(UserFunction &scanFunc, std::string dir)
+std::string createScanKernelProgram_CU(SkeletonInstance &instance, UserFunction &scanFunc, std::string dir)
 {
 	const std::string kernelName = transformToCXXIdentifier(ResultName) + "_Scan_" + scanFunc.uniqueName;
 	std::ofstream FSOutFile {dir + "/" + kernelName + ".cu"};

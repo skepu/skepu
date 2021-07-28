@@ -100,7 +100,7 @@ public:
 )~~~";
 
 
-std::string createReduce1DKernelProgram_CL(UserFunction &reduceFunc, std::string dir)
+std::string createReduce1DKernelProgram_CL(SkeletonInstance &instance, UserFunction &reduceFunc, std::string dir)
 {
 	std::stringstream sourceStream;
 
@@ -115,7 +115,7 @@ std::string createReduce1DKernelProgram_CL(UserFunction &reduceFunc, std::string
 	for (UserType *RefType : reduceFunc.ReferencedUTs)
 		sourceStream << generateUserTypeCode_CL(*RefType);
 
-	const std::string kernelName = transformToCXXIdentifier(ResultName) + "_ReduceKernel_" + reduceFunc.uniqueName;
+	const std::string kernelName = instance + "_" + transformToCXXIdentifier(ResultName) + "_ReduceKernel_" + reduceFunc.uniqueName;
 	sourceStream << KernelPredefinedTypes_CL << generateUserFunctionCode_CL(reduceFunc) << ReduceKernelTemplate_CL;
 
 	std::ofstream FSOutFile {dir + "/" + kernelName + "_cl_source.inl"};
@@ -209,10 +209,10 @@ public:
 };
 )~~~";
 
-std::string createReduce2DKernelProgram_CL(UserFunction &rowWiseFunc, UserFunction &colWiseFunc, std::string dir)
+std::string createReduce2DKernelProgram_CL(SkeletonInstance &instance, UserFunction &rowWiseFunc, UserFunction &colWiseFunc, std::string dir)
 {
 	std::stringstream sourceStream;
-	const std::string kernelName = transformToCXXIdentifier(ResultName) + "_ReduceKernel_" + rowWiseFunc.uniqueName + "_" + colWiseFunc.uniqueName;
+	const std::string kernelName = instance + "_" + transformToCXXIdentifier(ResultName) + "_ReduceKernel_" + rowWiseFunc.uniqueName + "_" + colWiseFunc.uniqueName;
 
 	if (rowWiseFunc.requiresDoublePrecision || colWiseFunc.requiresDoublePrecision)
 		sourceStream << "#pragma OPENCL EXTENSION cl_khr_fp64: enable\n";

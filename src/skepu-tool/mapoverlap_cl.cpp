@@ -18,10 +18,11 @@ using namespace clang;
  */
 static const std::string MapOverlapKernel_CL = R"~~~(
 __kernel void {{KERNEL_NAME}}_Vector({{KERNEL_PARAMS}}
-	__global {{MAPOVERLAP_INPUT_TYPE}}* skepu_wrap, size_t skepu_n, size_t skepu_overlap, size_t out_offset,
-	size_t out_numelements, int skepu_poly, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad, __local {{MAPOVERLAP_INPUT_TYPE}}* sdata
+	__global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap, size_t skepu_n, size_t skepu_overlap, size_t out_offset,
+	size_t out_numelements, int skepu_poly, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, __local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* sdata
 )
 {
+	size_t skepu_global_prng_id = get_global_id(0);
 	size_t skepu_tid = get_local_id(0);
 	size_t skepu_i = get_group_id(0) * get_local_size(0) + get_local_id(0);
 	{{CONTAINER_PROXIES}}
@@ -90,10 +91,11 @@ __kernel void {{KERNEL_NAME}}_Vector({{KERNEL_PARAMS}}
  */
 static const std::string MapOverlapKernel_CL_Matrix_Row = R"~~~(
 __kernel void {{KERNEL_NAME}}_MatRowWise({{KERNEL_PARAMS}}
-	__global {{MAPOVERLAP_INPUT_TYPE}}* skepu_wrap, size_t skepu_n, size_t skepu_overlap, size_t out_offset, size_t out_numelements,
-	int skepu_poly, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad, size_t blocksPerRow, size_t rowWidth, __local {{MAPOVERLAP_INPUT_TYPE}}* sdata
+	__global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap, size_t skepu_n, size_t skepu_overlap, size_t out_offset, size_t out_numelements,
+	int skepu_poly, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, size_t blocksPerRow, size_t rowWidth, __local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* sdata
 )
 {
+	size_t skepu_global_prng_id = get_global_id(0);
 	size_t skepu_tid = get_local_id(0);
 	size_t skepu_i = get_group_id(0) * get_local_size(0) + get_local_id(0);
 	size_t wrapIndex = 2 * skepu_overlap * (int)(get_group_id(0) / blocksPerRow);
@@ -170,10 +172,11 @@ __kernel void {{KERNEL_NAME}}_MatRowWise({{KERNEL_PARAMS}}
  */
 static const std::string MapOverlapKernel_CL_Matrix_Col = R"~~~(
 __kernel void {{KERNEL_NAME}}_MatColWise({{KERNEL_PARAMS}}
-	__global {{MAPOVERLAP_INPUT_TYPE}}* skepu_wrap, size_t skepu_n, size_t skepu_overlap, size_t out_offset, size_t out_numelements,
-	int skepu_poly, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad, size_t blocksPerCol, size_t rowWidth, size_t colWidth, __local {{MAPOVERLAP_INPUT_TYPE}}* sdata
+	__global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap, size_t skepu_n, size_t skepu_overlap, size_t out_offset, size_t out_numelements,
+	int skepu_poly, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, size_t blocksPerCol, size_t rowWidth, size_t colWidth, __local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* sdata
 	)
 {
+	size_t skepu_global_prng_id = get_global_id(0);
 	size_t skepu_tid = get_local_id(0);
 	size_t skepu_i = get_group_id(0) * get_local_size(0) + get_local_id(0);
 	size_t wrapIndex = 2 * skepu_overlap * (int)(get_group_id(0) / blocksPerCol);
@@ -251,11 +254,12 @@ __kernel void {{KERNEL_NAME}}_MatColWise({{KERNEL_PARAMS}}
  */
 static const std::string MapOverlapKernel_CL_Matrix_ColMulti = R"~~~(
 __kernel void {{KERNEL_NAME}}_MatColWiseMulti({{KERNEL_PARAMS}}
-	__global {{MAPOVERLAP_INPUT_TYPE}}* skepu_wrap, size_t skepu_n, size_t skepu_overlap, size_t in_offset, size_t out_numelements,
-	int skepu_poly, int deviceType, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad, size_t blocksPerCol, size_t rowWidth, size_t colWidth,
-	__local {{MAPOVERLAP_INPUT_TYPE}}* sdata
+	__global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap, size_t skepu_n, size_t skepu_overlap, size_t in_offset, size_t out_numelements,
+	int skepu_poly, int deviceType, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, size_t blocksPerCol, size_t rowWidth, size_t colWidth,
+	__local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* sdata
 )
 {
+	size_t skepu_global_prng_id = get_global_id(0);
 	size_t skepu_tid = get_local_id(0);
 	size_t skepu_i   = get_group_id(0) * get_local_size(0) + get_local_id(0);
 	size_t wrapIndex = 2 * skepu_overlap * (int)(get_group_id(0)/blocksPerCol);
@@ -512,13 +516,14 @@ public:
 };
 )~~~";
 
-std::string createMapOverlap1DKernelProgram_CL(UserFunction &mapOverlapFunc, std::string dir)
+std::string createMapOverlap1DKernelProgram_CL(SkeletonInstance &instance, UserFunction &mapOverlapFunc, std::string dir)
 {
 	std::stringstream sourceStream, SSMapOverlapFuncArgs, SSKernelParamList, SSHostKernelParamList, SSKernelArgs;
 	IndexCodeGen indexInfo = indexInitHelper_CL(mapOverlapFunc);
 	bool first = !indexInfo.hasIndex;
 	SSMapOverlapFuncArgs << indexInfo.mapFuncParam;
 	std::string multiOutputAssign = handleOutputs_CL(mapOverlapFunc, SSHostKernelParamList, SSKernelParamList, SSKernelArgs);
+	handleRandomParam_CL(mapOverlapFunc, sourceStream, SSMapOverlapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
 	
 	UserFunction::RegionParam& overlapParam = *mapOverlapFunc.regionParam;
 	if (!first) { SSMapOverlapFuncArgs << ", "; }
@@ -526,19 +531,19 @@ std::string createMapOverlap1DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 	SSMapOverlapFuncArgs << "skepu_region";
 	SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<" << overlapParam.resolvedTypeName << "> *skepu_input, ";
 	SSKernelArgs << "skepu_input->getDeviceDataPointer(), ";
-	SSKernelParamList << "__global " << overlapParam.resolvedTypeName << "* " << overlapParam.name << ", "; 
+	SSKernelParamList << "__global " << overlapParam.typeNameOpenCL() << "* " << overlapParam.name << ", "; 
 	
 	std::string proxy = "skepu_region1d_" + transformToCXXIdentifier(overlapParam.resolvedTypeName) + " skepu_region = { .data = &sdata[skepu_tid+skepu_overlap], .oi = skepu_overlap, .stride = 1 };\n";
 	
 	handleUserTypesConstantsAndPrecision_CL({&mapOverlapFunc}, sourceStream);
-	sourceStream << generateOpenCLRegion(1, overlapParam.resolvedTypeName);
+	sourceStream << generateOpenCLRegion(1, overlapParam);
 	auto argsInfo = handleRandomAccessAndUniforms_CL(mapOverlapFunc, SSMapOverlapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
 	proxyCodeGenHelper_CL(argsInfo.containerProxyTypes, sourceStream);
 	sourceStream << generateUserFunctionCode_CL(mapOverlapFunc)
 	             << MapOverlapKernel_CL << MapOverlapKernel_CL_Matrix_Row
 	             << MapOverlapKernel_CL_Matrix_Col << MapOverlapKernel_CL_Matrix_ColMulti;
 
-	const std::string kernelName = transformToCXXIdentifier(ResultName) + "_OverlapKernel_" + mapOverlapFunc.uniqueName;
+	const std::string kernelName = instance + "_" + transformToCXXIdentifier(ResultName) + "_OverlapKernel_" + mapOverlapFunc.uniqueName;
 	std::stringstream SSKernelArgCount;
 	SSKernelArgCount << (mapOverlapFunc.numKernelArgsCL());
 	
@@ -547,6 +552,7 @@ std::string createMapOverlap1DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 	{
 		{"{{OPENCL_KERNEL}}",            sourceStream.str()},
 		{"{{MAPOVERLAP_INPUT_TYPE}}",    overlapParam.resolvedTypeName},
+		{"{{MAPOVERLAP_INPUT_TYPE_OPENCL}}", overlapParam.typeNameOpenCL()},
 		{"{{MAPOVERLAP_RESULT_TYPE}}",   mapOverlapFunc.resolvedReturnTypeName},
 		{"{{KERNEL_NAME}}",              kernelName},
 		{"{{INPUT_PARAM_NAME}}",         overlapParam.name},
@@ -580,41 +586,80 @@ std::string createMapOverlap1DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 */
 static const std::string MatrixConvol2D_CL = R"~~~(
 __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
-	size_t out_rows, size_t out_cols, size_t skepu_overlap_y, size_t skepu_overlap_x,
-	size_t in_pitch, size_t sharedRows, size_t sharedCols,
-	__local {{MAPOVERLAP_INPUT_TYPE}}* sdata)
+	size_t skepu_out_rows, size_t skepu_out_cols,
+	size_t skepu_overlap_y, size_t skepu_overlap_x,
+	size_t skepu_in_rows, size_t skepu_in_cols,
+	size_t skepu_sharedRows, size_t skepu_sharedCols,
+	int skepu_edge, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, __global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap,
+	__local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_sdata)
 {
-	size_t xx = ((size_t)(get_global_id(0) / get_local_size(0))) * get_local_size(0);
-	size_t yy = ((size_t)(get_global_id(1) / get_local_size(1))) * get_local_size(1);
-	size_t x = get_global_id(0);
-	size_t y = get_global_id(1);
+	size_t skepu_global_prng_id = get_global_id(0);
+	size_t skepu_xx = ((size_t)(get_global_id(0) / get_local_size(0))) * get_local_size(0);
+	size_t skepu_yy = ((size_t)(get_global_id(1) / get_local_size(1))) * get_local_size(1);
+	size_t skepu_x = get_global_id(0);
+	size_t skepu_y = get_global_id(1);
 	{{CONTAINER_PROXIES}}
 	{{CONTAINER_PROXIE_INNER}}
 
-	if (x < out_cols + skepu_overlap_x * 2 && y < out_rows + skepu_overlap_y * 2)
+	if (skepu_x < skepu_out_cols + skepu_overlap_x * 2 && skepu_y < skepu_out_rows + skepu_overlap_y * 2)
 	{
-		size_t sharedIdx = get_local_id(1) * sharedCols + get_local_id(0);
-		sdata[sharedIdx]= {{INPUT_PARAM_NAME}}[y * in_pitch + x];
-
-		size_t shared_x = get_local_id(0)+get_local_size(0);
-		size_t shared_y = get_local_id(1);
-		while (shared_y < sharedRows)
+		size_t skepu_shared_x = get_local_id(0);
+		size_t skepu_shared_y = get_local_id(1);
+		while (skepu_shared_y < skepu_sharedRows)
 		{
-			while (shared_x < sharedCols)
+			while (skepu_shared_x < skepu_sharedCols)
 			{
-				sharedIdx = shared_y * sharedCols + shared_x;
-				sdata[sharedIdx] = {{INPUT_PARAM_NAME}}[(yy + shared_y) * in_pitch + xx + shared_x];
-				shared_x = shared_x + get_local_size(0);
+				size_t skepu_sharedIdx = skepu_shared_y * skepu_sharedCols + skepu_shared_x;
+				int skepu_global_x = (skepu_xx + skepu_shared_x - skepu_overlap_x);
+				int skepu_global_y = (skepu_yy + skepu_shared_y - skepu_overlap_y);
+				
+				if ((skepu_global_y >= 0 && skepu_global_y < skepu_in_rows) && (skepu_global_x >= 0 && skepu_global_x < skepu_in_cols))
+					skepu_sdata[skepu_sharedIdx] = {{INPUT_PARAM_NAME}}[skepu_global_y * skepu_in_cols + skepu_global_x];
+				else
+				{
+					if (skepu_edge == SKEPU_EDGE_PAD)
+						skepu_sdata[skepu_sharedIdx] = skepu_pad;
+					else if (skepu_edge == SKEPU_EDGE_DUPLICATE)
+					{
+						skepu_sdata[skepu_sharedIdx] = {{INPUT_PARAM_NAME}}[
+							clamp(skepu_global_y, 0, (int)skepu_in_rows - 1) * skepu_in_cols +
+							clamp(skepu_global_x, 0, (int)skepu_in_cols - 1)];
+					}
+					else if (skepu_edge == SKEPU_EDGE_CYCLIC)
+					{
+						skepu_sdata[skepu_sharedIdx] = {{INPUT_PARAM_NAME}}[
+							((skepu_global_y + skepu_in_rows) % skepu_in_rows) * skepu_in_cols +
+							((skepu_global_x + skepu_in_cols) % skepu_in_cols)];
+					}
+				}
+				
+				skepu_shared_x += get_local_size(0);
 			}
-			shared_x = get_local_id(0);
-			shared_y = shared_y + get_local_size(1);
+			skepu_shared_x  = get_local_id(0);
+			skepu_shared_y += get_local_size(1);
 		}
 	}
+	
+	/*
+	barrier(CLK_LOCAL_MEM_FENCE);
+	
+	if (skepu_x == 0 && skepu_y == 0)
+	{
+		for (size_t yi = 0; yi < skepu_sharedCols; ++yi)
+		{
+			for (size_t xi = 0; xi < skepu_sharedRows; ++xi)
+			{
+				printf("%d\t", skepu_sdata[yi * skepu_sharedCols + xi]);
+			}
+			printf("\n");
+		}
+	}
+	*/
 
 	barrier(CLK_LOCAL_MEM_FENCE);
-	if (x < out_cols && y < out_rows)
+	if (skepu_x < skepu_out_cols && skepu_y < skepu_out_rows)
 	{
-		size_t skepu_i = y * out_cols + x;
+		size_t skepu_i = skepu_y * skepu_out_cols + skepu_x;
 		{{INDEX_INITIALIZER}}
 		{{CONTAINER_PROXIE_INNER}}
 #if !{{USE_MULTIRETURN}}
@@ -673,13 +718,16 @@ public:
 		size_t deviceID, size_t localSize[2], size_t globalSize[2],
 		{{HOST_KERNEL_PARAMS}} {{SIZES_TUPLE_PARAM}}
 		size_t out_rows, size_t out_cols, size_t skepu_overlap_y, size_t skepu_overlap_x,
-		size_t in_pitch, size_t sharedRows, size_t sharedCols,
+		size_t in_rows, size_t in_cols, size_t sharedRows, size_t sharedCols,
+		int skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad,
+		skepu::backend::DeviceMemPointer_CL<{{MAPOVERLAP_INPUT_TYPE}}> *skepu_wrap,
 		size_t sharedMemSize
 	)
 	{
 		skepu::backend::cl_helpers::setKernelArgs(kernels(deviceID), {{KERNEL_ARGS}}
-			out_rows, out_cols, skepu_overlap_y, skepu_overlap_x, in_pitch, sharedRows, sharedCols);
-		clSetKernelArg(kernels(deviceID), {{KERNEL_ARG_COUNT}} + 7, sharedMemSize, NULL);
+			out_rows, out_cols, skepu_overlap_y, skepu_overlap_x, in_rows, in_cols, sharedRows, sharedCols,
+			skepu_edge, skepu_pad, skepu_wrap->getDeviceDataPointer());
+		clSetKernelArg(kernels(deviceID), {{KERNEL_ARG_COUNT}} + 11, sharedMemSize, NULL);
 		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
 			kernels(deviceID), 2, NULL, globalSize, localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching MapOverlap 2D kernel");
@@ -693,7 +741,7 @@ handleRegion_CL(UserFunction &mapOverlapFunc, std::stringstream &SSMapOverlapFun
 	
 }*/
 
-std::string createMapOverlap2DKernelProgram_CL(UserFunction &mapOverlapFunc, std::string dir)
+std::string createMapOverlap2DKernelProgram_CL(SkeletonInstance &instance, UserFunction &mapOverlapFunc, std::string dir)
 {
 	std::stringstream sourceStream, SSMapOverlapFuncArgs, SSKernelParamList, SSHostKernelParamList, SSKernelArgs;
 	std::string indexInit = "";
@@ -705,6 +753,7 @@ std::string createMapOverlap2DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 	IndexCodeGen indexInfo = indexInitHelper_CL(mapOverlapFunc);
 	bool first = !indexInfo.hasIndex;
 	std::string multiOutputAssign = handleOutputs_CL(mapOverlapFunc, SSHostKernelParamList, SSKernelParamList, SSKernelArgs);
+	handleRandomParam_CL(mapOverlapFunc, sourceStream, SSMapOverlapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
 	
 	UserFunction::RegionParam& overlapParam = *mapOverlapFunc.regionParam;
 	if (!first) { SSMapOverlapFuncArgs << ", "; }
@@ -712,17 +761,17 @@ std::string createMapOverlap2DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 	SSMapOverlapFuncArgs << "skepu_region";
 	SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<" << overlapParam.resolvedTypeName << "> *skepu_input, ";
 	SSKernelArgs << "skepu_input->getDeviceDataPointer(), ";
-	SSKernelParamList << "__global " << overlapParam.resolvedTypeName << "* " << overlapParam.name << ", "; 
+	SSKernelParamList << "__global " << overlapParam.typeNameOpenCL() << "* " << overlapParam.name << ", "; 
 	
-	std::string proxy = "skepu_region2d_" + transformToCXXIdentifier(overlapParam.resolvedTypeName) + " skepu_region = { .data = &sdata[(get_local_id(1) + skepu_overlap_y) * sharedCols + (get_local_id(0) + skepu_overlap_x)], .oi = skepu_overlap_y, .oj = skepu_overlap_x, .stride = sharedCols };\n";
+	std::string proxy = "skepu_region2d_" + transformToCXXIdentifier(overlapParam.resolvedTypeName) + " skepu_region = { .data = &skepu_sdata[(get_local_id(1) + skepu_overlap_y) * skepu_sharedCols + (get_local_id(0) + skepu_overlap_x)], .oi = skepu_overlap_y, .oj = skepu_overlap_x, .stride = skepu_sharedCols };\n";
 	
 	handleUserTypesConstantsAndPrecision_CL({&mapOverlapFunc}, sourceStream);
-	sourceStream << generateOpenCLRegion(2, overlapParam.resolvedTypeName);
+	sourceStream << generateOpenCLRegion(2, overlapParam);
 	auto argsInfo = handleRandomAccessAndUniforms_CL(mapOverlapFunc, SSMapOverlapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
 	proxyCodeGenHelper_CL(argsInfo.containerProxyTypes, sourceStream);
 	sourceStream << generateUserFunctionCode_CL(mapOverlapFunc) << MatrixConvol2D_CL;
 
-	const std::string kernelName = transformToCXXIdentifier(ResultName) + "_Overlap2DKernel_" + mapOverlapFunc.uniqueName;
+	const std::string kernelName = instance + "_" + transformToCXXIdentifier(ResultName) + "_Overlap2DKernel_" + mapOverlapFunc.uniqueName;
 	std::stringstream SSKernelArgCount;
 	SSKernelArgCount << (mapOverlapFunc.numKernelArgsCL());
 	
@@ -731,6 +780,7 @@ std::string createMapOverlap2DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 	{
 		{"{{OPENCL_KERNEL}}",            sourceStream.str()},
 		{"{{MAPOVERLAP_INPUT_TYPE}}",    overlapParam.resolvedTypeName},
+		{"{{MAPOVERLAP_INPUT_TYPE_OPENCL}}", overlapParam.typeNameOpenCL()},
 		{"{{MAPOVERLAP_RESULT_TYPE}}",   mapOverlapFunc.resolvedReturnTypeName},
 		{"{{KERNEL_NAME}}",              kernelName},
 		{"{{INPUT_PARAM_NAME}}",         overlapParam.name},
@@ -765,55 +815,106 @@ std::string createMapOverlap2DKernelProgram_CL(UserFunction &mapOverlapFunc, std
 /*!
 * The mapoverlap OpenCL kernel to apply a user function on neighbourhood of each element in the matrix.
 */
-/*
 static const std::string MatrixConvol3D_CL = R"~~~(
-__kernel void {{KERNEL_NAME}}(
-	__global {{MAPOVERLAP_INPUT_TYPE}}* skepu_input, {{KERNEL_PARAMS}} __global {{MAPOVERLAP_RESULT_TYPE}}* skepu_output,
-	size_t out_rows, size_t out_cols, size_t out_peaks,
-	 size_t overlap_z, size_t skepu_overlap_y, size_t skepu_overlap_x,
-	size_t in_pitch, size_t sharedRows, size_t sharedCols, size_t sharedPeaks,
-	__local {{MAPOVERLAP_INPUT_TYPE}}* sdata)
+__kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
+	size_t skepu_out_size_i, size_t skepu_out_size_j, size_t skepu_out_size_k,
+	size_t skepu_overlap_i, size_t skepu_overlap_j, size_t skepu_overlap_k,
+	size_t skepu_in_size_i, size_t skepu_in_size_j, size_t skepu_in_size_k,
+	size_t skepu_shared_size_i, size_t skepu_shared_size_j, size_t skepu_shared_size_k,
+	int skepu_edge, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, __global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap,
+	__local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_sdata)
 {
-	size_t xx = ((size_t)(get_global_id(0) / get_local_size(0))) * get_local_size(0);
-	size_t yy = ((size_t)(get_global_id(1) / get_local_size(1))) * get_local_size(1);
-	size_t zz = ((size_t)(get_global_id(2) / get_local_size(2))) * get_local_size(2);
-	size_t x = get_global_id(0);
-	size_t y = get_global_id(1);
-	size_t z = get_global_id(2);
+	size_t skepu_global_prng_id = get_global_id(0);
+	size_t skepu_kk = ((size_t)(get_global_id(0) / get_local_size(0))) * get_local_size(0);
+	size_t skepu_jj = ((size_t)(get_global_id(1) / get_local_size(1))) * get_local_size(1);
+	size_t skepu_ii = ((size_t)(get_global_id(2) / get_local_size(2))) * get_local_size(2);
+	size_t skepu_k = get_global_id(0);
+	size_t skepu_j = get_global_id(1);
+	size_t skepu_i = get_global_id(2);
 	{{CONTAINER_PROXIES}}
 	{{CONTAINER_PROXIE_INNER}}
 
-	if (x < out_cols + skepu_overlap_x * 2 && y < out_rows + skepu_overlap_y * 2 && z < out_peaks + skepu_overlap_z * 2)
+	if (skepu_i < skepu_out_size_i + skepu_overlap_i * 2 && skepu_j < skepu_out_size_j + skepu_overlap_j * 2 && skepu_k < skepu_out_size_k + skepu_overlap_k * 2)
 	{
-		size_t sharedIdx = get_local_id(2) * sharedPeaks + get_local_id(1) * sharedCols + get_local_id(0);
-		sdata[sharedIdx] = skepu_input[z * ??? + y * in_pitch + x];
-
-		size_t shared_x = get_local_id(0)+get_local_size(0);
-		size_t shared_y = get_local_id(1)+get_local_size(1);
-		size_t shared_z = get_local_id(2);
-		while (shared_z < sharedPeaks)
+		size_t skepu_shared_k = get_local_id(0);
+		size_t skepu_shared_j = get_local_id(1);
+		size_t skepu_shared_i = get_local_id(2);
+		while (skepu_shared_i < skepu_shared_size_i)
 		{
-			while (shared_y < sharedRows)
+			while (skepu_shared_j < skepu_shared_size_j)
 			{
-				while (shared_x < sharedCols)
+				while (skepu_shared_k < skepu_shared_size_k)
 				{
-					sharedIdx = shared_y * sharedCols + shared_x;
-					sdata[sharedIdx] = skepu_input[(zz + shared_z) * ??? + (yy + shared_y) * in_pitch + xx + shared_x];
-					shared_x = shared_x + get_local_size(0);
+					size_t skepu_sharedIdx = skepu_shared_i * skepu_shared_size_j * skepu_shared_size_k + skepu_shared_j * skepu_shared_size_k + skepu_shared_k;
+					int skepu_global_k = (skepu_kk + skepu_shared_k - skepu_overlap_k);
+					int skepu_global_j = (skepu_jj + skepu_shared_j - skepu_overlap_j);
+					int skepu_global_i = (skepu_ii + skepu_shared_i - skepu_overlap_i);
+					
+					if ((skepu_global_i >= 0 && skepu_global_i < skepu_in_size_i) && (skepu_global_j >= 0 && skepu_global_j < skepu_in_size_j) && (skepu_global_k >= 0 && skepu_global_k < skepu_in_size_k))
+						skepu_sdata[skepu_sharedIdx] = {{INPUT_PARAM_NAME}}[skepu_global_i * skepu_in_size_j * skepu_in_size_k + skepu_global_j * skepu_in_size_k + skepu_global_k];
+					else
+					{
+						if (skepu_edge == SKEPU_EDGE_PAD)
+							skepu_sdata[skepu_sharedIdx] = skepu_pad;
+						else if (skepu_edge == SKEPU_EDGE_DUPLICATE)
+						{
+							skepu_sdata[skepu_sharedIdx] = {{INPUT_PARAM_NAME}}[
+								clamp(skepu_global_i, 0, (int)skepu_in_size_i - 1) * skepu_in_size_j * skepu_in_size_k +
+								clamp(skepu_global_j, 0, (int)skepu_in_size_j - 1) * skepu_in_size_k +
+								clamp(skepu_global_k, 0, (int)skepu_in_size_k - 1)];
+						}
+						else if (skepu_edge == SKEPU_EDGE_CYCLIC)
+						{
+							skepu_sdata[skepu_sharedIdx] = {{INPUT_PARAM_NAME}}[
+								((skepu_global_i + skepu_in_size_i) % skepu_in_size_i) * skepu_in_size_j * skepu_in_size_k +
+								((skepu_global_j + skepu_in_size_j) % skepu_in_size_j) * skepu_in_size_k +
+								((skepu_global_k + skepu_in_size_k) % skepu_in_size_k)];
+						}
+					}
+					
+					skepu_shared_k += get_local_size(0);
 				}
-				shared_x = get_local_id(0);
-				shared_y = shared_y + get_local_size(1);
+				skepu_shared_k  = get_local_id(0);
+				skepu_shared_j += get_local_size(1);
 			}
-			shared_x = get_local_id(0);
-			shared_y = get_local_id(1);
-			shared_z = shared_z + get_local_size(2);
+			skepu_shared_j  = get_local_id(1);
+			skepu_shared_i += get_local_size(2);
 		}
 	}
-
+	
+/*
 	barrier(CLK_LOCAL_MEM_FENCE);
 
-	if (x < out_cols && y < out_rows && z < out_peaks)
-		skepu_output[y * out_cols + x] = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
+	if (skepu_i == 0 && skepu_j == 0 && skepu_k == 0)
+	{
+		for (size_t dbg_j = 0; dbg_j < skepu_shared_size_j; ++dbg_j)
+		{
+			for (size_t dbg_i = 0; dbg_i < skepu_shared_size_i; ++dbg_i)
+			{
+				for (size_t dbg_k = 0; dbg_k < skepu_shared_size_k; ++dbg_k)
+				{
+					printf("%d\t", skepu_sdata[dbg_i * skepu_shared_size_j * skepu_shared_size_k + dbg_j * skepu_shared_size_k + dbg_k]);
+				}
+				printf(" | ");
+			}
+			printf("\n");
+		}
+	}
+	*/
+	
+	barrier(CLK_LOCAL_MEM_FENCE);
+	if (skepu_i < skepu_out_size_i && skepu_j < skepu_out_size_j && skepu_k < skepu_out_size_k)
+	{
+		skepu_i = skepu_i * skepu_out_size_j * skepu_out_size_k + skepu_j * skepu_out_size_k + skepu_k;
+		{{INDEX_INITIALIZER}}
+		{{CONTAINER_PROXIE_INNER}}
+#if !{{USE_MULTIRETURN}}
+		skepu_output[skepu_i] = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
+#else
+		{{MULTI_TYPE}} skepu_out_temp = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
+		{{OUTPUT_ASSIGN}}
+#endif
+	}
 }
 )~~~";
 
@@ -857,23 +958,386 @@ public:
 		initialized = true;
 	}
 
+	{{TEMPLATE_HEADER}}
 	static void mapOverlap3D
 	(
-		size_t deviceID, size_t localSize[3], size_t globalSize[3],
-		skepu::backend::DeviceMemPointer_CL<{{MAPOVERLAP_INPUT_TYPE}}> *skepu_input, {{HOST_KERNEL_PARAMS}}
-		skepu::backend::DeviceMemPointer_CL<{{MAPOVERLAP_RESULT_TYPE}}> *skepu_output,
-		size_t out_rows, size_t out_cols, size_t out_peaks,
-		size_t skepu_overlap_z, size_t skepu_overlap_y, size_t skepu_overlap_x,
-		size_t in_pitch, size_t sharedRows, size_t sharedCols, size_t sharedPeaks,
-		size_t sharedMemSize
+		size_t skepu_deviceID, size_t skepu_localSize[3], size_t skepu_globalSize[3],
+		{{HOST_KERNEL_PARAMS}} {{SIZES_TUPLE_PARAM}}
+		size_t skepu_out_i, size_t skepu_out_j, size_t skepu_out_k,
+		size_t skepu_overlap_i, size_t skepu_overlap_j, size_t skepu_overlap_k,
+		size_t skepu_in_size_i, size_t skepu_in_size_j, size_t skepu_in_size_k,
+		size_t skepu_shared_size_i, size_t skepu_shared_size_j, size_t skepu_shared_size_k,
+		int skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad,
+		skepu::backend::DeviceMemPointer_CL<{{MAPOVERLAP_INPUT_TYPE}}> *skepu_wrap,
+		size_t skepu_sharedMemSize
 	)
 	{
-		skepu::backend::cl_helpers::setKernelArgs(kernels(deviceID), skepu_input->getDeviceDataPointer(), {{KERNEL_ARGS}} skepu_output->getDeviceDataPointer(),
-			out_rows, out_cols, out_peaks, skepu_overlap_z, skepu_overlap_y, skepu_overlap_x, in_pitch, sharedRows, sharedCols, sharedPeaks);
-		clSetKernelArg(kernels(deviceID), {{KERNEL_ARG_COUNT}} + 12, sharedMemSize, NULL);
-		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
-			kernels(deviceID), 3, NULL, globalSize, localSize, 0, NULL, NULL);
-		CL_CHECK_ERROR(err, "Error launching MapOverlap 3D kernel");
+		skepu::backend::cl_helpers::setKernelArgs(kernels(skepu_deviceID), {{KERNEL_ARGS}}
+			skepu_out_i, skepu_out_j, skepu_out_k,
+			skepu_overlap_i, skepu_overlap_j, skepu_overlap_k,
+	 		skepu_in_size_i, skepu_in_size_j, skepu_in_size_k,
+			skepu_shared_size_i, skepu_shared_size_j, skepu_shared_size_k,
+			skepu_edge, skepu_pad, skepu_wrap->getDeviceDataPointer()
+		);
+		clSetKernelArg(kernels(skepu_deviceID), {{KERNEL_ARG_COUNT}} + 15, skepu_sharedMemSize, NULL);
+		cl_int skepu_err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(skepu_deviceID)->getQueue(),
+			kernels(skepu_deviceID), 3, NULL, skepu_globalSize, skepu_localSize, 0, NULL, NULL);
+		CL_CHECK_ERROR(skepu_err, "Error launching MapOverlap 3D kernel");
 	}
 };
-)~~~";*/
+)~~~";
+
+/*
+handleRegion_CL(UserFunction &mapOverlapFunc, std::stringstream &SSMapOverlapFuncArgs, std::stringstream &SSHostKernelParamList, std::stringstream &SSKernelParamList, std::stringstream &SSKernelArgs, first)
+{
+	
+}*/
+
+std::string createMapOverlap3DKernelProgram_CL(SkeletonInstance &instance, UserFunction &mapOverlapFunc, std::string dir)
+{
+	std::stringstream sourceStream, SSMapOverlapFuncArgs, SSKernelParamList, SSHostKernelParamList, SSKernelArgs;
+	std::string indexInit = "";
+	if (mapOverlapFunc.indexed3D)
+	{
+		indexInit = "index3_t skepu_index = { .i = i, .j = j, .k = k };";
+		SSMapOverlapFuncArgs << "skepu_index";
+	}
+	IndexCodeGen indexInfo = indexInitHelper_CL(mapOverlapFunc);
+	bool first = !indexInfo.hasIndex;
+	std::string multiOutputAssign = handleOutputs_CL(mapOverlapFunc, SSHostKernelParamList, SSKernelParamList, SSKernelArgs);
+	handleRandomParam_CL(mapOverlapFunc, sourceStream, SSMapOverlapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
+	
+	UserFunction::RegionParam& overlapParam = *mapOverlapFunc.regionParam;
+	if (!first) { SSMapOverlapFuncArgs << ", "; }
+	first = false;
+	SSMapOverlapFuncArgs << "skepu_region";
+	SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<" << overlapParam.resolvedTypeName << "> *skepu_input, ";
+	SSKernelArgs << "skepu_input->getDeviceDataPointer(), ";
+	SSKernelParamList << "__global " << overlapParam.typeNameOpenCL() << "* " << overlapParam.name << ", "; 
+	
+	std::string proxy = "skepu_region3d_" + transformToCXXIdentifier(overlapParam.resolvedTypeName) + " skepu_region = { .data = &skepu_sdata[(get_local_id(2) + skepu_overlap_i) * skepu_shared_size_j * skepu_shared_size_k + (get_local_id(1) + skepu_overlap_j) * skepu_shared_size_k + (get_local_id(0) + skepu_overlap_k)], .oi = skepu_overlap_i, .oj = skepu_overlap_j, .ok = skepu_overlap_k, .stride1 = skepu_shared_size_j, .stride2 = skepu_shared_size_k };\n";
+	
+	handleUserTypesConstantsAndPrecision_CL({&mapOverlapFunc}, sourceStream);
+	sourceStream << generateOpenCLRegion(3, overlapParam);
+	auto argsInfo = handleRandomAccessAndUniforms_CL(mapOverlapFunc, SSMapOverlapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
+	proxyCodeGenHelper_CL(argsInfo.containerProxyTypes, sourceStream);
+	sourceStream << generateUserFunctionCode_CL(mapOverlapFunc) << MatrixConvol3D_CL;
+
+	const std::string kernelName = instance + "_" + transformToCXXIdentifier(ResultName) + "_Overlap3DKernel_" + mapOverlapFunc.uniqueName;
+	std::stringstream SSKernelArgCount;
+	SSKernelArgCount << (mapOverlapFunc.numKernelArgsCL());
+	
+	std::ofstream FSOutFile {dir + "/" + kernelName + "_cl_source.inl"};
+	FSOutFile << templateString(Constructor3D,
+	{
+		{"{{OPENCL_KERNEL}}",            sourceStream.str()},
+		{"{{MAPOVERLAP_INPUT_TYPE}}",    overlapParam.resolvedTypeName},
+		{"{{MAPOVERLAP_INPUT_TYPE_OPENCL}}", overlapParam.typeNameOpenCL()},
+		{"{{MAPOVERLAP_RESULT_TYPE}}",   mapOverlapFunc.resolvedReturnTypeName},
+		{"{{KERNEL_NAME}}",              kernelName},
+		{"{{INPUT_PARAM_NAME}}",         overlapParam.name},
+		{"{{FUNCTION_NAME_MAPOVERLAP}}", mapOverlapFunc.uniqueName},
+		{"{{KERNEL_PARAMS}}",            SSKernelParamList.str()},
+		{"{{MAPOVERLAP_ARGS}}",          SSMapOverlapFuncArgs.str()},
+		{"{{HOST_KERNEL_PARAMS}}",       SSHostKernelParamList.str()},
+		{"{{KERNEL_CLASS}}",             "CLWrapperClass_" + kernelName},
+		{"{{KERNEL_ARGS}}",              SSKernelArgs.str()},
+		{"{{KERNEL_ARG_COUNT}}",         SSKernelArgCount.str()},
+		{"{{CONTAINER_PROXIES}}",        argsInfo.proxyInitializer + proxy},
+		{"{{CONTAINER_PROXIE_INNER}}",   argsInfo.proxyInitializerInner},
+		{"{{INDEX_INITIALIZER}}",        indexInit},
+		{"{{SIZE_PARAMS}}",              indexInfo.sizeParams},
+		{"{{SIZE_ARGS}}",                indexInfo.sizeArgs},
+		{"{{SIZES_TUPLE_PARAM}}",        indexInfo.sizesTupleParam},
+		{"{{TEMPLATE_HEADER}}",          indexInfo.templateHeader},
+		{"{{MULTI_TYPE}}",               mapOverlapFunc.multiReturnTypeNameGPU()},
+		{"{{USE_MULTIRETURN}}",          (mapOverlapFunc.multipleReturnTypes.size() > 0) ? "1" : "0"},
+		{"{{OUTPUT_ASSIGN}}",            multiOutputAssign}
+	});
+
+	return kernelName;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*!
+* The mapoverlap OpenCL kernel to apply a user function on neighbourhood of each element in the matrix.
+*/
+static const std::string MatrixConvol4D_CL = R"~~~(
+__kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
+	size_t skepu_out_size_i, size_t skepu_out_size_j, size_t skepu_out_size_k, size_t skepu_out_size_l,
+	size_t skepu_overlap_i, size_t skepu_overlap_j, size_t skepu_overlap_k, size_t skepu_overlap_l,
+	size_t skepu_in_size_i, size_t skepu_in_size_j, size_t skepu_in_size_k, size_t skepu_in_size_l,
+	size_t skepu_shared_size_i, size_t skepu_shared_size_j, size_t skepu_shared_size_k, size_t skepu_shared_size_l,
+	int skepu_edge, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, __global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap,
+	__local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_sdata)
+{
+	size_t skepu_global_prng_id = get_global_id(0);
+	const size_t skepu_ll = ((size_t)(get_global_id(0) / get_local_size(0))) * get_local_size(0);
+	const size_t skepu_kk = ((size_t)(get_global_id(0) / get_local_size(0))) * get_local_size(0);
+	const size_t skepu_jj = ((size_t)(get_global_id(1) / get_local_size(1))) * get_local_size(1);
+	const size_t skepu_ii = ((size_t)(get_global_id(2) / get_local_size(2))) * get_local_size(2);
+	
+	const size_t skepu_l = get_global_id(0) % skepu_out_size_l;
+	const size_t skepu_k = get_global_id(0) / skepu_out_size_l;
+	const size_t skepu_j = get_global_id(1);
+	      size_t skepu_i = get_global_id(2);
+	
+	const size_t skepu_increment_l = get_local_size(0) / skepu_out_size_l;
+	const size_t skepu_increment_k = get_local_size(0) / skepu_increment_l;
+	
+//	if (get_group_id(0) != 0 || get_group_id(1) != 0 || get_group_id(2) != 0)
+//		return;
+	
+	{{CONTAINER_PROXIES}}
+	{{CONTAINER_PROXIE_INNER}}
+
+	if (skepu_i < skepu_out_size_i + skepu_overlap_i * 2 && skepu_j < skepu_out_size_j + skepu_overlap_j * 2 && skepu_k < skepu_out_size_k + skepu_overlap_k * 2 && skepu_l < skepu_out_size_l + skepu_overlap_l * 2)
+	{
+		size_t skepu_shared_l = get_local_id(0) % skepu_out_size_l;
+		size_t skepu_shared_k = get_local_id(0) / skepu_out_size_l;
+		size_t skepu_shared_j = get_local_id(1);
+		size_t skepu_shared_i = get_local_id(2);
+		while (skepu_shared_i < skepu_shared_size_i)
+		{
+			while (skepu_shared_j < skepu_shared_size_j)
+			{
+				while (skepu_shared_k < skepu_shared_size_k)
+				{
+					while (skepu_shared_l < skepu_shared_size_l)
+					{
+						size_t skepu_sharedIdx = skepu_shared_i * skepu_shared_size_j * skepu_shared_size_k * skepu_shared_size_l + skepu_shared_j * skepu_shared_size_k * skepu_shared_size_l + skepu_shared_k * skepu_shared_size_l + skepu_shared_l;
+						int skepu_global_l = (skepu_ll + skepu_shared_l - skepu_overlap_l);
+						int skepu_global_k = (skepu_kk + skepu_shared_k - skepu_overlap_k);
+						int skepu_global_j = (skepu_jj + skepu_shared_j - skepu_overlap_j);
+						int skepu_global_i = (skepu_ii + skepu_shared_i - skepu_overlap_i);
+						
+						if ((skepu_global_i >= 0 && skepu_global_i < skepu_in_size_i) && (skepu_global_j >= 0 && skepu_global_j < skepu_in_size_j)
+						 && (skepu_global_k >= 0 && skepu_global_k < skepu_in_size_k) && (skepu_global_l >= 0 && skepu_global_l < skepu_in_size_l))
+							skepu_sdata[skepu_sharedIdx] = get_group_id(0);//{{INPUT_PARAM_NAME}}[skepu_global_i * skepu_in_size_j * skepu_in_size_k * skepu_in_size_l + skepu_global_j * skepu_in_size_k * skepu_in_size_l + skepu_global_k * skepu_in_size_l + skepu_global_l];
+						else
+						{
+							if (skepu_edge == SKEPU_EDGE_PAD)
+								skepu_sdata[skepu_sharedIdx] = skepu_pad;
+							else if (skepu_edge == SKEPU_EDGE_DUPLICATE)
+							{
+								skepu_sdata[skepu_sharedIdx] = {{INPUT_PARAM_NAME}}[
+									clamp(skepu_global_i, 0, (int)skepu_in_size_i - 1) * skepu_in_size_j * skepu_in_size_k * skepu_in_size_l +
+									clamp(skepu_global_j, 0, (int)skepu_in_size_j - 1) * skepu_in_size_k * skepu_in_size_l +
+									clamp(skepu_global_k, 0, (int)skepu_in_size_k - 1) * skepu_in_size_l +
+									clamp(skepu_global_l, 0, (int)skepu_in_size_l - 1)];
+							}
+							else if (skepu_edge == SKEPU_EDGE_CYCLIC)
+							{
+								skepu_sdata[skepu_sharedIdx] = {{INPUT_PARAM_NAME}}[
+									((skepu_global_i + skepu_in_size_i) % skepu_in_size_i) * skepu_in_size_j * skepu_in_size_k * skepu_in_size_l +
+									((skepu_global_j + skepu_in_size_j) % skepu_in_size_j) * skepu_in_size_k * skepu_in_size_l +
+									((skepu_global_k + skepu_in_size_k) % skepu_in_size_k) * skepu_in_size_l +
+									((skepu_global_l + skepu_in_size_l) % skepu_in_size_l)];
+							}
+						}
+						
+						skepu_shared_l += skepu_increment_l;
+					}
+					skepu_shared_l = get_local_id(0) % skepu_out_size_l;
+					skepu_shared_k += skepu_increment_k;
+				}
+				skepu_shared_k  = get_local_id(0) / skepu_out_size_l;
+				skepu_shared_j += get_local_size(1);
+			}
+			skepu_shared_j  = get_local_id(1);
+			skepu_shared_i += get_local_size(2);
+		}
+	}
+	
+/*
+	barrier(CLK_LOCAL_MEM_FENCE);
+
+	if (skepu_i == 0 && skepu_j == 0 && skepu_k == 0 && skepu_l == 0)
+	{
+		for (size_t dbg_i = 0; dbg_i < skepu_shared_size_i; ++dbg_i)
+		{
+			for (size_t dbg_k = 0; dbg_k < skepu_shared_size_k; ++dbg_k)
+			{
+				for (size_t dbg_j = 0; dbg_j < skepu_shared_size_j; ++dbg_j)
+				{
+					for (size_t dbg_l = 0; dbg_l < skepu_shared_size_l; ++dbg_l)
+					{
+						printf("%d\t", skepu_sdata[dbg_i * skepu_shared_size_j * skepu_shared_size_k * skepu_shared_size_l + dbg_j * skepu_shared_size_k * skepu_shared_size_l + dbg_k * skepu_shared_size_l + dbg_l]);
+					}
+					printf(" | ");
+				}
+				printf("\n");
+			}
+			printf("---------------------------------\n");
+		}
+	}
+	*/
+	
+	barrier(CLK_LOCAL_MEM_FENCE);
+	if (skepu_i < skepu_out_size_i && skepu_j < skepu_out_size_j && skepu_k < skepu_out_size_k && skepu_l < skepu_out_size_l)
+	{
+		skepu_i = skepu_i * skepu_out_size_j * skepu_out_size_k * skepu_out_size_l + skepu_j * skepu_out_size_k * skepu_out_size_l + skepu_k * skepu_out_size_l + skepu_l;
+		{{INDEX_INITIALIZER}}
+		{{CONTAINER_PROXIE_INNER}}
+#if !{{USE_MULTIRETURN}}
+		skepu_output[skepu_i] = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
+#else
+		{{MULTI_TYPE}} skepu_out_temp = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
+		{{OUTPUT_ASSIGN}}
+#endif
+	}
+}
+)~~~";
+
+
+const std::string Constructor4D = R"~~~(
+class {{KERNEL_CLASS}}
+{
+public:
+
+	static cl_kernel kernels(size_t deviceID, cl_kernel *newkernel = nullptr)
+	{
+		static cl_kernel arr[8]; // Hard-coded maximum
+		if (newkernel)
+		{
+			arr[deviceID] = *newkernel;
+			return nullptr;
+		}
+		else return arr[deviceID];
+	}
+
+	static void initialize()
+	{
+		static bool initialized = false;
+		if (initialized)
+			return;
+
+		std::string source = skepu::backend::cl_helpers::replaceSizeT(R"###({{OPENCL_KERNEL}})###");
+
+		// Builds the code and creates kernel for all devices
+		size_t counter = 0;
+		for (skepu::backend::Device_CL *device : skepu::backend::Environment<int>::getInstance()->m_devices_CL)
+		{
+			cl_int err;
+			cl_program program = skepu::backend::cl_helpers::buildProgram(device, source);
+			cl_kernel kernel = clCreateKernel(program, "{{KERNEL_NAME}}", &err);
+			CL_CHECK_ERROR(err, "Error creating MapOverlap 4D kernel '{{KERNEL_NAME}}'");
+
+			kernels(counter++, &kernel);
+		}
+
+		initialized = true;
+	}
+
+	{{TEMPLATE_HEADER}}
+	static void mapOverlap4D
+	(
+		size_t skepu_deviceID, size_t skepu_localSize[3], size_t skepu_globalSize[3],
+		{{HOST_KERNEL_PARAMS}} {{SIZES_TUPLE_PARAM}}
+		size_t skepu_out_i, size_t skepu_out_j, size_t skepu_out_k, size_t skepu_out_l,
+		size_t skepu_overlap_i, size_t skepu_overlap_j, size_t skepu_overlap_k, size_t skepu_overlap_l,
+		size_t skepu_in_size_i, size_t skepu_in_size_j, size_t skepu_in_size_k, size_t skepu_in_size_l,
+		size_t skepu_shared_size_i, size_t skepu_shared_size_j, size_t skepu_shared_size_k, size_t skepu_shared_size_l,
+		int skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad,
+		skepu::backend::DeviceMemPointer_CL<{{MAPOVERLAP_INPUT_TYPE}}> *skepu_wrap,
+		size_t skepu_sharedMemSize
+	)
+	{
+		skepu::backend::cl_helpers::setKernelArgs(kernels(skepu_deviceID), {{KERNEL_ARGS}}
+			skepu_out_i, skepu_out_j, skepu_out_k, skepu_out_l,
+			skepu_overlap_i, skepu_overlap_j, skepu_overlap_k, skepu_overlap_l,
+	 		skepu_in_size_i, skepu_in_size_j, skepu_in_size_k, skepu_in_size_l,
+			skepu_shared_size_i, skepu_shared_size_j, skepu_shared_size_k, skepu_shared_size_l,
+			skepu_edge, skepu_pad, skepu_wrap->getDeviceDataPointer()
+		);
+		clSetKernelArg(kernels(skepu_deviceID), {{KERNEL_ARG_COUNT}} + 19, skepu_sharedMemSize, NULL);
+		cl_int skepu_err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(skepu_deviceID)->getQueue(),
+			kernels(skepu_deviceID), 3, NULL, skepu_globalSize, skepu_localSize, 0, NULL, NULL);
+		CL_CHECK_ERROR(skepu_err, "Error launching MapOverlap 4D kernel");
+	}
+};
+)~~~";
+
+/*
+handleRegion_CL(UserFunction &mapOverlapFunc, std::stringstream &SSMapOverlapFuncArgs, std::stringstream &SSHostKernelParamList, std::stringstream &SSKernelParamList, std::stringstream &SSKernelArgs, first)
+{
+	
+}*/
+
+std::string createMapOverlap4DKernelProgram_CL(SkeletonInstance &instance, UserFunction &mapOverlapFunc, std::string dir)
+{
+	std::stringstream sourceStream, SSMapOverlapFuncArgs, SSKernelParamList, SSHostKernelParamList, SSKernelArgs;
+	std::string indexInit = "";
+	if (mapOverlapFunc.indexed4D)
+	{
+		indexInit = "index4_t skepu_index = { .i = i, .j = j, .k = k, .l = l };";
+		SSMapOverlapFuncArgs << "skepu_index";
+	}
+	IndexCodeGen indexInfo = indexInitHelper_CL(mapOverlapFunc);
+	bool first = !indexInfo.hasIndex;
+	std::string multiOutputAssign = handleOutputs_CL(mapOverlapFunc, SSHostKernelParamList, SSKernelParamList, SSKernelArgs);
+	handleRandomParam_CL(mapOverlapFunc, sourceStream, SSMapOverlapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
+	
+	UserFunction::RegionParam& overlapParam = *mapOverlapFunc.regionParam;
+	if (!first) { SSMapOverlapFuncArgs << ", "; }
+	first = false;
+	SSMapOverlapFuncArgs << "skepu_region";
+	SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<" << overlapParam.resolvedTypeName << "> *skepu_input, ";
+	SSKernelArgs << "skepu_input->getDeviceDataPointer(), ";
+	SSKernelParamList << "__global " << overlapParam.typeNameOpenCL() << "* " << overlapParam.name << ", "; 
+	
+	std::string proxy = "skepu_region4d_" + transformToCXXIdentifier(overlapParam.resolvedTypeName) + " skepu_region = { .data = &skepu_sdata [(get_local_id(2) + skepu_overlap_i) * skepu_shared_size_j * skepu_shared_size_k * skepu_shared_size_l + (get_local_id(1) + skepu_overlap_j) * skepu_shared_size_k * skepu_shared_size_l + ((get_local_id(0) / skepu_out_size_l) + skepu_overlap_k) * skepu_shared_size_l + ((get_local_id(0) % skepu_out_size_l) + skepu_overlap_l)], .oi = skepu_overlap_i, .oj = skepu_overlap_j, .ok = skepu_overlap_k, .ol = skepu_overlap_l, .stride1 = skepu_shared_size_j, .stride2 = skepu_shared_size_k, .stride3 = skepu_shared_size_l };\n";
+	
+	handleUserTypesConstantsAndPrecision_CL({&mapOverlapFunc}, sourceStream);
+	sourceStream << generateOpenCLRegion(4, overlapParam);
+	auto argsInfo = handleRandomAccessAndUniforms_CL(mapOverlapFunc, SSMapOverlapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
+	proxyCodeGenHelper_CL(argsInfo.containerProxyTypes, sourceStream);
+	sourceStream << generateUserFunctionCode_CL(mapOverlapFunc) << MatrixConvol4D_CL;
+
+	const std::string kernelName = instance + "_" + transformToCXXIdentifier(ResultName) + "_Overlap4DKernel_" + mapOverlapFunc.uniqueName;
+	std::stringstream SSKernelArgCount;
+	SSKernelArgCount << (mapOverlapFunc.numKernelArgsCL());
+	
+	std::ofstream FSOutFile {dir + "/" + kernelName + "_cl_source.inl"};
+	FSOutFile << templateString(Constructor4D,
+	{
+		{"{{OPENCL_KERNEL}}",            sourceStream.str()},
+		{"{{MAPOVERLAP_INPUT_TYPE}}",    overlapParam.resolvedTypeName},
+		{"{{MAPOVERLAP_INPUT_TYPE_OPENCL}}", overlapParam.typeNameOpenCL()},
+		{"{{MAPOVERLAP_RESULT_TYPE}}",   mapOverlapFunc.resolvedReturnTypeName},
+		{"{{KERNEL_NAME}}",              kernelName},
+		{"{{INPUT_PARAM_NAME}}",         overlapParam.name},
+		{"{{FUNCTION_NAME_MAPOVERLAP}}", mapOverlapFunc.uniqueName},
+		{"{{KERNEL_PARAMS}}",            SSKernelParamList.str()},
+		{"{{MAPOVERLAP_ARGS}}",          SSMapOverlapFuncArgs.str()},
+		{"{{HOST_KERNEL_PARAMS}}",       SSHostKernelParamList.str()},
+		{"{{KERNEL_CLASS}}",             "CLWrapperClass_" + kernelName},
+		{"{{KERNEL_ARGS}}",              SSKernelArgs.str()},
+		{"{{KERNEL_ARG_COUNT}}",         SSKernelArgCount.str()},
+		{"{{CONTAINER_PROXIES}}",        argsInfo.proxyInitializer + proxy},
+		{"{{CONTAINER_PROXIE_INNER}}",   argsInfo.proxyInitializerInner},
+		{"{{INDEX_INITIALIZER}}",        indexInit},
+		{"{{SIZE_PARAMS}}",              indexInfo.sizeParams},
+		{"{{SIZE_ARGS}}",                indexInfo.sizeArgs},
+		{"{{SIZES_TUPLE_PARAM}}",        indexInfo.sizesTupleParam},
+		{"{{TEMPLATE_HEADER}}",          indexInfo.templateHeader},
+		{"{{MULTI_TYPE}}",               mapOverlapFunc.multiReturnTypeNameGPU()},
+		{"{{USE_MULTIRETURN}}",          (mapOverlapFunc.multipleReturnTypes.size() > 0) ? "1" : "0"},
+		{"{{OUTPUT_ASSIGN}}",            multiOutputAssign}
+	});
+
+	return kernelName;
+}

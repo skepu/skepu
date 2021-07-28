@@ -1,4 +1,5 @@
-#include <iostream>
+#include <catch2/catch.hpp>
+
 #include <skepu>
 
 int uf(int a, int b)
@@ -9,22 +10,14 @@ int uf(int a, int b)
 	return a * b;
 }
 
-int main(int argc, char *argv[])
+auto skel = skepu::Map<2>(uf);
+
+TEST_CASE("BackendSpec options")
 {
-	if (argc < 3)
-	{
-		std::cout << "Usage: " << argv[0] << " size backend\n";
-		exit(1);
-	}
-	
-	const size_t size = atoi(argv[1]);
-	skepu::BackendSpec spec{argv[2]};
-	
-	auto skel = skepu::Map<2>(uf);
-	
+	const size_t size{100};
+	skepu::BackendSpec spec;
 	
 	skepu::Vector<int> v1(size), v2(size), v3(size);
-	
 	
 	// Global spec
 	
@@ -81,6 +74,5 @@ int main(int argc, char *argv[])
 	skel(v3, v1, v2);
 	std::cout << v3 << std::endl;
 	
-	return 0;
 }
 

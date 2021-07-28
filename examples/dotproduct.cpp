@@ -1,8 +1,5 @@
-#include <iostream>
-#include <utility>
-#include <cfloat>
-
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 template<typename T>
 T mult(T a, T b)
@@ -21,7 +18,7 @@ int main(int argc, char *argv[])
 {
 	if (argc < 3)
 	{
-		std::cout << "Usage: " << argv[0] << " size backend\n";
+		skepu::io::cout << "Usage: " << argv[0] << " size backend\n";
 		exit(1);
 	}
 	
@@ -35,17 +32,12 @@ int main(int argc, char *argv[])
 	a.randomize(0, 3);
 	b.randomize(0, 2);
 	
-	skepu::external(
-		skepu::read(a,b),
-		[&]{
-			std::cout << a << "\n";
-			std::cout << b << "\n";
-		});
+	skepu::io::cout << a << "\n";
+	skepu::io::cout << b << "\n";
 	
 	float res = dotprod(a, b);
 	
-	skepu::external(
-		[&]{ std::cout << res << "\n"; });
+	skepu::io::cout << res << "\n";
 	
 	return 0;
 }
