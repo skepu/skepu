@@ -9,21 +9,27 @@ include_directories(${CMAKE_CURRENT_LIST_DIR})
 add_library(lodepng STATIC lodepng.cpp)
 
 set(_skepu_examples
-	call
+	cellular_automaton
 	cma
+	conjugate_gradient
 	coulombic
 	dotproduct
+	edgedetect
+	heat_diffusion
 	mandelbrot
 	maxmin
 	median
+	miller_rabin
 	mmmult
 	mmmult_row_col
+	montecarlo
 	mvmult
 	mvmult_row
 	nbody
 	nbody_mappairs
 	ppmcc
 	psnr
+	riemann_sum
 	taylor
 )
 
@@ -53,6 +59,9 @@ if(SKEPU_EXAMPLES_SEQ)
 
 	if(TARGET median_seq)
 		target_link_libraries(median_seq PRIVATE lodepng)
+	endif()
+	if(TARGET edgedetect_seq)
+		target_link_libraries(edgedetect_seq PRIVATE lodepng)
 	endif()
 endif()
 
@@ -88,6 +97,9 @@ if(SKEPU_EXAMPLES_PAR)
 
 	if(TARGET median_par)
 		target_link_libraries(median_par PRIVATE lodepng)
+	endif()
+	if(TARGET edgedetect_par)
+		target_link_libraries(edgedetect_par PRIVATE lodepng)
 	endif()
 endif()
 

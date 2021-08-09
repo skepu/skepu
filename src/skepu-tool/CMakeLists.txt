@@ -20,6 +20,7 @@ add_clang_executable(skepu-tool
   mappairs_cl.cpp
   mappairs_cu.cpp
   mappairsreduce_cl.cpp
+  mappairsreduce_cu.cpp
   call_cl.cpp
   call_cu.cpp)
 

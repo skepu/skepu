@@ -27,24 +27,26 @@ struct PixelInfo<skepu::filter::RGBPixel>
 template<typename Pixel>
 void ReadPngFileToMatrix(skepu::Matrix<Pixel> &inputMatrix, std::string filePath)
 {
-	std::vector<unsigned char> image;
-	unsigned imageWidth, imageHeight;
-	unsigned error = lodepng::decode(image, imageWidth, imageHeight, filePath, PixelInfo<Pixel>::type);
-	if (error)
-		std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
-	
-	inputMatrix.init(imageHeight, imageWidth);
-	Pixel *imgView = reinterpret_cast<Pixel*>(image.data());
-	std::copy(imgView, imgView + imageHeight * imageWidth, inputMatrix.data());
+	skepu::external([&]
+	{
+		std::vector<unsigned char> image;
+		unsigned imageWidth, imageHeight;
+		unsigned error = lodepng::decode(image, imageWidth, imageHeight, filePath, PixelInfo<Pixel>::type);
+		if (error) std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
+		inputMatrix.init(imageHeight, imageWidth);
+		Pixel *imgView = reinterpret_cast<Pixel*>(image.data());
+		std::copy(imgView, imgView + imageHeight * imageWidth, inputMatrix.data());
+	}, skepu::write(inputMatrix));
 }
 
 template<typename Pixel>
 void WritePngFileMatrix(skepu::Matrix<Pixel> &imageData, std::string filePath)
 {
-	imageData.updateHost();
-	unsigned error = lodepng::encode(filePath, reinterpret_cast<unsigned char*>(&imageData[0]), imageData.total_cols(), imageData.total_rows(), PixelInfo<Pixel>::type);
-	if(error)
-		std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
+	skepu::external(skepu::read(imageData), [&]
+	{
+		unsigned error = lodepng::encode(filePath, reinterpret_cast<unsigned char*>(imageData.data()), imageData.total_cols(), imageData.total_rows(), PixelInfo<Pixel>::type);
+		if (error) std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
+	});
 }
 
 
@@ -63,7 +65,7 @@ int main(int argc, char* argv[])
 	std::string outputFileName(argv[3]);
 	const float blur_sigma = atof(argv[4]);
 	skepu::BackendSpec spec;
-	if (argc > 4) spec = skepu::BackendSpec{argv[5]};
+	if (argc > 5) spec = skepu::BackendSpec{argv[5]};
 	skepu::setGlobalBackendSpec(spec);
 	
 	auto intensity       = skepu::Map(skepu::filter::intensity_kernel);
@@ -74,9 +76,7 @@ int main(int argc, char* argv[])
 	
 	// Read the padded image into a matrix. Create the output matrix without padding.
 	skepu::Matrix<skepu::filter::RGBPixel> inputImg;
-	skepu::external([&]{
-		ReadPngFileToMatrix<skepu::filter::RGBPixel>(inputImg, inputFileName);
-	}, skepu::write(inputImg));
+	ReadPngFileToMatrix<skepu::filter::RGBPixel>(inputImg, inputFileName);
 	skepu::io::cout << "Image of height: " << inputImg.total_rows() << " and width: " << inputImg.total_cols() << "\n";
 	
 	// Gaussian blur
@@ -85,26 +85,20 @@ int main(int argc, char* argv[])
 		const size_t blur_radius = ceil(3.0 * blur_sigma);
 		skepu::Vector<float> filter(blur_radius * 2 + 1);
 		filter_gen(filter, blur_radius, blur_sigma);
-		float sum = 0;
-		for (float f : filter) sum += f;
-		skepu::io::cout << "Radius: " << blur_radius << ", Weights: " << filter << ", sum: " << sum << "\n";
 		
 		skepu::Matrix<skepu::filter::RGBPixel>
 			tempImgA (inputImg.total_rows(), inputImg.total_cols()),
-			tempImgB (inputImg.total_rows(), inputImg.total_cols()),
 			outputImg(inputImg.total_rows(), inputImg.total_cols());
 		
 		convolution_rgb.setOverlap(blur_radius);
 		convolution_rgb.setEdgeMode(skepu::Edge::Duplicate);
 		
 		convolution_rgb.setOverlapMode(skepu::Overlap::RowWise);
-		convolution_rgb(tempImgB, tempImgA, filter, 0, 1.0);
+		convolution_rgb(tempImgA, inputImg, filter, 0, 1.0);
 		convolution_rgb.setOverlapMode(skepu::Overlap::ColWise);
-		convolution_rgb(outputImg, tempImgB, filter, 0, 1.0);
+		convolution_rgb(outputImg, tempImgA, filter, 0, 1.0);
 		
-		skepu::external(skepu::read(outputImg), [&]{
-			WritePngFileMatrix(outputImg, outputFileName + "_final.png");
-		});
+		WritePngFileMatrix(outputImg, outputFileName + "_final.png");
 	}
 	else if (mode == "edge")
 	{
@@ -130,9 +124,7 @@ int main(int argc, char* argv[])
 		
 		// Final computation
 		distance(outputImg, tempImgA, outputImg);
-		skepu::external(skepu::read(outputImg), [&]{
-			WritePngFileMatrix(outputImg, outputFileName + "_final.png");
-		});
+		WritePngFileMatrix(outputImg, outputFileName + "_final.png");
 	}
 	
 	

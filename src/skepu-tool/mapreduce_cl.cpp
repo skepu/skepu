@@ -228,7 +228,7 @@ std::string createMapReduceKernelProgram_CL(SkeletonInstance &instance, UserFunc
 	SSKernelName << instance << "_" << transformToCXXIdentifier(ResultName) << "_MapReduceKernel_" << mapFunc.uniqueName << "_" << reduceFunc.uniqueName << "_arity_" << mapFunc.Varity << "uid_" << GlobalSkeletonIndex++;
 	const std::string kernelName = SSKernelName.str();
 	std::stringstream SSKernelArgCount;
-	SSKernelArgCount << mapFunc.numKernelArgsCL() + 2 + std::max<int>(0, indexInfo.dim - 1) + (mapFunc.randomParam ? 1 : 0) + stride_counter;
+	SSKernelArgCount << mapFunc.numKernelArgsCL() + 2 + std::max<int>(0, indexInfo.dim - 1) + stride_counter;
 	
 	std::stringstream SSStrideCount;
 	SSStrideCount << mapFunc.elwiseParams.size();

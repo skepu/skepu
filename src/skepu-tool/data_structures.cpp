@@ -771,7 +771,7 @@ std::string UserFunction::multiReturnTypeNameGPU()
 {
 	std::string multiReturnType = "skepu_multiple";
 		for (std::string &type : this->multipleReturnTypes)
-			multiReturnType += "_" + type;
+			multiReturnType += "_" + transformToCXXIdentifier(type);
 	return multiReturnType;
 }
 
@@ -780,6 +780,8 @@ size_t UserFunction::numKernelArgsCL()
 {
 	size_t count = std::max<size_t>(1, this->multipleReturnTypes.size());
 	
+	if (this->randomParam)
+		count += 1;
 	if (this->regionParam)
 		count += 1;
 

@@ -19,8 +19,8 @@ static long pow_mod(long a, long x, long n)
 
 int isprime(skepu::Index1D index, skepu::Random<DEFAULT_ACCURACY> &prng, int k)
 {
-  // Remap from [0 n) to [2 n+2)
-  int n = index.i + 2;
+  // Remap from [0 n) to [4 n+4)
+  int n = index.i + 4;
   bool definitely_prime = false;
   bool definitely_not_prime = false;
   bool factor_found = false;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 
   for (int n = 10, e = 0; n <= 10000000; n *= 10, ++e)
   {
-    int primes = pi(n);
+    int primes = pi(n-2)+2;
     skepu::io::cout << "There are " << primes << " primes less than " << n;
 
     if (primes == expected[e]) skepu::io::cout << "\n";

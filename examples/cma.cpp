@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 	if (size <= 50)
 		skepu::io::cout << "Cumulative moving average: " << out << "\n";
 	else
-		skepu::io::cout << "Average: " << out[size-1] << "\n";
+		skepu::io::cout << "Average: " << out(size-1) << "\n";
 	
 	return 0;
 }

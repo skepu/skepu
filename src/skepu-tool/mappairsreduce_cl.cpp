@@ -12,7 +12,6 @@ const char *MapPairsReduceKernelTemplate_CL = R"~~~(
 __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_Vsize, size_t skepu_Hsize, size_t skepu_base, int skepu_transposed, __local {{REDUCE_RESULT_TYPE}}* skepu_sdata)
 {
 	size_t skepu_global_prng_id = get_global_id(0);
-	size_t skepu_gridSize = get_local_size(0) * get_num_groups(0);
 	size_t skepu_blockSize = get_local_size(0);
 	size_t skepu_tid = get_local_id(0);
 	{{CONTAINER_PROXIES}}
@@ -26,10 +25,6 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_Vsi
 	
 	if (skepu_thread_H < skepu_Hsize)
 	{
-		if (get_global_id(0) == 0)
-		{
-			printf("taking h-index %d\n", skepu_thread_H);
-		}
 		{{INDEX_INITIALIZER}}
 		{{CONTAINER_PROXIE_INNER}}
 #if !{{USE_MULTIRETURN}}
@@ -47,10 +42,6 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_Vsi
 	
 	while (skepu_thread_H < skepu_Hsize)
 	{
-		if (get_global_id(0) == 0)
-		{
-			printf("taking h-index %d\n", skepu_thread_H);
-		}
 		{{INDEX_INITIALIZER}}
 		{{CONTAINER_PROXIE_INNER}}
 #if !{{USE_MULTIRETURN}}
@@ -66,7 +57,6 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_Vsi
 		else
 			skepu_lookup_V += skepu_blockSize;
 	}
-	
 	
 	skepu_sdata[skepu_tid] = skepu_result;
 	
@@ -222,78 +212,4 @@ std::string createMapPairsReduceKernelProgram_CL(SkeletonInstance &instance, Use
 	});
 	
 	return kernelName;
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	/*
-	std::stringstream sourceStream, SSKernelParamList, SSMapFuncArgs, SSHostKernelParamList, SSKernelArgs;
-	IndexCodeGen indexInfo = indexInitHelper_CL(mapFunc);
-	bool first = !indexInfo.hasIndex;
-	SSMapFuncArgs << indexInfo.mapFuncParam;
-
-	for (UserFunction::Param& param : mapFunc.elwiseParams)
-	{
-		if (!first) { SSMapFuncArgs << ", "; }
-		SSKernelParamList << "__global " << param.rawTypeName << " * user_" << param.name << ", ";
-		SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<const " << param.resolvedTypeName << "> * user_" << param.name << ", ";
-		SSKernelArgs << "user_" << param.name << "->getDeviceDataPointer(), ";
-		SSMapFuncArgs << "user_" << param.name << "[skepu_i]";
-		first = false;
-	}
-	
-	auto argsInfo = handleRandomAccessAndUniforms_CL(mapFunc, SSMapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
-	handleUserTypesConstantsAndPrecision_CL({&mapFunc, &reduceFunc}, sourceStream);	
-	proxyCodeGenHelper_CL(argsInfo.containerProxyTypes, sourceStream);
-
-	if (mapFunc.refersTo(reduceFunc))
-		sourceStream << generateUserFunctionCode_CL(mapFunc);
-	else if (reduceFunc.refersTo(mapFunc))
-		sourceStream << generateUserFunctionCode_CL(reduceFunc);
-	else
-		sourceStream << generateUserFunctionCode_CL(mapFunc) << generateUserFunctionCode_CL(reduceFunc);
-
-	sourceStream << MapReduceKernelTemplate_CL << ReduceKernelTemplate_CL;
-	
-	std::stringstream SSKernelName;
-	SSKernelName << transformToCXXIdentifier(ResultName) << "_MapReduceKernel_" << mapFunc.uniqueName << "_" << reduceFunc.uniqueName << "_arity_" << mapFunc.Varity;
-	const std::string kernelName = SSKernelName.str();
-	std::stringstream SSKernelArgCount;
-	SSKernelArgCount << mapFunc.numKernelArgsCL() + 2 + std::max<int>(0, indexInfo.dim - 1);
-	
-	std::ofstream FSOutFile {dir + "/" + kernelName + "_cl_source.inl"};
-	FSOutFile << templateString(Constructor,
-	{
-		{"{{OPENCL_KERNEL}}",          sourceStream.str()},
-		{"{{KERNEL_CLASS}}",           "CLWrapperClass_" + kernelName},
-		{"{{KERNEL_ARGS}}",            SSKernelArgs.str()},
-		{"{{KERNEL_ARG_COUNT}}",       SSKernelArgCount.str()},
-		{"{{HOST_KERNEL_PARAMS}}",     SSHostKernelParamList.str()},
-		{"{{CONTAINER_PROXIES}}",      argsInfo.proxyInitializer},
-		{"{{CONTAINER_PROXIE_INNER}}", argsInfo.proxyInitializerInner},
-		{"{{KERNEL_PARAMS}}",          SSKernelParamList.str()},
-		{"{{MAP_PARAMS}}",             SSMapFuncArgs.str()},
-		{"{{REDUCE_RESULT_TYPE}}",     reduceFunc.rawReturnTypeName},
-		{"{{REDUCE_RESULT_CPU}}",      reduceFunc.resolvedReturnTypeName},
-		{"{{MAP_RESULT_TYPE}}",        mapFunc.rawReturnTypeName},
-		{"{{FUNCTION_NAME_MAP}}",      mapFunc.uniqueName},
-		{"{{FUNCTION_NAME_REDUCE}}",   reduceFunc.uniqueName},
-		{"{{KERNEL_NAME}}",            kernelName},
-		{"{{INDEX_INITIALIZER}}",      indexInfo.indexInit},
-		{"{{SIZE_PARAMS}}",            indexInfo.sizeParams},
-		{"{{SIZE_ARGS}}",              indexInfo.sizeArgs},
-		{"{{SIZES_TUPLE_PARAM}}",      indexInfo.sizesTupleParam},
-		{"{{TEMPLATE_HEADER}}",        indexInfo.templateHeader}
-	});
-
-	return kernelName;*/
 }

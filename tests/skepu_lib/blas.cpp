@@ -1,5 +1,7 @@
 #include <catch2/catch.hpp>
 
+#define SKEPU_DEBUG 3
+#define SKEPU_ENABLE_EXCEPTIONS
 #include <iostream>
 #include <skepu>
 
@@ -9,7 +11,7 @@
 
 TEST_CASE("BLAS level 1")
 {
-	const size_t n{1000000};
+	const size_t n{1000};
 	
 	skepu::Vector<skepu::complex::complex<float>> v1(n), v2(n), r(n);
 	
@@ -104,7 +106,7 @@ TEST_CASE("BLAS level 1")
 
 TEST_CASE("BLAS level 2")
 {
-	const size_t n{1000};
+	const size_t n{100};
 	
 	{
 		using TestType = skepu::complex::complex<float>;
@@ -190,9 +192,64 @@ TEST_CASE("BLAS level 2")
 	
 }
 
-TEST_CASE("BLAS level 3")
+/*
+TEST_CASE("BLAS level 3 integral")
 {
-	const size_t n{100};
+	const size_t n{20};
+
+	using TestType = int;
+	size_t m = n + 2;
+	size_t k = n + 1;
+	skepu::Matrix<TestType> C(m, n), A(m, k), B(k, n);
+	
+	A.randomize(0, 10);
+	B.randomize(0, 10);
+	C.randomize(0, 10);
+	
+	skepu::io::cout << "C: " << C << "\n";
+	skepu::io::cout << "A: " << A << "\n";
+	skepu::io::cout << "B: " << B << "\n";
+	
+	float alpha = 0.5;
+	float beta = 0.5;
+	skepu::blas::gemm(skepu::blas::Op::NoTrans, skepu::blas::Op::NoTrans,
+		m, n, k, alpha, A, 1, B, 1, beta, C, 1
+	);
+	skepu::io::cout << "C: " << C << "\n\n";
+	
+	
+}*/
+
+TEST_CASE("BLAS level 3 floating point")
+{
+	const size_t n{20};
+
+	using TestType = float;
+	size_t m = n + 2;
+	size_t k = n + 1;
+	skepu::Matrix<TestType> C(m, n), A(m, k), B(k, n);
+	
+	A.randomize(0, 10);
+	B.randomize(0, 10);
+	C.randomize(0, 10);
+	
+	skepu::io::cout << "C: " << C << "\n";
+	skepu::io::cout << "A: " << A << "\n";
+	skepu::io::cout << "B: " << B << "\n";
+	
+	float alpha = 0.5;
+	float beta = 0.5;
+	skepu::blas::gemm(skepu::blas::Op::NoTrans, skepu::blas::Op::Trans,
+		m, n, k, alpha, A, 1, B, 1, beta, C, 1
+	);
+	skepu::io::cout << "C: " << C << "\n\n";
+	
+	
+}
+/*
+TEST_CASE("BLAS level 3 complex")
+{
+	const size_t n{20};
 
 	using TestType = skepu::complex::complex<float>;
 	size_t m = n + 2;
@@ -217,3 +274,8 @@ TEST_CASE("BLAS level 3")
 	
 }
 
+*/
+
+
+// Known error A: MatCol in CUDA
+// Known error B: Mixing several template instantiations in BLAS

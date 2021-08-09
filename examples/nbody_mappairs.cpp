@@ -145,7 +145,7 @@ void nbody(skepu::Vector<Particle> &particles, size_t iterations)
 	auto nbody_influence = skepu::MapPairsReduce<1, 1>(influence, sum);
 	auto nbody_update = skepu::Map<2>(update);
 
-	// Itermediate data
+	// Intermediate data
 	size_t np = particles.size();
 	skepu::Vector<Acceleration> accel(np);
 

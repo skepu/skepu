@@ -4,8 +4,7 @@
 #define ENABLE_1D_EXAMPLE 1
 #define ENABLE_2D_EXAMPLE 1
 #define ENABLE_3D_EXAMPLE 1
-#define ENABLE_4D_EXAMPLE 1
-#define ENABLE_DEBUG 1
+#define ENABLE_4D_EXAMPLE 0
 
 float heat1D(skepu::Region1D<float> r)
 {

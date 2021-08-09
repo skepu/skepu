@@ -10,13 +10,13 @@
 .DEFAULT_GOAL=all
 
 # Default backend set for SkePU precompiler.
-BACKENDS = -openmp -cuda # -opencl
+BACKENDS = -openmp -opencl -cuda
 
 SKEPU_OPTIONS =
-PRECOMPILER_OPTIONS = --silent
+PRECOMPILER_OPTIONS = --no-preserve-lines
 
 # Backend-specific flags
-BACKEND_FLAGS =
+BACKEND_FLAGS = -O3 -g -DSKEPU_DEBUG=3 #-DSKEPU_ENABLE_EXCEPTIONS
 
 # Default OpenCL specific flags (matching a CUDA-provided installation)
 OPENCL_FLAGS = -I /usr/local/cuda/include -L /usr/local/cuda/lib64/ -lOpenCL
@@ -27,17 +27,14 @@ CLANG_INCLUDE = $(PWD)/../llvm/clang/lib/Headers
 # path to the SkePU sources
 SKEPU_INCLUDE = $(PWD)/../skepu-headers/src
 
-CXX = g++-7
-SEQ_CXX = g++-11
+CXX = g++-10
+SEQ_CXX = g++-10
 #DBGR = lldb -- 
 
-MPICXX=mpic++
-MPIBACKENDS=-openmp
-MPICXXFLAGS=-std=c++11 -fopenmp $$(pkg-config --cflags starpu-1.3 starpumpi-1.3)
-MPILIBS=$$(pkg-config --libs starpu-1.3 starpumpi-1.3)
-
-MPI_SRC=nbody_mpi.cpp
-MPI_EXEC=nbody
+CLUSTER_CXX      = mpic++
+CLUSTER_BACKENDS = -openmp
+CLUSTER_CXXFLAGS = -std=c++11 -fopenmp $$(pkg-config --cflags starpu-1.3 starpumpi-1.3) -I ./  -DSKEPU_DEBUG=3  -g -O3 
+CLUSTER_LIBS     = $$(pkg-config --libs starpu-1.3 starpumpi-1.3)
 
 
 CLANGTOOL_USER_FLAGS =
@@ -58,45 +55,67 @@ SKEPU = $(PWD)/../build/llvm/bin/skepu-tool
 # ---------------------------------------------------------------------------- #
 # Test program names and target directories.
 
-PAR_DIR = parallel
-SEQ_DIR = sequential
-MPI_DIR = mpi
-RUN_DIR = run
+PAR_DIR     = parallel
+SEQ_DIR     = sequential
+CLUSTER_DIR = cluster
+RUN_DIR     = run
 
-# All SkePU example programs (used for 'make all-[parallel|sequential]' and 'make clean').
+# All SkePU example programs (used for 'make all-[parallel|sequential|cluster]' and 'make clean').
 
-# MapOverlap skeleton disabled until OpenCL backend is resolved.
 PROGS=
-#PROGS+=call
-PROGS+=cellular_automaton
-PROGS+=cma
-PROGS+=conjugate_gradient
-PROGS+=coulombic
-PROGS+=dotproduct
-PROGS+=edgedetect
-PROGS+=heat_diffusion
-PROGS+=mandelbrot
-PROGS+=maxmin
-PROGS+=median
-PROGS+=miller_rabin
-PROGS+=mmmult
-PROGS+=montecarlo
-PROGS+=mvmult
-PROGS+=mvmult_row
-PROGS+=nbody
-PROGS+=nbody_mappairs
-PROGS+=ppmcc
-PROGS+=psnr
-PROGS+=riemann_sum
-PROGS+=taylor
+PROGS += cellular_automaton
+PROGS += cma
+PROGS += conjugate_gradient
+PROGS += coulombic
+PROGS += dotproduct
+PROGS += edgedetect
+PROGS += heat_diffusion # no red-black update mode in CUDA
+PROGS += mandelbrot
+PROGS += maxmin
+PROGS += median
+PROGS += miller_rabin
+PROGS += mmmult
+PROGS += montecarlo
+PROGS += mvmult
+PROGS += mvmult_row
+PROGS += nbody
+PROGS += nbody_mappairs
+PROGS += ppmcc
+PROGS += psnr
+PROGS += riemann_sum
+PROGS += taylor
+
+
+CLUSTER_PROGS =
+#CLUSTER_PROGS += cellular_automaton
+CLUSTER_PROGS += cma
+#CLUSTER_PROGS += conjugate_gradient
+CLUSTER_PROGS += coulombic
+CLUSTER_PROGS += dotproduct
+CLUSTER_PROGS += edgedetect
+#CLUSTER_PROGS += heat_diffusion # no red-black update mode
+CLUSTER_PROGS += mandelbrot
+CLUSTER_PROGS += maxmin
+CLUSTER_PROGS += median
+#CLUSTER_PROGS += miller_rabin # no skepu random
+CLUSTER_PROGS += mmmult
+#CLUSTER_PROGS += montecarlo # no skepu random
+CLUSTER_PROGS += mvmult
+CLUSTER_PROGS += mvmult_row
+CLUSTER_PROGS += nbody
+CLUSTER_PROGS += nbody_mappairs
+CLUSTER_PROGS += ppmcc
+CLUSTER_PROGS += psnr
+CLUSTER_PROGS += riemann_sum
+CLUSTER_PROGS += taylor
 
 
 # if opencl isn't enabled, add more progs
 ifeq (,$(findstring opencl, $(BACKENDS)))
-PROGS+=mmmult_row_col # error!
+PROGS += mmmult_row_col # error!
 endif
 
-RUN_BACKEND = OpenCL
+RUN_BACKEND = OpenMP
 SIZE_BACKEND = 2048
 lookup.cellular_automaton  := 2 $(SIZE_BACKEND) 10 $(RUN_BACKEND)
 lookup.cma                 := $(SIZE_BACKEND) $(RUN_BACKEND)
@@ -122,10 +141,10 @@ lookup.taylor              := 0.1 $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.riemann_sum         := 0 1 $(SIZE_BACKEND) $(RUN_BACKEND)
 
 
-TESTS = $(addprefix $(SEQ_DIR)/, $(PROGS))
-PTESTS = $(addprefix $(PAR_DIR)/, $(PROGS))
-MPITESTS=$(addprefix $(MPI_DIR)/, $(MPI_EXEC))
-RUN_TESTS = $(addprefix $(RUN_DIR)/, $(PROGS))
+TESTS          = $(addprefix $(SEQ_DIR)/,      $(PROGS))
+PTESTS         = $(addprefix $(PAR_DIR)/,      $(PROGS))
+CLUSTER_TESTS  = $(addprefix $(CLUSTER_DIR)/,  $(CLUSTER_PROGS))
+RUN_TESTS      = $(addprefix $(RUN_DIR)/,      $(PROGS))
 
 # ---------------------------------------------------------------------------- #
 # Compiler flags begin here.
@@ -171,7 +190,7 @@ all-sequential: $(TESTS)
 # Builds all test programs, parallel implementations, using the precompiler.
 all-parallel: $(PTESTS)
 
-all-mpi: $(MPITESTS)
+all-cluster: $(CLUSTER_TESTS)
 	
 all-run: $(RUN_TESTS)
 	
@@ -202,7 +221,7 @@ fapi:
 	gfortran -c skepu_in_fortran.f90 -I $(SKEPU_INCLUDE) -o ./test_build/skepu_in_fortran.o
 	$(CXX) -lgfortran ./test_build/cskepu.o ./test_build/fskepu.o ./test_build/skepu_in_fortran.o ./test_build/c_skeleton.o ./test_build/f_skeleton.o $(TARGET_FLAGS) -o ./test_build/skepu_in_fortran
 
-all: all-sequential all-parallel all-mpi
+all: all-sequential all-parallel all-cluster
 
 $(PAR_DIR):
 	@mkdir -p $(PAR_DIR)
@@ -210,8 +229,8 @@ $(PAR_DIR):
 $(SEQ_DIR):
 	@mkdir -p $(SEQ_DIR)
 
-$(MPI_DIR):
-	@mkdir -p $(MPI_DIR)
+$(CLUSTER_DIR):
+	@mkdir -p $(CLUSTER_DIR)
 
 $(RUN_DIR):
 	@mkdir -p $(RUN_DIR)
@@ -250,24 +269,38 @@ $(PAR_DIR)/multi: multi1.cpp multi2.cpp $(PAR_DIR)
 	$(DBGR) $(SKEPU) $(BACKENDS) -name multi2_precompiled multi2.cpp  -dir $(PAR_DIR) $(SKEPU_FLAGS)
 	$(DBGR) $(CXX) -fopenmp $(PAR_DIR)/multi1_precompiled.$(FILETYPE) $(PAR_DIR)/multi2_precompiled.$(FILETYPE)  $(TARGET_FLAGS)  -o $@
 
-$(MPI_DIR)/%.o: %_mpi.cpp $(MPI_DIR)
+$(CLUSTER_DIR)/%.o: %.cpp $(CLUSTER_DIR)
 	@echo "Precompiling $<"
-	@$(SKEPU) $(MPIBACKENDS) -dir=$(MPI_DIR) -name $*_precompiled $< \
-		$(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU) $(CLUSTER_BACKENDS) -dir=$(CLUSTER_DIR) -name $*_precompiled $< $(SKEPU_FLAGS)
 	@echo "Compiling $<"
-	@$(MPICXX) -o $@ $(MPI_DIR)/$*_precompiled.cpp \
-		$(MPICXXFLAGS) -c -g -O0 -I$(SKEPU_INCLUDE) -DSKEPU_MPI_STARPU
+	$(CLUSTER_CXX) -o $@ $(CLUSTER_DIR)/$*_precompiled.cpp $(CLUSTER_CXXFLAGS) -c -I$(SKEPU_INCLUDE) -DSKEPU_STARPU_MPI
+	# NOTE: -O0 generates undefined referece to proxy_tags
 
-$(MPI_DIR)/%: $(MPI_DIR)/%.o
+$(CLUSTER_DIR)/%: $(CLUSTER_DIR)/%.o
 	@echo "Linking $*"
-	@$(MPICXX) -std=c++11 -fopenmp -o $@ $< $(MPILIBS)
+	@$(CLUSTER_CXX) -std=c++11 -fopenmp -o $@ $< $(CLUSTER_LIBS)
+	
+lodeppng.o:
+	@$(CLUSTER_CXX) -std=c++11 -fopenmp -o $@ lodepng.cpp $(CLUSTER_LIBS)
+	
+
+$(CLUSTER_DIR)/edgedetect: $(CLUSTER_DIR)/edgedetect.o lodepng.o
+	@echo "Linking $*"
+	@$(CLUSTER_CXX) -std=c++11 -fopenmp -o $@ $< lodepng.o $(CLUSTER_LIBS)
+
+
+$(CLUSTER_DIR)/median: $(CLUSTER_DIR)/median.o lodepng.o
+	@echo "Linking $*"
+	@$(CLUSTER_CXX) -std=c++11 -fopenmp -o $@ $< lodepng.o $(CLUSTER_LIBS)
+
 
 $(RUN_DIR)/% : $(PAR_DIR)/% $(RUN_DIR)
 	$< ${lookup.$*} > $@.log 2>&1
+
 
 # Deletes all temporary files (including all precompiled sources) and binaries.
 clean:
 	$(RM) -R $(SEQ_DIR)
 	$(RM) -R $(PAR_DIR)
-	$(RM) -R $(MPI_DIR)
+	$(RM) -R $(CLUSTER_DIR)
 	$(RM) -R $(RUN_DIR)

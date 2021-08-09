@@ -88,11 +88,5 @@ TEST_CASE("Test skeleton instances using lambda expressions")
 	conv2d(rm, m, filter);
   rm.flush();
   CHECK(rm(o, o) == 45);
-	
-	skepu::Vector<float> ans(1);
-	caller(ans, 4, 5);
-  ans.flush();
-  CHECK(ans(0) == 20);
-
 }
 

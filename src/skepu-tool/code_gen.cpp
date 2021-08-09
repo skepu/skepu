@@ -1,12 +1,13 @@
 #include "code_gen.h"
+#include "code_gen_cu.h"
 
 using namespace clang;
 
 std::string lineDirectiveForSourceLoc(SourceLocation &loc)
 {
 	std::stringstream directive;
-	if (!DoNotGenLineDirectives)
-		directive << "#line " << GlobalRewriter.getSourceMgr().getSpellingLineNumber(loc) << " \"" + inputFileName << "\"\n";
+//	if (!DoNotGenLineDirectives)
+//		directive << "#line " << GlobalRewriter.getSourceMgr().getSpellingLineNumber(loc) << " \"" + inputFileName << "\"\n";
 	return directive.str();
 }
 
@@ -121,48 +122,9 @@ std::string transformToCXXIdentifier(std::string &in)
 	replaceTextInString(out, " ", "__space__");
 	replaceTextInString(out, ":", "__colon__");
 	replaceTextInString(out, "-", "__hyphen__");
+	replaceTextInString(out, "<", "__lt__");
+	replaceTextInString(out, ">", "__gt__");
 	return out;
-}
-
-
-std::string generateCUDAMultipleReturn(UserFunction &UF)
-{
-	if (UF.multipleReturnTypes.size() > 0)
-	{
-		std::stringstream SSmultiReturnType, SSmultiReturnTypeDef, SSmultiReturnMakeStruct, SSmultiReturnMakeParams;
-		SSmultiReturnType << "skepu_multiple";
-		size_t ctr = 0;
-		for (std::string &type : UF.multipleReturnTypes)
-		{
-			std::string divider = (ctr != UF.multipleReturnTypes.size() - 1) ? ", " : "";
-			SSmultiReturnType << "_" << type;
-			SSmultiReturnTypeDef << type << " e" << ctr << ";\n";
-			SSmultiReturnMakeParams << type << " arg" << ctr << divider;
-			SSmultiReturnMakeStruct << "arg" << ctr << divider;
-			ctr++;
-		}
-
-		std::string codeTemplate = R"~~~(
-			struct {{SKEPU_MULTIPLE_RETURN_TYPE}}
-			{
-				{{SKEPU_MULTIPLE_RETURN_TYPE_DEF}}
-
-				static __device__ {{SKEPU_MULTIPLE_RETURN_TYPE}} make({{SKEPU_MULTIPLE_RETURN_MAKE_PARAMS}})
-				{
-					{{SKEPU_MULTIPLE_RETURN_TYPE}} retval = { {{SKEPU_MULTIPLE_RETURN_MAKE_STRUCT}} };
-					return retval;
-				}
-			};
-		)~~~";
-
-		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_TYPE}}", SSmultiReturnType.str());
-		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_TYPE_DEF}}", SSmultiReturnTypeDef.str());
-		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_MAKE_PARAMS}}", SSmultiReturnMakeParams.str());
-		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_MAKE_STRUCT}}", SSmultiReturnMakeStruct.str());
-
-		return codeTemplate;
-	}
-	return "";
 }
 
 
@@ -584,8 +546,9 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			break;
 
 		case Skeleton::Type::MapPairsReduce:
-			SkePUAbort("CUDA MapPairsReduce not implemented yet");
-			// TODO
+			KernelName_CU = createMapPairsReduceKernelProgram_CU(skeletonID, *FuncArgs[0], *FuncArgs[1], ResultDir);
+			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
+			SSCallArgs << KernelName_CU;
 			break;
 
 		case Skeleton::Type::Reduce1D:
@@ -621,8 +584,13 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			break;
 
 		case Skeleton::Type::MapOverlap3D:
+			KernelName_CU = createMapOverlap3DKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
+			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_conv_cuda_3D_kernel)";
+			SSCallArgs << KernelName_CU << "_conv_cuda_3D_kernel";
+			break;
+		
 		case Skeleton::Type::MapOverlap4D:
-			SkePUAbort("CUDA MapOverlap disabled in this release");
+			SkePUAbort("CUDA MapOverlap 4D disabled in this release");
 
 		case Skeleton::Type::Call:
 			KernelName_CU = createCallKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
@@ -632,12 +600,12 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		}
 
 		// Insert the code at the proper place
-		const DeclContext *DeclCtx = d->getDeclContext();
+	/*	const DeclContext *DeclCtx = d->getDeclContext();
 		SourceLocation loc = d->getSourceRange().getBegin();
 		if (isa<FunctionDecl>(DeclCtx))
 		{
 			loc = dyn_cast<FunctionDecl>(DeclCtx)->getSourceRange().getBegin();
-		}
+		}*/
 		if (GlobalRewriter.InsertText(loc, "#include \"" + KernelName_CU + ".cu\"\n" + lineDirectiveForSourceLoc(loc)))
 			SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
 	}

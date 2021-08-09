@@ -74,14 +74,8 @@ const std::unordered_map<std::string, Skeleton> Skeletons =
 	{"MapOverlap3D",         {"MapOverlap3D",       Skeleton::Type::MapOverlap3D,       1, 1}},
 	{"MapOverlap4D",         {"MapOverlap4D",       Skeleton::Type::MapOverlap4D,       1, 1}},
 	{"MapPairsImpl",         {"MapPairs",           Skeleton::Type::MapPairs,           1, 1}},
-	{"MapPairsReduceImpl",   {"MapPairsReduce",     Skeleton::Type::MapPairsReduce,     2, 2}},
+	{"MapPairsReduceImpl",   {"MapPairsReduce",     Skeleton::Type::MapPairsReduce,     2, 1}},
 	{"CallImpl",             {"Call",               Skeleton::Type::Call,               1, 1}},
-	{"MapRandomImpl",        {"Map",                Skeleton::Type::Map,                1, 1}},
-	{"MapRandomReduceImpl",  {"MapReduce",          Skeleton::Type::MapReduce,          2, 2}},
-	{"MapRandomOverlap1D",   {"MapOverlap1D",       Skeleton::Type::MapOverlap1D,       1, 4}},
-	{"MapRandomOverlap2D",   {"MapOverlap2D",       Skeleton::Type::MapOverlap2D,       1, 1}},
-	{"MapRandomOverlap3D",   {"MapOverlap3D",       Skeleton::Type::MapOverlap3D,       1, 1}},
-	{"MapRandomOverlap4D",   {"MapOverlap4D",       Skeleton::Type::MapOverlap4D,       1, 1}},
 };
 
 Rewriter GlobalRewriter;
@@ -124,8 +118,8 @@ public:
 		if (GenCL)   GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENCL 1\n");
 		if (GenCUDA) GlobalRewriter.InsertText(SLStart, "#define SKEPU_CUDA 1\n");
 		if (GenStarPUMPI) GlobalRewriter.InsertText(SLStart, "#define SKEPU_STARPU_MPI 1\n");
-		if (!DoNotGenLineDirectives)
-			GlobalRewriter.InsertText(SLStart, "#line 1 \"" + inputFileName + "\"\n");
+//		if (!DoNotGenLineDirectives)
+//			GlobalRewriter.InsertText(SLStart, "#line 1 \"" + inputFileName + "\"\n");
 		
 		for (VarDecl *d : this->SkeletonInstances)
 			HandleSkeletonInstance(d);

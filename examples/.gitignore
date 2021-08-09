@@ -1,4 +1,4 @@
 parallel
 sequential
-mpi
+cluster
 run

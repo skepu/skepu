@@ -62,7 +62,7 @@ auto conv2_m = skepu::MapOverlap(over_2d_multi);
 auto conv3_m = skepu::MapOverlap(over_3d_multi);
 auto conv4_m = skepu::MapOverlap(over_4d_multi);
 
-TEST_CASE("MapOverlap with variadic return")
+TEST_CASE("MapOverlap 1D with variadic return")
 {
 	const size_t size{20};
 	
@@ -144,35 +144,46 @@ TEST_CASE("MapOverlap with variadic return")
 		std::cout << "Matrix Col-wise Pad 0:     rm2 = " << rm2 << "\n";
 	}
 	
-	// Matrix
-	{
-		skepu::Matrix<float> m(size, size, 10), filter(2*1+1, 2*1+1, 1), rm2(size, size);
-		skepu::Matrix<int> ret_m_int(size, size);
-		
-		conv2_m.setOverlap(1, 1);
-		conv2_m(rm2, ret_m_int, m, filter);
-		std::cout << "Tensor2D: " << rm2 << "\n" << ret_m_int << "\n";
-	}
+}
+
+
+TEST_CASE("MapOverlap 2d with variadic return")
+{
+	constexpr size_t size_i{33}, size_j{56};
 	
-	// Tensor3
+	skepu::Matrix<float> m(size_i, size_j, 10), filter(2*1+1, 2*1+1, 1), rm2(size_i, size_j);
+	skepu::Matrix<int> ret_m_int(size_i, size_j);
 	
-	skepu::Tensor3<float> ten3(size, size, size, 1), stencil3(2*1+1, 2*1+1, 2*1+1, 1), ret_ten3(size, size, size);
-	skepu::Tensor3<int> ret_ten3_int(size, size, size);
+	conv2_m.setOverlap(1, 1);
+	conv2_m(rm2, ret_m_int, m, filter);
+	std::cout << "Matrix 2D: " << rm2 << "\n" << ret_m_int << "\n";
+
+}
+
+
+TEST_CASE("MapOverlap 3D with variadic return")
+{
+	constexpr size_t size_i{13}, size_j{7}, size_k{23};
+	
+	skepu::Tensor3<float> ten3(size_i, size_j, size_k, 1), stencil3(2*1+1, 2*1+1, 2*1+1, 1), ret_ten3(size_i, size_j, size_k);
+	skepu::Tensor3<int> ret_ten3_int(size_i, size_j, size_k);
 	
 	conv3_m.setOverlap(1, 1, 1);
 	conv3_m(ret_ten3, ret_ten3_int, ten3, stencil3);
 	std::cout << "Tensor3D: " << ret_ten3 << "\n" << ret_ten3_int << "\n";
 	
+}
+
+
+TEST_CASE("MapOverlap 4D with variadic return")
+{
+	constexpr size_t size_i{3}, size_j{7}, size_k{5}, size_l{13};
 	
-	// Tensor4
-	
-	skepu::Tensor4<float> ten4(size, size, size, size, 1), stencil4(2*1+1, 2*1+1, 2*1+1, 2*1+1, 1), ret_ten4(size, size, size, size);
-	skepu::Tensor4<int> ret_ten4_int(size, size, size, size);
+	skepu::Tensor4<float> ten4(size_i, size_j, size_k, size_l, 1), stencil4(2*1+1, 2*1+1, 2*1+1, 2*1+1, 1), ret_ten4(size_i, size_j, size_k, size_l);
+	skepu::Tensor4<int> ret_ten4_int(size_i, size_j, size_k, size_l);
 	
 	conv4_m.setOverlap(1, 1, 1, 1);
 	std::cout << "Tensor4D: " << ret_ten4 << "\n" << ret_ten4_int << "\n";
-	
-	
 	
 }
 

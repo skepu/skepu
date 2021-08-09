@@ -12,6 +12,7 @@ __global__ void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_Vsize, size_t ske
 {
 	size_t skepu_n = skepu_Vsize * skepu_Hsize;
 	size_t skepu_i = blockIdx.x * blockDim.x + threadIdx.x;
+	size_t skepu_global_prng_id = skepu_i;
 	size_t skepu_gridSize = blockDim.x * gridDim.x;
 	size_t skepu_w2 = skepu_Hsize;
 
@@ -28,11 +29,12 @@ __global__ void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_Vsize, size_t ske
 
 std::string createMapPairsKernelProgram_CU(SkeletonInstance &instance, UserFunction &mapPairsFunc, std::string dir)
 {
-	std::stringstream sourceStream, SSKernelParamList, SSMapPairsFuncArgs;
+	std::stringstream SSKernelParamList, SSMapPairsFuncArgs;
 	IndexCodeGen indexInfo = indexInitHelper_CU(mapPairsFunc);
 	bool first = !indexInfo.hasIndex;
 	SSMapPairsFuncArgs << indexInfo.mapFuncParam;
 	std::string multiOutputAssign = handleOutputs_CU(mapPairsFunc, SSKernelParamList);
+	handleRandomParam_CU(mapPairsFunc, SSMapPairsFuncArgs, SSKernelParamList, first);
 	
 	size_t ctr = 0;
 	for (UserFunction::Param& param : mapPairsFunc.elwiseParams)
@@ -48,7 +50,7 @@ std::string createMapPairsKernelProgram_CU(SkeletonInstance &instance, UserFunct
 	auto argsInfo = handleRandomAccessAndUniforms_CU(mapPairsFunc, SSMapPairsFuncArgs, SSKernelParamList, first);
 	
 	std::stringstream SSKernelName;
-	SSKernelName << transformToCXXIdentifier(ResultName) << "_MapPairsKernel_" << mapPairsFunc.uniqueName << "_Varity_" << mapPairsFunc.Varity << "_Harity_" << mapPairsFunc.Harity;
+	SSKernelName << instance + "_" + transformToCXXIdentifier(ResultName) << "_MapPairsKernel_" << mapPairsFunc.uniqueName << "_Varity_" << mapPairsFunc.Varity << "_Harity_" << mapPairsFunc.Harity;
 	const std::string kernelName = SSKernelName.str();
 	
 	std::ofstream FSOutFile {dir + "/" + kernelName + ".cu"};

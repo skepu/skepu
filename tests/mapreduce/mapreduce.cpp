@@ -69,7 +69,7 @@ auto mapred0_4 = skepu::MapReduce<0>(test4_ver2, redfn);
 
 TEST_CASE("MapReduce fundamentals")
 {
-	const size_t size{100};
+	const size_t size{20};
 	
 	skepu::Vector<int> vec(size);
 	skepu::Matrix<int> mat(size, size+1);
@@ -115,6 +115,5 @@ TEST_CASE("MapReduce fundamentals")
 	res4 = mapred0_4(1);
 	
 	std::cout << res1 << ", " << res2 << ", " << res3 << ", " << res4 << "\n";
-	
 	
 }

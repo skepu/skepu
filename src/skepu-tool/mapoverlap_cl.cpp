@@ -593,7 +593,6 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
 	int skepu_edge, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, __global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap,
 	__local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_sdata)
 {
-	size_t skepu_global_prng_id = get_global_id(0);
 	size_t skepu_xx = ((size_t)(get_global_id(0) / get_local_size(0))) * get_local_size(0);
 	size_t skepu_yy = ((size_t)(get_global_id(1) / get_local_size(1))) * get_local_size(1);
 	size_t skepu_x = get_global_id(0);
@@ -660,6 +659,7 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
 	if (skepu_x < skepu_out_cols && skepu_y < skepu_out_rows)
 	{
 		size_t skepu_i = skepu_y * skepu_out_cols + skepu_x;
+		size_t skepu_global_prng_id = skepu_i;
 		{{INDEX_INITIALIZER}}
 		{{CONTAINER_PROXIE_INNER}}
 #if !{{USE_MULTIRETURN}}
@@ -735,11 +735,7 @@ public:
 };
 )~~~";
 
-/*
-handleRegion_CL(UserFunction &mapOverlapFunc, std::stringstream &SSMapOverlapFuncArgs, std::stringstream &SSHostKernelParamList, std::stringstream &SSKernelParamList, std::stringstream &SSKernelArgs, first)
-{
-	
-}*/
+
 
 std::string createMapOverlap2DKernelProgram_CL(SkeletonInstance &instance, UserFunction &mapOverlapFunc, std::string dir)
 {
@@ -747,7 +743,7 @@ std::string createMapOverlap2DKernelProgram_CL(SkeletonInstance &instance, UserF
 	std::string indexInit = "";
 	if (mapOverlapFunc.indexed2D)
 	{
-		indexInit = "index2_t skepu_index = { .row = x, .col = y };";
+		indexInit = "index2_t skepu_index = { .row = skepu_x, .col = skepu_y };";
 		SSMapOverlapFuncArgs << "skepu_index";
 	}
 	IndexCodeGen indexInfo = indexInitHelper_CL(mapOverlapFunc);
@@ -987,11 +983,7 @@ public:
 };
 )~~~";
 
-/*
-handleRegion_CL(UserFunction &mapOverlapFunc, std::stringstream &SSMapOverlapFuncArgs, std::stringstream &SSHostKernelParamList, std::stringstream &SSKernelParamList, std::stringstream &SSKernelArgs, first)
-{
-	
-}*/
+
 
 std::string createMapOverlap3DKernelProgram_CL(SkeletonInstance &instance, UserFunction &mapOverlapFunc, std::string dir)
 {
@@ -999,7 +991,7 @@ std::string createMapOverlap3DKernelProgram_CL(SkeletonInstance &instance, UserF
 	std::string indexInit = "";
 	if (mapOverlapFunc.indexed3D)
 	{
-		indexInit = "index3_t skepu_index = { .i = i, .j = j, .k = k };";
+		indexInit = "index3_t skepu_index = { .i = skepu_i, .j = skepu_j, .k = skepu_k };";
 		SSMapOverlapFuncArgs << "skepu_index";
 	}
 	IndexCodeGen indexInfo = indexInitHelper_CL(mapOverlapFunc);
@@ -1271,11 +1263,6 @@ public:
 };
 )~~~";
 
-/*
-handleRegion_CL(UserFunction &mapOverlapFunc, std::stringstream &SSMapOverlapFuncArgs, std::stringstream &SSHostKernelParamList, std::stringstream &SSKernelParamList, std::stringstream &SSKernelArgs, first)
-{
-	
-}*/
 
 std::string createMapOverlap4DKernelProgram_CL(SkeletonInstance &instance, UserFunction &mapOverlapFunc, std::string dir)
 {
@@ -1283,7 +1270,7 @@ std::string createMapOverlap4DKernelProgram_CL(SkeletonInstance &instance, UserF
 	std::string indexInit = "";
 	if (mapOverlapFunc.indexed4D)
 	{
-		indexInit = "index4_t skepu_index = { .i = i, .j = j, .k = k, .l = l };";
+		indexInit = "index4_t skepu_index = { .i = skepu_i, .j = skepu_j, .k = skepu_k, .l = skepu_l };";
 		SSMapOverlapFuncArgs << "skepu_index";
 	}
 	IndexCodeGen indexInfo = indexInitHelper_CL(mapOverlapFunc);

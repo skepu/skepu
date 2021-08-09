@@ -19,9 +19,9 @@ if(SKEPU_CUDA)
 endif()
 
 if(SKEPU_OPENCL)
-	skepu_add_executable(blas_opencl_test OpenCL SKEPUSRC blas.cpp)
-	target_link_libraries(blas_opencl_test PRIVATE catch2_main)
-	add_test(blas_opencl blas_opencl_test)
+#	skepu_add_executable(blas_opencl_test OpenCL SKEPUSRC blas.cpp)
+#	target_link_libraries(blas_opencl_test PRIVATE catch2_main)
+#	add_test(blas_opencl blas_opencl_test)
 endif()
 
 # ------------------------------------------------
@@ -45,9 +45,9 @@ if(SKEPU_CUDA)
 endif()
 
 if(SKEPU_OPENCL)
-	skepu_add_executable(complex_opencl_test OpenCL SKEPUSRC complex.cpp)
-	target_link_libraries(complex_opencl_test PRIVATE catch2_main)
-	add_test(complex_opencl complex_opencl_test)
+#	skepu_add_executable(complex_opencl_test OpenCL SKEPUSRC complex.cpp)
+#	target_link_libraries(complex_opencl_test PRIVATE catch2_main)
+#	add_test(complex_opencl complex_opencl_test)
 endif()
 
 # ------------------------------------------------

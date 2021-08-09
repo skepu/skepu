@@ -16,7 +16,7 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 std::string createMapReduceKernelProgram_CU(SkeletonInstance&, UserFunction &mapFunc, UserFunction &reduceFunc, size_t arity, std::string dir);
 std::string createMapKernelProgram_CU(SkeletonInstance&, UserFunction &mapFunc, size_t arity, std::string dir);
 std::string createMapPairsKernelProgram_CU(SkeletonInstance&, UserFunction &mapPairsFunc, std::string dir);
-//std::string createMapPairsReduceKernelProgram_CU(UserFunction &mapFunc, UserFunction &reduceFunc, size_t Varity, size_t Harity, std::string dir);
+std::string createMapPairsReduceKernelProgram_CU(SkeletonInstance&, UserFunction &mapFunc, UserFunction &reduceFunc, std::string dir);
 std::string createScanKernelProgram_CU(SkeletonInstance&, UserFunction &scanFunc, std::string dir);
 std::string createReduce1DKernelProgram_CU(SkeletonInstance&, UserFunction &reduceFunc, std::string dir);
 std::string createReduce2DKernelProgram_CU(SkeletonInstance&, UserFunction &rowWiseFunc, UserFunction &colWiseFunc, std::string dir);

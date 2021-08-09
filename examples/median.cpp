@@ -29,28 +29,27 @@ struct PixelInfo<skepu::filter::RGBPixel>
 template<typename Pixel>
 void ReadPngFileToMatrix(skepu::Matrix<Pixel> &inputMatrix, std::string filePath)
 {
-	std::vector<unsigned char> image;
-	unsigned imageWidth, imageHeight;
-	unsigned error = lodepng::decode(image, imageWidth, imageHeight, filePath, PixelInfo<Pixel>::type);
-	if (error)
-		std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
-	
-	inputMatrix.init(imageHeight, imageWidth);
-	Pixel *imgView = reinterpret_cast<Pixel*>(image.data());
-	std::copy(imgView, imgView + imageHeight * imageWidth, inputMatrix.data());
+	skepu::external([&]
+	{
+		std::vector<unsigned char> image;
+		unsigned imageWidth, imageHeight;
+		unsigned error = lodepng::decode(image, imageWidth, imageHeight, filePath, PixelInfo<Pixel>::type);
+		if (error) std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
+		inputMatrix.init(imageHeight, imageWidth);
+		Pixel *imgView = reinterpret_cast<Pixel*>(image.data());
+		std::copy(imgView, imgView + imageHeight * imageWidth, inputMatrix.data());
+	}, skepu::write(inputMatrix));
 }
 
 template<typename Pixel>
 void WritePngFileMatrix(skepu::Matrix<Pixel> &imageData, std::string filePath)
 {
-	imageData.updateHost();
-	unsigned error = lodepng::encode(filePath, reinterpret_cast<unsigned char*>(&imageData[0]), imageData.total_cols(), imageData.total_rows(), PixelInfo<Pixel>::type);
-	if(error)
-		std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
+	skepu::external(skepu::read(imageData), [&]
+	{
+		unsigned error = lodepng::encode(filePath, reinterpret_cast<unsigned char*>(imageData.data()), imageData.total_cols(), imageData.total_rows(), PixelInfo<Pixel>::type);
+		if (error) std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
+	});
 }
-
-
-
 
 
 int main(int argc, char* argv[])
@@ -78,21 +77,17 @@ int main(int argc, char* argv[])
 	
 	// Read the padded image into a matrix. Create the output matrix without padding.
 	skepu::Matrix<skepu::filter::RGBPixel> inputImg;
-	skepu::external([&]{
-		ReadPngFileToMatrix<skepu::filter::RGBPixel>(inputImg, inputFileName);
-	}, skepu::write(inputImg));
+	ReadPngFileToMatrix<skepu::filter::RGBPixel>(inputImg, inputFileName);
 	skepu::Matrix<skepu::filter::RGBPixel> outputMatrix(inputImg.total_rows(), inputImg.total_cols());
 	
 	// Launch different kernels depending on filtersize.
-	calculateMedian.setOverlap(radius, radius  * 3);
-	calculateMedian(outputMatrix, inputImg, 3);
+	calculateMedian.setOverlap(radius, radius);
+	calculateMedian(outputMatrix, inputImg);
 
 	skepu::io::cout << "Inputfile : " << inputFileName << "\n";
 	skepu::io::cout << "Filtersize : " << (2 * radius + 1) << "x" << (2 * radius + 1) << "\n";
 	
-	skepu::external(skepu::read(outputMatrix), [&]{
-		WritePngFileMatrix(outputMatrix, outputFileNamePad);
-	});
+	WritePngFileMatrix(outputMatrix, outputFileNamePad);
 	
 	return 0;
 }

@@ -36,4 +36,12 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CU(
 	bool &first
 );
 
-std::string handleOutputs_CU(UserFunction &func, std::stringstream &SSKernelParamList, std::string index = "skepu_i");
+void handleRandomParam_CU(
+	UserFunction &func,
+	std::stringstream& SSMapFuncArgs,
+	std::stringstream& SSKernelParamList,
+	bool &first
+);
+
+std::string handleOutputs_CU(UserFunction &func, std::stringstream &SSKernelParamList, bool strided = false, std::string index = "skepu_i");
+std::string generateCUDAMultipleReturn(UserFunction &UF);

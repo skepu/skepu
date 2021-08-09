@@ -27,10 +27,10 @@ IndexCodeGen indexInitHelper_CU(UserFunction &uf)
 		res.indexInit = R"~~~(
 			skepu::Index3D skepu_index;
 			size_t skepu_cindex = skepu_base + skepu_i;
-			skepu_index.i = cindex / (skepu_w2 * skepu_w3);
-			skepu_cindex = cindex % (skepu_w2 * skepu_w3);
-			skepu_index.j = cindex / (skepu_w3);
-			skepu_index.k = cindex % (skepu_w3);
+			skepu_index.i = skepu_cindex / (skepu_w2 * skepu_w3);
+			skepu_cindex = skepu_cindex % (skepu_w2 * skepu_w3);
+			skepu_index.j = skepu_cindex / (skepu_w3);
+			skepu_index.k = skepu_cindex % (skepu_w3);
 	)~~~";
 	}
 	else if (uf.indexed4D)
@@ -100,26 +100,94 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CU(
 	return res;
 }
 
+void handleRandomParam_CU(
+	UserFunction &func,
+	std::stringstream& SSMapFuncArgs,
+	std::stringstream& SSKernelParamList,
+	bool &first
+)
+{
+	if (UserFunction::RandomParam *param = func.randomParam)
+	{
+		if (!first) { SSMapFuncArgs << ", "; }
+		first = false;
+		SSMapFuncArgs << param->name << "[skepu_global_prng_id]";
+		SSKernelParamList << "skepu::Random<" << param->randomCount << ">* " << param->name << ", ";
+	}
+	else
+	{
+		SSKernelParamList << "skepu::PRNG::Placeholder,";
+	}
+}
 
 
-std::string handleOutputs_CU(UserFunction &func, std::stringstream &SSKernelParamList, std::string index)
+
+std::string handleOutputs_CU(UserFunction &func, std::stringstream &SSKernelParamList, bool strided, std::string index)
 {
 	std::stringstream SSOutputBindings;
 	if (func.multipleReturnTypes.size() == 0)
 	{
+		std::stringstream strideinc;
+		if (strided) strideinc << " * skepu_strides[0]";
 		SSKernelParamList << func.resolvedReturnTypeName << "* skepu_output, ";
-		SSOutputBindings << "skepu_output[" << index << "] = skepu_res;";
+		SSOutputBindings << "skepu_output[" << index << strideinc.str() << "] = skepu_res;";
 	}
 	else
 	{
 		size_t outCtr = 0;
 		for (std::string& outputType : func.multipleReturnTypes)
 		{
+			std::stringstream strideinc;
+			if (strided) strideinc << " * skepu_strides[" << outCtr << "]";
 			SSKernelParamList << outputType << "* skepu_output_" << outCtr << ", ";
-			SSOutputBindings << "skepu_output_" << outCtr << "[" << index << "] = skepu_res.e" << outCtr << ";\n";
+			SSOutputBindings << "skepu_output_" << outCtr << "[" << index << strideinc.str() << "] = skepu_res.e" << outCtr << ";\n";
 			outCtr++;
 		}
 	}
 	
 	return SSOutputBindings.str();
+}
+
+
+
+
+
+std::string generateCUDAMultipleReturn(UserFunction &UF)
+{
+	if (UF.multipleReturnTypes.size() > 0)
+	{
+		std::stringstream SSmultiReturnType, SSmultiReturnTypeDef, SSmultiReturnMakeStruct, SSmultiReturnMakeParams;
+		SSmultiReturnType << "skepu_multiple";
+		size_t ctr = 0;
+		for (std::string &type : UF.multipleReturnTypes)
+		{
+			std::string divider = (ctr != UF.multipleReturnTypes.size() - 1) ? ", " : "";
+			SSmultiReturnType << "_" << transformToCXXIdentifier(type);
+			SSmultiReturnTypeDef << type << " e" << ctr << ";\n";
+			SSmultiReturnMakeParams << type << " arg" << ctr << divider;
+			SSmultiReturnMakeStruct << "arg" << ctr << divider;
+			ctr++;
+		}
+
+		std::string codeTemplate = R"~~~(
+			struct {{SKEPU_MULTIPLE_RETURN_TYPE}}
+			{
+				{{SKEPU_MULTIPLE_RETURN_TYPE_DEF}}
+
+				static __device__ {{SKEPU_MULTIPLE_RETURN_TYPE}} make({{SKEPU_MULTIPLE_RETURN_MAKE_PARAMS}})
+				{
+					{{SKEPU_MULTIPLE_RETURN_TYPE}} retval = { {{SKEPU_MULTIPLE_RETURN_MAKE_STRUCT}} };
+					return retval;
+				}
+			};
+		)~~~";
+
+		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_TYPE}}", SSmultiReturnType.str());
+		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_TYPE_DEF}}", SSmultiReturnTypeDef.str());
+		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_MAKE_PARAMS}}", SSmultiReturnMakeParams.str());
+		replaceTextInString(codeTemplate, "{{SKEPU_MULTIPLE_RETURN_MAKE_STRUCT}}", SSmultiReturnMakeStruct.str());
+
+		return codeTemplate;
+	}
+	return "";
 }

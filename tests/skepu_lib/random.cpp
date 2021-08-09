@@ -6,6 +6,7 @@
 #include <skepu-lib/io.hpp>
 
 
+
 int indirect(skepu::Random<> &&prng)
 {
   return prng.get() % 100;
@@ -86,10 +87,12 @@ auto mapper4 = skepu::Map([](skepu::Index1D index, skepu::Random<2> &prng, int e
 auto mapper5 = skepu::MapReduce(mapfunc, redfunc);
 auto mapper6 = skepu::MapReduce(mapfunc_0, redfunc);
 auto mapper7 = skepu::MapPairs(mappairsfunc);
+auto mapoverlapper1d = skepu::MapOverlap(mapoverlapfunc_1d);
+auto mapoverlapper2d = skepu::MapOverlap(mapoverlapfunc_2d);
 
 TEST_CASE("PRNG API")
 {
-  size_t size{10000};
+  size_t size{20};
   
   // Map
   {
@@ -197,32 +200,31 @@ TEST_CASE("PRNG API")
     mapper(out, inV, inH);
     std::cout << "Result: " << out << "\n";
   }
-  
+  */
   // MapOverlap 1D
   {
     std::cout << "\n~~~ MAPOVERLAP 1D ~~~\n";
     skepu::Vector<int> in(size, 1), out(size);
     
-    auto mapoverlapper = skepu::MapOverlap(mapoverlapfunc_1d);
-    mapoverlapper.setEdgeMode(skepu::Edge::Cyclic);
+    mapoverlapper1d.setEdgeMode(skepu::Edge::Cyclic);
     
     skepu::PRNG prng;
-    mapoverlapper.setPRNG(prng);
+    mapoverlapper1d.setPRNG(prng);
     
-    mapoverlapper(out, in);
-    std::cout << "Result: " << out << "\n";
+    mapoverlapper1d(out, in);
+    std::cout << "Result A: " << out << "\n";
     
-    mapoverlapper(out, in);
-    std::cout << "Result: " << out << "\n";
+    mapoverlapper1d(out, in);
+    std::cout << "Result B: " << out << "\n";
     
     
     skepu::Matrix<int> in_m(size, size, 1), out_m(size, size);
     
-    mapoverlapper(out_m, in_m);
-    std::cout << "Result: " << out << "\n";
+    mapoverlapper1d(out_m, in_m);
+    std::cout << "Result C: " << out_m << "\n";
     
-    mapoverlapper(out_m, in_m);
-    std::cout << "Result: " << out << "\n";
+    mapoverlapper1d(out_m, in_m);
+    std::cout << "Result D: " << out_m << "\n";
     
   }
   
@@ -232,21 +234,20 @@ TEST_CASE("PRNG API")
     size = 8;
     skepu::Matrix<int> in(size, size, 1), out(size, size);
     
-    auto mapoverlapper = skepu::MapOverlap(mapoverlapfunc_2d);
-    mapoverlapper.setEdgeMode(skepu::Edge::Cyclic);
+    mapoverlapper2d.setEdgeMode(skepu::Edge::Cyclic);
     
     skepu::PRNG prng;
-    mapoverlapper.setPRNG(prng);
+    mapoverlapper2d.setPRNG(prng);
     
-    mapoverlapper(out, in);
-    std::cout << "Result: " << out << "\n";
+    mapoverlapper2d(out, in);
+    std::cout << "Result A: " << out << "\n";
     
-    mapoverlapper(out, in);
-    std::cout << "Result: " << out << "\n";
+    mapoverlapper2d(out, in);
+    std::cout << "Result B: " << out << "\n";
   }
   
   
-  
+  /*
   // MapOverlap 3D
   {
     std::cout << "\n~~~ MAPOVERLAP 3D ~~~\n";
