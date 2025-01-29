@@ -1,93 +1,94 @@
-# SkePU alpha
+[![pipeline status](https://gitlab.liu.se/exa2pro/skepu/badges/master/pipeline.svg)](https://gitlab.liu.se/exa2pro/skepu/commits/master)
+[![coverage report](https://gitlab.liu.se/exa2pro/skepu/badges/master/coverage.svg)](https://gitlab.liu.se/exa2pro/skepu/commits/master)
 
+# SkePU 3
 
+SkePU 3 consists of four parts:
 
-## Getting started
+1. A sequential interface and accompanying implementation for C++ skeleton
+programming.
+2. A source-to-source precompiler tool built on top of the Clang C-language
+compiler front-end, transforming code written for the sequential interface for
+parallel and heterogeneous execution.
+3. Minor patches to Clang to support said tool.
+4. A collection of parallel and/or heterogeneous back-ends targeting various
+architectures and systems.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Setting up the SkePU source-to-source compiler
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+### Cloning with submodules
 
-## Add your files
+This repository should be cloned with `git clone --recursive $URL` in
+order to also clone the submodules it links to. `git submodule update --init`
+can be used to clone submodules to an existing repository.
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+### Building - Automatically
 
-```
-cd existing_repo
-git remote add origin https://gitlab.liu.se/auger33/skepu-alpha-2.git
-git branch -M main
-git push -uf origin main
-```
+To compile SkePU-tool, run the foolowing commands in the project root:
 
-## Integrate with your tools
+`$ mkdir build && cd build`
 
-- [ ] [Set up project integrations](https://gitlab.liu.se/auger33/skepu-alpha-2/-/settings/integrations)
+`$ cmake -DCMAKE_BUILD_TYPE=Release ..`
 
-## Collaborate with your team
+`$ make`
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+To install SkePU into <path>, run the following command from
+<project_root>/build:
 
-## Test and Deploy
+`$ make DESTDIR=<path> install`
 
-Use the built-in continuous integration in GitLab.
+If cmake does not generate Makefiles, use the option `-G "Unix Makefiles"`.
+For more information about build options, run ´cmake -LAH` in the build
+directory. For information about how to configure cmake with compilers,
+linkers, flags, and other such options, please refer to the cmake manuals at
+the [cmake homepage](https://cmake.org).
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+## Compatibility with SkePU 1 and 2
 
-***
+SkePU v3 is not compatible with version 2 nor with version 1. Check the user
+guide for more information.
 
-# Editing this README
+SkePU 1 code is not compatible with SkePU 2 and vice-versa. SkePU 2 is in large
+part based on concepts from SkePU 1, and the data structures are the same, so
+it should be fairly straightworward to port a SkePU 1 project to SkePU 2. It
+may require some effort to fit the SkePU 2 precompiler into a large project
+with non-trivial build system, however.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## Directory layout
 
-## Suggestions for a good README
+### `skepu-headers/src/`
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+As SkePU 3 is a header library, this directory contains headers and source
+files for the SkePU runtime. Herafter refered to as <skepu-headers>.
 
-## Name
-Choose a self-explaining name for your project.
+#### `<skepu-headers>/skepu3`
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Contains the serial skeleton interface (headers with inline implementations),
+along with headers for SkePU containers.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+##### `<skepu-headers>/skepu3/impl`
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+Helpers.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+##### `<skepu-headers>/skepu3/backend`
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+Contains header files for the SkePU skeleton backends.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+##### `<skepu-headers>/skepu3/backend/impl`
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Contains implementations of the various SkePU skeleton backends and containers.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+##### `<skepu-headers>skepu3/cluster`
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+Containes the implementation of the StarPU MPI backend.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+### `examples`
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+Contains SkePU 3 example programs. Note that the Makefile requires skepu-tool
+to have been built in <project root>/build to find skepu-tool.
 
-## License
-For open source projects, say how it is licensed.
+### `llvm`
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Sources for the source-to-source Clang tool. This directory is part of the LLVM
+directory tree, and a symlink named
+`<path_to_llvm>/llvm/tools/clang/tools/skepu` should link here.

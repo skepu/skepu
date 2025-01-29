@@ -1,0 +1,311 @@
+body, html {
+  padding: 0; margin: 0;
+  display: flex;
+  flex-flow: column;
+  height: 100%;
+  background-color: black;
+}
+header, footer
+{
+  font-family: monospace;
+  font-size: 0.8em;
+  background-color: black;
+  color: white;
+  text-align: center;
+  margin: 0;
+  padding: 0.5em 0;
+  flex: 0 1 1em;
+}
+header p {
+  margin: 0;
+}
+code, pre {
+  margin: 0;
+}
+.outer_container
+{
+  flex: 1 1 auto;
+  display: flex;
+  background-color: white;
+  height: calc(100vh - 4em);
+}
+#left_pane
+{
+  display: flex;
+  flex-direction: column;
+}
+#settings
+{
+  flex: 0 1 auto;
+  font-family: sans-serif;
+  font-size: 0.75em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid gray;
+  background-color: #ddd;
+}
+#visualization
+{
+/*  box-shadow: 0 0 3em lightgray inset;*/
+  flex: 1 1 auto;
+  display: flex;
+  flex-flow: column;
+}
+#legend
+{
+  flex: 0 1 auto;
+  font-size: 0.7em;
+  font-family: monospace;
+  border-top: 1px solid lightgray;
+}
+
+#cy {
+  flex: 1 0 auto;
+}
+
+#cy:hover
+{
+/*  box-shadow: 0 0 3em gray inset;*/
+  cursor: pointer;
+}
+#right_pane
+{
+  display: flex;
+  flex-flow: column;
+}
+#cpp_container
+{
+/*  height: calc(100vh - 4em);*/
+  overflow-y: auto;
+  tab-size: 3;
+  flex: 1 1 auto;
+}
+#info_window
+{
+  flex: 0 0 0em;
+}
+.dot {
+  height: 1.5em;
+  width: 1.5em;
+  background-color: #000000;
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+  top: 0.4em;
+}
+.rectangle
+{
+  height: 1.5em;
+  width: 1.5em;
+  background-color: #000000;
+  display: inline-block;
+  position: relative;
+  top: 0.4em;
+}
+#legend p
+{
+  margin: 0 1em 1em 1em;
+}
+.highlight
+{
+  background-color: yellow;
+}
+
+
+#info_window
+{
+  font-family: sans-serif;
+  font-size: 0.8em;
+  word-wrap: anywhere;
+  z-index: 999;
+  overflow-y: scroll;
+  transition: 0.3s flex;
+}
+
+#info_window h3, p
+{
+  margin: 0;
+}
+
+#info_window h3
+{
+  text-transform: uppercase;
+  text-align: center;
+  border-bottom: 1pt solid #bbb;
+  border-top: 1pt solid #bbb;
+  background-color: #ddd;
+}
+
+#info_window p:nth-of-type(even)
+{
+  background-color: #f5f5f5;
+}
+
+#info_window strong
+{
+  display: inline-block;
+  width: 30%;
+  min-width: 12em;
+  text-align: right;
+  padding-right: 0.5em;
+}
+
+
+#plot {
+  max-height: 10em;
+}
+
+
+
+
+
+
+#color-bar-legend
+{
+  text-align: center;
+  width: 50%;
+}
+#color-bar
+{
+  display: inline-block;
+  width: 35%;
+  height: 1.5em;
+  background: linear-gradient(to right, #0f0, #f00);
+  position: relative;
+  top: 0.4em;
+}
+#color-description
+{
+  display: flex;
+  justify-content: space-between;
+}
+.setting
+{
+  background-color: white;
+  border-radius: 3pt;
+  margin: 0.3em 0.2em;
+  padding: 0.1em 0.4em;
+  display: inline-block;
+  font-size: 0.9em;
+}
+.setting-heading
+{
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  font-weight: bold;
+  display: inline-block;
+  width: 5em;
+  text-align: right;
+}
+.setting.hidden { display: none; }
+
+.setting label:hover
+{
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+#settings hr
+{
+  border: none;
+  border-bottom: 1px solid gray;
+}
+
+pre code.hljs
+{
+  padding-top: 0 !important;
+  font-size: 0.8em;
+}
+
+.hljs-ln-numbers
+{
+  text-align: right;
+  color: #ccc;
+  border-right: 1px solid #CCC;
+  vertical-align: top;
+  padding-right: 1.95em !important;
+  margin-right: 1em;
+}
+
+/* for block of code */
+.hljs-ln-code
+{
+  padding-left: .5em !important;
+}
+
+.hljs-ln tr:hover
+{
+  background-color: #ddd;
+}
+
+.badge
+{
+  background-color: blue;
+  color: white;
+  font-size: 0.9em;
+  border-radius: 100%;
+  cursor: pointer;
+  display: inline-block;
+  height: 1.5em;
+  width: 1.5em;
+  line-height: 1.5em;
+  position: relative;
+  right: -1.75em;
+  margin-left: -1.5em;
+  text-align: center;
+  transition: 0.3s transform;
+}
+
+.badge:hover
+{
+  transform: scale(1.2);
+}
+
+
+
+#png-render
+{
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  height: 5em;
+  width: 5em;
+  background-color: white;
+  border: 0.5em solid white;
+  display: none;
+  z-index: 9999;
+}
+
+.line-selected
+{
+  background-color: yellow !important;
+  color: black !important;
+}
+
+footer a {
+  color: white;
+}
+
+
+.split
+{
+  display: flex;
+  flex-direction: row;
+}
+.gutter
+{
+  background-color: #777;
+  background-repeat: no-repeat;
+  background-position: 50%;
+}
+.gutter.gutter-horizontal
+{
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+  cursor: col-resize;
+}
+
+.vis-item.red
+{
+  color: white;
+  background-color: red;
+  border-color: darkred;
+}

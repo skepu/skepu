@@ -1,0 +1,6 @@
+if(NOT TARGET SkePU::skepu-tool)
+	include(${CMAKE_CURRENT_LIST_DIR}/skepu-toolConfig.cmake)
+endif()
+if(NOT TARGET SkePU::SkePU)
+	include(${CMAKE_CURRENT_LIST_DIR}/skepu-headersConfig.cmake)
+endif()

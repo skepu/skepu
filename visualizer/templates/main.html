@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trace Performance Visualization Tool for SkePU</title>
+
+    <!-- App stylesheet -->
+    <link rel="stylesheet" href="{{url_for('static', filename='style/main.css')}}"/>
+    <link rel="stylesheet" href="{{url_for('static', filename='cmu-font/fonts/cmuserif_roman/stylesheet.css')}}"/>
+
+    <!-- jQuery library  -->
+    <script src="{{url_for('static', filename='jquery/jquery-3.7.1.min.js')}}"></script>
+    <script src="{{url_for('static', filename='jquery-scrollto/jquery.scrollTo.min.js')}}"></script>
+
+    <!-- Split -->
+    <script src="{{url_for('static', filename='splitjs/split.js')}}"></script>
+
+    <!-- Cytoscape  -->
+    <script src="{{url_for('static', filename='cytoscape/cytoscape.min.js')}}"></script>
+    <script src="{{url_for('static', filename='dagre/dagre.min.js')}}"></script>
+    <script src="{{url_for('static', filename='cytoscape-dagre/cytoscape-dagre.js')}}"></script>
+    <script src="{{url_for('static', filename='cytoscape-expand-collapse/cytoscape-expand-collapse.js')}}"></script>
+
+    <!-- Highlight js -->
+    <link rel="stylesheet" href="{{url_for('static', filename='highlight/styles/default.css')}}">
+    <script src="{{url_for('static', filename='highlight/highlight.min.js')}}"></script>
+    <script src="{{url_for('static', filename='highlight-line-numbers/highlightjs-line-numbers.min.js')}}"></script>
+
+    <!-- Vis.js -->
+    <script src="{{url_for('static', filename='visjs/vis-timeline-graph2d.min.js')}}"></script>
+
+    <!-- App script  -->
+    <script type="text/javascript" src="{{url_for('static', filename='script/main.js')}}"></script>
+
+</head>
+<body onload="load();">
+    <header>
+      <p>~ Trace Performance Visualization Tool for SkePU ~</p>
+    </header>
+
+    <div class="outer_container">
+      <div id="left_pane">
+        <div id="settings">
+          <span class="setting-heading">General</span>
+          <input type="button" value="Apply settings" onclick="fetchViewDataAndRender();">
+          <input type="button" value="Reset view" onclick="recenterGraph();">
+          <input type="button" value="Save image" onclick="renderImage();">
+          <span class="setting">Toggle:
+            <input type="button" value="Settings" onclick="toggleSettings();">
+            <input type="button" value="Legend" onclick="toggleLegend();">
+            <input type="button" value="New trace" onclick="toggleFiles();">
+          </span>
+      <!--    <span class="setting">
+            <label for="view-mode">View </label>
+            <select id="view-mode">
+              <option value="graph" selected>Graph</option>
+              <option value="timeline" >Timeline</option>
+            </select>
+          </span>-->
+          <br/>
+          <div id="toggled-settings">
+
+          <span class="setting-heading">Nodes</span>
+          <span class="setting"><input type="checkbox" id="container-updates" onchange="settingChanged()"/> <label for="container-updates">Updates</label></span>
+          <span class="setting"><input type="checkbox" id="container-allocations" onchange="settingChanged()"/> <label for="container-allocations">Allocations</label></span>
+          <span class="setting"><input type="checkbox" id="container-deallocations" onchange="settingChanged()"/> <label for="container-deallocations">Deallocations</label></span>
+          <span class="setting"><input type="checkbox" id="container-transfers" onchange="settingChanged()"/> <label for="container-transfers">Transfers</label></span>
+          <span class="setting">
+            <label for="node-color-call">Color </label><select id="node-color-call" onchange="settingChanged()">
+              <option value="duration-total" selected>Total time</option>
+              <option value="elements">Elements</option>
+              <option value="duration-per-element">Time/element</option>
+              <option value="iterations">Iterations</option>
+              <option value="dag-depth">DAG depth</option>
+              <option value="total-order">Program sequence</option>
+              <option value="critical-path">Critical path</option>
+              <option value="pattern">Pattern</option>
+              <option value="backend">Backend</option>
+            </select>
+          </span>
+          <span class="setting">
+            <label for="node-size-call">Size </label><select id="node-size-call" onchange="settingChanged()">
+              <option value="fixed" selected>Fixed</option>
+              <option value="duration-total">Total time</option>
+              <option value="elements">Elements</option>
+              <option value="duration-per-element">Time/element</option>
+              <option value="iterations">Iterations</option>
+            </select>
+          </span>
+          <br/>
+
+          <span class="setting-heading">Edges</span>
+          <span class="setting"><input type="checkbox" id="anti-deps"/> <label for="anti-deps">Anti-dependences</label></span>
+          <span class="setting"><input type="checkbox" id="edge-labels"/> <label for="edge-labels">Labels</label></span>
+          <span class="setting">
+            <label for="direction">Direction </label>
+            <select id="direction">
+              <option value="vertical" selected>Vertical</option>
+              <option value="horizontal" >Horizontal</option>
+            </select>
+          </span>
+          <span class="setting hidden"><label for="edge-style">Style</label>
+            <select id="edge-style" onchange="settingChanged()">
+              <option value="straight" selected>Straight</option>
+              <option value="taxi">Angular</option>
+            </select>
+          </span>
+          <span class="setting">
+            <label for="edge-width">Width </label><select id="edge-width" onchange="settingChanged()">
+              <option value="fixed" selected>Fixed</option>
+              <option value="elements">Elements</option>
+              <option value="iterations">Iterations</option>
+              <option value="critical-path">Critical path</option>
+            </select>
+          </span>
+          <span class="setting">
+            <label for="edge-opacity">Opacity </label><select id="edge-opacity" onchange="settingChanged()">
+              <option value="fixed" selected>Fixed</option>
+              <option value="elements">Elements</option>
+              <option value="iterations">Iterations</option>
+              <option value="critical-path">Critical path</option>
+            </select>
+          </span>
+
+          <br/> <span class="setting-heading">Advanced</span>
+          <span class="setting"><input type="checkbox" id="show_regions"/> <label for="show_regions">Regions</label></span>
+        <!--  <span class="setting"><input type="checkbox" id="coalesce_region_deps" onchange="settingChanged()"/> <label for="coalesce_region_deps">Collapse region edges</label></span>-->
+          <span class="setting"><input type="checkbox" id="collapse_iteration" onchange="settingChanged()"/> <label for="collapse_iteration">Aggregate iteration</label></span>
+          <span class="setting"><input type="checkbox" id="fusion_analysis"/> <label for="fusion_analysis">Fusion analysis</label></span>
+
+        <!--  <span class="setting">
+            <label for="optimization-hints">Optimization hint: </label><select id="optimization-hints">
+            </select>
+          </span>-->
+          </span>
+
+          <br/> <span class="setting-heading">Actions</span>
+          <span class="setting"><b>Regions:</b>
+            <button id="collapseAllRegions">Collapse</button>
+            <button id="expandAllRegions">Expand</button>
+          </span>
+          <span class="setting"><b>Fusions:</b>
+            <button id="collapseAllFusions">Collapse</button>
+            <button id="expandAllFusions">Expand</button>
+          </span>
+          <span class="setting"><b>Selected:</b>
+            <button id="collapseRecursively">Collapse</button>
+            <button id="expandRecursively">Expand</button>
+          </span>
+        </div>
+        <div id="file-settings" style="display: none;">
+
+          <hr/>
+          <span class="setting-heading">New Trace</span>
+          <span class="setting">
+            <form  id="post-form" method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+              Trace file: <input type="file" name="json_file" accept=".json">
+              Source file: <input type="file" name="cpp_file" accept=".cpp">
+              <input type="submit" value="Upload New Trace">
+            </form>
+          </span>
+        </div>
+        </div>
+
+        <div id="visualization">
+          <div id="cy"></div>
+          <div id="timeline"></div>
+        </div>
+        <div id="legend">
+          <p>
+            <span class="dot"> </span> = Skeleton call
+            <span class="rectangle"> </span> = Data-container update
+            | Node color: <span id="color-bar-legend">min <span id="color-bar"></span> max</span>
+          </p>
+          <!-- View a bar of what the colors mean -->
+        </div>
+        <img id="png-render"></img>
+      </div>
+      <!-- The container for c++ code -->
+      <div id="right_pane">
+        <div id="cpp_container">
+          <pre><code>{{ cpp_code }}</code></pre>
+        </div>
+        <div id="info_window">
+          <div id="info"></div>
+          <div id="plot"></div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      ~ <span id="event-count">__</span> trace events, <span id="node-count">__</span> nodes, <span id="edge-count">__</span> edges ~ Load time <span id="load-time">__</span> ms ~ See the <a href="https://skepu.github.io">SkePU website</a> for source code and documentation ~
+    </footer>
+</body>
+</html>

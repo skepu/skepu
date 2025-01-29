@@ -1,0 +1,24 @@
+SkePU contributors since 2010
+
+SkePU research and development is coordinated by Linköping University.
+Individual contributor names are listed below in chronological order of earliest contribution.
+
+- Johan Enmyren
+- Usman Dastgeer
+- Lu Li
+- Oskar Sjöström
+- August Ernstsson
+- Henrik Henriksson
+- Johan Ahlqvist
+
+(The above list are contributions to the public SkePU
+ software distribution; for further contributors see our
+ publications and the SkePU web page at https://skepu.github.io/.)
+
+The development of SkePU has been financially supported by the following grants:
+
+EU H2020 project EXA2PRO (801015), https://exa2pro.eu/.
+EU FP7 project EXCESS (611183),
+and EU FP7 project PEPPHER (248481).
+
+Please see individual publications (https://skepu.github.io/#publications) about SkePU for further acknowledgements, such as CUGS, SeRC, and NSC (project number SNIC-2016/5-6). 

@@ -1,0 +1,6 @@
+SkePU Refactoring
+=================
+* External pointers shall not be deleted until vector is deleted.
+* If created from external vector, copy back data to that pointer when flush()
+
+vi:ts=2 sw=2 noet

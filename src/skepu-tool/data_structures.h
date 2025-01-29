@@ -1,0 +1,240 @@
+#pragma once
+
+#include <string>
+#include <unordered_set>
+#include <utility>
+
+#include "clang/AST/AST.h"
+
+
+
+// ------------------------------
+// Data structures
+// ------------------------------
+
+enum class Backend
+{
+	CPU, OpenMP, CUDA, OpenCL,
+};
+
+enum class AccessMode
+{
+	Read,
+	Write,
+	ReadWrite
+};
+
+enum class ContainerType
+{
+	Vector,
+	Matrix,
+	MatRow,
+	MatCol,
+	Tensor3,
+	Tensor4,
+	SparseMatrix,
+	Region1D,
+	Region2D,
+	Region3D,
+	Region4D,
+	Pool1D,
+	Pool2D,
+	Pool3D,
+	Pool4D
+};
+
+
+struct Skeleton
+{
+	enum class Type
+	{
+		Map,
+		Reduce1D,
+		Reduce2D,
+		MapReduce,
+		MapPairs,
+		MapPairsReduce,
+		Scan,
+		MapOverlap1D,
+		MapOverlap2D,
+		MapOverlap3D,
+		MapOverlap4D,
+		MapPool1D,
+		MapPool2D,
+		MapPool3D,
+		MapPool4D,
+		Call
+	};
+
+	std::string name;
+	Type type;
+	size_t userfunctionArgAmount;
+	size_t deviceKernelAmount;
+};
+
+
+class UserConstant
+{
+public:
+	const clang::VarDecl *astDeclNode;
+
+	std::string name;
+	std::string typeName;
+	std::string definition;
+
+	UserConstant(const clang::VarDecl *v);
+};
+
+
+class UserType
+{
+public:
+	const clang::CXXRecordDecl *astDeclNode;
+
+	std::string name;
+	const clang::Type *type;
+	std::string typeNameOpenCL;
+	bool requiresDoublePrecision;
+
+	UserType(const clang::CXXRecordDecl *t);
+};
+
+
+
+class UserFunction
+{
+public:
+
+
+	struct TemplateArgument
+	{
+		const std::string paramName;
+		const std::string rawTypeName;
+		const std::string resolvedTypeName;
+
+		TemplateArgument(std::string name, std::string rawType, std::string resolvedType);
+	};
+
+	struct Param
+	{
+		const clang::ParmVarDecl *astDeclNode;
+		const clang::Type *type;
+		
+		std::string name;
+		std::string rawTypeName;
+		std::string resolvedTypeName;
+		std::string escapedTypeName;
+		std::string fullTypeName;
+		std::string unqualifiedFullTypeName;
+		bool isReferenceType = false;
+		bool isRValueReference = false;
+		bool isLValueReference = false;
+		
+		static bool constructibleFrom(const clang::ParmVarDecl *p);
+		
+		Param(const clang::ParmVarDecl *p);
+		virtual ~Param() = default;
+		
+		std::string templateInstantiationType() const;
+		virtual size_t numKernelArgsCL() const;
+		std::string typeNameOpenCL() const;
+	};
+
+	struct RandomAccessParam: Param
+	{
+		AccessMode accessMode;
+		ContainerType containerType;
+		const clang::Type *containedType;
+		
+		static bool constructibleFrom(const clang::ParmVarDecl *p);
+		
+		RandomAccessParam(const clang::ParmVarDecl *p);
+		virtual ~RandomAccessParam() = default;
+		
+		virtual size_t numKernelArgsCL() const override;
+		std::string TypeNameOpenCL() const;
+		std::string innerTypeNameOpenCL() const;
+		std::string TypeNameHost() const;
+	};
+	
+	struct RegionParam: RandomAccessParam
+	{
+		static bool constructibleFrom(const clang::ParmVarDecl *p);
+		
+		RegionParam(const clang::ParmVarDecl *p);
+
+		bool isPool;
+	};
+	
+	struct RandomParam: Param
+	{
+		static bool constructibleFrom(const clang::ParmVarDecl *p);
+		
+		size_t randomCount;
+		
+		RandomParam(const clang::ParmVarDecl *p);
+	};
+
+	void updateArgLists(size_t arity, size_t Harity = 0);
+
+	bool refersTo(UserFunction &other);
+
+	std::string funcNameCUDA();
+	size_t numKernelArgsCL();
+	std::string multiReturnTypeNameGPU();
+
+	clang::FunctionDecl *astDeclNode;
+
+	std::string rawName;
+	std::string uniqueName;
+	std::string rawReturnTypeName;
+	std::string resolvedReturnTypeName;
+	
+	std::string returnTypeNameOpenCL();
+	
+	std::vector<std::string> multipleReturnTypes {};
+
+	std::string instanceName;
+
+	clang::SourceLocation codeLocation;
+	
+	size_t Varity = 0, Harity = 0;
+	
+	RandomParam* randomParam = nullptr;
+	size_t randomCount;
+	
+	RegionParam* regionParam = nullptr;
+	std::vector<Param> elwiseParams{};
+	std::vector<RandomAccessParam> anyContainerParams {};
+	std::vector<Param> anyScalarParams {};
+	Param *indexParam; // can be NULL
+
+	std::vector<TemplateArgument> templateArguments{};
+
+	std::vector<std::pair<const clang::CallExpr*, UserFunction*>> UFReferences{};
+	std::set<UserFunction*> ReferencedUFs{};
+	
+	
+	std::set<const clang::CallExpr*> ReferencedRets{};
+	std::set<clang::CXXMemberCallExpr*> ReferencedGets{};
+
+	std::vector<std::pair<const clang::TypeSourceInfo*, UserType*>> UTReferences{};
+	std::set<UserType*> ReferencedUTs{};
+
+
+	std::vector<clang::CXXOperatorCallExpr*> containerSubscripts{}, containerCalls{};
+	std::vector<clang::CXXOperatorCallExpr*> operatorOverloads{};
+
+	bool fromTemplate = false;
+	bool indexed1D = false;
+	bool indexed2D = false;
+	bool indexed3D = false;
+	bool indexed4D = false;
+	bool requiresDoublePrecision;
+	bool hasMatRowOrCol = false;
+
+
+	UserFunction(clang::FunctionDecl *f);
+	UserFunction(clang::CXXMethodDecl *f, clang::VarDecl *d);
+	
+};

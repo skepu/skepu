@@ -1,0 +1,34 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  artifacts:
+    paths:
+      - build/tests
+      - build/CTestTestfile.cmake
+  script:
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make
+  only:
+    - web
+    - merge_requests
+
+test:
+  stage: test
+  dependencies:
+    - build
+  script:
+    - cd build
+    - ctest
+  only:
+    - web
+    - merge_requests
+
+# vi:ts=2 sw=2 et

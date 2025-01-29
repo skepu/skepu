@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trace Performance Visualization Tool for SkePU</title>
+    <style>
+      /* Define style of containers and dataPopup */
+      body, html {
+        padding: 0; margin: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 10vh;
+        background-color: #f0f0f2;
+        font-family: monospace;
+      }
+
+      #form
+      {
+        background-color: white;
+        width: 50%;
+        margin: 5em auto;
+        border: 0.3em solid white;
+        border-radius: 1em;
+        padding: 2em;
+        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02)
+      }
+
+      #form h1, #form h3
+      {
+        text-align: center;
+      }
+
+      .label
+      {
+        display: inline-block;
+        text-align: right;
+        width: 50%;
+      }
+
+      code
+      {
+        color: red;
+      }
+
+      a
+      {
+        color: red;
+      }
+
+      hr {
+        border: 1px solid lightgray;
+      }
+
+      #submit
+      {
+        background-color: green;
+        width: 100%;
+        border: none;
+        border-radius: 0.5em;
+        font-family: monospace;
+        font-size: 2em;
+        padding: 0.5em;
+        text-transform: uppercase;
+        color: white;
+      }
+
+      #submit:hover
+      {
+        cursor: pointer;
+        background-color: darkgreen;
+      }
+    </style>
+</head>
+<body>
+    <!-- What different types of files are allowed to be uploaded -->
+    <div id="form">
+      <h1>Trace Performance Visualization Tool for SkePU</h1>
+      <hr/>
+      <h3>~ See the <a href="https://skepu.github.io">SkePU website</a> for source code and documentation ~</h3>
+      <ol>
+        <li>Build your SkePU program with the precompiler and <code>-DSKEPU_TRACING</code> enabled.</li>
+        <li>Run the program as normal.</li>
+        <li>Find <code>trace.json</code> in your current directory.</li>
+      </ol>
+      <hr/>
+      <h3>~ Upload generated trace file and program source ~</h3>
+      <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+          <p><span class="label">Trace file:</span> <input type="file" name="json_file" accept=".json"> (.json)</p>
+          <p><span class="label">Source file:</span> <input type="file" name="cpp_file" accept=".cpp"> (.cpp)</p>
+          <input id="submit" type="submit" value="Visualize">
+      </form>
+    </div>
+</body>
+</html>
