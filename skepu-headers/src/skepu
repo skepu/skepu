@@ -1,0 +1,84 @@
+#pragma once
+
+// Deprecated operators are still accessible in this version
+#define SKEPU_ENABLE_DEPRECATED_OPERATOR
+
+
+#if defined(SKEPU_OPENMP) && (defined(SKEPU_CUDA) || defined(SKEPU_OPENCL))
+# define SKEPU_HYBRID
+
+# if defined(SKEPU_CUDA) && !(defined(SKEPU_OPENCL) && defined(SKEPU_HYBRID_FORCE_OPENCL))
+#  define SKEPU_HYBRID_USE_CUDA
+# endif
+#endif
+
+/* TODO: Get rid of this hack if possible. */
+#ifdef SKEPU_MERCURIUM_CUDA
+#define __CUDACC__
+#include <cuda.h>
+#include <device_functions.h>
+#undef __CUDACC__
+#endif
+
+#include <memory>
+
+#ifdef SKEPU_STARPU_MPI
+
+#include <skepu3/cluster/cluster.hpp>
+#include <skepu3/cluster/external.hpp>
+#include <skepu3/cluster/containers/matrix/matrix.hpp>
+#include <skepu3/cluster/containers/vector/vector.hpp>
+#include <skepu3/cluster/containers/tensor3/tensor3.hpp>
+#include <skepu3/cluster/containers/tensor4/tensor4.hpp>
+#include <skepu3/impl/random.hpp>
+#include <skepu3/impl/stride_list.hpp>
+#include <skepu3/cluster/skeletons/map/map.hpp>
+#include <skepu3/cluster/skeletons/map/mapoverlap.hpp>
+#include <skepu3/cluster/skeletons/map/mappairs.hpp>
+#include <skepu3/cluster/skeletons/map/mappairsreduce.hpp>
+#include <skepu3/cluster/skeletons/map/mapreduce.hpp>
+#include <skepu3/cluster/skeletons/reduce/reduce.hpp>
+#include <skepu3/cluster/skeletons/scan.hpp>
+
+#else
+
+#include "skepu3/cluster/cluster_fake.hpp"
+
+#include "skepu3/impl/backend.hpp"
+#include "skepu3/backend/helper_methods.h"
+#include "skepu3/impl/common.hpp"
+#include "skepu3/impl/external.hpp"
+#include "skepu3/backend/hybrid_tuner.h"
+
+//#ifndef SKEPU_PRECOMPILED
+
+#include "skepu3/map.hpp"
+#include "skepu3/reduce.hpp"
+#include "skepu3/scan.hpp"
+#include "skepu3/mapoverlap.hpp"
+#include "skepu3/mapreduce.hpp"
+#include "skepu3/mappairs.hpp"
+#include "skepu3/mappairsreduce.hpp"
+#include "skepu3/call.hpp"
+
+//#else
+
+#ifdef SKEPU_PRECOMPILED
+
+#include "skepu3/backend/map.h"
+#include "skepu3/backend/reduce.h"
+#include "skepu3/backend/mapreduce.h"
+#include "skepu3/backend/scan.h"
+#include "skepu3/backend/mapoverlap.h"
+#include "skepu3/backend/mappairs.h"
+#include "skepu3/backend/mappairsreduce.h"
+#include "skepu3/backend/call.h"
+
+
+#endif // SKEPU_PRECOMPILED
+#endif // SKEPU_MPI_STARPU
+
+#include "skepu3/impl/container_helpers.hpp"
+//#include "skepu3/impl/fusion.hpp"
+//#include "skepu3/impl/pipe.hpp"
+//#include "skepu3/impl/lineage.hpp"
