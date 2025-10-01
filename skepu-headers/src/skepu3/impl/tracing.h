@@ -5,7 +5,6 @@
 #include <sstream>
 #include <iostream>
 #include <stack>
-#include <source_location>
 
 #ifndef SKEPU_PRECOMPILED
 #ifdef SKEPU_TRACING
