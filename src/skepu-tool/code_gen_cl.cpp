@@ -78,13 +78,14 @@ std::string generateOpenCLVectorProxy(UserFunction::RandomAccessParam const& par
 {
   static const std::string OpenCLVectorTemplate = R"~~~(
 typedef struct {
-	__global {{CONTAINED_TYPE_CL}} *data;
+	__global {{TYPE_CL}} *data;
 	size_t size;
 } skepu_vec_proxy_{{CONTAINED_TYPE_CL}};
-{{CONTAINED_TYPE_CL}} skepu_vec_proxy_access_{{CONTAINED_TYPE_CL}}(skepu_vec_proxy_{{CONTAINED_TYPE_CL}} v, size_t i)
+{{TYPE_CL}} skepu_vec_proxy_access_{{CONTAINED_TYPE_CL}}(skepu_vec_proxy_{{CONTAINED_TYPE_CL}} v, size_t i)
 { return v.data[i]; }
 )~~~";
 	std::string retval = OpenCLVectorTemplate;
+	replaceTextInString(retval, "{{TYPE_CL}}", param.typeNameOpenCL());
 	replaceTextInString(retval, "{{CONTAINED_TYPE_CL}}", param.innerTypeNameOpenCL());
 	return retval;
 }
@@ -93,14 +94,15 @@ std::string generateOpenCLMatrixProxy(UserFunction::RandomAccessParam const& par
 {
   static const std::string OpenCLMatrixTemplate = R"~~~(
 typedef struct {
-	__global {{CONTAINED_TYPE_CL}} *data;
+	__global {{TYPE_CL}} *data;
 	size_t rows;
 	size_t cols;
 } skepu_mat_proxy_{{CONTAINED_TYPE_CL}};
-{{CONTAINED_TYPE_CL}} skepu_mat_proxy_access_{{CONTAINED_TYPE_CL}}(skepu_mat_proxy_{{CONTAINED_TYPE_CL}} m, size_t i, size_t j)
+{{TYPE_CL}} skepu_mat_proxy_access_{{CONTAINED_TYPE_CL}}(skepu_mat_proxy_{{CONTAINED_TYPE_CL}} m, size_t i, size_t j)
 { return m.data[i * m.cols + j]; }
 )~~~";
 	std::string retval = OpenCLMatrixTemplate;
+	replaceTextInString(retval, "{{TYPE_CL}}", param.typeNameOpenCL());
 	replaceTextInString(retval, "{{CONTAINED_TYPE_CL}}", param.innerTypeNameOpenCL());
 	return retval;
 }
@@ -109,13 +111,14 @@ std::string generateOpenCLMatrixRowProxy(UserFunction::RandomAccessParam const& 
 {
   static const std::string OpenCLMatrixRowTemplate = R"~~~(
 typedef struct {
-	__global {{CONTAINED_TYPE_CL}} *data;
+	__global {{TYPE_CL}} *data;
 	size_t cols;
 } skepu_matrow_proxy_{{CONTAINED_TYPE_CL}};
-static {{CONTAINED_TYPE_CL}} skepu_matrow_proxy_access_{{CONTAINED_TYPE_CL}}(skepu_matrow_proxy_{{CONTAINED_TYPE_CL}} mr, size_t i)
+static {{TYPE_CL}} skepu_matrow_proxy_access_{{CONTAINED_TYPE_CL}}(skepu_matrow_proxy_{{CONTAINED_TYPE_CL}} mr, size_t i)
 { return mr.data[i]; }
 )~~~";
-  std::string retval = OpenCLMatrixRowTemplate;
+  	std::string retval = OpenCLMatrixRowTemplate;
+  	replaceTextInString(retval, "{{TYPE_CL}}", param.typeNameOpenCL());
 	replaceTextInString(retval, "{{CONTAINED_TYPE_CL}}", param.innerTypeNameOpenCL());
 	return retval;
 }
@@ -124,23 +127,25 @@ std::string generateOpenCLMatrixColProxy(UserFunction::RandomAccessParam const& 
 {
   static const std::string OpenCLMatrixColTemplate = R"~~~(
 typedef struct {
-	__global {{CONTAINED_TYPE_CL}} *data;
+	__global {{TYPE_CL}} *data;
 	size_t rows;
 	size_t cols;
 } skepu_matcol_proxy_{{CONTAINED_TYPE_CL}};
-static {{CONTAINED_TYPE_CL}} skepu_matcol_proxy_access_{{CONTAINED_TYPE_CL}}(skepu_matcol_proxy_{{CONTAINED_TYPE_CL}} mc, size_t i)
+static {{TYPE_CL}} skepu_matcol_proxy_access_{{CONTAINED_TYPE_CL}}(skepu_matcol_proxy_{{CONTAINED_TYPE_CL}} mc, size_t i)
 { return mc.data[i * mc.cols]; }
 )~~~";
 	std::string retval = OpenCLMatrixColTemplate;
+	replaceTextInString(retval, "{{TYPE_CL}}", param.typeNameOpenCL());
 	replaceTextInString(retval, "{{CONTAINED_TYPE_CL}}", param.innerTypeNameOpenCL());
 	return retval;
 }
-
-std::string generateOpenCLSparseMatrixProxy(UserFunction::RandomAccessParam const& param)
+// UNSUPPORTED
+/*
+std::string generateOpenCLSparseMatrixProxy(UserFunction::RandomAccessParam const& param) 
 {
   static const std::string OpenCLSparseMatrixTemplate = R"~~~(
 typedef struct {
-	__global {{CONTAINED_TYPE_CL}} *data;
+	__global {{TYPE_CL}} *data;
 	__global size_t *row_offsets;
 	__global size_t *col_indices;
 	size_t count;
@@ -149,21 +154,22 @@ typedef struct {
 	std::string retval = OpenCLSparseMatrixTemplate;
 	replaceTextInString(retval, "{{CONTAINED_TYPE_CL}}", param.innerTypeNameOpenCL());
 	return retval;
-}
+}*/
 
 std::string generateOpenCLTensor3Proxy(UserFunction::RandomAccessParam const& param)
 {
   static const std::string OpenCLTensor3Template = R"~~~(
 typedef struct {
-	__global {{CONTAINED_TYPE_CL}} *data;
+	__global {{TYPE_CL}} *data;
 	size_t size_i;
 	size_t size_j;
 	size_t size_k;
 } skepu_ten3_proxy_{{CONTAINED_TYPE_CL}};
-static {{CONTAINED_TYPE_CL}} skepu_ten3_proxy_access_{{CONTAINED_TYPE_CL}}(skepu_ten3_proxy_{{CONTAINED_TYPE_CL}} t, size_t i, size_t j, size_t k)
+static {{TYPE_CL}} skepu_ten3_proxy_access_{{CONTAINED_TYPE_CL}}(skepu_ten3_proxy_{{CONTAINED_TYPE_CL}} t, size_t i, size_t j, size_t k)
 { return t.data[i * t.size_j * t.size_k + j * t.size_k + k]; }
 )~~~";
 	std::string retval = OpenCLTensor3Template;
+	replaceTextInString(retval, "{{TYPE_CL}}", param.typeNameOpenCL());
 	replaceTextInString(retval, "{{CONTAINED_TYPE_CL}}", param.innerTypeNameOpenCL());
 	return retval;
 }
@@ -172,16 +178,17 @@ std::string generateOpenCLTensor4Proxy(UserFunction::RandomAccessParam const& pa
 {
   static const std::string OpenCLTensor4Template = R"~~~(
 typedef struct {
-	__global {{CONTAINED_TYPE_CL}} *data;
+	__global {{TYPE_CL}} *data;
 	size_t size_i;
 	size_t size_j;
 	size_t size_k;
 	size_t size_l;
 } skepu_ten4_proxy_{{CONTAINED_TYPE_CL}};
-static {{CONTAINED_TYPE_CL}} skepu_ten4_proxy_access_{{CONTAINED_TYPE_CL}}(skepu_ten4_proxy_{{CONTAINED_TYPE_CL}} t, size_t i, size_t j, size_t k, size_t l)
+static {{TYPE_CL}} skepu_ten4_proxy_access_{{CONTAINED_TYPE_CL}}(skepu_ten4_proxy_{{CONTAINED_TYPE_CL}} t, size_t i, size_t j, size_t k, size_t l)
 { return t.data[i * t.size_j * t.size_k * t.size_l + j * t.size_k * t.size_l + k * t.size_l + l]; }
 )~~~";
 	std::string retval = OpenCLTensor4Template;
+	replaceTextInString(retval, "{{TYPE_CL}}", param.typeNameOpenCL());
 	replaceTextInString(retval, "{{CONTAINED_TYPE_CL}}", param.innerTypeNameOpenCL());
 	return retval;
 }
@@ -193,90 +200,90 @@ std::string generateOpenCLRegion(size_t dim, UserFunction::RegionParam const& pa
 {
 static const std::string OpenCLRegion1DTemplate = R"~~~(
 typedef struct {
-	__local {{CONTAINED_TYPE_CL}} *data;
+	__local {{TYPE_CL}} *data;
 	int oi;
 	size_t stride;
 } skepu_region1d_{{CONTAINED_TYPE_CL}};
 
-static {{CONTAINED_TYPE_CL}} skepu_region_access_1d_{{CONTAINED_TYPE_CL}}(skepu_region1d_{{CONTAINED_TYPE_CL}} r, int i)
+static {{TYPE_CL}} skepu_region_access_1d_{{CONTAINED_TYPE_CL}}(skepu_region1d_{{CONTAINED_TYPE_CL}} r, int i)
 { return r.data[i * r.stride]; }
 )~~~";
 
 static const std::string OpenCLRegion2DTemplate = R"~~~(
 typedef struct {
-	__local {{CONTAINED_TYPE_CL}} *data;
+	__local {{TYPE_CL}} *data;
 	int oi, oj;
 	size_t stride;
 } skepu_region2d_{{CONTAINED_TYPE_CL}};
 
-static {{CONTAINED_TYPE_CL}} skepu_region_access_2d_{{CONTAINED_TYPE_CL}}(skepu_region2d_{{CONTAINED_TYPE_CL}} r, int i, int j)
+static {{TYPE_CL}} skepu_region_access_2d_{{CONTAINED_TYPE_CL}}(skepu_region2d_{{CONTAINED_TYPE_CL}} r, int i, int j)
 { return r.data[i * r.stride + j]; }
 )~~~";
 
 static const std::string OpenCLRegion3DTemplate = R"~~~(
 typedef struct {
-	__local {{CONTAINED_TYPE_CL}} *data;
+	__local {{TYPE_CL}} *data;
 	int oi, oj, ok;
 	size_t stride1, stride2;
 } skepu_region3d_{{CONTAINED_TYPE_CL}};
 
-static {{CONTAINED_TYPE_CL}} skepu_region_access_3d_{{CONTAINED_TYPE_CL}}(skepu_region3d_{{CONTAINED_TYPE_CL}} r, int i, int j, int k)
+static {{TYPE_CL}} skepu_region_access_3d_{{CONTAINED_TYPE_CL}}(skepu_region3d_{{CONTAINED_TYPE_CL}} r, int i, int j, int k)
 { return r.data[i * r.stride1 * r.stride2 + j * r.stride2 + k]; }
 )~~~";
 
 static const std::string OpenCLRegion4DTemplate = R"~~~(
 typedef struct {
-	__local {{CONTAINED_TYPE_CL}} *data;
+	__local {{TYPE_CL}} *data;
 	int oi, oj, ok, ol;
 	size_t stride1, stride2, stride3;
 } skepu_region4d_{{CONTAINED_TYPE_CL}};
 
-static {{CONTAINED_TYPE_CL}} skepu_region_access_4d_{{CONTAINED_TYPE_CL}}(skepu_region4d_{{CONTAINED_TYPE_CL}} r, int i, int j, int k, int l)
+static {{TYPE_CL}} skepu_region_access_4d_{{CONTAINED_TYPE_CL}}(skepu_region4d_{{CONTAINED_TYPE_CL}} r, int i, int j, int k, int l)
 { return r.data[i * r.stride1 * r.stride2 * r.stride3 + j * r.stride2 * r.stride3 + k * r.stride3 + l]; }
 )~~~";
 
 
 static const std::string OpenCLPool1DTemplate = R"~~~(
 typedef struct {
-	__local {{CONTAINED_TYPE_CL}} *data;
+	__local {{TYPE_CL}} *data;
 	int si;
 	size_t stride;
 } skepu_pool1d_{{CONTAINED_TYPE_CL}};
 
-static {{CONTAINED_TYPE_CL}} skepu_pool_access_1d_{{CONTAINED_TYPE_CL}}(skepu_pool1d_{{CONTAINED_TYPE_CL}} r, int i)
+static {{TYPE_CL}} skepu_pool_access_1d_{{CONTAINED_TYPE_CL}}(skepu_pool1d_{{CONTAINED_TYPE_CL}} r, int i)
 { return r.data[i * r.stride]; }
 )~~~";
 
 static const std::string OpenCLPool2DTemplate = R"~~~(
 typedef struct {
-	__local {{CONTAINED_TYPE_CL}} *data;
+	__local {{TYPE_CL}} *data;
 	int si, sj;
 	size_t stride;
 } skepu_pool2d_{{CONTAINED_TYPE_CL}};
 
-static {{CONTAINED_TYPE_CL}} skepu_pool_access_2d_{{CONTAINED_TYPE_CL}}(skepu_pool2d_{{CONTAINED_TYPE_CL}} r, int i, int j)
+static {{TYPE_CL}} skepu_pool_access_2d_{{CONTAINED_TYPE_CL}}(skepu_pool2d_{{CONTAINED_TYPE_CL}} r, int i, int j)
 { return r.data[i * r.stride + j]; }
 )~~~";
 
 static const std::string OpenCLPool3DTemplate = R"~~~(
 typedef struct {
-	__local {{CONTAINED_TYPE_CL}} *data;
+	__local {{TYPE_CL}} *data;
 	int si, sj, sk;
 	size_t stride1, stride2;
 } skepu_pool3d_{{CONTAINED_TYPE_CL}};
 
-static {{CONTAINED_TYPE_CL}} skepu_pool_access_3d_{{CONTAINED_TYPE_CL}}(skepu_pool3d_{{CONTAINED_TYPE_CL}} r, int i, int j, int k)
+static {{TYPE_CL}} skepu_pool_access_3d_{{CONTAINED_TYPE_CL}}(skepu_pool3d_{{CONTAINED_TYPE_CL}} r, int i, int j, int k)
 { return r.data[i * r.stride1 * r.stride2 + j * r.stride2 + k]; }
 )~~~";
 
 static const std::string OpenCLPool4DTemplate = R"~~~(
 typedef struct {
-	__local {{CONTAINED_TYPE_CL}} *data;
+	__local {{TYPE_CL}} *data;
 	int si, sj, sk, sl;
 	size_t stride1, stride2, stride3;
 } skepu_pool4d_{{CONTAINED_TYPE_CL}};
 
-static {{CONTAINED_TYPE_CL}} skepu_pool_access_4d_{{CONTAINED_TYPE_CL}}(skepu_pool4d_{{CONTAINED_TYPE_CL}} r, int i, int j, int k, int l)
+static {{TYPE_CL}} skepu_pool_access_4d_{{CONTAINED_TYPE_CL}}(skepu_pool4d_{{CONTAINED_TYPE_CL}} r, int i, int j, int k, int l)
 { return r.data[i * r.stride1 * r.stride2 * r.stride3 + j * r.stride2 * r.stride3 + k * r.stride3 + l]; }
 )~~~";
 	
@@ -301,6 +308,7 @@ static {{CONTAINED_TYPE_CL}} skepu_pool_access_4d_{{CONTAINED_TYPE_CL}}(skepu_po
 		case 4: retval = OpenCLPool4DTemplate; break;
 		};
 	}
+	replaceTextInString(retval, "{{TYPE_CL}}", param.typeNameOpenCL());
 	replaceTextInString(retval, "{{CONTAINED_TYPE_CL}}", param.innerTypeNameOpenCL());
 	return retval;
 }
@@ -467,7 +475,7 @@ void proxyCodeGenHelper_CL(std::map<ContainerType, std::unordered_set<UserFuncti
 		}
 	}
 	
-	handledTypes.clear();
+	/*handledTypes.clear();
 	for (auto *type : containerProxyTypes[ContainerType::SparseMatrix])
 	{
 		if (std::find(handledTypes.begin(), handledTypes.end(), type->innerTypeNameOpenCL()) == handledTypes.end())
@@ -475,7 +483,7 @@ void proxyCodeGenHelper_CL(std::map<ContainerType, std::unordered_set<UserFuncti
 			sourceStream << generateOpenCLSparseMatrixProxy(*type);
 			handledTypes.insert(type->innerTypeNameOpenCL());
 		}
-	}
+	}*/
 	
 	handledTypes.clear();
 	for (auto *type : containerProxyTypes[ContainerType::MatRow])

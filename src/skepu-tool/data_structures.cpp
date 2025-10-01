@@ -558,7 +558,7 @@ std::string UserFunction::Param::typeNameOpenCL() const
 	
 	
 	
-	return this->escapedTypeName;
+	return this->resolvedTypeName;
 }
 
 std::string UserFunction::RandomAccessParam::innerTypeNameOpenCL() const
