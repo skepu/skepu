@@ -15,18 +15,18 @@
 
 
 # Default backend set for SkePU precompiler.
-BACKENDS = -openmp -opencl #-cuda
+BACKENDS = -openmp -opencl #-cuda -opencl 
 
-SKEPU_OPTIONS = -std=c++17 -O3 #-g -DSKEPU_DEBUG=3 #-DSKEPU_DEBUG_PRNG
+SKEPU_OPTIONS = -std=c++17 -O3 -g #-DSKEPU_DEBUG=3 #-DSKEPU_DEBUG_PRNG
 #SKEPU_OPTIONS +=
 
-PRECOMPILER_OPTIONS = --no-preserve-lines #--verbose
+PRECOMPILER_OPTIONS = --no-preserve-lines --verbose
 
 # Backend-specific flags
 BACKEND_FLAGS = -DSKEPU_TRACING #-DSKEPU_SIMULATE_MULTI_GPU # -DSKEPU_SET_DEFAULT_BACKEND_CUDA #  -g -O3
 
 # Default OpenCL specific flags (matching a CUDA-provided installation)
-OPENCL_FLAGS = -I /usr/local/cuda/include -L /usr/local/cuda/lib64/ -lOpenCL
+OPENCL_FLAGS = -I /usr/local/cuda/include -L /usr/local/cuda/lib64/ -lOpenCL -Wno-deprecated-declarations
 
 # path to Clang source directory (repository root)
 CLANG_INCLUDE = $(PWD)/../llvm/clang/lib/Headers
@@ -34,7 +34,7 @@ CLANG_INCLUDE = $(PWD)/../llvm/clang/lib/Headers
 # path to the SkePU sources
 SKEPU_INCLUDE = $(PWD)/../skepu-headers/src
 
-CXX = g++-14
+CXX = clang++
 SEQ_CXX = clang++
 #DBGR = lldb --
 
@@ -44,7 +44,7 @@ CLUSTER_CXXFLAGS = -std=c++11 -fopenmp $$(pkg-config --cflags starpu-1.3 starpum
 CLUSTER_LIBS     = $$(pkg-config --libs starpu-1.3 starpumpi-1.3)
 
 
-OPENCL_FLAGS = -framework OpenCL
+#OPENCL_FLAGS = -framework OpenCL
 
 #CLANGTOOL_USER_FLAGS = -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/ -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/  -I /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/ -I /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/ -Wno-macro-redefined
 
@@ -108,7 +108,7 @@ PROGS += mmmult_row_col
 PROGS += nbody
 PROGS += nbody_mappairs
 PROGS += ppmcc
-PROGS += psnr
+#PROGS += psnr error in: index = (get<0>(std::forward<CallArgs>(args)...) + i).getIndex();
 PROGS += riemann_sum
 PROGS += taylor
 

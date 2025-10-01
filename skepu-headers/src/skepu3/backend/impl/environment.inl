@@ -301,7 +301,7 @@ namespace skepu
 				major = device->getMajorVersion();
 				sm_per_multiproc = device->getSmPerMultiProc();
 				
-				int compute_perf  = device->getNumComputeUnits() * sm_per_multiproc * device->getClockRate();
+				int compute_perf  = device->getNumComputeUnits() * sm_per_multiproc;// * device->getClockRate();
 				
 				if( compute_perf  > max_compute_perf )
 				{
@@ -368,7 +368,7 @@ namespace skepu
 		}
 		
 		
-		template <typename T>
+		/*template <typename T>
 		bool Environment<T>::supportsCUDAOverlap()
 		{
 			for (size_t i = 0; i < m_numDevices; ++i)
@@ -377,7 +377,7 @@ namespace skepu
 					return false;
 			}
 			return true;
-		}
+		}*/
 		
 		
 		/*!
@@ -547,6 +547,7 @@ template <typename T>
 		 *  OpenCL Transpose kernel. Modified the transpose kernel provided by NVIDIA to make it work for any problem size rather than just perfect size such as 1024X1024.
 		 */
 		static const std::string TransposeKernelNoBankConflicts_CL = R"~~~(
+		
 		__kernel void transposeNoBankConflicts(__global TYPE* odata, __global TYPE* idata, size_t width, size_t height, __local TYPE* sdata)
 		{
 			int xIndex = get_group_id(0) * TILE_DIM + get_local_id(0);
@@ -587,6 +588,7 @@ template <typename T>
 			std::string datatypedef_CL = getDataTypeDefCL<T>();
 			std::stringstream totalSource;
 			
+			totalSource << "typedef uchar uint8_t;\n";
 			totalSource << datatypedef_CL;
 			
 			if (datatype_CL == "double")

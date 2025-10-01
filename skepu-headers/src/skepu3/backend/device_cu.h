@@ -217,10 +217,10 @@ public:
    /*!
     * Returns whether the device supports overlap (memory,kernel) operation or not
     */
-   bool isOverlapSupported()
+   /*bool isOverlapSupported()
    {
       return m_deviceProp.deviceOverlap;
-   }
+   }*/
 
    /*!
     *  \return The maximum block size.
@@ -267,10 +267,10 @@ public:
     * 
     *  \return The clock rate of current GPU.
     */
-   int getClockRate() const
+   /*int getClockRate() const
    {
       return m_deviceProp.clockRate;
-   }
+   }*/
 
    /*!
     *  \return The integer specifying whether the overlap is support between pinned memory transfer and kernel launches (value>0 if supported)

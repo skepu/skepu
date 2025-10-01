@@ -8,4 +8,6 @@ bandwidthMeasures.dat
 .DS_Store
 *.swp
 *__pycache__*
-
+trace.json
+outputOpenCL.txt
+mandelbrot.png
