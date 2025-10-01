@@ -182,7 +182,7 @@ namespace skepu
 		 */
 		template<typename ReduceFunc, typename CUDAKernel, typename CLKernel>
 		template<typename Iterator>
-		typename ReduceFunc::Ret Reduce1D<ReduceFunc, CUDAKernel, CLKernel>
+		Scalar<typename ReduceFunc::Ret> Reduce1D<ReduceFunc, CUDAKernel, CLKernel>
 		::reduceSingleThread_CU(size_t deviceID, size_t size, T &res, Iterator arg)
 		{
 			cudaSetDevice(deviceID);
@@ -215,7 +215,7 @@ namespace skepu
 		
 		template<typename ReduceFunc, typename CUDAKernel, typename CLKernel>
 		template<typename Iterator>
-		typename ReduceFunc::Ret Reduce1D<ReduceFunc, CUDAKernel, CLKernel>
+		Scalar<typename ReduceFunc::Ret> Reduce1D<ReduceFunc, CUDAKernel, CLKernel>
 		::reduceMultiple_CU(size_t numDevices, size_t size, T &res, Iterator arg)
 		{
 			const size_t numElemPerSlice = size / numDevices;
@@ -305,7 +305,7 @@ namespace skepu
 		 */
 		template<typename ReduceFunc, typename CUDAKernel, typename CLKernel>
 		template<typename Iterator>
-		typename ReduceFunc::Ret Reduce1D<ReduceFunc, CUDAKernel, CLKernel>
+		Scalar<typename ReduceFunc::Ret> Reduce1D<ReduceFunc, CUDAKernel, CLKernel>
 		::CU(size_t size, T &res, Iterator arg)
 		{
 			DEBUG_TEXT_LEVEL1("CUDA Reduce: size = " << size << ", maxDevices = " << this->m_selected_spec->devices()
