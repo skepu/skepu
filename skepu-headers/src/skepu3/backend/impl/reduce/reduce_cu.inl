@@ -353,7 +353,10 @@ namespace skepu
 			// Copies "all" elements to the device at once, better?
 			typename Matrix<T>::device_pointer_type_cu in_mem_p = arg.getParent().updateDevice_CU(arg.getAddress(), size, deviceID, AccessMode::Read);
 			
-			cutilSafeCall(cudaStreamSynchronize(device->m_streams[0]));
+			// cutilSafeCall(cudaStreamSynchronize(device->m_streams[0])); This leads to the following error when running motiondetection:
+			// skepu-headers/src/skepu3/backend/impl/reduce/reduce_cu.inl(356) : cudaSafeCall() Runtime API error 709: context is destroyed.
+			// Modified by David B
+			cudaStreamSynchronize(device->m_streams[0]);
 			
 			// Manually allocate output memory in this case, if only 1 block allocate for two
 			T *deviceMemPointer;
