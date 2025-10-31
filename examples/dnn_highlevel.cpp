@@ -2463,8 +2463,8 @@ int main(int argc, char *argv[])
 //  artifical_dataset(batch_size, learning_rate, epochs);  exit(0);
 
 	// Dataset configuration
-	const std::string data_path = "./data/mnist/";
-	const std::string param_path = "./data/pretrained/";
+	const std::string data_path = "../data/mnist/";
+	const std::string param_path = "../data/pretrained/";
 	const size_t num_classes = 10;
 
 	using namespace skepu::ml;
@@ -2547,8 +2547,8 @@ int main(int argc, char *argv[])
 	test_labels.flush();
 
 	
-/*	train_labels = cut_tensor4(train_labels, 100);
-	train_images = cut_tensor4(train_images, 100);*/
+	train_labels = cut_tensor4(train_labels, 1000);
+	train_images = cut_tensor4(train_images, 1000);
 	test_labels = cut_tensor4(test_labels, 1000);
 	test_images = cut_tensor4(test_images, 1000);
 	
@@ -2560,7 +2560,7 @@ int main(int argc, char *argv[])
 	//std::cout << "Loss: " << std::get<0>(score_pt) << "\nAccuracy: " << std::get<1>(score_pt) << "\n";
 
 	// Training
-//	model.fit(train_images, train_labels, epochs, learning_rate, 0.1 ,  true); //true is logging ->progress bar
+	model.fit(train_images, train_labels, epochs, learning_rate, 0.1 ,  true); //true is logging ->progress bar
 
 	// Testing
 	skepu::Matrix<int> confusion_matrix(num_classes,num_classes, 0);

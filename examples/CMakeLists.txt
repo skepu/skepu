@@ -15,8 +15,8 @@ set(_skepu_examples
 	coulombic
 	dotproduct
 	edgedetect
-	heat_diffusion
-	mandelbrot
+	#heat_diffusion
+	#mandelbrot
 	maxmin
 	median
 	miller_rabin
@@ -28,7 +28,7 @@ set(_skepu_examples
 	nbody
 	nbody_mappairs
 	ppmcc
-	psnr
+	#psnr
 	riemann_sum
 	taylor
 	dnn_highlevel

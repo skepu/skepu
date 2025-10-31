@@ -15,12 +15,14 @@
 
 
 # Default backend set for SkePU precompiler.
-BACKENDS = -openmp -opencl #-cuda -opencl 
+BACKENDS = -openmp
+BACKENDS += -opencl
+BACKENDS += -cuda
 
-SKEPU_OPTIONS = -std=c++17 -O3 -g #-DSKEPU_DEBUG=3 #-DSKEPU_DEBUG_PRNG
+SKEPU_OPTIONS = -std=c++17 -O3 -g -DSKEPU_DEBUG=1 #-DSKEPU_DEBUG_PRNG
 #SKEPU_OPTIONS +=
 
-PRECOMPILER_OPTIONS = --no-preserve-lines --verbose
+PRECOMPILER_OPTIONS = --no-preserve-lines #--verbose
 
 # Backend-specific flags
 BACKEND_FLAGS = -DSKEPU_TRACING #-DSKEPU_SIMULATE_MULTI_GPU # -DSKEPU_SET_DEFAULT_BACKEND_CUDA #  -g -O3
