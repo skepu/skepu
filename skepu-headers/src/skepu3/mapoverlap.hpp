@@ -145,9 +145,19 @@ namespace skepu
 				this->m_overlapPolicy = mode;
 			}
 
+			Overlap getOverlapMode() const
+			{
+				return this->m_overlapPolicy;
+			}
+
 			void setEdgeMode(Edge mode)
 			{
 				this->m_edge = mode;
+			}
+
+			Edge getEdgeMode() const
+			{
+				return this->m_edge;
 			}
 
 			void setPad(T pad)
@@ -158,6 +168,11 @@ namespace skepu
 			void setUpdateMode(UpdateMode mode)
 			{
 				this->m_updateMode = mode;
+			}
+
+			UpdateMode getUpdateMode() const
+			{
+				return this->m_updateMode;
 			}
 
 		protected:
@@ -639,15 +654,16 @@ namespace skepu
 				this->m_overlap[1] = j;
 			}
 
+			std::tuple<int, int> getOverlap() const
+			{
+				return std::make_tuple(this->m_overlap[0], this->m_overlap[1]);
+			}
+
 			void setStride(size_t si, size_t sj)
 			{
 				this->m_strides = StrideList<2>(si, sj);
 			}
-			/*
-			std::pair<size_t, size_t> getOverlap() const
-			{
-				return std::make_pair(this->m_overlap_x, this->m_overlap_y);
-			}*/
+			
 
 			void setStride(size_t si, size_t sj, size_t sk)
 			{
@@ -789,11 +805,11 @@ namespace skepu
 				this->m_overlap[1] = oj;
 				this->m_overlap[2] = ok;
 			}
-			/*
+
 			std::tuple<int, int, int> getOverlap() const
 			{
-				return std::make_tuple(this->m_overlap_i, this->m_overlap_j, this->m_overlap_k);
-			}*/
+				return std::make_tuple(this->m_overlap[0], this->m_overlap[1], this->m_overlap[2]);
+			}
 
 			void setStride(size_t si, size_t sj, size_t sk)
 			{
@@ -964,11 +980,11 @@ namespace skepu
 				this->m_overlap[2] = ok;
 				this->m_overlap[3] = ol;
 			}
-			/*
+
 			std::tuple<int, int, int, int> getOverlap() const
 			{
-				return std::make_tuple(this->m_overlap_i, this->m_overlap_j, this->m_overlap_k, this->m_overlap_l);
-			}*/
+				return std::make_tuple(this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_overlap[3]);
+			}
 
 
 			void setStride(size_t si, size_t sj, size_t sk, size_t sl)

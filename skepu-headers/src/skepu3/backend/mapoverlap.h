@@ -65,9 +65,19 @@ namespace skepu
 				this->m_overlapPolicy = mode;
 			}
 
+			Overlap getOverlapMode() const
+			{
+				return this->m_overlapPolicy;
+			}
+
 			void setEdgeMode(Edge mode)
 			{
 				this->m_edge = mode;
+			}
+
+			Edge getEdgeMode() const
+			{
+				return this->m_edge;
 			}
 
 			void setPad(T pad)
@@ -78,6 +88,11 @@ namespace skepu
 			void setUpdateMode(UpdateMode mode)
 			{
 				this->m_updateMode = mode;
+			}
+
+			UpdateMode getUpdateMode() const
+			{
+				return this->m_updateMode;
 			}
 
 			void setOverlap(size_t o)
@@ -448,6 +463,11 @@ namespace skepu
 				this->m_edge = mode;
 			}
 
+			Edge getEdgeMode() const
+			{
+				return this->m_edge;
+			}
+
 			void setPad(T pad)
 			{
 				this->m_pad = pad;
@@ -456,6 +476,11 @@ namespace skepu
 			void setUpdateMode(UpdateMode mode)
 			{
 				this->m_updateMode = mode;
+			}
+
+			UpdateMode getUpdateMode() const
+			{
+				return this->m_updateMode;
 			}
 
 			void setOverlap(size_t o)
@@ -655,6 +680,11 @@ namespace skepu
 				this->m_edge = mode;
 			}
 
+			Edge getEdgeMode() const
+			{
+				return this->m_edge;
+			}
+
 			void setPad(T pad)
 			{
 				this->m_pad = pad;
@@ -663,6 +693,11 @@ namespace skepu
 			void setUpdateMode(UpdateMode mode)
 			{
 				this->m_updateMode = mode;
+			}
+
+			UpdateMode getUpdateMode() const
+			{
+				return this->m_updateMode;
 			}
 
 			void setOverlap(int o)
@@ -871,6 +906,11 @@ namespace skepu
 				this->m_edge = mode;
 			}
 
+			Edge getEdgeMode() const
+			{
+				return this->m_edge;
+			}
+
 			void setPad(T pad)
 			{
 				this->m_pad = pad;
@@ -879,6 +919,11 @@ namespace skepu
 			void setUpdateMode(UpdateMode mode)
 			{
 				this->m_updateMode = mode;
+			}
+
+			UpdateMode getUpdateMode() const
+			{
+				return this->m_updateMode;
 			}
 
 			void setOverlap(int o)
