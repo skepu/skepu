@@ -1,6 +1,6 @@
 #include "skepu3/cluster/cluster.hpp"
 #include "skepu3/cluster/skeletons/reduce/reduce_mode.hpp"
-#include <catch2/catch_test_macros.hpp>
+#include "../../../external/catch2/catch.hpp"
 
 #include <skepu3/cluster/containers/matrix/matrix.hpp>
 #include <skepu3/cluster/containers/vector/vector.hpp>

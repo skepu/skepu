@@ -1,4 +1,4 @@
-#include <catch2/catch_test_macros.hpp>
+#include "../../../external/catch2/catch.hpp"
 
 #include <skepu3/cluster/containers/matrix/matrix.hpp>
 #include <skepu3/cluster/containers/tensor3/tensor3.hpp>

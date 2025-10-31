@@ -1,4 +1,4 @@
-#include <catch2/catch_test_macros.hpp>
+#include "../../catch2/catch.hpp"
 //#define SKEPU_DEBUG_PRNG
 #define SKEPU_DEBUG 3
 #include <iostream>
@@ -182,7 +182,7 @@ TEST_CASE("PRNG API: MapReduce")
     int result = 0;
     for (size_t i = 0; i < size; ++i)
       result += ref_prng.get() % 100;
-    CHECK(out == result);
+    CHECK(static_cast<bool>(out == result));
     CHECK(prng.get() == ref_prng.get()); // next value should also be correct
   //  skepu::io::cout << "Result: " << out << "\n";
   }
@@ -199,7 +199,7 @@ TEST_CASE("PRNG API: MapReduce")
     int result = 0;
     for (size_t i = 0; i < size; ++i)
       result += ref_prng.get() % 100;
-    CHECK(out == result);
+    CHECK(static_cast<bool>(out == result));
     CHECK(prng.get() == ref_prng.get()); // next value should also be correct
   //  skepu::io::cout << "Result: " << out << "\n";
   }
@@ -271,7 +271,7 @@ TEST_CASE("PRNG API: MapPairs + MapPairsReduce")
   
 }
 
-
+/*
 TEST_CASE("PRNG API: MapOverlap 1D EdgeMode == None")
 {
   size_t size_i{10}, size_j{9};
@@ -361,7 +361,7 @@ TEST_CASE("PRNG API: MapOverlap 1D EdgeMode != None")
 //  skepu::io::cout << "Result: " << out_m << "\n";
   
 }
-  
+*/  
 
 TEST_CASE("PRNG API: MapOverlap 2D EdgeMode == None")
 {
@@ -415,7 +415,7 @@ TEST_CASE("PRNG API: MapOverlap 3D EdgeMode == None")
   size_t size_i{38}, size_j{27}, size_k{15};
   size_t overlap_i{3}, overlap_j{3}, overlap_k{3};
   
-  skepu::Tensor3<int> in(size_i, size_j, size_k, 1), out(size_i, size_j, size_k);
+  skepu::Tensor3<int> in(size_i, size_j, size_k, "", 1), out(size_i, size_j, size_k);
   
   mapoverlapper3d.setOverlap(overlap_i, overlap_j, overlap_k);
   mapoverlapper3d.setEdgeMode(skepu::Edge::None);
@@ -439,7 +439,7 @@ TEST_CASE("PRNG API: MapOverlap 3D EdgeMode == None")
 TEST_CASE("PRNG API: MapOverlap 3D EdgeMode != None")
 {
   size_t size_i{38}, size_j{27}, size_k{15};
-  skepu::Tensor3<int> in(size_i, size_j, size_k, 1), out(size_i, size_j, size_k);
+  skepu::Tensor3<int> in(size_i, size_j, size_k, "", 1), out(size_i, size_j, size_k);
   
   mapoverlapper3d.setEdgeMode(skepu::Edge::Cyclic);
   

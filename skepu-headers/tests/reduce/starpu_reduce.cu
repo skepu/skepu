@@ -1,4 +1,4 @@
-#include <catch2/catch_test_macros.hpp>
+#include "../../../external/catch2/catch.hpp"
 
 #define SKEPU_CUDA
 #include <skepu3/cluster/containers/matrix/matrix.hpp>

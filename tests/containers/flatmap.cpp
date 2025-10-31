@@ -1,4 +1,4 @@
-#include <catch2/catch_test_macros.hpp>
+#include "../../catch2/catch.hpp"
 
 #include <skepu>
 #include <math.h>
@@ -10,8 +10,8 @@ TEST_CASE("Flat map")
 	const size_t size{10};
 
 	skepu::Matrix<int> mat(size, size, 2);
-	skepu::Tensor3<int> ten3(size, size, size, 3);
-	skepu::Tensor4<int> ten4(size, size, size, size, 4);
+	skepu::Tensor3<int> ten3(size, size, size, "", 3);
+	skepu::Tensor4<int> ten4(size, size, size, size, "", 4);
 	
 	skepu::Vector<int> dest_A(size*size), dest_B(size*size*size), dest_C(size*size*size*size);
 	

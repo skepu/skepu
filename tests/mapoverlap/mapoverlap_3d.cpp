@@ -1,4 +1,4 @@
-#include <catch2/catch_test_macros.hpp>
+#include "../../catch2/catch.hpp"
 
 #define SKEPU_DEBUG 3
 #include <skepu>
@@ -26,9 +26,9 @@ TEST_CASE("MapOverlap 3D fundamentals")
 	conv3.setOverlap(1, 1, 1);
 	conv3.setPad(-5);
 
-	skepu::Tensor3<int> ten3(size, size, size, 1);
+	skepu::Tensor3<int> ten3(size, size, size, "", 1);
 	skepu::Tensor3<float> ret_ten3(size, size, size);
-	skepu::Tensor3<float> stencil3(2*1+1, 2*1+1, 2*1+1, 1);
+	skepu::Tensor3<float> stencil3(2*1+1, 2*1+1, 2*1+1, "", 1);
 
 	skepu::external([&] {
 		auto i(0);

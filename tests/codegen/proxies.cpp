@@ -1,4 +1,4 @@
-#include <catch2/catch_test_macros.hpp>
+#include "../../catch2/catch.hpp"
 
 #include <skepu>
 
@@ -96,8 +96,8 @@ TEST_CASE("Container proxy sizes in user function")
 	
 	skepu::Vector<int> vec(size, A);
 	skepu::Matrix<int> mat(size, size+1, A);
-	skepu::Tensor3<int> ten3(size, size+1, size+2, A);
-	skepu::Tensor4<int> ten4(size, size+1, size+2, size+3, A);
+	skepu::Tensor3<int> ten3(size, size+1, size+2, "", A);
+	skepu::Tensor4<int> ten4(size, size+1, size+2, size+3, "", A);
 	
 	skel1_p(dummy, vec);
 	dummy.flush();

@@ -1,4 +1,4 @@
-find_package(Catch2 3 REQUIRED)
+find_package(Catch2 2 REQUIRED)
 add_subdirectory(catch2_main)
 
 # Use add_mpi_test(<name> <command>) to get a parallel mpi test added.

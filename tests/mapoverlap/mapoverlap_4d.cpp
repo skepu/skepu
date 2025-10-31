@@ -1,4 +1,4 @@
-#include <catch2/catch_test_macros.hpp>
+#include "../../catch2/catch.hpp"
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
@@ -29,7 +29,7 @@ TEST_CASE("MapOverlap 4D fundamentals")
 
 	skepu::Tensor4<int> ten4(size, size, size, size);
 	skepu::Tensor4<float> ret_ten4(size, size, size, size);
-	skepu::Tensor4<float> stencil4(2*1+1, 2*1+1, 2*1+1, 2*1+1, 1);
+	skepu::Tensor4<float> stencil4(2*1+1, 2*1+1, 2*1+1, 2*1+1, "", 1);
 
 	skepu::external(
 		[&]

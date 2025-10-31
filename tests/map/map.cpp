@@ -1,4 +1,4 @@
-#include <catch2/catch_test_macros.hpp>
+#include "../../catch2/catch.hpp"
 #define SKEPU_DEBUG 3
 #include <skepu>
 #include <skepu-lib/util.hpp>

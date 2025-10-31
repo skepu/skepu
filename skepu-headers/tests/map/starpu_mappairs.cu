@@ -1,6 +1,6 @@
 #include "skepu3/cluster/cluster.hpp"
 #include "skepu3/impl/backend.hpp"
-#include <catch2/catch_test_macros.hpp>
+#include "../../../external/catch2/catch.hpp"
 #include <cuda.h>
 
 #define SKEPU_CUDA

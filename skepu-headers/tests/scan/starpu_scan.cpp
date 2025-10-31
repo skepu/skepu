@@ -1,4 +1,4 @@
-#include <catch2/catch_test_macros.hpp>
+#include "../../../external/catch2/catch.hpp"
 
 #include <skepu3/cluster/containers/vector/vector.hpp>
 #include <skepu3/cluster/skeletons/scan.hpp>

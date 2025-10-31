@@ -1,5 +1,5 @@
 #include "skepu3/cluster/containers/partition.hpp"
-#include <catch2/catch_test_macros.hpp>
+#include "../../../external/catch2/catch.hpp"
 
 #include <skepu3/cluster/skeletons/map/map.hpp>
 #include <skepu3/cluster/containers/matrix/matrix.hpp>

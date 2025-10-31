@@ -1,8 +1,7 @@
 //#define SKEPU_ENABLE_EXCEPTIONS
 #define PRECISION 1E-3
 
-#include <catch2/catch_test_macros.hpp>
-#include <catch2/catch_approx.hpp> // note, Approx is now deprecated
+#include "../../catch2/catch.hpp"
 
 #include <iostream>
 #include <skepu>
@@ -45,7 +44,7 @@ void is_similar(float a, float b)
 	CHECK((
 		(isnan(a) && isnan(b)) ||
 		(isinf(a) && isinf(b)) ||
-		(a == Catch::Approx(b).epsilon(PRECISION)))
+		(a == Approx(b).epsilon(PRECISION)))
 	);
 }
 

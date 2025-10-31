@@ -1,4 +1,4 @@
-#include <catch2/catch_test_macros.hpp>
+#include "../../catch2/catch.hpp"
 
 #include <iostream>
 
@@ -155,6 +155,7 @@ TEST_CASE("MapOverlap 2d with variadic return")
 	skepu::Matrix<int> ret_m_int(size_i, size_j);
 	
 	conv2_m.setOverlap(1, 1);
+	std::cout << conv2_m.getEdgeMode() << "\n";
 	conv2_m(rm2, ret_m_int, m, filter);
 	std::cout << "Matrix 2D: " << rm2 << "\n" << ret_m_int << "\n";
 
@@ -165,7 +166,7 @@ TEST_CASE("MapOverlap 3D with variadic return")
 {
 	constexpr size_t size_i{13}, size_j{7}, size_k{23};
 	
-	skepu::Tensor3<float> ten3(size_i, size_j, size_k, 1), stencil3(2*1+1, 2*1+1, 2*1+1, 1), ret_ten3(size_i, size_j, size_k);
+	skepu::Tensor3<float> ten3(size_i, size_j, size_k, "", 1), stencil3(2*1+1, 2*1+1, 2*1+1, "", 1), ret_ten3(size_i, size_j, size_k);
 	skepu::Tensor3<int> ret_ten3_int(size_i, size_j, size_k);
 	
 	conv3_m.setOverlap(1, 1, 1);
@@ -179,7 +180,7 @@ TEST_CASE("MapOverlap 4D with variadic return")
 {
 	constexpr size_t size_i{3}, size_j{7}, size_k{5}, size_l{13};
 	
-	skepu::Tensor4<float> ten4(size_i, size_j, size_k, size_l, 1), stencil4(2*1+1, 2*1+1, 2*1+1, 2*1+1, 1), ret_ten4(size_i, size_j, size_k, size_l);
+	skepu::Tensor4<float> ten4(size_i, size_j, size_k, size_l, "", 1), stencil4(2*1+1, 2*1+1, 2*1+1, 2*1+1, "", 1), ret_ten4(size_i, size_j, size_k, size_l);
 	skepu::Tensor4<int> ret_ten4_int(size_i, size_j, size_k, size_l);
 	
 	conv4_m.setOverlap(1, 1, 1, 1);

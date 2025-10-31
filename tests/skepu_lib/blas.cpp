@@ -1,4 +1,4 @@
-#include <catch2/catch_test_macros.hpp>
+#include "../../catch2/catch.hpp"
 
 #define SKEPU_DEBUG 3
 #define SKEPU_ENABLE_EXCEPTIONS
@@ -41,34 +41,34 @@ TEST_CASE("BLAS level 1")
 	
 	skepu::io::cout << "v1: " << v1 << "\n";
 	skepu::io::cout << "v2: " << v2 << "\n";
-	auto res = skepu::blas::dot(n, v1, 1, v2, 1);
+	auto resDot = skepu::blas::dot(n, v1, 1, v2, 1);
 	skepu::io::cout << "dot(n, v1, 1, v2, 1);" << "\n";
-	skepu::io::cout << "res: " << res << "\n\n";
+	skepu::io::cout << "res: " << resDot << "\n\n";
 	
 	skepu::io::cout << "v1: " << v1 << "\n";
 	skepu::io::cout << "v2: " << v2 << "\n";
-	res = skepu::blas::dotu(n, v1, 1, v2, 1);
+	auto resDotU = skepu::blas::dotu(n, v1, 1, v2, 1);
 	skepu::io::cout << "dotu(n, v1, 1, v2, 1);" << "\n";
-	skepu::io::cout << "res: " << res << "\n\n";
+	skepu::io::cout << "res: " << resDotU << "\n\n";
 	
 	
 	skepu::io::cout << "v1: " << v1 << "\n";
 	skepu::io::cout << "v2: " << v2 << "\n";
-	res = skepu::blas::nrm2(n, v1, 1);
+	auto resNrm2 = skepu::blas::nrm2(n, v1, 1);
 	skepu::io::cout << "nrm2(n, v1, 1);" << "\n";
-	skepu::io::cout << "res: " << res << "\n\n";
+	skepu::io::cout << "res: " << resNrm2 << "\n\n";
 	
 	
 	skepu::io::cout << "v1: " << v1 << "\n";
-	res = skepu::blas::asum(n, v1, 1);
+	auto resAsum = skepu::blas::asum(n, v1, 1);
 	skepu::io::cout << "asum(n, v1, 1);" << "\n";
-	skepu::io::cout << "res: " << res << "\n\n";
+	skepu::io::cout << "res: " << resAsum << "\n\n";
 	
 	
 	skepu::io::cout << "v1: " << v1 << "\n";
-	res = skepu::blas::iamax(n, v1, 1);
+	auto resIamax = skepu::blas::iamax(n, v1, 1);
 	skepu::io::cout << "iamax(n, v1, 1);" << "\n";
-	skepu::io::cout << "res: " << res << "\n\n";
+	skepu::io::cout << "res: " << resIamax << "\n\n";
 	
 	
 	skepu::io::cout << "v1: " << v1 << "\n";

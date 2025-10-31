@@ -1,6 +1,6 @@
 #define SKEPU_ENABLE_EXCEPTIONS
 
-#include <catch2/catch_test_macros.hpp>
+#include "../../catch2/catch.hpp"
 
 #include <iostream>
 #include <skepu>
@@ -106,7 +106,7 @@ TEST_CASE("Tensor3 lifecycle")
 	CHECK_THROWS(t2.init(1, 1, 1));
 
 	// Default value
-	skepu::Tensor3<float> t3(10, 10, 10, 3.142f);
+	skepu::Tensor3<float> t3(10, 10, 10, "", 3.142f);
 	CHECK(t3.size() == 10 * 10 * 10);
 	CHECK(t3(0, 0, 0) == 3.142f);
 	
@@ -145,7 +145,7 @@ TEST_CASE("Tensor4 lifecycle")
 	CHECK_THROWS(t2.init(1, 1, 1, 1));
 
 	// Default value
-	skepu::Tensor4<float> t3(10, 10, 10, 10, 3.142f);
+	skepu::Tensor4<float> t3(10, 10, 10, 10, "", 3.142f);
 	CHECK(t3.size() == 10 * 10 * 10 * 10);
 	CHECK(t3(0, 0, 0, 0) == 3.142f);
 	

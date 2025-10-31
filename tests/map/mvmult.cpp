@@ -1,5 +1,4 @@
-#include <catch2/catch_test_macros.hpp>
-#include <catch2/catch_approx.hpp> // note, Approx is now deprecated
+#include "../../catch2/catch.hpp"
 
 #include <iostream>
 #include <skepu>
@@ -48,6 +47,6 @@ TEST_CASE("Matrix vector multiplication")
 
 	skepu::external(skepu::read(res, expected), [&]{
 		for(size_t i = 0; i < N; ++i)
-			REQUIRE(res(i) == Catch::Approx(expected(i)).epsilon(1E-3));
+			REQUIRE(res(i) == Approx(expected(i)).epsilon(1E-3));
 	});
 }

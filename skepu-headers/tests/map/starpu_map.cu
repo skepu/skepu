@@ -1,4 +1,4 @@
-#include <catch2/catch_test_macros.hpp>
+#include "../../../external/catch2/catch.hpp"
 #include <cuda.h>
 
 #define SKEPU_CUDA
