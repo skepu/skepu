@@ -1,6 +1,7 @@
 examples/bin
 build-src-dir
 build
+build_test
 skepu.tgz
 bandwidthMeasures.dat
 .ycm_extra_conf.py
@@ -8,6 +9,7 @@ bandwidthMeasures.dat
 .DS_Store
 *.swp
 *__pycache__*
+.vscode
 trace.json
 outputOpenCL.txt
 mandelbrot.png
