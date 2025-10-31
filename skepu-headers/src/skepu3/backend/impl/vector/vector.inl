@@ -216,7 +216,7 @@ namespace skepu
 		m_noValidDeviceCopy(true),
 		m_object_id(UniqueIdentifier::generate())
 	{
-		DEBUG_TEXT_LEVEL1("Vector: Constructor with " << num << " elements");
+		DEBUG_TEXT_LEVEL1("Vector: Constructor with label and " << num << " elements");
 		this->init(num, val);
 	}
 
