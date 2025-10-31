@@ -48,17 +48,18 @@ namespace skepu
 #endif
 			}
 
-#ifdef SKEPU_TRACING
 			std::string getLabel()
 			{
+#ifdef SKEPU_TRACING
 				if (this->m_label != "")
 					return this->m_label;
-
+#endif
 				std::stringstream ss;
 				ss << skepu::debug.getObjectName(this);
 				return ss.str();
 			}
 
+#ifdef SKEPU_TRACING
 			UniqueIdentifier::ID getObjectID()
 			{
 				return this->m_object_id;
