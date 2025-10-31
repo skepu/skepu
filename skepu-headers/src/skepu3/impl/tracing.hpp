@@ -19,7 +19,7 @@ namespace skepu
 			return get_all_addresses_tuple_helper(indices, tuple);
 		}
 
-		void scalar_labels_helper(std::vector<TraceID> &labels) {}
+		inline void scalar_labels_helper(std::vector<TraceID> &labels) {}
 
 		template<typename First, typename... Rest>
 		void scalar_labels_helper(std::vector<TraceID> &labels, First, Rest... rest)
@@ -68,7 +68,7 @@ namespace skepu
 			return labels;
 		}
 
-		std::vector<TraceID> uniform_labels()
+		inline std::vector<TraceID> uniform_labels()
 		{
 			return std::vector<TraceID>{};
 		}
@@ -121,16 +121,16 @@ namespace skepu
 			}
 		}
 
-		EventHandle::EventHandle()
+		inline EventHandle::EventHandle()
 #ifdef SKEPU_TRACING
 		: m_id{UniqueIdentifier::generate()}, m_time{timestamp_now()}
 #endif
 		{}
 
-		Tracer::Tracer(std::string filename): m_file_name{filename}
+		inline Tracer::Tracer(std::string filename): m_file_name{filename}
 		{}
 
-		Tracer::~Tracer()
+		inline Tracer::~Tracer()
 		{
 #ifdef SKEPU_TRACING
 			for (auto& capture : this->m_captures)
@@ -147,7 +147,7 @@ namespace skepu
 
 
 
-		void Tracer::allocation(TraceID id, std::string const& label, int line)
+		inline void Tracer::allocation(TraceID id, std::string const& label, int line)
 		{
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
@@ -167,7 +167,7 @@ namespace skepu
 #endif
 		}
 
-		void Tracer::deallocation(TraceID id, std::string const& label, int line)
+		inline void Tracer::deallocation(TraceID id, std::string const& label, int line)
 		{
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
@@ -187,7 +187,7 @@ namespace skepu
 #endif
 		}
 
-		void Tracer::transfer(TraceID id, std::string const& label, int line, size_t elements, std::string direction, std::string backend)
+		inline void Tracer::transfer(TraceID id, std::string const& label, int line, size_t elements, std::string direction, std::string backend)
 		{
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
@@ -210,12 +210,12 @@ namespace skepu
 #endif
 		}
 
-		EventHandle Tracer::startEvent()
+		inline EventHandle Tracer::startEvent()
 		{
 			return EventHandle{};
 		}
 
-		void Tracer::call(
+		inline void Tracer::call(
 			EventHandle &h,
 			std::string pattern,
 			backend::SkeletonBase *skel_instance,
@@ -266,7 +266,7 @@ namespace skepu
 #endif
 		}
 
-		void Tracer::call(
+		inline void Tracer::call(
 			std::string pattern,
 			backend::SkeletonBase *skel_instance,
 			std::vector<size_t> &&elements,
@@ -284,7 +284,7 @@ namespace skepu
 #endif
 		}
 
-		void Tracer::external(EventHandle &h,
+		inline void Tracer::external(EventHandle &h,
 			std::string const& label,
 			std::vector<TraceID> &&outputs,
 			std::vector<TraceID> &&inputs
@@ -321,7 +321,7 @@ namespace skepu
 #endif
 		}
 
-		void Tracer::beginRegion(std::string const& label, int line)
+		inline void Tracer::beginRegion(std::string const& label, int line)
 		{
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
@@ -342,7 +342,7 @@ namespace skepu
 #endif
 		}
 
-		void Tracer::endRegion()
+		inline void Tracer::endRegion()
 		{
 #ifdef SKEPU_TRACING
 			auto capture = [=](){
@@ -351,7 +351,7 @@ namespace skepu
 #endif
 		}
 
-		void Tracer::region(std::string const& label, int line, std::function<void(void)> &&work_func)
+		inline void Tracer::region(std::string const& label, int line, std::function<void(void)> &&work_func)
 		{
 			this->beginRegion(label, line);
 			work_func();
@@ -384,12 +384,12 @@ namespace skepu
 		}
 
 
-		Scope::Scope(std::string const& label, int line)
+		inline Scope::Scope(std::string const& label, int line)
 		{
 			tracer().beginRegion(label, line);
 		}
 
-		Scope::~Scope()
+		inline Scope::~Scope()
 		{
 			tracer().endRegion();
 		}
