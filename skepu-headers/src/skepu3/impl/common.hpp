@@ -180,6 +180,22 @@ namespace skepu
 		None, Cyclic, Duplicate, Pad
 	};
 
+	inline std::ostream &operator<<(std::ostream &o, Edge e)
+	{
+		switch (e)
+		{
+			case Edge::None:
+				o << "None"; break;
+			case Edge::Cyclic:
+				o << "Cyclic"; break;
+			case Edge::Duplicate:
+				o << "Duplicate"; break;
+			case Edge::Pad:
+				o << "Pad"; break;
+		}
+		return o;
+	}
+
 	enum class Overlap
 	{
 		RowWise, ColWise
