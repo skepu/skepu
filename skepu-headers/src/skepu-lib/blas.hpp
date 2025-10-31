@@ -358,7 +358,7 @@ real_type<T> asum_uf_1(T x)
 }
 
 template<typename T>
-Scalar<T> asum(
+Scalar<real_type<T>> asum(
 	size_type                        n,
 	Vector<T> BLAS_CONST&            x,
 	stride_type                      incx
