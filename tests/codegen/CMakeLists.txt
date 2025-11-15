@@ -11,6 +11,17 @@ skepu_add_test_case_hybrid_opencl(builtins)
 skepu_add_test_case_hybrid_cuda(builtins)
 
 # ------------------------------------------------
+#   Fundamental types
+# ------------------------------------------------
+
+skepu_add_test_case_cpu(fundamental_types)
+skepu_add_test_case_openmp(fundamental_types)
+skepu_add_test_case_opencl(fundamental_types)
+skepu_add_test_case_cuda(fundamental_types)
+skepu_add_test_case_hybrid_opencl(fundamental_types)
+skepu_add_test_case_hybrid_cuda(fundamental_types)
+
+# ------------------------------------------------
 #   Linking multiple precompiled files
 # ------------------------------------------------
 

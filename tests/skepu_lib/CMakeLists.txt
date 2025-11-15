@@ -35,6 +35,18 @@ skepu_add_test_case_hybrid_opencl(random)
 skepu_add_test_case_hybrid_cuda(random)
 
 # ------------------------------------------------
+#   skepu_external
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(skepu_external)
+skepu_add_test_case_cpu(skepu_external)
+skepu_add_test_case_openmp(skepu_external)
+skepu_add_test_case_opencl(skepu_external)
+skepu_add_test_case_cuda(skepu_external)
+skepu_add_test_case_hybrid_opencl(skepu_external)
+skepu_add_test_case_hybrid_cuda(skepu_external)
+
+# ------------------------------------------------
 #   Standard library namespaces
 # ------------------------------------------------
 

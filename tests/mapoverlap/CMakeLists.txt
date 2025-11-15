@@ -1,4 +1,16 @@
 # ------------------------------------------------
+#   MapOverlap default values
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(default_values)
+skepu_add_test_case_cpu(default_values)
+skepu_add_test_case_openmp(default_values)
+skepu_add_test_case_opencl(default_values)
+#skepu_add_test_case_cuda(default_values)
+skepu_add_test_case_hybrid_opencl(default_values)
+#skepu_add_test_case_hybrid_cuda(default_values)
+
+# ------------------------------------------------
 #   MapOverlap 1D fundamentals
 # ------------------------------------------------
 
