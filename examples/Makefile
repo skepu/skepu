@@ -17,9 +17,9 @@
 # Default backend set for SkePU precompiler.
 BACKENDS = -openmp
 BACKENDS += -opencl
-BACKENDS += -cuda
+#BACKENDS += -cuda
 
-SKEPU_OPTIONS = -std=c++17 -O3 -g -DSKEPU_DEBUG=1 #-DSKEPU_DEBUG_PRNG
+SKEPU_OPTIONS = -std=c++17 -O3 -g -DSKEPU_DEBUG=3 #-DSKEPU_DEBUG_PRNG
 #SKEPU_OPTIONS +=
 
 PRECOMPILER_OPTIONS = --no-preserve-lines #--verbose

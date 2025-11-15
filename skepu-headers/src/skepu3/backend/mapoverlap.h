@@ -12,6 +12,67 @@ namespace skepu
 
 	namespace backend
 	{
+		template<typename MapOverlapFunc>
+		class MapOverlapBase: public SkeletonBase
+		{
+		protected:
+			static constexpr bool isPool = MapOverlapFunc::isPool;
+			using T = typename region_type<typename parameter_type<(MapOverlapFunc::indexed ? 1 : 0) + (MapOverlapFunc::usesPRNG ? 1 : 0), decltype(&MapOverlapFunc::CPU)>::type>::type;
+		public:
+			void setEdgeMode(Edge mode)
+			{
+				this->m_edge = mode;
+			}
+
+			Edge getEdgeMode() const
+			{
+				return this->m_edge;
+			}
+
+			void setPad(T pad)
+			{
+				this->m_pad = pad;
+			}
+
+			T getPad() const
+			{
+				return this->m_pad;
+			}
+
+			void setUpdateMode(UpdateMode mode)
+			{
+				this->m_updateMode = mode;
+			}
+
+			UpdateMode getUpdateMode() const
+			{
+				return this->m_updateMode;
+			}
+
+		protected:
+			size_t expectedInputSize(size_t size, size_t dim) const // This should be updated to account for stride in non-pools
+			{
+				if (isPool) return this->m_overlap[dim] + this->m_strides[dim] * (size - 1);
+				else if (this->m_edge == Edge::None) return size + 2 * this->m_overlap[dim];
+				else return size;
+			}
+
+			MapOverlapBase(std::string label)
+			: SkeletonBase{label}
+			{}
+
+
+			Edge m_edge = Edge::Duplicate;
+			UpdateMode m_updateMode = skepu::UpdateMode::Normal;
+			T m_pad;
+			int m_overlap[4] = {1, 1, 1, 1};
+			StrideList<4> m_strides{1, 1, 1, 1};
+		};
+
+
+
+
+
 		/*!
 		 *  \ingroup skeletons
 		 */
@@ -27,10 +88,10 @@ namespace skepu
 		 *  MapOverlap2D class can be used by including same header file (i.e., mapoverlap.h) but class name is different (MapOverlap2D).
 		 */
 		template<typename MapOverlapFunc, typename CUDAKernel, typename C2, typename C3, typename C4, typename CLKernel>
-		class MapOverlap1D: public SkeletonBase
+		class MapOverlap1D: public MapOverlapBase<MapOverlapFunc>
 		{
 			using Ret = typename MapOverlapFunc::Ret;
-			using T = typename region_type<typename parameter_type<(MapOverlapFunc::indexed ? 1 : 0) + (MapOverlapFunc::usesPRNG ? 1 : 0), decltype(&MapOverlapFunc::CPU)>::type>::type;
+			using T = typename MapOverlapBase<MapOverlapFunc>::T;
 			using F = ConditionalIndexForwarder<MapOverlapFunc::indexed, MapOverlapFunc::usesPRNG, decltype(&MapOverlapFunc::CPU)>;
 
 		public:
@@ -53,7 +114,7 @@ namespace skepu
 			static constexpr typename make_pack_indices<numArgs, arity + anyArity + outArity>::type const_indices{};
 
 			MapOverlap1D(std::string label, CUDAKernel kernel, C2 k2, C3 k3, C4 k4)
-			: SkeletonBase{label}, m_cuda_kernel(kernel), m_cuda_rowwise_kernel(k2), m_cuda_colwise_kernel(k3), m_cuda_colwise_multi_kernel(k4)
+			: MapOverlapBase<MapOverlapFunc>{label}, m_cuda_kernel(kernel), m_cuda_rowwise_kernel(k2), m_cuda_colwise_kernel(k3), m_cuda_colwise_multi_kernel(k4)
 			{
 #ifdef SKEPU_OPENCL
 				CLKernel::initialize();
@@ -70,44 +131,19 @@ namespace skepu
 				return this->m_overlapPolicy;
 			}
 
-			void setEdgeMode(Edge mode)
-			{
-				this->m_edge = mode;
-			}
-
-			Edge getEdgeMode() const
-			{
-				return this->m_edge;
-			}
-
-			void setPad(T pad)
-			{
-				this->m_pad = pad;
-			}
-
-			void setUpdateMode(UpdateMode mode)
-			{
-				this->m_updateMode = mode;
-			}
-
-			UpdateMode getUpdateMode() const
-			{
-				return this->m_updateMode;
-			}
-
 			void setOverlap(size_t o)
 			{
-				this->m_overlap = o;
+				this->m_overlap[0] = o;
 			}
 
-			size_t getOverlap() const
+			int getOverlap() const
 			{
-				return this->m_overlap;
+				return this->m_overlap[0];
 			}
 
 			void setStride(size_t si)
 			{
-				this->m_strides = StrideList<1>(si);
+				this->m_strides = StrideList<4>(si, 1, 1, 1);
 			}
 
 			template<typename... Args>
@@ -123,13 +159,6 @@ namespace skepu
 			C4 m_cuda_colwise_multi_kernel;
 
 			Overlap m_overlapPolicy = Overlap::RowWise;
-			Edge m_edge = Edge::Duplicate;
-			UpdateMode m_updateMode = skepu::UpdateMode::Normal;
-			T m_pad {};
-
-			StrideList<1> m_strides{};
-
-			size_t m_overlap = 1;
 
 		public:
 
@@ -260,16 +289,17 @@ namespace skepu
 			auto backendDispatch(Parity p, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args) -> decltype(get<0>(std::forward<CallArgs>(args)...))
 			{
 				auto &res = get<0>(std::forward<CallArgs>(args)...);
+				auto out_size = res.size();
 				auto size = get<outArity>(std::forward<CallArgs>(args)...).size();
 
 				// Verify overlap radius is valid
-				if (this->m_edge != Edge::None && size < this->m_overlap * 2)
+				if (this->m_edge != Edge::None && size < this->m_overlap[0] * 2)
 					SKEPU_ERROR("Non-matching overlap radius");
 
-				if (disjunction(get<OI>(std::forward<CallArgs>(args)...).size() < size...))
+				if (disjunction(get<OI>(std::forward<CallArgs>(args)...).size() != out_size...))
 					SKEPU_ERROR("Non-matching output container sizes");
 
-				if (disjunction(get<EI>(std::forward<CallArgs>(args)...).size() != size...))
+				if (disjunction(get<EI>(std::forward<CallArgs>(args)...).size() != this->expectedInputSize(out_size, 0)...))
 					SKEPU_ERROR("Non-matching input container sizes");
 
 
@@ -323,11 +353,11 @@ namespace skepu
 					SKEPU_ERROR("Non-matching input container sizes");
 
 				// Verify overlap radius is valid
-				if (this->m_overlapPolicy == Overlap::RowWise && this->m_edge != Edge::None && size_j < this->m_overlap * 2)
+				if (this->m_overlapPolicy == Overlap::RowWise && this->m_edge != Edge::None && size_j < this->m_overlap[0] * 2)
 					SKEPU_ERROR("Non-matching overlap radius");
 
 				// Verify overlap radius is valid
-				if (this->m_overlapPolicy == Overlap::ColWise && this->m_edge != Edge::None && size_i < this->m_overlap * 2)
+				if (this->m_overlapPolicy == Overlap::ColWise && this->m_edge != Edge::None && size_i < this->m_overlap[0] * 2)
 					SKEPU_ERROR("Non-matching overlap radius");
 
 
@@ -473,6 +503,11 @@ namespace skepu
 				this->m_pad = pad;
 			}
 
+			T getPad() const
+			{
+				return this->m_pad;
+			}
+
 			void setUpdateMode(UpdateMode mode)
 			{
 				this->m_updateMode = mode;
@@ -495,9 +530,9 @@ namespace skepu
 				this->m_overlap_y = y;
 			}
 
-			std::pair<size_t, size_t> getOverlap() const
+			std::tuple<int, int> getOverlap() const
 			{
-				return std::make_pair(this->m_overlap_x, this->m_overlap_y);
+				return std::make_tuple(this->m_overlap_x, this->m_overlap_y);
 			}
 
 			template<typename... Args>
@@ -509,11 +544,11 @@ namespace skepu
 		private:
 			CUDAKernel m_cuda_kernel;
 
-			Edge m_edge = Edge::None;
+			Edge m_edge = Edge::Duplicate;
 			UpdateMode m_updateMode = skepu::UpdateMode::Normal;
 			T m_pad {};
 
-			int m_overlap_x, m_overlap_y;
+			int m_overlap_x = 1, m_overlap_y = 1;
 
 
 		private:
@@ -690,6 +725,11 @@ namespace skepu
 				this->m_pad = pad;
 			}
 
+			T getPad() const
+			{
+				return this->m_pad;
+			}
+
 			void setUpdateMode(UpdateMode mode)
 			{
 				this->m_updateMode = mode;
@@ -728,11 +768,11 @@ namespace skepu
 		private:
 			CUDAKernel m_cuda_kernel;
 
-			Edge m_edge = Edge::None;
+			Edge m_edge = Edge::Duplicate;
 			UpdateMode m_updateMode = skepu::UpdateMode::Normal;
 			T m_pad {};
 
-			int m_overlap_i, m_overlap_j, m_overlap_k;
+			int m_overlap_i = 1, m_overlap_j = 1, m_overlap_k = 1;
 
 
 		private:
@@ -916,6 +956,11 @@ namespace skepu
 				this->m_pad = pad;
 			}
 
+			T getPad() const
+			{
+				return this->m_pad;
+			}
+
 			void setUpdateMode(UpdateMode mode)
 			{
 				this->m_updateMode = mode;
@@ -962,7 +1007,6 @@ namespace skepu
 				this->m_overlap[3] = pl;
 			}
 
-
 			void setStride(size_t si, size_t sj, size_t sk, size_t sl)
 			{
 				this->m_strides = StrideList<4>(si, sj, sk, sl);
@@ -990,11 +1034,11 @@ namespace skepu
 
 			CUDAKernel m_cuda_kernel;
 
-			Edge m_edge = Edge::None;
+			Edge m_edge = Edge::Duplicate;
 			UpdateMode m_updateMode = skepu::UpdateMode::Normal;
 			T m_pad {};
 
-			int m_overlap_i, m_overlap_j, m_overlap_k, m_overlap_l;
+			int m_overlap_i = 1, m_overlap_j = 1, m_overlap_k = 1, m_overlap_l = 1;
 			int m_overlap[4] = {1, 1, 1, 1};
 
 			StrideList<4> m_strides{};

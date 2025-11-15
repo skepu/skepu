@@ -31,8 +31,12 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU({{KERNEL_PARAMS}}
 
    while (skepu_i < n + overlap)
    {
+      if (edgeMode == skepu::Edge::None)
+      {
+         {{SHARED_BUFFER}}[skepu_tid] = skepu_input[skepu_i];
+      }
       //Copy data to shared memory
-      if (edgeMode == skepu::Edge::Pad || edgeMode == skepu::Edge::None)
+      else if (edgeMode == skepu::Edge::Pad)
       {
          {{SHARED_BUFFER}}[overlap+skepu_tid] = (skepu_i < n) ? skepu_input[skepu_i] : pad;
 
@@ -84,10 +88,8 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU({{KERNEL_PARAMS}}
 
       __syncthreads();
 			
-			bool edgeModeNoneCheck = (edgeMode != skepu::Edge::None) ? true : (skepu_i >= out_offset + overlap) && (skepu_i < out_offset + out_numelements - overlap);
-
       //Compute and store data
-      if ( (skepu_i >= out_offset) && (skepu_i < out_offset + out_numelements) && edgeModeNoneCheck )
+      if ( (skepu_i >= out_offset) && (skepu_i < out_offset + out_numelements))
 			{
 				skepu_i = skepu_i - out_offset;
 				const size_t skepu_base = 0;

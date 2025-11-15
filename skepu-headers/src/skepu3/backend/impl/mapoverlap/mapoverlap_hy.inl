@@ -19,7 +19,7 @@ namespace skepu
 		::vector_Hybrid(skepu::Parity p, pack_indices<OI...> oi, pack_indices<EI...> ei, pack_indices<AI...> ai, pack_indices<CI...> ci, CallArgs&&... args)
 		{
 			auto &arg = get<outArity>(std::forward<CallArgs>(args)...);
-			const int overlap = this->m_overlap;
+			const int overlap = this->m_overlap[0];
 			const size_t size = arg.size();
 			const size_t stride = 1;
 			
@@ -174,7 +174,7 @@ namespace skepu
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-arity-outArity])), 0)...);
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
 			
-			const int overlap = this->m_overlap;
+			const int overlap = this->m_overlap[0];
 			T start[3*overlap], end[3*overlap];
 			
 			const T *inputBegin = arg.getAddress() + gpuRows*rowWidth;

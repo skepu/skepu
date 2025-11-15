@@ -26,10 +26,15 @@ namespace skepu
 			
 			// Setup parameters
 			size_t numElem = arg.size() - startIdx;
-			size_t overlap = this->m_overlap;
+			size_t overlap = (size_t)this->m_overlap[0];
 			size_t n = numElem + std::min(startIdx, overlap);
 			size_t out_offset = std::min(startIdx, overlap);
-			size_t out_numelements = numElem;
+
+			size_t out_numelements;
+			if (this->m_edge != skepu::Edge::None)
+				out_numelements = numElem;
+			else
+				out_numelements = numElem - overlap * 2;
 			
 			// Constructs a wrap vector, which is used if cyclic edge policy is specified.
 			auto inputEndMinusOverlap = arg.end() - overlap;
@@ -48,11 +53,11 @@ namespace skepu
 					wrap[overlap+i] = arg(i);
 				}
 				// Copy wrap vector to device only if is is cyclic policy as otherwise it is not used.
-				wrapMemP = new DeviceMemPointer_CU<T>(&wrap[0], wrap.size(), m_environment->m_devices_CU.at(deviceID));
+				wrapMemP = new DeviceMemPointer_CU<T>(&wrap[0], wrap.size(), this->m_environment->m_devices_CU.at(deviceID), "Internal (overlap-wrap)");
 				wrapMemP->copyHostToDevice();
 			}
 			else // construct a very naive dummy
-				wrapMemP = new DeviceMemPointer_CU<T>(NULL, 1, m_environment->m_devices_CU.at(deviceID));
+				wrapMemP = new DeviceMemPointer_CU<T>(NULL, 1, this->m_environment->m_devices_CU.at(deviceID), "Internal (overlap-wrap)");
 			
 			size_t numThreads = std::min(this->m_selected_spec->GPUThreads(), n);
 			
@@ -75,7 +80,7 @@ namespace skepu
 			
 			// Copy elements to device and allocate output memory.
 			auto inMemP = arg.updateDevice_CU(arg.getAddress() + startIdx - out_offset, n, deviceID, AccessMode::Read);
-			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress() + startIdx, numElem, deviceID, AccessMode::Write)...);
+			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress() + startIdx, out_numelements, deviceID, AccessMode::Write)...);
 			
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).cudaProxy(deviceID, MapOverlapFunc::anyAccessMode[AI-arity-outArity])...);
 		
@@ -87,7 +92,7 @@ namespace skepu
 			DEBUG_TEXT_LEVEL1("CUDA MapOverlap kernel: size = " << numElem << ", one device, numBlocks = " << numBlocks << ", numThreads = " << numThreads);
 			
 #ifdef USE_PINNED_MEMORY
-			this->m_cuda_kernel<<<numBlocks, numThreads, sharedMemSize, (m_environment->m_devices_CU.at(deviceID)->m_streams[0])>>>
+			this->m_cuda_kernel<<<numBlocks, numThreads, sharedMemSize, (this->m_environment->m_devices_CU.at(deviceID)->m_streams[0])>>>
 #else
 			this->m_cuda_kernel<<<numBlocks, numThreads, sharedMemSize>>>
 #endif
@@ -99,7 +104,7 @@ namespace skepu
 				get<CI>(std::forward<CallArgs>(args)...)...,
 				wrapMemP->getDeviceDataPointer(),
 				n, out_offset, out_numelements,
-				this->m_edge,	this->m_pad, this->m_overlap
+				this->m_edge,	this->m_pad, (size_t)this->m_overlap[0]
 			);
 			
 			// Make sure the data is marked as changed by the device
@@ -128,7 +133,7 @@ namespace skepu
 			auto &arg = get<outArity>(std::forward<CallArgs>(args)...);
 			
 			const size_t totalNumElements = arg.size() - startIdx;
-			const size_t overlap = this->m_overlap;
+			const size_t overlap = (size_t)this->m_overlap[0];
 			size_t numElemPerSlice = totalNumElements / numDevices;
 			size_t rest = totalNumElements % numDevices;
 			
@@ -173,7 +178,7 @@ namespace skepu
 				out_mem_p[i] = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress() + i * numElemPerSlice, numElem, i, AccessMode::None)...);
 				
 				// wrap vector, don't copy just allocates space onf CUDA device.
-				wrap_mem_p[i] = new DeviceMemPointer_CU<T>(&wrap[0], wrap.size(), m_environment->m_devices_CU.at(i));
+				wrap_mem_p[i] = new DeviceMemPointer_CU<T>(&wrap[0], wrap.size(), this->m_environment->m_devices_CU.at(i));
 				
 				numThreads[i] = std::min(this->m_selected_spec->GPUThreads(), n[i]);
 				
@@ -228,7 +233,7 @@ namespace skepu
 				const size_t sharedMemSize = sizeof(T) * (numThreads[i] + 2 * overlap);
 				
 #ifdef USE_PINNED_MEMORY
-					this->m_cuda_kernel<<<numBlocks[i], numThreads[i], sharedMemSize, (m_environment->m_devices_CU.at(i)->m_streams[0])>>>
+					this->m_cuda_kernel<<<numBlocks[i], numThreads[i], sharedMemSize, (this->m_environment->m_devices_CU.at(i)->m_streams[0])>>>
 #else
 					this->m_cuda_kernel<<<numBlocks[i], numThreads[i], sharedMemSize>>>
 #endif
@@ -240,7 +245,7 @@ namespace skepu
 						get<CI>(std::forward<CallArgs>(args)...)...,
 						wrap_mem_p[i]->getDeviceDataPointer(),
 						n[i], out_offset[i], out_numelements,
-						this->m_edge, this->m_pad, this->m_overlap
+						this->m_edge, this->m_pad, (size_t)this->m_overlap[0]
 					);
 				
 				// Make sure the data is marked as changed by the device
@@ -251,7 +256,7 @@ namespace skepu
 			for (size_t i = 0; i < numDevices; ++i)
 				delete wrap_mem_p[i];
 			
-			cudaSetDevice(m_environment->bestCUDADevID);
+			cudaSetDevice(this->m_environment->bestCUDADevID);
 		}
 		
 		
@@ -294,7 +299,7 @@ namespace skepu
 		bool MapOverlap1D<MapOverlapFunc, CUDAKernel, C2, C3, C4, CLKernel>
 		::sharedMemAvailable_CU(size_t &numThreads, size_t deviceID)
 		{
-			const size_t overlap = this->m_overlap;
+			const size_t overlap = (size_t)this->m_overlap[0];
 			const size_t maxShMem = this->m_environment->m_devices_CU.at(deviceID)->getSharedMemPerBlock() / sizeof(T) - SHMEM_SAFITY_BUFFER;
 			size_t orgThreads = numThreads;
 			numThreads = (numThreads + 2 * overlap < maxShMem) ? numThreads : maxShMem - 2 * overlap;
@@ -354,7 +359,7 @@ namespace skepu
 			auto &arg = get<outArity>(std::forward<CallArgs>(args)...);
 			
 			const size_t n = arg.size();
-			const size_t overlap = this->m_overlap;
+			const size_t overlap = (size_t)this->m_overlap[0];
 			const size_t colWidth = arg.total_rows();
 			const size_t numCols = arg.total_cols();
 			size_t numThreads = this->m_selected_spec->GPUThreads();
@@ -375,7 +380,7 @@ namespace skepu
 			}
 			
 			std::vector<T> wrap(2 * overlap * numCols);
-			DeviceMemPointer_CU<T> wrap_mem_p(&wrap[0], wrap.size(), m_environment->m_devices_CU.at(deviceID));
+			DeviceMemPointer_CU<T> wrap_mem_p(&wrap[0], wrap.size(), this->m_environment->m_devices_CU.at(deviceID));
 			
 			if (this->m_edge == Edge::Cyclic)
 			{
@@ -423,7 +428,7 @@ namespace skepu
 				get<CI>(std::forward<CallArgs>(args)...)...,
 				wrap_mem_p.getDeviceDataPointer(),
 				n, 0, n,
-				this->m_edge, this->m_pad, this->m_overlap,
+				this->m_edge, this->m_pad, (size_t)this->m_overlap[0],
 				blocksPerCol, numCols, colWidth
 			);
 			
@@ -446,7 +451,7 @@ namespace skepu
 			const size_t totalElems = arg.size();
 			const size_t maxBlocks = this->m_selected_spec->GPUBlocks();
 			size_t maxThreads = this->m_selected_spec->GPUThreads();
-			const size_t overlap = this->m_overlap;
+			const size_t overlap = (size_t)this->m_overlap[0];
 			const size_t colWidth = arg.total_rows();
 			const size_t numCols = arg.total_cols();
 			const size_t numRowsPerSlice = colWidth / numDevices;
@@ -592,7 +597,7 @@ namespace skepu
 					n, in_offset, n,
 					this->m_edge,
 					deviceType,
-					this->m_pad, this->m_overlap,
+					this->m_pad, (size_t)this->m_overlap[0],
 					blocksPerCol[i],
 					numCols, numRows
 				);
@@ -608,7 +613,7 @@ namespace skepu
 				delete wrapEndDev_mem_p[i];
 			}
 			
-			cudaSetDevice(m_environment->bestCUDADevID);
+			cudaSetDevice(this->m_environment->bestCUDADevID);
 		}
 		
 		
@@ -650,7 +655,7 @@ namespace skepu
 			auto &arg = get<outArity>(std::forward<CallArgs>(args)...);
 			const size_t maxBlocks = this->m_selected_spec->GPUBlocks();
 			size_t maxThreads = 256; // this->m_selected_spec->GPUThreads();
-			const size_t overlap = this->m_overlap;
+			const size_t overlap = (size_t)this->m_overlap[0];
 			const size_t rowWidth = arg.total_cols();
 			const size_t n = rowWidth*numrows;
 			size_t trdsize = rowWidth;
@@ -720,7 +725,7 @@ namespace skepu
 				get<CI>(std::forward<CallArgs>(args)...)...,
 				wrap_mem_p.getDeviceDataPointer(),
 				n, 0, n,
-				this->m_edge, this->m_pad, this->m_overlap,
+				this->m_edge, this->m_pad, (size_t)this->m_overlap[0],
 				blocksPerRow, rowWidth
 			);
 			
@@ -743,7 +748,7 @@ namespace skepu
 			auto &arg = get<outArity>(std::forward<CallArgs>(args)...);
 			const size_t maxBlocks = this->m_selected_spec->GPUBlocks();
 			size_t maxThreads = this->m_selected_spec->GPUThreads();
-			const size_t overlap = this->m_overlap;
+			const size_t overlap = (size_t)this->m_overlap[0];
 			const size_t rowWidth = arg.total_cols();
 			const size_t totalElems = rowWidth*numrows;
 			size_t trdsize= rowWidth;
@@ -849,7 +854,7 @@ namespace skepu
 					wrap_mem_p[i]->getDeviceDataPointer(),
 					numElems, 0, numElems,
 					this->m_edge,
-					this->m_pad, this->m_overlap,
+					this->m_pad, (size_t)this->m_overlap[0],
 					blocksPerRow, rowWidth
 				);
 				

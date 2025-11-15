@@ -212,7 +212,7 @@ namespace skepu
 				if ((i+1) % matrix.total_cols() == 0)
 					os << "\n";
 			}
-			return os << "\n";;
+			return os;
 		}
 
 	// Constructors, destructors
