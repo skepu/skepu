@@ -6,6 +6,9 @@ project(SkePU VERSION 3.0.0.1
 		"A C++11/CUDA/OpenCL skeleton framework with smart containers"
 	LANGUAGES CXX)
 
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Initialize CMAKE_CUDA_ARCHITECTURES automatically if cmake version >= 3.18
 if(POLICY CMP0104)
 	cmake_policy(SET CMP0104 NEW)
