@@ -91,6 +91,9 @@ namespace skepu
 						case Edge::Pad:
 							start[i] = this->m_pad;
 							end[3*overlap-1 - i] = this->m_pad;
+							break;
+						default:
+							break;
 						}
 					}
 					
@@ -218,6 +221,8 @@ namespace skepu
 							case Edge::Pad:
 								start[i] = this->m_pad;
 								end[3*overlap-1 - i] = this->m_pad;
+								break;
+							default:
 								break;
 							}
 						}
