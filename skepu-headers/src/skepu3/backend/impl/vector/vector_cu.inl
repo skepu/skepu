@@ -179,7 +179,7 @@ typename Vector<T>::device_pointer_type_cu Vector<T>::updateDevice_CU(T* start, 
 #ifdef NO_LAZY_MEMORY_COPYING
    if(result == m_deviceMemPointers_CU[deviceID].end()) //no copy should be reused, right? may be not in multigpu case as it is allocated and then copied data
    {
-      tempCopy = new backend::DeviceMemPointer_CU<T>(start, numElements, backend::Environment<int>::getInstance()->m_devices_CU.at(deviceID), "noname");
+      tempCopy = new backend::DeviceMemPointer_CU<T>(start, numElements, backend::Environment<int>::getInstance()->m_devices_CU.at(deviceID), this->getLabel());
       if(hasReadAccess(accessMode))
       {
          tempCopy->copyHostToDevice();
@@ -200,7 +200,7 @@ typename Vector<T>::device_pointer_type_cu Vector<T>::updateDevice_CU(T* start, 
 #else
    if(result == m_deviceMemPointers_CU[deviceID].end()) //insert new, alloc mem and copy
    {
-      tempCopy = new backend::DeviceMemPointer_CU<T>(start, numElements, backend::Environment<int>::getInstance()->m_devices_CU.at(deviceID), "noname");
+      tempCopy = new backend::DeviceMemPointer_CU<T>(start, numElements, backend::Environment<int>::getInstance()->m_devices_CU.at(deviceID), this->getLabel());
 
       if(hasReadAccess(accessMode))
       {

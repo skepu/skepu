@@ -24,9 +24,8 @@ namespace skepu
 
 		if (result == m_deviceMemPointers_CL.end()) //insert new, alloc mem and copy
 		{
-			auto temp = new backend::DeviceMemPointer_CL<T>{start, numElements, device};
+			auto temp = new backend::DeviceMemPointer_CL<T>{start, numElements, device, this->getLabel()};
 #ifdef SKEPU_TRACING
-			temp->m_label = this->getLabel();
 			temp->m_container_id = this->getObjectID();
 #endif
 			if (copy)
@@ -42,9 +41,8 @@ namespace skepu
 		{
 			m_deviceMemPointers_CL.erase(result->first);
 			delete result->second;
-			auto temp = new backend::DeviceMemPointer_CL<T>{start, numElements, device};
+			auto temp = new backend::DeviceMemPointer_CL<T>{start, numElements, device, this->getLabel()};
 #ifdef SKEPU_TRACING
-			temp->m_label = this->getLabel();
 			temp->m_container_id = this->getObjectID();
 #endif
 			if (copy)
@@ -81,7 +79,7 @@ namespace skepu
 
 		if (result == m_deviceConstMemPointers_CL.end()) //insert new, alloc mem and copy
 		{
-			auto temp = new device_const_pointer_type_cl(start, numElements, device);
+			auto temp = new device_const_pointer_type_cl(start, numElements, device, this->getLabel());
 #ifdef SKEPU_TRACING
 			temp->m_label = this->getLabel();
 			temp->m_container_id = this->getObjectID();

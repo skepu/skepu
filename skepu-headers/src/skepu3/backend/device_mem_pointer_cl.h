@@ -29,8 +29,8 @@ namespace skepu
 		class DeviceMemPointer_CL
 		{
 		public:
-			DeviceMemPointer_CL(T* root, T* start, size_t numElements, Device_CL* device);
-			DeviceMemPointer_CL(T* start, size_t numElements, Device_CL* device);
+			DeviceMemPointer_CL(T* root, T* start, size_t numElements, Device_CL* device, std::string const& label = "");
+			DeviceMemPointer_CL(T* start, size_t numElements, Device_CL* device, std::string const& label = "");
 			~DeviceMemPointer_CL();
 
 	/*		operator DeviceMemPointer_CL<const T>()
@@ -51,6 +51,7 @@ namespace skepu
 			T* m_effectiveHostDataPointer;
 			T* m_hostDataPointer;
 			size_t m_numElements;
+			std::string m_label;
 
 		private:
 			void copyHostToDevice_internal(T* src, cl_mem dest, size_t numElements, size_t offset = 0) const;
@@ -69,7 +70,6 @@ namespace skepu
 #ifdef SKEPU_TRACING
 		public:
 			UniqueIdentifier::ID m_container_id;
-			std::string m_label;
 #endif
 		};
 
@@ -84,7 +84,7 @@ namespace skepu
 		 *  \param device Pointer to a valid device to allocate the space on.
 		 */
 		template <typename T>
-		DeviceMemPointer_CL<T>::DeviceMemPointer_CL(T* root, T* start, size_t numElements, Device_CL* device)
+		DeviceMemPointer_CL<T>::DeviceMemPointer_CL(T* root, T* start, size_t numElements, Device_CL* device, std::string const& label)
 		: m_effectiveHostDataPointer(start),
 		  m_hostDataPointer(root),
 			m_numElements(numElements),
@@ -104,8 +104,16 @@ namespace skepu
 			m_deviceDataPointer = clCreateBuffer(m_device->getContext(), CL_MEM_READ_WRITE, sizeVec, NULL, &err);
 			CL_CHECK_ERROR(err, "Error allocating memory on OpenCL device, size: " << sizeVec);
 
-			DEBUG_TEXT_LEVEL1("Alloc OpenCL, ptr: " << m_deviceDataPointer << ", size: " << sizeVec << " B (" << numElements << " elements)");
+			if (label == "")
+			{
+				DEBUG_TEXT_LEVEL1("Alloc OpenCL, ptr: " << m_deviceDataPointer << ", size: " << sizeVec << " B (" << numElements << " elements)");
+			}
+			else
+			{
+				DEBUG_TEXT_LEVEL1("Alloc OpenCL, label: " << label << ", ptr: " << m_deviceDataPointer << ", size: " << sizeVec << " B (" << numElements << " elements)");
+			}
 
+			m_label = label;
 			m_effectiveDeviceDataPointer = m_deviceDataPointer;
 
 #ifdef SKEPU_MEASURE_TIME_DISTRIBUTION
@@ -127,8 +135,8 @@ namespace skepu
 		 *  \param device Pointer to a valid device to allocate the space on.
 		 */
 		template <typename T>
-		DeviceMemPointer_CL<T>::DeviceMemPointer_CL(T* start, size_t numElements, Device_CL* device)
-		: DeviceMemPointer_CL<T>::DeviceMemPointer_CL(start, start, numElements, device)
+		DeviceMemPointer_CL<T>::DeviceMemPointer_CL(T* start, size_t numElements, Device_CL* device, std::string const& label)
+		: DeviceMemPointer_CL<T>::DeviceMemPointer_CL(start, start, numElements, device, label)
 		{}
 
 
@@ -136,7 +144,7 @@ namespace skepu
 		template <typename T>
 		DeviceMemPointer_CL<T>::~DeviceMemPointer_CL()
 		{
-			DEBUG_TEXT_LEVEL1("Dealloc OpenCL, ptr: " << m_deviceDataPointer << ", size: " << (this->m_numElements * sizeof(T)) << " B (" << this->m_numElements << " elements)");
+			DEBUG_TEXT_LEVEL1("Dealloc OpenCL, label: " << this->m_label << ", ptr: " << m_deviceDataPointer << ", size: " << (this->m_numElements * sizeof(T)) << " B (" << this->m_numElements << " elements)");
 			clReleaseMemObject(m_deviceDataPointer);
 		}
 
@@ -244,7 +252,7 @@ template <typename T>
 				err = clEnqueueWriteBuffer(m_device->getQueue(), m_effectiveDeviceDataPointer, CL_TRUE, 0, sizeVec, m_effectiveHostDataPointer, 0, NULL, NULL);
 			CL_CHECK_ERROR(err, "Error copying data to OpenCL device, size: " << sizeVec);
 
-			DEBUG_TEXT_LEVEL1("HOST_TO_DEVICE OpenCL, size " << sizeVec << " B (" << (sizeVec/sizeof(T)) << " elements)");
+			DEBUG_TEXT_LEVEL1("HOST_TO_DEVICE OpenCL, label: " << this->m_label << ", size " << sizeVec << " B (" << (sizeVec/sizeof(T)) << " elements)");
 			
 			SKEPU_TRACE_TRANSFER(this->m_container_id, this->m_label, __LINE__, (sizeVec/sizeof(T)), "host-to-device", "OpenCL");
 
@@ -292,7 +300,7 @@ template <typename T>
 					err = clEnqueueReadBuffer(m_device->getQueue(), m_effectiveDeviceDataPointer, CL_TRUE, 0, sizeVec, (void*)m_effectiveHostDataPointer, 0, NULL, NULL);
 				CL_CHECK_ERROR(err, "Error copying data from OpenCL device, size: " << sizeVec);
 
-				DEBUG_TEXT_LEVEL1("DEVICE_TO_HOST OpenCL, size " << sizeVec << " B (" << (sizeVec/sizeof(T)) << " elements)");
+				DEBUG_TEXT_LEVEL1("DEVICE_TO_HOST OpenCL, label: " << this->m_label << ", size " << sizeVec << " B (" << (sizeVec/sizeof(T)) << " elements)");
 
 				SKEPU_TRACE_TRANSFER(this->m_container_id, this->m_label, __LINE__, (sizeVec/sizeof(T)), "device-to-host", "OpenCL");
 #ifdef SKEPU_MEASURE_TIME_DISTRIBUTION
