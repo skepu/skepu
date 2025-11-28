@@ -11,6 +11,19 @@ skepu_add_test_case_hybrid_opencl(default_values)
 #skepu_add_test_case_hybrid_cuda(default_values)
 
 # ------------------------------------------------
+#   MapOverlap 1D fundamentals new
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mapoverlap_1d_new)
+skepu_add_test_case_cpu(mapoverlap_1d_new)
+skepu_add_test_case_openmp(mapoverlap_1d_new)
+skepu_add_test_case_opencl(mapoverlap_1d_new)
+skepu_add_test_case_cuda(mapoverlap_1d_new)
+skepu_add_test_case_hybrid_opencl(mapoverlap_1d_new)
+skepu_add_test_case_hybrid_cuda(mapoverlap_1d_new)
+
+
+# ------------------------------------------------
 #   MapOverlap 1D fundamentals
 # ------------------------------------------------
 

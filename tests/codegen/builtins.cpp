@@ -1,7 +1,7 @@
 //#define SKEPU_ENABLE_EXCEPTIONS
 #define PRECISION 1E-3
 
-#include "../../catch2/catch.hpp"
+#include "../../external/catch2/catch.hpp"
 
 #include <iostream>
 #include <skepu>

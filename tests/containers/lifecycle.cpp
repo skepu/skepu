@@ -1,6 +1,6 @@
 #define SKEPU_ENABLE_EXCEPTIONS
 
-#include "../../catch2/catch.hpp"
+#include "../../external/catch2/catch.hpp"
 
 #include <iostream>
 #include <skepu>

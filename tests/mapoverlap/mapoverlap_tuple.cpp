@@ -1,4 +1,4 @@
-#include "../../catch2/catch.hpp"
+#include "../../external/catch2/catch.hpp"
 
 #include <iostream>
 
