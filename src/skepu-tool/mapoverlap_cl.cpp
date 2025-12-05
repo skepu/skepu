@@ -28,7 +28,12 @@ __kernel void {{KERNEL_NAME}}_Vector({{KERNEL_PARAMS}}
 	{{CONTAINER_PROXIES}}
 	{{CONTAINER_PROXIE_INNER}}
 
-	if (skepu_poly == SKEPU_EDGE_PAD || skepu_poly == SKEPU_EDGE_NONE)
+	if (skepu_poly == SKEPU_EDGE_NONE)
+	{
+		sdata[skepu_tid] = {{INPUT_PARAM_NAME}}[skepu_i];
+	}
+
+	else if (skepu_poly == SKEPU_EDGE_PAD)
 	{
 		sdata[skepu_overlap + skepu_tid] = (skepu_i < skepu_n) ? {{INPUT_PARAM_NAME}}[skepu_i] : skepu_pad;
 		if (skepu_tid < skepu_overlap)

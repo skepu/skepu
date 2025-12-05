@@ -26,66 +26,81 @@ namespace skepu
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
 			SKEPU_TRACE_START_EVENT(trace_handle);
 			
-			const int overlap = (int)this->m_overlap;
+			const int overlap = this->m_overlap[0];
 			const size_t size = arg.size();
 			const size_t stride = 1;
-			
-			T start[3*overlap], end[3*overlap];
 			
 			auto random_pre = this->template prepareRandom<MapOverlapFunc::randomCount>(overlap);
 			size_t threads = std::min<size_t>(size - 2*overlap, omp_get_max_threads());
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(size - 2*overlap, threads);
 			auto random_post = this->template prepareRandom<MapOverlapFunc::randomCount>(overlap);
 			
-#pragma omp parallel for schedule(runtime)
-			for (size_t i = 0; i < overlap; ++i)
+			if (this->m_edge != Edge::None)
 			{
-				switch (this->m_edge)
+				T start[3*overlap], end[3*overlap];
+
+#pragma omp parallel for schedule(runtime)
+				for (size_t i = 0; i < overlap; ++i)
 				{
-				case Edge::Cyclic:
-					start[i] = arg(size + i  - overlap);
-					end[3*overlap-1 - i] = arg(overlap-i-1);
-					break;
-				case Edge::Duplicate:
-					start[i] = arg(0);
-					end[3*overlap-1 - i] = arg(size-1);
-					break;
-				case Edge::Pad:
-					start[i] = this->m_pad;
-					end[3*overlap-1 - i] = this->m_pad;
-					break;
-				default:
-					break;
+					switch (this->m_edge)
+					{
+					case Edge::Cyclic:
+						start[i] = arg(size + i  - overlap);
+						end[3*overlap-1 - i] = arg(overlap-i-1);
+						break;
+					case Edge::Duplicate:
+						start[i] = arg(0);
+						end[3*overlap-1 - i] = arg(size-1);
+						break;
+					case Edge::Pad:
+						start[i] = this->m_pad;
+						end[3*overlap-1 - i] = this->m_pad;
+						break;
+					default:
+						break;
+					}
+				}
+				
+				for (size_t i = overlap, j = 0; i < 3*overlap; ++i, ++j)
+					start[i] = arg(j);
+				
+				for (size_t i = 0, j = 0; i < 2*overlap; ++i, ++j)
+					end[i] = arg(j + size - 2*overlap);
+				
+				for (size_t i = 0; i < overlap; ++i)
+				{
+					auto res = F::forward(MapOverlapFunc::OMP, Index1D{i}, random_pre, Region1D<T>{overlap, stride, &start[i + overlap]},
+							get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+					SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i)..., res);
+				}
+					
+#pragma omp parallel for schedule(runtime)
+				for (size_t i = overlap; i < size - overlap; ++i)
+				{
+					auto res = F::forward(MapOverlapFunc::OMP, Index1D{i}, random(omp_get_thread_num()), Region1D<T>{overlap, stride, &arg(i)},
+						get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+					SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i)..., res);
+				}
+					
+				for (size_t i = size - overlap; i < size; ++i)
+				{
+					auto res = F::forward(MapOverlapFunc::OMP, Index1D{i}, random_post, Region1D<T>{overlap, stride, &end[i + 2 * overlap - size]},
+						get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+					SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i)..., res);
 				}
 			}
-			
-			for (size_t i = overlap, j = 0; i < 3*overlap; ++i, ++j)
-				start[i] = arg(j);
-			
-			for (size_t i = 0, j = 0; i < 2*overlap; ++i, ++j)
-				end[i] = arg(j + size - 2*overlap);
-			
-			for (size_t i = 0; i < overlap; ++i)
+
+			else // Edge::None
 			{
-				auto res = F::forward(MapOverlapFunc::OMP, Index1D{i}, random_pre, Region1D<T>{overlap, stride, &start[i + overlap]},
-						get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-				SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i)..., res);
-			}
-				
 #pragma omp parallel for schedule(runtime)
-			for (size_t i = overlap; i < size - overlap; ++i)
-			{
-				auto res = F::forward(MapOverlapFunc::OMP, Index1D{i}, random(omp_get_thread_num()), Region1D<T>{overlap, stride, &arg(i)},
-					get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-				SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i)..., res);
+				for (size_t i = 0; i < size - overlap * 2; ++i)
+				{
+					auto res = F::forward(MapOverlapFunc::OMP, Index1D{i}, random(omp_get_thread_num()), Region1D<T>{overlap, stride, &arg(i + overlap)},
+						get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+					SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i)..., res);
+				}
 			}
-				
-			for (size_t i = size - overlap; i < size; ++i)
-			{
-				auto res = F::forward(MapOverlapFunc::OMP, Index1D{i}, random_post, Region1D<T>{overlap, stride, &end[i + 2 * overlap - size]},
-					get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-				SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i)..., res);
-			}
+
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 1D", this, {size},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
@@ -112,7 +127,7 @@ namespace skepu
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
 			SKEPU_TRACE_START_EVENT(trace_handle);
 			
-			int overlap = (int)this->m_overlap;
+			int overlap = this->m_overlap[0];
 			size_t size = arg.size();
 			T start[3*overlap], end[3*overlap];
 			
@@ -207,7 +222,7 @@ namespace skepu
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
 			SKEPU_TRACE_START_EVENT(trace_handle);
 			
-			int overlap = (int)this->m_overlap;
+			int overlap = this->m_overlap[0];
 			size_t size = arg.size();
 			T start[3*overlap], end[3*overlap];
 			
