@@ -9,36 +9,49 @@
 #######################################################################
 .DEFAULT_GOAL=all
 
-# Init Cmake
-# cmake -DCMAKE_BUILD_TYPE=Release ..
+# ------------------------------------------------------------------- #
+# Default fundamental paths and options.
+# ------------------------------------------------------------------- #
 
+# Default path to the SkePU installation
+# Override in Makefile.in
+SKEPU_SRC_PATH = ../
 
+# Default path to LLVM build directory (relative to SkePU installation path)
+# Override in Makefile.in
+LLVM_BUILD_REL_PATH = /build/
 
-# Default backend set for SkePU precompiler.
-BACKENDS = -openmp
-BACKENDS += -opencl
-#BACKENDS += -cuda
+# Default backend set for SkePU precompiler
+# Override in Makefile.in
+BACKENDS = -openmp -opencl -cuda
 
-SKEPU_OPTIONS = -std=c++17 -O3 -g -DSKEPU_DEBUG=3 #-DSKEPU_DEBUG_PRNG
-#SKEPU_OPTIONS +=
+# Default backend set for SkePU precompiler
+# Override in Makefile.in
+SKEPU_DEBUG_LEVEL = 0
 
+# Default values for SkePU backend compiler options
+# Override in Makefile.in
+SKEPU_OPTIONS = -std=c++17 -O3 -g
+
+# Default values for SkePU backend compiler options
+# Override in Makefile.in
 PRECOMPILER_OPTIONS = --no-preserve-lines #--verbose
 
 # Backend-specific flags
+# Override in Makefile.in
 BACKEND_FLAGS = -DSKEPU_TRACING #-DSKEPU_SIMULATE_MULTI_GPU # -DSKEPU_SET_DEFAULT_BACKEND_CUDA #  -g -O3
 
 # Default OpenCL specific flags (matching a CUDA-provided installation)
+# Override in Makefile.in
 OPENCL_FLAGS = -I /usr/local/cuda/include -L /usr/local/cuda/lib64/ -lOpenCL -Wno-deprecated-declarations
 
-# path to Clang source directory (repository root)
-CLANG_INCLUDE = $(PWD)/../llvm/clang/lib/Headers
-
-# path to the SkePU sources
-SKEPU_INCLUDE = $(PWD)/../skepu-headers/src
-
+# Default compilers 
+# Override in Makefile.in
 CXX = clang++
 SEQ_CXX = clang++
-#DBGR = lldb --
+
+# Uncomment for launching SkePU precompiler in debugger
+# DBGR = lldb --
 
 CLUSTER_CXX      = mpic++
 CLUSTER_BACKENDS = -openmp
@@ -46,38 +59,33 @@ CLUSTER_CXXFLAGS = -std=c++11 -fopenmp $$(pkg-config --cflags starpu-1.3 starpum
 CLUSTER_LIBS     = $$(pkg-config --libs starpu-1.3 starpumpi-1.3)
 
 
-#OPENCL_FLAGS = -framework OpenCL
 
-#CLANGTOOL_USER_FLAGS = -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/ -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/  -I /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/ -I /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/ -Wno-macro-redefined
+# ------------------------------------------------------------------- #
+# Includes.
+# ------------------------------------------------------------------- #
 
-#CLANGTOOL_USER_FLAGS  = -I /usr/local/include
-#CLANGTOOL_USER_FLAGS += -I /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/
-#CLANGTOOL_USER_FLAGS += -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/15.0.0/include/
-#CLANGTOOL_USER_FLAGS += -I /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/
-#CLANGTOOL_USER_FLAGS += -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
-#CLANGTOOL_USER_FLAGS += -I /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks
+# Overrides default values for various paths and options
+include Makefile.in
 
-# echo | g++-14 -E -x c++ -Wp,-v -
-CLANGTOOL_USER_FLAGS  = -I /usr/local/Cellar/gcc/14.2.0_1/bin/../lib/gcc/current/gcc/x86_64-apple-darwin23/14/../../../../../../include/c++/14
-CLANGTOOL_USER_FLAGS += -I /usr/local/Cellar/gcc/14.2.0_1/bin/../lib/gcc/current/gcc/x86_64-apple-darwin23/14/../../../../../../include/c++/14/x86_64-apple-darwin23
-#CLANGTOOL_USER_FLAGS += -I /usr/local/Cellar/gcc/13.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin23/13/../../../../../../include/c++/13/backward
-#CLANGTOOL_USER_FLAGS += -I /usr/local/Cellar/gcc/13.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin23/13/include
-#CLANGTOOL_USER_FLAGS += -I /usr/local/Cellar/gcc/13.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin23/13/include-fixed
-CLANGTOOL_USER_FLAGS += -I /Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk/usr/include
-#CLANGTOOL_USER_FLAGS += -I /Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk/System/Library/Frameworks
 
-# ---------------------------------------------------------------------------- #
-# Compilers.
+# ------------------------------------------------------------------- #
+# Derived paths and option sets.
+# ------------------------------------------------------------------- #
 
-# Conditionally choose either g++ or nvcc for target compiler,
-# depending on whether CUDA is in the list of backends
-# This will also be used for non-preprocessed compilation of SkePU programs.
-ifneq (,$(findstring cuda, $(BACKENDS)))
-CXX = nvcc
-endif
+# Path to Clang source directory (repository root)
+CLANG_INCLUDE_PATH = $(SKEPU_SRC_PATH)/llvm/clang/lib/Headers/
 
-# Location of SkePU precompiler binary.
-SKEPU = $(PWD)/../build/llvm/bin/skepu-tool
+# Default path to the SkePU sources
+SKEPU_INCLUDE_PATH = $(SKEPU_SRC_PATH)/skepu-headers/src/
+
+# Location for LLVM build directory
+LLVM_BUILD_PATH = $(SKEPU_SRC_PATH)/$(LLVM_BUILD_REL_PATH)
+
+# Location of SkePU precompiler binary
+SKEPU_TOOL_PATH = $(LLVM_BUILD_PATH)/llvm/bin/skepu-tool
+
+# Add SkePU-specific debug level to options set
+SKEPU_OPTIONS += -DSKEPU_DEBUG=$(SKEPU_DEBUG_LEVEL)
 
 
 # ---------------------------------------------------------------------------- #
@@ -174,16 +182,17 @@ RUN_TESTS      = $(addprefix $(RUN_DIR)/,      $(PROGS))
 
 # Flags for precompiler.
 SKEPU_FLAGS = $(PRECOMPILER_OPTIONS)
-SKEPU_FLAGS += -- #$(SKEPU_OPTIONS) -Wno-expansion-to-defined
-SKEPU_FLAGS += $(CLANGTOOL_USER_FLAGS)
-SKEPU_FLAGS += -I $(CLANG_INCLUDE)
-SKEPU_FLAGS += -I $(SKEPU_INCLUDE)
+SKEPU_FLAGS += -- 
+SKEPU_FLAGS += $(SKEPU_TOOL_USER_FLAGS)
+SKEPU_FLAGS += -I $(CLANG_INCLUDE_PATH)
+SKEPU_FLAGS += -I $(SKEPU_INCLUDE_PATH)
 
 # Activate backend flags for CUDA backend
 ifneq (,$(findstring cuda, $(BACKENDS)))
 BACKEND_FLAGS += -Xcudafe "--diag_suppress=declared_but_not_referenced --diag_suppress=set_but_not_used"
 NVCCPASS = -Xcompiler
 FILETYPE = cu
+CXX = nvcc
 else
 FILETYPE = cpp
 endif
@@ -199,10 +208,11 @@ BACKEND_FLAGS += $(OPENCL_FLAGS)
 endif
 
 # Flags for target compiler (preprocessed sources).
-TARGET_FLAGS = $(SKEPU_OPTIONS) -I $(SKEPU_INCLUDE) -I ./  $(NVCCPASS) -Wno-attributes $(BACKEND_FLAGS)
+TARGET_FLAGS = $(SKEPU_OPTIONS) -I $(SKEPU_INCLUDE_PATH) -I ./  $(NVCCPASS) -Wno-attributes $(BACKEND_FLAGS)
 
 # Flags for non-preprocessed compilation.
-SEQ_FLAGS    = $(SKEPU_OPTIONS) -I $(SKEPU_INCLUDE) -Wno-attributes # -fno-rtti -fno-exceptions
+SEQ_FLAGS    = $(SKEPU_OPTIONS) -I $(SKEPU_INCLUDE_PATH) -Wno-attributes # -fno-rtti -fno-exceptions
+
 
 # ---------------------------------------------------------------------------- #
 # Make recipies begin here.
@@ -221,27 +231,27 @@ all-run: $(RUN_TESTS)
 
 
 capi:
-	$(DBGR) $(SKEPU) $(BACKENDS) -name cskepu_precompiled $(SKEPU_INCLUDE)/cskepu.cpp  -dir ./test_build $(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name cskepu_precompiled $(SKEPU_INCLUDE_PATH)/cskepu.cpp  -dir ./test_build $(SKEPU_FLAGS)
 	$(DBGR) $(CXX) -c ./test_build/cskepu_precompiled.$(FILETYPE)  $(TARGET_FLAGS) -o ./test_build/cskepu.o
 
-	$(DBGR) $(SKEPU) $(BACKENDS) -name c_skeleton_precompiled c_skeleton.cpp  -dir ./test_build $(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name c_skeleton_precompiled c_skeleton.cpp  -dir ./test_build $(SKEPU_FLAGS)
 	$(DBGR) $(CXX) -c ./test_build/c_skeleton_precompiled.$(FILETYPE)  $(TARGET_FLAGS) -o ./test_build/c_skeleton.o
 
-	clang -c skepu_in_c.c -I $(SKEPU_INCLUDE) -o ./test_build/skepu_in_c.o
+	clang -c skepu_in_c.c -I $(SKEPU_INCLUDE_PATH) -o ./test_build/skepu_in_c.o
 	$(CXX) ./test_build/cskepu.o ./test_build/skepu_in_c.o ./test_build/c_skeleton.o $(TARGET_FLAGS) -o ./test_build/skepu_in_c
 
 
 fapi:
-	$(DBGR) $(SKEPU) $(BACKENDS) -name cskepu_precompiled $(SKEPU_INCLUDE)/cskepu.cpp  -dir ./test_build $(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name cskepu_precompiled $(SKEPU_INCLUDE_PATH)/cskepu.cpp  -dir ./test_build $(SKEPU_FLAGS)
 	$(DBGR) $(CXX) -c ./test_build/cskepu_precompiled.$(FILETYPE)  $(TARGET_FLAGS) -o ./test_build/cskepu.o
 
-	$(DBGR) $(SKEPU) $(BACKENDS) -name c_skeleton_precompiled c_skeleton.cpp  -dir ./test_build $(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name c_skeleton_precompiled c_skeleton.cpp  -dir ./test_build $(SKEPU_FLAGS)
 	$(DBGR) $(CXX) -c ./test_build/c_skeleton_precompiled.$(FILETYPE)  $(TARGET_FLAGS) -o ./test_build/c_skeleton.o
 
-	gfortran -c $(SKEPU_INCLUDE)/fskepu.f90 -o ./test_build/fskepu.o
+	gfortran -c $(SKEPU_INCLUDE_PATH)/fskepu.f90 -o ./test_build/fskepu.o
 	gfortran -c f_skeleton.f90 -o ./test_build/f_skeleton.o
 
-	gfortran -c skepu_in_fortran.f90 -I $(SKEPU_INCLUDE) -o ./test_build/skepu_in_fortran.o
+	gfortran -c skepu_in_fortran.f90 -I $(SKEPU_INCLUDE_PATH) -o ./test_build/skepu_in_fortran.o
 	$(CXX) -lgfortran ./test_build/cskepu.o ./test_build/fskepu.o ./test_build/skepu_in_fortran.o ./test_build/c_skeleton.o ./test_build/f_skeleton.o $(TARGET_FLAGS) -o ./test_build/skepu_in_fortran
 
 all: all-sequential all-parallel all-cluster
@@ -275,45 +285,45 @@ $(SEQ_DIR)/fusion_eval : fusion_eval.cpp $(SEQ_DIR)
 
 # Precompiles and builds a single parallel test program.
 $(PAR_DIR)/%: %.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU) $(BACKENDS) -name $*_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name $*_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
 	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS) -o $@
 
 # Precompiles and builds a single parallel test program.
 $(PAR_DIR)/image_manip: image_manip.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU) $(BACKENDS) -name image_manip_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name image_manip_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
 	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS)  -o $@
 
 # Precompiles and builds a single parallel test program.
 $(PAR_DIR)/demo: demo.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU) $(BACKENDS) -name demo_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name demo_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
 	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS)  -o $@
 
 # Precompiles and builds a single parallel test program.
 $(PAR_DIR)/fusion_eval: fusion_eval.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU) $(BACKENDS) -name fusion_eval_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name fusion_eval_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
 	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS)  -o $@
 
 # Precompiles and builds a single parallel test program.
 $(PAR_DIR)/perlin: perlin.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU) $(BACKENDS) -name perlin_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name perlin_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
 	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS)  -o $@
 
 # Precompiles and builds a single parallel test program.
 $(PAR_DIR)/uniformnoise: uniformnoise.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU) $(BACKENDS) -name uniformnoise_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name uniformnoise_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
 	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS)  -o $@
 
 # Precompiles and builds a single parallel test program.
 $(PAR_DIR)/multi: multi1.cpp multi2.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU) $(BACKENDS) -name multi1_precompiled multi1.cpp  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(SKEPU) $(BACKENDS) -name multi2_precompiled multi2.cpp  -dir $(PAR_DIR) $(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name multi1_precompiled multi1.cpp  -dir $(PAR_DIR) $(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name multi2_precompiled multi2.cpp  -dir $(PAR_DIR) $(SKEPU_FLAGS)
 	$(DBGR) $(CXX) -fopenmp $(PAR_DIR)/multi1_precompiled.$(FILETYPE) $(PAR_DIR)/multi2_precompiled.$(FILETYPE)  $(TARGET_FLAGS)  -o $@
 
 $(CLUSTER_DIR)/%.o: %.cpp $(CLUSTER_DIR)
 	@echo "Precompiling $<"
-	$(DBGR) $(SKEPU) $(CLUSTER_BACKENDS) -dir=$(CLUSTER_DIR) -name $*_precompiled $< $(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(CLUSTER_BACKENDS) -dir=$(CLUSTER_DIR) -name $*_precompiled $< $(SKEPU_FLAGS)
 	@echo "Compiling $<"
-	$(CLUSTER_CXX) -o $@ $(CLUSTER_DIR)/$*_precompiled.cpp $(CLUSTER_CXXFLAGS) -c -I$(SKEPU_INCLUDE) -DSKEPU_STARPU_MPI
+	$(CLUSTER_CXX) -o $@ $(CLUSTER_DIR)/$*_precompiled.cpp $(CLUSTER_CXXFLAGS) -c -I$(SKEPU_INCLUDE_PATH) -DSKEPU_STARPU_MPI
 	# NOTE: -O0 generates undefined referece to proxy_tags
 
 $(CLUSTER_DIR)/%: $(CLUSTER_DIR)/%.o

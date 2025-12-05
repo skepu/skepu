@@ -1,0 +1,23 @@
+################################################################################
+#                         ~ SkePU options Makefile ~                           #
+################################################################################
+
+# NOTE:
+# Override the variables set in Makefile here.
+# DO NOT PUSH MODIFICATIONS TO THIS FILE UPSTREAM unless absolutely neccessary.
+
+#BACKENDS =
+#SKEPU_DEBUG_LEVEL = 3
+
+#SKEPU_SRC_PATH =
+#LLVM_BUILD_REL_PATH 
+#LLVM_BUILD = 
+#CLANG_HEADERS = 
+
+#CXX =
+#SEQ_CXX = 
+#OPENCL_FLAGS = 
+#SKEPU_OPTIONS = 
+#PRECOMPILER_OPTIONS =
+
+#SKEPU_TOOL_USER_FLAGS  =
