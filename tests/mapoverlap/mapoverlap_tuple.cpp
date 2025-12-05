@@ -187,4 +187,3 @@ TEST_CASE("MapOverlap 4D with variadic return")
 	std::cout << "Tensor4D: " << ret_ten4 << "\n" << ret_ten4_int << "\n";
 	
 }
-

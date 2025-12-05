@@ -54,4 +54,3 @@ TEST_CASE("MapOverlap 3D fundamentals")
 	skepu::io::cout << "Tensor3D Pad 0: " << ret_ten3 << "\n";
 	
 }
-

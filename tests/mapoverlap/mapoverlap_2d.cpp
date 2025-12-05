@@ -58,4 +58,3 @@ TEST_CASE("MapOverlap 2D fundamentals")
 	skepu::io::cout << "Matrix 2D Pad:    rm_d = " << rm_d << "\n";
 	
 }
-

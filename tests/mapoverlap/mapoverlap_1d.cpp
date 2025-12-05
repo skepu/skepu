@@ -189,4 +189,3 @@ TEST_CASE("MapOverlap 1D matrix fundamentals")
 	SECTION( "Rotate: +2" ) { helper_matrix_rotate(m, +2); }
 	
 }
-

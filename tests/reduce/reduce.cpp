@@ -43,4 +43,3 @@ TEST_CASE("Reduce fundamentals")
 	r = max_sum(v);
 	skepu::io::cout << "Sum of v (Reduce2D): " << r << "\n";
 }
-

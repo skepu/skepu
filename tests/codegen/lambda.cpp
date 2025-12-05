@@ -89,4 +89,3 @@ TEST_CASE("Test skeleton instances using lambda expressions")
   rm.flush();
   CHECK(rm(o, o) == 45);
 }
-

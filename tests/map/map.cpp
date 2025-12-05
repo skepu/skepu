@@ -28,4 +28,3 @@ TEST_CASE("Map fundamentals")
   r.flush();
   CHECK(r(0) == 21);
 }
-

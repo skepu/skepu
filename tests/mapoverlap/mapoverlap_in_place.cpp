@@ -29,4 +29,3 @@ TEST_CASE("MapOverlap in place")
 	update(domain, domain);
 	skepu::io::cout << domain << "\n";
 }
-

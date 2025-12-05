@@ -147,4 +147,3 @@ void test_mapreduce_multi(size_t size)
 			std::cout << "sum1: " << sum1 << ", sum2: " << sum2 << std::endl;
 		});
 }*/
-

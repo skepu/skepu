@@ -93,5 +93,3 @@ TEST_CASE("Test 3")
 
 	std::cout << "\ntest 3 res: " << res << "\n";
 }
-
-

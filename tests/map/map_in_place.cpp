@@ -23,4 +23,3 @@ TEST_CASE("Map in place")
 	instance(values, values, 1);
 
 }
-

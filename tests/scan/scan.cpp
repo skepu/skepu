@@ -50,4 +50,3 @@ TEST_CASE("Scan fundamentals")
 	prefix_sum(r, v.begin());
 	skepu::io::cout << "Scan exclusive: r = " << r << "\n";
 }
-

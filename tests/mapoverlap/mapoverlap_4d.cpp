@@ -55,4 +55,3 @@ TEST_CASE("MapOverlap 4D fundamentals")
 	skepu::io::cout << "Tensor4D Pad 0: " << ret_ten4 << "\n";
 	
 }
-
