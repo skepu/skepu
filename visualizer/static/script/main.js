@@ -210,10 +210,10 @@ function fetchGraphDataAndRender()
       elements: edges.concat(nodes),
 
       // How sensitive the zoom wheel is as well a how much you can zoom
-    //  wheelSensitivity: 0.4,
+      wheelSensitivity: 0.2,
       minZoom: 0.01,
       maxZoom: 5,
-      userZoomingEnabled: false,
+      userZoomingEnabled: true,
 
       // Choose the style of the nodes depending on the type of container
       style:

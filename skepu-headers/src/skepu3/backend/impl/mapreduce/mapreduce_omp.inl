@@ -36,7 +36,7 @@ namespace skepu
 			for (size_t i = 0; i < size; ++i)
 			{
 				size_t myid = omp_get_thread_num();
-				TempIndexType index;
+				typename std::conditional<(sizeof...(EI) > 0), decltype((get<0>(std::forward<CallArgs>(args)...) + i).getIndex()), TempIndexType>::type index;
 				if constexpr (sizeof...(EI) > 0)
 					index = (get<0>(std::forward<CallArgs>(args)...) + i).getIndex();
 				else

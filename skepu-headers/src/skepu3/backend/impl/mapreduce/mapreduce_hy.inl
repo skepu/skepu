@@ -83,7 +83,7 @@ namespace skepu
 					const size_t first = start_idxs[myId];
 					const size_t last = first + workSize;
 					
-					TempIndexType index;
+					typename std::conditional<(sizeof...(EI) > 0), decltype((get<0>(std::forward<CallArgs>(args)...) + first).getIndex()), TempIndexType>::type index;
 					if constexpr (sizeof...(EI) > 0)
 						index = (get<0>(std::forward<CallArgs>(args)...) + first).getIndex();
 					else

@@ -7,7 +7,7 @@
 namespace skepu
 {
 
-	void synchronize()
+	inline void synchronize()
 	{
 		for (size_t i = 0; i < skepu::backend::Environment<int>::getInstance()->m_devices_CL.size(); ++i)
 		{

@@ -902,13 +902,12 @@ def preprocess_file_paths(event_data):
         if "file" in event and event["file"] != "":
             file_paths.append(event["file"])
     path_prefix = os.path.dirname(os.path.commonprefix(file_paths))
-    print("Common file path prefix: ", path_prefix)
+#    print("Common file path prefix: ", path_prefix)
     
     # Filter path fields to remove common prefix
     for event in event_data:
         if "file" in event and event["file"] != "":
             event["file"] = event["file"].removeprefix(path_prefix)
-            print(event)
 
 
 @app.route('/graph')
@@ -951,14 +950,14 @@ def request_graph():
             RegionNode(graph, event, order)
     
     graph.summary()
-    print("Commputing depths ...")
+#    print("Commputing depths ...")
 #    graph.computeDepths()
     print("Finding critical path ...")
     graph.findCriticalPath()
     print("Computing keypaths ...")
     graph.computeKeyPaths()
 #    graph.computeLiveness()
-    print("Computing equivalence classes ...")
+#    print("Computing equivalence classes ...")
 #    graph.computeEquivalenceClasses()
 
     fusion_hints = graph.findFusions() if fusion_analysis else []
@@ -996,9 +995,7 @@ def get_data():
     global graph
 
     node_id = request.args.get('id')
-
     info_data = graph.getNodeById(node_id).infoData()
-    print(info_data)
     return info_data
 
 
