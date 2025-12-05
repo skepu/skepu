@@ -106,10 +106,16 @@ __kernel void {{KERNEL_NAME}}_MatRowWise({{KERNEL_PARAMS}}
 	size_t wrapIndex = 2 * skepu_overlap * (int)(get_group_id(0) / blocksPerRow);
 	size_t skepu_tmp  = (get_group_id(0) % blocksPerRow);
 	size_t skepu_tmp2 = (get_group_id(0) / blocksPerRow);
+	size_t out_rowWidth = skepu_poly == SKEPU_EDGE_NONE ? rowWidth - skepu_overlap * 2 : rowWidth;
 	{{CONTAINER_PROXIES}}
 	{{CONTAINER_PROXIE_INNER}}
 
-	if (skepu_poly == SKEPU_EDGE_PAD || skepu_poly == SKEPU_EDGE_NONE)
+	if (skepu_poly == SKEPU_EDGE_NONE)
+	{
+		sdata[skepu_tid] = {{INPUT_PARAM_NAME}}[skepu_i];
+	}
+
+	else if (skepu_poly == SKEPU_EDGE_PAD)
 	{
 		sdata[skepu_overlap + skepu_tid] = (skepu_i < skepu_n) ? {{INPUT_PARAM_NAME}}[skepu_i] : skepu_pad;
 		if (skepu_tid < skepu_overlap)
@@ -146,7 +152,7 @@ __kernel void {{KERNEL_NAME}}_MatRowWise({{KERNEL_PARAMS}}
 	}
 
 	barrier(CLK_LOCAL_MEM_FENCE);
-	if ((skepu_i >= out_offset) && (skepu_i < out_offset + out_numelements))
+	if (skepu_tid < out_rowWidth)
 	{
 		skepu_i = skepu_i - out_offset;
 		const size_t skepu_base = 0;
@@ -154,7 +160,7 @@ __kernel void {{KERNEL_NAME}}_MatRowWise({{KERNEL_PARAMS}}
 		skepu_i = skepu_i % rowWidth;
 		{{INDEX_INITIALIZER}}
 		{{CONTAINER_PROXIE_INNER}}
-		skepu_i = saved_skepu_i;
+		skepu_i = saved_skepu_i/rowWidth*out_rowWidth + skepu_tid;
 #if !{{USE_MULTIRETURN}}
 		skepu_output[skepu_i] = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
 #else
@@ -191,7 +197,12 @@ __kernel void {{KERNEL_NAME}}_MatColWise({{KERNEL_PARAMS}}
 	{{CONTAINER_PROXIES}}
 	{{CONTAINER_PROXIE_INNER}}
 
-	if (skepu_poly == SKEPU_EDGE_PAD || skepu_poly == SKEPU_EDGE_NONE)
+	if (skepu_poly == SKEPU_EDGE_NONE)
+	{
+		sdata[skepu_tid] = {{INPUT_PARAM_NAME}}[arrInd];
+	}
+
+	else if (skepu_poly == SKEPU_EDGE_PAD)
 	{
 		sdata[skepu_overlap+skepu_tid] = (skepu_i < skepu_n) ? {{INPUT_PARAM_NAME}}[arrInd] : skepu_pad;
 		if (skepu_tid < skepu_overlap)

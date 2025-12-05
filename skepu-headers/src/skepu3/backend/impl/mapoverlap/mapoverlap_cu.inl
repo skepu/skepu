@@ -359,6 +359,7 @@ namespace skepu
 			auto &arg = get<outArity>(std::forward<CallArgs>(args)...);
 			
 			const size_t n = arg.size();
+			const size_t out_numelements = res.size();
 			const size_t overlap = (size_t)this->m_overlap[0];
 			const size_t colWidth = arg.total_rows();
 			const size_t numCols = arg.total_cols();
@@ -407,7 +408,7 @@ namespace skepu
 			
 			// Copy elements to device and allocate output memory.
 			auto in_mem_p = arg.updateDevice_CU(arg.getAddress(), n, deviceID, AccessMode::Read, false);
-			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), n, deviceID, AccessMode::Write, false)...);
+			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_numelements, deviceID, AccessMode::Write, false)...);
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).cudaProxy(deviceID, MapOverlapFunc::anyAccessMode[AI-arity-outArity])...);
 		
 			// PRNG support
@@ -427,7 +428,7 @@ namespace skepu
 				std::get<AI-arity-outArity>(anyMemP).second...,
 				get<CI>(std::forward<CallArgs>(args)...)...,
 				wrap_mem_p.getDeviceDataPointer(),
-				n, 0, n,
+				n, 0, out_numelements,
 				this->m_edge, this->m_pad, (size_t)this->m_overlap[0],
 				blocksPerCol, numCols, colWidth
 			);
@@ -658,6 +659,7 @@ namespace skepu
 			const size_t overlap = (size_t)this->m_overlap[0];
 			const size_t rowWidth = arg.total_cols();
 			const size_t n = rowWidth*numrows;
+			const size_t out_numelements = res.total_rows() * res.total_cols();
 			size_t trdsize = rowWidth;
 			size_t blocksPerRow = 1;
 			
@@ -704,7 +706,7 @@ namespace skepu
 			
 			// Copy elements to device and allocate output memory.
 			auto in_mem_p = arg.updateDevice_CU(arg.getAddress(), n, deviceID, AccessMode::Read, false);
-			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), n, deviceID, AccessMode::Write, false)...);
+			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_numelements, deviceID, AccessMode::Write, false)...);
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).cudaProxy(deviceID, MapOverlapFunc::anyAccessMode[AI-arity-outArity])...);
 		
 			// PRNG support
@@ -724,7 +726,7 @@ namespace skepu
 				std::get<AI-arity-outArity>(anyMemP).second...,
 				get<CI>(std::forward<CallArgs>(args)...)...,
 				wrap_mem_p.getDeviceDataPointer(),
-				n, 0, n,
+				n, 0, out_numelements,
 				this->m_edge, this->m_pad, (size_t)this->m_overlap[0],
 				blocksPerRow, rowWidth
 			);

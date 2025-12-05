@@ -283,25 +283,53 @@ namespace skepu
 
 #endif
 
+			std::string generateCallMetadata()
+			{
+				return "MapOverlap1D call, label: " + this->getLabel() + ", Edge mode: " + to_string(this->getEdgeMode());
+			}
+
+			template<typename First, typename... Rest>
+			void checkOutputVectorSizes(size_t const& expectedSize, size_t const& i, First&& first, Rest&&... rest) // TODO: Add index to output
+			{
+				if (first.size() != expectedSize)
+					SKEPU_ERROR(generateCallMetadata()
+					<< "\ninvalid output vector size (label: " << first.getLabel() << ", index: " << i << ", size: " << colorRed(first.size()) << ")"
+					<< "\nexpected size: " << colorRed(expectedSize) << ")");
+
+				checkOutputVectorSizes(expectedSize, i+1, rest...);
+			}
+
+			void checkOutputVectorSizes(size_t const& expectedSize, size_t const& i){}
+
+			template<size_t... OI, size_t... EI, typename... CallArgs>
+			void checkVectorSizes(pack_indices<OI...>, pack_indices<EI...>, CallArgs&&... args)
+			{
+				auto& firstOutput = get<0>(std::forward<CallArgs>(args)...);
+				auto& input = get<outArity>(std::forward<CallArgs>(args)...);
+
+				size_t firstOutputSize = firstOutput.size();
+				size_t inputSize = input.size();
+
+				
+				if (inputSize != this->expectedInputSize(firstOutputSize, 0))
+					SKEPU_ERROR(this->generateCallMetadata()
+					<< "\ninput/output vector size mismatch"
+					<< "\noutput vector (label: " << firstOutput.getLabel() << ", size: " << firstOutputSize << ")"
+					<< "\nexpected input vector size: " << colorRed(this->expectedInputSize(firstOutputSize, 0))
+					<< "\ninput vector (label: " << input.getLabel() << ", size: " << colorRed(inputSize) << ")");
+				
+				this->checkOutputVectorSizes(firstOutputSize, 0, get<OI>(std::forward<CallArgs>(args)...)...);
+			}
+
 		public:
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs,
 				REQUIRES(is_skepu_vector<typename std::remove_reference<typename pack_element<0, CallArgs...>::type>::type>::value)>
 			auto backendDispatch(Parity p, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args) -> decltype(get<0>(std::forward<CallArgs>(args)...))
 			{
-				auto &res = get<0>(std::forward<CallArgs>(args)...);
-				auto out_size = res.size();
-				auto size = get<outArity>(std::forward<CallArgs>(args)...).size();
 
-				// Verify overlap radius is valid
-				if (this->m_edge != Edge::None && size < this->m_overlap[0] * 2)
-					SKEPU_ERROR("Non-matching overlap radius");
+				this->checkVectorSizes(out_indices, elwise_indices, std::forward<CallArgs>(args)...);
 
-				if (disjunction(get<OI>(std::forward<CallArgs>(args)...).size() != out_size...))
-					SKEPU_ERROR("Non-matching output container sizes");
-
-				if (disjunction(get<EI>(std::forward<CallArgs>(args)...).size() != this->expectedInputSize(out_size, 0)...))
-					SKEPU_ERROR("Non-matching input container sizes");
-
+				size_t size = get<outArity>(std::forward<CallArgs>(args)...).size();
 
 				this->selectBackend(size);
 
@@ -335,31 +363,86 @@ namespace skepu
 				return get<0>(std::forward<CallArgs>(args)...);
 			}
 
+			template<typename First, typename... Rest>
+			void checkOutputMatrixSizes(size_t const& expectedSizeRow, size_t const& expectedSizeCol, size_t const& i, std::string const& callMetadata, First&& first, Rest&&... rest)
+			{
+				if (first.total_rows() != expectedSizeRow)
+					SKEPU_ERROR(callMetadata
+					<< "\ninvalid number of output matrix rows"
+					<< "\nexpected output matrix rows: " << colorRed(expectedSizeRow)
+					<< "\noutput matrix (label: " << first.getLabel() << ", index: " << i << ", rows: " << colorRed(first.total_rows()) << ")");
+				
+				if (first.total_cols() != expectedSizeCol)
+					SKEPU_ERROR(callMetadata
+					<< "\ninvalid number of output matrix cols"
+					<< "\nexpected output matrix cols: " << colorRed(expectedSizeCol)
+					<< "\noutput matrix (label: " << first.getLabel() << ", index: " << i << ", cols: " << colorRed(first.total_cols()) << ")");
+
+				checkOutputMatrixSizes(expectedSizeRow, expectedSizeCol, i+1, callMetadata, rest...);
+			}
+
+			void checkOutputMatrixSizes(size_t const& expectedSizeRow, size_t const& expectedSizeCol, size_t const& i, std::string const& callMetadata){}
+
+			template<size_t... OI, size_t... EI, typename... CallArgs>
+			void checkMatrixSizes(size_t const& expectedInputRows, size_t const& expectedInputCols, std::string const& callMetadata,
+								  pack_indices<OI...>, pack_indices<EI...>, CallArgs&&... args)
+			{
+				auto& firstOutput = get<0>(std::forward<CallArgs>(args)...);
+				auto& input = get<outArity>(std::forward<CallArgs>(args)...);
+
+				size_t firstOutputRows = firstOutput.total_rows();
+				size_t firstOutputCols = firstOutput.total_cols();
+				size_t inputRows = input.total_rows();
+				size_t inputCols = input.total_cols();
+				
+				if (inputRows != expectedInputRows)
+					SKEPU_ERROR(callMetadata
+					<< "\ninput/output matrix row count mismatch"
+					<< "\nfirst output matrix (label: " << firstOutput.getLabel() << ", rows: " << firstOutputRows << ")"
+					<< "\nexpected input matrix rows: " << colorRed(expectedInputRows)
+					<< "\ninput matrix (label: " << input.getLabel() << ", rows: " << colorRed(inputRows) << ")");
+				
+				if (inputCols != expectedInputCols)
+					SKEPU_ERROR(callMetadata
+					<< "\ninput/output matrix col count mismatch"
+					<< "\nfirst output matrix (label: " << firstOutput.getLabel() << ", cols: " << firstOutputCols << ")"
+					<< "\nexpected input matrix cols: " << colorRed(expectedInputCols)
+					<< "\ninput matrix (label: " << input.getLabel() << ", cols: " << colorRed(inputCols) << ")");
+				
+				checkOutputMatrixSizes(firstOutputRows, firstOutputCols, 0, callMetadata, get<OI>(std::forward<CallArgs>(args)...)...);
+			}
+
+			std::string generateRowwiseCallMetadata()
+			{
+				return "MapOverlap1D RowWise call, label: " + this->getLabel() + ", Edge mode: " + to_string(this->getEdgeMode());
+			}
+
+			std::string generateColwiseCallMetadata()
+			{
+				return "MapOverlap1D ColWise call, label: " + this->getLabel() + ", Edge mode: " + to_string(this->getEdgeMode());
+			}
+
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs,
 				REQUIRES(is_skepu_matrix<typename std::remove_reference<typename pack_element<0, CallArgs...>::type>::type>::value)>
 			auto backendDispatch(Parity p, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args) -> decltype(get<0>(std::forward<CallArgs>(args)...))
 			{
+				auto &arg = get<outArity>(std::forward<CallArgs>(args)...);
+				size_t inputRows = arg.total_rows();
+				size_t inputCols = arg.total_cols();
+
+				auto& firstOutput = get<0>(std::forward<CallArgs>(args)...);
+				size_t firstOutputRows = firstOutput.total_rows();
+				size_t firstOutputCols = firstOutput.total_cols();
+
+				if (this->m_overlapPolicy == Overlap::ColWise)
+					checkMatrixSizes(this->expectedInputSize(firstOutputRows, 0), firstOutputCols, generateColwiseCallMetadata(),
+									 out_indices, elwise_indices, std::forward<CallArgs>(args)...);
+				else // RowWise
+					checkMatrixSizes(firstOutputRows, this->expectedInputSize(firstOutputCols, 0), generateRowwiseCallMetadata(),
+									 out_indices, elwise_indices, std::forward<CallArgs>(args)...);
+
 				size_t size_i = get<0>(std::forward<CallArgs>(args)...).size_i();
 				size_t size_j = get<0>(std::forward<CallArgs>(args)...).size_j();
-
-				if (disjunction(
-					(get<OI>(std::forward<CallArgs>(args)...).size_i() != size_i) &&
-					(get<OI>(std::forward<CallArgs>(args)...).size_j() != size_j) ...))
-					SKEPU_ERROR("Non-matching output container sizes");
-
-				if (disjunction(
-					(get<EI>(std::forward<CallArgs>(args)...).size_i() != size_i) &&
-					(get<EI>(std::forward<CallArgs>(args)...).size_j() != size_j) ...))
-					SKEPU_ERROR("Non-matching input container sizes");
-
-				// Verify overlap radius is valid
-				if (this->m_overlapPolicy == Overlap::RowWise && this->m_edge != Edge::None && size_j < this->m_overlap[0] * 2)
-					SKEPU_ERROR("Non-matching overlap radius");
-
-				// Verify overlap radius is valid
-				if (this->m_overlapPolicy == Overlap::ColWise && this->m_edge != Edge::None && size_i < this->m_overlap[0] * 2)
-					SKEPU_ERROR("Non-matching overlap radius");
-
 
 				this->selectBackend(get<outArity>(std::forward<CallArgs>(args)...).size());
 

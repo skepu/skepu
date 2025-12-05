@@ -180,20 +180,26 @@ namespace skepu
 		None, Cyclic, Duplicate, Pad
 	};
 
-	inline std::ostream &operator<<(std::ostream &o, Edge e)
+	inline std::string to_string(Edge e)
 	{
 		switch (e)
 		{
 			case Edge::None:
-				o << "None"; break;
+				return "None";
 			case Edge::Cyclic:
-				o << "Cyclic"; break;
+				return"Cyclic";
 			case Edge::Duplicate:
-				o << "Duplicate"; break;
+				return "Duplicate";
 			case Edge::Pad:
-				o << "Pad"; break;
+				return "Pad";
+			default:
+				return "";
 		}
-		return o;
+	}
+
+	inline std::ostream &operator<<(std::ostream &o, Edge e)
+	{
+		return o << to_string(e);
 	}
 
 	enum class Overlap

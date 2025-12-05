@@ -10,6 +10,29 @@
 #include <iomanip>
 #include <chrono>
 
+// Debugging colors
+#define RED "\e[1;31m"
+#define RESET "\e[0m"
+
+inline std::string colorRed(std::string const& s)
+{
+	return RED + s + RESET;
+}
+
+inline std::string colorRed(const char* c)
+{
+	std::string str(RED);
+	str += c;
+	str += RESET;
+	return str;
+}
+
+template<typename T>
+std::string colorRed(T const& t)
+{
+	return RED + std::to_string(t) + RESET;
+}
+
 #ifndef SKEPU_DEBUG
 #define SKEPU_DEBUG 0
 #endif
@@ -61,7 +84,7 @@
 #ifdef SKEPU_ENABLE_EXCEPTIONS
 #define SKEPU_ERROR(skepu_macro_text) { std::stringstream skepu_macro_msg; skepu_macro_msg << skepu_macro_text; throw(skepu_macro_msg.str()); }
 #else
-#define SKEPU_ERROR(skepu_macro_text) { std::cerr << "[SKEPU_ERROR " << __FILE__ << ":" << __LINE__ << "] " << skepu_macro_text << "\n"; exit(1); }
+#define SKEPU_ERROR(skepu_macro_text) { std::cerr << "[" << colorRed("SKEPU_ERROR ") << __FILE__ << ":" << __LINE__ << "] " << skepu_macro_text << "\n"; exit(1); }
 #endif // SKEPU_ENABLE_EXCEPTIONS
 
 #define SKEPU_WARNING(skepu_macro_text) { std::cerr << "[SKEPU_WARNING " << __FILE__ << ":" << __LINE__ << "] " << skepu_macro_text << "\n"; }

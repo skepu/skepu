@@ -129,10 +129,15 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Row({{KERNEL_PARAMS}}
    size_t wrapIndex = 2 * overlap * (int)(blockIdx.x / blocksPerRow);
    size_t tmp = (blockIdx.x % blocksPerRow);
    size_t tmp2 = (blockIdx.x / blocksPerRow);
+   size_t out_rowWidth = edgeMode == skepu::Edge::None ? rowWidth - overlap * 2 : rowWidth;
 
 
    // Copy data to shared memory
-   if (edgeMode == skepu::Edge::Pad || edgeMode == skepu::Edge::None)
+   if (edgeMode == skepu::Edge::None)
+   {
+      {{SHARED_BUFFER}}[skepu_tid] = skepu_input[skepu_i];
+   }
+   if (edgeMode == skepu::Edge::Pad)
    {
       {{SHARED_BUFFER}}[overlap+skepu_tid] = (skepu_i < n) ? skepu_input[skepu_i] : pad;
 
@@ -189,7 +194,7 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Row({{KERNEL_PARAMS}}
    __syncthreads();
 
   //Compute and store data
-  if ( (skepu_i >= out_offset) && (skepu_i < out_offset + out_numelements) )
+  if (skepu_tid < out_rowWidth)
 	{
   //	skepu_output[skepu_i - out_offset] = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
 		skepu_i = skepu_i - out_offset;
@@ -198,7 +203,7 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Row({{KERNEL_PARAMS}}
 		skepu_i = skepu_i % rowWidth;
 		{{INDEX_INITIALIZER}}
 		{{PROXIES_UPDATE}}
-		skepu_i = saved_skepu_i;
+		skepu_i = saved_skepu_i/rowWidth*out_rowWidth + skepu_tid;
 		auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
 		{{OUTPUT_BINDINGS}}
 	}
@@ -233,7 +238,11 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Col({{KERNEL_PARAMS}}
    size_t arrInd = (threadIdx.x + tmp*blockDim.x)*rowWidth + ((blockIdx.x)/blocksPerCol);
 
    //Copy data to shared memory
-   if (edgeMode == skepu::Edge::Pad || edgeMode == skepu::Edge::None)
+   if (edgeMode == skepu::Edge::None)
+   {
+      {{SHARED_BUFFER}}[skepu_tid] = skepu_input[arrInd];
+   }
+   else if (edgeMode == skepu::Edge::Pad)
    {
       {{SHARED_BUFFER}}[overlap+skepu_tid] = (skepu_i < n) ? skepu_input[arrInd] : pad;
 

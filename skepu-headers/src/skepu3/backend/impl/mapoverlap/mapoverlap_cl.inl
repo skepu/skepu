@@ -295,7 +295,7 @@ namespace skepu
 			const size_t n = arg.total_cols()*numrows;
 			const size_t overlap = (size_t)this->m_overlap[0];
 			const size_t out_offset = 0;
-			const size_t out_numelements = n;
+			const size_t out_numelements = res.size();
 			const size_t maxThreads = this->m_selected_spec->GPUThreads();
 			const size_t maxBlocks = this->m_selected_spec->GPUBlocks();
 			size_t rowWidth = arg.total_cols(); // same as numcols
@@ -358,7 +358,7 @@ namespace skepu
 			
 			// Copy elements to device and allocate output memory.
 			auto inMemP  = arg.updateDevice_CL(arg.getAddress(), numrows, rowWidth, device, true);
-			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress(), numrows, rowWidth, device, false)...);
+			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress(), res.total_rows(), res.total_cols(), device, false)...);
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(),
 				get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-arity-outArity]))...);
 				
@@ -573,7 +573,7 @@ namespace skepu
 			const size_t n = arg.size();
 			const size_t overlap = (size_t)this->m_overlap[0];
 			const size_t out_offset = 0;
-			const size_t out_numelements = n;
+			const size_t out_numelements = res.size();
 			const size_t colWidth = arg.total_rows();
 			const size_t numcols = arg.total_cols();
 			const size_t maxThreads = this->m_selected_spec->GPUThreads();
@@ -633,7 +633,7 @@ namespace skepu
 			
 			// Copy elements to device and allocate output memory.
 			auto inMemP  = arg.updateDevice_CL(arg.getAddress(), colWidth, numcols, device, true);
-			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress(), colWidth, numcols, device, false)...);
+			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress(), res.total_rows(), res.total_cols(), device, false)...);
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(),
 				get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-arity-outArity]))...);
 					

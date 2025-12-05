@@ -235,28 +235,54 @@ namespace skepu
 				else return size;
 			}
 
+			std::string generateCallMetadata()
+			{
+				return "MapOverlap1D call, label: " + this->getLabel() + ", Edge mode: " + to_string(this->getEdgeMode());
+			}
+
+			template<typename First, typename... Rest>
+			void checkOutputVectorSizes(size_t const& expectedSize, size_t const& i, First&& first, Rest&&... rest) // TODO: Add index to output
+			{
+				if (first.size() != expectedSize)
+					SKEPU_ERROR(generateCallMetadata()
+					<< "\ninvalid output vector size (label: " << first.getLabel() << ", index: " << i << ", size: " << colorRed(first.size()) << ")"
+					<< "\nexpected size: " << colorRed(expectedSize) << ")");
+
+				checkOutputVectorSizes(expectedSize, i+1, rest...);
+			}
+
+			void checkOutputVectorSizes(size_t const& expectedSize, size_t const& i){}
+
+			template<size_t... OI, size_t... EI, typename... CallArgs>
+			void checkVectorSizes(pack_indices<OI...>, pack_indices<EI...>, CallArgs&&... args)
+			{
+				auto& firstOutput = get<0>(std::forward<CallArgs>(args)...);
+				auto& input = get<OutArity>(std::forward<CallArgs>(args)...);
+
+				size_t firstOutputSize = firstOutput.size();
+				size_t inputSize = input.size();
+				
+				if (inputSize != expectedInputSize<0>(firstOutputSize))
+					SKEPU_ERROR(generateCallMetadata()
+					<< "\ninput/output vector size mismatch"
+					<< "\noutput vector (label: " << firstOutput.getLabel() << ", size: " << firstOutputSize << ")"
+					<< "\nexpected input vector size: " << colorRed(expectedInputSize<0>(firstOutputSize))
+					<< "\ninput vector (label: " << input.getLabel() << ", size: " << colorRed(inputSize) << ")");
+				
+				checkOutputVectorSizes(firstOutputSize, 0, get<OI>(std::forward<CallArgs>(args)...)...);
+			}
+
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
 			void apply(Parity p, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 			{
-
-				size_t out_size = get<0>(std::forward<CallArgs>(args)...).size();
-				
 				auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
-
-				const int overlap = (int)this->m_overlap;
+				
+				const int overlap = this->m_overlap;
 				const size_t size = arg.size();
-
-				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap1D: size = " << out_size);
-
-				// Verify overlap radius is valid
-				if (size < this->m_overlap * 2)
-					SKEPU_ERROR("Non-matching overlap radius");
-
-				if (disjunction(get<OI>(std::forward<CallArgs>(args)...).size() != out_size...))
-					SKEPU_ERROR("Non-matching output container sizes");
-
-				if (disjunction(get<EI>(std::forward<CallArgs>(args)...).size() != expectedInputSize<0>(out_size)...))
-					SKEPU_ERROR("Non-matching input container sizes");
+				
+				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap1D: input size = " << size);
+				
+				checkVectorSizes(out_indices, elwise_indices, std::forward<CallArgs>(args)...);
 
 
 				size_t edge_prng_size = (this->m_edge != Edge::None) ? overlap : 0;
@@ -328,6 +354,7 @@ namespace skepu
 
 				else // Edge::None
 				{
+					size_t out_size = get<0>(std::forward<CallArgs>(args)...).size();
 					for (size_t i = 0; i < out_size; ++i)
 					{
 						if (p == Parity::None || index_parity(p, i))
@@ -361,32 +388,77 @@ namespace skepu
 				return get<0>(std::forward<CallArgs>(args)...);
 			}
 
+			template<typename First, typename... Rest>
+			void checkOutputMatrixSizes(size_t const& expectedSizeRow, size_t const& expectedSizeCol, size_t const& i, std::string const& callMetadata, First&& first, Rest&&... rest)
+			{
+				if (first.total_rows() != expectedSizeRow)
+					SKEPU_ERROR(callMetadata
+					<< "\ninvalid number of output matrix rows"
+					<< "\nexpected output matrix rows: " << colorRed(expectedSizeRow)
+					<< "\noutput matrix (label: " << first.getLabel() << ", index: " << i << ", rows: " << colorRed(first.total_rows()) << ")");
+				
+				if (first.total_cols() != expectedSizeCol)
+					SKEPU_ERROR(callMetadata
+					<< "\ninvalid number of output matrix cols"
+					<< "\nexpected output matrix cols: " << colorRed(expectedSizeCol)
+					<< "\noutput matrix (label: " << first.getLabel() << ", index: " << i << ", cols: " << colorRed(first.total_cols()) << ")");
+
+				checkOutputMatrixSizes(expectedSizeRow, expectedSizeCol, i+1, callMetadata, rest...);
+			}
+
+			void checkOutputMatrixSizes(size_t const& expectedSizeRow, size_t const& expectedSizeCol, size_t const& i, std::string const& callMetadata){}
+
+			template<size_t... OI, size_t... EI, typename... CallArgs>
+			void checkMatrixSizes(size_t const& expectedInputRows, size_t const& expectedInputCols, size_t const& overlapComparison,
+								  std::string const& callMetadata, pack_indices<OI...>, pack_indices<EI...>, CallArgs&&... args)
+			{
+				auto& firstOutput = get<0>(std::forward<CallArgs>(args)...);
+				auto& input = get<OutArity>(std::forward<CallArgs>(args)...);
+
+				size_t firstOutputRows = firstOutput.total_rows();
+				size_t firstOutputCols = firstOutput.total_cols();
+				size_t inputRows = input.total_rows();
+				size_t inputCols = input.total_cols();
+				
+				if (inputRows != expectedInputRows)
+					SKEPU_ERROR(callMetadata
+					<< "\ninput/output matrix row count mismatch"
+					<< "\nfirst output matrix (label: " << firstOutput.getLabel() << ", rows: " << firstOutputRows << ")"
+					<< "\nexpected input matrix rows: " << colorRed(expectedInputRows)
+					<< "\ninput matrix (label: " << input.getLabel() << ", rows: " << colorRed(inputRows) << ")");
+				
+				if (inputCols != expectedInputCols)
+					SKEPU_ERROR(callMetadata
+					<< "\ninput/output matrix col count mismatch"
+					<< "\nfirst output matrix (label: " << firstOutput.getLabel() << ", cols: " << firstOutputCols << ")"
+					<< "\nexpected input matrix cols: " << colorRed(expectedInputCols)
+					<< "\ninput matrix (label: " << input.getLabel() << ", cols: " << colorRed(inputCols) << ")");
+				
+				checkOutputMatrixSizes(firstOutputRows, firstOutputCols, 0, callMetadata, get<OI>(std::forward<CallArgs>(args)...)...);
+			}
+
+			std::string generateColwiseCallMetadata()
+			{
+				return "MapOverlap1D ColWise call, label: " + this->getLabel() + ", Edge mode: " + to_string(this->getEdgeMode());
+			}
 
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
 			void apply_colwise(Parity p, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 			{
-				size_t size_i = get<0>(std::forward<CallArgs>(args)...).size_i();
-				size_t size_j = get<0>(std::forward<CallArgs>(args)...).size_j();
-
-				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap1D ColWise: size = " << size_i << " x " << size_j);
-
-				// Verify overlap radius is valid
-				if (this->m_edge != Edge::None && size_i < this->m_overlap * 2)
-					SKEPU_ERROR("Non-matching overlap radius");
-
-				if (disjunction(
-					(get<OI>(std::forward<CallArgs>(args)...).size_i() != size_i) &&
-					(get<OI>(std::forward<CallArgs>(args)...).size_j() != size_j) ...))
-					SKEPU_ERROR("Non-matching output container sizes");
-
-				if (disjunction(
-					(get<EI>(std::forward<CallArgs>(args)...).size_i() != size_i) &&
-					(get<EI>(std::forward<CallArgs>(args)...).size_j() != size_j) ...))
-					SKEPU_ERROR("Non-matching input container sizes");
-
 				auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
+				size_t inputRows = arg.total_rows();
+				size_t inputCols = arg.total_cols();
 
-				const int overlap = (int)this->m_overlap;
+				auto& firstOutput = get<0>(std::forward<CallArgs>(args)...);
+				size_t firstOutputRows = firstOutput.total_rows();
+				size_t firstOutputCols = firstOutput.total_cols();
+
+				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap1D ColWise: input size = " << inputRows << " x " << inputCols);
+
+				checkMatrixSizes(expectedInputSize<0>(firstOutputRows), firstOutputCols, inputRows,
+								 generateColwiseCallMetadata(), out_indices, elwise_indices, std::forward<CallArgs>(args)...);
+
+				const int overlap = this->m_overlap;
 				size_t size = arg.size();
 				T start[3*overlap], end[3*overlap];
 
@@ -409,29 +481,31 @@ namespace skepu
 
 					inputEnd = inputBegin + (rowWidth * (colWidth-1));
 
-					for (size_t i = 0; i < overlap; ++i)
-					{
-						switch (this->m_edge)
-						{
-						case Edge::Cyclic:
-							start[i] = inputEnd[(i+1-overlap)*stride];
-							end[3*overlap-1 - i] = inputBegin[(overlap-i-1)*stride];
-							break;
-						case Edge::Duplicate:
-							start[i] = inputBegin[0];
-							end[3*overlap-1 - i] = inputEnd[0]; // hmmm...
-							break;
-						case Edge::Pad:
-							start[i] = this->m_pad;
-							end[3*overlap-1 - i] = this->m_pad;
-							break;
-						default:
-							break;
-						}
-					}
+					
 
 					if (this->m_edge != Edge::None)
 					{
+						for (size_t i = 0; i < overlap; ++i)
+						{
+							switch (this->m_edge)
+							{
+							case Edge::Cyclic:
+								start[i] = inputEnd[(i+1-overlap)*stride];
+								end[3*overlap-1 - i] = inputBegin[(overlap-i-1)*stride];
+								break;
+							case Edge::Duplicate:
+								start[i] = inputBegin[0];
+								end[3*overlap-1 - i] = inputEnd[0]; // hmmm...
+								break;
+							case Edge::Pad:
+								start[i] = this->m_pad;
+								end[3*overlap-1 - i] = this->m_pad;
+								break;
+							default:
+								break;
+							}
+						}
+
 						for (size_t i = overlap, j = 0; i < 3*overlap; ++i, ++j)
 							start[i] = inputBegin[j*stride];
 
@@ -448,6 +522,16 @@ namespace skepu
 							}
 						}
 
+						for (size_t i = overlap; i < colWidth - overlap; ++i)
+						{
+							if (p == Parity::None || index_parity(p, i))
+							{
+								auto res = F::forward(this->mapFunc, Index1D{i}, random, RegionType{overlap, stride, &inputBegin[i*stride]},
+									get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+								SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, col)..., res);
+							}
+						}
+
 						for (size_t i = colWidth - overlap; i < colWidth; ++i)
 						{
 							if (p == Parity::None || index_parity(p, i))
@@ -459,13 +543,16 @@ namespace skepu
 						}
 					}
 
-					for (size_t i = overlap; i < colWidth - overlap; ++i)
+					else // Edge::None
 					{
-						if (p == Parity::None || index_parity(p, i))
+						size_t out_rows = get<0>(std::forward<CallArgs>(args)...).total_rows();
+						for (size_t i = 0; i < out_rows; ++i)
 						{
-							auto res = F::forward(this->mapFunc, Index1D{i}, random, RegionType{overlap, stride, &inputBegin[i*stride]},
-								get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-							SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, col)..., res);
+							if (p == Parity::None || index_parity(p, i))
+							{
+								auto res = F::forward(this->mapFunc, Index1D{i}, random, RegionType{overlap, stride, &inputBegin[(i + overlap)*stride]}, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+								SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, col)..., res);
+							}
 						}
 					}
 
@@ -473,40 +560,35 @@ namespace skepu
 				}
 			}
 
+			std::string generateRowwiseCallMetadata()
+			{
+				return "MapOverlap1D RowWise call, label: " + this->getLabel() + ", Edge mode: " + to_string(this->getEdgeMode());
+			}
 
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
 			void apply_rowwise(Parity p, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 			{
-				size_t size_i = get<0>(std::forward<CallArgs>(args)...).size_i();
-				size_t size_j = get<0>(std::forward<CallArgs>(args)...).size_j();
-
-				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap1D RowWise: size = " << size_i << " x " << size_j);
-
-				// Verify overlap radius is valid
-				if (this->m_edge != Edge::None && size_j < this->m_overlap * 2)
-					SKEPU_ERROR("Non-matching overlap radius");
-
-				if (disjunction(
-					(get<OI>(std::forward<CallArgs>(args)...).size_i() != size_i) &&
-					(get<OI>(std::forward<CallArgs>(args)...).size_j() != size_j) ...))
-					SKEPU_ERROR("Non-matching output container sizes");
-
-				if (disjunction(
-					(get<EI>(std::forward<CallArgs>(args)...).size_i() != size_i) &&
-					(get<EI>(std::forward<CallArgs>(args)...).size_j() != size_j) ...))
-					SKEPU_ERROR("Non-matching input container sizes");
-
 				auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
+				size_t inputRows = arg.total_rows();
+				size_t inputCols = arg.total_cols();
 
-				int overlap = (int)this->m_overlap;
-				size_t size = arg.size();
+				auto& firstOutput = get<0>(std::forward<CallArgs>(args)...);
+				size_t firstOutputRows = firstOutput.total_rows();
+				size_t firstOutputCols = firstOutput.total_cols();
+
+				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap1D RowWise: input size = " << inputRows << " x " << inputCols);
+
+				checkMatrixSizes(firstOutputRows, expectedInputSize<0>(firstOutputCols), inputCols,
+								 generateRowwiseCallMetadata(), out_indices, elwise_indices, std::forward<CallArgs>(args)...);
+
+				int overlap = this->m_overlap;
 				T start[3*overlap], end[3*overlap];
 
 				size_t rowWidth = arg.total_cols();
 				size_t stride = 1;
 
 				const T *inputBegin = arg.getAddress();
-				const T *inputEnd = inputBegin + size;
+				const T *inputEnd;
 
 				for (size_t row = 0; row < arg.total_rows(); ++row)
 				{
@@ -520,29 +602,31 @@ namespace skepu
 
 					inputEnd = inputBegin + rowWidth;
 
-					for (size_t i = 0; i < overlap; ++i)
-					{
-						switch (this->m_edge)
-						{
-						case Edge::Cyclic:
-							start[i] = inputEnd[i  - overlap];
-							end[3*overlap-1 - i] = inputBegin[overlap-i-1];
-							break;
-						case Edge::Duplicate:
-							start[i] = inputBegin[0];
-							end[3*overlap-1 - i] = inputEnd[-1];
-							break;
-						case Edge::Pad:
-							start[i] = this->m_pad;
-							end[3*overlap-1 - i] = this->m_pad;
-							break;
-						default:
-							break;
-						}
-					}
+					
 
 					if (this->m_edge != Edge::None)
 					{
+						for (size_t i = 0; i < overlap; ++i)
+						{
+							switch (this->m_edge)
+							{
+							case Edge::Cyclic:
+								start[i] = inputEnd[i  - overlap];
+								end[3*overlap-1 - i] = inputBegin[overlap-i-1];
+								break;
+							case Edge::Duplicate:
+								start[i] = inputBegin[0];
+								end[3*overlap-1 - i] = inputEnd[-1];
+								break;
+							case Edge::Pad:
+								start[i] = this->m_pad;
+								end[3*overlap-1 - i] = this->m_pad;
+								break;
+							default:
+								break;
+							}
+						}
+
 						for (size_t i = overlap, j = 0; i < 3*overlap; ++i, ++j)
 							start[i] = inputBegin[j];
 
@@ -558,6 +642,15 @@ namespace skepu
 							}
 						}
 
+						for (size_t i = overlap; i < rowWidth - overlap; ++i)
+						{
+							if (p == Parity::None || index_parity(p, i))
+							{
+								auto res = F::forward(this->mapFunc, Index1D{i}, random, RegionType{overlap, stride, &inputBegin[i]}, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+								SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(row, i)..., res);
+							}
+						}
+
 						for (size_t i = rowWidth - overlap; i < rowWidth; ++i)
 						{
 							if (p == Parity::None || index_parity(p, i))
@@ -568,12 +661,16 @@ namespace skepu
 						}
 					}
 
-					for (size_t i = overlap; i < rowWidth - overlap; ++i)
+					else // Edge::None
 					{
-						if (p == Parity::None || index_parity(p, i))
+						size_t out_cols = get<0>(std::forward<CallArgs>(args)...).total_cols();
+						for (size_t i = 0; i < out_cols; ++i)
 						{
-							auto res = F::forward(this->mapFunc, Index1D{i}, random, RegionType{overlap, stride, &inputBegin[i]}, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-							SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(row, i)..., res);
+							if (p == Parity::None || index_parity(p, i))
+							{
+								auto res = F::forward(this->mapFunc, Index1D{i}, random, RegionType{overlap, stride, &inputBegin[i + overlap]}, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+								SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(row, i)..., res);
+							}
 						}
 					}
 
@@ -636,7 +733,7 @@ namespace skepu
 				this->m_edge = Edge::Duplicate;
 			}
 
-			size_t m_overlap = 1;
+			int m_overlap = 1;
 
 			friend MapOverlap1D<Ret, Args...> skepu::MapOverlapWrapper<Ret, Args...>(MapFunc);
 		};

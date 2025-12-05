@@ -127,56 +127,71 @@ namespace skepu
 			{
 				inputEnd = inputBegin + rowWidth * (colWidth - 1);
 				
-				for (size_t i = 0; i < overlap; ++i)
+				if (this->m_edge != Edge::None)
 				{
-					switch (this->m_edge)
+					for (size_t i = 0; i < overlap; ++i)
 					{
-					case Edge::Cyclic:
-						start[i] = inputEnd[(i+1-overlap)*stride];
-						end[3*overlap-1 - i] = inputBegin[(overlap-i-1)*stride];
-						break;
-					case Edge::Duplicate:
-						start[i] = inputBegin[0];
-						end[3*overlap-1 - i] = inputEnd[0]; // hmmm...
-						break;
-					case Edge::Pad:
-						start[i] = this->m_pad;
-						end[3*overlap-1 - i] = this->m_pad;
-						break;
-					default:
-						break;
+						switch (this->m_edge)
+						{
+						case Edge::Cyclic:
+							start[i] = inputEnd[(i+1-overlap)*stride];
+							end[3*overlap-1 - i] = inputBegin[(overlap-i-1)*stride];
+							break;
+						case Edge::Duplicate:
+							start[i] = inputBegin[0];
+							end[3*overlap-1 - i] = inputEnd[0]; // hmmm...
+							break;
+						case Edge::Pad:
+							start[i] = this->m_pad;
+							end[3*overlap-1 - i] = this->m_pad;
+							break;
+						default:
+							break;
+						}
+					}
+					
+					for (size_t i = overlap, j = 0; i < 3*overlap; ++i, ++j)
+						start[i] = inputBegin[j*stride];
+					
+					for (size_t i = 0, j = 0; i < 2*overlap; ++i, ++j)
+						end[i] = inputEnd[(j - 2*overlap + 1)*stride];
+					
+					for (size_t i = 0; i < overlap; ++i)
+					{
+						auto res = F::forward(MapOverlapFunc::CPU, Index1D{i}, random, Region1D<T>{overlap, 1, &start[i + overlap]},
+							get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+						SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, col)..., res);
+					}
+						
+					for (size_t i = overlap; i < colWidth - overlap; ++i)
+					{
+						auto res = F::forward(MapOverlapFunc::CPU, Index1D{i}, random, Region1D<T>{overlap, stride, &inputBegin[i*stride]},
+							get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+						SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, col)..., res);
+					}
+						
+					for (size_t i = colWidth - overlap; i < colWidth; ++i)
+					{
+						auto res = F::forward(MapOverlapFunc::CPU, Index1D{i}, random, Region1D<T>{overlap, 1, &end[i + 2 * overlap - colWidth]},
+							get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+						SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, col)..., res);
 					}
 				}
-				
-				for (size_t i = overlap, j = 0; i < 3*overlap; ++i, ++j)
-					start[i] = inputBegin[j*stride];
-				
-				for (size_t i = 0, j = 0; i < 2*overlap; ++i, ++j)
-					end[i] = inputEnd[(j - 2*overlap + 1)*stride];
-				
-				for (size_t i = 0; i < overlap; ++i)
+
+				else // Edge::None
 				{
-					auto res = F::forward(MapOverlapFunc::CPU, Index1D{i}, random, Region1D<T>{overlap, 1, &start[i + overlap]},
-						get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-					SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, col)..., res);
+					size_t out_rows = get<0>(std::forward<CallArgs>(args)...).total_rows();
+					for (size_t i = 0; i < out_rows; ++i)
+					{
+						auto res = F::forward(MapOverlapFunc::CPU, Index1D{i}, random, Region1D<T>{overlap, stride, &inputBegin[(i + overlap)*stride]},
+							get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+						SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, col)..., res);
+					}
 				}
-					
-				for (size_t i = overlap; i < colWidth - overlap; ++i)
-				{
-					auto res = F::forward(MapOverlapFunc::CPU, Index1D{i}, random, Region1D<T>{overlap, stride, &inputBegin[i*stride]},
-						get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-					SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, col)..., res);
-				}
-					
-				for (size_t i = colWidth - overlap; i < colWidth; ++i)
-				{
-					auto res = F::forward(MapOverlapFunc::CPU, Index1D{i}, random, Region1D<T>{overlap, 1, &end[i + 2 * overlap - colWidth]},
-						get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-					SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, col)..., res);
-				}
-				
+
 				inputBegin += 1;
 			}
+
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap ColWise", this, {colWidth, rowWidth},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
@@ -217,52 +232,66 @@ namespace skepu
 			{
 				inputEnd = inputBegin + rowWidth;
 				
-				for (size_t i = 0; i < overlap; ++i)
+				if (this->m_edge != Edge::None)
 				{
-					switch (this->m_edge)
+					for (size_t i = 0; i < overlap; ++i)
 					{
-					case Edge::Cyclic:
-						start[i] = inputEnd[i  - overlap];
-						end[3*overlap-1 - i] = inputBegin[overlap-i-1];
-						break;
-					case Edge::Duplicate:
-						start[i] = inputBegin[0];
-						end[3*overlap-1 - i] = inputEnd[-1];
-						break;
-					case Edge::Pad:
-						start[i] = this->m_pad;
-						end[3*overlap-1 - i] = this->m_pad;
-						break;
-					default:
-						break;
+						switch (this->m_edge)
+						{
+						case Edge::Cyclic:
+							start[i] = inputEnd[i  - overlap];
+							end[3*overlap-1 - i] = inputBegin[overlap-i-1];
+							break;
+						case Edge::Duplicate:
+							start[i] = inputBegin[0];
+							end[3*overlap-1 - i] = inputEnd[-1];
+							break;
+						case Edge::Pad:
+							start[i] = this->m_pad;
+							end[3*overlap-1 - i] = this->m_pad;
+							break;
+						default:
+							break;
+						}
+					}
+					
+					for (size_t i = overlap, j = 0; i < 3*overlap; ++i, ++j)
+						start[i] = inputBegin[j];
+					
+					for (size_t i = 0, j = 0; i < 2*overlap; ++i, ++j)
+						end[i] = inputEnd[j - 2*overlap];
+					
+					for (size_t i = 0; i < overlap; ++i)
+					{
+						auto res = F::forward(MapOverlapFunc::CPU, Index1D{i}, random, Region1D<T>{overlap, stride, &start[i + overlap]},
+							get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+						SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(row, i)..., res);
+					}
+						
+					for (size_t i = overlap; i < rowWidth - overlap; ++i)
+					{
+						auto res = F::forward(MapOverlapFunc::CPU, Index1D{i}, random, Region1D<T>{overlap, stride, &inputBegin[i]},
+							get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+						SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(row, i)..., res);
+					}
+						
+					for (size_t i = rowWidth - overlap; i < rowWidth; ++i)
+					{
+						auto res = F::forward(MapOverlapFunc::CPU, Index1D{i}, random, Region1D<T>{overlap, stride, &end[i + 2 * overlap - rowWidth]},
+							get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+						SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(row, i)..., res);
 					}
 				}
-				
-				for (size_t i = overlap, j = 0; i < 3*overlap; ++i, ++j)
-					start[i] = inputBegin[j];
-				
-				for (size_t i = 0, j = 0; i < 2*overlap; ++i, ++j)
-					end[i] = inputEnd[j - 2*overlap];
-				
-				for (size_t i = 0; i < overlap; ++i)
+
+				else // Edge::none
 				{
-					auto res = F::forward(MapOverlapFunc::CPU, Index1D{i}, random, Region1D<T>{overlap, stride, &start[i + overlap]},
-						get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-					SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(row, i)..., res);
-				}
-					
-				for (size_t i = overlap; i < rowWidth - overlap; ++i)
-				{
-					auto res = F::forward(MapOverlapFunc::CPU, Index1D{i}, random, Region1D<T>{overlap, stride, &inputBegin[i]},
-						get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-					SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(row, i)..., res);
-				}
-					
-				for (size_t i = rowWidth - overlap; i < rowWidth; ++i)
-				{
-					auto res = F::forward(MapOverlapFunc::CPU, Index1D{i}, random, Region1D<T>{overlap, stride, &end[i + 2 * overlap - rowWidth]},
-						get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-					SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(row, i)..., res);
+					size_t out_cols = get<0>(std::forward<CallArgs>(args)...).total_cols();
+					for (size_t i = 0; i < out_cols; ++i)
+					{
+						auto res = F::forward(MapOverlapFunc::CPU, Index1D{i}, random, Region1D<T>{overlap, stride, &inputBegin[i + overlap]},
+							get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+						SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(row, i)..., res);
+					}
 				}
 				
 				inputBegin += rowWidth;

@@ -635,8 +635,18 @@ const T& Matrix<T>::operator()(const size_type row, const size_type col) const
 template <typename T>
 T& Matrix<T>::operator()(const size_type row, const size_type col)
 {
-   if(row >= this->total_rows() || col >= this->total_cols())
-      SKEPU_ERROR("ERROR! Row or Column index is out of bound!");
+   if(row >= this->total_rows())
+      SKEPU_ERROR("Matrix (label: " << this->getLabel() << ")"
+      << "\nAttempted row access out of bounds"
+      << "\nRows: " << this->total_rows()
+      << "\nAttempted access at " << colorRed(row));
+
+   if(col >= this->total_cols())
+      SKEPU_ERROR("Matrix (label: " << this->getLabel() << ")"
+      << "\nAttempted col access out of bounds"
+      << "\nCols: " << this->total_cols()
+      << "\nAttempted access at " << colorRed(col));
+
    return m_data[row * m_cols + col];
 }
 
