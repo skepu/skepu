@@ -1,3 +1,6 @@
+#!/bin/sh
+
+cat << 'EOF' > Makefile.in
 ################################################################################
 #                         ~ SkePU options Makefile ~                           #
 ################################################################################
@@ -20,4 +23,7 @@
 #SKEPU_OPTIONS = 
 #PRECOMPILER_OPTIONS =
 
-#SKEPU_TOOL_USER_FLAGS  =
+#SKEPU_TOOL_USER_FLAGS =
+EOF
+
+echo "Makefile.in has been generated."

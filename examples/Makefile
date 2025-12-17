@@ -64,6 +64,9 @@ CLUSTER_LIBS     = $$(pkg-config --libs starpu-1.3 starpumpi-1.3)
 # Includes.
 # ------------------------------------------------------------------- #
 
+Makefile.in:
+	./generate_makefile.in.sh
+
 # Overrides default values for various paths and options
 include Makefile.in
 
@@ -254,7 +257,7 @@ fapi:
 	gfortran -c skepu_in_fortran.f90 -I $(SKEPU_INCLUDE_PATH) -o ./test_build/skepu_in_fortran.o
 	$(CXX) -lgfortran ./test_build/cskepu.o ./test_build/fskepu.o ./test_build/skepu_in_fortran.o ./test_build/c_skeleton.o ./test_build/f_skeleton.o $(TARGET_FLAGS) -o ./test_build/skepu_in_fortran
 
-all: all-sequential all-parallel all-cluster
+all: Makefile.in all-sequential all-parallel all-cluster
 
 $(PAR_DIR):
 	@mkdir -p $(PAR_DIR)
