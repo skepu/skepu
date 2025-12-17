@@ -1098,17 +1098,17 @@ namespace skepu
 				size_t size_l = get<0>(std::forward<CallArgs>(args)...).size_l();
 
 				if (disjunction(
-					(get<OI>(std::forward<CallArgs>(args)...).size_i() < size_i) &&
-					(get<OI>(std::forward<CallArgs>(args)...).size_j() < size_j) &&
-					(get<OI>(std::forward<CallArgs>(args)...).size_k() < size_k) &&
+					(get<OI>(std::forward<CallArgs>(args)...).size_i() < size_i) ||
+					(get<OI>(std::forward<CallArgs>(args)...).size_j() < size_j) ||
+					(get<OI>(std::forward<CallArgs>(args)...).size_k() < size_k) ||
 					(get<OI>(std::forward<CallArgs>(args)...).size_l() < size_l)...))
 					SKEPU_ERROR("Non-matching output container sizes");
 
 				if (disjunction(
-					(get<EI>(std::forward<CallArgs>(args)...).size_i() != size_i) &&
-					(get<EI>(std::forward<CallArgs>(args)...).size_j() != size_j) &&
-					(get<EI>(std::forward<CallArgs>(args)...).size_k() != size_k) &&
-					(get<EI>(std::forward<CallArgs>(args)...).size_l() != size_l)...))
+					(get<EI>(std::forward<CallArgs>(args)...).size_i() != expectedInputSize<0>(size_i)) ||
+					(get<EI>(std::forward<CallArgs>(args)...).size_j() != expectedInputSize<1>(size_j)) ||
+					(get<EI>(std::forward<CallArgs>(args)...).size_k() != expectedInputSize<2>(size_k)) ||
+					(get<EI>(std::forward<CallArgs>(args)...).size_l() != expectedInputSize<3>(size_l))...))
 					SKEPU_ERROR("Non-matching input container sizes");
 
 				// Remove later

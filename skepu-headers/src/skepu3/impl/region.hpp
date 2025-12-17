@@ -187,9 +187,6 @@ namespace skepu
 		Edge edge = Edge::None;
 		T pad;
 		
-#ifdef SKEPU_CUDA
-		__host__ __device__
-#endif
 		T operator()(int i, int j, int k, int l) const
 		{
 			int ii = this->idx.i + i + (this->edge != Edge::None ? -this->offset_i : 0);
@@ -223,10 +220,7 @@ namespace skepu
 				return data[(ii + oi) * this->stride1 + (jj + oj) * this->stride2 + (kk + ok) * this->stride3 + (ll + ol)];
 			}
 		}
-		
-#ifdef SKEPU_CUDA
-		__host__ __device__
-#endif
+
 		Region4D(Tensor4<T> const& ten, int arg_oi, int arg_oj, int arg_ok, int arg_ol, Edge arg_edge, T arg_pad,
 		size_t arg_offset_i = 0, size_t arg_offset_j = 0, size_t arg_offset_k = 0, size_t arg_offset_l = 0)
 		:	oi(arg_oi), oj(arg_oj), ok(arg_ok), ol(arg_ol),
@@ -239,7 +233,45 @@ namespace skepu
 			offset_i(arg_offset_i), offset_j(arg_offset_j), offset_k(arg_offset_k), offset_l(arg_offset_l), 
 			data(ten.getAddress())
 		{}
+
+		// Called by test code.
+		Region4D(int arg_oi, int arg_oj, int arg_ok, int arg_ol,
+				 size_t arg_size_i, size_t arg_size_j, size_t arg_size_k, size_t arg_size_l,
+				 size_t arg_stride1, size_t arg_stride2, size_t arg_stride3, T *arg_data)
+		:	oi(arg_oi), oj(arg_oj), ok(arg_ok), ol(arg_ol),
+			size_i(arg_size_i), size_j(arg_size_j), size_k(arg_size_k), size_l(arg_size_l),
+			stride1(arg_stride1), stride2(arg_stride2), stride3(arg_stride3),
+			edge(Edge::None),
+			data(arg_data),
+			idx{0,0,0,0}
+		{}
 	};
+
+	template <typename T>
+	struct Region4DCU
+	{
+		int oi, oj, ok, ol;
+		size_t stride1, stride2, stride3;
+		const T *data;
+
+#ifdef SKEPU_CUDA
+		__host__ __device__
+#endif
+		T operator()(int i, int j, int k, int l) const
+		{
+			return data[i * this->stride1 + j * this->stride2 + k * this->stride3 + l];
+		}
+
+#ifdef SKEPU_CUDA
+		__host__ __device__
+#endif
+		Region4DCU(int arg_oi, int arg_oj, int arg_ok, int arg_ol, size_t arg_stride1, size_t arg_stride2, size_t arg_stride3, T *arg_data)
+		:	oi(arg_oi), oj(arg_oj), ok(arg_ok), ol(arg_ol),
+			stride1(arg_stride1), stride2(arg_stride2), stride3(arg_stride3),
+			data(arg_data)
+		{}
+	};
+	
 	
 	
 	template<typename T>
@@ -565,10 +597,7 @@ namespace skepu
 			int ll = this->idx.l + l;
 			return data[ii * this->stride1 + jj * this->stride2 + kk * this->stride3 + ll];
 		}
-		
-#ifdef SKEPU_CUDA
-	__host__ __device__
-#endif
+	
 	Pool4D(Tensor4<T> const& ten, int arg_si, int arg_sj, int arg_sk, int arg_sl, Edge arg_edge, T arg_pad,
 	size_t arg_offset_i = 0, size_t arg_offset_j = 0, size_t arg_offset_k = 0, size_t arg_offset_l = 0)
 	:	si(arg_si), sj(arg_sj), sk(arg_sk), sl(arg_sl),
@@ -577,6 +606,15 @@ namespace skepu
 		stride3(ten.m_stride_3),
 		data(ten.getAddress())
 	{}
+
+#ifdef SKEPU_CUDA
+	__host__ __device__
+#endif
+	Pool4D(int arg_si, int arg_sj, int arg_sk, int arg_sl, size_t arg_stride1, size_t arg_stride2, size_t arg_stride3, T *arg_data)
+		:	si(arg_si), sj(arg_sj), sk(arg_sk), sl(arg_sl),
+			stride1(arg_stride1), stride2(arg_stride2), stride3(arg_stride3),
+			data(arg_data)
+		{}
 	};
 	
 	

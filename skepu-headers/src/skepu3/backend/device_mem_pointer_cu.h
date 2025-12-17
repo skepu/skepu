@@ -211,7 +211,7 @@ namespace skepu
 			m_deviceID = m_dev->getDeviceID();
 			CHECK_CUDA_ERROR(cudaSetDevice(m_deviceID));
    
-			DEBUG_TEXT_LEVEL1(m_nameVerbose + " Alloc: size = " << m_numElements << ", GPU_" << m_deviceID << "\n")
+			DEBUG_TEXT_LEVEL1(m_nameVerbose + " Alloc: size = " << m_numElements << "x" << sizeof(T) << ", GPU_" << m_deviceID << "\n")
 
 				cudaError_t er;
 			DeviceAllocations_CU<int>* dev_alloc = DeviceAllocations_CU<int>::getInstance();

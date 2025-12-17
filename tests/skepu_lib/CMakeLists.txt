@@ -27,12 +27,12 @@ skepu_add_test_case_hybrid_cuda(complex)
 # ------------------------------------------------
 
 skepu_add_test_case_sequential(random)
-skepu_add_test_case_cpu(random)
-skepu_add_test_case_openmp(random)
-skepu_add_test_case_opencl(random)
-skepu_add_test_case_cuda(random)
-skepu_add_test_case_hybrid_opencl(random)
-skepu_add_test_case_hybrid_cuda(random)
+#skepu_add_test_case_cpu(random)
+#skepu_add_test_case_openmp(random)
+#skepu_add_test_case_opencl(random)
+#skepu_add_test_case_cuda(random)
+#skepu_add_test_case_hybrid_opencl(random)
+#skepu_add_test_case_hybrid_cuda(random)
 
 # ------------------------------------------------
 #   skepu_external

@@ -1096,6 +1096,7 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
 	 size_t skepu_kk = ((size_t)(skepu_k / skepu_numThreads_0b)) * skepu_numThreads_0b;
 	 size_t skepu_jj = ((size_t)(skepu_j / get_local_size(1))) * get_local_size(1);
 	 size_t skepu_ii = ((size_t)(skepu_i / get_local_size(2))) * get_local_size(2);
+
 	
 	// Adjust shared size for far-edge blocks
 	if (skepu_is_pool)
@@ -1106,7 +1107,7 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
 		skepu_ii *= skepu_overlap_i;
 		
 		
-		if (get_group_id(0) == get_global_size(1) / get_local_size(1) - 1)
+		if (get_group_id(0) == get_global_size(1) / get_local_size(1) - 1) // Is this wrong? Shouldn't it be 0 in all calls?
 		{
 			size_t rem_a = skepu_out_size_l % skepu_numThreads_0a;
 			size_t rem_b = skepu_out_size_k % skepu_numThreads_0b;

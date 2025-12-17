@@ -39,7 +39,7 @@ int getRangeSize(SourceRange range)
 	return GlobalRewriter.getRangeSize(range);
 }
 
-void printParamList(std::ostream &o, UserFunction &Func)
+void printParamList(std::ostream &o, UserFunction &Func, bool isCuda = false)
 {
 	bool first = true;
 
@@ -77,7 +77,10 @@ void printParamList(std::ostream &o, UserFunction &Func)
 	if (UserFunction::RegionParam *param = Func.regionParam)
 	{
 		if (!first) { o << ", "; }
-		o << param->fullTypeName << " " << param->name;
+		std::string fullTypename = param->fullTypeName;
+		if (isCuda)
+			replaceTextInString(fullTypename, "Region4D", "Region4DCU");
+		o << fullTypename << " " << param->name;
 		first = false;
 	}
 
@@ -459,7 +462,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 		else
 			SSSkepuFunctorStruct << UF.resolvedReturnTypeName;
 		SSSkepuFunctorStruct << " CU(";
-		printParamList(SSSkepuFunctorStruct, UF);
+		printParamList(SSSkepuFunctorStruct, UF, true);
 		SSSkepuFunctorStruct << ")\n{" << replaceReferencesToOtherUFs(Backend::CUDA, UF, [InstanceName] (UserFunction &UF) { return SkePU_UF_Prefix + InstanceName + "_" + UF.uniqueName + "::CU"; }) << "\n}\n";
 		SSSkepuFunctorStruct << "#undef SKEPU_USING_BACKEND_CUDA\n\n";
 	}
@@ -630,7 +633,10 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 
 		case Skeleton::Type::MapOverlap4D:
 		case Skeleton::Type::MapPool4D:
-			SkePUAbort("CUDA MapOverlap 4D disabled in this release");
+			KernelName_CU = createMapOverlap4DKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
+			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_conv_cuda_4D_kernel)";
+			SSCallArgs << KernelName_CU << "_conv_cuda_4D_kernel";
+			break;
 
 		case Skeleton::Type::Call:
 			KernelName_CU = createCallKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);

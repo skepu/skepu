@@ -76,6 +76,18 @@ skepu_add_test_case_openmp(mapoverlap_4d)
 
 
 # ------------------------------------------------
+#   MapOverlap 4D fundamentals new
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mapoverlap_4d_new)
+skepu_add_test_case_cpu(mapoverlap_4d_new)
+skepu_add_test_case_openmp(mapoverlap_4d_new)
+skepu_add_test_case_opencl(mapoverlap_4d_new)
+skepu_add_test_case_cuda(mapoverlap_4d_new)
+skepu_add_test_case_hybrid_opencl(mapoverlap_4d_new)
+skepu_add_test_case_hybrid_cuda(mapoverlap_4d_new)
+
+# ------------------------------------------------
 #   MapOverlap in place
 # ------------------------------------------------
 

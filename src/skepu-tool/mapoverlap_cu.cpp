@@ -646,7 +646,165 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_3D_kernel({{KERNEL_PARAMS}}
 }
 )~~~";
 
-static const std::string MatrixConvol4D_CU = R"~~~()~~~";
+static const std::string MatrixConvol4D_CU = R"~~~(
+__global__ void {{KERNEL_NAME}}_conv_cuda_4D_kernel({{KERNEL_PARAMS}}
+	const size_t skepu_in_size_i, const size_t skepu_in_size_j, const size_t skepu_in_size_k, size_t skepu_in_size_l,
+	const size_t skepu_out_size_i, const size_t skepu_out_size_j, const size_t skepu_out_size_k, size_t skepu_out_size_l,
+	size_t skepu_overlap_i, size_t skepu_overlap_j, size_t skepu_overlap_k, size_t skepu_overlap_l,
+	size_t skepu_shared_size_i, size_t skepu_shared_size_j, size_t skepu_shared_size_k, size_t skepu_shared_size_l,
+	size_t skepu_numThreads_0a,
+   int skepu_is_pool, skepu::Edge skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad
+)
+{
+   extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} {{SHARED_BUFFER}}[];
+
+   size_t skepu_numThreads_0b = blockDim.x / skepu_numThreads_0a;
+   
+   size_t skepu_l = (blockIdx.x * blockDim.x + threadIdx.x) % skepu_numThreads_0a;
+	size_t skepu_k = (blockIdx.x * blockDim.x + threadIdx.x) / skepu_numThreads_0a;
+	size_t skepu_j = blockIdx.y * blockDim.y + threadIdx.y;
+	size_t skepu_i = blockIdx.z * blockDim.z + threadIdx.z;
+
+   size_t skepu_ll = ((size_t)(skepu_l / skepu_numThreads_0a)) * skepu_numThreads_0a;
+	size_t skepu_kk = ((size_t)(skepu_k / skepu_numThreads_0b)) * skepu_numThreads_0b;
+	size_t skepu_jj = ((size_t)(skepu_j / blockDim.y)) * blockDim.y;
+	size_t skepu_ii = ((size_t)(skepu_i / blockDim.z)) * blockDim.z;
+   
+   if (skepu_is_pool)
+   {
+      skepu_ll *= skepu_overlap_l;
+      skepu_kk *= skepu_overlap_k;
+      skepu_jj *= skepu_overlap_j;
+      skepu_ii *= skepu_overlap_i;
+
+      if (blockIdx.x == (gridDim.y * blockDim.y) / blockDim.y - 1)
+      {
+         size_t rem_a = skepu_out_size_l % skepu_numThreads_0a;
+         size_t rem_b = skepu_out_size_k % skepu_numThreads_0b;
+         if (rem_b > 0) skepu_shared_size_k = rem_b * skepu_overlap_k;
+         if (rem_a > 0) skepu_shared_size_l = rem_a * skepu_overlap_l;
+      }
+      if (blockIdx.y == (gridDim.y * blockDim.y) / blockDim.y - 1)
+      {
+         size_t rem = skepu_out_size_j % blockDim.y;
+         if (rem > 0) skepu_shared_size_j = rem * skepu_overlap_j;
+      }
+      if (blockIdx.z == (gridDim.z * blockDim.z) / blockDim.z - 1)
+      {
+         size_t rem = skepu_out_size_i % blockDim.z;
+         if (rem > 0) skepu_shared_size_i = rem * skepu_overlap_i;
+      }
+   }
+   
+   size_t skepu_increment_l = skepu_numThreads_0a; //blockDim.x / skepu_out_size_l;
+   size_t skepu_increment_k = blockDim.x / skepu_increment_l;
+
+   size_t skepu_offset_i = (skepu_out_size_i - skepu_in_size_i) / 2 + skepu_overlap_i;
+	size_t skepu_offset_j = (skepu_out_size_j - skepu_in_size_j) / 2 + skepu_overlap_j;
+	size_t skepu_offset_k = (skepu_out_size_k - skepu_in_size_k) / 2 + skepu_overlap_k;
+	size_t skepu_offset_l = (skepu_out_size_l - skepu_in_size_l) / 2 + skepu_overlap_l;
+
+   if (skepu_overlap_i == 0) skepu_offset_i = 0;
+	if (skepu_overlap_j == 0) skepu_offset_j = 0;
+	if (skepu_overlap_k == 0) skepu_offset_k = 0;
+	if (skepu_overlap_l == 0) skepu_offset_l = 0;
+	
+	if (skepu_is_pool)
+	{
+		skepu_offset_i = 0;
+		skepu_offset_j = 0;
+		skepu_offset_k = 0;
+		skepu_offset_l = 0;
+	}
+	
+	if (skepu_i < skepu_out_size_i + skepu_overlap_i * 2
+       && skepu_j < skepu_out_size_j + skepu_overlap_j * 2
+       && skepu_k < skepu_out_size_k + skepu_overlap_k * 2
+       && skepu_l < skepu_out_size_l + skepu_overlap_l * 2)
+	{
+      size_t skepu_shared_l = threadIdx.x % skepu_numThreads_0a;
+		size_t skepu_shared_k = threadIdx.x / skepu_numThreads_0a;
+		size_t skepu_shared_j = threadIdx.y;
+		size_t skepu_shared_i = threadIdx.z;
+		while (skepu_shared_i < skepu_shared_size_i)
+		{
+			while (skepu_shared_j < skepu_shared_size_j)
+			{
+				while (skepu_shared_k < skepu_shared_size_k)
+				{
+               while (skepu_shared_l < skepu_shared_size_l)
+               {
+					   size_t skepu_sharedIdx =
+                  skepu_shared_i * skepu_shared_size_j * skepu_shared_size_k * skepu_shared_size_l +
+                  skepu_shared_j * skepu_shared_size_k * skepu_shared_size_l +
+                  skepu_shared_k * skepu_shared_size_l +
+                  skepu_shared_l;
+
+					   int skepu_global_l = (skepu_ll + skepu_shared_l - skepu_offset_l);
+                  int skepu_global_k = (skepu_kk + skepu_shared_k - skepu_offset_k);
+					   int skepu_global_j = (skepu_jj + skepu_shared_j - skepu_offset_j);
+					   int skepu_global_i = (skepu_ii + skepu_shared_i - skepu_offset_i);
+
+					   if ((skepu_global_i >= 0 && skepu_global_i < skepu_in_size_i) && (skepu_global_j >= 0 && skepu_global_j < skepu_in_size_j)
+                   && (skepu_global_k >= 0 && skepu_global_k < skepu_in_size_k) && (skepu_global_l >= 0 && skepu_global_l < skepu_in_size_l))
+                  {
+						   {{SHARED_BUFFER}}[skepu_sharedIdx] = {{INPUT_PARAM_NAME}}[
+                        skepu_global_i * skepu_in_size_j * skepu_in_size_k * skepu_in_size_l +
+                        skepu_global_j * skepu_in_size_k * skepu_in_size_l +
+                        skepu_global_k * skepu_in_size_l +
+                        skepu_global_l];
+                  }
+					   else
+					   {
+						   if (skepu_edge == skepu::Edge::Pad)
+							   {{SHARED_BUFFER}}[skepu_sharedIdx] = skepu_pad;
+						   else if (skepu_edge == skepu::Edge::Duplicate)
+						   {
+							   {{SHARED_BUFFER}}[skepu_sharedIdx] = {{INPUT_PARAM_NAME}}[
+								   skepu::cuda::clamp(skepu_global_i, 0, (int)skepu_in_size_i - 1) * skepu_in_size_j * skepu_in_size_k * skepu_in_size_l +
+								   skepu::cuda::clamp(skepu_global_j, 0, (int)skepu_in_size_j - 1) * skepu_in_size_k * skepu_in_size_l +
+								   skepu::cuda::clamp(skepu_global_k, 0, (int)skepu_in_size_k - 1) * skepu_in_size_l +
+                           skepu::cuda::clamp(skepu_global_l, 0, (int)skepu_in_size_l - 1)];
+						   }
+						   else if (skepu_edge == skepu::Edge::Cyclic)
+						   {
+							   {{SHARED_BUFFER}}[skepu_sharedIdx] = {{INPUT_PARAM_NAME}}[
+								   ((skepu_global_i + skepu_in_size_i) % skepu_in_size_i) * skepu_in_size_j * skepu_in_size_k * skepu_in_size_l +
+								   ((skepu_global_j + skepu_in_size_j) % skepu_in_size_j) * skepu_in_size_k * skepu_in_size_l +
+								   ((skepu_global_k + skepu_in_size_k) % skepu_in_size_k) * skepu_in_size_l +
+                           ((skepu_global_l + skepu_in_size_l) % skepu_in_size_l)];
+						   }
+					   }
+                  
+                  skepu_shared_l += skepu_increment_l;
+				   }
+               skepu_shared_l = threadIdx.x % skepu_out_size_l;
+				   skepu_shared_k += skepu_increment_k;
+			   }
+            skepu_shared_k = threadIdx.x / skepu_out_size_l;
+            skepu_shared_j += blockDim.y;
+		   }
+         skepu_shared_j = threadIdx.y;
+         skepu_shared_i += blockDim.z;
+      }
+	}
+   
+	__syncthreads();
+	
+	{{PROXIES_INIT}}
+
+	if (skepu_i < skepu_out_size_i && skepu_j < skepu_out_size_j && skepu_k < skepu_out_size_k && skepu_l < skepu_out_size_l)
+	{
+		skepu_i = skepu_i * skepu_out_size_j * skepu_out_size_k * skepu_out_size_l + skepu_j * skepu_out_size_k * skepu_out_size_l + skepu_k * skepu_out_size_l + skepu_l;
+		size_t skepu_global_prng_id = skepu_i;
+		size_t skepu_base = 0;
+		{{INDEX_INITIALIZER}}
+		{{PROXIES_UPDATE}}
+		auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
+		{{OUTPUT_BINDINGS}}
+	}
+}
+)~~~";
 
 
 std::string createMapOverlapKernelProgramHelper_CU(SkeletonInstance &instance, UserFunction &mapOverlapFunc, int dim, std::string dir, std::string kernelSource, std::string kernelTag)
@@ -669,6 +827,10 @@ std::string createMapOverlapKernelProgramHelper_CU(SkeletonInstance &instance, U
 		SSMapOverlapFuncArgs
 			<< "{(int)skepu_overlap_i, (int)skepu_overlap_j, (int)skepu_overlap_k, skepu_shared_size_j * skepu_shared_size_k, skepu_shared_size_k, &"
 			<< sdataName << "[(threadIdx.z + skepu_overlap_i) * skepu_shared_size_j * skepu_shared_size_k + (threadIdx.y + skepu_overlap_j) * skepu_shared_size_k + (threadIdx.x + skepu_overlap_k)]}";
+   else if (dim == 4)
+      SSMapOverlapFuncArgs
+         << "{(int)skepu_overlap_i, (int)skepu_overlap_j, (int)skepu_overlap_k, (int)skepu_overlap_l, skepu_shared_size_j * skepu_shared_size_k * skepu_shared_size_l, skepu_shared_size_k * skepu_shared_size_l, skepu_shared_size_l, &"
+         << sdataName << "[(threadIdx.z + skepu_overlap_i) * skepu_shared_size_j * skepu_shared_size_k * skepu_shared_size_l + (threadIdx.y + skepu_overlap_j) * skepu_shared_size_k * skepu_shared_size_l + (threadIdx.x / skepu_numThreads_0a + skepu_overlap_k) * skepu_shared_size_l + (threadIdx.x % skepu_numThreads_0a + skepu_overlap_l)]}";
 	
 	SSKernelParamList << mapOverlapFunc.regionParam->templateInstantiationType() << " *skepu_input, ";
 	
