@@ -1,5 +1,5 @@
-/*! \file mapoverlap_hy.inl
-*  \brief Contains the definitions of Hybrid execution specific member functions for the MapOverlap skeleton.
+/*! \file mapoverlap_1d_hy.inl
+*  \brief Contains the definitions of Hybrid execution specific member functions for the MapOverlap1D skeleton.
  */
 
 #ifdef SKEPU_HYBRID
@@ -10,7 +10,8 @@ namespace skepu
 {
 	namespace backend
 	{
-		/*!
+
+        /*!
 		 *  Performs the MapOverlap on a range of elements using \em Hybrid backend and a seperate output range.
 		 */
 		template<typename MapOverlapFunc, typename CUDAKernel, typename C2, typename C3, typename C4, typename CLKernel>
@@ -18,7 +19,7 @@ namespace skepu
 		void MapOverlap1D<MapOverlapFunc, CUDAKernel, C2, C3, C4, CLKernel>
 		::vector_Hybrid(skepu::Parity p, pack_indices<OI...> oi, pack_indices<EI...> ei, pack_indices<AI...> ai, pack_indices<CI...> ci, CallArgs&&... args)
 		{
-			auto &arg = get<outArity>(std::forward<CallArgs>(args)...);
+			auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 			const int overlap = this->m_overlap[0];
 			const size_t size = arg.size();
 			const size_t stride = 1;
@@ -51,8 +52,8 @@ namespace skepu
 			
 			// Sync with device data
 			arg.updateHost();
-			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateHost(hasReadAccess(MapOverlapFunc::anyAccessMode[AI-arity-outArity])), 0)...);
-			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-arity-outArity])), 0)...);
+			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateHost(hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
+			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
 			
 			omp_set_nested(true);
@@ -140,7 +141,7 @@ namespace skepu
 		void MapOverlap1D<MapOverlapFunc, CUDAKernel, C2, C3, C4, CLKernel>
 		::rowwise_Hybrid(skepu::Parity p, pack_indices<OI...> oi, pack_indices<EI...> ei, pack_indices<AI...> ai, pack_indices<CI...> ci, CallArgs&&... args)
 		{
-			auto &arg = get<outArity>(std::forward<CallArgs>(args)...);
+			auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 			const size_t rowWidth = arg.total_cols();
 			const size_t stride = 1;
 			
@@ -170,8 +171,8 @@ namespace skepu
 			
 			// Sync with device data
 			arg.updateHost();
-			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateHost(hasReadAccess(MapOverlapFunc::anyAccessMode[AI-arity-outArity])), 0)...);
-			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-arity-outArity])), 0)...);
+			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateHost(hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
+			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
 			
 			const int overlap = this->m_overlap[0];
@@ -272,39 +273,9 @@ namespace skepu
 			
 			this->colwise_OpenMP(p, oi, ei, ai, ci, std::forward<CallArgs>(args)...);
 		}
-		
-		
-		template<typename MapOverlapFunc, typename CUDAKernel, typename CLKernel>
-		template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
-		void MapOverlap2D<MapOverlapFunc, CUDAKernel, CLKernel>
-		::helper_Hybrid(skepu::Parity p, pack_indices<OI...> oi, pack_indices<EI...> ei, pack_indices<AI...> ai, pack_indices<CI...> ci, CallArgs&&... args)
-		{
-			std::cout << "WARNING: helper_Hybrid is not implemented for Hybrid exection yet. Will run OpenMP version." << std::endl;
-			
-			this->helper_OpenMP(p, oi, ei, ai, ci, std::forward<CallArgs>(args)...);
-		}
-		
-		template<typename MapOverlapFunc, typename CUDAKernel, typename CLKernel>
-		template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
-		void MapOverlap3D<MapOverlapFunc, CUDAKernel, CLKernel>
-		::helper_Hybrid(skepu::Parity p, pack_indices<OI...> oi, pack_indices<EI...> ei, pack_indices<AI...> ai, pack_indices<CI...> ci, CallArgs&&... args)
-		{
-			std::cout << "WARNING: helper_Hybrid is not implemented for Hybrid exection yet. Will run OpenMP version." << std::endl;
-			
-			this->helper_OpenMP(p, oi, ei, ai, ci, std::forward<CallArgs>(args)...);
-		}
-		
-		template<typename MapOverlapFunc, typename CUDAKernel, typename CLKernel>
-		template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
-		void MapOverlap4D<MapOverlapFunc, CUDAKernel, CLKernel>
-		::helper_Hybrid(skepu::Parity p, pack_indices<OI...> oi, pack_indices<EI...> ei, pack_indices<AI...> ai, pack_indices<CI...> ci, CallArgs&&... args)
-		{
-			std::cout << "WARNING: helper_Hybrid is not implemented for Hybrid exection yet. Will run OpenMP version." << std::endl;
-			
-			this->helper_OpenMP(p, oi, ei, ai, ci, std::forward<CallArgs>(args)...);
-		}
-		
-	} // namespace backend
-} // namespace skepu
 
-#endif
+    } // backend
+
+} // skepu
+
+#endif // SKEPU_HYBRID

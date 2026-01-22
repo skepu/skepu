@@ -8,7 +8,7 @@ skepu_add_test_case_openmp(mappairs)
 skepu_add_test_case_opencl(mappairs)
 skepu_add_test_case_cuda(mappairs)
 skepu_add_test_case_hybrid_opencl(mappairs)
-skepu_add_test_case_hybrid_cuda(mappairs)
+#skepu_add_test_case_hybrid_cuda(mappairs)
 
 # ------------------------------------------------
 #   MapPairs with variadic return

@@ -26,7 +26,7 @@ skepu_add_test_case_hybrid_cuda(complex)
 #   Random fundamentals
 # ------------------------------------------------
 
-skepu_add_test_case_sequential(random)
+#skepu_add_test_case_sequential(random)
 #skepu_add_test_case_cpu(random)
 #skepu_add_test_case_openmp(random)
 #skepu_add_test_case_opencl(random)

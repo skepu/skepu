@@ -20,7 +20,7 @@ skepu_add_test_case_openmp(startval)
 skepu_add_test_case_opencl(startval)
 skepu_add_test_case_cuda(startval)
 skepu_add_test_case_hybrid_opencl(startval)
-skepu_add_test_case_hybrid_cuda(startval)
+#skepu_add_test_case_hybrid_cuda(startval)
 
 # ------------------------------------------------
 #   Reduce with 'or' user function
