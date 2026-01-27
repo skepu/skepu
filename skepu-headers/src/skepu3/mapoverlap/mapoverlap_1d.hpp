@@ -246,8 +246,8 @@ namespace skepu
 			void checkOutputMatrixSizes(size_t expectedSizeRow, size_t expectedSizeCol, size_t i, std::string const& callMetadata){}
 
 			template<size_t... OI, size_t... EI, typename... CallArgs>
-			void checkMatrixSizes(size_t expectedInputRows, size_t expectedInputCols, size_t overlapComparison,
-								  std::string const& callMetadata, pack_indices<OI...>, pack_indices<EI...>, CallArgs&&... args)
+			void checkMatrixSizes(size_t expectedInputRows, size_t expectedInputCols, std::string const& callMetadata,
+				pack_indices<OI...>, pack_indices<EI...>, CallArgs&&... args)
 			{
 				auto& firstOutput = get<0>(std::forward<CallArgs>(args)...);
 				auto& input = get<OutArity>(std::forward<CallArgs>(args)...);
@@ -292,7 +292,7 @@ namespace skepu
 
 				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap1D ColWise: input size = " << inputRows << " x " << inputCols);
 
-				checkMatrixSizes(this->expectedInputSize(firstOutputRows, 0), firstOutputCols, inputRows,
+				checkMatrixSizes(this->expectedInputSize(firstOutputRows, 0), firstOutputCols,
 								 generateColwiseCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
 				const int overlap = this->m_overlap[0];
@@ -415,7 +415,7 @@ namespace skepu
 
 				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap1D RowWise: input size = " << inputRows << " x " << inputCols);
 
-				checkMatrixSizes(firstOutputRows, this->expectedInputSize(firstOutputCols, 0), inputCols,
+				checkMatrixSizes(firstOutputRows, this->expectedInputSize(firstOutputCols, 0),
 								 generateRowwiseCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
 				int overlap = this->m_overlap[0];

@@ -84,40 +84,88 @@ namespace skepu
 
 		private:
 
+			template<typename First, typename... Rest>
+			void checkOutputMatrixSizes(size_t expectedSizeRow, size_t expectedSizeCol, size_t i, std::string const& callMetadata, First&& first, Rest&&... rest)
+			{
+				if (first.total_rows() != expectedSizeRow)
+					SKEPU_ERROR(callMetadata
+					<< "\ninvalid number of output matrix rows"
+					<< "\nexpected output matrix rows: " << colorRed(expectedSizeRow)
+					<< "\noutput matrix (label: " << first.getLabel() << ", index: " << i << ", rows: " << colorRed(first.total_rows()) << ")");
+				
+				if (first.total_cols() != expectedSizeCol)
+					SKEPU_ERROR(callMetadata
+					<< "\ninvalid number of output matrix cols"
+					<< "\nexpected output matrix cols: " << colorRed(expectedSizeCol)
+					<< "\noutput matrix (label: " << first.getLabel() << ", index: " << i << ", cols: " << colorRed(first.total_cols()) << ")");
+
+				checkOutputMatrixSizes(expectedSizeRow, expectedSizeCol, i+1, callMetadata, rest...);
+			}
+
+			void checkOutputMatrixSizes(size_t expectedSizeRow, size_t expectedSizeCol, size_t i, std::string const& callMetadata){}
+
+			template<size_t... OI, size_t... EI, typename... CallArgs>
+			void checkMatrixSizes(size_t expectedInputRows, size_t expectedInputCols,std::string const& callMetadata,
+								  pack_indices<OI...>, pack_indices<EI...>, CallArgs&&... args)
+			{
+				auto& firstOutput = get<0>(std::forward<CallArgs>(args)...);
+				auto& input = get<OutArity>(std::forward<CallArgs>(args)...);
+
+				size_t firstOutputRows = firstOutput.total_rows();
+				size_t firstOutputCols = firstOutput.total_cols();
+				size_t inputRows = input.total_rows();
+				size_t inputCols = input.total_cols();
+				
+				if (inputRows != expectedInputRows)
+					SKEPU_ERROR(callMetadata
+					<< "\ninput/output matrix row count mismatch"
+					<< "\nfirst output matrix (label: " << firstOutput.getLabel() << ", rows: " << firstOutputRows << ")"
+					<< "\nexpected input matrix rows: " << colorRed(expectedInputRows)
+					<< "\ninput matrix (label: " << input.getLabel() << ", rows: " << colorRed(inputRows) << ")");
+				
+				if (inputCols != expectedInputCols)
+					SKEPU_ERROR(callMetadata
+					<< "\ninput/output matrix col count mismatch"
+					<< "\nfirst output matrix (label: " << firstOutput.getLabel() << ", cols: " << firstOutputCols << ")"
+					<< "\nexpected input matrix cols: " << colorRed(expectedInputCols)
+					<< "\ninput matrix (label: " << input.getLabel() << ", cols: " << colorRed(inputCols) << ")");
+				
+				checkOutputMatrixSizes(firstOutputRows, firstOutputCols, 0, callMetadata, get<OI>(std::forward<CallArgs>(args)...)...);
+			}
+
+			std::string generateCallMetadata()
+			{
+				return "MapOverlap2D call, label: " + this->getLabel() + ", Edge mode: " + to_string(this->getEdgeMode());
+			}
+
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
 			void apply(Parity p, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 			{
-				size_t size_i = get<0>(std::forward<CallArgs>(args)...).size_i();
-				size_t size_j = get<0>(std::forward<CallArgs>(args)...).size_j();
+				size_t firstOutputRows = get<0>(std::forward<CallArgs>(args)...).total_rows();
+				size_t firstOutputCols = get<0>(std::forward<CallArgs>(args)...).total_cols();
 
-				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap2D: size = " << size_i << " x " << size_j);
+				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap2D: size = " << firstOutputRows << " x " << firstOutputCols);
 
-				if (disjunction(
-					(get<OI>(std::forward<CallArgs>(args)...).size_i() != size_i) &&
-					(get<OI>(std::forward<CallArgs>(args)...).size_j() != size_j) ...))
-					SKEPU_ERROR("Non-matching output container sizes");
 
-				if (disjunction(
-					(get<EI>(std::forward<CallArgs>(args)...).size_i() != this->expectedInputSize(size_i, 0)) &&
-					(get<EI>(std::forward<CallArgs>(args)...).size_j() != this->expectedInputSize(size_j, 1)) ...))
-					SKEPU_ERROR("Non-matching input container sizes");
+				checkMatrixSizes(this->expectedInputSize(firstOutputRows, 0), this->expectedInputSize(firstOutputCols, 1),
+								 generateCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
 				auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 
 				RegionType region{arg, this->m_overlap[0], this->m_overlap[1], this->m_edge, this->m_pad};
 
-		/*		Index2D start{0, 0}, end{size_i, size_j};
+		/*		Index2D start{0, 0}, end{firstOutputRows, firstOutputCols};
 				if (isPool)
 				{
-					end = Index2D{size_i, size_j};
+					end = Index2D{firstOutputRows, firstOutputCols};
 				}
 				else if (this->m_edge == Edge::None)
 				{
 					start = Index2D{(size_t)this->m_overlap[0], (size_t)this->m_overlap[1]};
-					end = Index2D{size_i - this->m_overlap[0], size_j - this->m_overlap[1]};
+					end = Index2D{firstOutputRows - this->m_overlap[0], firstOutputCols - this->m_overlap[1]};
 				}*/
 
-				auto random = this->template prepareRandom<randomCount>(size_i * size_j);
+				auto random = this->template prepareRandom<randomCount>(firstOutputRows * firstOutputCols);
 
 				Index2D offset = {0, 0};
 				if (this->m_edge == skepu::Edge::None)
@@ -126,8 +174,8 @@ namespace skepu
 					offset.col = this->m_overlap[1];
 				}
 
-				for (size_t i = 0; i < size_i; ++i)
-					for (size_t j = 0; j < size_j; ++j)
+				for (size_t i = 0; i < firstOutputRows; ++i)
+					for (size_t j = 0; j < firstOutputCols; ++j)
 						if (p == Parity::None || index_parity(p, i, j))
 						{
 							region.idx = Index2D{(i + offset.row) * this->m_strides[0], (j + offset.col) * this->m_strides[1]};

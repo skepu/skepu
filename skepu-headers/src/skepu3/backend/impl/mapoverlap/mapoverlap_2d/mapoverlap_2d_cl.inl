@@ -52,8 +52,8 @@ namespace skepu
 			numBlocks[0] = (size_t)((out_cols + numThreads[0] - 1) / numThreads[0]) * numThreads[0];
 			numBlocks[1] = (size_t)((out_rows + numThreads[1] - 1) / numThreads[1]) * numThreads[1];
 			
-			const size_t sharedCols = numThreads[0] + this->m_overlap[0] * 2;
-			const size_t sharedRows = numThreads[1] + this->m_overlap[1] * 2;
+			const size_t sharedCols = numThreads[0] + this->m_overlap[1] * 2;
+			const size_t sharedRows = numThreads[1] + this->m_overlap[0] * 2;
 			const size_t sharedMemSize =  sharedRows * sharedCols * sizeof(T);
 			
 			DEBUG_TEXT_LEVEL1("OpenCL MapOverlap 2D: device = " << deviceID << ", numThreads = "
@@ -73,7 +73,7 @@ namespace skepu
 				get<CI>(std::forward<CallArgs>(args)...)...,
 				get<0>(std::forward<CallArgs>(args)...).getParent().size_info(),
 				out_rows, out_cols,
-				this->m_overlap[1], this->m_overlap[0],
+				this->m_overlap[0], this->m_overlap[1],
 				in_rows, in_cols, sharedRows, sharedCols,
 				edge, pad, &wrapMemP,
 				sharedMemSize

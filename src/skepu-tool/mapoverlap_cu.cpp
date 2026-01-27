@@ -507,6 +507,9 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_2D_kernel({{KERNEL_PARAMS}}
 	size_t skepu_x = skepu_xx + threadIdx.x;
 	size_t skepu_y = skepu_yy + threadIdx.y;
 	
+   size_t skepu_offset_x = (skepu_out_cols - skepu_in_cols) / 2 + skepu_overlap_x;
+	size_t skepu_offset_y = (skepu_out_rows - skepu_in_rows) / 2 + skepu_overlap_y;
+
 	
 	if (skepu_x < skepu_out_cols + skepu_overlap_x * 2 && skepu_y < skepu_out_rows + skepu_overlap_y * 2)
 	{
@@ -517,8 +520,8 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_2D_kernel({{KERNEL_PARAMS}}
 			while (skepu_shared_x < skepu_sharedCols)
 			{
 				size_t skepu_sharedIdx = skepu_shared_y * skepu_sharedCols + skepu_shared_x;
-				int skepu_global_x = (skepu_xx + skepu_shared_x - skepu_overlap_x);
-				int skepu_global_y = (skepu_yy + skepu_shared_y - skepu_overlap_y);
+				int skepu_global_x = (skepu_xx + skepu_shared_x - skepu_offset_x);
+				int skepu_global_y = (skepu_yy + skepu_shared_y - skepu_offset_y);
 				
 				if ((skepu_global_y >= 0 && skepu_global_y < skepu_in_rows) && (skepu_global_x >= 0 && skepu_global_x < skepu_in_cols))
 					{{SHARED_BUFFER}}[skepu_sharedIdx] = {{INPUT_PARAM_NAME}}[skepu_global_y * skepu_in_cols + skepu_global_x];

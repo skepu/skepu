@@ -24,23 +24,22 @@ namespace skepu
 			
 			auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 			
-			Region2D<T> region{arg, this->m_overlap[1], this->m_overlap[0], this->m_edge, this->m_pad};
+			Region2D<T> region{arg, this->m_overlap[0], this->m_overlap[1], this->m_edge, this->m_pad};
 			
-			Index2D start{0, 0}, end{size_i, size_j};
+			Index2D offset{0, 0};
 			if (this->m_edge == Edge::None)
 			{
-				start = Index2D{(size_t)this->m_overlap[1], (size_t)this->m_overlap[0]};
-				end = Index2D{size_i - (size_t)this->m_overlap[1], size_j - (size_t)this->m_overlap[0]};
+				offset.row = this->m_overlap[0];
+				offset.col = this->m_overlap[1];
 			}
 			
-			size_t final_size = (end.row - start.row) * (end.col - start.col);
-			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(final_size);
+			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(size_i * size_j);
 			
-			for (size_t i = start.row; i < end.row; i++)
-				for (size_t j = start.col; j < end.col; j++)
+			for (size_t i = 0; i < size_i; i++)
+				for (size_t j = 0; j < size_j; j++)
 					if (p == Parity::None || index_parity(p, i, j))
 					{
-						region.idx = Index2D{i,j};
+						region.idx = Index2D{(i + offset.row) * this->m_strides[0], (j + offset.col) * this->m_strides[1]};
 						auto res = F::forward(MapOverlapFunc::CPU, Index2D{i,j}, random, region, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
 						SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, j)..., res);
 					}

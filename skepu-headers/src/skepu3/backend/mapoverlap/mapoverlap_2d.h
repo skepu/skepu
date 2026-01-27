@@ -39,9 +39,8 @@ namespace skepu
 			{
 				if (y < 0 || x < 0)
 					SKEPU_ERROR("Overlap cannot be less than 0");
-				// TODO: Swapping the order of these doesn't cause any test to fail.
-				this->m_overlap[0] = x;
-				this->m_overlap[1] = y;
+				this->m_overlap[0] = y;
+				this->m_overlap[1] = x;
 			}
 
 			std::tuple<int, int> getOverlap() const
@@ -111,22 +110,72 @@ namespace skepu
 
 #endif
 
+			template<typename First, typename... Rest>
+			void checkOutputMatrixSizes(size_t expectedSizeRow, size_t expectedSizeCol, size_t i, std::string const& callMetadata, First&& first, Rest&&... rest)
+			{
+				if (first.total_rows() != expectedSizeRow)
+					SKEPU_ERROR(callMetadata
+					<< "\ninvalid number of output matrix rows"
+					<< "\nexpected output matrix rows: " << colorRed(expectedSizeRow)
+					<< "\noutput matrix (label: " << first.getLabel() << ", index: " << i << ", rows: " << colorRed(first.total_rows()) << ")");
+				
+				if (first.total_cols() != expectedSizeCol)
+					SKEPU_ERROR(callMetadata
+					<< "\ninvalid number of output matrix cols"
+					<< "\nexpected output matrix cols: " << colorRed(expectedSizeCol)
+					<< "\noutput matrix (label: " << first.getLabel() << ", index: " << i << ", cols: " << colorRed(first.total_cols()) << ")");
+
+				checkOutputMatrixSizes(expectedSizeRow, expectedSizeCol, i+1, callMetadata, rest...);
+			}
+
+			void checkOutputMatrixSizes(size_t expectedSizeRow, size_t expectedSizeCol, size_t i, std::string const& callMetadata){}
+
+			template<size_t... OI, size_t... EI, typename... CallArgs>
+			void checkMatrixSizes(size_t expectedInputRows, size_t expectedInputCols,std::string const& callMetadata,
+								  pack_indices<OI...>, pack_indices<EI...>, CallArgs&&... args)
+			{
+				auto& firstOutput = get<0>(std::forward<CallArgs>(args)...);
+				auto& input = get<OutArity>(std::forward<CallArgs>(args)...);
+
+				size_t firstOutputRows = firstOutput.total_rows();
+				size_t firstOutputCols = firstOutput.total_cols();
+				size_t inputRows = input.total_rows();
+				size_t inputCols = input.total_cols();
+				
+				if (inputRows != expectedInputRows)
+					SKEPU_ERROR(callMetadata
+					<< "\ninput/output matrix row count mismatch"
+					<< "\nfirst output matrix (label: " << firstOutput.getLabel() << ", rows: " << firstOutputRows << ")"
+					<< "\nexpected input matrix rows: " << colorRed(expectedInputRows)
+					<< "\ninput matrix (label: " << input.getLabel() << ", rows: " << colorRed(inputRows) << ")");
+				
+				if (inputCols != expectedInputCols)
+					SKEPU_ERROR(callMetadata
+					<< "\ninput/output matrix col count mismatch"
+					<< "\nfirst output matrix (label: " << firstOutput.getLabel() << ", cols: " << firstOutputCols << ")"
+					<< "\nexpected input matrix cols: " << colorRed(expectedInputCols)
+					<< "\ninput matrix (label: " << input.getLabel() << ", cols: " << colorRed(inputCols) << ")");
+				
+				checkOutputMatrixSizes(firstOutputRows, firstOutputCols, 0, callMetadata, get<OI>(std::forward<CallArgs>(args)...)...);
+			}
+
+			std::string generateCallMetadata()
+			{
+				return "MapOverlap2D call, label: " + this->getLabel() + ", Edge mode: " + to_string(this->getEdgeMode());
+			}
+
 		public:
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
 			auto backendDispatch(Parity p, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args) -> decltype(get<0>(std::forward<CallArgs>(args)...))
 			{
-				size_t size_i = get<0>(std::forward<CallArgs>(args)...).size_i();
-				size_t size_j = get<0>(std::forward<CallArgs>(args)...).size_j();
+				size_t firstOutputRows = get<0>(std::forward<CallArgs>(args)...).total_rows();
+				size_t firstOutputCols = get<0>(std::forward<CallArgs>(args)...).total_cols();
 
-				if (disjunction(
-					(get<OI>(std::forward<CallArgs>(args)...).size_i() != size_i) &&
-					(get<OI>(std::forward<CallArgs>(args)...).size_j() != size_j) ...))
-					SKEPU_ERROR("Non-matching container sizes");
+				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap2D: size = " << firstOutputRows << " x " << firstOutputCols);
 
-				if (disjunction(
-					(get<EI>(std::forward<CallArgs>(args)...).size_i() != size_i) &&
-					(get<EI>(std::forward<CallArgs>(args)...).size_j() != size_j) ...))
-					SKEPU_ERROR("Non-matching input container sizes");
+
+				checkMatrixSizes(this->expectedInputSize(firstOutputRows, 0), this->expectedInputSize(firstOutputCols, 1),
+								 generateCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
 				// Remove later
 				auto &res = get<0>(std::forward<CallArgs>(args)...);

@@ -50,7 +50,7 @@ namespace skepu
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(out_rows * out_cols, prng_threads);
 			auto randomMemP = random.updateDevice_CU(random.getAddress(), prng_threads, deviceID, AccessMode::ReadWrite);
 			
-			size_t sharedMem =  (numThreads.x + this->m_overlap[0] * 2) * (numThreads.y + this->m_overlap[1] * 2) * sizeof(T);
+			size_t sharedMem =  (numThreads.x + this->m_overlap[1] * 2) * (numThreads.y + this->m_overlap[0] * 2) * sizeof(T);
 			
 			DEBUG_TEXT_LEVEL1("CUDA MapOverlap kernel: size = " << out_rows * out_cols << ", one device, numBlocks = [" << numBlocks.x << "x" << numBlocks.y << "], numThreads = [" << numThreads.x << "x" << numThreads.y << "]");
 			
@@ -67,10 +67,10 @@ namespace skepu
 				get<CI>(std::forward<CallArgs>(args)...)...,
 				in_rows, in_cols,
 				out_rows, out_cols,
-				this->m_overlap[1], this->m_overlap[0],
+				this->m_overlap[0], this->m_overlap[1],
 				in_cols, out_cols,
-				numThreads.y + this->m_overlap[1] * 2,
-				numThreads.x + this->m_overlap[0] * 2,
+				numThreads.y + this->m_overlap[0] * 2,
+				numThreads.x + this->m_overlap[1] * 2,
 				this->m_edge, this->m_pad
 			);
 			

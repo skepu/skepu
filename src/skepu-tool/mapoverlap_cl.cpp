@@ -613,10 +613,14 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
 	size_t skepu_yy = ((size_t)(get_global_id(1) / get_local_size(1))) * get_local_size(1);
 	size_t skepu_x = get_global_id(0);
 	size_t skepu_y = get_global_id(1);
+	size_t skepu_offset_x = (skepu_out_cols - skepu_in_cols) / 2 + skepu_overlap_x;
+	size_t skepu_offset_y = (skepu_out_rows - skepu_in_rows) / 2 + skepu_overlap_y;
+
 	{{CONTAINER_PROXIES}}
 	{{CONTAINER_PROXIE_INNER}}
 
-	if (skepu_x < skepu_out_cols + skepu_overlap_x * 2 && skepu_y < skepu_out_rows + skepu_overlap_y * 2)
+	if (skepu_x < skepu_out_cols + skepu_overlap_x * 2
+		&& skepu_y < skepu_out_rows + skepu_overlap_y * 2)
 	{
 		size_t skepu_shared_x = get_local_id(0);
 		size_t skepu_shared_y = get_local_id(1);
@@ -625,8 +629,8 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
 			while (skepu_shared_x < skepu_sharedCols)
 			{
 				size_t skepu_sharedIdx = skepu_shared_y * skepu_sharedCols + skepu_shared_x;
-				int skepu_global_x = (skepu_xx + skepu_shared_x - skepu_overlap_x);
-				int skepu_global_y = (skepu_yy + skepu_shared_y - skepu_overlap_y);
+				int skepu_global_x = (skepu_xx + skepu_shared_x - skepu_offset_x);
+				int skepu_global_y = (skepu_yy + skepu_shared_y - skepu_offset_y);
 				
 				if ((skepu_global_y >= 0 && skepu_global_y < skepu_in_rows) && (skepu_global_x >= 0 && skepu_global_x < skepu_in_cols))
 					skepu_sdata[skepu_sharedIdx] = {{INPUT_PARAM_NAME}}[skepu_global_y * skepu_in_cols + skepu_global_x];

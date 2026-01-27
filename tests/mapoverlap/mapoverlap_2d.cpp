@@ -25,7 +25,7 @@ TEST_CASE("MapOverlap 2D fundamentals")
 	conv2.setPad(-5);
 
 	skepu::Matrix<int> m(size, size);
-	skepu::Matrix<float> rm_a(size, size), rm_b(size, size), rm_c(size, size), rm_d(size, size);
+	skepu::Matrix<float> rm_a(size-4, size-4), rm_b(size, size), rm_c(size, size), rm_d(size, size);
 	skepu::external(
 		skepu::read(m),
 		[&]

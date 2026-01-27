@@ -81,7 +81,7 @@ TEST_CASE("Test skeleton instances using lambda expressions")
   CHECK(r(0) == 9);
 	
 	int o = 1;
-	skepu::Matrix<float> filter(2*o+1, 2*o+1, 1), m(size, size, 5), rm(size, size);
+	skepu::Matrix<float> filter(2*o+1, 2*o+1, 1), m(size, size, 5), rm(size - o * 2, size - o * 2);
 	
 	conv2d.setOverlap(o);
 	conv2d.setEdgeMode(skepu::Edge::None);

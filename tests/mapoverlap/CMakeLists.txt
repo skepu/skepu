@@ -23,6 +23,18 @@ skepu_add_test_case_hybrid_opencl(mapoverlap_1d_new)
 skepu_add_test_case_hybrid_cuda(mapoverlap_1d_new)
 
 # ------------------------------------------------
+#   MapOverlap 2D fundamentals new
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mapoverlap_2d_new)
+skepu_add_test_case_cpu(mapoverlap_2d_new)
+skepu_add_test_case_openmp(mapoverlap_2d_new)
+skepu_add_test_case_opencl(mapoverlap_2d_new)
+skepu_add_test_case_cuda(mapoverlap_2d_new)
+skepu_add_test_case_hybrid_opencl(mapoverlap_2d_new)
+skepu_add_test_case_hybrid_cuda(mapoverlap_2d_new)
+
+# ------------------------------------------------
 #   MapOverlap 1D rowcol fundamentals
 # ------------------------------------------------
 

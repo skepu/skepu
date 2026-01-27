@@ -102,6 +102,18 @@ namespace skepu
 			data(arg_data),
 			idx{0,0}
 		{}
+
+		// Called by test code.
+		Region2D(int arg_oi, int arg_oj,
+				 size_t arg_size_i, size_t arg_size_j,
+				 size_t arg_stride, T *arg_data)
+		:	oi(arg_oi), oj(arg_oj),
+			size_i(arg_size_i), size_j(arg_size_j),
+			stride(arg_stride),
+			edge(Edge::None),
+			data(arg_data),
+			idx{0,0}
+		{}
 	};
 	
 	template<typename T>
