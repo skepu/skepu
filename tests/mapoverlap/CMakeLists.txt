@@ -10,41 +10,6 @@ skepu_add_test_case_opencl(default_values)
 skepu_add_test_case_hybrid_opencl(default_values)
 #skepu_add_test_case_hybrid_cuda(default_values)
 
-# ------------------------------------------------
-#   MapOverlap 1D fundamentals new
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_1d_new)
-skepu_add_test_case_cpu(mapoverlap_1d_new)
-skepu_add_test_case_openmp(mapoverlap_1d_new)
-skepu_add_test_case_opencl(mapoverlap_1d_new)
-skepu_add_test_case_cuda(mapoverlap_1d_new)
-skepu_add_test_case_hybrid_opencl(mapoverlap_1d_new)
-skepu_add_test_case_hybrid_cuda(mapoverlap_1d_new)
-
-# ------------------------------------------------
-#   MapOverlap 2D fundamentals new
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_2d_new)
-skepu_add_test_case_cpu(mapoverlap_2d_new)
-skepu_add_test_case_openmp(mapoverlap_2d_new)
-skepu_add_test_case_opencl(mapoverlap_2d_new)
-skepu_add_test_case_cuda(mapoverlap_2d_new)
-skepu_add_test_case_hybrid_opencl(mapoverlap_2d_new)
-skepu_add_test_case_hybrid_cuda(mapoverlap_2d_new)
-
-# ------------------------------------------------
-#   MapOverlap 1D rowcol fundamentals
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_1d_rowcol)
-skepu_add_test_case_cpu(mapoverlap_1d_rowcol)
-skepu_add_test_case_openmp(mapoverlap_1d_rowcol)
-skepu_add_test_case_opencl(mapoverlap_1d_rowcol)
-skepu_add_test_case_cuda(mapoverlap_1d_rowcol)
-skepu_add_test_case_hybrid_opencl(mapoverlap_1d_rowcol)
-skepu_add_test_case_hybrid_cuda(mapoverlap_1d_rowcol)
 
 # ------------------------------------------------
 #   MapOverlap 1D fundamentals
@@ -57,6 +22,32 @@ skepu_add_test_case_hybrid_cuda(mapoverlap_1d_rowcol)
 #skepu_add_test_case_cuda(mapoverlap_1d)
 #skepu_add_test_case_hybrid_opencl(mapoverlap_1d)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_1d)
+
+
+# ------------------------------------------------
+#   MapOverlap 1D fundamentals new
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mapoverlap_1d_new)
+skepu_add_test_case_cpu(mapoverlap_1d_new)
+skepu_add_test_case_openmp(mapoverlap_1d_new)
+skepu_add_test_case_opencl(mapoverlap_1d_new)
+skepu_add_test_case_cuda(mapoverlap_1d_new)
+skepu_add_test_case_hybrid_opencl(mapoverlap_1d_new)
+skepu_add_test_case_hybrid_cuda(mapoverlap_1d_new)
+
+
+# ------------------------------------------------
+#   MapOverlap 1D rowcol fundamentals
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mapoverlap_1d_rowcol)
+skepu_add_test_case_cpu(mapoverlap_1d_rowcol)
+skepu_add_test_case_openmp(mapoverlap_1d_rowcol)
+skepu_add_test_case_opencl(mapoverlap_1d_rowcol)
+skepu_add_test_case_cuda(mapoverlap_1d_rowcol)
+skepu_add_test_case_hybrid_opencl(mapoverlap_1d_rowcol)
+skepu_add_test_case_hybrid_cuda(mapoverlap_1d_rowcol)
 
 
 # ------------------------------------------------
@@ -73,6 +64,19 @@ skepu_add_test_case_hybrid_cuda(mapoverlap_2d)
 
 
 # ------------------------------------------------
+#   MapOverlap 2D fundamentals new
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mapoverlap_2d_new)
+skepu_add_test_case_cpu(mapoverlap_2d_new)
+skepu_add_test_case_openmp(mapoverlap_2d_new)
+skepu_add_test_case_opencl(mapoverlap_2d_new)
+skepu_add_test_case_cuda(mapoverlap_2d_new)
+skepu_add_test_case_hybrid_opencl(mapoverlap_2d_new)
+skepu_add_test_case_hybrid_cuda(mapoverlap_2d_new)
+
+
+# ------------------------------------------------
 #   MapOverlap 3D fundamentals
 # ------------------------------------------------
 
@@ -83,6 +87,19 @@ skepu_add_test_case_opencl(mapoverlap_3d)
 skepu_add_test_case_cuda(mapoverlap_3d)
 skepu_add_test_case_hybrid_opencl(mapoverlap_3d)
 skepu_add_test_case_hybrid_cuda(mapoverlap_3d)
+
+
+# ------------------------------------------------
+#   MapOverlap 3D fundamentals new
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mapoverlap_3d_new)
+skepu_add_test_case_cpu(mapoverlap_3d_new)
+skepu_add_test_case_openmp(mapoverlap_3d_new)
+skepu_add_test_case_opencl(mapoverlap_3d_new)
+skepu_add_test_case_cuda(mapoverlap_3d_new)
+skepu_add_test_case_hybrid_opencl(mapoverlap_3d_new)
+skepu_add_test_case_hybrid_cuda(mapoverlap_3d_new)
 
 
 # ------------------------------------------------

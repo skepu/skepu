@@ -73,14 +73,8 @@ namespace skepu
                     SKEPU_ERROR("Stride cannot be less than 0")
                 this->m_strides[0] = si;
                 this->m_strides[1] = sj;
-				//this->m_strides = StrideList<2>(si, sj);
 			}
 			
-            // TODO: Discuss with August.
-			void setStride(size_t si, size_t sj, size_t sk)
-			{
-				this->m_strides = StrideList<3>(si, sj, sk);
-			}
 
 		private:
 

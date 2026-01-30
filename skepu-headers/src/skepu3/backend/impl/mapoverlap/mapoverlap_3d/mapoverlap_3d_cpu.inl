@@ -27,22 +27,23 @@ namespace skepu
 			
 			Region3D<T> region{arg, this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_edge, this->m_pad};
 			
-			Index3D start{0, 0, 0}, end{size_i, size_j, size_k};
+			Index3D offset{0, 0, 0};
 			if (this->m_edge == Edge::None)
 			{
-				start = Index3D{(size_t)this->m_overlap[0], (size_t)this->m_overlap[1], (size_t)this->m_overlap[2]};
-				end = Index3D{size_i - (size_t)this->m_overlap[0], size_j - (size_t)this->m_overlap[1], size_k - (size_t)this->m_overlap[2]};
+				offset.i = this->m_overlap[0];
+				offset.j = this->m_overlap[1];
+				offset.k = this->m_overlap[2];
 			}
 			
-			size_t final_size = (end.i - start.i) * (end.j - start.j) * (end.k - start.k);
+			size_t final_size = size_i * size_j * size_k;
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(final_size);
 			
-			for (size_t i = start.i; i < end.i; i++)
-				for (size_t j = start.j; j < end.j; j++)
-					for (size_t k = start.k; k < end.k; k++)
+			for (size_t i = 0; i < size_i; i++)
+				for (size_t j = 0; j < size_j; j++)
+					for (size_t k = 0; k < size_k; k++)
 						if (p == Parity::None || index_parity(p, i, j, k))
 						{
-							region.idx = Index3D{i,j,k};
+							region.idx = Index3D{(i + offset.i) * this->m_strides[0], (j + offset.j) * this->m_strides[1], (k + offset.k) * this->m_strides[2]};
 							auto res = F::forward(MapOverlapFunc::CPU, Index3D{i,j,k}, random, region, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
 							SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, j, k)..., res);
 						}

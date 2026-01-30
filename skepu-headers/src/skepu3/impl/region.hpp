@@ -122,7 +122,7 @@ namespace skepu
 		int oi, oj, ok;
 		size_t size_i, size_j, size_k;
 		size_t m_offset[3];
-		size_t stride1, stride2;
+		int stride1, stride2;
 		Index3D idx;
 		const T *data;
 		Edge edge = Edge::None;
@@ -181,6 +181,20 @@ namespace skepu
 		:	oi(arg_oi), oj(arg_oj), ok(arg_ok),
 			size_i(0), size_j(0), size_k(0), // unused
 			stride1(arg_stride1), stride2(arg_stride2),
+			m_offset{0,0,0},
+			edge(Edge::None),
+			data(arg_data),
+			idx{0,0,0}
+		{}
+
+		// Called by test code.
+		Region3D(int arg_oi, int arg_oj, int arg_ok,
+				 size_t arg_size_i, size_t arg_size_j, size_t arg_size_k,
+				 size_t arg_stride1, size_t arg_stride2, T *arg_data)
+		:	oi(arg_oi), oj(arg_oj), ok(arg_ok),
+			size_i(arg_size_i), size_j(arg_size_j), size_k(arg_size_k),
+			stride1(arg_stride1), stride2(arg_stride2),
+			m_offset{0,0,0},
 			edge(Edge::None),
 			data(arg_data),
 			idx{0,0,0}

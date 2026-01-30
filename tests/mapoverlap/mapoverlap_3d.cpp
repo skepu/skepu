@@ -28,6 +28,7 @@ TEST_CASE("MapOverlap 3D fundamentals")
 
 	skepu::Tensor3<int> ten3(size, size, size, "", 1);
 	skepu::Tensor3<float> ret_ten3(size, size, size);
+	skepu::Tensor3<float> ret_ten3_none(size-2, size-2, size-2);
 	skepu::Tensor3<float> stencil3(2*1+1, 2*1+1, 2*1+1, "", 1);
 
 	skepu::external([&] {
@@ -38,7 +39,7 @@ TEST_CASE("MapOverlap 3D fundamentals")
 	}, skepu::write(ten3));
 	
 	conv3.setEdgeMode(skepu::Edge::None);
-	conv3(ret_ten3, ten3, stencil3);
+	conv3(ret_ten3_none, ten3, stencil3);
 	skepu::io::cout << "Tensor3D None: " << ret_ten3 << "\n";
 
 	conv3.setEdgeMode(skepu::Edge::Cyclic);

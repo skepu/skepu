@@ -590,6 +590,10 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_3D_kernel({{KERNEL_PARAMS}}
 	size_t skepu_k = skepu_kk + threadIdx.x;
 	size_t skepu_j = skepu_jj + threadIdx.y;
 	size_t skepu_i = skepu_ii + threadIdx.z;
+
+   size_t skepu_offset_i = (skepu_out_size_i - skepu_in_size_i) / 2 + skepu_overlap_i;
+   size_t skepu_offset_j = (skepu_out_size_j - skepu_in_size_j) / 2 + skepu_overlap_j;
+   size_t skepu_offset_k = (skepu_out_size_k - skepu_in_size_k) / 2 + skepu_overlap_k;
 	
 	
 	if (skepu_i < skepu_out_size_i + skepu_overlap_i * 2 && skepu_j < skepu_out_size_j + skepu_overlap_j * 2 && skepu_k < skepu_out_size_k + skepu_overlap_k * 2)
@@ -604,9 +608,9 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_3D_kernel({{KERNEL_PARAMS}}
 				while (skepu_shared_k < skepu_shared_size_k)
 				{
 					size_t skepu_sharedIdx = skepu_shared_i * skepu_shared_size_j * skepu_shared_size_k + skepu_shared_j * skepu_shared_size_k + skepu_shared_k;
-					int skepu_global_k = (skepu_kk + skepu_shared_k - skepu_overlap_k);
-					int skepu_global_j = (skepu_jj + skepu_shared_j - skepu_overlap_j);
-					int skepu_global_i = (skepu_ii + skepu_shared_i - skepu_overlap_i);
+					int skepu_global_k = (skepu_kk + skepu_shared_k - skepu_offset_k);
+					int skepu_global_j = (skepu_jj + skepu_shared_j - skepu_offset_j);
+					int skepu_global_i = (skepu_ii + skepu_shared_i - skepu_offset_i);
 					
 					if ((skepu_global_i >= 0 && skepu_global_i < skepu_in_size_i) && (skepu_global_j >= 0 && skepu_global_j < skepu_in_size_j) && (skepu_global_k >= 0 && skepu_global_k < skepu_in_size_k))
 						{{SHARED_BUFFER}}[skepu_sharedIdx] = {{INPUT_PARAM_NAME}}[skepu_global_i * skepu_in_size_j * skepu_in_size_k + skepu_global_j * skepu_in_size_k + skepu_global_k];

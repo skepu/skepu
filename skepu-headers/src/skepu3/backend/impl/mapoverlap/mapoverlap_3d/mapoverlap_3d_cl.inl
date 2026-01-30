@@ -49,10 +49,12 @@ namespace skepu
 			SKEPU_TRACE_START_EVENT(trace_handle);
 			
 			size_t numThreads[3], numBlocks[3];
+
 			size_t sizeLength = (size_t)std::cbrt(maxThreads);
 			numThreads[0] = std::min<size_t>(out_size_k, sizeLength);
 			numThreads[1] = std::min<size_t>(out_size_j, std::min<size_t>(maxThreads / numThreads[0], sizeLength));
 			numThreads[2] = std::min(out_size_i, maxThreads / (numThreads[0] * numThreads[1]));
+			
 			numBlocks[0] = (size_t)((out_size_k + numThreads[0] - 1) / numThreads[0]) * numThreads[0];
 			numBlocks[1] = (size_t)((out_size_j + numThreads[1] - 1) / numThreads[1]) * numThreads[1];
 			numBlocks[2] = (size_t)((out_size_i + numThreads[2] - 1) / numThreads[2]) * numThreads[2];
