@@ -83,8 +83,8 @@ namespace skepu
 					const size_t first = start_idxs[myId];
 					const size_t last = first + workSize;
 					
-					typename std::conditional<(sizeof...(EI) > 0), decltype((get<0>(std::forward<CallArgs>(args)...) + first).getIndex()), TempIndexType>::type index;
-					if constexpr (sizeof...(EI) > 0)
+					TempIndexType index;
+					if constexpr (MapFunc::indexed && sizeof...(EI) > 0)
 						index = (get<0>(std::forward<CallArgs>(args)...) + first).getIndex();
 					else
 						index = make_index(defaultDim{}, first, this->default_size_j, this->default_size_k, this->default_size_l);
@@ -98,7 +98,7 @@ namespace skepu
 
 					for (size_t i = first+1; i < last; ++i)
 					{
-						if constexpr (sizeof...(EI) > 0)
+						if constexpr (MapFunc::indexed && sizeof...(EI) > 0)
 							index = (get<0>(std::forward<CallArgs>(args)...) + i).getIndex();
 						else
 							index = make_index(defaultDim{}, i, this->default_size_j, this->default_size_k, this->default_size_l);

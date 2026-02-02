@@ -36,8 +36,8 @@ namespace skepu
 			for (size_t i = 0; i < size; ++i)
 			{
 				size_t myid = omp_get_thread_num();
-				typename std::conditional<(sizeof...(EI) > 0), decltype((get<0>(std::forward<CallArgs>(args)...) + i).getIndex()), TempIndexType>::type index;
-				if constexpr (sizeof...(EI) > 0)
+				TempIndexType index;
+				if constexpr (MapFunc::indexed && sizeof...(EI) > 0)
 					index = (get<0>(std::forward<CallArgs>(args)...) + i).getIndex();
 				else
 					index = make_index(defaultDim{}, i, this->default_size_j, this->default_size_k, this->default_size_l);
