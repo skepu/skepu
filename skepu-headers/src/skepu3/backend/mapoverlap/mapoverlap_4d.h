@@ -125,6 +125,91 @@ namespace skepu
 
 #endif
 
+			template<typename First, typename... Rest>
+			void checkOutputTensor4Sizes(size_t expected_size_i, size_t expected_size_j, size_t expected_size_k, size_t expected_size_l,
+										 size_t i, std::string const& callMetadata, First&& first, Rest&&... rest)
+			{
+				if (first.size_i() != expected_size_i)
+					SKEPU_ERROR(callMetadata
+					<< "\ninvalid output tensor4 size i"
+					<< "\nexpected output tensor4 size i: " << colorRed(expected_size_i)
+					<< "\noutput tensor (label: " << first.getLabel() << ", index: " << i << ", size i: " << colorRed(first.size_i()) << ")");
+				
+				if (first.size_j() != expected_size_j)
+					SKEPU_ERROR(callMetadata
+					<< "\ninvalid output tensor4 size j"
+					<< "\nexpected output tensor4 size j: " << colorRed(expected_size_j)
+					<< "\noutput tensor (label: " << first.getLabel() << ", index: " << i << ", size j: " << colorRed(first.size_j()) << ")");
+				
+				if (first.size_k() != expected_size_k)
+					SKEPU_ERROR(callMetadata
+					<< "\ninvalid output tensor4 size k"
+					<< "\nexpected output tensor4 size k: " << colorRed(expected_size_k)
+					<< "\noutput tensor (label: " << first.getLabel() << ", index: " << i << ", size k: " << colorRed(first.size_k()) << ")");
+				
+				if (first.size_l() != expected_size_l)
+					SKEPU_ERROR(callMetadata
+					<< "\ninvalid output tensor4 size l"
+					<< "\nexpected output tensor4 size l: " << colorRed(expected_size_l)
+					<< "\noutput tensor (label: " << first.getLabel() << ", index: " << i << ", size l: " << colorRed(first.size_l()) << ")");
+
+				checkOutputTensor4Sizes(expected_size_i, expected_size_j, expected_size_k, expected_size_l, i+1, callMetadata, rest...);
+			}
+
+			void checkOutputTensor4Sizes(size_t expected_size_i, size_t expected_size_j, size_t expected_size_k, size_t expected_size_l, size_t i, std::string const& callMetadata){}
+
+			template<size_t... OI, size_t... EI, typename... CallArgs>
+			void checkTensor4Sizes(size_t expected_input_size_i, size_t expected_input_size_j, size_t expected_input_size_k, size_t expected_input_size_l,
+								   std::string const& callMetadata, pack_indices<OI...>, pack_indices<EI...>, CallArgs&&... args)
+			{
+				auto& firstOutput = get<0>(std::forward<CallArgs>(args)...);
+				auto& input = get<OutArity>(std::forward<CallArgs>(args)...);
+
+				size_t first_output_size_i = firstOutput.size_i();
+				size_t first_output_size_j = firstOutput.size_j();
+				size_t first_output_size_k = firstOutput.size_k();
+				size_t first_output_size_l = firstOutput.size_l();
+				size_t input_size_i = input.size_i();
+				size_t input_size_j = input.size_j();
+				size_t input_size_k = input.size_k();
+				size_t input_size_l = input.size_l();
+				
+				if (input_size_i != expected_input_size_i)
+					SKEPU_ERROR(callMetadata
+					<< "\ninput/output tensor4 size i mismatch"
+					<< "\nfirst output tensor4 (label: " << firstOutput.getLabel() << ", size i: " << first_output_size_i << ")"
+					<< "\nexpected input tensor4 size i: " << colorRed(expected_input_size_i)
+					<< "\ninput tensor4 (label: " << input.getLabel() << ", size i: " << colorRed(input_size_i) << ")");
+				
+				if (input_size_j != expected_input_size_j)
+					SKEPU_ERROR(callMetadata
+					<< "\ninput/output tensor4 size j mismatch"
+					<< "\nfirst output tensor4 (label: " << firstOutput.getLabel() << ", size j: " << first_output_size_j << ")"
+					<< "\nexpected input tensor4 size j: " << colorRed(expected_input_size_j)
+					<< "\ninput tensor4 (label: " << input.getLabel() << ", size j: " << colorRed(input_size_j) << ")");
+
+				if (input_size_k != expected_input_size_k)
+					SKEPU_ERROR(callMetadata
+					<< "\ninput/output tensor4 size k mismatch"
+					<< "\nfirst output tensor4 (label: " << firstOutput.getLabel() << ", size k: " << first_output_size_k << ")"
+					<< "\nexpected input tensor4 size k: " << colorRed(expected_input_size_k)
+					<< "\ninput tensor4 (label: " << input.getLabel() << ", size k: " << colorRed(input_size_k) << ")");
+				
+				if (input_size_l != expected_input_size_l)
+					SKEPU_ERROR(callMetadata
+					<< "\ninput/output tensor4 size l mismatch"
+					<< "\nfirst output tensor4 (label: " << firstOutput.getLabel() << ", size l: " << first_output_size_l << ")"
+					<< "\nexpected input tensor4 size l: " << colorRed(expected_input_size_l)
+					<< "\ninput tensor4 (label: " << input.getLabel() << ", size k: " << colorRed(input_size_l) << ")");
+				
+				checkOutputTensor4Sizes(first_output_size_i, first_output_size_j, first_output_size_k, first_output_size_l, 1, callMetadata, get<OI>(std::forward<CallArgs>(args)...)...);
+			}
+
+			std::string generateCallMetadata()
+			{
+				return "MapOverlap4D call, label: " + this->getLabel() + ", Edge mode: " + to_string(this->getEdgeMode());
+			}
+
 		public:
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
 			auto backendDispatch(Parity p, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args) -> decltype(get<0>(std::forward<CallArgs>(args)...))
@@ -134,19 +219,8 @@ namespace skepu
 				size_t size_k = get<0>(std::forward<CallArgs>(args)...).size_k();
 				size_t size_l = get<0>(std::forward<CallArgs>(args)...).size_l();
 
-				if (disjunction(
-					(get<OI>(std::forward<CallArgs>(args)...).size_i() < size_i) ||
-					(get<OI>(std::forward<CallArgs>(args)...).size_j() < size_j) ||
-					(get<OI>(std::forward<CallArgs>(args)...).size_k() < size_k) ||
-					(get<OI>(std::forward<CallArgs>(args)...).size_l() < size_l)...))
-					SKEPU_ERROR("Non-matching output container sizes");
-
-				if (disjunction(
-					(get<EI>(std::forward<CallArgs>(args)...).size_i() != this->expectedInputSize(size_i, 0)) ||
-					(get<EI>(std::forward<CallArgs>(args)...).size_j() != this->expectedInputSize(size_j, 1)) ||
-					(get<EI>(std::forward<CallArgs>(args)...).size_k() != this->expectedInputSize(size_k, 2)) ||
-					(get<EI>(std::forward<CallArgs>(args)...).size_l() != this->expectedInputSize(size_l, 3))...))
-					SKEPU_ERROR("Non-matching input container sizes");
+				checkTensor4Sizes(this->expectedInputSize(size_i, 0), this->expectedInputSize(size_j, 1), this->expectedInputSize(size_k, 2), this->expectedInputSize(size_l, 3),
+				generateCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
 				// Remove later
 				auto &res = get<0>(std::forward<CallArgs>(args)...);
