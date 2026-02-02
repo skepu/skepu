@@ -104,50 +104,27 @@ RUN_DIR     = run
 PROGS=
 PROGS += cellular_automaton
 PROGS += cma
-PROGS += conjugate_gradient
+#PROGS += conjugate_gradient # Error related to repeated instantiations of different types in SkePU BLAS
 PROGS += coulombic
 PROGS += dotproduct
+PROGS += edgedetect
 PROGS += heat_diffusion # no red-black update mode in CUDA
 PROGS += horner
-#PROGS += image_manip
 PROGS += mandelbrot
 PROGS += maxmin
+PROGS += median
 PROGS += miller_rabin
 PROGS += mmmult
+PROGS += mmmult_row_col
 PROGS += montecarlo
 PROGS += mvmult
 PROGS += mvmult_row
-PROGS += mmmult_row_col
 PROGS += nbody
 PROGS += nbody_mappairs
 PROGS += ppmcc
-#PROGS += psnr error in: index = (get<0>(std::forward<CallArgs>(args)...) + i).getIndex();
+PROGS += psnr
 PROGS += riemann_sum
 PROGS += taylor
-
-
-CLUSTER_PROGS =
-#CLUSTER_PROGS += cellular_automaton
-CLUSTER_PROGS += cma
-#CLUSTER_PROGS += conjugate_gradient
-CLUSTER_PROGS += coulombic
-CLUSTER_PROGS += dotproduct
-#CLUSTER_PROGS += heat_diffusion # no red-black update mode
-CLUSTER_PROGS += mandelbrot
-CLUSTER_PROGS += maxmin
-#CLUSTER_PROGS += miller_rabin # no skepu random
-CLUSTER_PROGS += mmmult
-#CLUSTER_PROGS += montecarlo # no skepu random
-CLUSTER_PROGS += mvmult
-CLUSTER_PROGS += mvmult_row
-#CLUSTER_PROGS += mmmult_row_col # no matcol
-CLUSTER_PROGS += nbody
-CLUSTER_PROGS += nbody_mappairs
-CLUSTER_PROGS += ppmcc
-CLUSTER_PROGS += psnr
-CLUSTER_PROGS += riemann_sum
-CLUSTER_PROGS += taylor
-
 
 RUN_BACKEND = OpenCL
 SIZE_BACKEND = 2048
@@ -273,17 +250,6 @@ $(RUN_DIR):
 
 # Builds a single sequential test program.
 $(SEQ_DIR)/% : %.cpp $(SEQ_DIR)
-	$(DBGR) $(SEQ_CXX) $(SEQ_FLAGS) $< -o $@
-
-# Builds a single sequential test program.
-$(SEQ_DIR)/image_manip : image_manip.cpp $(SEQ_DIR)
-	$(DBGR) $(SEQ_CXX) $(SEQ_FLAGS) lodepng.cpp $< -o $@
-
-$(SEQ_DIR)/sde : sde.cpp $(SEQ_DIR)
-	$(DBGR) $(SEQ_CXX) $(SEQ_FLAGS) lodepng.cpp $< -o $@
-
-# Builds a single sequential test program.
-$(SEQ_DIR)/fusion_eval : fusion_eval.cpp $(SEQ_DIR)
 	$(DBGR) $(SEQ_CXX) $(SEQ_FLAGS) lodepng.cpp $< -o $@
 
 # Precompiles and builds a single parallel test program.
