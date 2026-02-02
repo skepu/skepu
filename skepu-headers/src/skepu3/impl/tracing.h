@@ -27,10 +27,10 @@ namespace skepu
 	namespace tracing
 	{
 		using TraceID = UniqueIdentifier::ID;
-		static const std::string defaultTraceFilename = "trace.json";
+		static const std::string defaultTraceFilename = "skepu_trace.json";
 
-#ifndef SKEPU_TRACE_FILENAME
-#define SKEPU_TRACE_FILENAME defaultTraceFilename
+#ifndef SKEPU_TRACE_FILE
+#define SKEPU_TRACE_FILE defaultTraceFilename
 #endif
 
 //#define SKEPU_USE_STD_SOURCE_LOCATION

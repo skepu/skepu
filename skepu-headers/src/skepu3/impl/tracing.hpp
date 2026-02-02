@@ -2,6 +2,7 @@
 #define TRACING_HPP
 
 
+#include "tracing.h"
 namespace skepu
 {
 	namespace tracing
@@ -48,7 +49,6 @@ namespace skepu
 		template<size_t... Indices, typename... Args>
 		void scalar_output_labels_helper(std::vector<TraceID> &labels, future_std::index_sequence<Indices...>, skepu::multiple<Args...> &margs)
 		{
-			std::cout << __PRETTY_FUNCTION__ << "\n";
 			pack_expand((scalar_labels_helper(labels, std::get<Indices>(margs)), 0)...);
 		}
 		
@@ -128,7 +128,12 @@ namespace skepu
 		{}
 
 		inline Tracer::Tracer(std::string filename): m_file_name{filename}
-		{}
+		{
+		    if (this->m_file_name == defaultTraceFilename && std::getenv("SKEPU_TRACE_FILE"))
+			{
+				this->m_file_name = std::getenv("SKEPU_TRACE_FILE");
+			}
+        }
 
 		inline Tracer::~Tracer()
 		{
@@ -359,7 +364,7 @@ namespace skepu
 		}
 
 
-		static Tracer internal_defaultGlobalTracer(SKEPU_TRACE_FILENAME);
+		static Tracer internal_defaultGlobalTracer(SKEPU_TRACE_FILE);
 
 		// Enables global tracer across multiple translation units
 		inline Tracer **internal_GlobalTracerAccessor()
