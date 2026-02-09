@@ -397,7 +397,7 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 		this->containerType = ContainerType::Pool1D;
 		SkePULog() << "Pool1D of " << this->resolvedTypeName << "\n";
 	}
-	else if (templateName == "Pool1D")
+	else if (templateName == "Pool2D")
 	{
 		this->containerType = ContainerType::Pool2D;
 		SkePULog() << "Pool2D of " << this->resolvedTypeName << "\n";
@@ -413,7 +413,7 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 		SkePULog() << "Pool4D of " << this->resolvedTypeName << "\n";
 	}
 	else
-		SkePUAbort("Unhandled proxy type");
+		SkePUAbort("Unhandled proxy type: " + templateName);
 
 	SkePULog() << "#----------------#\n";
 	SkePULog() << "Param [RandomAccess]: " << this->name << " of type " << this->rawTypeName << " resolving to " << this->resolvedTypeName << " (or fully: " << this->fullTypeName << ")\n";

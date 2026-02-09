@@ -47,13 +47,26 @@ namespace skepu
 			SKEPU_TRACE_START_EVENT(trace_handle);
 			
 			size_t numThreads[2], numBlocks[2];
-			numThreads[0] = std::min<size_t>(out_cols, 16);
-			numThreads[1] = std::min(out_rows, maxThreads / 16);
+			size_t sizeLength = (size_t)std::sqrt(maxThreads);
+			numThreads[0] = std::min<size_t>(out_cols, sizeLength);
+			numThreads[1] = std::min<size_t>(out_rows, sizeLength);
 			numBlocks[0] = (size_t)((out_cols + numThreads[0] - 1) / numThreads[0]) * numThreads[0];
 			numBlocks[1] = (size_t)((out_rows + numThreads[1] - 1) / numThreads[1]) * numThreads[1];
 			
-			const size_t sharedCols = numThreads[0] + this->m_overlap[1] * 2;
-			const size_t sharedRows = numThreads[1] + this->m_overlap[0] * 2;
+			size_t sharedCols;
+			size_t sharedRows;
+
+			if (this->isPool)
+			{
+				sharedCols = (numThreads[0] - 1) * this->m_strides[1] + this->m_overlap[1];
+				sharedRows = (numThreads[1] - 1) * this->m_strides[0] + this->m_overlap[0];
+			}
+			else
+			{
+				sharedCols = numThreads[0] + this->m_overlap[1] * 2;
+				sharedRows = numThreads[1] + this->m_overlap[0] * 2;
+			}
+
 			const size_t sharedMemSize =  sharedRows * sharedCols * sizeof(T);
 			
 			DEBUG_TEXT_LEVEL1("OpenCL MapOverlap 2D: device = " << deviceID << ", numThreads = "
@@ -74,8 +87,9 @@ namespace skepu
 				get<0>(std::forward<CallArgs>(args)...).getParent().size_info(),
 				out_rows, out_cols,
 				this->m_overlap[0], this->m_overlap[1],
+				this->m_strides[0], this->m_strides[1],
 				in_rows, in_cols, sharedRows, sharedCols,
-				edge, pad, &wrapMemP,
+				(int)(this->isPool ? 1 : 0), edge, pad, &wrapMemP,
 				sharedMemSize
 			);
 			
@@ -165,8 +179,9 @@ namespace skepu
 					get<0>(std::forward<CallArgs>(args)...).getParent().size_info(),
 					outRows, out_cols,
 					this->m_overlap[1], this->m_overlap[0],
+					this->m_strides[0], this->m_strides[1],
 					in_rows, in_cols, sharedRows, sharedCols,
-					edge, pad, &wrapMemP,
+					(int)(this->isPool ? 1 : 0), edge, pad, &wrapMemP,
 					sharedMemSize
 				);
 				

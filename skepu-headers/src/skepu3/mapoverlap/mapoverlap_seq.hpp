@@ -34,7 +34,24 @@ namespace skepu
 				else if (this->m_edge == Edge::None) return size + 2 * this->m_overlap[dim];
 				else return size;
 			}
+
+            bool isInputSizeValid(size_t out_size, size_t in_size, size_t dim) const
+			{
+                // input must be greater than or equal to the area that will be traversed
+                // to obtain the outputs.
+                if (this->isPool)
+                    return in_size >= this->getSmallestAllowedInputSizePool(out_size, dim);
+                
+                // input must be sized exactly so that there is no edge handling
+                else if (this->m_edge == skepu::Edge::None)
+                    return in_size == this->getAllowedInputSizeNone(out_size, dim);
+
+                // it doesn't matter what the input size is
+                return true;
+			}
         };
+
+			
 
     } // impl
 

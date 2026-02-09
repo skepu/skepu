@@ -26,6 +26,14 @@ namespace skepu
 		{
 			return this->values[i];
 		}
+
+#ifdef SKEPU_CUDA
+	__host__ __device__
+#endif
+		int& operator[](size_t i)
+		{
+			return this->values[i];
+		}
 		
 	private:
 		

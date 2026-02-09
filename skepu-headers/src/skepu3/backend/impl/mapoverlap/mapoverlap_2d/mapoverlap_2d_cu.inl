@@ -27,6 +27,7 @@ namespace skepu
 			const size_t in_cols = arg.total_cols();
 			const size_t out_rows = res.total_rows();
 			const size_t out_cols = res.total_cols();
+			const size_t maxThreads = this->m_selected_spec->GPUThreads();
 			
 			cudaSetDevice(deviceID);
 			
@@ -34,9 +35,12 @@ namespace skepu
 			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_rows * out_cols, deviceID, AccessMode::Write, true)...);
 			
 			dim3 numBlocks, numThreads;
-			
-			numThreads.x = (out_cols > 16) ? 16 : out_cols;
-			numThreads.y = (out_rows > 32) ? 32 : out_rows;
+
+			size_t sizeLength = (size_t)std::sqrt(maxThreads);
+			numThreads.x = std::min<size_t>(out_cols, sizeLength);
+			numThreads.y = std::min<size_t>(out_rows, sizeLength);
+			//numThreads.x = (out_cols > 16) ? 16 : out_cols;
+			//numThreads.y = (out_rows > 32) ? 32 : out_rows;
 			numThreads.z = 1;
 			
 			numBlocks.x = (out_cols + numThreads.x - 1) / numThreads.x;
@@ -49,15 +53,31 @@ namespace skepu
 			size_t prng_threads = std::min<size_t>(out_rows * out_cols, numBlocks.x * numBlocks.y * numThreads.x * numThreads.y);
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(out_rows * out_cols, prng_threads);
 			auto randomMemP = random.updateDevice_CU(random.getAddress(), prng_threads, deviceID, AccessMode::ReadWrite);
+
+			size_t sharedCols;
+			size_t sharedRows;
+
+			if (this->isPool)
+			{
+				sharedCols = (numThreads.x - 1) * this->m_strides[1] + this->m_overlap[1];
+			 	sharedRows = (numThreads.y - 1) * this->m_strides[0] + this->m_overlap[0];
+			}
+			else
+			{
+				sharedCols = numThreads.x + this->m_overlap[1] * 2;
+				sharedRows = numThreads.y + this->m_overlap[0] * 2;
+			}
+
+			size_t sharedMem = sharedRows * sharedCols * sizeof(T);
 			
-			size_t sharedMem =  (numThreads.x + this->m_overlap[1] * 2) * (numThreads.y + this->m_overlap[0] * 2) * sizeof(T);
+			//size_t sharedMem =  (numThreads.x + this->m_overlap[1] * 2) * (numThreads.y + this->m_overlap[0] * 2) * sizeof(T);
 			
 			DEBUG_TEXT_LEVEL1("CUDA MapOverlap kernel: size = " << out_rows * out_cols << ", one device, numBlocks = [" << numBlocks.x << "x" << numBlocks.y << "], numThreads = [" << numThreads.x << "x" << numThreads.y << "]");
 			
 #ifdef USE_PINNED_MEMORY
-			this->m_cuda_kernel<<<numBlocks,numThreads, sharedMem, this->m_environment->m_devices_CU.at(deviceID)->m_streams[0]>>>
+			this->m_cuda_kernel<<<numBlocks, numThreads, sharedMem, this->m_environment->m_devices_CU.at(deviceID)->m_streams[0]>>>
 #else
-			this->m_cuda_kernel<<<numBlocks,numThreads, sharedMem>>>
+			this->m_cuda_kernel<<<numBlocks, numThreads, sharedMem>>>
 #endif
 			(
 				std::get<OI>(out_mem_p)->getDeviceDataPointer()...,
@@ -68,16 +88,16 @@ namespace skepu
 				in_rows, in_cols,
 				out_rows, out_cols,
 				this->m_overlap[0], this->m_overlap[1],
+				this->m_strides[0], this->m_strides[1],
 				in_cols, out_cols,
-				numThreads.y + this->m_overlap[0] * 2,
-				numThreads.x + this->m_overlap[1] * 2,
-				this->m_edge, this->m_pad
+				sharedRows,
+				sharedCols,
+				(int)(this->isPool ? 1 : 0), this->m_edge, this->m_pad
 			);
 			
 			// Make sure the data is marked as changed by the device
 			pack_expand((std::get<OI>(out_mem_p)->changeDeviceData(), 0)...);
 		}
-		
 		
 		/*!
 		*  Performs the 2D MapOverlap using multiple CUDA GPUs.
@@ -172,10 +192,11 @@ namespace skepu
 					in_rows, in_cols,
 					outRows, out_cols,
 					this->m_overlap[1], this->m_overlap[0],
+					this->m_strides[0], this->m_strides[1],
 					in_cols, out_cols,
 					numThreads.y + this->m_overlap[1] * 2,
 					numThreads.x + this->m_overlap[0] * 2,
-					this->m_edge, this->m_pad
+					(int)(this->isPool ? 1 : 0), this->m_edge, this->m_pad
 				);
 				
 				// Make sure the data is marked as changed by the device

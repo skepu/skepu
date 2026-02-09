@@ -491,9 +491,10 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_2D_kernel({{KERNEL_PARAMS}}
 	const size_t skepu_in_rows, const size_t skepu_in_cols,
 	const size_t skepu_out_rows, const size_t skepu_out_cols,
 	size_t skepu_overlap_y, size_t skepu_overlap_x,
+   size_t skepu_stride_y, size_t skepu_stride_x,
 	size_t skepu_in_pitch, size_t skepu_out_pitch,
 	const size_t skepu_sharedRows, const size_t skepu_sharedCols,
-	skepu::Edge skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad
+	int skepu_is_pool, skepu::Edge skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad
 )
 {
   extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} {{SHARED_BUFFER}}[];
@@ -503,8 +504,8 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_2D_kernel({{KERNEL_PARAMS}}
 	size_t skepu_x = skepu_xx + threadIdx.x;
 	size_t skepu_y = skepu_yy + threadIdx.y;
 	
-   size_t skepu_offset_x = (skepu_out_cols - skepu_in_cols) / 2 + skepu_overlap_x;
-	size_t skepu_offset_y = (skepu_out_rows - skepu_in_rows) / 2 + skepu_overlap_y;
+   size_t skepu_offset_x = skepu_is_pool ? 0 : ((skepu_out_cols - skepu_in_cols) / 2 + skepu_overlap_x);
+	size_t skepu_offset_y = skepu_is_pool ? 0 : ((skepu_out_rows - skepu_in_rows) / 2 + skepu_overlap_y);
 
 	
 	if (skepu_x < skepu_out_cols + skepu_overlap_x * 2 && skepu_y < skepu_out_rows + skepu_overlap_y * 2)
@@ -839,7 +840,12 @@ std::string createMapOverlapKernelProgramHelper_CU(SkeletonInstance &instance, U
 	if (dim == 1)
 		SSMapOverlapFuncArgs << "{(int)overlap, 1, &" << sdataName << "[skepu_tid + overlap]}";
 	else if (dim == 2)
-		SSMapOverlapFuncArgs << "{(int)skepu_overlap_y, (int)skepu_overlap_x, skepu_sharedCols, &" << sdataName << "[(threadIdx.y + skepu_overlap_y) * skepu_sharedCols + (threadIdx.x + skepu_overlap_x)]}";
+   {
+      if (mapOverlapFunc.regionParam->isPool)
+		   SSMapOverlapFuncArgs << "{(int)skepu_overlap_y, (int)skepu_overlap_x, skepu_sharedCols, &" << sdataName << "[(threadIdx.y * skepu_stride_y) * skepu_sharedCols + (threadIdx.x * skepu_stride_x)]}";
+      else
+      	SSMapOverlapFuncArgs << "{(int)skepu_overlap_y, (int)skepu_overlap_x, skepu_sharedCols, &" << sdataName << "[(threadIdx.y + skepu_overlap_y) * skepu_sharedCols + (threadIdx.x + skepu_overlap_x)]}";
+   }
 	else if (dim == 3)
 		SSMapOverlapFuncArgs
 			<< "{(int)skepu_overlap_i, (int)skepu_overlap_j, (int)skepu_overlap_k, skepu_shared_size_j * skepu_shared_size_k, skepu_shared_size_k, &"

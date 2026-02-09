@@ -217,23 +217,11 @@ TEST_CASE("Invalid sizes")
     int overlapOffset[2];
     overlapOffset[0] = std::get<0>(overlapOffsetTemp) * 2;
     overlapOffset[1] = std::get<1>(overlapOffsetTemp) * 2;
-    skepu::Matrix<int> input(10, 10), correctSize(10, 10), smallRow(input.total_rows()-1, input.total_cols()), smallCol(input.total_rows(), input.total_cols()-1),
-    largeRow(input.total_rows()+1, input.total_cols()), largeCol(input.total_rows(), input.total_cols()+1),
+    skepu::Matrix<int> input(10, 10), correctSize(10, 10),
     correctSizeNone(input.total_rows()-overlapOffset[0], input.total_cols()-overlapOffset[1]), smallRowNone(input.total_rows()-overlapOffset[0]-1, input.total_cols()-overlapOffset[1]),
     smallColNone(input.total_rows()-overlapOffset[0], input.total_cols()-overlapOffset[1]-1), largeRowNone(input.total_rows()-overlapOffset[0]+1, input.total_cols()-overlapOffset[1]),
     largeColNone(input.total_rows()-overlapOffset[0], input.total_cols()-overlapOffset[1]+1);
 
-    skepu::Edge regularEdges[] = {skepu::Edge::Duplicate, skepu::Edge::Cyclic, skepu::Edge::Pad};
-
-    for (skepu::Edge edge : regularEdges)
-    {
-        INFO("edge = " + skepu::to_string(edge));
-        overlap.setEdgeMode(edge);
-        CHECK_THROWS_WITH(overlap(smallRow, input), Catch::Matchers::Contains("input/output matrix row count mismatch"));
-        CHECK_THROWS_WITH(overlap(largeRow, input), Catch::Matchers::Contains("input/output matrix row count mismatch"));
-        CHECK_THROWS_WITH(overlap(smallCol, input), Catch::Matchers::Contains("input/output matrix col count mismatch"));
-        CHECK_THROWS_WITH(overlap(largeCol, input), Catch::Matchers::Contains("input/output matrix col count mismatch"));
-    }
 
     INFO("edge = None");
     overlap.setEdgeMode(skepu::Edge::None);
@@ -390,8 +378,8 @@ TEST_CASE("Multi return")
 
 TEST_CASE("Invalid sizes 2 output matrices")
 {
-    overlap.setOverlap(1, 1);
-    std::tuple<int, int> overlapOffsetTemp = overlap.getOverlap();
+    overlap2.setOverlap(1, 1);
+    std::tuple<int, int> overlapOffsetTemp = overlap2.getOverlap();
     int overlapOffset[2];
     overlapOffset[0] = std::get<0>(overlapOffsetTemp) * 2;
     overlapOffset[1] = std::get<1>(overlapOffsetTemp) * 2;

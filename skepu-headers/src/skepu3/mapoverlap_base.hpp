@@ -48,6 +48,16 @@ namespace skepu
 			T m_pad {};
             int m_overlap[4] = {1, 1, 1, 1};
             StrideList<4> m_strides{1, 1, 1, 1};
+
+            size_t getSmallestAllowedInputSizePool(size_t out_size, size_t dim) const
+            {
+                return (out_size - 1) * this->m_strides[dim] + this->m_overlap[dim];
+            }
+
+            size_t getAllowedInputSizeNone(size_t out_size, size_t dim) const
+            {
+                return out_size + 2 * this->m_overlap[dim];
+            }
 		};
     }
 }

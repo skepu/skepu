@@ -522,14 +522,22 @@ namespace skepu
 			return data[ii * this->stride + jj];
 		}
 		
-#ifdef SKEPU_CUDA
-	__host__ __device__
-#endif
-	Pool2D(Matrix<T> const& mat, size_t arg_si, size_t arg_sj, Edge arg_edge, T arg_pad)
+	Pool2D(Matrix<T> const& mat, int arg_si, int arg_sj, Edge arg_edge, T arg_pad)
 	:	si(arg_si), sj(arg_sj),
 		stride(mat.size_j()),
 		data(mat.getAddress())
 	{}
+
+	// For CUDA kernel
+#ifdef SKEPU_CUDA
+		__host__ __device__
+#endif
+		Pool2D(int arg_si, int arg_sj, size_t arg_stride, T *arg_data)
+		:	si(arg_si), sj(arg_sj),
+			stride(arg_stride),
+			data(arg_data),
+			idx{0,0}
+		{}
 	};
 	
 	template<typename T>

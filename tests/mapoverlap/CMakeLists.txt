@@ -12,6 +12,19 @@ skepu_add_test_case_hybrid_cuda(default_values)
 
 
 # ------------------------------------------------
+#   MapOverlap expanding
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(expanding_mapoverlap)
+skepu_add_test_case_cpu(expanding_mapoverlap)
+skepu_add_test_case_openmp(expanding_mapoverlap)
+skepu_add_test_case_opencl(expanding_mapoverlap)
+skepu_add_test_case_cuda(expanding_mapoverlap)
+skepu_add_test_case_hybrid_opencl(expanding_mapoverlap)
+skepu_add_test_case_hybrid_cuda(expanding_mapoverlap)
+
+
+# ------------------------------------------------
 #   MapOverlap 1D fundamentals
 # ------------------------------------------------
 
@@ -74,6 +87,32 @@ skepu_add_test_case_opencl(mapoverlap_2d_new)
 skepu_add_test_case_cuda(mapoverlap_2d_new)
 skepu_add_test_case_hybrid_opencl(mapoverlap_2d_new)
 skepu_add_test_case_hybrid_cuda(mapoverlap_2d_new)
+
+
+# ------------------------------------------------
+#   MapPool 2D fundamentals
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mappool_2d)
+skepu_add_test_case_cpu(mappool_2d)
+skepu_add_test_case_openmp(mappool_2d)
+skepu_add_test_case_opencl(mappool_2d)
+skepu_add_test_case_cuda(mappool_2d)
+skepu_add_test_case_hybrid_opencl(mappool_2d)
+skepu_add_test_case_hybrid_cuda(mappool_2d)
+
+
+# ------------------------------------------------
+#   MapPool 2D small output sizes
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mappool_2d_small_output)
+skepu_add_test_case_cpu(mappool_2d_small_output)
+skepu_add_test_case_openmp(mappool_2d_small_output)
+skepu_add_test_case_opencl(mappool_2d_small_output)
+skepu_add_test_case_cuda(mappool_2d_small_output)
+skepu_add_test_case_hybrid_opencl(mappool_2d_small_output)
+skepu_add_test_case_hybrid_cuda(mappool_2d_small_output)
 
 
 # ------------------------------------------------

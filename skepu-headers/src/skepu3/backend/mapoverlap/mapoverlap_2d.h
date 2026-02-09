@@ -12,10 +12,11 @@ namespace skepu
         template<typename MapOverlapFunc, typename CUDAKernel, typename CLKernel>
 		class MapOverlap2D: public MapOverlapPar<MapOverlapFunc, SkeletonType::MapOverlap2D>, public SkeletonBase
 		{
-		private:
+		protected:
 			using Base = MapOverlapPar<MapOverlapFunc, SkeletonType::MapOverlap2D>;
 			using Base::InArity;
 			using Base::OutArity;
+			using typename Base::RegionType;
 			using typename Base::T;
 			using typename Base::F;
 
@@ -27,20 +28,17 @@ namespace skepu
 #endif
 			}
 
-			void setOverlap(int o)
+			void setOverlap(int oi, int oj)
 			{
-				if (o < 0)
+				if (oi < 0 || oj < 0)
 					SKEPU_ERROR("Overlap cannot be less than 0");
-				this->m_overlap[0] = o;
-				this->m_overlap[1] = o;
+				this->m_overlap[0] = oi;
+				this->m_overlap[1] = oj;
 			}
 
-			void setOverlap(int y, int x)
+			void setOverlap(int o)
 			{
-				if (y < 0 || x < 0)
-					SKEPU_ERROR("Overlap cannot be less than 0");
-				this->m_overlap[0] = y;
-				this->m_overlap[1] = x;
+				this->setOverlap(o, o);
 			}
 
 			std::tuple<int, int> getOverlap() const
@@ -54,6 +52,16 @@ namespace skepu
 					SKEPU_ERROR("Stride cannot be less than 0");
 				this->m_strides[0] = si;
 				this->m_strides[1] = sj;
+			}
+
+			void setStride(int s)
+			{
+				this->setStride(s, s);
+			}
+
+			std::tuple<int, int> getStride() const
+			{
+				return std::make_tuple(this->m_strides[0], this->m_strides[1]);
 			}
 
 			template<typename... Args>
@@ -111,52 +119,55 @@ namespace skepu
 #endif
 
 			template<typename First, typename... Rest>
-			void checkOutputMatrixSizes(size_t expectedSizeRow, size_t expectedSizeCol, size_t i, std::string const& callMetadata, First&& first, Rest&&... rest)
+			void checkOutputMatrixSizes(size_t expected_size_i, size_t expected_size_j, size_t i, First&& first, Rest&&... rest)
 			{
-				if (first.total_rows() != expectedSizeRow)
-					SKEPU_ERROR(callMetadata
+				if (first.size_i() != expected_size_i)
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninvalid number of output matrix rows"
-					<< "\nexpected output matrix rows: " << colorRed(expectedSizeRow)
-					<< "\noutput matrix (label: " << first.getLabel() << ", index: " << i << ", rows: " << colorRed(first.total_rows()) << ")");
+					<< "\nexpected output matrix rows: " << colorRed(expected_size_i)
+					<< "\noutput matrix (label: " << first.getLabel() << ", index: " << i << ", rows: " << colorRed(first.size_i()) << ")");
 				
-				if (first.total_cols() != expectedSizeCol)
-					SKEPU_ERROR(callMetadata
+				if (first.size_j() != expected_size_j)
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninvalid number of output matrix cols"
-					<< "\nexpected output matrix cols: " << colorRed(expectedSizeCol)
-					<< "\noutput matrix (label: " << first.getLabel() << ", index: " << i << ", cols: " << colorRed(first.total_cols()) << ")");
+					<< "\nexpected output matrix cols: " << colorRed(expected_size_j)
+					<< "\noutput matrix (label: " << first.getLabel() << ", index: " << i << ", cols: " << colorRed(first.size_j()) << ")");
 
-				checkOutputMatrixSizes(expectedSizeRow, expectedSizeCol, i+1, callMetadata, rest...);
+				checkOutputMatrixSizes(expected_size_i, expected_size_j, i+1, rest...);
 			}
 
-			void checkOutputMatrixSizes(size_t expectedSizeRow, size_t expectedSizeCol, size_t i, std::string const& callMetadata){}
+			void checkOutputMatrixSizes(size_t expected_size_i, size_t expected_size_j, size_t i){}
 
-			template<size_t... OI, size_t... EI, typename... CallArgs>
-			void checkMatrixSizes(size_t expectedInputRows, size_t expectedInputCols,std::string const& callMetadata,
-								  pack_indices<OI...>, pack_indices<EI...>, CallArgs&&... args)
+			template<size_t... OI, typename... CallArgs>
+			void checkMatrixSizes(pack_indices<OI...>, CallArgs&&... args)
 			{
-				auto& firstOutput = get<0>(std::forward<CallArgs>(args)...);
+				auto& first_output = get<0>(std::forward<CallArgs>(args)...);
 				auto& input = get<OutArity>(std::forward<CallArgs>(args)...);
 
-				size_t firstOutputRows = firstOutput.total_rows();
-				size_t firstOutputCols = firstOutput.total_cols();
-				size_t inputRows = input.total_rows();
-				size_t inputCols = input.total_cols();
+				size_t out_size_i = first_output.size_i();
+				size_t out_size_j = first_output.size_j();
+				size_t in_size_i = input.size_i();
+				size_t in_size_j = input.size_j();
 				
-				if (inputRows != expectedInputRows)
-					SKEPU_ERROR(callMetadata
+				if (!this->isInputSizeValid(out_size_i, in_size_i, 0))
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninput/output matrix row count mismatch"
-					<< "\nfirst output matrix (label: " << firstOutput.getLabel() << ", rows: " << firstOutputRows << ")"
-					<< "\nexpected input matrix rows: " << colorRed(expectedInputRows)
-					<< "\ninput matrix (label: " << input.getLabel() << ", rows: " << colorRed(inputRows) << ")");
+					<< "\nfirst output matrix (label: " << first_output.getLabel() << ", rows: " << out_size_i << ")"
+					<< "\nexpected input matrix rows: "
+                    << (this->isPool ? ">= " + colorRed(this->getSmallestAllowedInputSizePool(out_size_i, 0)) :
+                                      colorRed(this->getAllowedInputSizeNone(out_size_i, 0)))
+					<< "\ninput matrix (label: " << input.getLabel() << ", rows: " << colorRed(in_size_i) << ")");
 				
-				if (inputCols != expectedInputCols)
-					SKEPU_ERROR(callMetadata
+				if (!this->isInputSizeValid(out_size_j, in_size_j, 1))
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninput/output matrix col count mismatch"
-					<< "\nfirst output matrix (label: " << firstOutput.getLabel() << ", cols: " << firstOutputCols << ")"
-					<< "\nexpected input matrix cols: " << colorRed(expectedInputCols)
-					<< "\ninput matrix (label: " << input.getLabel() << ", cols: " << colorRed(inputCols) << ")");
+					<< "\nfirst output matrix (label: " << first_output.getLabel() << ", cols: " << out_size_j << ")"
+					<< "\nexpected input matrix cols: "
+                    << (this->isPool ? ">= " + colorRed(this->getSmallestAllowedInputSizePool(out_size_j, 1)) :
+                                      colorRed(this->getAllowedInputSizeNone(out_size_j, 1)))
+					<< "\ninput matrix (label: " << input.getLabel() << ", cols: " << colorRed(in_size_j) << ")");
 				
-				checkOutputMatrixSizes(firstOutputRows, firstOutputCols, 0, callMetadata, get<OI>(std::forward<CallArgs>(args)...)...);
+				checkOutputMatrixSizes(out_size_i, out_size_j, 0, get<OI>(std::forward<CallArgs>(args)...)...);
 			}
 
 			std::string generateCallMetadata()
@@ -174,8 +185,7 @@ namespace skepu
 				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap2D: size = " << firstOutputRows << " x " << firstOutputCols);
 
 
-				checkMatrixSizes(this->expectedInputSize(firstOutputRows, 0), this->expectedInputSize(firstOutputCols, 1),
-								 generateCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
+				checkMatrixSizes(this->out_indices, std::forward<CallArgs>(args)...);
 
 				// Remove later
 				auto &res = get<0>(std::forward<CallArgs>(args)...);
@@ -234,6 +244,59 @@ namespace skepu
 				return get<0>(std::forward<CallArgs>(args)...);
 			}
 		}; // MapOverlap2D
+
+		template<typename MapOverlapFunc, typename CUDAKernel, typename CLKernel>
+		class MapPool2D: public MapOverlap2D<MapOverlapFunc, CUDAKernel, CLKernel>
+		{
+		private:
+		using typename MapOverlap2D<MapOverlapFunc, CUDAKernel, CLKernel>::T;
+
+		public:
+			void setOverlap(int, int) = delete;
+			void setOverlap(int) = delete;
+			std::tuple<int, int> getOverlap() const = delete;
+
+			void setEdgeMode(Edge) = delete;
+			Edge getEdgeMode() const = delete;
+
+			void setPad(T) = delete;
+			T getPad() const = delete;
+			
+			void setUpdateMode(UpdateMode) = delete;
+			UpdateMode getUpdateMode() const = delete;
+
+			void setPoolSize(int pi, int pj)
+			{
+				if (pi < 0 || pj < 0)
+                    SKEPU_ERROR("Pool size cannot be less than 0");
+				this->m_overlap[0] = pi;
+				this->m_overlap[1] = pj;
+			}
+
+			void setPoolSize(int p)
+			{
+				this->setPoolSize(p, p);
+			}
+
+			std::tuple<int, int> getPoolSize() const
+			{
+				return std::make_tuple(this->m_overlap[0], this->m_overlap[1]);
+			}
+
+			void setPoolSizeAndStride(int pi, int pj)
+			{
+				this->setPoolSize(pi, pj);
+				this->setStride(pi, pj);
+			}
+
+			void setPoolSizeAndStride(int p)
+			{
+				this->setPoolSize(p);
+				this->setStride(p);
+			}
+
+			MapPool2D(std::string label, CUDAKernel kernel): MapOverlap2D<MapOverlapFunc, CUDAKernel, CLKernel>(label, kernel) {}
+		};
 
     } // backend
 
