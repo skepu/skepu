@@ -157,11 +157,12 @@ namespace skepu
 				size_t myId = omp_get_thread_num();
 				
 				if(myId == 0) {
+					T tempRes = arg[cpuSize];
 					// Let first thread handle the GPU part
 #ifdef SKEPU_HYBRID_USE_CUDA
-					parsums[numCPUThreads] = this->CU(gpuSize, arg[cpuSize], arg+cpuSize);
+					parsums[numCPUThreads] = this->CU(gpuSize-1, tempRes, arg+cpuSize+1);
 #else
-					parsums[numCPUThreads] = this->CL(gpuSize, arg[cpuSize], arg+cpuSize);
+					parsums[numCPUThreads] = this->CL(gpuSize-1, tempRes, arg+cpuSize+1);
 #endif
 				}
 				else {

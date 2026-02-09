@@ -60,6 +60,7 @@ TEST_CASE("MapPairsReduce fundamentals")
 	{
 		for (size_t j = 0; j < Hsize; ++j)
 		{
+			INFO("pairs, j=" + std::to_string(j));
 			int res = 0;
 			for (size_t i = 0; i < Vsize; ++i)
 				res += (i+1) * (j+1) * 10;
@@ -92,6 +93,7 @@ TEST_CASE("MapPairsReduce fundamentals")
 		{
 			for (size_t j = 0; j < Hsize; ++j)
 			{
+				INFO("pairs4, j=" + std::to_string(j));
 				int res = 0;
 				for (size_t i = 0; i < Vsize; ++i)
 					res += i + j;

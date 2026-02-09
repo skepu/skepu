@@ -282,7 +282,7 @@ macro(skepu_add_test_case_hybrid_opencl name)
 		skepu_add_executable(${name}_hybrid_opencl_test OpenMP OpenCL SKEPUSRC ${name}.cpp)
 		target_link_libraries(${name}_hybrid_opencl_test PRIVATE catch2_main)
 		target_compile_options(${name}_hybrid_opencl_test PRIVATE -DSKEPU_SET_DEFAULT_BACKEND_HYBRID)
-		add_test(${name}_hybrid_opencl ${name}_cpu_test)
+		add_test(${name}_hybrid_opencl ${name}_hybrid_opencl_test)
 	endif()
 endmacro()
 

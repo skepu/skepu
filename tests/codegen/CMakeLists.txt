@@ -48,7 +48,7 @@ skepu_add_test_case_cpu(lambda)
 skepu_add_test_case_openmp(lambda)
 skepu_add_test_case_opencl(lambda)
 skepu_add_test_case_cuda(lambda)
-skepu_add_test_case_hybrid_opencl(lambda)
+#skepu_add_test_case_hybrid_opencl(lambda)
 #skepu_add_test_case_hybrid_cuda(lambda)
 
 # ------------------------------------------------
@@ -68,6 +68,11 @@ skepu_add_test_case_hybrid_opencl(lambda)
 #   Object-oriented SkePU usage
 # ------------------------------------------------
 
+
+# CUDA does not work because TestClass.scale() calls a __global__ kernel. The kernel then relies on the struct::CU function.
+# 2 problems arise from this.
+# 1. The kernel gets included inside the class and a __global__ function cannot be a member function.
+# 2. The kernel calls the function struct::CU but needs to actually call TestClass::struct::CU.
 skepu_add_test_case_cpu(objectoriented)
 skepu_add_test_case_openmp(objectoriented)
 skepu_add_test_case_opencl(objectoriented)

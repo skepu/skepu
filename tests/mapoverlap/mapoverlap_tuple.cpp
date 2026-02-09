@@ -72,8 +72,10 @@ TEST_CASE("MapOverlap 1D with variadic return")
 		skepu::Vector<float> v(size, 10), rv1(size);
 		skepu::Vector<int> rv2(size);
 		
-		for (size_t i = 0;  i < size; ++i)
-			v(i) = i;
+		skepu::external([&]{
+			for (size_t i = 0;  i < size; ++i)
+				v(i) = i;
+		}, skepu::write(v));
 		
 		std::cout << "v: " << v <<"\n";
 		

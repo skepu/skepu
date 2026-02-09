@@ -31,6 +31,7 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_maj
 #if !{{USE_MULTIRETURN}}
 		skepu_result = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
 #else
+		size_t skepu_i = skepu_tid;
 		{{MULTI_TYPE}} skepu_out_temp = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
 		{{OUTPUT_ASSIGN}}
 #endif
@@ -49,6 +50,7 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_maj
 		{{MAPPAIRS_RESULT_TYPE}} tempMap = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
 		skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, tempMap);
 #else
+		size_t skepu_i = skepu_tid;
 		{{MULTI_TYPE}} skepu_out_temp = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
 		{{OUTPUT_ASSIGN}}
 #endif
@@ -75,10 +77,12 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_maj
 	if (skepu_blockSize >=    2) { if (skepu_tid <   1 && skepu_tid +   1 < skepu_minorSize) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +   1]); } barrier(CLK_LOCAL_MEM_FENCE); }
 	
 
+#if !{{USE_MULTIRETURN}}
 	if (skepu_tid == 0)
 	{
 		skepu_output[skepu_thread_major] = skepu_sdata[skepu_tid];
 	}
+#endif
 }
 )~~~";
 
