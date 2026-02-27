@@ -15,13 +15,13 @@ skepu_add_test_case_hybrid_cuda(mapoverlap_default_values)
 #   MapOverlap expanding
 # ------------------------------------------------
 
-skepu_add_test_case_sequential(mapoverlap_expanding)
-skepu_add_test_case_cpu(mapoverlap_expanding)
-skepu_add_test_case_openmp(mapoverlap_expanding)
-skepu_add_test_case_opencl(mapoverlap_expanding)
-skepu_add_test_case_cuda(mapoverlap_expanding)
-skepu_add_test_case_hybrid_opencl(mapoverlap_expanding)
-skepu_add_test_case_hybrid_cuda(mapoverlap_expanding)
+skepu_add_test_case_sequential(mapoverlap_2d_expanding)
+skepu_add_test_case_cpu(mapoverlap_2d_expanding)
+skepu_add_test_case_openmp(mapoverlap_2d_expanding)
+skepu_add_test_case_opencl(mapoverlap_2d_expanding)
+skepu_add_test_case_cuda(mapoverlap_2d_expanding)
+skepu_add_test_case_hybrid_opencl(mapoverlap_2d_expanding)
+skepu_add_test_case_hybrid_cuda(mapoverlap_2d_expanding)
 
 
 # ------------------------------------------------
@@ -155,6 +155,19 @@ skepu_add_test_case_hybrid_cuda(mapoverlap_4d)
 
 
 # ------------------------------------------------
+#   MapOverlap 4D Expanding
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mapoverlap_4d_expanding)
+skepu_add_test_case_cpu(mapoverlap_4d_expanding)
+skepu_add_test_case_openmp(mapoverlap_4d_expanding)
+skepu_add_test_case_opencl(mapoverlap_4d_expanding)
+skepu_add_test_case_cuda(mapoverlap_4d_expanding)
+skepu_add_test_case_hybrid_opencl(mapoverlap_4d_expanding)
+skepu_add_test_case_hybrid_cuda(mapoverlap_4d_expanding)
+
+
+# ------------------------------------------------
 #   MapOverlap 4D fundamentals new
 # ------------------------------------------------
 
@@ -165,6 +178,33 @@ skepu_add_test_case_opencl(mapoverlap_4d_new)
 skepu_add_test_case_cuda(mapoverlap_4d_new)
 skepu_add_test_case_hybrid_opencl(mapoverlap_4d_new)
 skepu_add_test_case_hybrid_cuda(mapoverlap_4d_new)
+
+
+# ------------------------------------------------
+#   MapPool 4D fundamentals
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mappool_4d)
+skepu_add_test_case_cpu(mappool_4d)
+skepu_add_test_case_openmp(mappool_4d)
+skepu_add_test_case_opencl(mappool_4d)
+skepu_add_test_case_cuda(mappool_4d)
+skepu_add_test_case_hybrid_opencl(mappool_4d)
+skepu_add_test_case_hybrid_cuda(mappool_4d)
+
+
+# ------------------------------------------------
+#   MapPool 4D small output sizes
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mappool_4d_small_output)
+skepu_add_test_case_cpu(mappool_4d_small_output)
+skepu_add_test_case_openmp(mappool_4d_small_output)
+skepu_add_test_case_opencl(mappool_4d_small_output)
+skepu_add_test_case_cuda(mappool_4d_small_output)
+skepu_add_test_case_hybrid_opencl(mappool_4d_small_output)
+skepu_add_test_case_hybrid_cuda(mappool_4d_small_output)
+
 
 # ------------------------------------------------
 #   MapOverlap Indexed

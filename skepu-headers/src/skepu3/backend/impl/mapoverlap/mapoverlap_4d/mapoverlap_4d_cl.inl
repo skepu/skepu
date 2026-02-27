@@ -76,20 +76,14 @@ namespace skepu
 			const size_t sharedK = (numThreads[0] / numThreads_0a) + this->m_overlap[2] * 2;
 			const size_t sharedJ = numThreads[1] + this->m_overlap[1] * 2;
 			const size_t sharedI = numThreads[2] + this->m_overlap[0] * 2;*/
-			 size_t sharedL = std::min<size_t>(in_size_l, numThreads_0a) + this->m_overlap[3] * 2;
-			 size_t sharedK = std::min<size_t>(in_size_k, numThreads[0] / numThreads_0a) + this->m_overlap[2] * 2;
-			 size_t sharedJ = std::min<size_t>(in_size_j, numThreads[1]) + this->m_overlap[1] * 2;
-			 size_t sharedI = std::min<size_t>(in_size_i, numThreads[2]) + this->m_overlap[0] * 2;
-			 size_t sharedMemSize =  sharedI * sharedJ * sharedK * sharedL * sizeof(T);
+			size_t sharedL = std::min<size_t>(out_size_l, numThreads_0a) + this->m_overlap[3] * 2;
+			size_t sharedK = std::min<size_t>(out_size_k, numThreads[0] / numThreads_0a) + this->m_overlap[2] * 2;
+			size_t sharedJ = std::min<size_t>(out_size_j, numThreads[1]) + this->m_overlap[1] * 2;
+			size_t sharedI = std::min<size_t>(out_size_i, numThreads[2]) + this->m_overlap[0] * 2;
+			size_t sharedMemSize =  sharedI * sharedJ * sharedK * sharedL * sizeof(T);
 			
 			if (this->isPool)
-			{
-				sharedL = std::min<size_t>(out_size_l, numThreads_0a) * this->m_overlap[3];
-				sharedK = std::min<size_t>(out_size_k, numThreads[0] / numThreads_0a) * this->m_overlap[2];
-				sharedJ = std::min<size_t>(out_size_j, numThreads[1]) * this->m_overlap[1];
-				sharedI = std::min<size_t>(out_size_i, numThreads[2]) * this->m_overlap[0];
-				sharedMemSize =  sharedI * sharedJ * sharedK * sharedL * sizeof(T);
-			}
+				sharedMemSize = 0;
 			
 			DEBUG_TEXT_LEVEL1("OpenCL " << name << " 4D: device = " << deviceID << ", numThreads = "
 				<< "[(" << numThreads_0a << ") " << numThreads[0] << " x " << numThreads[1] << " x " << numThreads[2] << "]" 
@@ -109,6 +103,7 @@ namespace skepu
 				get<0>(std::forward<CallArgs>(args)...).getParent().size_info(),
 				out_size_i, out_size_j, out_size_k, out_size_l, 
 				this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_overlap[3],
+                this->m_strides[0], this->m_strides[1], this->m_strides[2], this->m_strides[3],
 				in_size_i, in_size_j, in_size_k, in_size_l, 
 				sharedI, sharedJ, sharedK, sharedL,
 				numThreads_0a, numBlocks_0a,

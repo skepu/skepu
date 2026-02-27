@@ -12,13 +12,13 @@ namespace skepu
 		void MapOverlap4D<MapOverlapFunc, CUDAKernel, CLKernel>
 		::helper_CPU(Parity p, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 		{
-			size_t size_i = get<0>(std::forward<CallArgs>(args)...).size_i();
-			size_t size_j = get<0>(std::forward<CallArgs>(args)...).size_j();
-			size_t size_k = get<0>(std::forward<CallArgs>(args)...).size_k();
-			size_t size_l = get<0>(std::forward<CallArgs>(args)...).size_l();
+			size_t out_size_i = get<0>(std::forward<CallArgs>(args)...).size_i();
+			size_t out_size_j = get<0>(std::forward<CallArgs>(args)...).size_j();
+			size_t out_size_k = get<0>(std::forward<CallArgs>(args)...).size_k();
+			size_t out_size_l = get<0>(std::forward<CallArgs>(args)...).size_l();
 			
 			const std::string Name = this->isPool ? "MapPool4D" : "MapOverlap4D";
-			DEBUG_TEXT_LEVEL1("CPU " << Name << ": size = " << size_i << " x " << size_j << " x " << size_k << " x " << size_l);
+			DEBUG_TEXT_LEVEL1("CPU " << Name << ": size = " << out_size_i << " x " << out_size_j << " x " << out_size_k << " x " << out_size_l);
 			DEBUG_TEXT_LEVEL1("CPU " << Name << ": kernel = " << this->m_overlap[0] << " x " << this->m_overlap[1] << " x " << this->m_overlap[2] << " x " << this->m_overlap[3]);
 			DEBUG_TEXT_LEVEL1("CPU " << Name << ": strides = " << this->m_strides[0] << " x " << this->m_strides[1] << " x " << this->m_strides[2] << " x " << this->m_strides[3]);
 			
@@ -31,34 +31,46 @@ namespace skepu
 			
 			auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 			
-			Region4D<T> region{arg,
+			RegionType region{arg,
 				this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_overlap[3],
 				this->m_edge, this->m_pad,
-				(size_i - arg.size_i()) / 2 * this->m_overlap[0], (size_j - arg.size_j()) / 2 * this->m_overlap[1],
-				(size_k - arg.size_k()) / 2 * this->m_overlap[2], (size_l - arg.size_l()) / 2 * this->m_overlap[3]
+				(out_size_i - arg.size_i()) / 2 * this->m_overlap[0], (out_size_j - arg.size_j()) / 2 * this->m_overlap[1],
+				(out_size_k - arg.size_k()) / 2 * this->m_overlap[2], (out_size_l - arg.size_l()) / 2 * this->m_overlap[3]
 			};
-		/*	Index4D start{0, 0, 0, 0}, end{size_i, size_j, size_k, size_l};
-			if (this->m_edge == Edge::None)
-			{
-				start = Index4D{(size_t)this->m_overlap[0], (size_t)this->m_overlap[1], (size_t)this->m_overlap[2], (size_t)this->m_overlap[3]};
-				end = Index4D{size_i - this->m_overlap[0], size_j - this->m_overlap[1], size_k - this->m_overlap[2], size_l - this->m_overlap[3]};
-			}
+            
+			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(out_size_i * out_size_j * out_size_k * out_size_l);
 			
-			size_t final_size = (end.i - start.i) * (end.j - start.j) * (end.k - start.k) * (end.l - start.l);*/
-			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(size_i * size_j * size_k * size_l);
-			
-			for (size_t i = 0; i < size_i; i++)
-				for (size_t j = 0; j < size_j; j++)
-					for (size_t k = 0; k < size_k; k++)
-						for (size_t l = 0; l < size_l; l++)
+            Index4D offset{0, 0, 0, 0};
+            if (!this->isPool)
+            {
+                if (this->m_edge == Edge::None)
+                {
+                    offset.i = this->m_overlap[0];
+                    offset.j = this->m_overlap[1];
+                    offset.k = this->m_overlap[2];
+                    offset.l = this->m_overlap[3];
+                }
+                else
+                {
+                    offset.i = (arg.size_i() - out_size_i) / 2;
+                    offset.j = (arg.size_j() - out_size_j) / 2;
+                    offset.k = (arg.size_k() - out_size_k) / 2;
+                    offset.l = (arg.size_l() - out_size_l) / 2;
+                }
+            }
+
+			for (size_t i = 0; i < out_size_i; i++)
+				for (size_t j = 0; j < out_size_j; j++)
+					for (size_t k = 0; k < out_size_k; k++)
+						for (size_t l = 0; l < out_size_l; l++)
 							if (p == Parity::None || index_parity(p, i, j, k, l))
 							{
 								region.idx = Index4D{
-									i * this->m_strides[0],// + ((this->m_edge == Edge::None) ? this->m_overlap[0] : 0),
-									j * this->m_strides[1],// + ((this->m_edge == Edge::None) ? this->m_overlap[1] : 0),
-									k * this->m_strides[2],// + ((this->m_edge == Edge::None) ? this->m_overlap[2] : 0),
-									l * this->m_strides[3]// + ((this->m_edge == Edge::None) ? this->m_overlap[3] : 0)
-								};
+                                    (i + offset.i) * this->m_strides[0],
+                                    (j + offset.j) * this->m_strides[1],
+                                    (k + offset.k) * this->m_strides[2],
+                                    (l + offset.l) * this->m_strides[3]
+                                };
 								auto res = F::forward(
 									MapOverlapFunc::CPU, Index4D{i,j,k,l}, random, region,
 									get<AI>(std::forward<CallArgs>(args)...).hostProxy()...,
@@ -66,7 +78,7 @@ namespace skepu
 								);
 								SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, j, k, l)..., res);
 							}
-			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 4D", this, {size_i, size_j, size_k, size_l},
+			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 4D", this, {out_size_i, out_size_j, out_size_k, out_size_l},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},

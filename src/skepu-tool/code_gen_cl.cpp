@@ -286,6 +286,17 @@ typedef struct {
 static {{TYPE_CL}} skepu_pool_access_4d_{{CONTAINED_TYPE_CL}}(skepu_pool4d_{{CONTAINED_TYPE_CL}} r, int i, int j, int k, int l)
 { return r.data[i * r.stride1 * r.stride2 * r.stride3 + j * r.stride2 * r.stride3 + k * r.stride3 + l]; }
 )~~~";
+
+static const std::string OpenCLPool4DTemplateGlobal = R"~~~(
+typedef struct {
+	__global {{TYPE_CL}} *data;
+	int si, sj, sk, sl;
+	size_t stride1, stride2, stride3;
+} skepu_pool4d_{{CONTAINED_TYPE_CL}}_global;
+
+static {{TYPE_CL}} skepu_pool_access_4d_{{CONTAINED_TYPE_CL}}_global(skepu_pool4d_{{CONTAINED_TYPE_CL}}_global r, int i, int j, int k, int l)
+{ return r.data[i * r.stride1 * r.stride2 * r.stride3 + j * r.stride2 * r.stride3 + k * r.stride3 + l]; }
+)~~~";
 	
 	std::string retval;
 	if (!param.isPool)
@@ -305,7 +316,7 @@ static {{TYPE_CL}} skepu_pool_access_4d_{{CONTAINED_TYPE_CL}}(skepu_pool4d_{{CON
 		case 1: retval = OpenCLPool1DTemplate; break;
 		case 2: retval = OpenCLPool2DTemplate; break;
 		case 3: retval = OpenCLPool3DTemplate; break;
-		case 4: retval = OpenCLPool4DTemplate; break;
+		case 4: retval = OpenCLPool4DTemplate + "\n" + OpenCLPool4DTemplateGlobal; break;
 		};
 	}
 	replaceTextInString(retval, "{{TYPE_CL}}", param.typeNameOpenCL());
@@ -898,6 +909,31 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 		SSFuncSource << "typedef " << arg.rawTypeName << " " << arg.paramName << ";\n";
 
 	SSFuncSource << transformedSource << "\n}\n\n";
+    if (UserFunction::RegionParam *param = Func.regionParam)
+        if (param->containerType == ContainerType::Pool4D)
+        {
+            std::stringstream SSGlobalFuncSource;
+            SSGlobalFuncSource << "static ";
+            if (Func.multipleReturnTypes.size() > 0)
+                SSGlobalFuncSource << Func.multiReturnTypeNameGPU();
+            else
+                SSGlobalFuncSource << Func.returnTypeNameOpenCL();
+            
+            std::string original = "skepu_pool4d_" + transformToCXXIdentifier(param->resolvedTypeName);
+            std::string replacement = original + "_global";
+            std::string param_list = SSFuncParamList.str();
+            replaceTextInString(param_list, original, replacement);
+
+            SSGlobalFuncSource << " " << Func.uniqueName << "_global(" << param_list << ")\n{";
+            for (UserFunction::TemplateArgument &arg : Func.templateArguments)
+                SSGlobalFuncSource << "typedef " << arg.rawTypeName << " " << arg.paramName << ";\n";
+            
+            original = "skepu_pool_access_4d_" + transformToCXXIdentifier(param->resolvedTypeName);
+            replacement = original + "_global";
+            replaceTextInString(transformedSource, original, replacement);
+            SSGlobalFuncSource << transformedSource << "\n}\n\n";
+            return SSFuncSource.str() + "\n" + SSGlobalFuncSource.str();
+        }
 	return SSFuncSource.str();
 }
 

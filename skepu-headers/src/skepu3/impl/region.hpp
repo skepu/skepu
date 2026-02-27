@@ -215,10 +215,10 @@ namespace skepu
 		
 		T operator()(int i, int j, int k, int l) const
 		{
-			int ii = this->idx.i + i + (this->edge != Edge::None ? -this->offset_i : 0);
-			int jj = this->idx.j + j + (this->edge != Edge::None ? -this->offset_j : 0);
-			int kk = this->idx.k + k + (this->edge != Edge::None ? -this->offset_k : 0);
-			int ll = this->idx.l + l + (this->edge != Edge::None ? -this->offset_l : 0);
+			int ii = this->idx.i + i;
+			int jj = this->idx.j + j;
+			int kk = this->idx.k + k;
+			int ll = this->idx.l + l;
 			size_t offset;
 			
 			switch (this->edge)
@@ -243,7 +243,7 @@ namespace skepu
 					future_std::clamp<int>(ll, 0, this->size_l-1);
 				return data[offset];
 			default:
-				return data[(ii + oi) * this->stride1 + (jj + oj) * this->stride2 + (kk + ok) * this->stride3 + (ll + ol)];
+				return data[ii * this->stride1 + jj * this->stride2 + kk * this->stride3 + ll];
 			}
 		}
 
@@ -277,7 +277,7 @@ namespace skepu
 	struct Region4DCU
 	{
 		int oi, oj, ok, ol;
-		size_t stride1, stride2, stride3;
+		int stride1, stride2, stride3;
 		const T *data;
 
 #ifdef SKEPU_CUDA
@@ -638,6 +638,7 @@ namespace skepu
 		stride1(ten.m_stride_1),
 		stride2(ten.m_stride_2),
 		stride3(ten.m_stride_3),
+		idx{0, 0, 0, 0},
 		data(ten.getAddress())
 	{}
 
@@ -647,7 +648,7 @@ namespace skepu
 	Pool4D(int arg_si, int arg_sj, int arg_sk, int arg_sl, size_t arg_stride1, size_t arg_stride2, size_t arg_stride3, T *arg_data)
 		:	si(arg_si), sj(arg_sj), sk(arg_sk), sl(arg_sl),
 			stride1(arg_stride1), stride2(arg_stride2), stride3(arg_stride3),
-			data(arg_data)
+			idx{0, 0, 0, 0}, data(arg_data)
 		{}
 	};
 	
