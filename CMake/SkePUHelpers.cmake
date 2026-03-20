@@ -199,7 +199,6 @@ function(skepu_add_executable name)
 					-fnames="${_skepu_fnames}"
 					${CMAKE_CURRENT_LIST_DIR}/${_file}
 					--
-					-std=c++14
 					"${_include_generators}"
 			DEPENDS ${CMAKE_CURRENT_LIST_DIR}/${_file}
 			BYPRODUCTS ${_output_dir}/${_target_byprod}

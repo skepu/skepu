@@ -130,6 +130,8 @@ public:
 //		if (!DoNotGenLineDirectives)
 //			GlobalRewriter.InsertText(SLStart, "#line 1 \"" + inputFileName + "\"\n");
 
+        SkePULog() << "Found " << this->SkeletonInstances.size() << " skeleton instances\n";
+
 		for (VarDecl *d : this->SkeletonInstances)
 			HandleSkeletonInstance(d);
 
@@ -161,7 +163,7 @@ public:
 	{
 		if (Verbose) SkePULog() << "** Creating AST consumer for: " << file << "\n";
 		GlobalRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
-		return llvm::make_unique<SkePUASTConsumer>(&CI.getASTContext(), this->SkeletonInstances);
+		return std::make_unique<SkePUASTConsumer>(&CI.getASTContext(), this->SkeletonInstances);
 	}
 
 private:
@@ -171,7 +173,17 @@ private:
 
 int main(int argc, const char **argv)
 {
-	tooling::CommonOptionsParser op(argc, argv, SkePUCategory);
+    auto expectedParser = tooling::CommonOptionsParser::create(argc, argv, SkePUCategory);
+
+    if (!expectedParser)
+    {
+        // Fail gracefully for unsupported options
+        SkePULog() << "The expected parser for SkePU tool has failed \n";
+        llvm::errs() << expectedParser.takeError();
+    }
+
+
+	tooling::CommonOptionsParser& op = expectedParser.get();
 	tooling::ClangTool Tool(op.getCompilations(), op.getSourcePathList());
 
 	if (ResultName == "")
@@ -189,6 +201,8 @@ int main(int argc, const char **argv)
 		SkePULog() << "   StarPU-MPI gen:   " << (GenStarPUMPI ? "ON" : "OFF") << "\n";
 		SkePULog() << "   Main output file: " << mainFileName << "\n";
 		SkePULog() << "# ======================================= #\n";
+        for (int i = 1; i < argc; ++i)
+            SkePULog() << "Argument " << i << ": " << argv[i] << "\n";
 	}
 
 	std::istringstream SSNames(AllowedFuncNames);

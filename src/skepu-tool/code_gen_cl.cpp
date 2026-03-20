@@ -422,7 +422,7 @@ RND_NORMALIZED_T skepu_random_get_normalized(__global skepu_random *prng)
 }
 )~~~";
 	return OpenCLRandomTemplate;
-};
+}
 
 
 void handleRandomParam_CL(
