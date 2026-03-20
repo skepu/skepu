@@ -1,8 +1,8 @@
 diff --git a/clang/include/clang/Basic/Attr.td b/clang/include/clang/Basic/Attr.td
-index efa64dbe4b51..354e4dae75eb 100644
+index efa64dbe4b51..a14ec41ae10b 100644
 --- a/clang/include/clang/Basic/Attr.td
 +++ b/clang/include/clang/Basic/Attr.td
-@@ -5344,3 +5344,59 @@ def ModularFormat : InheritableAttr {
+@@ -5344,3 +5344,15 @@ def ModularFormat : InheritableAttr {
    let Subjects = SubjectList<[Function]>;
    let Documentation = [ModularFormatDocs];
  }
@@ -11,23 +11,6 @@ index efa64dbe4b51..354e4dae75eb 100644
 +/* SkePU attributes */
 +/*------------------*/
 +
-+/* [[skepu::userfunction]] */
-+def SkepuUserFunction : InheritableAttr
-+{
-+  let Spellings = [CXX11<"skepu", "userfunction">];
-+  let Subjects = SubjectList<[Function]>;
-+  let Documentation = [Undocumented];
-+}
-+
-+/* [[skepu::usertype]] */
-+def SkepuUserType : InheritableAttr
-+{
-+  let Spellings = [CXX11<"skepu", "usertype">];
-+  let Subjects = SubjectList<[Record, TypedefName], ErrorDiag,
-+                             "ExpectedStructOrUnionOrTypedef">;
-+  let Documentation = [Undocumented];
-+}
-+
 +/* [[skepu::userconstant]] */
 +def SkepuUserConstant : InheritableAttr
 +{
@@ -35,105 +18,11 @@ index efa64dbe4b51..354e4dae75eb 100644
 +  let Subjects = SubjectList<[Var]>;
 +  let Documentation = [Undocumented];
 +}
-+
-+/* [[skepu::out]] */
-+def SkepuOut : InheritableParamAttr
-+{
-+  let Spellings = [CXX11<"skepu", "out">];
-+  let Subjects = SubjectList<[ParmVar]>;
-+  let Documentation = [Undocumented];
-+}
-+
-+/* [[skepu::accessmode(...)]] */
-+def SkepuAccessMode : InheritableParamAttr
-+{
-+  let Spellings = [CXX11<"skepu", "accessmode">];
-+  let Subjects = SubjectList<[ParmVar]>;
-+  let Args = [EnumArgument<"Mode", "AccessMode", 1,
-+                          ["read", "write", "read_ptr", "write_ptr"],
-+                          ["Read", "Write", "ReadPtr", "WritePtr"]>];
-+  let Documentation = [Undocumented];
-+}
-+
-+/* [[skepu::instance]] */
-+def SkepuInstance : InheritableAttr
-+{
-+  let Spellings = [CXX11<"skepu", "instance">];
-+  let Subjects = SubjectList<[Var]>;
-+  let Documentation = [Undocumented];
-+}
-diff --git a/clang/include/clang/Basic/DiagnosticASTKinds.td b/clang/include/clang/Basic/DiagnosticASTKinds.td
-index e90ee9d376e0..18b667575aa0 100644
---- a/clang/include/clang/Basic/DiagnosticASTKinds.td
-+++ b/clang/include/clang/Basic/DiagnosticASTKinds.td
-@@ -1077,4 +1077,22 @@ def warn_unpacked_field
- def warn_unaligned_access : Warning<
-   "field %1 within %0 is less aligned than %2 and is usually due to %0 being "
-   "packed, which can lead to unaligned accesses">, InGroup<UnalignedAccess>, DefaultIgnore;
-+
-+/* SkePU diagnostics */
-+def err_skepu_no_userfunction_body : Error<
-+  "[SkePU] Declaration of function %0 with skepu::userfunction attribute is "
-+	"not a definition">;
-+def err_skepu_arg_not_a_userfunction : Error<
-+  "[SkePU] Argument is not a userfunction">;
-+def err_skepu_invalid_out_attribute : Error<
-+  "[SkePU] Invalid skepu::out attribute on pointer-to-const userfunction "
-+	"parameter %0">;
-+def err_skepu_userfunction_call : Error<
-+  "[SkePU] Function call inside user function with callee '%0' which is not a "
-+	"user function or an exempted function name">;
-+
-+def warn_skepu_no_userfunction_attr : Warning<
-+  "[SkePU] Function %0 does not have the skepu::userfunction attribute">;
-+def warn_skepu_explicit_function_address_of : Warning<
-+  "[SkePU] Explicit addressof-operator on userfunction argument">;
- }
 diff --git a/clang/lib/Sema/SemaDeclAttr.cpp b/clang/lib/Sema/SemaDeclAttr.cpp
-index 3f0ea5c8f3eb..3a5fdd506307 100644
+index 3f0ea5c8f3eb..bb4133f8ef31 100644
 --- a/clang/lib/Sema/SemaDeclAttr.cpp
 +++ b/clang/lib/Sema/SemaDeclAttr.cpp
-@@ -7078,6 +7078,39 @@ static void handleModularFormat(Sema &S, Decl *D, const ParsedAttr &AL) {
-       S.Context, AL, ModularImplFn, ImplName, Aspects.data(), Aspects.size()));
- }
- 
-+/* SkePU attribute handlers */
-+static void handleSkepuAccessModeAttr(Sema &S, Decl *D, const ParsedAttr &AL)
-+{
-+	if (AL.getNumArgs() > 1)
-+	{
-+		S.Diag(AL.getLoc(), diag::err_attribute_too_many_arguments)
-+			<< AL.getAttrName() << 1;
-+		return;
-+	}
-+
-+	StringRef Str;
-+	SourceLocation ArgLoc;
-+
-+	if (AL.getNumArgs() == 0)
-+		Str = "";
-+	else if (!S.checkStringLiteralArgumentAttr(AL, 0, Str, &ArgLoc))
-+		return;
-+
-+	SkepuAccessModeAttr::AccessMode Mode;
-+	if (!SkepuAccessModeAttr::ConvertStrToAccessMode(Str, Mode))
-+	{
-+		S.Diag(AL.getLoc(), diag::warn_attribute_type_not_supported)
-+			<< AL.getAttrName() << Str << ArgLoc;
-+		return;
-+	}
-+
-+	D->addAttr(::new (S.Context)
-+		SkepuAccessModeAttr(
-+			S.Context,
-+			AL,
-+			Mode));
-+}
-+
- //===----------------------------------------------------------------------===//
- // Top Level Sema Entry Points
- //===----------------------------------------------------------------------===//
-@@ -8033,6 +8066,40 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
+@@ -8033,6 +8033,15 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
    case ParsedAttr::AT_GCCStruct:
      handleGCCStructAttr(S, D, AL);
      break;
@@ -142,34 +31,9 @@ index 3f0ea5c8f3eb..3a5fdd506307 100644
 +	/* SkePU Attributes. */
 +	/*-------------------------*/
 +
-+	/* [[skepu::userfunction]] */
-+	case ParsedAttr::AT_SkepuUserFunction:
-+		handleSimpleAttribute<SkepuUserFunctionAttr>(S, D, AL);
-+		break;
-+
-+	/* [[skepu::usertype]] */
-+	case ParsedAttr::AT_SkepuUserType:
-+		handleSimpleAttribute<SkepuUserTypeAttr>(S, D, AL);
-+		break;
-+
 +	/* [[skepu::userconstant]] */
 +	case ParsedAttr::AT_SkepuUserConstant:
 +		handleSimpleAttribute<SkepuUserConstantAttr>(S, D, AL);
-+		break;
-+
-+	/* [[skepu::out]] */
-+	case ParsedAttr::AT_SkepuOut:
-+		handleSimpleAttribute<SkepuOutAttr>(S, D, AL);
-+		break;
-+
-+	/* [[skepu::accessmode(...)]] */
-+	case ParsedAttr::AT_SkepuAccessMode:
-+		handleSkepuAccessModeAttr(S, D, AL);
-+		break;
-+
-+	/* [[skepu::instance]] */
-+	case ParsedAttr::AT_SkepuInstance:
-+		handleSimpleAttribute<SkepuInstanceAttr>(S, D, AL);
 +		break;
    }
  }

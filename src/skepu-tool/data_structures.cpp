@@ -58,8 +58,6 @@ public:
 
 			bool allowed = std::find(AllowedFunctionNamesCalledInUFs.begin(), AllowedFunctionNamesCalledInUFs.end(), name)
 				!= AllowedFunctionNamesCalledInUFs.end();
-			if (!allowed)
-				GlobalRewriter.getSourceMgr().getDiagnostics().Report(c->getBeginLoc(), diag::err_skepu_userfunction_call) << name;
 
 			return allowed;
 		}
@@ -287,18 +285,9 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 	{
 		underlying = underlying.getUnqualifiedType();
 		qualifier = "const";
-		if (p->hasAttr<SkepuOutAttr>())
-		{
-			GlobalRewriter.getSourceMgr().getDiagnostics().Report(p->getAttr<SkepuOutAttr>()->getRange().getBegin(), diag::err_skepu_invalid_out_attribute) << this->name;
-		}
 
 		this->accessMode = AccessMode::Read;
 		SkePULog() << "Read only access mode\n";
-	}
-	else if (p->hasAttr<SkepuOutAttr>())
-	{
-		this->accessMode = AccessMode::Write;
-		SkePULog() << "Write only access mode\n";
 	}
 	else
 	{
