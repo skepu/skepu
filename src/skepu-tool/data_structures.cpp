@@ -65,7 +65,7 @@ public:
 		}
 
 		FunctionDecl *Func = c->getDirectCallee();
-		std::string name = Func->getName();
+		std::string name = Func->getName().str();
 
 		if (name == "")
 		{
@@ -155,7 +155,7 @@ UserConstant::UserConstant(const VarDecl *v)
 UserType::UserType(const CXXRecordDecl *t)
 : astDeclNode(t), name(t->getNameAsString()), requiresDoublePrecision(false)
 {
-	this->type = t->getTypeForDecl();
+	this->type = t->getASTContext().getTypeDeclType((const TypeDecl*)t).getTypePtr();
 	
 	// Same as Param
 	std::string rawTypeName = this->type->getCanonicalTypeInternal().getAsString();
@@ -270,10 +270,8 @@ size_t UserFunction::Param::numKernelArgsCL() const
 std::string UserFunction::Param::templateInstantiationType() const
 {
 	auto *type = this->astDeclNode->getOriginalType().getTypePtr();
-	if (auto *innertype = dyn_cast<ElaboratedType>(type))
-		type = innertype->getNamedType().getTypePtr();
-	const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
-	return templateType->getArg(0).getAsType().getAsString();
+    const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
+    return templateType->template_arguments()[0].getAsType().getAsString();
 }
 
 
@@ -310,11 +308,8 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 
 	auto *type = underlying.getTypePtr();
 
-	if (auto *innertype = dyn_cast<ElaboratedType>(type))
-		type = innertype->getNamedType().getTypePtr();
-
 	const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
-	const clang::TemplateArgument containedTypeArg = templateType->getArg(0);
+	const clang::TemplateArgument containedTypeArg = templateType->template_arguments()[0];
 
 	std::string templateName = templateType->getTemplateName().getAsTemplateDecl()->getNameAsString();
 	this->containedType = containedTypeArg.getAsType().getTypePtr();
@@ -325,8 +320,6 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 	if (auto *typedeft = dyn_cast<TypedefType>(this->containedType))
 		this->containedType = typedeft->desugar().getTypePtr();
 		
-	if (auto *innertype = dyn_cast<ElaboratedType>(this->containedType))
-		this->containedType = innertype->getNamedType().getTypePtr();
 		
 //	this->containedType->dump();
 	this->resolvedTypeName = this->containedType->getCanonicalTypeInternal().getAsString();
@@ -428,9 +421,6 @@ bool UserFunction::RandomAccessParam::constructibleFrom(const clang::ParmVarDecl
 	
 	if (auto *referenceType = dyn_cast<ReferenceType>(type))
 		type = referenceType->getPointeeType().getTypePtr();
-	
-	if (auto *innertype = dyn_cast<ElaboratedType>(type))
-		type = innertype->getNamedType().getTypePtr();
 
 	const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
 	if (!templateType) return false;
@@ -447,9 +437,6 @@ UserFunction::RegionParam::RegionParam(const ParmVarDecl *p)
 	
 	if (auto *referenceType = dyn_cast<ReferenceType>(type))
 		type = referenceType->getPointeeType().getTypePtr();
-	
-	if (auto *innertype = dyn_cast<ElaboratedType>(type))
-		type = innertype->getNamedType().getTypePtr();
 
 	const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
 	std::string templateName = templateType->getTemplateName().getAsTemplateDecl()->getNameAsString();
@@ -460,13 +447,10 @@ UserFunction::RegionParam::RegionParam(const ParmVarDecl *p)
 
 bool UserFunction::RegionParam::constructibleFrom(const clang::ParmVarDecl *p)
 {
-	auto *type = p->getOriginalType().getTypePtr();
+    auto *type = p->getOriginalType().getTypePtr();
 	
 	if (auto *referenceType = dyn_cast<ReferenceType>(type))
 		type = referenceType->getPointeeType().getTypePtr();
-	
-	if (auto *innertype = dyn_cast<ElaboratedType>(type))
-		type = innertype->getNamedType().getTypePtr();
 
 	const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
 	if (!templateType) return false;
@@ -494,12 +478,10 @@ UserFunction::RandomParam::RandomParam(const ParmVarDecl *p)
 	if (auto *referenceType = dyn_cast<ReferenceType>(type))
 		type = referenceType->getPointeeType().getTypePtr();
 	
-	if (auto *innertype = dyn_cast<ElaboratedType>(type))
-		type = innertype->getNamedType().getTypePtr();
 	
 	const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
-	if (templateType->getNumArgs() > 0)
-		this->randomCount = templateType->getArg(0).getAsExpr()->EvaluateKnownConstInt(p->getASTContext()).getExtValue();
+	if (templateType->template_arguments().size() > 0)
+		this->randomCount = templateType->template_arguments()[0].getAsExpr()->EvaluateKnownConstInt(p->getASTContext()).getExtValue();
 	else
 		this->randomCount = 0;
 }
@@ -510,9 +492,6 @@ bool UserFunction::RandomParam::constructibleFrom(const clang::ParmVarDecl *p)
 	
 	if (auto *referenceType = dyn_cast<ReferenceType>(type))
 		type = referenceType->getPointeeType().getTypePtr();
-	
-	if (auto *innertype = dyn_cast<ElaboratedType>(type))
-		type = innertype->getNamedType().getTypePtr();
 		
 	const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
 	if (!templateType) return false;
@@ -707,7 +686,7 @@ UserFunction::UserFunction(FunctionDecl *f)
 	//		SkePUAbort("Multi-valued return is not enabled for GPU backends.");
 		
 		const auto *templateType = f->getReturnType().getTypePtr()->getAs<clang::TemplateSpecializationType>();
-		for (const clang::TemplateArgument &arg : *templateType)
+		for (const clang::TemplateArgument &arg : templateType->template_arguments())
 		{
 			std::string argType = arg.getAsType().getAsString();
 			SkePULog() << "    [UF " << this->uniqueName << "] Multi-return type: " << argType << "\n";

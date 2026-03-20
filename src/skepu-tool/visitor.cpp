@@ -54,14 +54,10 @@ UserFunction *HandleFunctionPointerArg(Expr *ArgExpr)
 
 UserFunction *HandleLambdaArg(Expr *ArgExpr, VarDecl *d)
 {
-	CXXConstructExpr *ConstrExpr = dyn_cast<CXXConstructExpr>(ArgExpr);
-	if (!ConstrExpr)
-		SkePUAbort("User function (assumed lambda) argument not a construct expr");
-
-	Expr *Arg = ConstrExpr->getArg(0);
+	Expr *Arg = ArgExpr;
 
 	if (MaterializeTemporaryExpr *MatTempExpr = dyn_cast<MaterializeTemporaryExpr>(Arg))
-		Arg = MatTempExpr->GetTemporaryExpr();
+		Arg = MatTempExpr->getSubExpr();
 
 	LambdaExpr *Lambda = dyn_cast<LambdaExpr>(Arg);
 	if (!Lambda)
@@ -91,20 +87,21 @@ const Skeleton::Type* DeclIsValidSkeleton(VarDecl *d)
 	if (!InitExpr)
 		return nullptr;
 
+    InitExpr = InitExpr->IgnoreImplicit();
+
+
 	if (auto *CleanUpExpr = dyn_cast<ExprWithCleanups>(InitExpr))
 		InitExpr = CleanUpExpr->getSubExpr();
 
 	auto *ConstructExpr = dyn_cast<CXXConstructExpr>(InitExpr);
-	if (!ConstructExpr || ConstructExpr->getConstructionKind() != CXXConstructExpr::ConstructionKind::CK_Complete)
+
+	if (ConstructExpr && ConstructExpr->getConstructionKind() != CXXConstructionKind::Complete)
 		return nullptr;
 
-	if (ConstructExpr->getNumArgs() == 0)
-		return nullptr;
-
-	auto *TempExpr = ConstructExpr->getArgs()[0];
+	auto *TempExpr = InitExpr;
 
 	if (auto *MatTempExpr = dyn_cast<MaterializeTemporaryExpr>(TempExpr))
-		TempExpr = MatTempExpr->GetTemporaryExpr();
+		TempExpr = MatTempExpr->getSubExpr();
 
 	if (auto *BindTempExpr = dyn_cast<CXXBindTemporaryExpr>(TempExpr))
 		TempExpr = BindTempExpr->getSubExpr();
@@ -113,14 +110,18 @@ const Skeleton::Type* DeclIsValidSkeleton(VarDecl *d)
 	if (!CExpr)
 		return nullptr;
 
+	if (CExpr->getNumArgs() == 0)
+		return nullptr;
+
 	const FunctionDecl *Callee = CExpr->getDirectCallee();
-	const Type *RetType = Callee->getReturnType().getTypePtr();
+
+    if (!Callee)
+        return nullptr;
+
+    const Type *RetType = Callee->getReturnType().getTypePtr();
 
 	if (isa<DecltypeType>(RetType))
 		RetType = dyn_cast<DecltypeType>(RetType)->getUnderlyingType().getTypePtr();
-
-	if (auto *ElabType = dyn_cast<ElaboratedType>(RetType))
-		RetType = ElabType->getNamedType().getTypePtr();
 
 	if (!isa<TemplateSpecializationType>(RetType))
 		return nullptr;
@@ -133,7 +134,7 @@ const Skeleton::Type* DeclIsValidSkeleton(VarDecl *d)
 	if (Skeletons.find(TypeName) == Skeletons.end())
 		return nullptr;
 
-	SkePULog() << "Accepted!\n";
+	SkePULog() << "Accepted " << Skeletons.at(TypeName).name << "!\n";
 
 	return &Skeletons.at(TypeName).type;
 }
@@ -145,16 +146,24 @@ bool HandleSkeletonInstance(VarDecl *d)
 
 	Expr *InitExpr = d->getInit();
 
+    if (!InitExpr)
+		SkePUAbort("Not an expression");
+
+    InitExpr = InitExpr->IgnoreImplicit();
+
 	if (isa<ExprWithCleanups>(InitExpr))
 		InitExpr = dyn_cast<ExprWithCleanups>(InitExpr)->getSubExpr();
 
 	CXXConstructExpr *ConstructExpr = dyn_cast<CXXConstructExpr>(InitExpr);
-	if (!ConstructExpr || ConstructExpr->getConstructionKind() != CXXConstructExpr::ConstructionKind::CK_Complete)
+	if (ConstructExpr && ConstructExpr->getConstructionKind() != CXXConstructionKind::Complete)
 		SkePUAbort("Not a complete constructor");
 
-	Expr *TempExpr = dyn_cast<MaterializeTemporaryExpr>(ConstructExpr->getArgs()[0])->GetTemporaryExpr();
+    Expr *TempExpr = InitExpr;
 
-	 if (isa<CXXBindTemporaryExpr>(TempExpr))
+    if (isa<MaterializeTemporaryExpr>(TempExpr))
+        TempExpr = dyn_cast<MaterializeTemporaryExpr>(TempExpr)->getSubExpr();
+
+	if (isa<CXXBindTemporaryExpr>(TempExpr))
 		TempExpr = dyn_cast<CXXBindTemporaryExpr>(TempExpr)->getSubExpr();
 
 	CallExpr *CExpr = dyn_cast<CallExpr>(TempExpr);
@@ -181,13 +190,13 @@ bool HandleSkeletonInstance(VarDecl *d)
 	case Skeleton::Type::Map:
 	case Skeleton::Type::MapReduce:
 		assert(Template->getNumArgs() > 0);
-		arity[0] = Template->getArg(0).getAsExpr()->EvaluateKnownConstInt(d->getASTContext()).getExtValue();
+		arity[0] = Template->template_arguments()[0].getAsExpr()->EvaluateKnownConstInt(d->getASTContext()).getExtValue();
 		break;
 	case Skeleton::Type::MapPairs:
 	case Skeleton::Type::MapPairsReduce:
 		assert(Template->getNumArgs() > 1);
-		arity[0] = Template->getArg(0).getAsExpr()->EvaluateKnownConstInt(d->getASTContext()).getExtValue();
-		arity[1] = Template->getArg(1).getAsExpr()->EvaluateKnownConstInt(d->getASTContext()).getExtValue();
+		arity[0] = Template->template_arguments()[0].getAsExpr()->EvaluateKnownConstInt(d->getASTContext()).getExtValue();
+		arity[1] = Template->template_arguments()[1].getAsExpr()->EvaluateKnownConstInt(d->getASTContext()).getExtValue();
 		break;
 	case Skeleton::Type::MapOverlap1D:
 	case Skeleton::Type::MapPool1D:
@@ -316,16 +325,16 @@ bool SkePUASTVisitor::VisitCXXOperatorCallExpr(CXXOperatorCallExpr *c)
 	if (c->getOperator() == OO_Call)
 	{
 		Expr *arg =	c->getArg(0);
-		std::string type = arg->getType().getAsString();
-	//	SkePULog() << "THE TYPE: " << type << "\n";
+		std::string type = arg->getType().getDesugaredType(*this->Context).getAsString();
+		//SkePULog() << "THE TYPE: " << type << "\n";
 
 		for (auto skeleton : Skeletons)
 		{
 			std::string skeletonName = std::get<0>(skeleton);
 			if (type.find(skeletonName) != std::string::npos)
 			{
-				SkePULog() << "Found skeleton call\n";
-			//	arg->dump();
+				SkePULog() << "Found skeleton call " << type << "\n";
+				//arg->dump();
 
 				if (isa<ImplicitCastExpr>(arg))
 					arg = dyn_cast<ImplicitCastExpr>(arg)->getSubExpr();
@@ -345,7 +354,7 @@ bool SkePUASTVisitor::VisitCXXOperatorCallExpr(CXXOperatorCallExpr *c)
 
 			//	skeletonInvocations.insert({c, instance_name});
 
-				std::string file_name = this->Context->getSourceManager().getFilename(c->getSourceRange().getBegin());
+				std::string file_name = this->Context->getSourceManager().getFilename(c->getSourceRange().getBegin()).str();
 				unsigned line_nr = this->Context->getSourceManager().getSpellingLineNumber(c->getSourceRange().getBegin());
 
 				std::stringstream ss;

@@ -1,10 +1,10 @@
 diff --git a/clang/include/clang/Basic/Attr.td b/clang/include/clang/Basic/Attr.td
-index d39b16e62b7..46582a9342a 100644
+index efa64dbe4b51..354e4dae75eb 100644
 --- a/clang/include/clang/Basic/Attr.td
 +++ b/clang/include/clang/Basic/Attr.td
-@@ -3274,3 +3274,59 @@ def ObjCExternallyRetained : InheritableAttr {
-   let Subjects = SubjectList<[NonParmVar, Function, Block, ObjCMethod]>;
-   let Documentation = [ObjCExternallyRetainedDocs];
+@@ -5344,3 +5344,59 @@ def ModularFormat : InheritableAttr {
+   let Subjects = SubjectList<[Function]>;
+   let Documentation = [ModularFormatDocs];
  }
 +
 +/*------------------*/
@@ -49,7 +49,7 @@ index d39b16e62b7..46582a9342a 100644
 +{
 +  let Spellings = [CXX11<"skepu", "accessmode">];
 +  let Subjects = SubjectList<[ParmVar]>;
-+  let Args = [EnumArgument<"Mode", "AccessMode",
++  let Args = [EnumArgument<"Mode", "AccessMode", 1,
 +                          ["read", "write", "read_ptr", "write_ptr"],
 +                          ["Read", "Write", "ReadPtr", "WritePtr"]>];
 +  let Documentation = [Undocumented];
@@ -63,13 +63,13 @@ index d39b16e62b7..46582a9342a 100644
 +  let Documentation = [Undocumented];
 +}
 diff --git a/clang/include/clang/Basic/DiagnosticASTKinds.td b/clang/include/clang/Basic/DiagnosticASTKinds.td
-index 23502152b4a..ce998e3aefd 100644
+index e90ee9d376e0..18b667575aa0 100644
 --- a/clang/include/clang/Basic/DiagnosticASTKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticASTKinds.td
-@@ -448,4 +448,22 @@ def warn_padded_struct_size : Warning<
-   InGroup<Padded>, DefaultIgnore;
- def warn_unnecessary_packed : Warning<
-   "packed attribute is unnecessary for %0">, InGroup<Packed>, DefaultIgnore;
+@@ -1077,4 +1077,22 @@ def warn_unpacked_field
+ def warn_unaligned_access : Warning<
+   "field %1 within %0 is less aligned than %2 and is usually due to %0 being "
+   "packed, which can lead to unaligned accesses">, InGroup<UnalignedAccess>, DefaultIgnore;
 +
 +/* SkePU diagnostics */
 +def err_skepu_no_userfunction_body : Error<
@@ -90,11 +90,11 @@ index 23502152b4a..ce998e3aefd 100644
 +  "[SkePU] Explicit addressof-operator on userfunction argument">;
  }
 diff --git a/clang/lib/Sema/SemaDeclAttr.cpp b/clang/lib/Sema/SemaDeclAttr.cpp
-index ee06f8ae511..d069587bbc9 100644
+index 3f0ea5c8f3eb..3a5fdd506307 100644
 --- a/clang/lib/Sema/SemaDeclAttr.cpp
 +++ b/clang/lib/Sema/SemaDeclAttr.cpp
-@@ -6593,6 +6593,40 @@ static void handleMSAllocatorAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
-   handleSimpleAttribute<MSAllocatorAttr>(S, D, AL);
+@@ -7078,6 +7078,39 @@ static void handleModularFormat(Sema &S, Decl *D, const ParsedAttr &AL) {
+       S.Context, AL, ModularImplFn, ImplName, Aspects.data(), Aspects.size()));
  }
  
 +/* SkePU attribute handlers */
@@ -103,7 +103,7 @@ index ee06f8ae511..d069587bbc9 100644
 +	if (AL.getNumArgs() > 1)
 +	{
 +		S.Diag(AL.getLoc(), diag::err_attribute_too_many_arguments)
-+			<< AL.getName() << 1;
++			<< AL.getAttrName() << 1;
 +		return;
 +	}
 +
@@ -119,24 +119,23 @@ index ee06f8ae511..d069587bbc9 100644
 +	if (!SkepuAccessModeAttr::ConvertStrToAccessMode(Str, Mode))
 +	{
 +		S.Diag(AL.getLoc(), diag::warn_attribute_type_not_supported)
-+			<< AL.getName() << Str << ArgLoc;
++			<< AL.getAttrName() << Str << ArgLoc;
 +		return;
 +	}
 +
 +	D->addAttr(::new (S.Context)
 +		SkepuAccessModeAttr(
-+			AL.getLoc(),
 +			S.Context,
-+			Mode,
-+			AL.getAttributeSpellingListIndex()));
++			AL,
++			Mode));
 +}
 +
  //===----------------------------------------------------------------------===//
  // Top Level Sema Entry Points
  //===----------------------------------------------------------------------===//
-@@ -7341,6 +7375,40 @@ static void ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D,
-   case ParsedAttr::AT_MSAllocator:
-     handleMSAllocatorAttr(S, D, AL);
+@@ -8033,6 +8066,40 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
+   case ParsedAttr::AT_GCCStruct:
+     handleGCCStructAttr(S, D, AL);
      break;
 +
 +	/*-------------------------*/
@@ -176,21 +175,22 @@ index ee06f8ae511..d069587bbc9 100644
  }
  
 diff --git a/clang/tools/CMakeLists.txt b/clang/tools/CMakeLists.txt
-index 223f1f74f3f..3a29eff0d2a 100644
+index afdd613b4ee9..111f916cd255 100644
 --- a/clang/tools/CMakeLists.txt
 +++ b/clang/tools/CMakeLists.txt
-@@ -39,3 +39,6 @@ add_llvm_external_project(clang-tools-extra extra)
- 
- # libclang may require clang-tidy in clang-tools-extra.
+@@ -53,3 +53,6 @@ add_llvm_external_project(clang-tools-extra extra)
  add_clang_subdirectory(libclang)
+ 
+ add_clang_subdirectory(offload-arch)
 +
 +# Add the skepu-tool subdirectory
 +add_clang_subdirectory(skepu-tool)
+\ No newline at end of file
 diff --git a/clang/tools/skepu-tool b/clang/tools/skepu-tool
 new file mode 120000
-index 00000000000..d9548cd2198
+index 000000000000..45351279b112
 --- /dev/null
 +++ b/clang/tools/skepu-tool
 @@ -0,0 +1 @@
-+../../../src/skepu-tool
++../../../src/skepu-tool/
 \ No newline at end of file

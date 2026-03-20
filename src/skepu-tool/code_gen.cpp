@@ -190,7 +190,7 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 			std::string varname = object2->getNameInfo().getAsString();
 
 			FunctionDecl *Func = ref->getDirectCallee();
-			std::string name = Func->getName();
+			std::string name = Func->getNameAsString();
 			std::string variant = ((name == "get") ? "get" : "get_normalized");
 
 			R.ReplaceText(ref->getSourceRange(), "skepu_random_" + variant + "(" + varname + ")");
@@ -218,13 +218,11 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 			DeclRefExpr* container = dyn_cast<clang::DeclRefExpr>(arg0);
 
 			auto type = container->getDecl()->getType().getTypePtr();
-			if (auto *innertype = dyn_cast<ElaboratedType>(type))
-				type = innertype->getNamedType().getTypePtr();
 			const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
 
 			std::string templateName = templateType->getTemplateName().getAsTemplateDecl()->getNameAsString();
 			std::string varname = container->getNameInfo().getAsString();
-			std::string typeName = templateType->getArg(0).getAsType().getAsString();
+			std::string typeName = templateType->template_arguments()[0].getAsType().getAsString();
 			replaceTextInString(typeName, "struct ", "");
 
 			int numArgs;
