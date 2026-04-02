@@ -92,7 +92,6 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU({{KERNEL_PARAMS}}
       if ( (skepu_i >= out_offset) && (skepu_i < out_offset + out_numelements))
 			{
 				skepu_i = skepu_i - out_offset;
-				const size_t skepu_base = 0;
 				{{INDEX_INITIALIZER}}
 				{{PROXIES_UPDATE}}
 				auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
@@ -196,12 +195,11 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Row({{KERNEL_PARAMS}}
   //Compute and store data
   if (skepu_tid < out_rowWidth)
 	{
-  //	skepu_output[skepu_i - out_offset] = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
+        //skepu_output[skepu_i - out_offset] = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
 		skepu_i = skepu_i - out_offset;
-		const size_t skepu_base = 0;
 		const size_t saved_skepu_i = skepu_i;
 		skepu_i = skepu_i % rowWidth;
-		{{INDEX_INITIALIZER}}
+        {{INDEX_INITIALIZER}}
 		{{PROXIES_UPDATE}}
 		skepu_i = saved_skepu_i/rowWidth*out_rowWidth + skepu_tid;
 		auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
@@ -303,7 +301,6 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Col({{KERNEL_PARAMS}}
 	{
 		//  skepu_output[arrInd-out_offset] = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
 		size_t skepu_i = arrInd - out_offset;
-		const size_t skepu_base = 0;
 		const size_t saved_skepu_i = skepu_i;
 		skepu_i = skepu_i / rowWidth;
 		{{INDEX_INITIALIZER}}
@@ -471,12 +468,11 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_ColMulti({{KERNEL_PAR
 	// Compute and store data
 	if ( arrInd < out_numelements )
 	{
-	//	skepu_output[arrInd] = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
+        //	skepu_output[arrInd] = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
 		size_t skepu_i = arrInd;
-		const size_t skepu_base = 0;
 		const size_t saved_skepu_i = skepu_i;
 		skepu_i = skepu_i / rowWidth;
-		{{INDEX_INITIALIZER}}
+        {{INDEX_INITIALIZER}}
 		{{PROXIES_UPDATE}}
 		skepu_i = saved_skepu_i;
 		auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
@@ -556,10 +552,8 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_2D_kernel({{KERNEL_PARAMS}}
 
 	if (skepu_x < skepu_out_cols && skepu_y < skepu_out_rows)
 	{
-		size_t skepu_w2 = skepu_out_cols;
 		size_t skepu_i = skepu_y * skepu_out_cols + skepu_x;
 		size_t skepu_global_prng_id = skepu_i;
-		size_t skepu_base = 0;
 		{{INDEX_INITIALIZER}}
 		{{PROXIES_UPDATE}}
 		auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
@@ -650,11 +644,9 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_3D_kernel({{KERNEL_PARAMS}}
 
 	if (skepu_i < skepu_out_size_i && skepu_j < skepu_out_size_j && skepu_k < skepu_out_size_k)
 	{
-	//	size_t skepu_w2 = skepu_out_size_?;
+        {{INDEX_INITIALIZER}}
 		skepu_i = skepu_i * skepu_out_size_j * skepu_out_size_k + skepu_j * skepu_out_size_k + skepu_k;
 		size_t skepu_global_prng_id = skepu_i;
-		size_t skepu_base = 0;
-		{{INDEX_INITIALIZER}}
 		{{PROXIES_UPDATE}}
 		auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
 		{{OUTPUT_BINDINGS}}
@@ -811,10 +803,9 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_4D_kernel({{KERNEL_PARAMS}}
 
 	if (skepu_i < skepu_out_size_i && skepu_j < skepu_out_size_j && skepu_k < skepu_out_size_k && skepu_l < skepu_out_size_l)
 	{
+		{{INDEX_INITIALIZER}}
 		skepu_i = skepu_i * skepu_out_size_j * skepu_out_size_k * skepu_out_size_l + skepu_j * skepu_out_size_k * skepu_out_size_l + skepu_k * skepu_out_size_l + skepu_l;
 		size_t skepu_global_prng_id = skepu_i;
-		size_t skepu_base = 0;
-		{{INDEX_INITIALIZER}}
 		{{PROXIES_UPDATE}}
 		auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
 		{{OUTPUT_BINDINGS}}
@@ -833,6 +824,16 @@ std::string createMapOverlapKernelProgramHelper_CU(SkeletonInstance &instance, U
 	handleRandomParam_CU(mapOverlapFunc, SSMapOverlapFuncArgs, SSKernelParamList, first);
 	if (!first) { SSMapOverlapFuncArgs << ", "; }
 	first = false;
+
+    std::string indexInit = "";
+    if (mapOverlapFunc.indexed1D)
+		indexInit = "skepu::Index1D skepu_index{.i = skepu_i};";
+    else if (mapOverlapFunc.indexed2D)
+		indexInit = "skepu::Index2D skepu_index{.row = skepu_y, .col = skepu_x};";
+    else if (mapOverlapFunc.indexed3D)
+		indexInit = "skepu::Index3D skepu_index{.i = skepu_i, .j = skepu_j, .k = skepu_k};";
+    else if (mapOverlapFunc.indexed4D)
+		indexInit = "skepu::Index4D skepu_index{.i = skepu_i, .j = skepu_j, .k = skepu_k, .l = skepu_l};";
 	
 	std::string sdataName = "sdata_" + instance;
 	if (dim == 1)
@@ -862,7 +863,7 @@ std::string createMapOverlapKernelProgramHelper_CU(SkeletonInstance &instance, U
 		{"{{INPUT_PARAM_NAME}}",         "skepu_input"},
 		{"{{KERNEL_PARAMS}}",            SSKernelParamList.str()},
 		{"{{MAPOVERLAP_ARGS}}",          SSMapOverlapFuncArgs.str()},
-		{"{{INDEX_INITIALIZER}}",        indexInfo.indexInit},
+		{"{{INDEX_INITIALIZER}}",        indexInit},
 		{"{{OUTPUT_BINDINGS}}",          multiOutputAssign},
 		{"{{PROXIES_UPDATE}}",           argsInfo.proxyInitializerInner},
 		{"{{PROXIES_INIT}}",             argsInfo.proxyInitializer},

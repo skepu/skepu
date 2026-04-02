@@ -212,7 +212,7 @@ namespace skepu
 									(j + offset[1]) * this->m_strides[1],
 									(k + offset[2]) * this->m_strides[2]
 								};
-								auto res = F::forward(this->mapFunc, region.idx, random, region,
+								auto res = F::forward(this->mapFunc, Index3D{i,j,k}, random, region,
 									get<AI>(std::forward<CallArgs>(args)...).hostProxy()...,
 									get<CI>(std::forward<CallArgs>(args)...)...
 								);

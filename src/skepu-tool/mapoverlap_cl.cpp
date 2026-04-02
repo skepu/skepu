@@ -466,7 +466,7 @@ public:
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_VECTOR);
-		skepu::backend::cl_helpers::setKernelArgs(kernel, {{KERNEL_ARGS}} {{SIZE_ARGS}}
+		skepu::backend::cl_helpers::setKernelArgs(kernel, {{KERNEL_ARGS}}
 			skepu_wrap->getDeviceDataPointer(), skepu_n, skepu_overlap, out_offset, out_numelements, skepu_poly, skepu_pad);
 		clSetKernelArg(kernel, {{KERNEL_ARG_COUNT}} + 7, sharedMemSize, NULL);
 		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
@@ -484,7 +484,7 @@ public:
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_MATRIX_ROW);
-		skepu::backend::cl_helpers::setKernelArgs(kernel, {{KERNEL_ARGS}} {{SIZE_ARGS}}
+		skepu::backend::cl_helpers::setKernelArgs(kernel, {{KERNEL_ARGS}}
 			skepu_wrap->getDeviceDataPointer(), skepu_n, skepu_overlap, out_offset, out_numelements, skepu_poly, skepu_pad, blocksPerRow, rowWidth);
 		clSetKernelArg(kernel, {{KERNEL_ARG_COUNT}} + 9, sharedMemSize, NULL);
 		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
@@ -503,7 +503,7 @@ public:
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_MATRIX_COL);
-		skepu::backend::cl_helpers::setKernelArgs(kernel, {{KERNEL_ARGS}} {{SIZE_ARGS}}
+		skepu::backend::cl_helpers::setKernelArgs(kernel, {{KERNEL_ARGS}}
 			skepu_wrap->getDeviceDataPointer(), skepu_n, skepu_overlap, out_offset, out_numelements, skepu_poly, skepu_pad, blocksPerCol, rowWidth, colWidth);
 		clSetKernelArg(kernel, {{KERNEL_ARG_COUNT}} + 10, sharedMemSize, NULL);
 		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
@@ -522,7 +522,7 @@ public:
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_MATRIX_COL_MULTI);
-		skepu::backend::cl_helpers::setKernelArgs(kernel, {{KERNEL_ARGS}} {{SIZE_ARGS}}
+		skepu::backend::cl_helpers::setKernelArgs(kernel, {{KERNEL_ARGS}}
 			skepu_wrap->getDeviceDataPointer(), skepu_n, skepu_overlap, in_offset, out_numelements, skepu_poly, deviceType, skepu_pad, blocksPerCol, rowWidth, colWidth);
 		clSetKernelArg(kernel, {{KERNEL_ARG_COUNT}} + 11, sharedMemSize, NULL);
 		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
@@ -763,7 +763,7 @@ std::string createMapOverlap2DKernelProgram_CL(SkeletonInstance &instance, UserF
 	std::string indexInit = "";
 	if (mapOverlapFunc.indexed2D)
 	{
-		indexInit = "index2_t skepu_index = { .row = skepu_x, .col = skepu_y };";
+		indexInit = "index2_t skepu_index = { .row = skepu_y, .col = skepu_x };";
 		SSMapOverlapFuncArgs << "skepu_index";
 	}
 	IndexCodeGen indexInfo = indexInitHelper_CL(mapOverlapFunc);
