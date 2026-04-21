@@ -257,7 +257,7 @@ namespace skepu
 			for (size_t i = 0; i < numDevices; ++i)
 				delete wrap_mem_p[i];
 			
-			cudaSetDevice(this->m_environment->bestCUDADevID);
+			cudaSetDevice(this->m_environment->m_best_cuda_device_id);
 		}
 		
 		
@@ -615,7 +615,7 @@ namespace skepu
 				delete wrapEndDev_mem_p[i];
 			}
 			
-			cudaSetDevice(this->m_environment->bestCUDADevID);
+			cudaSetDevice(this->m_environment->m_best_cuda_device_id);
 		}
 		
 		
@@ -869,7 +869,7 @@ namespace skepu
 			for (size_t i = 0; i < numDevices; ++i)
 				delete wrap_mem_p[i];
 			
-			cudaSetDevice(this->m_environment->bestCUDADevID);
+			cudaSetDevice(this->m_environment->m_best_cuda_device_id);
 		}
 		
 		

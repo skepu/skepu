@@ -168,7 +168,7 @@ namespace skepu
 					(out_mem_p->getDeviceDataPointer(), deviceSums(i-1), numElements);
 #endif
 			}
-			cudaSetDevice(m_environment->bestCUDADevID);
+			cudaSetDevice(m_environment->m_best_cuda_device_id);
 		}
 		
 		
@@ -216,7 +216,7 @@ namespace skepu
 #ifndef SKEPU_DEBUG_FORCE_MULTI_GPU_IMPL
 			
 			if (numDevices <= 1)
-				this->scanSingleThread_CU(this->m_environment->bestCUDADevID, size, res, arg, mode, initial);
+				this->scanSingleThread_CU(this->m_environment->m_best_cuda_device_id, size, res, arg, mode, initial);
 			else
 			
 #endif // SKEPU_DEBUG_FORCE_MULTI_GPU_IMPL

@@ -79,14 +79,14 @@ public:
    
 #endif // SKEPU_OPENCL
    
-   unsigned int m_numDevices;
+   unsigned int m_num_devices;
 
 #ifdef SKEPU_CUDA
 
-   unsigned int bestCUDADevID;
+   unsigned int m_best_cuda_device_id;
    
-   int m_peerAccessEnabled; /*! 0 means not enabled, 1 means enabled between all gpu combinations, -1 means enabled between some of the GPUs */
-   std::vector<std::pair<int, int> > m_peerCopyGpuIDsVector;
+   int m_peer_access_enabled; /*! 0 means not enabled, 1 means enabled between all gpu combinations, -1 means enabled between some of the GPUs */
+   std::vector<std::pair<int, int> > m_peer_copy_gpu_ids;
    
    bool supportsCUDAOverlap();
    

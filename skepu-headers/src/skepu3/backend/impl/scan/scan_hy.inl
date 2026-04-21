@@ -205,7 +205,7 @@ namespace skepu
 					(out_mem_p->getDeviceDataPointer(), value, numElements);
 #endif
 			}
-			cudaSetDevice(m_environment->bestCUDADevID);
+			cudaSetDevice(m_environment->m_best_cuda_device_id);
 		}
 #endif // SKEPU_HYBRID_USE_CUDA
 

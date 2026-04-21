@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef CL_TARGET_OPENCL_VERSION
+#define CL_TARGET_OPENCL_VERSION 300
+#endif
+
 // Deprecated operators are still accessible in this version
 #define SKEPU_ENABLE_DEPRECATED_OPERATOR
 

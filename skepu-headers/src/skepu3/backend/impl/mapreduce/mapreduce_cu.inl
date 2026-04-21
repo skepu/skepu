@@ -419,7 +419,7 @@ namespace skepu
 				delete outMemP[i];
 			}
 			
-			CHECK_CUDA_ERROR(cudaSetDevice(m_environment->bestCUDADevID));
+			CHECK_CUDA_ERROR(cudaSetDevice(m_environment->m_best_cuda_device_id));
 		
 			return res;
 		}
@@ -442,11 +442,11 @@ namespace skepu
 #ifdef USE_PINNED_MEMORY
 				
 				//Checks whether or not the GPU supports MemoryTransfer/KernelExec overlapping, if not call mapReduceSingleThread function
-				if (this->m_environment->m_devices_CU.at(this->m_environment->bestCUDADevID)->isOverlapSupported())
-					return mapReduceMultiStream_CU(this->m_environment->bestCUDADevID, startIdx, size, oi, ei, ai, ci, res, std::forward<CallArgs>(args)...);
+				if (this->m_environment->m_devices_CU.at(this->m_environment->m_best_cuda_device_id)->isOverlapSupported())
+					return mapReduceMultiStream_CU(this->m_environment->m_best_cuda_device_id, startIdx, size, oi, ei, ai, ci, res, std::forward<CallArgs>(args)...);
 				
 #endif
-				return mapReduceSingleThread_CU(this->m_environment->bestCUDADevID, startIdx, size, oi, ei, ai, ci, res, std::forward<CallArgs>(args)...);
+				return mapReduceSingleThread_CU(this->m_environment->m_best_cuda_device_id, startIdx, size, oi, ei, ai, ci, res, std::forward<CallArgs>(args)...);
 			}
 			
 #endif // SKEPU_DEBUG_FORCE_MULTI_GPU_IMPL

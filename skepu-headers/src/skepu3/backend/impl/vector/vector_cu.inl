@@ -70,7 +70,7 @@ void Vector<T>::copyDataToAnInvalidDeviceCopy(backend::DeviceMemPointer_CU<T> *c
       else /*! unfortunately, main copy is invalid so need to look for copies in other device memories... */
       {
          backend::Environment<int> *env = backend::Environment<int>::getInstance();
-         if(env->m_peerAccessEnabled) /*! if peer acces enabled for all of them then satt Bismillah, i.e. can transfer directly from other GPUs copies... */
+         if(env->m_peer_access_enabled) /*! if peer acces enabled for all of them then satt Bismillah, i.e. can transfer directly from other GPUs copies... */
          {
             /*! Copies from valid overlapping copies in other device mmeories **/
             for(int devID = 0; devID < MAX_GPU_DEVICES; ++devID)

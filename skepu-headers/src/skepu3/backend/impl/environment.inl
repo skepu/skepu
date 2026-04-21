@@ -28,7 +28,7 @@ namespace skepu
 				type = m_cacheGroupResult.second;
 				return true;
 			}
-			for (int i=0; i<m_groupMapping.size(); ++i)
+			for (int i = 0; i < m_groupMapping.size(); ++i)
 			{
 				if (m_groupMapping[i].first == groupId)
 				{
@@ -82,9 +82,9 @@ namespace skepu
 			m_cacheGroupResult.first = -1;
 			init();
 			
-			m_numDevices = 0;
+			m_num_devices = 0;
 #ifdef SKEPU_CUDA   
-			m_peerAccessEnabled = 0; // by default not enabled...
+			m_peer_access_enabled = 0; // by default not enabled...
 #endif
 		
 #ifdef SKEPU_OPENCL
@@ -97,8 +97,8 @@ namespace skepu
 			init_CU();
 		//	CHECK_CUDA_ERROR(cudaFuncSetCacheConfig("conv_cuda_shared_kernel", cudaFuncCachePreferShared));
 		//	assert(m_devices_CU.size() == 1);
-			assert(SKEPU_CUDA_DEV_ID == bestCUDADevID);
-			bwDataStruct = measureOrLoadCUDABandwidth(bestCUDADevID, false);
+			assert(SKEPU_CUDA_DEV_ID == m_best_cuda_device_id);
+			bwDataStruct = measureOrLoadCUDABandwidth(m_best_cuda_device_id, false);
 #else
 			//	std::cerr << "[SkePU Warning]: bwDataStruct is not initialized as CUDA is not enabled...\n";
 			bwDataStruct.cpu_id = -1;
@@ -130,13 +130,13 @@ namespace skepu
 		
 #ifdef SKEPU_CUDA
 			// disable peer-peer memcopy if enabled for different gpu combinations...
-			for (int i=0; i<m_peerCopyGpuIDsVector.size(); ++i)
+			for (int i = 0; i < m_peer_copy_gpu_ids.size(); ++i)
 			{
-				DEBUG_TEXT_LEVEL1("Disabling peer-peer access between GPU " << m_peerCopyGpuIDsVector[i].first << " <--> " << m_peerCopyGpuIDsVector[i].second << "\n");
-				CHECK_CUDA_ERROR(cudaSetDevice(m_peerCopyGpuIDsVector[i].first));
-				CHECK_CUDA_ERROR(cudaDeviceDisablePeerAccess(m_peerCopyGpuIDsVector[i].second));
-				CHECK_CUDA_ERROR(cudaSetDevice(m_peerCopyGpuIDsVector[i].second));
-				CHECK_CUDA_ERROR(cudaDeviceDisablePeerAccess(m_peerCopyGpuIDsVector[i].first));
+				DEBUG_TEXT_LEVEL1("Disabling peer-peer access between GPU " << m_peer_copy_gpu_ids[i].first << " <--> " << m_peer_copy_gpu_ids[i].second << "\n");
+				CHECK_CUDA_ERROR(cudaSetDevice(m_peer_copy_gpu_ids[i].first));
+				CHECK_CUDA_ERROR(cudaDeviceDisablePeerAccess(m_peer_copy_gpu_ids[i].second));
+				CHECK_CUDA_ERROR(cudaSetDevice(m_peer_copy_gpu_ids[i].second));
+				CHECK_CUDA_ERROR(cudaDeviceDisablePeerAccess(m_peer_copy_gpu_ids[i].first));
 			}
 			
 			finishAll_CU();
@@ -249,36 +249,33 @@ namespace skepu
 		{
 			cudaGetLastError(); // clear any previous errors, if any
 			cudaError_t err;
-			int numDevices = 0;
-			
+
 			// Create devices available
-			err = cudaGetDeviceCount(&numDevices);
+            int num_devices; // cudaGetDeviceCount requires int
+			err = cudaGetDeviceCount(&num_devices);
 			
-			m_numDevices = numDevices;
-			if (m_numDevices <= 0)
+			if (num_devices <= 0)
 				SKEPU_ERROR("No SKEPU_CUDA enabled devices found!\n");
 			
 			if (err != cudaSuccess)
 				SKEPU_ERROR("cudaGetDeviceCount failed!\n");
 			
+            m_num_devices = num_devices;
 			// if more devices, found, we used only what is specified as MAX_GPU_DEVICES.
-			if (m_numDevices > MAX_GPU_DEVICES)
-				m_numDevices = MAX_GPU_DEVICES;
+			if (m_num_devices > MAX_GPU_DEVICES)
+				m_num_devices = MAX_GPU_DEVICES;
 			
-			int best_SM_arch = 0;
-			int sm_per_multiproc = 0, major = 0;
+			int best_SM_arch = 0, major = 0;
 			Device_CU *device;
 			
-			for (int i = 0; i < m_numDevices; ++i)
+			for (int i = 0; i < m_num_devices; ++i)
 			{
-				device=new Device_CU(i);
+				device = new Device_CU(i);
 				m_devices_CU.push_back(device);
 				major = device->getMajorVersion();
 				
 				if (major > 0 && major < 9999)
-				{
 					best_SM_arch = MAX(best_SM_arch, major);
-				}
 				
 				CHECK_CUDA_ERROR(cudaSetDevice(device->getDeviceID()));
 				
@@ -288,90 +285,54 @@ namespace skepu
 				cudaGetLastError();
 			}
 			
-			int max_compute_perf = 0;
 			
 #ifndef SKEPU_CUDA_DEV_ID   
-			int max_perf_device  = 0;
-#endif   
-			
-			for(int i=0; i<m_numDevices; i++)
+			int max_perf_device  = 0;   
+			for (int i = 0; i < m_num_devices; i++)
 			{
-				device=m_devices_CU.at(i);
-				
-				major = device->getMajorVersion();
-				sm_per_multiproc = device->getSmPerMultiProc();
-				
-				int compute_perf  = device->getNumComputeUnits() * sm_per_multiproc;// * device->getClockRate();
-				
-				if( compute_perf  > max_compute_perf )
-				{
-					// If we find GPU with SM major > 2, search only these
-					if ( best_SM_arch > 2 )
-					{
-						// If our device==dest_SM_arch, choose this, or else pass
-						if (major == best_SM_arch)
-						{
-							max_compute_perf  = compute_perf;
-#ifndef SKEPU_CUDA_DEV_ID               
-							max_perf_device   = i;
-#endif               
-						}
-					}
-					else
-					{
-						max_compute_perf  = compute_perf;
-#ifndef SKEPU_CUDA_DEV_ID
-						max_perf_device   = i;
-#endif            
-					}
-				}
-			}
-			
-			/*! code to check if peer-peer memory transfers between 2 gpus are possible using GPUDirectin CUDA 4.0 or above */
-			if (m_numDevices > 1)
-			{
-#ifdef USE_PINNED_MEMORY
-				
-				bool allEnabled = true;
-				for (int i=0; i<m_numDevices; ++i)
-				{
-					for (int j=i+1; j<m_numDevices; ++j) /*! j=i+1 and j=0 because if peer access for "i,j" is same as "j,i") */
-					{
-						if (cudaPeerToPeerMemAccess(i, j))
-							m_peerCopyGpuIDsVector.push_back(std::make_pair(i,j));
-						else
-							allEnabled = false;
-					}
-				}
-				
-				if (allEnabled)
-					m_peerAccessEnabled = 1; // enabled for all...
-				else if (m_peerCopyGpuIDsVector.empty())
-					m_peerAccessEnabled = 0; // not enabled for any...
-				else
-					m_peerAccessEnabled = -1; // enabled for some of them...
-				     
-			//	m_peerAccessEnabled = 0;  
-#endif      
-			}
-			
-#ifdef SKEPU_CUDA_DEV_ID
-			bestCUDADevID = SKEPU_CUDA_DEV_ID; // Set user specified index
+				major = m_devices_CU.at(i)->getMajorVersion();
+            
+                if (best_SM_arch > 2)
+                    if (major == best_SM_arch)
+                        max_perf_device = i;
+                else
+                    max_perf_device = i;
+            }
+            m_best_cuda_device_id = max_perf_device;
 #else
-			bestCUDADevID = max_perf_device; // Set it as the best CUDA device
+            m_best_cuda_device_id = SKEPU_CUDA_DEV_ID; // user specified index
 #endif
 			
-			if (m_numDevices > 0)
+			/*! code to check if peer-peer memory transfers between 2 gpus are possible using GPUDirectin CUDA 4.0 or above */
+#ifdef USE_PINNED_MEMORY
+			if (m_num_devices > 1)
 			{
-				CHECK_CUDA_ERROR(cudaSetDevice(bestCUDADevID)); // Set the best CUDA device for execution
-			}
+				bool all_enabled = true;
+				for (int i = 0; i < m_num_devices; ++i)
+					for (int j = i+1; j < m_num_devices; ++j) /*! j=i+1 and j=0 because if peer access for "i,j" is same as "j,i") */
+						if (cudaPeerToPeerMemAccess(i, j))
+							m_peer_copy_gpu_ids.push_back(std::make_pair(i,j));
+						else
+							all_enabled = false;
+				
+				if (all_enabled)
+					m_peer_access_enabled = 1; // enabled for all...
+				else if (m_peer_copy_gpu_ids.empty())
+					m_peer_access_enabled = 0; // not enabled for any...
+				else
+					m_peer_access_enabled = -1; // enabled for some of them...
+            }
+#endif
+			
+			if (m_num_devices > 0)
+				CHECK_CUDA_ERROR(cudaSetDevice(m_best_cuda_device_id)); // Set the best CUDA device for execution
 		}
 		
 		
 		/*template <typename T>
 		bool Environment<T>::supportsCUDAOverlap()
 		{
-			for (size_t i = 0; i < m_numDevices; ++i)
+			for (size_t i = 0; i < m_num_devices; ++i)
 			{
 				if (!this->m_devices_CU.at(i)->isOverlapSupported())
 					return false;
@@ -389,17 +350,17 @@ namespace skepu
 template <typename T>
 		void Environment<T>::finishAll_CU(int lowID, int highID)
 		{
-			assert(m_numDevices == m_devices_CU.size());
+			assert(m_num_devices == m_devices_CU.size());
 			
-			if (SKEPU_UNLIKELY(m_numDevices == 0))
+			if (SKEPU_UNLIKELY(m_num_devices == 0))
 				return;
 			
 			if (lowID < 0)
 				lowID = 0;
-			if (highID < 1 || highID > m_numDevices)
-				highID = m_numDevices;
+			if (highID < 1 || highID > m_num_devices)
+				highID = m_num_devices;
 			
-			for (int i=lowID; i < highID; i++)
+			for (int i = lowID; i < highID; i++)
 			{
 			//	DEBUG_TEXT_LEVEL1("%%%%%\n** Synchronizing device "<<i << "\n%%%%%%%%%%%%%%%%%\n");
 				/*CHECK_CUDA_ERROR(*/cudaSetDevice(i)/*)*/;
@@ -407,7 +368,7 @@ template <typename T>
 				cudaDeviceSynchronize();
 			}
 			
-			/*CHECK_CUDA_ERROR(*/cudaSetDevice(bestCUDADevID)/*)*/;
+			/*CHECK_CUDA_ERROR(*/cudaSetDevice(m_best_cuda_device_id)/*)*/;
 		}
 #endif // SKEPU_CUDA
 		
@@ -431,7 +392,7 @@ template <typename T>
 				int platform_ind=0;
 				if(no_platforms > 1) // for more than platform, by default look for nvidia, ifdef ATI then look for ATI, else use whatever platform is available
 				{
-					for(; platform_ind <no_platforms; platform_ind++)
+					for (; platform_ind < no_platforms; platform_ind++)
 					{
 						char inf[1024];
 						cl_platform_info temp_info;
@@ -498,13 +459,13 @@ template <typename T>
 						<< "getType: "<< d->getType() << "\n\n";
 #endif
 				}
-				m_numDevices = numDevices;
+				m_num_devices = numDevices;
 			}
 			else // Just copy it from Environment<int>::getInstance() to ensure not to invoke it multiple times.
 			{
 				Environment<int> *envInt = Environment<int>::getInstance();
-				this->m_numDevices = envInt->m_devices_CL.size();
-				for (int i=0; i < m_numDevices; i++)
+				this->m_num_devices = envInt->m_devices_CL.size();
+				for (int i = 0; i < m_num_devices; i++)
 					this->m_devices_CL.push_back(envInt->m_devices_CL.at(i)); // = envInt->m_devices_CL; // Just copy it
 			}
 		}
@@ -516,7 +477,7 @@ template <typename T>
 		template <typename T>
 		void Environment<T>::finishAll_CL()
 		{
-			for(std::vector<Device_CL*>::iterator it = m_devices_CL.begin(); it != m_devices_CL.end(); ++it)
+			for (std::vector<Device_CL*>::iterator it = m_devices_CL.begin(); it != m_devices_CL.end(); ++it)
 			{
 				clFinish((*it)->getQueue());
 			}

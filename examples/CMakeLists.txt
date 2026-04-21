@@ -38,13 +38,6 @@ if(SKEPU_EXAMPLES_SEQ)
 	# Meta target for all sequential programs.
 	add_custom_target(all-sequential)
 
-	if(SKEPU_EXAMPLE_NBODY_NOSKEPU)
-		add_executable(nbody_noskepu nbody_noskepu.cpp)
-		set_target_properties(nbody_noskepu PROPERTIES
-			RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/sequential)
-		add_dependencies(all-sequential nbody_noskepu)
-	endif()
-
 	foreach(example IN LISTS _skepu_examples)
 		string(TOUPPER ${example} ucname)
 		if(SKEPU_EXAMPLE_${ucname})

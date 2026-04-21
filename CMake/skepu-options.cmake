@@ -58,7 +58,7 @@ endif()
 
 find_package(OpenMP)
 set(SKEPU_OPENMP OFF)
-if(OpenCL_FOUND)
+if(OpenMP_FOUND)
 	set(SKEPU_OPENMP ON)
 endif()
 

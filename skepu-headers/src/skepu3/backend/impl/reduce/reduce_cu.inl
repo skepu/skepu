@@ -166,7 +166,7 @@ namespace skepu
 #ifndef SKEPU_DEBUG_FORCE_MULTI_GPU_IMPL
 			
 			if (numDevices <= 1) {
-				this->reduceSingleThreadOneDim_CU(m_environment->bestCUDADevID, res, arg, numRows);
+				this->reduceSingleThreadOneDim_CU(m_environment->m_best_cuda_device_id, res, arg, numRows);
 				return;
 			}
 				
@@ -291,7 +291,7 @@ namespace skepu
 				delete out_mem_p[i];
 			}
 			
-			cudaSetDevice(m_environment->bestCUDADevID);
+			cudaSetDevice(m_environment->m_best_cuda_device_id);
 		
 			return res;
 		}
@@ -316,7 +316,7 @@ namespace skepu
 #ifndef SKEPU_DEBUG_FORCE_MULTI_GPU_IMPL
 			
 			if (numDevices <= 1)
-				return this->reduceSingleThread_CU(m_environment->bestCUDADevID, size, res, arg);
+				return this->reduceSingleThread_CU(m_environment->m_best_cuda_device_id, size, res, arg);
 			
 #endif // SKEPU_DEBUG_FORCE_MULTI_GPU_IMPL
 			
@@ -511,27 +511,30 @@ namespace skepu
 			// if sufficient work then do final (column-wise) reduction on GPU
 			if (rows > REDUCE_GPU_THRESHOLD)
 			{
-				cudaSetDevice(this->m_environment->bestCUDADevID); // do it on a single GPU or a CPU, should not be that much work(?)
+				cudaSetDevice(this->m_environment->m_best_cuda_device_id); // do it on a single GPU or a CPU, should not be that much work(?)
 				
 				// reset to starting position and use it as an input
 				d_input = deviceMemPointers[0];
 				d_output = deviceMemPointers[0]+rows; // re-use already allocated space as well for output.
 				
 #ifdef USE_PINNED_MEMORY
-				copyHostToDevice(&tempResult[0], d_input, rows, this->m_environment->m_devices_CU[this->m_environment->bestCUDADevID]->m_streams[0]);
+				copyHostToDevice(&tempResult[0], d_input, rows, this->m_environment->m_devices_CU[this->m_environment->m_best_cuda_device_id]->m_streams[0]);
 #else
 				copyHostToDevice(&tempResult[0], d_input, rows);
 #endif
 				std::tie(numThreads, numBlocks) = getNumBlocksAndThreads(rows, maxBlocks, maxThreads);
 				
 #ifdef USE_PINNED_MEMORY
-				ExecuteReduceOnADevice(this->m_cuda_colwise_kernel, rows, numThreads, numBlocks, maxThreads, maxBlocks, d_input, d_output, this->m_environment->bestCUDADevID, this->m_environment->m_devices_CU[m_environment->bestCUDADevID]->m_streams[0]);
+				ExecuteReduceOnADevice(this->m_cuda_colwise_kernel, rows, numThreads, numBlocks, maxThreads,
+                    maxBlocks, d_input, d_output, this->m_environment->m_best_cuda_device_id,
+                    this->m_environment->m_devices_CU[m_environment->m_best_cuda_device_id]->m_streams[0]);
 #else
-				ExecuteReduceOnADevice(this->m_cuda_colwise_kernel, rows, numThreads, numBlocks, maxThreads, maxBlocks, d_input, d_output, this->m_environment->bestCUDADevID);
+				ExecuteReduceOnADevice(this->m_cuda_colwise_kernel, rows, numThreads, numBlocks, maxThreads,
+                    maxBlocks, d_input, d_output, this->m_environment->m_best_cuda_device_id);
 #endif
 				
 #ifdef USE_PINNED_MEMORY
-				copyDeviceToHost(&res, d_output, 1, this->m_environment->m_devices_CU[m_environment->bestCUDADevID]->m_streams[0]);
+				copyDeviceToHost(&res, d_output, 1, this->m_environment->m_devices_CU[m_environment->m_best_cuda_device_id]->m_streams[0]);
 #else
 				copyDeviceToHost(&res, d_output, 1);
 #endif
@@ -574,7 +577,7 @@ namespace skepu
 #ifndef SKEPU_DEBUG_FORCE_MULTI_GPU_IMPL
 			
 			if (numDevices <= 1)
-				return this->reduceSingleThread_CU(this->m_environment->bestCUDADevID, res, arg, numRows);
+				return this->reduceSingleThread_CU(this->m_environment->m_best_cuda_device_id, res, arg, numRows);
 				
 #endif // SKEPU_DEBUG_FORCE_MULTI_GPU_IMPL
 				

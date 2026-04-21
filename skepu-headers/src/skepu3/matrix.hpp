@@ -576,7 +576,7 @@ namespace skepu
 				return *m_transpose_matrix;
 
 #if defined(SKEPU_CUDA)
-			transpose_CU(backend::Environment<int>::getInstance()->m_devices_CU.at(backend::Environment<int>::getInstance()->bestCUDADevID));
+			transpose_CU(backend::Environment<int>::getInstance()->m_devices_CU.at(backend::Environment<int>::getInstance()->m_best_cuda_device_id));
 #elif  defined(SKEPU_OPENCL)
 			transpose_CL(0);
 #elif defined(SKEPU_OPENMP)
@@ -598,7 +598,7 @@ namespace skepu
 			{
 			case Backend::Type::CUDA:
 #ifdef SKEPU_CUDA
-				this->transpose_CU(backend::Environment<int>::getInstance()->m_devices_CU[backend::Environment<int>::getInstance()->bestCUDADevID]);
+				this->transpose_CU(backend::Environment<int>::getInstance()->m_devices_CU[backend::Environment<int>::getInstance()->m_best_cuda_device_id]);
 				break;
 #endif
 			case Backend::Type::OpenCL:
