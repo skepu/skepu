@@ -54,6 +54,13 @@ namespace skepu
                 return (out_size - 1) * this->m_strides[dim] + this->m_overlap[dim];
             }
 
+            size_t isRegularInputSizeValid(size_t in_size, size_t out_size) const
+            {
+                if (in_size >= out_size)
+                    return ((in_size - out_size) % 2) == 0;
+                return ((out_size - in_size) % 2) == 0;
+            }
+
             size_t getAllowedInputSizeNone(size_t out_size, size_t dim) const
             {
                 return out_size + 2 * this->m_overlap[dim];

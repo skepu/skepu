@@ -2,26 +2,26 @@
 #   MapOverlap default values
 # ------------------------------------------------
 
-skepu_add_test_case_sequential(default_values)
-skepu_add_test_case_cpu(default_values)
-skepu_add_test_case_openmp(default_values)
-skepu_add_test_case_opencl(default_values)
-skepu_add_test_case_cuda(default_values)
-skepu_add_test_case_hybrid_opencl(default_values)
-skepu_add_test_case_hybrid_cuda(default_values)
+skepu_add_test_case_sequential(mapoverlap_default_values)
+skepu_add_test_case_cpu(mapoverlap_default_values)
+skepu_add_test_case_openmp(mapoverlap_default_values)
+skepu_add_test_case_opencl(mapoverlap_default_values)
+skepu_add_test_case_cuda(mapoverlap_default_values)
+skepu_add_test_case_hybrid_opencl(mapoverlap_default_values)
+skepu_add_test_case_hybrid_cuda(mapoverlap_default_values)
 
 
 # ------------------------------------------------
 #   MapOverlap expanding
 # ------------------------------------------------
 
-skepu_add_test_case_sequential(expanding_mapoverlap)
-skepu_add_test_case_cpu(expanding_mapoverlap)
-skepu_add_test_case_openmp(expanding_mapoverlap)
-skepu_add_test_case_opencl(expanding_mapoverlap)
-skepu_add_test_case_cuda(expanding_mapoverlap)
-skepu_add_test_case_hybrid_opencl(expanding_mapoverlap)
-skepu_add_test_case_hybrid_cuda(expanding_mapoverlap)
+skepu_add_test_case_sequential(mapoverlap_expanding)
+skepu_add_test_case_cpu(mapoverlap_expanding)
+skepu_add_test_case_openmp(mapoverlap_expanding)
+skepu_add_test_case_opencl(mapoverlap_expanding)
+skepu_add_test_case_cuda(mapoverlap_expanding)
+skepu_add_test_case_hybrid_opencl(mapoverlap_expanding)
+skepu_add_test_case_hybrid_cuda(mapoverlap_expanding)
 
 
 # ------------------------------------------------
@@ -170,13 +170,13 @@ skepu_add_test_case_hybrid_cuda(mapoverlap_4d_new)
 #   MapOverlap Indexed
 # ------------------------------------------------
 
-skepu_add_test_case_sequential(indexed)
-skepu_add_test_case_cpu(indexed)
-skepu_add_test_case_openmp(indexed)
-skepu_add_test_case_opencl(indexed)
-skepu_add_test_case_cuda(indexed)
-skepu_add_test_case_hybrid_opencl(indexed)
-skepu_add_test_case_hybrid_cuda(indexed)
+skepu_add_test_case_sequential(mapoverlap_indexed)
+skepu_add_test_case_cpu(mapoverlap_indexed)
+skepu_add_test_case_openmp(mapoverlap_indexed)
+skepu_add_test_case_opencl(mapoverlap_indexed)
+skepu_add_test_case_cuda(mapoverlap_indexed)
+skepu_add_test_case_hybrid_opencl(mapoverlap_indexed)
+skepu_add_test_case_hybrid_cuda(mapoverlap_indexed)
 
 
 # ------------------------------------------------
@@ -207,10 +207,10 @@ skepu_add_test_case_hybrid_cuda(mapoverlap_tuple)
 #   MapOverlap update modes
 # ------------------------------------------------
 
-skepu_add_test_case_sequential(updatemode)
-#skepu_add_test_case_cpu(updatemode)
-#skepu_add_test_case_openmp(updatemode)
-#skepu_add_test_case_opencl(updatemode)
-#skepu_add_test_case_cuda(updatemode)
-#skepu_add_test_case_hybrid_opencl(updatemode)
-#skepu_add_test_case_hybrid_cuda(updatemode)
+skepu_add_test_case_sequential(mapoverlap_updatemode)
+#skepu_add_test_case_cpu(mapoverlap_updatemode)
+#skepu_add_test_case_openmp(mapoverlap_updatemode)
+#skepu_add_test_case_opencl(mapoverlap_updatemode)
+#skepu_add_test_case_cuda(mapoverlap_updatemode)
+#skepu_add_test_case_hybrid_opencl(mapoverlap_updatemode)
+#skepu_add_test_case_hybrid_cuda(mapoverlap_updatemode)

@@ -155,6 +155,7 @@ namespace skepu
 					<< "\nfirst output matrix (label: " << first_output.getLabel() << ", rows: " << out_size_i << ")"
 					<< "\nexpected input matrix rows: "
                     << (this->isPool ? ">= " + colorRed(this->getSmallestAllowedInputSizePool(out_size_i, 0)) :
+                        this->m_edge != skepu::Edge::None ? colorRed(std::to_string(out_size_i) + " ± 2n") :
                                       colorRed(this->getAllowedInputSizeNone(out_size_i, 0)))
 					<< "\ninput matrix (label: " << input.getLabel() << ", rows: " << colorRed(in_size_i) << ")");
 				
@@ -164,6 +165,7 @@ namespace skepu
 					<< "\nfirst output matrix (label: " << first_output.getLabel() << ", cols: " << out_size_j << ")"
 					<< "\nexpected input matrix cols: "
                     << (this->isPool ? ">= " + colorRed(this->getSmallestAllowedInputSizePool(out_size_j, 1)) :
+                        this->m_edge != skepu::Edge::None ? colorRed(std::to_string(out_size_j) + " ± 2n") :
                                       colorRed(this->getAllowedInputSizeNone(out_size_j, 1)))
 					<< "\ninput matrix (label: " << input.getLabel() << ", cols: " << colorRed(in_size_j) << ")");
 				

@@ -40,8 +40,8 @@ namespace skepu
                 else if (this->m_edge == skepu::Edge::None)
                     return in_size == this->getAllowedInputSizeNone(out_size, dim);
 
-                // it doesn't matter what the input size is
-                return true;
+                // difference between in_size and out_size must be even
+                return this->isRegularInputSizeValid(in_size, out_size);
 			}
 
         public:
