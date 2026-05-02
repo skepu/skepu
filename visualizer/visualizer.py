@@ -431,18 +431,28 @@ class DirectedGraph:
 
             for node in rest_nodes:
                 self._nodes.remove(node)
-
+                canonicals[keypath].iteration_count += 1
+                canonicals[keypath].durations.extend(node.durations)
 
                 for edge in node.getIncomingEdges():
-                #    if edge in self._edges:
-                #        self._edges.remove(edge)
                     edge.target = canonicals[edge.target.keypath]
 
-
                 for edge in node.getOutgoingEdges():
-                #    if edge in self._edges:
-                #        self._edges.remove(edge)
                     edge.source = canonicals[edge.source.keypath]
+
+        # After re-pointing all edges to canonical nodes, many edges share the
+        # same (source, target) pair. Keep one per directed pair; accumulate
+        # the absorbed count on the surviving canonical edge.
+        canonical_edge = {}  # (source_id, target_id) -> surviving edge
+        deduped = []
+        for edge in self._edges:
+            key = (edge.source.id, edge.target.id)
+            if key not in canonical_edge:
+                canonical_edge[key] = edge
+                deduped.append(edge)
+            else:
+                canonical_edge[key].iteration_count += 1
+        self._edges = deduped
 
 
     # Serialization
@@ -480,6 +490,8 @@ class Node:
         self.fused = None
 
         self.is_critical_path = False
+        self.iteration_count = 1
+        self.durations = []   # populated by ComputationNode; accumulated during coalesceIterations
         self.region = None
         self.nesting_level = 0
         if graph.settings.regions:
@@ -521,6 +533,7 @@ class Node:
         cy_data["type"] = self.type
         cy_data["is_critical_path"] = self.is_critical_path
         cy_data["dag_depth"] = self.depth
+        cy_data["iteration_count"] = self.iteration_count
         if self.fused:
             cy_data["parent"] = self.fused.id
         elif self.region:
@@ -531,11 +544,11 @@ class Node:
     def infoData(self):
         info_data = {}
         info_data["internal"] = {}
-    #    info_data["total_order"] = self.total_order
         info_data["type"] = self.type
         info_data["On critical path"] = self.is_critical_path
         info_data["DAG depth"] = self.depth
-    #    info_data["keypath"] = self.keypath
+        if self.iteration_count > 1:
+            info_data["Repeat count"] = self.iteration_count
         if self.region:
             info_data["Region"] = graph.labelForID(self.region.id)
             info_data["Region Nesting Depth"] = self.nesting_level
@@ -550,6 +563,7 @@ class ComputationNode(Node):
         self.start = json_data["start"]
         self.end = json_data["end"]
         self.duration = self.end - self.start
+        self.durations = [self.duration]
 
         self.backend = json_data.get("backend", "CPU")
         self.file = json_data.get("file")
@@ -607,6 +621,7 @@ class ComputationNode(Node):
         info_data["File"] = self.file
         info_data["Line"] = self.line
         info_data["Backend"] = self.backend
+        info_data["durations"] = [{"x": i, "y": d} for i, d in enumerate(self.durations)]
         return info_data
 
 
@@ -816,6 +831,7 @@ class Edge:
             self.source = graph.producerForID(source_id, target.backend)
 
         self.is_critical_path = False
+        self.iteration_count = 1
 
         if self.source and self.target:
             graph.addEdge(self)
@@ -827,6 +843,7 @@ class Edge:
         cy_data["source"] = self.source.id
         cy_data["target"] = self.target.id
         cy_data["is_critical_path"] = self.is_critical_path
+        cy_data["iteration_count"] = self.iteration_count
         return cy_data
 
 
@@ -1222,17 +1239,19 @@ def upload():
         if json_file:
             event_data = json.load(json_file)
 
-        cpp_file = request.files.get('cpp_file')
-        if cpp_file:
-            cpp_code = cpp_file.read().decode('utf-8')
+        cpp_files = {}
+        for f in request.files.getlist('cpp_files'):
+            if f and f.filename:
+                basename = os.path.basename(f.filename.replace('\\', '/'))
+                cpp_files[basename] = f.read().decode('utf-8')
 
-    return main_page(cpp_code=cpp_code, event_data=event_data)
+    return main_page(cpp_files=cpp_files, event_data=event_data)
 
 
- # Route to the main-page of the website
+# Route to the main-page of the website
 @app.route('/main')
-def main_page(cpp_code=None, event_data=None):
-    return render_template('main.html', data=event_data, cpp_code=cpp_code)
+def main_page(cpp_files=None, event_data=None):
+    return render_template('main.html', data=event_data, cpp_files=cpp_files or {})
 
 if __name__ == '__main__':
 #    pid = os.fork()

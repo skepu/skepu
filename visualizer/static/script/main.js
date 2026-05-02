@@ -3,6 +3,7 @@
 var cy;
 var expand_collapse;
 var daglayout;
+var splitInstance;
 
 var previous_selected_item = undefined;
 var opaqueNodes = [];
@@ -210,7 +211,7 @@ function fetchGraphDataAndRender()
       elements: edges.concat(nodes),
 
       // How sensitive the zoom wheel is as well a how much you can zoom
-      wheelSensitivity: 0.2,
+      wheelSensitivity: 0.0,
       minZoom: 0.01,
       maxZoom: 5,
       userZoomingEnabled: true,
@@ -501,6 +502,33 @@ function fetchGraphDataAndRender()
       closePopup();
     });
 
+    cy.edges().on('click', function(event)
+    {
+      var d = event.target.data();
+
+      var typeHeadings = {
+        'forward-dep': 'Data Dependence',
+        'anti-dep':    'Anti-Dependence',
+      };
+      var heading = typeHeadings[d.type] || 'Edge';
+
+      var sourceName = cy.$id(d.source).data('label') || d.source;
+      var targetName = cy.$id(d.target).data('label') || d.target;
+
+      document.getElementById('info-heading').textContent = heading;
+      var info = '';
+      info += '<p><strong>from</strong> '         + sourceName + '</p>';
+      info += '<p><strong>to</strong> '           + targetName + '</p>';
+      if (d.label)         info += '<p><strong>container</strong> '    + d.label         + '</p>';
+      if (d.access_mode)   info += '<p><strong>access mode</strong> '  + d.access_mode   + '</p>';
+      if (d.is_critical_path) info += '<p><strong>critical path</strong> ' + d.is_critical_path + '</p>';
+      if (d.iteration_count > 1) info += '<p><strong>repeat count</strong> ' + d.iteration_count + '</p>';
+
+      $('#info').html(info);
+      openInfoPane();
+      document.getElementById('plot').style.display = 'none';
+    });
+
     document.getElementById('cy').onwheel = function(event)
     {
       event.preventDefault();
@@ -562,11 +590,12 @@ function fetchGraphDataAndRender()
       .then(response => response.json())
       .then(data =>
       {
-        var info = "<h3>" + headings[data["type"]] + "</h3>";
+        document.getElementById('info-heading').textContent = headings[data["type"]] || data["type"];
+        var info = "";
         for (var key in data)
         {
           var str = key.toString();
-          if (data.hasOwnProperty(key) && !str.match("internal") && !str.match("type"))
+          if (data.hasOwnProperty(key) && !str.match("internal") && !str.match("type") && str !== "durations")
           {
             var value = data[key];
             if (key == "file") value = value.split('\\').pop().split('/').pop();
@@ -574,7 +603,7 @@ function fetchGraphDataAndRender()
           }
         }
         $('#info').html(info);
-        $('#info_window').css('flex', '0 0 10em');
+        openInfoPane();
 
         // Update the opaque/transparent emphasis in the graph
         if (data["type"] == "container_update")
@@ -582,21 +611,19 @@ function fetchGraphDataAndRender()
         else opaqueNodes = [];
         cy.style().update();
 
-        highlightSourceLine(data["Line"]);
+        highlightSourceLine(data["Line"], data["File"]);
 
         var plot_container = document.getElementById('plot');
         plot_container.innerHTML = "";
-        if (data.durations.length > 1)
+        if (data.durations && data.durations.length > 1)
         {
-          // Create a DataSet (allows two way data-binding)
           var items = new vis.DataSet(data.durations);
           var options = {
-            locale: 'en',
-            start: '2024-01-01',
-            end: '2024-01-10',
-            style:'bar',
+            style: 'bar',
             height: '10em',
-            barChart: {width:50,align:'center'},
+            barChart: { width: 50, align: 'center' },
+            drawPoints: false,
+            legend: false,
           };
           var timeline = new vis.Graph2d(plot_container, items, options);
           plot_container.style.display = "block";
@@ -618,15 +645,22 @@ function fetchGraphDataAndRender()
       {
         if ((node.data.type == "skeleton_call") && node.data.line != -1)
         {
-          if (!badges.hasOwnProperty(node.data.line)) badges[node.data.line] = {"count" : 0, "ids" : []};
-          badges[node.data.line].count += 1;
-          badges[node.data.line].ids.push(node.data.id);
+          var key = (node.data.file || '') + ':' + node.data.line;
+          if (!badges.hasOwnProperty(key)) badges[key] = {"count" : 0, "ids" : [], "file" : node.data.file, "line" : node.data.line};
+          badges[key].count += 1;
+          badges[key].ids.push(node.data.id);
         }
       });
 
-      for (badge in badges)
+      for (var key in badges)
       {
-        $('.hljs-ln-n[data-line-number="' + badge + '"]')[0].innerHTML = ("<span class='badge' onclick='zoomToFit(\"" + badges[badge].ids[0] + "\")'>" + badges[badge].count + "</span>");
+        var b = badges[key];
+        var basename = b.file ? b.file.split('/').pop().split('\\').pop() : '';
+        var pane = document.querySelector('.cpp-tab-pane[data-filename="' + basename + '"]')
+                || document.querySelector('.cpp-tab-pane');
+        if (!pane) continue;
+        var el = $(pane).find('.hljs-ln-n[data-line-number="' + b.line + '"]')[0];
+        if (el) el.innerHTML = "<span class='badge' onclick='zoomToFit(\"" + b.ids[0] + "\")'>" + b.count + "</span>";
       }
     }, 200);
 
@@ -662,20 +696,34 @@ function findPropertyNorm(key, ele, minmax)
   return norm;
 }
 
-function highlightSourceLine(line_nr)
+function highlightSourceLine(line_nr, file_path)
 {
-  // Remove previous highlighted rows
-  var row = document.querySelectorAll('.hljs-ln-line').forEach(function(el)
+  document.querySelectorAll('.hljs-ln-line').forEach(function(el)
   {
     el.classList.remove('line-selected');
   });
 
-  // Highlight new clicked row if relevant
-  if (line_nr != -1)
+  if (line_nr == -1) return;
+
+  // Switch to the tab matching the file, if known
+  if (file_path)
   {
-    $('.hljs-ln-line[data-line-number="' + line_nr + '"]').addClass("line-selected");
-    $("#cpp_container").scrollTo($('.hljs-ln-line[data-line-number="' + line_nr + '"]')[0], 500, {over: {top: -5}});
+    var basename = file_path.split('/').pop().split('\\').pop();
+    document.querySelectorAll('.cpp-tab-pane').forEach(function(pane, i)
+    {
+      if (pane.dataset.filename === basename)
+        switchTab(document.querySelectorAll('.cpp-tab')[i], i);
+    });
   }
+
+  var activePane = document.querySelector('.cpp-tab-pane.active');
+  var targets = activePane
+    ? $(activePane).find('.hljs-ln-line[data-line-number="' + line_nr + '"]')
+    : $('.hljs-ln-line[data-line-number="' + line_nr + '"]');
+
+  targets.addClass('line-selected');
+  if (targets[0])
+    $(activePane || '#cpp_container').scrollTo(targets[0], 500, {over: {top: -5}});
 }
 
 // To close popup window
@@ -695,13 +743,6 @@ function recenterGraph()
   layout.run();
 }
 
-function toggleSettings()
-{
-  var status = document.getElementById('toggled-settings').style.display;
-  var newStatus = status != "none" ? "none" : "block";
-  document.getElementById('toggled-settings').style.display = newStatus;
-}
-
 function toggleLegend()
 {
   var status = document.getElementById('legend').style.display;
@@ -709,19 +750,13 @@ function toggleLegend()
   document.getElementById('legend').style.display = newStatus;
 }
 
-function toggleFiles()
-{
-  var status = document.getElementById('file-settings').style.display;
-  var newStatus = status != "none" ? "none" : "block";
-  document.getElementById('file-settings').style.display = newStatus;
-}
-
 
 
 
 function load()
 {
-  Split(['#left_pane', '#right_pane'], { sizes: [65, 35] });
+  splitInstance = Split(['#left_pane', '#right_pane'], { sizes: [65, 35], onDragEnd: saveSettings });
+  applyStoredLayout();
 
   hljs.highlightAll();
   hljs.initLineNumbersOnLoad();
@@ -748,6 +783,34 @@ function load()
   document.getElementById("expandAllFusions").addEventListener("click", function () {
     expand_collapse.expandRecursively(cy.nodes("[type='fusion']"));
   });
+
+  var infoWindow  = document.getElementById('info_window');
+  var infoResizer = document.getElementById('info-resizer');
+  var _dragStartY, _dragStartH;
+
+  infoResizer.addEventListener('mousedown', function(e) {
+    _dragStartY = e.clientY;
+    _dragStartH = infoWindow.offsetHeight;
+    infoWindow.classList.add('resizing');
+    document.addEventListener('mousemove', _onInfoDrag);
+    document.addEventListener('mouseup',   _onInfoDragEnd);
+    e.preventDefault();
+  });
+
+  function _onInfoDrag(e) {
+    var newH = Math.max(40, _dragStartH + (_dragStartY - e.clientY));
+    infoWindow.style.flex = '0 0 ' + newH + 'px';
+  }
+
+  function _onInfoDragEnd() {
+    infoWindow.classList.remove('resizing');
+    document.removeEventListener('mousemove', _onInfoDrag);
+    document.removeEventListener('mouseup',   _onInfoDragEnd);
+    var rightEl = document.getElementById('right_pane');
+    if (rightEl && infoWindow.offsetHeight > 40)
+      _infoPaneRatio = infoWindow.offsetHeight / rightEl.offsetHeight;
+    saveSettings();
+  }
 
   document.addEventListener("keydown",  function (event)
   {

@@ -34,14 +34,187 @@ code, pre {
   display: flex;
   flex-direction: column;
 }
-#settings
+#menubar
 {
-  flex: 0 1 auto;
-  font-family: sans-serif;
-  font-size: 0.75em;
-  padding-bottom: 0.3em;
-  border-bottom: 1px solid gray;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
   background-color: #ddd;
+  border-bottom: 1px solid #aaa;
+  font-family: sans-serif;
+  font-size: 0.8em;
+  user-select: none;
+  position: relative;
+  z-index: 100;
+}
+
+#hidden-controls
+{
+  display: none;
+}
+
+/* Top-level menu item */
+.menu
+{
+  position: relative;
+}
+
+.menu-title, .menu-anfang
+{
+  display: block;
+  background: none;
+  border: none;
+  padding: 0.4em 0.85em;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: bold;
+  white-space: nowrap;
+  height: 100%;
+}
+
+.menu-anfang
+{
+    cursor: default;
+}
+
+.menu-title:hover,
+.menu.open > .menu-title
+{
+  background-color: #bbb;
+}
+
+/* Dropdowns */
+.menu > .dropdown
+{
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #aaa;
+  box-shadow: 2px 4px 10px rgba(0,0,0,0.18);
+  min-width: 170px;
+  z-index: 1000;
+}
+
+.menu.open > .dropdown
+{
+  display: block;
+}
+
+.dropdown button,
+.submenu-title
+{
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.35em 0.75em;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.dropdown button:hover,
+.submenu:hover > .submenu-title
+{
+  background-color: #ddeeff;
+}
+
+/* Check/radio icon column */
+.menu-icon
+{
+  display: inline-block;
+  width: 1.3em;
+  text-align: center;
+  margin-right: 0.3em;
+  flex-shrink: 0;
+  color: #333;
+}
+
+/* Separator */
+.menu-sep
+{
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 0.2em 0;
+}
+
+/* Submenus */
+.submenu
+{
+  position: relative;
+}
+
+.submenu-title
+{
+  justify-content: space-between;
+}
+
+.menu-arrow
+{
+  margin-left: 1.5em;
+  opacity: 0.5;
+  font-size: 0.85em;
+  flex-shrink: 0;
+}
+
+.submenu > .dropdown
+{
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 100%;
+  background: white;
+  border: 1px solid #aaa;
+  box-shadow: 2px 4px 10px rgba(0,0,0,0.18);
+  min-width: 170px;
+  z-index: 1001;
+}
+
+.submenu:hover > .dropdown
+{
+  display: block;
+}
+
+/* Trace form dropdown */
+.dropdown-wide
+{
+  min-width: 240px;
+  padding: 0.6em 0.8em;
+}
+
+.menu-form-row
+{
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.5em;
+}
+
+.menu-form-row label
+{
+  font-size: 0.85em;
+  color: #666;
+  margin-bottom: 0.2em;
+}
+
+.menu-form-row input[type="file"]
+{
+  font-size: 0.9em;
+}
+
+.menu-form-row input[type="submit"]
+{
+  margin-top: 0.3em;
+  cursor: pointer;
+  padding: 0.3em 0.7em;
+  align-self: flex-start;
 }
 #visualization
 {
@@ -49,6 +222,12 @@ code, pre {
   flex: 1 1 auto;
   display: flex;
   flex-flow: column;
+}
+
+/* Prevent the Cytoscape canvas from swallowing pointer events while any menu is open */
+#left_pane:has(.menu.open) #visualization
+{
+  pointer-events: none;
 }
 #legend
 {
@@ -74,10 +253,69 @@ code, pre {
 }
 #cpp_container
 {
-/*  height: calc(100vh - 4em);*/
-  overflow-y: auto;
   tab-size: 3;
   flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+#cpp_tab_bar
+{
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  background-color: #f0f0f0;
+  border-bottom: 1px solid #ccc;
+}
+
+.cpp-tab
+{
+  background: none;
+  border: none;
+  border-right: 1px solid #ccc;
+  padding: 0.3em 0.9em;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.8em;
+  white-space: nowrap;
+  color: #555;
+}
+
+.cpp-tab:hover
+{
+  background-color: #e4e4e4;
+}
+
+.cpp-tab.active
+{
+  background-color: white;
+  color: black;
+  border-bottom: 2px solid white;
+  margin-bottom: -1px;
+}
+
+#cpp_tab_panes
+{
+  flex: 1 1 auto;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cpp-tab-pane
+{
+  display: none;
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  overflow-y: auto;
+}
+
+.cpp-tab-pane.active
+{
+  display: block;
 }
 #info_window
 {
@@ -117,22 +355,51 @@ code, pre {
   font-size: 0.8em;
   word-wrap: anywhere;
   z-index: 999;
-  overflow-y: scroll;
   transition: 0.3s flex;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-#info_window h3, p
+#info_window.resizing
 {
+  transition: none;
+  user-select: none;
+}
+
+#info-resizer
+{
+  flex: 0 0 5px;
+  background-color: #bbb;
+  cursor: ns-resize;
+}
+
+#info-resizer:hover
+{
+  background-color: #999;
+}
+
+#info-heading
+{
+  flex: 0 0 auto;
   margin: 0;
-}
-
-#info_window h3
-{
   text-transform: uppercase;
   text-align: center;
   border-bottom: 1pt solid #bbb;
   border-top: 1pt solid #bbb;
   background-color: #ddd;
+}
+
+#info-content
+{
+  flex: 1 1 auto;
+  overflow-y: scroll;
+  min-height: 0;
+}
+
+#info_window p
+{
+  margin: 0;
 }
 
 #info_window p:nth-of-type(even)
@@ -177,37 +444,6 @@ code, pre {
 {
   display: flex;
   justify-content: space-between;
-}
-.setting
-{
-  background-color: white;
-  border-radius: 3pt;
-  margin: 0.3em 0.2em;
-  padding: 0.1em 0.4em;
-  display: inline-block;
-  font-size: 0.9em;
-}
-.setting-heading
-{
-  margin-left: 0.5em;
-  margin-right: 0.5em;
-  font-weight: bold;
-  display: inline-block;
-  width: 5em;
-  text-align: right;
-}
-.setting.hidden { display: none; }
-
-.setting label:hover
-{
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-#settings hr
-{
-  border: none;
-  border-bottom: 1px solid gray;
 }
 
 pre code.hljs
