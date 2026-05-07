@@ -1,0 +1,82 @@
+[
+    {
+        "label": "0x7fc69702f000",
+        "line": 239,
+        "object_id": 1001,
+        "time": 0,
+        "type": "allocation"
+    },
+    {
+        "label": "0x7fc697025000",
+        "line": 239,
+        "object_id": 1002,
+        "time": 5,
+        "type": "allocation"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 606,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1001
+        ],
+        "scalar_inputs": [],
+        "start": 39,
+        "type": "external"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 1106,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1002
+        ],
+        "scalar_inputs": [],
+        "start": 607,
+        "type": "external"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048
+        ],
+        "elwise_inputs": [
+            1001,
+            1002
+        ],
+        "end": 2085,
+        "file": "/Users/august/Developer/skepu-alpha/examples/dotproduct.cpp",
+        "label": "dotprod",
+        "line": 38,
+        "object_id": 1000,
+        "outputs": [
+            1006
+        ],
+        "pattern": "MapReduce",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 1821,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "0x7fc697025000",
+        "line": 270,
+        "object_id": 1002,
+        "time": 2099,
+        "type": "deallocation"
+    },
+    {
+        "label": "0x7fc69702f000",
+        "line": 270,
+        "object_id": 1001,
+        "time": 2100,
+        "type": "deallocation"
+    }
+]

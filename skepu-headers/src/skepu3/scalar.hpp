@@ -37,7 +37,7 @@ public:
 
 	}
 
-	operator T()
+	operator T() const
 	{
 		return this->m_value;
 	}

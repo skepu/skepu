@@ -245,7 +245,8 @@ template <typename T>
 #endif
 			copyUpTimer.start();
 #endif
-
+            SKEPU_TRACE_START_EVENT(trace_handle);
+            
 			if (copyLast)
 				err = clEnqueueWriteBuffer(m_device->getQueue(), m_deviceDataPointer, CL_TRUE, 0, sizeVec, m_hostDataPointer, 0, NULL, NULL);
 			else
@@ -254,7 +255,7 @@ template <typename T>
 
 			DEBUG_TEXT_LEVEL1("HOST_TO_DEVICE OpenCL, label: " << this->m_label << ", size " << sizeVec << " B (" << (sizeVec/sizeof(T)) << " elements)");
 			
-			SKEPU_TRACE_TRANSFER(this->m_container_id, this->m_label, __LINE__, (sizeVec/sizeof(T)), "host-to-device", "OpenCL");
+			SKEPU_TRACE_TRANSFER(trace_handle, this->m_container_id, this->m_label, __LINE__, (sizeVec/sizeof(T)), "host-to-device", "OpenCL");
 
 #ifdef SKEPU_MEASURE_TIME_DISTRIBUTION
 #ifdef SKEPU_MEASURE_ONLY_COPY
@@ -302,7 +303,7 @@ template <typename T>
 
 				DEBUG_TEXT_LEVEL1("DEVICE_TO_HOST OpenCL, label: " << this->m_label << ", size " << sizeVec << " B (" << (sizeVec/sizeof(T)) << " elements)");
 
-				SKEPU_TRACE_TRANSFER(this->m_container_id, this->m_label, __LINE__, (sizeVec/sizeof(T)), "device-to-host", "OpenCL");
+				SKEPU_TRACE_TRANSFER(trace_handle, this->m_container_id, this->m_label, __LINE__, (sizeVec/sizeof(T)), "device-to-host", "OpenCL");
 #ifdef SKEPU_MEASURE_TIME_DISTRIBUTION
 #ifdef SKEPU_MEASURE_ONLY_COPY
 				clFinish(m_device->getQueue());

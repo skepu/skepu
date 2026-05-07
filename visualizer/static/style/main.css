@@ -19,6 +19,8 @@ code, pre {
 {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 #menubar
 {
@@ -63,6 +65,9 @@ code, pre {
 .menu-anfang
 {
     cursor: default;
+    font-size: 1.15em;
+    position: relative;
+    top: 0.05em;
 }
 
 .menu-title:hover,
@@ -113,6 +118,15 @@ code, pre {
   background-color: #ddeeff;
 }
 
+/* Keyboard shortcut hint — pushed to the right edge of the menu item */
+.menu-key
+{
+  margin-left: auto;
+  padding-left: 1.5em;
+  font-size: 0.9em;
+  flex-shrink: 0;
+}
+
 /* Check/radio icon column */
 .menu-icon
 {
@@ -122,6 +136,24 @@ code, pre {
   margin-right: 0.3em;
   flex-shrink: 0;
   color: #333;
+}
+
+/* Color-spectrum dropdown — wider to fit swatch + note */
+.dropdown-spectrum
+{
+  min-width: 220px;
+}
+
+/* Small gradient swatch shown next to each spectrum option */
+.spectrum-swatch
+{
+  display: inline-block;
+  margin-left: auto;
+  padding-left: 0.6em;
+  width: 3.5em;
+  height: 1em;
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 /* Separator */
@@ -181,6 +213,7 @@ code, pre {
   display: flex;
   flex-direction: column;
   margin-bottom: 0.5em;
+  padding: 0 0.7em;
 }
 
 .menu-form-row label
@@ -201,6 +234,7 @@ code, pre {
   cursor: pointer;
   padding: 0.3em 0.7em;
   align-self: flex-start;
+  width: 100%;
 }
 #alert-bar
 {
@@ -289,23 +323,6 @@ code, pre {
   transition: flex-basis 0.15s ease;
 }
 
-#gantt-pane.resizing
-{
-  transition: none;
-  user-select: none;
-}
-
-#gantt-resizer
-{
-  flex: 0 0 5px;
-  background-color: #bbb;
-  cursor: ns-resize;
-}
-
-#gantt-resizer:hover
-{
-  background-color: #999;
-}
 
 #gantt-svg-container
 {
@@ -330,6 +347,8 @@ code, pre {
 {
   display: flex;
   flex-flow: column;
+  flex: 0 0 380px;
+  min-width: 0;
 }
 #cpp_container
 {
@@ -598,23 +617,15 @@ pre code.hljs
 }
 
 
-.split
+#split-gutter
 {
-  display: flex;
-  flex-direction: row;
-}
-.gutter
-{
+  flex: 0 0 7px;
   background-color: #777;
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
   background-repeat: no-repeat;
   background-position: 50%;
-}
-.gutter.gutter-horizontal
-{
-  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
   cursor: col-resize;
 }
-
 .vis-item.red
 {
   color: white;

@@ -105,6 +105,8 @@ namespace skepu
 				static const std::string THREADS{"threads"};
 				static const std::string DIRECTION{"direction"};
 				static const std::string PRNG{"prng"};
+				static const std::string SOURCE{"source"};
+				static const std::string INDEX{"index"};
 			}
 
 			namespace Values
@@ -114,6 +116,7 @@ namespace skepu
 					static const std::string CALL{"skeleton_call"};
 					static const std::string ALLOCATION{"allocation"};
 					static const std::string DEALLOCATION{"deallocation"};
+					static const std::string ELEM_ACCESS{"element_access"};
 					static const std::string TRANSFER{"transfer"};
 					static const std::string REGION{"region"};
 					static const std::string EXTERNAL{"external"};
@@ -192,7 +195,36 @@ namespace skepu
 #endif
 		}
 
-		inline void Tracer::transfer(TraceID id, std::string const& label, int line, size_t elements, std::string direction, std::string backend)
+		inline void Tracer::element_access(TraceID id, TraceID source_id, size_t index, std::string const& label, int line)
+		{
+#ifdef SKEPU_TRACING
+			unsigned long now = timestamp_now();
+
+			auto capture = [=](){
+			nlohmann::json entry;
+			entry[Schema::Keys::OBJECT_ID] = id;
+			entry[Schema::Keys::SOURCE] = source_id;
+			entry[Schema::Keys::TYPE]  = Schema::Values::Types::ELEM_ACCESS;
+			entry[Schema::Keys::INDEX]  = index;
+			entry[Schema::Keys::LABEL] = label;
+			entry[Schema::Keys::TIME]  = now;
+			entry[Schema::Keys::LINE]  = line;
+			if (!this->m_region_stack.empty())
+				entry[Schema::Keys::REGION] = this->m_region_stack.top();
+
+			this->m_trace_json.push_back(entry);
+			}; this->m_captures.push_back(capture);
+#endif
+		}
+
+		inline void Tracer::transfer(
+		    EventHandle &h,
+			TraceID id,
+			std::string const& label,
+			int line,
+			size_t elements,
+			std::string direction,
+			std::string backend)
 		{
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
@@ -205,6 +237,8 @@ namespace skepu
 			entry[Schema::Keys::DIRECTION] = direction;
 			entry[Schema::Keys::BACKEND] = backend;
 			entry[Schema::Keys::LABEL] = label;
+			entry[Schema::Keys::START]   = h.m_time;
+			entry[Schema::Keys::END]     = now;
 			entry[Schema::Keys::TIME]  = now;
 			entry[Schema::Keys::LINE]  = line;
 			if (!this->m_region_stack.empty())
@@ -363,8 +397,7 @@ namespace skepu
 			this->endRegion();
 		}
 
-
-		static Tracer internal_defaultGlobalTracer(SKEPU_TRACE_FILE);
+		static Tracer internal_defaultGlobalTracer(SKEPU_STRINGIFY_NESTED(SKEPU_TRACE_FILE));
 
 		// Enables global tracer across multiple translation units
 		inline Tracer **internal_GlobalTracerAccessor()

@@ -12,6 +12,10 @@
 #define VARIANT_OPENMP(block)
 #define VARIANT_CPU(block) block
 
+// Convert macro values to C strings
+#define SKEPU_STRINGIFY(x) #x
+#define SKEPU_STRINGIFY_NESTED(x) SKEPU_STRINGIFY(x)
+
 #include <vector>
 #include <array>
 #include <iostream>

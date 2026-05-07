@@ -1,0 +1,83 @@
+[
+    {
+        "label": "0x7f9e0a1d6400",
+        "line": 239,
+        "object_id": 1001,
+        "time": 0,
+        "type": "allocation"
+    },
+    {
+        "label": "0x7f9e09f07350",
+        "line": 278,
+        "object_id": 1002,
+        "time": 45,
+        "type": "allocation"
+    },
+    {
+        "label": "0x7f9e0a9067d0",
+        "line": 278,
+        "object_id": 1003,
+        "time": 749,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            100
+        ],
+        "elwise_inputs": [
+            1003
+        ],
+        "end": 1252,
+        "file": "/Users/august/Developer/skepu-alpha/examples/coulombic.cpp",
+        "label": "columbicPotential",
+        "line": 110,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "Map",
+        "proxy_inputs": [
+            1001
+        ],
+        "scalar_inputs": [],
+        "start": 766,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "0x7f9e0a9067d0",
+        "line": 308,
+        "object_id": 1003,
+        "time": 1259,
+        "type": "deallocation"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 1368,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1002
+        ],
+        "scalar_inputs": [],
+        "start": 1285,
+        "type": "external"
+    },
+    {
+        "label": "0x7f9e09f07350",
+        "line": 308,
+        "object_id": 1002,
+        "time": 1370,
+        "type": "deallocation"
+    },
+    {
+        "label": "0x7f9e0a1d6400",
+        "line": 270,
+        "object_id": 1001,
+        "time": 1372,
+        "type": "deallocation"
+    }
+]

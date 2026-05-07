@@ -1,6 +1,6 @@
 /*!
-  Highlight.js v11.9.0 (git: b7ec4bfafc)
-  (c) 2006-2024 undefined and other contributors
+  Highlight.js v11.11.1 (git: 08cb242e7d)
+  (c) 2006-2025 Josh Goebel <hello@joshgoebel.com> and other contributors
   License: BSD-3-Clause
  */
 var hljs = (function () {
@@ -1558,7 +1558,7 @@ var hljs = (function () {
     return mode;
   }
 
-  var version = "11.9.0";
+  var version = "11.11.1";
 
   class HTMLInjectionError extends Error {
     constructor(reason, html) {
@@ -2085,6 +2085,7 @@ var hljs = (function () {
         // first handler (when ignoreIllegals is true)
         if (match.type === "illegal" && lexeme === "") {
           // advance so we aren't stuck in an infinite loop
+          modeBuffer += "\n";
           return 1;
         }
 
@@ -2378,24 +2379,23 @@ var hljs = (function () {
      * auto-highlights all pre>code elements on the page
      */
     function highlightAll() {
+      function boot() {
+        // if a highlight was requested before DOM was loaded, do now
+        highlightAll();
+      }
+
       // if we are called too early in the loading process
       if (document.readyState === "loading") {
+        // make sure the event listener is only added once
+        if (!wantsHighlight) {
+          window.addEventListener('DOMContentLoaded', boot, false);
+        }
         wantsHighlight = true;
         return;
       }
 
       const blocks = document.querySelectorAll(options.cssSelector);
       blocks.forEach(highlightElement);
-    }
-
-    function boot() {
-      // if a highlight was requested before DOM was loaded, do now
-      if (wantsHighlight) highlightAll();
-    }
-
-    // make sure we are in the browser environment
-    if (typeof window !== 'undefined' && window.addEventListener) {
-      window.addEventListener('DOMContentLoaded', boot, false);
     }
 
     /**
@@ -2604,7 +2604,7 @@ var hljs = (function () {
 
 })();
 if (typeof exports === 'object' && typeof module !== 'undefined') { module.exports = hljs; }
-/*! `c` grammar compiled for Highlight.js 11.9.0 */
+/*! `c` grammar compiled for Highlight.js 11.11.1 */
   (function(){
     var hljsGrammar = (function () {
   'use strict';
@@ -2668,20 +2668,21 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
     const NUMBERS = {
       className: 'number',
       variants: [
-        { begin: '\\b(0b[01\']+)' },
-        { begin: '(-?)\\b([\\d\']+(\\.[\\d\']*)?|\\.[\\d\']+)((ll|LL|l|L)(u|U)?|(u|U)(ll|LL|l|L)?|f|F|b|B)' },
-        { begin: '(-?)(\\b0[xX][a-fA-F0-9\']+|(\\b[\\d\']+(\\.[\\d\']*)?|\\.[\\d\']+)([eE][-+]?[\\d\']+)?)' }
-      ],
+        { match: /\b(0b[01']+)/ },  
+        { match: /(-?)\b([\d']+(\.[\d']*)?|\.[\d']+)((ll|LL|l|L)(u|U)?|(u|U)(ll|LL|l|L)?|f|F|b|B)/ },  
+        { match: /(-?)\b(0[xX][a-fA-F0-9]+(?:'[a-fA-F0-9]+)*(?:\.[a-fA-F0-9]*(?:'[a-fA-F0-9]*)*)?(?:[pP][-+]?[0-9]+)?(l|L)?(u|U)?)/ },  
+        { match: /(-?)\b\d+(?:'\d+)*(?:\.\d*(?:'\d*)*)?(?:[eE][-+]?\d+)?/ }  
+    ],
       relevance: 0
-    };
-
+    };  
+    
     const PREPROCESSOR = {
       className: 'meta',
       begin: /#\s*[a-z]+\b/,
       end: /$/,
       keywords: { keyword:
           'if else elif endif define undef warning error line '
-          + 'pragma _Pragma ifdef ifndef include' },
+          + 'pragma _Pragma ifdef ifndef elifdef elifndef include' },
       contains: [
         {
           begin: /\\\n/,
@@ -2725,6 +2726,8 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
       "restrict",
       "return",
       "sizeof",
+      "typeof",
+      "typeof_unqual",
       "struct",
       "switch",
       "typedef",
@@ -2759,14 +2762,26 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
       "char",
       "void",
       "_Bool",
+      "_BitInt",
       "_Complex",
       "_Imaginary",
       "_Decimal32",
       "_Decimal64",
+      "_Decimal96",
       "_Decimal128",
+      "_Decimal64x",
+      "_Decimal128x",
+      "_Float16",
+      "_Float32",
+      "_Float64",
+      "_Float128",
+      "_Float32x",
+      "_Float64x",
+      "_Float128x",
       // modifiers
       "const",
       "static",
+      "constexpr",
       // aliases
       "complex",
       "bool",
@@ -2931,7 +2946,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
 })();
 
     hljs.registerLanguage('c', hljsGrammar);
-  })();/*! `cpp` grammar compiled for Highlight.js 11.9.0 */
+  })();/*! `cpp` grammar compiled for Highlight.js 11.11.1 */
   (function(){
     var hljsGrammar = (function () {
   'use strict';
@@ -3185,6 +3200,8 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
       'counting_semaphore',
       'deque',
       'false_type',
+      'flat_map',
+      'flat_set',
       'future',
       'imaginary',
       'initializer_list',
@@ -3510,7 +3527,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
         [
           PREPROCESSOR,
           { // containers: ie, `vector <int> rooms (9);`
-            begin: '\\b(deque|list|queue|priority_queue|pair|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array|tuple|optional|variant|function)\\s*<(?!<)',
+            begin: '\\b(deque|list|queue|priority_queue|pair|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array|tuple|optional|variant|function|flat_map|flat_set)\\s*<(?!<)',
             end: '>',
             keywords: CPP_KEYWORDS,
             contains: [
@@ -3543,4 +3560,67 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
 })();
 
     hljs.registerLanguage('cpp', hljsGrammar);
+  })();/*! `json` grammar compiled for Highlight.js 11.11.1 */
+  (function(){
+    var hljsGrammar = (function () {
+  'use strict';
+
+  /*
+  Language: JSON
+  Description: JSON (JavaScript Object Notation) is a lightweight data-interchange format.
+  Author: Ivan Sagalaev <maniac@softwaremaniacs.org>
+  Website: http://www.json.org
+  Category: common, protocols, web
+  */
+
+  function json(hljs) {
+    const ATTRIBUTE = {
+      className: 'attr',
+      begin: /"(\\.|[^\\"\r\n])*"(?=\s*:)/,
+      relevance: 1.01
+    };
+    const PUNCTUATION = {
+      match: /[{}[\],:]/,
+      className: "punctuation",
+      relevance: 0
+    };
+    const LITERALS = [
+      "true",
+      "false",
+      "null"
+    ];
+    // NOTE: normally we would rely on `keywords` for this but using a mode here allows us
+    // - to use the very tight `illegal: \S` rule later to flag any other character
+    // - as illegal indicating that despite looking like JSON we do not truly have
+    // - JSON and thus improve false-positively greatly since JSON will try and claim
+    // - all sorts of JSON looking stuff
+    const LITERALS_MODE = {
+      scope: "literal",
+      beginKeywords: LITERALS.join(" "),
+    };
+
+    return {
+      name: 'JSON',
+      aliases: ['jsonc'],
+      keywords:{
+        literal: LITERALS,
+      },
+      contains: [
+        ATTRIBUTE,
+        PUNCTUATION,
+        hljs.QUOTE_STRING_MODE,
+        LITERALS_MODE,
+        hljs.C_NUMBER_MODE,
+        hljs.C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE
+      ],
+      illegal: '\\S'
+    };
+  }
+
+  return json;
+
+})();
+
+    hljs.registerLanguage('json', hljsGrammar);
   })();

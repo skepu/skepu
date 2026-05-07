@@ -12,9 +12,6 @@
     <script src="{{url_for('static', filename='jquery/jquery-3.7.1.min.js')}}"></script>
     <script src="{{url_for('static', filename='jquery-scrollto/jquery.scrollTo.min.js')}}"></script>
 
-    <!-- Split -->
-    <script src="{{url_for('static', filename='splitjs/split.js')}}"></script>
-
     <!-- Cytoscape  -->
     <script src="{{url_for('static', filename='cytoscape/cytoscape.min.js')}}"></script>
     <script src="{{url_for('static', filename='dagre/dagre.min.js')}}"></script>
@@ -48,6 +45,7 @@
             <input type="checkbox" id="container-allocations" onchange="settingChanged()">
             <input type="checkbox" id="container-deallocations" onchange="settingChanged()">
             <input type="checkbox" id="container-transfers" onchange="settingChanged()">
+            <input type="checkbox" id="element-accesses" onchange="settingChanged()">
             <input type="checkbox" id="anti-deps">
             <input type="checkbox" id="edge-labels">
             <input type="checkbox" id="show_regions">
@@ -102,10 +100,39 @@
           
           <div class="menu"><span class="menu-anfang">SkeVU<span></div>
     
-            <!-- Trace menu -->
+            <!-- File menu -->
             <div class="menu">
-                <button class="menu-title" onclick="menuToggle(event,this)">New Trace</button>
-                <div class="dropdown dropdown-wide">
+                <button class="menu-title" onclick="menuToggle(event,this)">Files</button>
+                <div class="dropdown">
+                {% if examples %}
+                {% set backend_names = {'cpu': 'CPU', 'openmp': 'OpenMP', 'opencl': 'OpenCL', 'cuda': 'CUDA'} %}
+                <div class="submenu">
+                  <div class="submenu-title">Examples<span class="menu-arrow">▸</span></div>
+                  <div class="dropdown">
+                    {% for ex in examples %}
+                    {% set ex_idx = loop.index0 %}
+                    {% set backends = ex.trace.keys() | list %}
+                    {% if backends | length == 1 %}
+                    <button class="menu-action" onclick="window.location='/load_example?index={{ ex_idx }}&backend={{ backends[0] }}'">
+                      {{ ex.title }} ({{ backend_names.get(backends[0], backends[0]) }})
+                    </button>
+                    {% else %}
+                    <div class="submenu">
+                      <div class="submenu-title">{{ ex.title }}<span class="menu-arrow">▸</span></div>
+                      <div class="dropdown">
+                        {% for backend in backends %}
+                        <button class="menu-action" onclick="window.location='/load_example?index={{ ex_idx }}&backend={{ backend }}'">
+                          {{ backend_names.get(backend, backend) }}
+                        </button>
+                        {% endfor %}
+                      </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+                <div class="menu-sep"></div>
+                {% endif %}
                 <form id="post-form" method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
                     <div class="menu-form-row">
                     <label>Trace file</label>
@@ -126,14 +153,17 @@
           <div class="menu">
             <button class="menu-title" onclick="menuToggle(event,this)">View</button>
             <div class="dropdown">
-              <button class="menu-action" onclick="fetchViewDataAndRender();menuClose()">Apply settings</button>
+              <button class="menu-action" onclick="fetchViewDataAndRender();menuClose()">Apply settings<span class="menu-key">Space</span></button>
               <button class="menu-action" onclick="menuRestoreDefaults();fetchViewDataAndRender()">Restore defaults</button>
               <button class="menu-action" onclick="recenterGraph();menuClose()">Reset view</button>
               <button class="menu-action" onclick="renderImage();menuClose()">Save image</button>
               <div class="menu-sep"></div>
               <button id="menu-check-legend"   class="menu-check" onclick="toggleLegend();menuClose()"><span class="menu-icon"></span>Legend</button>
-              <button id="menu-check-timeline" class="menu-check" onclick="toggleGanttPane();menuClose()"><span class="menu-icon"></span>Timeline</button>
+              <button id="menu-check-timeline" class="menu-check" onclick="toggleGanttPane();menuClose()"><span class="menu-icon"></span>Timeline<span class="menu-key">G</span></button>
+              <button id="menu-check-source"   class="menu-check" onclick="toggleSourcePane();menuClose()"><span class="menu-icon"></span>Source panel<span class="menu-key">S</span></button>
+              <button class="menu-action" onclick="(function(){var tabs=Array.from(document.querySelectorAll('.cpp-tab'));if(tabs.length>1){var cur=tabs.findIndex(function(t){return t.classList.contains('active');});var next=(cur+1)%tabs.length;switchTab(tabs[next],next);}})();menuClose()">Next source tab<span class="menu-key">Tab</span></button>
               <div class="menu-sep"></div>
+              <button class="menu-action" onclick="zoomGanttToMeasuredInterval();menuClose()">Zoom to measured interval<span class="menu-key">Z</span></button>
               <div class="menu-form-row" onclick="event.stopPropagation()" style="padding:0.35em 0.75em">
                 <label style="font-size:0.85em;color:#666">Timeline scale: <span id="gantt-scale-label">1×</span></label>
                 <input type="range" id="gantt-scale" min="1" max="20" step="1" value="1"
@@ -146,10 +176,13 @@
           <div class="menu">
             <button class="menu-title" onclick="menuToggle(event,this)">Nodes</button>
             <div class="dropdown">
-              <button class="menu-check" data-ctrl="container-updates" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Updates</button>
-              <button class="menu-check" data-ctrl="container-allocations" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Allocations</button>
-              <button class="menu-check" data-ctrl="container-deallocations" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Deallocations</button>
-              <button class="menu-check" data-ctrl="container-transfers" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Transfers</button>
+              <button class="menu-check" data-ctrl="container-updates" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Updates<span class="menu-key">U</span></button>
+              <button class="menu-check" data-ctrl="container-allocations" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Allocations<span class="menu-key">A</span></button>
+              <button class="menu-check" data-ctrl="container-deallocations" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Deallocations<span class="menu-key">D</span></button>
+              <button class="menu-check" data-ctrl="container-transfers" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Transfers<span class="menu-key">T</span></button>
+              <button class="menu-check" data-ctrl="element-accesses" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Element Accesses</button>
+              <div class="menu-sep"></div>
+              <button class="menu-check" data-ctrl="show_regions" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Regions<span class="menu-key">R</span></button>
               <div class="menu-sep"></div>
               <div class="submenu">
                 <div class="submenu-title">Color<span class="menu-arrow">▸</span></div>
@@ -182,8 +215,8 @@
           <div class="menu">
             <button class="menu-title" onclick="menuToggle(event,this)">Edges</button>
             <div class="dropdown">
-              <button class="menu-check" data-ctrl="anti-deps" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Anti-dependences</button>
-              <button class="menu-check" data-ctrl="edge-labels" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Labels</button>
+              <button class="menu-check" data-ctrl="anti-deps" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Anti-dependences<span class="menu-key">D</span></button>
+              <button class="menu-check" data-ctrl="edge-labels" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Labels<span class="menu-key">L</span></button>
               <div class="menu-sep"></div>
               <div class="submenu">
                 <div class="submenu-title">Direction<span class="menu-arrow">▸</span></div>
@@ -220,41 +253,54 @@
             </div>
           </div>
 
+          <!-- Actions menu -->
+          <div class="menu">
+              <button class="menu-title" onclick="menuToggle(event,this)">Actions</button>
+              <div class="dropdown">
+          <div class="submenu">
+              <div class="submenu-title">Selected Node<span class="menu-arrow">▸</span></div>
+                  <div class="dropdown">
+                      <button class="menu-action" onclick="document.getElementById('collapseRecursively').click();menuClose()">Collapse<span class="menu-key">C</span></button>
+                      <button class="menu-action" onclick="document.getElementById('expandRecursively').click();menuClose()">Expand<span class="menu-key">E</span></button>
+                  </div>
+              </div>
+              <div class="submenu">
+                  <div class="submenu-title">All Regions<span class="menu-arrow">▸</span></div>
+                  <div class="dropdown">
+                  <button class="menu-action" onclick="document.getElementById('collapseAllRegions').click();menuClose()">Collapse</button>
+                  <button class="menu-action" onclick="document.getElementById('expandAllRegions').click();menuClose()">Expand</button>
+                  </div>
+              </div>
+              <div class="submenu">
+                  <div class="submenu-title">All Fusions<span class="menu-arrow">▸</span></div>
+                  <div class="dropdown">
+                  <button class="menu-action" onclick="document.getElementById('collapseAllFusions').click();menuClose()">Collapse</button>
+                  <button class="menu-action" onclick="document.getElementById('expandAllFusions').click();menuClose()">Expand</button>
+                  </div>
+              </div>
+              </div>
+          </div>
+          
+          <!-- Color Spectrum menu -->
+          <div class="menu">
+            <button class="menu-title" onclick="menuToggle(event,this)">Colors</button>
+            <div class="dropdown dropdown-spectrum">
+              <button class="spectrum-radio" data-spectrum="default"   onclick="colorSpectrumChanged('default');menuClose()">  <span class="menu-icon">✓</span>Red–Green <span class="spectrum-swatch" style="background:linear-gradient(to right,#00ff00,#ff0000)"></span></button>
+              <button class="spectrum-radio" data-spectrum="viridis"   onclick="colorSpectrumChanged('viridis');menuClose()">  <span class="menu-icon"></span>Viridis   <span class="spectrum-swatch" style="background:linear-gradient(to right,#440154,#2a788e,#22a884,#fde725)"></span></button>
+              <button class="spectrum-radio" data-spectrum="plasma"    onclick="colorSpectrumChanged('plasma');menuClose()">   <span class="menu-icon"></span>Plasma    <span class="spectrum-swatch" style="background:linear-gradient(to right,#0d0887,#b83289,#f48849,#f0f921)"></span></button>
+              <button class="spectrum-radio" data-spectrum="inferno"   onclick="colorSpectrumChanged('inferno');menuClose()">  <span class="menu-icon"></span>Inferno   <span class="spectrum-swatch" style="background:linear-gradient(to right,#000004,#57106e,#f98c0a,#fcffa4)"></span></button>
+              <button class="spectrum-radio" data-spectrum="cividis"   onclick="colorSpectrumChanged('cividis');menuClose()">  <span class="menu-icon"></span>Cividis   <span class="spectrum-swatch" style="background:linear-gradient(to right,#00224e,#5f5a80,#fde725)"></span></button>
+              <button class="spectrum-radio" data-spectrum="cool-warm" onclick="colorSpectrumChanged('cool-warm');menuClose()"><span class="menu-icon"></span>Cool–Warm <span class="spectrum-swatch" style="background:linear-gradient(to right,#3b4cc0,#ddd,#b40426)"></span></button>
+              <button class="spectrum-radio" data-spectrum="grayscale" onclick="colorSpectrumChanged('grayscale');menuClose()"><span class="menu-icon"></span>Grayscale <span class="spectrum-swatch" style="background:linear-gradient(to right,#f0f0f0,#141414)"></span></button>
+            </div>
+          </div>
+
           <!-- Advanced menu -->
           <div class="menu">
             <button class="menu-title" onclick="menuToggle(event,this)">Advanced</button>
             <div class="dropdown">
-              <button class="menu-check" data-ctrl="show_regions" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Regions</button>
               <button class="menu-check" data-ctrl="collapse_iteration" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Aggregate iteration</button>
               <button class="menu-check" data-ctrl="fusion_analysis" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Fusion analysis</button>
-            </div>
-          </div>
-
-          <!-- Actions menu -->
-          <div class="menu">
-            <button class="menu-title" onclick="menuToggle(event,this)">Actions</button>
-            <div class="dropdown">
-              <div class="submenu">
-                <div class="submenu-title">Regions<span class="menu-arrow">▸</span></div>
-                <div class="dropdown">
-                  <button class="menu-action" onclick="document.getElementById('collapseAllRegions').click();menuClose()">Collapse</button>
-                  <button class="menu-action" onclick="document.getElementById('expandAllRegions').click();menuClose()">Expand</button>
-                </div>
-              </div>
-              <div class="submenu">
-                <div class="submenu-title">Fusions<span class="menu-arrow">▸</span></div>
-                <div class="dropdown">
-                  <button class="menu-action" onclick="document.getElementById('collapseAllFusions').click();menuClose()">Collapse</button>
-                  <button class="menu-action" onclick="document.getElementById('expandAllFusions').click();menuClose()">Expand</button>
-                </div>
-              </div>
-              <div class="submenu">
-                <div class="submenu-title">Selected<span class="menu-arrow">▸</span></div>
-                <div class="dropdown">
-                  <button class="menu-action" onclick="document.getElementById('collapseRecursively').click();menuClose()">Collapse</button>
-                  <button class="menu-action" onclick="document.getElementById('expandRecursively').click();menuClose()">Expand</button>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -265,7 +311,9 @@
               <p><strong>Trace events:</strong> <span id="event-count">—</span></p>
               <p><strong>Nodes:</strong> <span id="node-count">—</span></p>
               <p><strong>Edges:</strong> <span id="edge-count">—</span></p>
-              <p><strong>Last load:</strong> <span id="load-time">—</span> ms</p>
+              <p><strong>Analysis time:</strong> <span id="modeling-time">—</span> ms</p>
+              <p><strong>Rendering time:</strong> <span id="rendering-time">—</span> ms</p>
+              <p><strong>Total response time:</strong> <span id="response-time">—</span> ms</p>
               <hr class="menu-sep">
               <p><a href="https://skepu.github.io" target="_blank">SkePU website</a></p>
             </div>
@@ -285,7 +333,7 @@
            */
           var STORAGE_KEY = 'skepu-visualizer-settings-v1';
           var _infoPaneRatio = 0;  // last-known open ratio; 0 = use default height
-          // _ganttPaneOpen / _ganttPaneRatio / _lastGraphNodes are declared in main.js (loaded first)
+          // _ganttPaneOpen / _lastGraphNodes are declared in main.js (loaded first)
 
           var DEFAULTS = {
             checkboxes: {
@@ -293,6 +341,7 @@
               'container-allocations':   false,
               'container-deallocations': false,
               'container-transfers':     false,
+              'element-accesses':        false,
               'anti-deps':               false,
               'edge-labels':             false,
               'show_regions':            false,
@@ -308,12 +357,13 @@
               'edge-opacity':    'fixed',
             },
             layout: {
-              'split-sizes':     [65, 35], // [left %, right %] for the graph/sidebar gutter
+              'right-pane-width': 500,      // source panel width in px
+              'source-open':      true,     // whether the source panel is open
               'info-pane-ratio':  0,        // info pane height as fraction of right pane; 0 = closed
-              'gantt-pane-ratio': 0.25,     // gantt pane height as fraction of viewport height
-              'gantt-open':       true,     // whether the gantt pane is open
+              'gantt-open':       false,     // whether the gantt pane is open
               'gantt-scale':      1,        // x-axis scale multiplier (1 = fit, >1 = zoom + scroll)
-              'legend-open':      true,     // whether the legend bar is visible
+              'legend-open':      false,     // whether the legend bar is visible
+              'color-spectrum':   'default', // active color spectrum key
             }
           };
 
@@ -335,19 +385,22 @@
                 b.querySelector('.menu-icon').textContent = b.dataset.value === val ? '✓' : '';
               });
             }
-            if (splitInstance) splitInstance.setSizes(DEFAULTS.layout['split-sizes']);
+            var rightEl = document.getElementById('right_pane');
+            if (rightEl) rightEl.style.flex = '0 0 ' + DEFAULTS.layout['right-pane-width'] + 'px';
+            _sourcePaneOpen = DEFAULTS.layout['source-open'];
             _infoPaneRatio  = DEFAULTS.layout['info-pane-ratio'];
-            _ganttPaneRatio = DEFAULTS.layout['gantt-pane-ratio'];
             _ganttPaneOpen  = DEFAULTS.layout['gantt-open'];
             _legendOpen     = DEFAULTS.layout['legend-open'];
+            _colorSpectrum  = DEFAULTS.layout['color-spectrum'];
             document.getElementById('info_window').style.flex = '0 0 0em';
             document.getElementById('legend').style.display = _legendOpen ? '' : 'none';
+            if (_sourcePaneOpen) openSourcePane(); else closeSourcePane();
             if (_ganttPaneOpen) openGanttPane(); else closeGanttPane();
             ganttScaleChanged(DEFAULTS.layout['gantt-scale']);
             syncExternalMenuIcons();
+            syncSpectrumMenuIcons();
             saveSettings({
-              'info-pane-ratio':  DEFAULTS.layout['info-pane-ratio'],
-              'gantt-pane-ratio': DEFAULTS.layout['gantt-pane-ratio'],
+              'info-pane-ratio': DEFAULTS.layout['info-pane-ratio'],
             });
             menuClose();
           }
@@ -358,8 +411,17 @@
               state.checkboxes[id] = document.getElementById(id).checked;
             for (var id in DEFAULTS.selects)
               state.selects[id] = document.getElementById(id).value;
-            if (splitInstance)
-              state.layout['split-sizes'] = splitInstance.getSizes();
+            // Source pane width: preserve stored value when closed so toggling doesn't reset it.
+            if (_sourcePaneOpen) {
+              var rightEl = document.getElementById('right_pane');
+              if (rightEl) state.layout['right-pane-width'] = rightEl.offsetWidth;
+            } else {
+              var prev = {};
+              try { prev = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) {}
+              state.layout['right-pane-width'] = (prev.layout && prev.layout['right-pane-width'] != null)
+                ? prev.layout['right-pane-width'] : DEFAULTS.layout['right-pane-width'];
+            }
+            state.layout['source-open'] = _sourcePaneOpen;
             // Ratio: use override if provided, save current ratio if pane is open,
             // otherwise preserve whatever was last stored (closed state is irrelevant).
             if (layoutOverrides && 'info-pane-ratio' in layoutOverrides) {
@@ -377,20 +439,10 @@
                   : DEFAULTS.layout['info-pane-ratio'];
               }
             }
-            // Gantt pane ratio (fraction of viewport height) and open state
-            if (layoutOverrides && 'gantt-pane-ratio' in layoutOverrides) {
-              state.layout['gantt-pane-ratio'] = layoutOverrides['gantt-pane-ratio'];
-            } else {
-              var ganttEl = document.getElementById('gantt-pane');
-              if (ganttEl && ganttEl.offsetHeight > 10) {
-                state.layout['gantt-pane-ratio'] = ganttEl.offsetHeight / window.innerHeight;
-              } else {
-                state.layout['gantt-pane-ratio'] = _ganttPaneRatio;
-              }
-            }
-            state.layout['gantt-open']  = _ganttPaneOpen;
-            state.layout['gantt-scale'] = _ganttScale;
-            state.layout['legend-open'] = _legendOpen;
+            state.layout['gantt-open']      = _ganttPaneOpen;
+            state.layout['gantt-scale']     = _ganttScale;
+            state.layout['legend-open']     = _legendOpen;
+            state.layout['color-spectrum']  = _colorSpectrum;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
           }
 
@@ -420,8 +472,8 @@
             }
             if (state.layout && state.layout['info-pane-ratio'] != null)
               _infoPaneRatio = state.layout['info-pane-ratio'];
-            if (state.layout && state.layout['gantt-pane-ratio'] != null)
-              _ganttPaneRatio = state.layout['gantt-pane-ratio'];
+            if (state.layout && state.layout['source-open'] != null)
+              _sourcePaneOpen = state.layout['source-open'];
             if (state.layout && state.layout['gantt-open'] != null)
               _ganttPaneOpen = state.layout['gantt-open'];
             if (state.layout && state.layout['gantt-scale'] != null) {
@@ -433,9 +485,12 @@
             }
             if (state.layout && state.layout['legend-open'] != null)
               _legendOpen = state.layout['legend-open'];
-            // Legend display is applied in load() once the full DOM exists.
+            if (state.layout && state.layout['color-spectrum'] != null)
+              _colorSpectrum = state.layout['color-spectrum'];
+            // Legend display and spectrum gradient are applied in load() once the full DOM exists.
             // Sync the menu icons now — the nav buttons are already in the DOM.
             syncExternalMenuIcons();
+            syncSpectrumMenuIcons();
           }
 
           // Keep the Legend and Timeline checkmark icons in sync with actual visibility state.
@@ -444,6 +499,8 @@
             if (lb) lb.querySelector('.menu-icon').textContent = _legendOpen ? '✓' : '';
             var tb = document.getElementById('menu-check-timeline');
             if (tb) tb.querySelector('.menu-icon').textContent = _ganttPaneOpen ? '✓' : '';
+            var sb = document.getElementById('menu-check-source');
+            if (sb) sb.querySelector('.menu-icon').textContent = _sourcePaneOpen ? '✓' : '';
           }
 
           // Open the info pane using the last-known ratio, or 10em as fallback.
@@ -464,8 +521,10 @@
             var state;
             try { state = JSON.parse(stored); } catch(e) { return; }
             if (!state.layout) return;
-            if (state.layout['split-sizes'] && splitInstance)
-              splitInstance.setSizes(state.layout['split-sizes']);
+            if (state.layout['right-pane-width'] != null) {
+              var rightEl = document.getElementById('right_pane');
+              if (rightEl) rightEl.style.flex = '0 0 ' + state.layout['right-pane-width'] + 'px';
+            }
           }
 
           function menuToggle(event, btn) {
@@ -537,6 +596,7 @@
         </div>
         <img id="png-render"></img>
       </div>
+      <div id="split-gutter"></div>
       <!-- The container for c++ code -->
       <div id="right_pane">
         <div id="cpp_container">
@@ -573,7 +633,6 @@
     </div>
 
     <div id="gantt-pane">
-      <div id="gantt-resizer"></div>
       <div id="gantt-svg-container"></div>
     </div>
 </body>

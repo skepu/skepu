@@ -1,0 +1,34 @@
+[
+  {
+    "title": "Horner",
+    "trace": {
+      "openmp": "horner/trace_horner_openmp.json",
+      "opencl": "horner/trace_horner_opencl.json"
+    },
+    "cpp_files": ["horner/horner.cpp"]
+  },
+  {
+    "title": "Cellular Automaton",
+    "trace": {
+      "openmp": "cellular_automaton/trace_cellular_automaton_openmp.json",
+      "opencl": "cellular_automaton/trace_cellular_automaton_opencl.json"
+    },
+    "cpp_files": ["cellular_automaton/cellular_automaton.cpp"]
+  },
+  {
+    "title": "Coulombic",
+    "trace": {
+      "openmp": "coulombic/trace_coulombic_openmp.json",
+      "opencl": "coulombic/trace_coulombic_opencl.json"
+    },
+    "cpp_files": ["coulombic/coulombic.cpp"]
+  },
+  {
+    "title": "Dot Product",
+    "trace": {
+      "openmp": "dotproduct/trace_dotproduct_openmp.json",
+      "opencl": "dotproduct/trace_dotproduct_opencl.json"
+    },
+    "cpp_files": ["dotproduct/dotproduct.cpp"]
+  }
+]

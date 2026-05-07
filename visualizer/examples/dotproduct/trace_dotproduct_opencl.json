@@ -1,0 +1,118 @@
+[
+    {
+        "label": "0x7fa20d019800",
+        "line": 239,
+        "object_id": 1001,
+        "time": 0,
+        "type": "allocation"
+    },
+    {
+        "label": "0x7fa20d1e6a00",
+        "line": 239,
+        "object_id": 1002,
+        "time": 7,
+        "type": "allocation"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 836,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1001
+        ],
+        "scalar_inputs": [],
+        "start": 58,
+        "type": "external"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 1329,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1002
+        ],
+        "scalar_inputs": [],
+        "start": 837,
+        "type": "external"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "host-to-device",
+        "elements": 2048,
+        "end": 2589,
+        "label": "0x7fa20d1e6a00",
+        "line": 258,
+        "object_id": 1002,
+        "start": 1359,
+        "time": 2589,
+        "type": "transfer"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "host-to-device",
+        "elements": 2048,
+        "end": 3283,
+        "label": "0x7fa20d019800",
+        "line": 258,
+        "object_id": 1001,
+        "start": 2612,
+        "time": 3283,
+        "type": "transfer"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "device-to-host",
+        "elements": 1,
+        "end": 4144,
+        "label": "Internal (reduce-temp)",
+        "line": 306,
+        "object_id": 1007,
+        "start": 3314,
+        "time": 4144,
+        "type": "transfer"
+    },
+    {
+        "backend": "OpenCL",
+        "elements": [
+            2048
+        ],
+        "elwise_inputs": [
+            1001,
+            1002
+        ],
+        "end": 4178,
+        "file": "/Users/august/Developer/skepu-alpha/examples/dotproduct.cpp",
+        "label": "dotprod",
+        "line": 38,
+        "object_id": 1000,
+        "outputs": [
+            1010
+        ],
+        "pattern": "MapReduce",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 3297,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "0x7fa20d1e6a00",
+        "line": 270,
+        "object_id": 1002,
+        "time": 4280,
+        "type": "deallocation"
+    },
+    {
+        "label": "0x7fa20d019800",
+        "line": 270,
+        "object_id": 1001,
+        "time": 4295,
+        "type": "deallocation"
+    }
+]

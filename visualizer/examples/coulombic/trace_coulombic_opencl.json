@@ -1,0 +1,119 @@
+[
+    {
+        "label": "0x7faaeb858200",
+        "line": 239,
+        "object_id": 1001,
+        "time": 0,
+        "type": "allocation"
+    },
+    {
+        "label": "0x7faaeb706be0",
+        "line": 278,
+        "object_id": 1002,
+        "time": 27,
+        "type": "allocation"
+    },
+    {
+        "label": "0x7faaec5044e0",
+        "line": 278,
+        "object_id": 1003,
+        "time": 602,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "host-to-device",
+        "elements": 100,
+        "end": 2450,
+        "label": "0x7faaec5044e0",
+        "line": 258,
+        "object_id": 1003,
+        "start": 1117,
+        "time": 2450,
+        "type": "transfer"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "host-to-device",
+        "elements": 2048,
+        "end": 3168,
+        "label": "0x7faaeb858200",
+        "line": 258,
+        "object_id": 1001,
+        "start": 2461,
+        "time": 3168,
+        "type": "transfer"
+    },
+    {
+        "backend": "OpenCL",
+        "elements": [
+            100
+        ],
+        "elwise_inputs": [
+            1003
+        ],
+        "end": 3192,
+        "file": "/Users/august/Developer/skepu-alpha/examples/coulombic.cpp",
+        "label": "columbicPotential",
+        "line": 110,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "Map",
+        "proxy_inputs": [
+            1001
+        ],
+        "scalar_inputs": [],
+        "start": 1110,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "0x7faaec5044e0",
+        "line": 308,
+        "object_id": 1003,
+        "time": 5608,
+        "type": "deallocation"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "device-to-host",
+        "elements": 100,
+        "end": 6233,
+        "label": "0x7faaeb706be0",
+        "line": 306,
+        "object_id": 1002,
+        "start": 5656,
+        "time": 6233,
+        "type": "transfer"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 6316,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1002
+        ],
+        "scalar_inputs": [],
+        "start": 5655,
+        "type": "external"
+    },
+    {
+        "label": "0x7faaeb706be0",
+        "line": 308,
+        "object_id": 1002,
+        "time": 6406,
+        "type": "deallocation"
+    },
+    {
+        "label": "0x7faaeb858200",
+        "line": 270,
+        "object_id": 1001,
+        "time": 6464,
+        "type": "deallocation"
+    }
+]

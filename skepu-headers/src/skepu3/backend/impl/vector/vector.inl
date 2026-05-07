@@ -536,7 +536,15 @@ namespace skepu
 	}
 	
 #endif // SKEPU_PRECOMPILED
-	
+
+    template <typename T>
+	const Scalar<T> Vector<T>::elem(size_type loc)
+	{
+	    updateHost();
+		auto res = Scalar<T>(this->m_data[loc]);
+		SKEPU_TRACE_ELEMENT_ACCESS(res.m_ids[0], this->m_object_id, loc, this->getLabel(), __LINE__);
+		return res;
+	}
 	
 	/*!
 	 *  Please refer to the documentation of \p std::vector.

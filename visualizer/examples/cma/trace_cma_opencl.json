@@ -1,0 +1,88 @@
+[
+    {
+        "label": "0x7fa5941c0800",
+        "line": 239,
+        "object_id": 1002,
+        "time": 0,
+        "type": "allocation"
+    },
+    {
+        "label": "0x7fa5941c2800",
+        "line": 239,
+        "object_id": 1003,
+        "time": 11,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "host-to-device",
+        "elements": 2048,
+        "end": 1598,
+        "label": "0x7fa5941c0800",
+        "line": 258,
+        "object_id": 1002,
+        "start": 79,
+        "time": 1598,
+        "type": "transfer"
+    },
+    {
+        "backend": "OpenCL",
+        "elements": [
+            2048
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 1660,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cma.cpp",
+        "label": "prefix_sum",
+        "line": 17,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "Scan",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 1610,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenCL",
+        "elements": [
+            2048
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 1711,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cma.cpp",
+        "label": "average",
+        "line": 18,
+        "object_id": 1001,
+        "outputs": [
+            1003
+        ],
+        "pattern": "Map",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 1706,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "0x7fa5941c2800",
+        "line": 270,
+        "object_id": 1003,
+        "time": 3797,
+        "type": "deallocation"
+    },
+    {
+        "label": "0x7fa5941c0800",
+        "line": 270,
+        "object_id": 1002,
+        "time": 3817,
+        "type": "deallocation"
+    }
+]

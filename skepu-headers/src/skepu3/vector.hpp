@@ -247,6 +247,8 @@ namespace skepu
 		T& at(size_type loc);
 #endif // SKEPU_PRECOMPILED
 
+        const skepu::Scalar<T> elem(size_type loc);
+
 		void swap(Vector<T>& from);
 
 		T *getAddress() { return this->m_data; }

@@ -1,4 +1,4 @@
-/*! `c` grammar compiled for Highlight.js 11.9.0 */
+/*! `c` grammar compiled for Highlight.js 11.11.1 */
 var hljsGrammar = (function () {
   'use strict';
 
@@ -61,20 +61,21 @@ var hljsGrammar = (function () {
     const NUMBERS = {
       className: 'number',
       variants: [
-        { begin: '\\b(0b[01\']+)' },
-        { begin: '(-?)\\b([\\d\']+(\\.[\\d\']*)?|\\.[\\d\']+)((ll|LL|l|L)(u|U)?|(u|U)(ll|LL|l|L)?|f|F|b|B)' },
-        { begin: '(-?)(\\b0[xX][a-fA-F0-9\']+|(\\b[\\d\']+(\\.[\\d\']*)?|\\.[\\d\']+)([eE][-+]?[\\d\']+)?)' }
-      ],
+        { match: /\b(0b[01']+)/ },  
+        { match: /(-?)\b([\d']+(\.[\d']*)?|\.[\d']+)((ll|LL|l|L)(u|U)?|(u|U)(ll|LL|l|L)?|f|F|b|B)/ },  
+        { match: /(-?)\b(0[xX][a-fA-F0-9]+(?:'[a-fA-F0-9]+)*(?:\.[a-fA-F0-9]*(?:'[a-fA-F0-9]*)*)?(?:[pP][-+]?[0-9]+)?(l|L)?(u|U)?)/ },  
+        { match: /(-?)\b\d+(?:'\d+)*(?:\.\d*(?:'\d*)*)?(?:[eE][-+]?\d+)?/ }  
+    ],
       relevance: 0
-    };
-
+    };  
+    
     const PREPROCESSOR = {
       className: 'meta',
       begin: /#\s*[a-z]+\b/,
       end: /$/,
       keywords: { keyword:
           'if else elif endif define undef warning error line '
-          + 'pragma _Pragma ifdef ifndef include' },
+          + 'pragma _Pragma ifdef ifndef elifdef elifndef include' },
       contains: [
         {
           begin: /\\\n/,
@@ -118,6 +119,8 @@ var hljsGrammar = (function () {
       "restrict",
       "return",
       "sizeof",
+      "typeof",
+      "typeof_unqual",
       "struct",
       "switch",
       "typedef",
@@ -152,14 +155,26 @@ var hljsGrammar = (function () {
       "char",
       "void",
       "_Bool",
+      "_BitInt",
       "_Complex",
       "_Imaginary",
       "_Decimal32",
       "_Decimal64",
+      "_Decimal96",
       "_Decimal128",
+      "_Decimal64x",
+      "_Decimal128x",
+      "_Float16",
+      "_Float32",
+      "_Float64",
+      "_Float128",
+      "_Float32x",
+      "_Float64x",
+      "_Float128x",
       // modifiers
       "const",
       "static",
+      "constexpr",
       // aliases
       "complex",
       "bool",

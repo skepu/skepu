@@ -1,0 +1,968 @@
+[
+    {
+        "label": "A",
+        "line": 278,
+        "object_id": 1001,
+        "time": 0,
+        "type": "allocation"
+    },
+    {
+        "label": "B",
+        "line": 278,
+        "object_id": 1002,
+        "time": 3322,
+        "type": "allocation"
+    },
+    {
+        "label": "Rules",
+        "line": 278,
+        "object_id": 1003,
+        "time": 5528,
+        "type": "allocation"
+    },
+    {
+        "label": "Double-iteration",
+        "line": 211,
+        "region_depth": 1,
+        "time": 37986,
+        "type": "region"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 66561,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 93,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 39640,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 94115,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 94,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 67114,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 523315,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1002
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 94146,
+        "type": "external"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 957053,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1001
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 523320,
+        "type": "external"
+    },
+    {
+        "label": "Double-iteration",
+        "line": 211,
+        "region_depth": 1,
+        "time": 957058,
+        "type": "region"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 986044,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 93,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 957061,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 1013669,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 94,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 986051,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 1441194,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1002
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 1013674,
+        "type": "external"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 1911919,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1001
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 1441197,
+        "type": "external"
+    },
+    {
+        "label": "Double-iteration",
+        "line": 211,
+        "region_depth": 1,
+        "time": 1911922,
+        "type": "region"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 1942561,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 93,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 1911928,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 1977754,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 94,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 1942570,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 2387098,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1002
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 1977761,
+        "type": "external"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 2914153,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1001
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 2387101,
+        "type": "external"
+    },
+    {
+        "label": "Double-iteration",
+        "line": 211,
+        "region_depth": 1,
+        "time": 2914156,
+        "type": "region"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 2950171,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 93,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 2914160,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 2986777,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 94,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 2950201,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 3455492,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1002
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 2986783,
+        "type": "external"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 3910024,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1001
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 3455495,
+        "type": "external"
+    },
+    {
+        "label": "Double-iteration",
+        "line": 211,
+        "region_depth": 1,
+        "time": 3910034,
+        "type": "region"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 3949161,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 93,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 3910038,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 3990710,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 94,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 3949172,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 4442516,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1002
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 3990804,
+        "type": "external"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 4860522,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1001
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 4442518,
+        "type": "external"
+    },
+    {
+        "label": "Double-iteration",
+        "line": 211,
+        "region_depth": 1,
+        "time": 4860532,
+        "type": "region"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 4889187,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 93,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 4860536,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 4917120,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 94,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 4889196,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 5318124,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1002
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 4917191,
+        "type": "external"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 5735338,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1001
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 5318127,
+        "type": "external"
+    },
+    {
+        "label": "Double-iteration",
+        "line": 211,
+        "region_depth": 1,
+        "time": 5735342,
+        "type": "region"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 5764997,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 93,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 5735346,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 5794644,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 94,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 5765004,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 6218033,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1002
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 5794649,
+        "type": "external"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 6695114,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1001
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 6218036,
+        "type": "external"
+    },
+    {
+        "label": "Double-iteration",
+        "line": 211,
+        "region_depth": 1,
+        "time": 6695117,
+        "type": "region"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 6726590,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 93,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 6695121,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 6759983,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 94,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 6726598,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 7159855,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1002
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 6759991,
+        "type": "external"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 7564574,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1001
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 7159857,
+        "type": "external"
+    },
+    {
+        "label": "Double-iteration",
+        "line": 211,
+        "region_depth": 1,
+        "time": 7564577,
+        "type": "region"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 7593651,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 93,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 7564580,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 7629648,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 94,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 7593659,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 8095008,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1002
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 7629656,
+        "type": "external"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 8522829,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1001
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 8095010,
+        "type": "external"
+    },
+    {
+        "label": "Double-iteration",
+        "line": 211,
+        "region_depth": 1,
+        "time": 8522832,
+        "type": "region"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 8555346,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 93,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 8522851,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            2048,
+            2048
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 8583824,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 94,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1003
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 8555354,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 8977212,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1002
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 8583830,
+        "type": "external"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 9375992,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1001
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 8977214,
+        "type": "external"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 9769900,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1001
+        ],
+        "scalar_inputs": [],
+        "start": 9375994,
+        "type": "external"
+    },
+    {
+        "label": "Rules",
+        "line": 308,
+        "object_id": 1003,
+        "time": 9769903,
+        "type": "deallocation"
+    },
+    {
+        "label": "B",
+        "line": 308,
+        "object_id": 1002,
+        "time": 9769909,
+        "type": "deallocation"
+    },
+    {
+        "label": "A",
+        "line": 308,
+        "object_id": 1001,
+        "time": 9769910,
+        "type": "deallocation"
+    }
+]

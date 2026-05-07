@@ -1,0 +1,276 @@
+[
+    {
+        "label": "Coeffs",
+        "line": 239,
+        "object_id": 1000,
+        "time": 1,
+        "type": "allocation"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 10,
+        "file": "",
+        "label": "Read coeffs",
+        "line": 0,
+        "outputs": [
+            1000
+        ],
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 7,
+        "type": "external"
+    },
+    {
+        "label": "X",
+        "line": 239,
+        "object_id": 1003,
+        "time": 82729,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenCL",
+        "elements": [
+            2048
+        ],
+        "elwise_inputs": [],
+        "end": 84988,
+        "file": "/Users/august/Developer/skepu-alpha/examples/horner.cpp",
+        "label": "gen_even",
+        "line": 14,
+        "object_id": 1002,
+        "outputs": [
+            1003
+        ],
+        "pattern": "Map",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 84951,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "device-to-host",
+        "elements": 2048,
+        "end": 86948,
+        "label": "X",
+        "line": 306,
+        "object_id": 1003,
+        "start": 86188,
+        "time": 86948,
+        "type": "transfer"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 88082,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1003
+        ],
+        "scalar_inputs": [],
+        "start": 86185,
+        "type": "external"
+    },
+    {
+        "label": "Res",
+        "line": 239,
+        "object_id": 1008,
+        "time": 88675,
+        "type": "allocation"
+    },
+    {
+        "label": "Iteration",
+        "line": 126,
+        "region_depth": 1,
+        "time": 88680,
+        "type": "region"
+    },
+    {
+        "index": 2,
+        "label": "Coeffs",
+        "line": 545,
+        "object_id": 1009,
+        "region": "Iteration",
+        "source": 1000,
+        "time": 88681,
+        "type": "element_access"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "host-to-device",
+        "elements": 2048,
+        "end": 89692,
+        "label": "Res",
+        "line": 258,
+        "object_id": 1008,
+        "region": "Iteration",
+        "start": 88700,
+        "time": 89692,
+        "type": "transfer"
+    },
+    {
+        "backend": "OpenCL",
+        "elements": [
+            2048
+        ],
+        "elwise_inputs": [
+            1008,
+            1003
+        ],
+        "end": 89707,
+        "file": "/Users/august/Developer/skepu-alpha/examples/horner.cpp",
+        "label": "muladd",
+        "line": 30,
+        "object_id": 1007,
+        "outputs": [
+            1008
+        ],
+        "pattern": "Map",
+        "proxy_inputs": [],
+        "region": "Iteration",
+        "scalar_inputs": [
+            1009
+        ],
+        "start": 88697,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "Iteration",
+        "line": 126,
+        "region_depth": 1,
+        "time": 90183,
+        "type": "region"
+    },
+    {
+        "index": 1,
+        "label": "Coeffs",
+        "line": 545,
+        "object_id": 1012,
+        "region": "Iteration",
+        "source": 1000,
+        "time": 90185,
+        "type": "element_access"
+    },
+    {
+        "backend": "OpenCL",
+        "elements": [
+            2048
+        ],
+        "elwise_inputs": [
+            1008,
+            1003
+        ],
+        "end": 90198,
+        "file": "/Users/august/Developer/skepu-alpha/examples/horner.cpp",
+        "label": "muladd",
+        "line": 30,
+        "object_id": 1007,
+        "outputs": [
+            1008
+        ],
+        "pattern": "Map",
+        "proxy_inputs": [],
+        "region": "Iteration",
+        "scalar_inputs": [
+            1012
+        ],
+        "start": 90186,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "Iteration",
+        "line": 126,
+        "region_depth": 1,
+        "time": 90852,
+        "type": "region"
+    },
+    {
+        "index": 0,
+        "label": "Coeffs",
+        "line": 545,
+        "object_id": 1014,
+        "region": "Iteration",
+        "source": 1000,
+        "time": 90856,
+        "type": "element_access"
+    },
+    {
+        "backend": "OpenCL",
+        "elements": [
+            2048
+        ],
+        "elwise_inputs": [
+            1008,
+            1003
+        ],
+        "end": 90875,
+        "file": "/Users/august/Developer/skepu-alpha/examples/horner.cpp",
+        "label": "muladd",
+        "line": 30,
+        "object_id": 1007,
+        "outputs": [
+            1008
+        ],
+        "pattern": "Map",
+        "proxy_inputs": [],
+        "region": "Iteration",
+        "scalar_inputs": [
+            1014
+        ],
+        "start": 90858,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "device-to-host",
+        "elements": 2048,
+        "end": 92113,
+        "label": "Res",
+        "line": 306,
+        "object_id": 1008,
+        "start": 91506,
+        "time": 92113,
+        "type": "transfer"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 92894,
+        "file": "",
+        "label": "I/O",
+        "line": 0,
+        "outputs": [],
+        "proxy_inputs": [
+            1008
+        ],
+        "scalar_inputs": [],
+        "start": 91504,
+        "type": "external"
+    },
+    {
+        "label": "Res",
+        "line": 270,
+        "object_id": 1008,
+        "time": 92940,
+        "type": "deallocation"
+    },
+    {
+        "label": "X",
+        "line": 270,
+        "object_id": 1003,
+        "time": 92966,
+        "type": "deallocation"
+    },
+    {
+        "label": "Coeffs",
+        "line": 270,
+        "object_id": 1000,
+        "time": 92967,
+        "type": "deallocation"
+    }
+]

@@ -159,6 +159,24 @@ class DirectedGraph:
     def visitNodes(self, f):
         pass
 
+    def pruneEmptyRegions(self):
+        """Remove RegionNodes that contain no nested nodes, iterating to
+        convergence so that removing a leaf region can expose an empty parent."""
+        changed = True
+        while changed:
+            changed = False
+            for node in list(self._nodes):
+                if isinstance(node, RegionNode) and len(node.nested_nodes) == 0:
+                    self._nodes.remove(node)
+                    self._nodeIdIndex.pop(node.id, None)
+                    self._nodeLabelIndex.pop(node.label, None)
+                    if node.region:
+                        try:
+                            node.region.nested_nodes.remove(node)
+                        except ValueError:
+                            pass
+                    changed = True
+
 
     def nodePreceedes(self, n1, n2):
         for edge in n2.getIncomingEdges():
@@ -233,7 +251,7 @@ class DirectedGraph:
     def computeKeyPaths(self):
 
         def helper(node, keypath):
-            mykey = node.label
+            mykey = node.type + "_" + node.label
             if isinstance(node, ComputationNode):
                 mykey += "["
                 for id in node.elwise_inputs:
@@ -333,6 +351,8 @@ class DirectedGraph:
                             root.fused = fused
                             root.region = fused
 
+                        if node.region:
+                            node.region.nested_nodes.remove(node)
                         node.fused = fused
                         node.region = fused
 
@@ -373,7 +393,6 @@ class DirectedGraph:
                         print(f"Detected serial fusion {node.label}, {parent.label}!")
                         fusions[node.id] = parent.id
 
-                        print(node.fused)
                         fused = node.fused if node.fused else None
 
                         if not fused and node.fused:
@@ -386,7 +405,12 @@ class DirectedGraph:
 
                         node.fused = fused
                         parent.fused = fused
+
+                        if node.region and isinstance(node.region, RegionNode):
+                            node.region.nested_nodes.remove(node)
                         node.region = fused
+                        if parent.region and isinstance(parent.region, RegionNode):
+                            parent.region.nested_nodes.remove(parent)
                         parent.region = fused
 
                         if isinstance(parent, UpdateNode):
@@ -547,8 +571,8 @@ class Node:
         info_data = {}
         info_data["internal"] = {}
         info_data["type"] = self.type
-        info_data["On critical path"] = self.is_critical_path
-        info_data["DAG depth"] = self.depth
+    #    info_data["On critical path"] = self.is_critical_path
+    #    info_data["DAG depth"] = self.depth
         if self.iteration_count > 1:
             info_data["Repeat count"] = self.iteration_count
         if self.region:
@@ -585,8 +609,8 @@ class ComputationNode(Node):
             graph.readFromID(id, self, self.backend)
 
         for id in self.scalar_inputs:
-            ScalarEdge(graph, id, self)
-            graph.readFromID(id, self, self.backend)
+            ScalarEdge(graph, graph.labelForID(id), id, self)
+            graph.readFromID(id, self, "ALL")
 
         for id in json_data['outputs']:
             if graph.settings.antideps and id not in json_data["elwise_inputs"]:
@@ -595,7 +619,7 @@ class ComputationNode(Node):
                 if not self.hasScalarOutput():
                     ElwiseEdge(graph, graph.labelForID(id), self, UpdateNode(graph, id, self.total_order + 1, self.region, self.backend))
                 else:
-                    ScalarEdge(graph, self, ScalarNode(graph, id, self.total_order + 1, self.region))
+                    ScalarEdge(graph, graph.labelForID(id), self, ScalarNode.fromID(graph, id, self.total_order + 1, self.region))
             else:
                 graph.writeToID(id, self, self.backend)
         
@@ -674,7 +698,8 @@ class RegionNode(Node):
             self.type = "region"
             self.region_depth = json_data["region_depth"]
             self.nested_nodes = []
-        #    graph.addNode(self)
+            self.region_start = None   # computed by computeExtent()
+            self.region_end   = None
 
     def addNestedNode(self, node):
         self.nested_nodes.append(node)
@@ -682,9 +707,29 @@ class RegionNode(Node):
     def getDirectChildren(self):
         return [node for node in self.nested_nodes if not isinstance(node, RegionNode)]
 
+    def computeExtent(self):
+        """Recursively derive start/end from all nested computation nodes."""
+        starts, ends = [], []
+        for node in self.nested_nodes:
+            if isinstance(node, RegionNode):
+                node.computeExtent()
+                if node.region_start is not None: starts.append(node.region_start)
+                if node.region_end   is not None: ends.append(node.region_end)
+            elif isinstance(node, ComputationNode):
+                starts.append(node.start)
+                ends.append(node.end)
+            elif hasattr(node, 'timestamp') and node.timestamp is not None:
+                starts.append(node.timestamp)
+                ends.append(node.timestamp)
+        self.region_start = min(starts) if starts else None
+        self.region_end   = max(ends)   if ends   else None
+
     def toCytoscape(self):
         cy_data = super(RegionNode, self).toCytoscape()
-        cy_data["region_depth"] = self.region_depth
+        cy_data["region_depth"]  = self.region_depth
+        cy_data["nesting_level"] = self.nesting_level
+        cy_data["region_start"]  = self.region_start
+        cy_data["region_end"]    = self.region_end
         return cy_data
 
 
@@ -711,6 +756,7 @@ class DataNode(Node):
 
     def __init__(self, graph, label, total_order, region):
         super(DataNode, self).__init__(graph, label, total_order, region)
+        self.backend = "ANY"
 
     def toCytoscape(self):
         cy_data = super(DataNode, self).toCytoscape()
@@ -724,10 +770,12 @@ class AllocationNode(DataNode):
         if graph.settings.allocations:
             super(AllocationNode, self).__init__(graph, json_data["label"], total_order, json_data.get("region"))
             self.type = "allocation"
+            self.timestamp = json_data.get("time")
             graph.writeToID(json_data["object_id"], self, "ALL")
 
     def toCytoscape(self):
         cy_data = super(AllocationNode, self).toCytoscape()
+        cy_data["timestamp"] = getattr(self, "timestamp", None)
         return cy_data
 
     def infoData(self):
@@ -742,11 +790,13 @@ class DeallocationNode(DataNode):
         if graph.settings.deallocations:
             super(DeallocationNode, self).__init__(graph, json_data["label"], total_order, json_data.get("region"))
             self.type = "deallocation"
+            self.timestamp = json_data.get("time")
             self.backend = "ANY"
             AntiDepEdge(graph, json_data["label"], graph.accessorForID(json_data["object_id"]), self)
 
     def toCytoscape(self):
         cy_data = super(DeallocationNode, self).toCytoscape()
+        cy_data["timestamp"] = getattr(self, "timestamp", None)
         return cy_data
 
 
@@ -768,20 +818,35 @@ class UpdateNode(DataNode):
 
     def infoData(self):
         info_data = super(UpdateNode, self).infoData()
-        info_data["version"] = self.version
-        info_data["location"] = backendToMemSpace[self.backend]
+        info_data["Version"] = self.version
+        info_data["Location"] = backendToMemSpace[self.backend]
         info_data["internal"]["is_live"] = self.is_live
         return info_data
 
 
 class ScalarNode(DataNode):
 
-    def __init__(self, graph, object_id, total_order, region):
-        label = "scalar" # + str(object_id)
-        graph.setLabelForID(label, object_id)
+    def __init__(self, graph, label, total_order, region):
         super(ScalarNode, self).__init__(graph, label, total_order, region)
         self.type = "scalar"
-        graph.writeToID(object_id, self, "ALL")
+
+    def fromEventData(graph, json_data, total_order, region=None):
+        label = json_data["label"] + "[" + str(json_data["index"]) + "]"
+        if graph.settings.scalars:
+            node = ScalarNode(graph, label, total_order, region)
+            ScalarEdge(graph, label, json_data["source"], node)
+            graph.readFromID(json_data["source"], node, "ALL")
+            graph.writeToID(json_data["object_id"], node, "ALL")
+        else:
+            graph.setLabelForID(label, json_data["object_id"])
+            graph.writeToID(json_data["object_id"], graph.producerForID(json_data["source"]), "ALL")
+
+    def fromID(graph, object_id, total_order, region):
+        label = "scalar" # + str(object_id)
+        node = ScalarNode(graph, label, total_order, region)
+        graph.setLabelForID(label, object_id)
+        graph.writeToID(object_id, node, "ALL")
+        return node
 
     def toCytoscape(self):
         cy_data = super(ScalarNode, self).toCytoscape()
@@ -794,10 +859,10 @@ class ScalarNode(DataNode):
 
 class TransferNode(DataNode):
     def __init__(self, graph, json_data, total_order):
-        
+
         if "internal" in json_data["label"].lower():
             return
-        
+
         self.direction = json_data["direction"]
         object_id = json_data["object_id"]
         trace_backend = json_data["backend"]
@@ -807,6 +872,10 @@ class TransferNode(DataNode):
         if graph.settings.transfers:
             super(TransferNode, self).__init__(graph, json_data["label"], total_order, json_data.get("region"))
             self.type = "transfer"
+            self.start = json_data["start"]
+            self.end = json_data["end"]
+            self.duration = self.end - self.start
+            self.timestamp = json_data.get("time")
             self.depth = graph.depthByLabel(json_data["label"]) + 1
             self.backend = source_backend
             ProxyEdge(graph, json_data["label"], object_id, self)
@@ -817,8 +886,18 @@ class TransferNode(DataNode):
     def toCytoscape(self):
         cy_data = super(TransferNode, self).toCytoscape()
         cy_data["direction"] = self.direction
+        cy_data["timestamp"] = self.timestamp
+        cy_data["start"] = self.start
+        cy_data["end"] = self.end
+        cy_data["duration"] = self.duration
         return cy_data
 
+    def infoData(self):
+        info_data = super(TransferNode, self).infoData()
+        info_data["Direction"] = self.direction
+        info_data["Duration"] = self.duration
+        info_data["Backend"] = self.backend
+        return info_data
 
 
 
@@ -827,7 +906,7 @@ class Edge:
 
     def __init__(self, graph, source_id, target):
         self.id = str(uuid.uuid4())
-        self.label = "dummy"
+        self.label = ""
         self.target = target
         if isinstance(source_id, Node):
             self.source = source_id
@@ -879,8 +958,9 @@ class ProxyEdge(Edge):
 
 class ScalarEdge(Edge):
 
-    def __init__(self, graph, source_id, target):
+    def __init__(self, graph, label, source_id, target):
         super(ScalarEdge, self).__init__(graph, source_id, target)
+        self.label = label
 
     def toCytoscape(self):
         cy_data = super(ScalarEdge, self).toCytoscape()
@@ -914,6 +994,20 @@ keypath_iterations = {}
 depths = {}
 graph = None
 
+# ── Examples ──────────────────────────────────────────────────────────────────
+
+EXAMPLES_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'examples')
+EXAMPLES_FILE = os.path.join(EXAMPLES_DIR, 'examples.json')
+
+def load_examples():
+    """Return the list of example descriptors from examples/examples.json,
+    or an empty list if the file is absent or malformed."""
+    try:
+        with open(EXAMPLES_FILE, encoding='utf-8') as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return []
+
 
 
 def preprocess_file_paths(event_data):
@@ -945,6 +1039,7 @@ def request_graph():
     graph.settings.deallocations = request.args.get('container_deallocations') == "true"
     graph.settings.transfers = request.args.get('container_transfers') == "true"
     graph.settings.updates = request.args.get('data_as_edges') != "true"
+    graph.settings.scalars = request.args.get('show_scalars') == "true"
     graph.settings.regions = request.args.get('show_regions') == "true"
     oalesce_edges = request.args.get('coalesce_region_deps') == "true"
     coalesce_iterations = request.args.get('collapse_iteration') == "true"
@@ -965,6 +1060,8 @@ def request_graph():
             AllocationNode(graph, event, order)
         elif event["type"] == "deallocation":
             DeallocationNode(graph, event, order)
+        elif event["type"] == "element_access":
+            ScalarNode.fromEventData(graph, event, order)
         elif event["type"] == "transfer":
             TransferNode(graph, event, order)
         elif event["type"] == "region":
@@ -986,6 +1083,16 @@ def request_graph():
     if coalesce_iterations:
         graph.coalesceIterations()
 
+    # Compute region extents (start/end times) for Gantt timeline display.
+    # Only root regions are called explicitly; computeExtent() recurses into nested ones.
+    if graph.settings.regions:
+        for node in graph.getAllNodes():
+            if isinstance(node, RegionNode) and node.region is None:
+                node.computeExtent()
+
+    # Drop empty RegionNodes (no nested nodes) before serialisation.
+    if graph.settings.regions:
+        graph.pruneEmptyRegions()
 
     (nodes, edges) = graph.toCytoscape()
 
@@ -1231,7 +1338,7 @@ def timeline():
 # Render the first page to upload files
 @app.route('/')
 def csv():
-    return render_template('files.html')
+    return render_template('files.html', examples=load_examples())
 
 
 # Being able to upload the CSV file and save variables as needed
@@ -1256,10 +1363,53 @@ def upload():
     return main_page(cpp_files=cpp_files, event_data=event_data, trace_json=trace_json, trace_filename=trace_filename)
 
 
+# Load a built-in example by index into the global event_data and render main.html.
+@app.route('/load_example')
+def load_example():
+    global event_data
+    index = request.args.get('index', type=int, default=0)
+    examples = load_examples()
+    if index < 0 or index >= len(examples):
+        return "Example not found", 404
+
+    ex = examples[index]
+    trace_dict = ex['trace']                               # dict: {backend: rel_path}
+    backend = request.args.get('backend', default=next(iter(trace_dict)))
+    if backend not in trace_dict:
+        return "Backend not available for this example", 404
+
+    trace_path = os.path.join(EXAMPLES_DIR, trace_dict[backend])
+    with open(trace_path, encoding='utf-8') as f:
+        event_data = json.load(f)
+
+    trace_filename = os.path.basename(trace_path)
+    trace_json_str = json.dumps(event_data, indent=2)
+
+    cpp_files = {}
+    for rel_path in ex.get('cpp_files', []):
+        full_path = os.path.join(EXAMPLES_DIR, rel_path)
+        if os.path.exists(full_path):
+            cpp_files[os.path.basename(full_path)] = open(full_path, encoding='utf-8').read()
+
+    return main_page(
+        cpp_files=cpp_files,
+        event_data=event_data,
+        trace_json=trace_json_str,
+        trace_filename=trace_filename,
+    )
+
+
 # Route to the main-page of the website
 @app.route('/main')
 def main_page(cpp_files=None, event_data=None, trace_json=None, trace_filename=None):
-    return render_template('main.html', data=event_data, cpp_files=cpp_files or {}, trace_json=trace_json, trace_filename=trace_filename)
+    return render_template(
+        'main.html',
+        data=event_data,
+        cpp_files=cpp_files or {},
+        trace_json=trace_json,
+        trace_filename=trace_filename,
+        examples=load_examples(),
+    )
 
 if __name__ == '__main__':
 #    pid = os.fork()

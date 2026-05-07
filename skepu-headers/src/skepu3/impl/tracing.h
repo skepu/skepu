@@ -46,6 +46,7 @@ namespace skepu
 #define SKEPU_TRACE_ALLOCATION(...) tracing::tracer().allocation(__VA_ARGS__)
 #define SKEPU_TRACE_DEALLOCATION(...) tracing::tracer().deallocation(__VA_ARGS__)
 #define SKEPU_TRACE_TRANSFER(...) tracing::tracer().transfer(__VA_ARGS__)
+#define SKEPU_TRACE_ELEMENT_ACCESS(...) tracing::tracer().element_access(__VA_ARGS__)
 #else
 #define SKEPU_TRACE_START_EVENT(handle_symbol)
 #define SKEPU_TRACE_CALL(...)
@@ -57,6 +58,7 @@ namespace skepu
 #define SKEPU_TRACE_ALLOCATION(...)
 #define SKEPU_TRACE_DEALLOCATION(...)
 #define SKEPU_TRACE_TRANSFER(...)
+#define SKEPU_TRACE_ELEMENT_ACCESS(...)
 #endif
 
 		struct EventHandle
@@ -86,7 +88,8 @@ namespace skepu
 
 			void allocation(TraceID id, std::string const& label, int line);
 			void deallocation(TraceID id, std::string const& label, int line);
-			void transfer(TraceID id, std::string const& label, int line, size_t elements, std::string direction, std::string backend);
+			void transfer(EventHandle &h, TraceID id, std::string const& label, int line, size_t elements, std::string direction, std::string backend);
+			void element_access(TraceID id, TraceID source_id, size_t index, std::string const& label, int line);
 
 			void call(
 				EventHandle &h,
