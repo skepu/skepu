@@ -131,7 +131,14 @@
               <button class="menu-action" onclick="recenterGraph();menuClose()">Reset view</button>
               <button class="menu-action" onclick="renderImage();menuClose()">Save image</button>
               <div class="menu-sep"></div>
-              <button class="menu-check" onclick="toggleLegend();menuToggleExternal(this);menuClose()"><span class="menu-icon"></span>Legend</button>
+              <button id="menu-check-legend"   class="menu-check" onclick="toggleLegend();menuClose()"><span class="menu-icon"></span>Legend</button>
+              <button id="menu-check-timeline" class="menu-check" onclick="toggleGanttPane();menuClose()"><span class="menu-icon"></span>Timeline</button>
+              <div class="menu-sep"></div>
+              <div class="menu-form-row" onclick="event.stopPropagation()" style="padding:0.35em 0.75em">
+                <label style="font-size:0.85em;color:#666">Timeline scale: <span id="gantt-scale-label">1×</span></label>
+                <input type="range" id="gantt-scale" min="1" max="20" step="1" value="1"
+                  oninput="ganttScaleChanged(this.value)" style="width:100%">
+              </div>
             </div>
           </div>
 
@@ -251,7 +258,21 @@
             </div>
           </div>
 
+          <!-- Info button — floats to the far right of the menu bar -->
+          <div class="menu menu-info-btn">
+            <button class="menu-title menu-info-title" onclick="menuToggle(event,this)" title="Trace statistics">ⓘ</button>
+            <div class="dropdown dropdown-info">
+              <p><strong>Trace events:</strong> <span id="event-count">—</span></p>
+              <p><strong>Nodes:</strong> <span id="node-count">—</span></p>
+              <p><strong>Edges:</strong> <span id="edge-count">—</span></p>
+              <p><strong>Last load:</strong> <span id="load-time">—</span> ms</p>
+              <hr class="menu-sep">
+              <p><a href="https://skepu.github.io" target="_blank">SkePU website</a></p>
+            </div>
+          </div>
+
         </nav>
+        <div id="alert-bar"></div>
 
         <script>
           /*
@@ -263,7 +284,8 @@
            * selects    — id -> string (must match an <option value="...">)
            */
           var STORAGE_KEY = 'skepu-visualizer-settings-v1';
-          var _infoPaneRatio = 0; // last-known open ratio; 0 = use default height
+          var _infoPaneRatio = 0;  // last-known open ratio; 0 = use default height
+          // _ganttPaneOpen / _ganttPaneRatio / _lastGraphNodes are declared in main.js (loaded first)
 
           var DEFAULTS = {
             checkboxes: {
@@ -286,8 +308,12 @@
               'edge-opacity':    'fixed',
             },
             layout: {
-              'split-sizes':    [65, 35], // [left %, right %] for the graph/sidebar gutter
-              'info-pane-ratio': 0,       // info pane height as fraction of right pane; 0 = closed
+              'split-sizes':     [65, 35], // [left %, right %] for the graph/sidebar gutter
+              'info-pane-ratio':  0,        // info pane height as fraction of right pane; 0 = closed
+              'gantt-pane-ratio': 0.25,     // gantt pane height as fraction of viewport height
+              'gantt-open':       true,     // whether the gantt pane is open
+              'gantt-scale':      1,        // x-axis scale multiplier (1 = fit, >1 = zoom + scroll)
+              'legend-open':      true,     // whether the legend bar is visible
             }
           };
 
@@ -310,9 +336,19 @@
               });
             }
             if (splitInstance) splitInstance.setSizes(DEFAULTS.layout['split-sizes']);
-            _infoPaneRatio = DEFAULTS.layout['info-pane-ratio'];
+            _infoPaneRatio  = DEFAULTS.layout['info-pane-ratio'];
+            _ganttPaneRatio = DEFAULTS.layout['gantt-pane-ratio'];
+            _ganttPaneOpen  = DEFAULTS.layout['gantt-open'];
+            _legendOpen     = DEFAULTS.layout['legend-open'];
             document.getElementById('info_window').style.flex = '0 0 0em';
-            saveSettings({'info-pane-ratio': DEFAULTS.layout['info-pane-ratio']});
+            document.getElementById('legend').style.display = _legendOpen ? '' : 'none';
+            if (_ganttPaneOpen) openGanttPane(); else closeGanttPane();
+            ganttScaleChanged(DEFAULTS.layout['gantt-scale']);
+            syncExternalMenuIcons();
+            saveSettings({
+              'info-pane-ratio':  DEFAULTS.layout['info-pane-ratio'],
+              'gantt-pane-ratio': DEFAULTS.layout['gantt-pane-ratio'],
+            });
             menuClose();
           }
 
@@ -341,14 +377,32 @@
                   : DEFAULTS.layout['info-pane-ratio'];
               }
             }
+            // Gantt pane ratio (fraction of viewport height) and open state
+            if (layoutOverrides && 'gantt-pane-ratio' in layoutOverrides) {
+              state.layout['gantt-pane-ratio'] = layoutOverrides['gantt-pane-ratio'];
+            } else {
+              var ganttEl = document.getElementById('gantt-pane');
+              if (ganttEl && ganttEl.offsetHeight > 10) {
+                state.layout['gantt-pane-ratio'] = ganttEl.offsetHeight / window.innerHeight;
+              } else {
+                state.layout['gantt-pane-ratio'] = _ganttPaneRatio;
+              }
+            }
+            state.layout['gantt-open']  = _ganttPaneOpen;
+            state.layout['gantt-scale'] = _ganttScale;
+            state.layout['legend-open'] = _legendOpen;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
           }
 
           function loadSettings() {
             var stored = localStorage.getItem(STORAGE_KEY);
-            if (!stored) return;
+            if (!stored) {
+              // No stored data — defaults are already in effect; just sync the icons.
+              syncExternalMenuIcons();
+              return;
+            }
             var state;
-            try { state = JSON.parse(stored); } catch(e) { return; }
+            try { state = JSON.parse(stored); } catch(e) { syncExternalMenuIcons(); return; }
             for (var id in DEFAULTS.checkboxes) {
               if (!state.checkboxes || !(id in state.checkboxes)) continue;
               var val = state.checkboxes[id];
@@ -366,6 +420,30 @@
             }
             if (state.layout && state.layout['info-pane-ratio'] != null)
               _infoPaneRatio = state.layout['info-pane-ratio'];
+            if (state.layout && state.layout['gantt-pane-ratio'] != null)
+              _ganttPaneRatio = state.layout['gantt-pane-ratio'];
+            if (state.layout && state.layout['gantt-open'] != null)
+              _ganttPaneOpen = state.layout['gantt-open'];
+            if (state.layout && state.layout['gantt-scale'] != null) {
+              _ganttScale = state.layout['gantt-scale'];
+              var sl = document.getElementById('gantt-scale');
+              if (sl) sl.value = _ganttScale;
+              var lb = document.getElementById('gantt-scale-label');
+              if (lb) lb.textContent = parseFloat(_ganttScale).toFixed(0) + '×';
+            }
+            if (state.layout && state.layout['legend-open'] != null)
+              _legendOpen = state.layout['legend-open'];
+            // Legend display is applied in load() once the full DOM exists.
+            // Sync the menu icons now — the nav buttons are already in the DOM.
+            syncExternalMenuIcons();
+          }
+
+          // Keep the Legend and Timeline checkmark icons in sync with actual visibility state.
+          function syncExternalMenuIcons() {
+            var lb = document.getElementById('menu-check-legend');
+            if (lb) lb.querySelector('.menu-icon').textContent = _legendOpen ? '✓' : '';
+            var tb = document.getElementById('menu-check-timeline');
+            if (tb) tb.querySelector('.menu-icon').textContent = _ganttPaneOpen ? '✓' : '';
           }
 
           // Open the info pane using the last-known ratio, or 10em as fallback.
@@ -407,6 +485,7 @@
             btn.querySelector('.menu-icon').textContent = ctrl.checked ? '✓' : '';
             saveSettings();
             menuClose();
+            settingChanged();
           }
           function menuToggleExternal(btn) {
             // Toggle check icon for items not backed by a hidden checkbox
@@ -423,6 +502,7 @@
             });
             saveSettings();
             menuClose();
+            settingChanged();
           }
           document.addEventListener('click', menuClose);
           loadSettings();
@@ -446,7 +526,6 @@
 
         <div id="visualization">
           <div id="cy"></div>
-          <div id="timeline"></div>
         </div>
         <div id="legend">
           <p>
@@ -465,6 +544,9 @@
             {% for filename in cpp_files %}
             <button class="cpp-tab{% if loop.first %} active{% endif %}" onclick="switchTab(this, {{ loop.index0 }})">{{ filename }}</button>
             {% endfor %}
+            {% if trace_json %}
+            <button class="cpp-tab{% if not cpp_files %} active{% endif %}" onclick="switchTab(this, {{ cpp_files | length }})">{{ trace_filename }}</button>
+            {% endif %}
           </div>
           <div id="cpp_tab_panes">
             {% for filename, content in cpp_files.items() %}
@@ -472,8 +554,10 @@
               <pre><code>{{ content }}</code></pre>
             </div>
             {% endfor %}
-            {% if not cpp_files %}
-            <div class="cpp-tab-pane active" data-filename=""></div>
+            {% if trace_json %}
+            <div class="cpp-tab-pane{% if not cpp_files %} active{% endif %}" data-filename="{{ trace_filename }}">
+              <pre><code class="language-json">{{ trace_json }}</code></pre>
+            </div>
             {% endif %}
           </div>
         </div>
@@ -488,8 +572,9 @@
       </div>
     </div>
 
-    <footer>
-      ~ <span id="event-count">__</span> trace events, <span id="node-count">__</span> nodes, <span id="edge-count">__</span> edges ~ Load time <span id="load-time">__</span> ms ~ See the <a href="https://skepu.github.io">SkePU website</a> for source code and documentation ~
-    </footer>
+    <div id="gantt-pane">
+      <div id="gantt-resizer"></div>
+      <div id="gantt-svg-container"></div>
+    </div>
 </body>
 </html>

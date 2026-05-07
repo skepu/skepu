@@ -433,6 +433,7 @@ class DirectedGraph:
                 self._nodes.remove(node)
                 canonicals[keypath].iteration_count += 1
                 canonicals[keypath].durations.extend(node.durations)
+                canonicals[keypath].intervals.extend(node.intervals)
 
                 for edge in node.getIncomingEdges():
                     edge.target = canonicals[edge.target.keypath]
@@ -492,6 +493,7 @@ class Node:
         self.is_critical_path = False
         self.iteration_count = 1
         self.durations = []   # populated by ComputationNode; accumulated during coalesceIterations
+        self.intervals = []   # list of (start, end) tuples; populated by ComputationNode
         self.region = None
         self.nesting_level = 0
         if graph.settings.regions:
@@ -564,6 +566,7 @@ class ComputationNode(Node):
         self.end = json_data["end"]
         self.duration = self.end - self.start
         self.durations = [self.duration]
+        self.intervals = [(self.start, self.end)]
 
         self.backend = json_data.get("backend", "CPU")
         self.file = json_data.get("file")
@@ -610,6 +613,7 @@ class ComputationNode(Node):
         cy_data["start"] = self.start
         cy_data["end"] = self.end
         cy_data["duration"] = self.duration
+        cy_data["intervals"] = self.intervals
         cy_data["file"] = self.file
         cy_data["line"] = self.line
         cy_data["backend"] = self.backend
@@ -1235,9 +1239,13 @@ def csv():
 def upload():
     global event_data
     if request.method == 'POST':
+        trace_filename = None
         json_file = request.files.get('json_file')
         if json_file:
+            trace_filename = os.path.basename(json_file.filename.replace('\\', '/'))
             event_data = json.load(json_file)
+
+        trace_json = json.dumps(event_data, indent=2) if event_data else None
 
         cpp_files = {}
         for f in request.files.getlist('cpp_files'):
@@ -1245,13 +1253,13 @@ def upload():
                 basename = os.path.basename(f.filename.replace('\\', '/'))
                 cpp_files[basename] = f.read().decode('utf-8')
 
-    return main_page(cpp_files=cpp_files, event_data=event_data)
+    return main_page(cpp_files=cpp_files, event_data=event_data, trace_json=trace_json, trace_filename=trace_filename)
 
 
 # Route to the main-page of the website
 @app.route('/main')
-def main_page(cpp_files=None, event_data=None):
-    return render_template('main.html', data=event_data, cpp_files=cpp_files or {})
+def main_page(cpp_files=None, event_data=None, trace_json=None, trace_filename=None):
+    return render_template('main.html', data=event_data, cpp_files=cpp_files or {}, trace_json=trace_json, trace_filename=trace_filename)
 
 if __name__ == '__main__':
 #    pid = os.fork()

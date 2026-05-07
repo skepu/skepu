@@ -5,29 +5,15 @@ body, html {
   height: 100%;
   background-color: black;
 }
-header, footer
-{
-  font-family: monospace;
-  font-size: 0.8em;
-  background-color: black;
-  color: white;
-  text-align: center;
-  margin: 0;
-  padding: 0.5em 0;
-  flex: 0 1 1em;
-}
-header p {
-  margin: 0;
-}
 code, pre {
   margin: 0;
 }
 .outer_container
 {
   flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   background-color: white;
-  height: calc(100vh - 4em);
 }
 #left_pane
 {
@@ -216,10 +202,58 @@ code, pre {
   padding: 0.3em 0.7em;
   align-self: flex-start;
 }
+#alert-bar
+{
+  display: none;
+  flex: 0 0 auto;
+  background-color: #fffbe6;
+  color: #7a5200;
+  border-bottom: 1px solid #f0d060;
+  font-family: monospace;
+  font-size: 0.75em;
+  padding: 0.2em 0.8em;
+  text-align: center;
+}
+
+/* Right-aligned ⓘ info button */
+.menu-info-btn
+{
+  margin-left: auto;
+}
+
+.menu-info-title
+{
+  font-size: 1.1em;
+  padding: 0.2em 0.7em;
+}
+
+/* Larger info dropdown, anchored to the right edge */
+.dropdown-info
+{
+  left: auto;
+  right: 0;
+  min-width: 200px;
+  padding: 0.6em 0.9em;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+
+.dropdown-info p
+{
+  margin: 0.3em 0;
+  white-space: nowrap;
+}
+
+.dropdown-info a
+{
+  color: #336;
+}
+
 #visualization
 {
-/*  box-shadow: 0 0 3em lightgray inset;*/
   flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-flow: column;
 }
@@ -238,7 +272,53 @@ code, pre {
 }
 
 #cy {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
+  min-height: 4em;
+}
+
+#gantt-pane
+{
+  flex: 0 0 0;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-top: 2px solid #aaa;
+  min-height: 0;
+  transition: flex-basis 0.15s ease;
+}
+
+#gantt-pane.resizing
+{
+  transition: none;
+  user-select: none;
+}
+
+#gantt-resizer
+{
+  flex: 0 0 5px;
+  background-color: #bbb;
+  cursor: ns-resize;
+}
+
+#gantt-resizer:hover
+{
+  background-color: #999;
+}
+
+#gantt-svg-container
+{
+  flex: 1 1 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 0;
+}
+
+.gantt-bar.gantt-selected
+{
+  stroke: #0033cc !important;
+  stroke-width: 2.5 !important;
 }
 
 #cy:hover
@@ -515,10 +595,6 @@ pre code.hljs
 {
   background-color: yellow !important;
   color: black !important;
-}
-
-footer a {
-  color: white;
 }
 
 

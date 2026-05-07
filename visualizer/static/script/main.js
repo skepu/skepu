@@ -10,6 +10,245 @@ var opaqueNodes = [];
 var baseZoom = 1;
 var isZooming = false;
 
+// Gantt pane state (referenced from inline script in main.html)
+var _lastGraphNodes      = [];
+var _ganttPaneOpen       = true;   // overridden by loadSettings if user closed it
+var _ganttPaneRatio      = 0.25;   // fraction of window.innerHeight; overridden by loadSettings
+var _ganttScale          = 1;      // x-axis scale multiplier; overridden by loadSettings
+var _ganttSelectedNodeId = null;
+var _legendOpen          = true;   // overridden by loadSettings
+
+// Auto-render: re-draw automatically on settings change only when the graph is small.
+var AUTO_RENDER_THRESHOLD = 200;   // node count below which changes trigger an immediate re-render
+var _lastNodeCount        = 0;
+var _settingChangedTimer  = null;
+
+function ganttScaleChanged(val) {
+  _ganttScale = parseFloat(val);
+  var sl = document.getElementById('gantt-scale');
+  if (sl) sl.value = _ganttScale;
+  var label = document.getElementById('gantt-scale-label');
+  if (label) label.textContent = _ganttScale.toFixed(1) + '×';
+  saveSettings();
+  if (_ganttPaneOpen && _lastGraphNodes.length) renderGantt(_lastGraphNodes);
+}
+
+
+// ── Gantt chart ───────────────────────────────────────────────────────────────
+
+function openGanttPane() {
+  var h = _ganttPaneRatio > 0
+    ? Math.round(_ganttPaneRatio * window.innerHeight)
+    : Math.round(window.innerHeight * 0.25);
+  document.getElementById('gantt-pane').style.flex = '0 0 ' + h + 'px';
+  _ganttPaneOpen = true;
+  if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
+  if (_lastGraphNodes.length) renderGantt(_lastGraphNodes);
+  saveSettings();
+}
+
+function closeGanttPane() {
+  _ganttPaneOpen = false;
+  document.getElementById('gantt-pane').style.flex = '0 0 0';
+  if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
+  saveSettings();
+}
+
+function toggleGanttPane() {
+  if (_ganttPaneOpen) closeGanttPane(); else openGanttPane();
+}
+
+function ganttHighlight(nodeId) {
+  _ganttSelectedNodeId = nodeId;
+  var firstBar = null;
+  document.querySelectorAll('.gantt-bar').forEach(function(b) {
+    var sel = b.dataset.nodeId === nodeId;
+    b.classList.toggle('gantt-selected', sel);
+    if (sel && !firstBar) firstBar = b;
+  });
+  // Animate the gantt container to centre the first matching bar, like the code view does.
+  if (firstBar) {
+    var container = document.getElementById('gantt-svg-container');
+    if (container) {
+      var bx     = parseFloat(firstBar.getAttribute('x') || 0);
+      var bw     = parseFloat(firstBar.getAttribute('width') || 0);
+      var target = bx + bw / 2 - container.clientWidth / 2;
+      $(container).stop(true).animate({ scrollLeft: Math.max(0, target) }, 500);
+    }
+  }
+}
+
+function renderGantt(cyNodes) {
+  var container = document.getElementById('gantt-svg-container');
+  if (!container) return;
+  _lastGraphNodes = cyNodes;
+
+  var timed = cyNodes.filter(function(n) {
+    return n.data.start != null && n.data.end != null &&
+      (n.data.type === 'skeleton_call' || n.data.type === 'external');
+  });
+
+  container.innerHTML = '';
+  if (!timed.length) {
+    var msg = document.createElement('p');
+    msg.style.cssText = 'padding:0.5em;color:#888;font-family:monospace;font-size:0.8em';
+    msg.textContent = 'No timed events to display.';
+    container.appendChild(msg);
+    return;
+  }
+
+  var minT = Infinity, maxT = -Infinity;
+  timed.forEach(function(n) {
+    var ivs = n.data.intervals || [[n.data.start, n.data.end]];
+    ivs.forEach(function(iv) {
+      minT = Math.min(minT, iv[0]);
+      maxT = Math.max(maxT, iv[1]);
+    });
+  });
+  var range = Math.max(maxT - minT, 1);
+
+  // Collect distinct backends → one row each
+  var bSet = {};
+  timed.forEach(function(n) { bSet[n.data.backend || 'CPU'] = true; });
+  var backends = Object.keys(bSet).sort();
+  var bRow = {};
+  backends.forEach(function(b, i) { bRow[b] = i; });
+
+  // Layout constants.
+  // SVG_W is the total SVG width: exactly the container width at scale=1 (no overflow),
+  // and container * scale at higher values (horizontal scroll kicks in).
+  // PAD_RIGHT is carved out of SVG_W for the "end of trace" label — the bar area BW
+  // shrinks by that amount so nothing overflows at scale=1.
+  var LW = 72, AH = 20, RH = 28, RP = 3, PAD_RIGHT = 90;
+  var SVG_W = Math.max(container.clientWidth || 400, 200) * _ganttScale;
+  var H     = backends.length * RH + AH;
+  var BW    = Math.max(1, SVG_W - LW - PAD_RIGHT);
+
+  var NS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS(NS, tag);
+    if (attrs) Object.keys(attrs).forEach(function(k) { el.setAttribute(k, attrs[k]); });
+    return el;
+  }
+  function tx(t) { return LW + (t - minT) / range * BW; }
+  // Timestamps from the server are in microseconds.
+  function fmtDt(dt) {
+    if (dt >= 1e6) return (dt / 1e6).toFixed(2) + 's';
+    if (dt >= 1e3) return (dt / 1e3).toFixed(1) + 'ms';
+    return dt.toFixed(1) + 'µs';
+  }
+
+  var svg = svgEl('svg', { width: SVG_W, height: H });
+  svg.style.cssText = 'display:block;font-family:monospace;font-size:11px;cursor:default';
+  var defs = svgEl('defs');
+  svg.appendChild(defs);
+
+  // Row backgrounds + labels
+  backends.forEach(function(b, i) {
+    var y = i * RH;
+    svg.appendChild(svgEl('rect', { x: 0, y: y, width: SVG_W, height: RH, fill: i % 2 ? '#f8f8f8' : '#fff' }));
+    var t = svgEl('text', { x: LW - 6, y: y + RH / 2 + 4, 'text-anchor': 'end', fill: '#555' });
+    t.textContent = b;
+    svg.appendChild(t);
+  });
+
+  // Left separator + axis baseline (baseline extends into the right padding area)
+  svg.appendChild(svgEl('line', { x1: LW, y1: 0, x2: LW, y2: H - AH, stroke: '#ccc', 'stroke-width': 1 }));
+  svg.appendChild(svgEl('line', { x1: LW, y1: H - AH, x2: SVG_W, y2: H - AH, stroke: '#bbb', 'stroke-width': 1 }));
+
+  // Time grid + tick labels
+  var numTicks = Math.max(2, Math.floor(BW / 90));
+  for (var ti = 0; ti <= numTicks; ti++) {
+    var frac = ti / numTicks;
+    var tv = minT + frac * range;
+    var xv = tx(tv);
+    svg.appendChild(svgEl('line', { x1: xv, y1: 0, x2: xv, y2: H - AH, stroke: '#efefef', 'stroke-width': 1 }));
+    svg.appendChild(svgEl('line', { x1: xv, y1: H - AH, x2: xv, y2: H - AH + 4, stroke: '#aaa', 'stroke-width': 1 }));
+    var anchor = ti === 0 ? 'start' : 'middle';
+    var tl = svgEl('text', { x: xv, y: H - 4, 'text-anchor': anchor, fill: '#777' });
+    tl.textContent = '+' + fmtDt(tv - minT);
+    svg.appendChild(tl);
+  }
+
+  // Pattern colours (match graph node colours where possible)
+  var patColors = {
+    Map: '#3a8', Reduce: '#c44', MapReduce: '#d73',
+    MapOverlap: '#55b', Scan: '#a4c', MapPool: '#36b',
+  };
+
+  var barIdx = 0;
+  timed.forEach(function(n) {
+    var d = n.data;
+    var backend = d.backend || 'CPU';
+    var ri = bRow[backend];
+    var y  = ri * RH + RP, bh = RH - RP * 2;
+    var fill = d.type === 'skeleton_call' ? (patColors[d.pattern] || '#778') : '#777';
+    var ivs = d.intervals || [[d.start, d.end]];
+    var total = ivs.length;
+
+    ivs.forEach(function(iv, iidx) {
+      var x1 = tx(iv[0]), x2 = tx(iv[1]);
+      var bw = Math.max(2, x2 - x1);
+      var clipId = 'gantt-c-' + (barIdx++);
+
+      var cp = svgEl('clipPath', { id: clipId });
+      cp.appendChild(svgEl('rect', { x: x1 + 2, y: y, width: Math.max(0, bw - 4), height: bh }));
+      defs.appendChild(cp);
+
+      var bar = svgEl('rect', {
+        x: x1, y: y, width: bw, height: bh, rx: 2,
+        fill: fill, stroke: 'rgba(0,0,0,0.2)', 'stroke-width': 0.5,
+      });
+      bar.classList.add('gantt-bar');
+      bar.dataset.nodeId = d.id;
+      bar.style.cursor = 'pointer';
+      if (d.id === _ganttSelectedNodeId) bar.classList.add('gantt-selected');
+
+      var title = document.createElementNS(NS, 'title');
+      var iterLabel = total > 1 ? ' [' + (iidx + 1) + '/' + total + ']' : '';
+      title.textContent = d.label + (d.pattern ? ' [' + d.pattern + ']' : '') + iterLabel
+        + '\n' + (d.backend || '') + '\n' + fmtDt(iv[1] - iv[0]);
+      bar.appendChild(title);
+
+      bar.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        ganttHighlight(d.id);
+        if (cy) zoomToFit(d.id);
+      });
+      svg.appendChild(bar);
+
+      if (bw > 24) {
+        var iterSuffix = total > 1 ? ' ' + (iidx + 1) : '';
+        var lbl = svgEl('text', {
+          x: x1 + 4, y: y + bh / 2 + 4,
+          fill: 'rgba(255,255,255,0.9)', 'clip-path': 'url(#' + clipId + ')',
+        });
+        lbl.style.pointerEvents = 'none';
+        lbl.textContent = d.label + iterSuffix;
+        svg.appendChild(lbl);
+      }
+    });
+  });
+
+  // "End of trace" marker — dashed vertical line at the right edge of the bar area,
+  // followed by a label that scrolls with the SVG content.
+  var eotX = LW + BW; // right edge of the bar area; PAD_RIGHT of space follows before SVG_W
+  svg.appendChild(svgEl('line', {
+    x1: eotX, y1: 0, x2: eotX, y2: H - AH,
+    stroke: '#bbb', 'stroke-width': 1, 'stroke-dasharray': '4,3',
+  }));
+  var eotText = svgEl('text', {
+    x: eotX + 6, y: Math.floor((H - AH) / 2),
+    'dominant-baseline': 'middle',
+    fill: '#bbb', 'font-style': 'italic',
+  });
+  eotText.textContent = 'end of trace';
+  svg.appendChild(eotText);
+
+  container.appendChild(svg);
+}
+
+// ── End Gantt ─────────────────────────────────────────────────────────────────
 
 function fetchViewDataAndRender()
 {
@@ -20,13 +259,15 @@ function fetchViewDataAndRender()
   {
     document.getElementById("cy").style.display = "block";
     document.getElementById('cy').style.height = document.getElementById('cy').offsetHeight + "px";
-    document.getElementById("timeline").style.display = "none";
+    var tlEl = document.getElementById("timeline");
+    if (tlEl) tlEl.style.display = "none";
     return fetchGraphDataAndRender();
   }
   else if (view_mode == "timeline")
   {
     document.getElementById("cy").style.display = "none";
-    document.getElementById("timeline").style.display = "block";
+    var tlEl = document.getElementById("timeline");
+    if (tlEl) tlEl.style.display = "block";
     return fetchTimelineDataAndRender();
   }
 }
@@ -156,6 +397,10 @@ function fetchGraphDataAndRender()
     document.getElementById("event-count").innerHTML = event_count;
     document.getElementById("node-count").innerHTML = nodes.length;
     document.getElementById("edge-count").innerHTML = edges.length;
+    _lastNodeCount  = nodes.length;
+    _lastGraphNodes = nodes;
+    clearAlert(); // settings have just been applied; any pending alert is now stale
+    if (_ganttPaneOpen) renderGantt(nodes);
 
     // First find max and min value for time for correct colors
     var minmax = {
@@ -497,6 +742,10 @@ function fetchGraphDataAndRender()
     //  collapseCueImage: "icon-minus.png"
     });
 
+    // After one animation frame the browser has reflowed the gantt pane into place,
+    // so cy picks up the correct container dimensions and the graph fits properly.
+    requestAnimationFrame(function() { if (cy) { cy.resize(); cy.fit(); } });
+
     cy.on('click', function(event)
     {
       closePopup();
@@ -604,6 +853,7 @@ function fetchGraphDataAndRender()
         }
         $('#info').html(info);
         openInfoPane();
+        ganttHighlight(id);
 
         // Update the opaque/transparent emphasis in the graph
         if (data["type"] == "container_update")
@@ -660,7 +910,7 @@ function fetchGraphDataAndRender()
                 || document.querySelector('.cpp-tab-pane');
         if (!pane) continue;
         var el = $(pane).find('.hljs-ln-n[data-line-number="' + b.line + '"]')[0];
-        if (el) el.innerHTML = "<span class='badge' onclick='zoomToFit(\"" + b.ids[0] + "\")'>" + b.count + "</span>";
+        if (el) el.innerHTML = "<span class='badge' onclick='zoomToFit(\"" + b.ids[0] + "\");ganttHighlight(\"" + b.ids[0] + "\")'>" + b.count + "</span>";
       }
     }, 200);
 
@@ -732,9 +982,37 @@ function closePopup()
   document.getElementById('info_window').style.flex = '0 0 0em';
 }
 
-function settingChanged()
-{
+function showAlert(msg) {
+  var bar = document.getElementById('alert-bar');
+  if (!bar) return;
+  bar.textContent = msg;
+  bar.style.display = 'block';
+}
 
+function clearAlert() {
+  var bar = document.getElementById('alert-bar');
+  if (!bar) return;
+  bar.style.display = 'none';
+  bar.textContent = '';
+}
+
+// Called whenever a menu setting changes.  For small graphs it triggers an immediate
+// re-render; for large graphs it shows an alert reminding the user to apply manually.
+// Debounced so rapid successive calls (e.g. a checkbox dispatching its own onchange
+// AND menuToggleCheck calling us) coalesce into a single action.
+function settingChanged() {
+  clearTimeout(_settingChangedTimer);
+  _settingChangedTimer = setTimeout(function() {
+    if (_lastNodeCount === 0) return; // no graph loaded yet
+    if (_lastNodeCount <= AUTO_RENDER_THRESHOLD) {
+      clearAlert();
+      fetchViewDataAndRender();
+    } else {
+      showAlert('⚠ Live re-render is disabled for large graphs ('
+        + _lastNodeCount + ' nodes > threshold ' + AUTO_RENDER_THRESHOLD
+        + '). Use View › Apply settings to update.');
+    }
+  }, 50);
 }
 
 function recenterGraph()
@@ -745,9 +1023,10 @@ function recenterGraph()
 
 function toggleLegend()
 {
-  var status = document.getElementById('legend').style.display;
-  var newStatus = status != "none" ? "none" : "block";
-  document.getElementById('legend').style.display = newStatus;
+  _legendOpen = !_legendOpen;
+  document.getElementById('legend').style.display = _legendOpen ? '' : 'none';
+  if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
+  saveSettings();
 }
 
 
@@ -755,11 +1034,29 @@ function toggleLegend()
 
 function load()
 {
-  splitInstance = Split(['#left_pane', '#right_pane'], { sizes: [65, 35], onDragEnd: saveSettings });
+  splitInstance = Split(['#left_pane', '#right_pane'], {
+    sizes: [65, 35],
+    onDragEnd: saveSettings,
+  });
   applyStoredLayout();
+  // Apply legend visibility now that #legend is in the DOM (_legendOpen was set by loadSettings).
+  document.getElementById('legend').style.display = _legendOpen ? '' : 'none';
+  if (_ganttPaneOpen) openGanttPane();
 
   hljs.highlightAll();
   hljs.initLineNumbersOnLoad();
+
+  // hljs.initLineNumbersOnLoad() skips elements inside display:none panes.
+  // Explicitly highlight and number any pane that hljs missed (e.g. the trace JSON tab).
+  document.querySelectorAll('.cpp-tab-pane code').forEach(function(block) {
+    if (!block.classList.contains('hljs')) {
+      var fn = hljs.highlightElement || hljs.highlightBlock;
+      if (fn) fn.call(hljs, block);
+    }
+    if (hljs.lineNumbersBlock && !block.querySelector('table')) {
+      hljs.lineNumbersBlock(block);
+    }
+  });
 
   // Needed to render the graph
   fetchViewDataAndRender();
@@ -809,6 +1106,35 @@ function load()
     var rightEl = document.getElementById('right_pane');
     if (rightEl && infoWindow.offsetHeight > 40)
       _infoPaneRatio = infoWindow.offsetHeight / rightEl.offsetHeight;
+    saveSettings();
+  }
+
+  // Gantt pane resizer (drag upward to grow)
+  var ganttPane    = document.getElementById('gantt-pane');
+  var ganttResizer = document.getElementById('gantt-resizer');
+  var _gDragStartY, _gDragStartH;
+
+  ganttResizer.addEventListener('mousedown', function(e) {
+    _gDragStartY = e.clientY;
+    _gDragStartH = ganttPane.offsetHeight;
+    ganttPane.classList.add('resizing');
+    document.addEventListener('mousemove', _onGanttDrag);
+    document.addEventListener('mouseup',   _onGanttDragEnd);
+    e.preventDefault();
+  });
+
+  function _onGanttDrag(e) {
+    var newH = Math.max(40, _gDragStartH + (_gDragStartY - e.clientY));
+    ganttPane.style.flex = '0 0 ' + newH + 'px';
+  }
+
+  function _onGanttDragEnd() {
+    ganttPane.classList.remove('resizing');
+    document.removeEventListener('mousemove', _onGanttDrag);
+    document.removeEventListener('mouseup',   _onGanttDragEnd);
+    if (ganttPane.offsetHeight > 10)
+      _ganttPaneRatio = ganttPane.offsetHeight / window.innerHeight;
+    renderGantt(_lastGraphNodes);
     saveSettings();
   }
 
