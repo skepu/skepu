@@ -24,10 +24,13 @@ skepu::Vector<float> horner_eval(skepu::Vector<float> &coeffs, skepu::Vector<flo
 	});
 
 	skepu::Vector<float> res(x_vals.size(), "Res", coeffs[degree]);
+	SKEPU_TRACE_SNAPSHOT(res);
+	
 	for (int i = degree-1; i >= 0; --i)
 	{
 		SKEPU_TRACE_SCOPE("Iteration");
 		muladd(res, res, x_vals, coeffs.elem(i));
+		SKEPU_TRACE_SNAPSHOT(res);
 	}
 	return res;
 }
@@ -65,7 +68,7 @@ int main(int argc, char *argv[])
 	auto spec = skepu::BackendSpec{argv[argi]};
 	skepu::setGlobalBackendSpec(spec);
 
-	skepu::Vector<float> x_vals = generate(0, 1, samples);
+	skepu::Vector<float> x_vals = generate(0, 10, samples);
 	skepu::io::cout << " X: " << x_vals << "\n";
 	skepu::Vector<float> res = horner_eval(coeffs, x_vals);
 	skepu::io::cout << "Values: " << res  << "\n";

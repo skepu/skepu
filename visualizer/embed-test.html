@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GraphView embed test — SkePU</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      font-size: 14px;
+      background: #f4f4f6;
+      color: #1a1a1a;
+      padding: 24px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .page-desc {
+      color: #555;
+      margin-bottom: 24px;
+    }
+
+    /* ── Three-column grid ─────────────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Individual panel ──────────────────────────────────────────────────── */
+    .panel {
+      background: #fff;
+      border: 1px solid #dde;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+
+    .panel-header {
+      padding: 12px 16px 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .panel-subtitle {
+      font-size: 0.78rem;
+      color: #888;
+      margin-top: 2px;
+    }
+
+    /* ── Graph container ───────────────────────────────────────────────────── */
+    .graph-wrap {
+      position: relative;
+      height: 440px;
+      background: #fafafa;
+    }
+
+    /* Loading indicator: small spinner in the top-right corner, no background */
+    .loading-msg {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #aaa;
+      font-size: 0.75rem;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid #ddd;
+      border-top-color: #888;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #c0392b;
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 16px;
+      z-index: 21;
+      pointer-events: none;
+      max-width: 80%;
+    }
+
+    /* ── Stats bar ─────────────────────────────────────────────────────────── */
+    .stats-bar {
+      padding: 8px 16px;
+      border-top: 1px solid #eee;
+      font-size: 0.78rem;
+      color: #666;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      min-height: 32px;
+      align-items: center;
+    }
+
+    .stats-bar span { white-space: nowrap; }
+
+    .stats-bar .stat-val { font-weight: 600; color: #333; }
+
+    /* ── Node info box ─────────────────────────────────────────────────────── */
+    .info-box {
+      padding: 10px 16px 12px;
+      border-top: 1px solid #eee;
+      font-size: 0.78rem;
+      color: #555;
+      min-height: 52px;
+      background: #fafafa;
+    }
+
+    .info-box.empty { color: #bbb; font-style: italic; }
+
+    .info-box table { border-collapse: collapse; width: 100%; }
+    .info-box td { padding: 1px 6px 1px 0; vertical-align: top; }
+    .info-box td:first-child { color: #999; white-space: nowrap; width: 1%; }
+
+    /* ── Toolbar row ───────────────────────────────────────────────────────── */
+    .toolbar {
+      padding: 8px 16px;
+      border-top: 1px solid #eee;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .toolbar button {
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      background: #f7f7f7;
+      cursor: pointer;
+    }
+    .toolbar button:hover { background: #eee; }
+
+    /* ── Settings row ──────────────────────────────────────────────────────── */
+    .settings-row {
+      padding: 8px 16px;
+      border-top: 1px solid #eee;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .settings-row label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      color: #555;
+      user-select: none;
+    }
+
+    .settings-row select {
+      font-size: 0.75rem;
+      padding: 2px 4px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      background: #fff;
+    }
+
+    /* Tooltip from GraphView — override the default gv-tooltip colours for
+       light-mode pages (the class sets inline styles, so use !important). */
+    .gv-tooltip {
+      font-family: system-ui, monospace !important;
+      font-size: 11px !important;
+    }
+
+    /* ── SourceCodeView section ─────────────────────────────────────────────── */
+
+    .section-heading {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 36px 0 6px;
+    }
+
+    /* Two-column grid for source panels */
+    .src-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .src-grid { grid-template-columns: 1fr; }
+    }
+
+    .src-panel {
+      background: #fff;
+      border: 1px solid #dde;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+
+    .src-panel-header {
+      padding: 12px 16px 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .src-panel-title {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    /* Tab bar — mirrors #cpp_tab_bar in main.css */
+    .src-tab-bar {
+      display: flex;
+      overflow-x: auto;
+      border-bottom: 1px solid #ccc;
+      flex-shrink: 0;
+    }
+    .src-tab-bar::-webkit-scrollbar { display: none; }
+
+    /* Tab panes container — position:relative so panes can fill it absolutely */
+    .src-tab-panes {
+      position: relative;
+      height: 420px;
+      overflow: hidden;
+    }
+
+    /* ── Tab buttons (.cpp-tab) ─────────────────────────────────────────────── */
+    .cpp-tab {
+      background: none;
+      border: none;
+      border-right: 1px solid #ccc;
+      padding: 0.5em 1em;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 0.8em;
+      white-space: nowrap;
+      color: #555;
+    }
+    .cpp-tab:hover  { background-color: #e4e4e4; }
+    .cpp-tab.active {
+      background-color: #fff;
+      color: #000;
+      font-weight: 600;
+      border-bottom: 2px solid #fff;
+      border-top: 2px solid #0055cc;
+      margin-bottom: -1px;
+    }
+
+    /* ── Tab panes (.cpp-tab-pane) ──────────────────────────────────────────── */
+    .cpp-tab-pane {
+      display: none;
+      position: absolute;
+      top: 0; right: 0; bottom: 0; left: 0;
+      overflow-y: auto;
+    }
+    .cpp-tab-pane.active { display: block; }
+
+    /* Hide raw pre until hljs runs; show spinner on active pane */
+    .cpp-tab-pane.hljs-loading pre { visibility: hidden; }
+    .cpp-tab-pane.hljs-loading.active::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 2em; height: 2em;
+      margin: -1em 0 0 -1em;
+      border: 3px solid #ddd;
+      border-top-color: #888;
+      border-radius: 50%;
+      animation: src-spin 0.7s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes src-spin { to { transform: rotate(360deg); } }
+
+    /* ── hljs line numbers ──────────────────────────────────────────────────── */
+    pre code.hljs { padding: 0 !important; font-size: 0.8em; }
+
+    .hljs-ln-numbers {
+      text-align: right;
+      color: #bbb;
+      border-right: 1px solid #ddd;
+      vertical-align: top;
+      padding-right: 2em !important;
+      padding-left: 0.6em !important;
+      margin-right: 1em;
+    }
+    .hljs-ln-code   { padding-left: 0.5em !important; }
+    .hljs-ln tr:hover { background-color: #ddd; }
+
+    /* Dark hljs theme support */
+    body.hljs-theme-dark .hljs-ln-numbers {
+      color: #555;
+      border-right-color: #3a3848;
+    }
+    body.hljs-theme-dark .hljs-ln tr:hover { background-color: rgba(255,255,255,0.07); }
+
+    /* ── Badge pills ────────────────────────────────────────────────────────── */
+    .badge {
+      background-color: #e6820a;
+      color: #fff;
+      font-size: 0.9em;
+      border-radius: 100%;
+      cursor: pointer;
+      display: inline-block;
+      height: 1.5em; width: 1.5em;
+      line-height: 1.5em;
+      position: relative;
+      right: -1.75em;
+      margin-left: -1.5em;
+      text-align: center;
+      transition: 0.3s transform;
+    }
+    .badge:hover { transform: scale(1.2); }
+
+    /* ── Line highlight ─────────────────────────────────────────────────────── */
+    .line-selected { background-color: rgba(230, 130, 10, 0.2) !important; }
+
+    /* ── Status overlay (loading / error) ───────────────────────────────────── */
+    .src-status {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: #888;
+      font-size: 0.85rem;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .src-status.error { color: #c0392b; }
+    .src-status.hidden { display: none; }
+
+    /* ── TimelineView section ───────────────────────────────────────────────── */
+
+    /* Selection highlight — mirrors main.css .gantt-bar.gantt-selected.
+       Uses the light-mode --highlight value (#0055cc) directly. */
+    .gantt-bar.gantt-selected {
+      stroke: #0055cc !important;
+      stroke-width: 2.5 !important;
+    }
+
+    .timeline-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .timeline-grid { grid-template-columns: 1fr; }
+    }
+
+    .timeline-panel {
+      background: #fff;
+      border: 1px solid #dde;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+
+    .timeline-header {
+      padding: 10px 16px 8px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .timeline-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .timeline-subtitle {
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 2px;
+    }
+
+    /* The SVG sets its own height; allow it to stretch the container vertically
+       and scroll horizontally when wider than the panel. */
+    .timeline-scroll {
+      overflow-x: auto;
+      overflow-y: visible;
+      min-height: 40px;
+      background: #fafafa;
+    }
+
+    .timeline-empty {
+      padding: 0.75em 1em;
+      color: #aaa;
+      font-size: 0.8rem;
+      font-family: monospace;
+      font-style: italic;
+    }
+  </style>
+
+  <!-- Cytoscape and layout engines must be loaded as classic scripts so that
+       cytoscape and ELK are available as window globals when GraphView.js runs. -->
+  <script src="./script/static/cytoscape/cytoscape.min.js"></script>
+  <script src="./script/static/dagre/dagre.min.js"></script>
+  <script src="./script/static/cytoscape-dagre/cytoscape-dagre.js"></script>
+  <script src="./script/static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js"></script>
+
+  <!-- jQuery + scrollTo (required by SourceCodeView.highlightSourceLine) -->
+  <script src="./script/static/jquery/jquery-3.7.1.min.js"></script>
+  <script src="./script/static/jquery-scrollto/jquery.scrollTo.min.js"></script>
+
+  <!-- Highlight.js (required by SourceCodeView.highlightAllBlocks) -->
+  <link id="hljs-theme-src" rel="stylesheet" href="./script/static/highlight/styles/default.css">
+  <script src="./script/static/highlight/highlight.min.js"></script>
+  <script src="./script/static/highlight-line-numbers/highlightjs-line-numbers.min.js"></script>
+</head>
+<body>
+
+  <h1>SkePU GraphView — embed test</h1>
+  <p class="page-desc">
+    Three independent <code>GraphView</code> instances, each backed by its own worker
+    and displaying a different example trace. Settings are per-instance and independent.
+  </p>
+
+  <div class="grid">
+
+    <!-- ── Panel 0: Dot Product ──────────────────────────────────────────── -->
+    <div class="panel" id="panel-0">
+      <div class="panel-header">
+        <div class="panel-title">Dot Product <span style="font-weight:400;color:#888">(OpenMP)</span></div>
+        <div class="panel-subtitle">Flat DAG · default settings</div>
+      </div>
+      <div class="graph-wrap loading" id="graph-0">
+        <div class="loading-msg" id="loading-0">
+          <div class="spinner"></div>
+        </div>
+      </div>
+      <div class="settings-row" id="settings-0"></div>
+      <div class="toolbar" id="toolbar-0"></div>
+      <div class="stats-bar" id="stats-0"><span style="color:#bbb">—</span></div>
+      <div class="info-box empty" id="info-0">Click a node to see details</div>
+    </div>
+
+    <!-- ── Panel 1: Horner ───────────────────────────────────────────────── -->
+    <div class="panel" id="panel-1">
+      <div class="panel-header">
+        <div class="panel-title">Horner <span style="font-weight:400;color:#888">(OpenMP)</span></div>
+        <div class="panel-subtitle">Region nodes · hierarchical layout (ELK)</div>
+      </div>
+      <div class="graph-wrap loading" id="graph-1">
+        <div class="loading-msg" id="loading-1">
+          <div class="spinner"></div>
+        </div>
+      </div>
+      <div class="settings-row" id="settings-1"></div>
+      <div class="toolbar" id="toolbar-1"></div>
+      <div class="stats-bar" id="stats-1"><span style="color:#bbb">—</span></div>
+      <div class="info-box empty" id="info-1">Click a node to see details</div>
+    </div>
+
+    <!-- ── Panel 2: Cellular Automaton ──────────────────────────────────── -->
+    <div class="panel" id="panel-2">
+      <div class="panel-header">
+        <div class="panel-title">Cellular Automaton <span style="font-weight:400;color:#888">(OpenMP)</span></div>
+        <div class="panel-subtitle">Iteration collapse · independent settings</div>
+      </div>
+      <div class="graph-wrap loading" id="graph-2">
+        <div class="loading-msg" id="loading-2">
+          <div class="spinner"></div>
+        </div>
+      </div>
+      <div class="settings-row" id="settings-2"></div>
+      <div class="toolbar" id="toolbar-2"></div>
+      <div class="stats-bar" id="stats-2"><span style="color:#bbb">—</span></div>
+      <div class="info-box empty" id="info-2">Click a node to see details</div>
+    </div>
+
+  </div><!-- .grid -->
+
+  <!-- ── SourceCodeView embed test ──────────────────────────────────────────── -->
+  <h2 class="section-heading">SourceCodeView embed test</h2>
+  <p class="page-desc">
+    Two <code>SourceCodeView</code> instances.  The left panel (Dot Product) shares a
+    <code>TraceDataProvider</code> with graph panel 0 above — badges auto-update on every
+    render and clear on every new fetch.  The right panel (Horner) is standalone.
+  </p>
+
+  <div class="src-grid">
+
+    <!-- ── Source Panel 0: Dot Product ──────────────────────────────────────── -->
+    <div class="src-panel" id="src-panel-0">
+      <div class="src-panel-header">
+        <div class="src-panel-title">Dot Product <span style="font-weight:400;color:#888">(OpenMP)</span></div>
+      </div>
+      <div class="src-tab-bar"   id="src-tab-bar-0"></div>
+      <div class="src-tab-panes" id="src-tab-panes-0">
+        <div class="src-status" id="src-status-0">
+          <div class="spinner"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Source Panel 1: Horner ────────────────────────────────────────────── -->
+    <div class="src-panel" id="src-panel-1">
+      <div class="src-panel-header">
+        <div class="src-panel-title">Horner <span style="font-weight:400;color:#888">(OpenMP)</span></div>
+      </div>
+      <div class="src-tab-bar"   id="src-tab-bar-1"></div>
+      <div class="src-tab-panes" id="src-tab-panes-1">
+        <div class="src-status" id="src-status-1">
+          <div class="spinner"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- .src-grid -->
+
+  <!-- ── TimelineView embed test ──────────────────────────────────────────────── -->
+  <h2 class="section-heading">TimelineView embed test</h2>
+  <p class="page-desc">
+    Two <code>TimelineView</code> instances.  The left panel shares the same
+    <code>TraceDataProvider</code> as Graph Panel 0 — it renders automatically on
+    every fetch and bar clicks cross-highlight in the paired graph and source view.
+    The right panel has its own standalone provider (Cellular Automaton example).
+    Both support ctrl+wheel / two-finger pinch to zoom the time axis.
+  </p>
+
+  <div class="timeline-grid">
+
+    <!-- ── Timeline Panel 0: Dot Product (shared provider) ──────────────────── -->
+    <div class="timeline-panel" id="timeline-panel-0">
+      <div class="timeline-header">
+        <div class="timeline-title">Dot Product <span style="font-weight:400;color:#888">(OpenMP)</span></div>
+        <div class="timeline-subtitle">Shared provider with Graph 0 — bar clicks cross-highlight graph &amp; source</div>
+      </div>
+      <div class="timeline-scroll" id="timeline-scroll-0">
+        <div class="timeline-empty">Loading trace…</div>
+      </div>
+    </div>
+
+    <!-- ── Timeline Panel 1: Cellular Automaton (standalone) ────────────────── -->
+    <div class="timeline-panel" id="timeline-panel-1">
+      <div class="timeline-header">
+        <div class="timeline-title">Cellular Automaton <span style="font-weight:400;color:#888">(OpenMP)</span></div>
+        <div class="timeline-subtitle">Standalone provider — bar clicks self-highlight only</div>
+      </div>
+      <div class="timeline-scroll" id="timeline-scroll-1">
+        <div class="timeline-empty">Loading trace…</div>
+      </div>
+    </div>
+
+  </div><!-- .timeline-grid -->
+
+  <script type="module">
+    import { GraphView }          from './script/GraphView.js';
+    import { TraceDataProvider }  from './script/TraceDataProvider.js';
+    import { SourceCodeView }     from './script/SourceCodeView.js';
+    import { TimelineView }       from './script/TimelineView.js';
+
+    // Set canonical timing values (same as state.js defaults, explicit for clarity).
+    SourceCodeView.BADGE_PLACEMENT_DELAY_MS = 200;
+    SourceCodeView.ANIM_SCROLL_MS           = 400;
+
+    // ── Worker URLs ─────────────────────────────────────────────────────────
+    const BASE         = new URL('../', location.href).href;
+    const DAGRE_WORKER = BASE + './script/workers/dagre-worker.js';
+    const ELK_WORKER   = BASE + './script/static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js';
+    const VIZ_WORKER   = BASE + './script/backend/visualizer.js';
+
+    // ── WorkerSession ───────────────────────────────────────────────────────
+    // Thin per-instance RPC wrapper.  Each panel gets its own worker so their
+    // loaded traces are completely independent.
+    class WorkerSession {
+      constructor() {
+        this._pending = new Map();
+        this._seq     = 0;
+        this._worker  = new Worker(VIZ_WORKER, { type: 'module' });
+        this._worker.addEventListener('message', (evt) => {
+          const data    = evt.data;
+          const handler = this._pending.get(data.id);
+          if (!handler) return;
+          this._pending.delete(data.id);
+          if (data.type === 'error') handler.reject(new Error(data.error));
+          else                       handler.resolve(data);
+        });
+        this._worker.addEventListener('error', (err) => {
+          for (const h of this._pending.values()) h.reject(err);
+          this._pending.clear();
+        });
+      }
+      call(type, payload) {
+        return new Promise((resolve, reject) => {
+          const id  = String(++this._seq);
+          this._pending.set(id, { resolve, reject });
+          // Protocol fields last so they always win over payload keys.
+          this._worker.postMessage(Object.assign({}, payload, { id, type }));
+        });
+      }
+      fetchGraph(params) { return this.call('graph', params); }
+      terminate() { this._worker.terminate(); }
+    }
+
+    // ── Utility helpers ──────────────────────────────────────────────────────
+
+    function fmtMs(ms) {
+      if (ms == null) return '—';
+      return ms < 1000 ? ms + ' ms' : (ms / 1000).toFixed(2) + ' s';
+    }
+
+    function fmtDur(us) {
+      if (us == null || us < 0) return null;
+      if (us >= 1e6)  return (us / 1e6).toFixed(1)  + ' s';
+      if (us >= 1000) return (us / 1000).toFixed(1) + ' ms';
+      return us.toFixed(0) + ' μs';
+    }
+
+    function setLoading(idx, active) {
+      const wrap    = document.getElementById('graph-' + idx);
+      const loading = document.getElementById('loading-' + idx);
+      wrap.classList.toggle('loading', active);
+      if (loading) loading.style.display = active ? 'flex' : 'none';
+    }
+
+    function setError(idx, msg) {
+      setLoading(idx, false);
+      const wrap = document.getElementById('graph-' + idx);
+      const prev = wrap.querySelector('.error-msg');
+      if (prev) prev.remove();
+      const div = document.createElement('div');
+      div.className   = 'error-msg';
+      div.textContent = '⚠ ' + msg;
+      wrap.appendChild(div);
+    }
+
+    function updateStats(idx, stats) {
+      document.getElementById('stats-' + idx).innerHTML =
+        '<span>Nodes <span class="stat-val">'    + stats.nodeCount       + '</span></span>' +
+        '<span>Edges <span class="stat-val">'    + stats.edgeCount       + '</span></span>' +
+        '<span>Events <span class="stat-val">'   + stats.eventCount      + '</span></span>' +
+        '<span>Timeline <span class="stat-val">' + stats.timelineNodes.length + '</span></span>' +
+        '<span>Model <span class="stat-val">'    + fmtMs(stats.modelingMs)   + '</span></span>' +
+        '<span>Layout <span class="stat-val">'   + fmtMs(stats.renderingMs)  + '</span></span>';
+    }
+
+    function showNodeInfo(idx, nodeId, data) {
+      const el   = document.getElementById('info-' + idx);
+      const rows = [];
+      if (data.label)  rows.push(['Name',    data.label]);
+      if (data.type)   rows.push(['Type',    data.type]);
+      if (data.backend) rows.push(['Backend', data.backend]);
+      if (data.duration != null && data.duration >= 0)
+        rows.push(['Duration', fmtDur(data.duration) || '0 μs']);
+      if (data.file && data.line != null && data.line !== -1)
+        rows.push(['Source', data.file.split('/').pop() + ':' + data.line]);
+      if (!rows.length) {
+        el.className = 'info-box empty';
+        el.textContent = 'No details available';
+        return;
+      }
+      el.className = 'info-box';
+      el.innerHTML = '<table>' +
+        rows.map(([k,v]) => '<tr><td>' + k + '</td><td>' + v + '</td></tr>').join('') +
+        '</table>';
+    }
+
+    function clearInfo(idx) {
+      const el = document.getElementById('info-' + idx);
+      el.className  = 'info-box empty';
+      el.textContent = 'Click a node to see details';
+    }
+
+    // ── Settings controls ────────────────────────────────────────────────────
+
+    function buildSettingsRow(idx, view, defs) {
+      const row = document.getElementById('settings-' + idx);
+      defs.forEach(function(def) {
+        if (def.type === 'checkbox') {
+          const lbl = document.createElement('label');
+          const inp = document.createElement('input');
+          inp.type    = 'checkbox';
+          inp.checked = !!view.settings[def.key];
+          inp.addEventListener('change', () => { view.settings[def.key] = inp.checked; view.render(); });
+          lbl.appendChild(inp);
+          lbl.appendChild(document.createTextNode(' ' + def.label));
+          row.appendChild(lbl);
+        } else if (def.type === 'select') {
+          const lbl = document.createElement('label');
+          const sel = document.createElement('select');
+          def.options.forEach(opt => {
+            const o = new Option(opt.label, opt.value);
+            if (opt.value === view.settings[def.key]) o.selected = true;
+            sel.appendChild(o);
+          });
+          sel.addEventListener('change', () => { view.settings[def.key] = sel.value; view.render(); });
+          lbl.appendChild(document.createTextNode(def.label + ' '));
+          lbl.appendChild(sel);
+          row.appendChild(lbl);
+        }
+      });
+    }
+
+    // ── Toolbar controls ─────────────────────────────────────────────────────
+
+    const SPECTRUM_OPTIONS = [
+      { value: 'default',   label: 'Green→Red' },
+      { value: 'viridis',   label: 'Viridis'   },
+      { value: 'plasma',    label: 'Plasma'     },
+      { value: 'cool-warm', label: 'Cool-warm'  },
+      { value: 'grayscale', label: 'Greyscale'  },
+    ];
+
+    function buildToolbar(idx, view, graphNodesRef) {
+      const bar = document.getElementById('toolbar-' + idx);
+
+      // "Random node" button — exercises view.selectNode() programmatically.
+      const btn = document.createElement('button');
+      btn.textContent = '↩ Select random node';
+      btn.addEventListener('click', function() {
+        const nodes = graphNodesRef.current.filter(n => n.data.type !== 'region');
+        if (!nodes.length) return;
+        const node = nodes[Math.floor(Math.random() * nodes.length)];
+        view.selectNode(node.data.id);
+        showNodeInfo(idx, node.data.id, node.data);
+      });
+      bar.appendChild(btn);
+
+      // "Clear" button — exercises view.clearSelection().
+      const clrBtn = document.createElement('button');
+      clrBtn.textContent = '✕ Clear selection';
+      clrBtn.addEventListener('click', function() {
+        view.clearSelection();
+        clearInfo(idx);
+      });
+      bar.appendChild(clrBtn);
+
+      // Colour spectrum selector — exercises view.setColorSpectrum().
+      const specLabel = document.createElement('label');
+      specLabel.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:0.75rem;color:#555;';
+      const specSel = document.createElement('select');
+      specSel.style.cssText = 'font-size:0.75rem;padding:2px 4px;border:1px solid #ccc;border-radius:3px;';
+      SPECTRUM_OPTIONS.forEach(opt => specSel.appendChild(new Option(opt.label, opt.value)));
+      specSel.addEventListener('change', () => view.setColorSpectrum(specSel.value));
+      specLabel.appendChild(document.createTextNode('Spectrum '));
+      specLabel.appendChild(specSel);
+      bar.appendChild(specLabel);
+    }
+
+    // ── Panel initialisation ─────────────────────────────────────────────────
+    // Graph-only panel: one provider, one GraphView.  Node clicks show the info
+    // box via a provider 'select' listener — same pattern as initPanelPair.
+
+    async function initPanel(idx, exampleIndex, backend, initialSettings, settingsDefs) {
+      setLoading(idx, true);
+
+      const session  = new WorkerSession();
+      const settings = Object.assign({}, initialSettings);
+      const provider = new TraceDataProvider({
+        fetchGraph: (p) => session.fetchGraph(p),
+        settings,
+      });
+
+      const graphNodesRef = { current: [] };
+
+      const view = new GraphView(document.getElementById('graph-' + idx), {
+        provider,
+        settings,
+        dagreWorkerUrl: DAGRE_WORKER,
+        elkWorkerUrl:   ELK_WORKER,
+        onRenderStart:  ()      => setLoading(idx, true),
+        onRenderEnd:    (stats) => {
+          setLoading(idx, false);
+          updateStats(idx, stats);
+          graphNodesRef.current = stats.graphNodes;
+        },
+        onError: (err) => setError(idx, err.message || String(err)),
+      });
+      provider.settings = view.settings;
+
+      provider.on('select', function(ev) {
+        const node = graphNodesRef.current.find(function(n) {
+          return n.data.id === (ev.focusId || ev.nodeId);
+        });
+        if (node) showNodeInfo(idx, node.data.id, node.data);
+      });
+      provider.on('clear', function() { clearInfo(idx); });
+
+      buildSettingsRow(idx, view, settingsDefs);
+      buildToolbar(idx, view, graphNodesRef);
+
+      try {
+        await session.call('loadExample', { index: exampleIndex, backend });
+      } catch (e) {
+        setError(idx, 'Failed to load example: ' + (e.message || e));
+        session.terminate();
+        return;
+      }
+
+      view.resetFirstLoad();
+      view.render();
+    }
+
+    // ── Paired panel initialisation (GraphView + SourceCodeView, shared provider) ──
+    //
+    // Creates a TraceDataProvider that all views share.  Each attached view
+    // registers its own 'data' and 'select' listeners via attachProvider.
+
+    async function initPanelPair(graphIdx, srcIdx, exampleIndex, backend,
+                                  initialSettings, settingsDefs,
+                                  timelineContainerEl = null) {
+      setLoading(graphIdx, true);
+
+      // ── Shared objects ──────────────────────────────────────────────────────
+      const session  = new WorkerSession();
+      // A single settings object is shared by both provider (for fetch params)
+      // and GraphView (for style functions).  Changes from UI controls write
+      // through to both via the same reference.
+      const settings = Object.assign({}, initialSettings);
+
+      // ── TraceDataProvider ───────────────────────────────────────────────────
+      const provider = new TraceDataProvider({
+        fetchGraph: (p) => session.fetchGraph(p),
+        settings,
+      });
+
+      // ── GraphView ───────────────────────────────────────────────────────────
+      const graphNodesRef = { current: [] };
+
+      const view = new GraphView(document.getElementById('graph-' + graphIdx), {
+        provider,
+        settings,          // same reference — style functions read this
+        dagreWorkerUrl: DAGRE_WORKER,
+        elkWorkerUrl:   ELK_WORKER,
+        onRenderStart:  ()      => setLoading(graphIdx, true),
+        onRenderEnd:    (stats) => {
+          setLoading(graphIdx, false);
+          updateStats(graphIdx, stats);
+          graphNodesRef.current = stats.graphNodes;
+        },
+        onError: (err) => setError(graphIdx, err.message || String(err)),
+      });
+
+      // GraphView merges options.settings with DEFAULT_SETTINGS in its constructor,
+      // producing a new object.  Sync that merged object back to the provider so
+      // normFromEle() reads the correct defaults (e.g. 'node-color-call': 'duration-total').
+      provider.settings = view.settings;
+
+      // ── TimelineView (optional) ─────────────────────────────────────────────
+      // If a container element is provided, attach a TimelineView to the shared
+      // provider.  It self-wires its own 'data', 'select', and 'clear' listeners
+      // inside attachProvider — no manual cross-highlight code needed here.
+      if (timelineContainerEl) {
+        timelineContainerEl.innerHTML = '';
+        const timeline = new TimelineView(timelineContainerEl, { animScrollMs: 400 });
+        timeline.attachProvider(provider);
+        timeline.initPinchZoom();
+      }
+
+      // ── Shared provider listeners — app-level concerns only ────────────────
+      // GraphView, TimelineView, and SourceCodeView each update themselves via
+      // their own provider listeners.  These listeners handle the one concern
+      // that lives outside the view classes: the info box.
+      provider.on('select', function(ev) {
+        const node = graphNodesRef.current.find(function(n) {
+          return n.data.id === (ev.focusId || ev.nodeId);
+        });
+        if (node) showNodeInfo(graphIdx, node.data.id, node.data);
+      });
+      provider.on('clear', function() { clearInfo(graphIdx); });
+
+      buildSettingsRow(graphIdx, view, settingsDefs);
+      buildToolbar(graphIdx, view, graphNodesRef);
+
+      // ── SourceCodeView ──────────────────────────────────────────────────────
+      const srcStatusEl  = document.getElementById('src-status-'   + srcIdx);
+      const srcView = new SourceCodeView({
+        tabBarEl:        document.getElementById('src-tab-bar-'   + srcIdx),
+        tabPanesEl:      document.getElementById('src-tab-panes-' + srcIdx),
+        hljsThemeLinkEl: document.getElementById('hljs-theme-src'),
+        initialTheme:    'default',
+      });
+
+      // Wire the source view to the provider:
+      //   'fetchstart'  → clears line highlight + stale badges
+      //   'renderend'   → places fresh badges after layout completes
+      //   'select'      → highlights source line when another view selects a node
+      //   'clear'       → clears the line highlight
+      srcView.attachProvider(provider);
+
+      // ── Load example into the worker ────────────────────────────────────────
+      let result;
+      try {
+        result = await session.call('loadExample', { index: exampleIndex, backend });
+      } catch (e) {
+        setError(graphIdx, 'Failed to load example: ' + (e.message || e));
+        srcStatusEl.textContent = '⚠ Failed: ' + (e.message || e);
+        srcStatusEl.classList.add('error');
+        session.terminate();
+        return;
+      }
+
+      // ── Rebuild the source pane from the loaded files ───────────────────────
+      srcView.rebuild(
+        result.cppFiles        || {},
+        result.traceJsonRaw    || null,
+        result.traceFilename   || 'trace.json',
+        result.traceLineRanges || []
+      );
+      srcStatusEl.classList.add('hidden');
+
+      // ── Trigger first render ────────────────────────────────────────────────
+      view.resetFirstLoad();
+      view.render();          // → provider.fetch() → 'fetchstart' → 'data' → 'renderend'
+    }
+
+    // ── Standalone timeline (no paired graph/source view) ────────────────────
+    //
+    // Creates its own provider and worker, fetches the example, and renders.
+    // TimelineView.attachProvider wires up 'data' (render) and 'select'
+    // (bar-click self-highlight) automatically — no extra listeners needed here.
+
+    async function initStandaloneTimeline(containerEl, exampleIndex, backend) {
+      const session  = new WorkerSession();
+      const provider = new TraceDataProvider({
+        fetchGraph: (p) => session.fetchGraph(p),
+        settings:   {},
+      });
+
+      containerEl.innerHTML = '';
+
+      const timeline = new TimelineView(containerEl, { animScrollMs: 400 });
+      timeline.attachProvider(provider);
+      timeline.initPinchZoom();
+
+      try {
+        await session.call('loadExample', { index: exampleIndex, backend });
+      } catch (e) {
+        containerEl.innerHTML = '<p style="padding:0.5em;color:#c0392b;font-size:0.8rem">⚠ ' +
+          (e.message || e) + '</p>';
+        session.terminate();
+        return;
+      }
+
+      // provider.fetch() triggers the 'data' event → TimelineView renders.
+      provider.fetch();
+    }
+
+    // ── Launch all three panels concurrently ─────────────────────────────────
+
+    const DIR_OPTS = [
+      { value: 'vertical',   label: '↕ Vertical'   },
+      { value: 'horizontal', label: '↔ Horizontal' },
+    ];
+    const COLOR_OPTS = [
+      { value: 'duration-total', label: 'Duration'    },
+      { value: 'dag-depth',      label: 'DAG depth'   },
+      { value: 'total-order',    label: 'Total order' },
+      { value: 'fixed',          label: 'Fixed'       },
+    ];
+
+    // Panel 0 — Dot Product: GraphView + SourceCodeView + TimelineView sharing one provider
+    initPanelPair(0, 0, 3, 'openmp',
+      {},
+      [
+        { type: 'checkbox', key: 'element-accesses', label: 'Data nodes' },
+        { type: 'checkbox', key: 'anti-deps',         label: 'Anti-deps' },
+        { type: 'select',   key: 'direction',         label: 'Dir',   options: DIR_OPTS   },
+        { type: 'select',   key: 'node-color-call',   label: 'Color', options: COLOR_OPTS },
+      ],
+      document.getElementById('timeline-scroll-0')
+    );
+
+    // Panel 1 — Horner: region nodes, hierarchical ELK layout
+    initPanel(1, 0, 'openmp',
+      { 'show_regions': true },
+      [
+        { type: 'checkbox', key: 'show_regions',       label: 'Regions'       },
+        { type: 'checkbox', key: 'collapse_iteration', label: 'Collapse iter' },
+        { type: 'checkbox', key: 'element-accesses',   label: 'Data nodes'    },
+        { type: 'select',   key: 'node-color-call',    label: 'Color', options: COLOR_OPTS },
+      ]
+    );
+
+    // Panel 2 — Cellular Automaton: iteration collapse on, regions on
+    initPanel(2, 1, 'openmp',
+      { 'collapse_iteration': true, 'show_regions': true },
+      [
+        { type: 'checkbox', key: 'show_regions',       label: 'Regions'       },
+        { type: 'checkbox', key: 'collapse_iteration', label: 'Collapse iter' },
+        { type: 'checkbox', key: 'element-accesses',   label: 'Data nodes'    },
+        { type: 'select',   key: 'direction',          label: 'Dir', options: DIR_OPTS },
+      ]
+    );
+
+    // Timeline Panel 1 — Cellular Automaton: standalone provider
+    initStandaloneTimeline(
+      document.getElementById('timeline-scroll-1'),
+      1,        // example index (Cellular Automaton)
+      'openmp'
+    );
+
+    // ── SourceCodeView panel initialisation ──────────────────────────────────
+
+    /**
+     * Load an example into a SourceCodeView instance.
+     *
+     * @param {number} idx           Source panel index (0 or 1)
+     * @param {number} exampleIndex  Index into the server examples array
+     * @param {string} backend       e.g. 'openmp'
+     */
+    async function initSourcePanel(idx, exampleIndex, backend) {
+      const statusEl  = document.getElementById('src-status-'   + idx);
+      const tabBarEl  = document.getElementById('src-tab-bar-'  + idx);
+      const tabPanesEl = document.getElementById('src-tab-panes-' + idx);
+
+      const srcView = new SourceCodeView({
+        tabBarEl:        tabBarEl,
+        tabPanesEl:      tabPanesEl,
+        // Share the single hljs-theme-src <link> element; both instances use the
+        // same theme stylesheet (fine for a standalone test page).
+        hljsThemeLinkEl: document.getElementById('hljs-theme-src'),
+        // themeTargetEl defaults to document.body — hljs-theme-dark toggles body class.
+        initialTheme:    'default',
+      });
+
+      const session = new WorkerSession();
+
+      let result;
+      try {
+        result = await session.call('loadExample', { index: exampleIndex, backend });
+      } catch (e) {
+        statusEl.textContent = '⚠ Failed to load: ' + (e.message || e);
+        statusEl.classList.add('error');
+        session.terminate();
+        return;
+      }
+
+      // Rebuild the tab panes from the loaded files.
+      srcView.rebuild(
+        result.cppFiles       || {},
+        result.traceJsonRaw   || null,
+        result.traceFilename  || 'trace.json',
+        result.traceLineRanges || []
+      );
+
+      // Hide the loading overlay once the panes are built.
+      statusEl.classList.add('hidden');
+    }
+
+    // ── Launch both source panels concurrently ───────────────────────────────
+
+    // Source Panel 0 is handled by initPanelPair(0, 0, …) above.
+
+    // Source Panel 1 — Horner (same example as graph Panel 1)
+    initSourcePanel(1, 0, 'openmp');
+  </script>
+
+</body>
+</html>

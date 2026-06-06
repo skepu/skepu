@@ -1,1 +1,0 @@
-This is an interactive performance visualizer for a data-parallel patterns framework, SkePU. It uses Cytoscape to render trace events as DAGs, with a source code browser connected in a separate pane. There are lots of configuration options that affect which and how trace events are rendered and connected, such as regions and node collapsing.

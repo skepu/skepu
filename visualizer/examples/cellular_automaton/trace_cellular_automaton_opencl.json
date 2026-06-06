@@ -2,94 +2,172 @@
     {
         "label": "A",
         "line": 278,
-        "object_id": 1001,
-        "time": 0,
+        "object_id": 1002,
+        "time": 1,
         "type": "allocation"
     },
     {
         "label": "B",
         "line": 278,
-        "object_id": 1002,
-        "time": 3323,
+        "object_id": 1003,
+        "time": 169,
         "type": "allocation"
     },
     {
         "label": "Rules",
         "line": 278,
-        "object_id": 1003,
-        "time": 5694,
+        "object_id": 1004,
+        "time": 308,
         "type": "allocation"
     },
     {
-        "label": "Double-iteration",
-        "line": 211,
-        "region_depth": 1,
-        "time": 39175,
-        "type": "region"
+        "end": 738,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "Domain",
+        "line": 89,
+        "object_ids": [
+            1002,
+            1003
+        ],
+        "start": 738,
+        "type": "virtual_container",
+        "virtual_id": 1092
+    },
+    {
+        "label": "[Global PRNG]",
+        "line": 139,
+        "object_id": 1006,
+        "time": 1652,
+        "type": "allocation"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 239,
+        "object_id": 1007,
+        "time": 1678,
+        "type": "allocation"
     },
     {
         "backend": "OpenCL",
         "direction": "host-to-device",
-        "elements": 4194304,
-        "end": 41864,
-        "label": "A",
+        "elements": 65536,
+        "end": 3157,
+        "label": "[Internal PRNG]",
         "line": 258,
-        "object_id": 1001,
-        "region": "Double-iteration",
-        "start": 39540,
-        "time": 41864,
+        "object_id": 1007,
+        "start": 2177,
+        "time": 3157,
         "type": "transfer"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 270,
+        "object_id": 1007,
+        "time": 3179,
+        "type": "deallocation"
+    },
+    {
+        "backend": "OpenCL",
+        "elements": [
+            65536
+        ],
+        "elwise_inputs": [],
+        "end": 3965,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "init_random",
+        "line": 98,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "Map",
+        "prng": 1006,
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 1647,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "device-to-host",
+        "elements": 65536,
+        "end": 5149,
+        "label": "A",
+        "line": 306,
+        "object_id": 1002,
+        "start": 4568,
+        "time": 5149,
+        "type": "transfer"
+    },
+    {
+        "data_file": "snapshots/A@1.txt",
+        "end": 8891,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "A",
+        "line": 99,
+        "object_id": 1002,
+        "start": 3972,
+        "type": "snapshot"
+    },
+    {
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "Double-iteration",
+        "line": 103,
+        "region_depth": 1,
+        "time": 8894,
+        "type": "region"
     },
     {
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 16,
-        "end": 43053,
+        "end": 9887,
         "label": "Rules",
         "line": 258,
-        "object_id": 1003,
+        "object_id": 1004,
         "region": "Double-iteration",
-        "start": 41892,
-        "time": 43053,
+        "start": 8987,
+        "time": 9887,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 43751,
+        "end": 10421,
         "label": "Internal (overlap-wrap)",
         "line": 258,
-        "object_id": 1006,
+        "object_id": 1011,
         "region": "Double-iteration",
-        "start": 43081,
-        "time": 43751,
+        "start": 9902,
+        "time": 10421,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
-            1001
+            1002
         ],
-        "end": 43780,
+        "end": 10435,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 93,
-        "object_id": 1000,
+        "line": 104,
+        "object_id": 1001,
         "outputs": [
-            1002
+            1003
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 43752,
+        "start": 10422,
         "threads": 8,
         "type": "skeleton_call"
     },
@@ -97,285 +175,271 @@
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 56519,
+        "end": 11293,
         "label": "Internal (overlap-wrap)",
         "line": 258,
-        "object_id": 1009,
+        "object_id": 1014,
         "region": "Double-iteration",
-        "start": 43810,
-        "time": 56519,
+        "start": 10445,
+        "time": 11293,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
-            1002
+            1003
         ],
-        "end": 56552,
+        "end": 11303,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 94,
-        "object_id": 1000,
+        "line": 105,
+        "object_id": 1001,
         "outputs": [
-            1001
+            1002
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 56525,
+        "start": 11293,
         "threads": 8,
         "type": "skeleton_call"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 70286,
+        "elements": 65536,
+        "end": 12228,
         "label": "B",
+        "line": 306,
+        "object_id": 1003,
+        "region": "Double-iteration",
+        "start": 11458,
+        "time": 12228,
+        "type": "transfer"
+    },
+    {
+        "data_file": "snapshots/B@2.txt",
+        "end": 16005,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "B",
+        "line": 106,
+        "object_id": 1003,
+        "region": "Double-iteration",
+        "start": 11306,
+        "type": "snapshot"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "device-to-host",
+        "elements": 65536,
+        "end": 16658,
+        "label": "A",
         "line": 306,
         "object_id": 1002,
         "region": "Double-iteration",
-        "start": 56575,
-        "time": 70286,
+        "start": 16099,
+        "time": 16658,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 467771,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1002
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 56573,
-        "type": "external"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 468853,
+        "data_file": "snapshots/A@3.txt",
+        "end": 20591,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "A",
-        "line": 306,
-        "object_id": 1001,
+        "line": 107,
+        "object_id": 1002,
         "region": "Double-iteration",
-        "start": 467774,
-        "time": 468853,
-        "type": "transfer"
+        "start": 16008,
+        "type": "snapshot"
     },
     {
-        "elwise_inputs": [],
-        "end": 874963,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1001
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 467773,
-        "type": "external"
-    },
-    {
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "Double-iteration",
-        "line": 211,
+        "line": 103,
         "region_depth": 1,
-        "time": 874966,
+        "time": 20596,
         "type": "region"
     },
     {
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 875765,
-        "label": "Internal (overlap-wrap)",
-        "line": 258,
-        "object_id": 1016,
-        "region": "Double-iteration",
-        "start": 874990,
-        "time": 875765,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            2048,
-            2048
-        ],
-        "elwise_inputs": [
-            1001
-        ],
-        "end": 875803,
-        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
-        "label": "update",
-        "line": 93,
-        "object_id": 1000,
-        "outputs": [
-            1002
-        ],
-        "pattern": "MapOverlap 2D",
-        "proxy_inputs": [
-            1003
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 875767,
-        "threads": 8,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 1,
-        "end": 889189,
+        "end": 21149,
         "label": "Internal (overlap-wrap)",
         "line": 258,
         "object_id": 1019,
         "region": "Double-iteration",
-        "start": 875814,
-        "time": 889189,
+        "start": 20613,
+        "time": 21149,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
             1002
         ],
-        "end": 889287,
+        "end": 21164,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 94,
-        "object_id": 1000,
+        "line": 104,
+        "object_id": 1001,
         "outputs": [
-            1001
+            1003
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 889195,
+        "start": 21151,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "host-to-device",
+        "elements": 1,
+        "end": 22053,
+        "label": "Internal (overlap-wrap)",
+        "line": 258,
+        "object_id": 1022,
+        "region": "Double-iteration",
+        "start": 21174,
+        "time": 22053,
+        "type": "transfer"
+    },
+    {
+        "backend": "OpenCL",
+        "elements": [
+            256,
+            256
+        ],
+        "elwise_inputs": [
+            1003
+        ],
+        "end": 22061,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 105,
+        "object_id": 1001,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1004
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 22054,
         "threads": 8,
         "type": "skeleton_call"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 903444,
+        "elements": 65536,
+        "end": 23063,
         "label": "B",
         "line": 306,
-        "object_id": 1002,
+        "object_id": 1003,
         "region": "Double-iteration",
-        "start": 889291,
-        "time": 903444,
+        "start": 22196,
+        "time": 23063,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 1303074,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1002
-        ],
+        "data_file": "snapshots/B@4.txt",
+        "end": 26635,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "B",
+        "line": 106,
+        "object_id": 1003,
         "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 889290,
-        "type": "external"
+        "start": 22076,
+        "type": "snapshot"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 1304047,
+        "elements": 65536,
+        "end": 27362,
         "label": "A",
         "line": 306,
-        "object_id": 1001,
+        "object_id": 1002,
         "region": "Double-iteration",
-        "start": 1303078,
-        "time": 1304047,
+        "start": 26741,
+        "time": 27362,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 1714663,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1001
-        ],
+        "data_file": "snapshots/A@5.txt",
+        "end": 31056,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "A",
+        "line": 107,
+        "object_id": 1002,
         "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 1303077,
-        "type": "external"
+        "start": 26638,
+        "type": "snapshot"
     },
     {
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "Double-iteration",
-        "line": 211,
+        "line": 103,
         "region_depth": 1,
-        "time": 1714666,
+        "time": 31059,
         "type": "region"
     },
     {
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 1715285,
+        "end": 31602,
         "label": "Internal (overlap-wrap)",
         "line": 258,
-        "object_id": 1026,
+        "object_id": 1027,
         "region": "Double-iteration",
-        "start": 1714712,
-        "time": 1715285,
+        "start": 31075,
+        "time": 31602,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
-            1001
+            1002
         ],
-        "end": 1715304,
+        "end": 31618,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 93,
-        "object_id": 1000,
+        "line": 104,
+        "object_id": 1001,
         "outputs": [
-            1002
+            1003
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 1715287,
+        "start": 31603,
         "threads": 8,
         "type": "skeleton_call"
     },
@@ -383,142 +447,135 @@
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 1728190,
+        "end": 32495,
         "label": "Internal (overlap-wrap)",
         "line": 258,
-        "object_id": 1029,
+        "object_id": 1030,
         "region": "Double-iteration",
-        "start": 1715318,
-        "time": 1728190,
+        "start": 31627,
+        "time": 32495,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
-            1002
+            1003
         ],
-        "end": 1728211,
+        "end": 32503,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 94,
-        "object_id": 1000,
+        "line": 105,
+        "object_id": 1001,
         "outputs": [
-            1001
+            1002
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 1728194,
+        "start": 32495,
         "threads": 8,
         "type": "skeleton_call"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 1742963,
+        "elements": 65536,
+        "end": 33519,
         "label": "B",
         "line": 306,
-        "object_id": 1002,
+        "object_id": 1003,
         "region": "Double-iteration",
-        "start": 1728215,
-        "time": 1742963,
+        "start": 32623,
+        "time": 33519,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 2147520,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1002
-        ],
+        "data_file": "snapshots/B@6.txt",
+        "end": 37393,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "B",
+        "line": 106,
+        "object_id": 1003,
         "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 1728214,
-        "type": "external"
+        "start": 32505,
+        "type": "snapshot"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 2148573,
+        "elements": 65536,
+        "end": 38179,
         "label": "A",
         "line": 306,
-        "object_id": 1001,
+        "object_id": 1002,
         "region": "Double-iteration",
-        "start": 2147523,
-        "time": 2148573,
+        "start": 37547,
+        "time": 38179,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 2550796,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1001
-        ],
+        "data_file": "snapshots/A@7.txt",
+        "end": 41739,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "A",
+        "line": 107,
+        "object_id": 1002,
         "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 2147523,
-        "type": "external"
+        "start": 37396,
+        "type": "snapshot"
     },
     {
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "Double-iteration",
-        "line": 211,
+        "line": 103,
         "region_depth": 1,
-        "time": 2550800,
+        "time": 41741,
         "type": "region"
     },
     {
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 2551567,
+        "end": 42270,
         "label": "Internal (overlap-wrap)",
         "line": 258,
-        "object_id": 1036,
+        "object_id": 1035,
         "region": "Double-iteration",
-        "start": 2550862,
-        "time": 2551567,
+        "start": 41757,
+        "time": 42270,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
-            1001
+            1002
         ],
-        "end": 2551589,
+        "end": 42284,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 93,
-        "object_id": 1000,
+        "line": 104,
+        "object_id": 1001,
         "outputs": [
-            1002
+            1003
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 2551569,
+        "start": 42271,
         "threads": 8,
         "type": "skeleton_call"
     },
@@ -526,285 +583,271 @@
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 2564361,
+        "end": 43175,
         "label": "Internal (overlap-wrap)",
         "line": 258,
-        "object_id": 1039,
+        "object_id": 1038,
         "region": "Double-iteration",
-        "start": 2551604,
-        "time": 2564361,
+        "start": 42294,
+        "time": 43175,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
-            1002
+            1003
         ],
-        "end": 2564384,
+        "end": 43183,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 94,
-        "object_id": 1000,
+        "line": 105,
+        "object_id": 1001,
         "outputs": [
-            1001
+            1002
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 2564365,
+        "start": 43176,
         "threads": 8,
         "type": "skeleton_call"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 2578653,
+        "elements": 65536,
+        "end": 44070,
         "label": "B",
         "line": 306,
-        "object_id": 1002,
+        "object_id": 1003,
         "region": "Double-iteration",
-        "start": 2564388,
-        "time": 2578653,
+        "start": 43291,
+        "time": 44070,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 2988071,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1002
-        ],
+        "data_file": "snapshots/B@8.txt",
+        "end": 47841,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "B",
+        "line": 106,
+        "object_id": 1003,
         "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 2564387,
-        "type": "external"
+        "start": 43185,
+        "type": "snapshot"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 2989213,
+        "elements": 65536,
+        "end": 48587,
         "label": "A",
         "line": 306,
-        "object_id": 1001,
+        "object_id": 1002,
         "region": "Double-iteration",
-        "start": 2988074,
-        "time": 2989213,
+        "start": 47947,
+        "time": 48587,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 3384799,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1001
-        ],
+        "data_file": "snapshots/A@9.txt",
+        "end": 52159,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "A",
+        "line": 107,
+        "object_id": 1002,
         "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 2988073,
-        "type": "external"
+        "start": 47845,
+        "type": "snapshot"
     },
     {
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "Double-iteration",
-        "line": 211,
+        "line": 103,
         "region_depth": 1,
-        "time": 3384802,
+        "time": 52162,
         "type": "region"
     },
     {
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 3385507,
+        "end": 52760,
+        "label": "Internal (overlap-wrap)",
+        "line": 258,
+        "object_id": 1043,
+        "region": "Double-iteration",
+        "start": 52176,
+        "time": 52760,
+        "type": "transfer"
+    },
+    {
+        "backend": "OpenCL",
+        "elements": [
+            256,
+            256
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 52775,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 104,
+        "object_id": 1001,
+        "outputs": [
+            1003
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1004
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 52761,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "host-to-device",
+        "elements": 1,
+        "end": 53763,
         "label": "Internal (overlap-wrap)",
         "line": 258,
         "object_id": 1046,
         "region": "Double-iteration",
-        "start": 3384824,
-        "time": 3385507,
+        "start": 52785,
+        "time": 53763,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
-            1001
+            1003
         ],
-        "end": 3385524,
+        "end": 53780,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 93,
-        "object_id": 1000,
+        "line": 105,
+        "object_id": 1001,
         "outputs": [
             1002
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 3385509,
-        "threads": 8,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 1,
-        "end": 3398217,
-        "label": "Internal (overlap-wrap)",
-        "line": 258,
-        "object_id": 1049,
-        "region": "Double-iteration",
-        "start": 3385536,
-        "time": 3398217,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            2048,
-            2048
-        ],
-        "elwise_inputs": [
-            1002
-        ],
-        "end": 3398236,
-        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
-        "label": "update",
-        "line": 94,
-        "object_id": 1000,
-        "outputs": [
-            1001
-        ],
-        "pattern": "MapOverlap 2D",
-        "proxy_inputs": [
-            1003
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 3398221,
+        "start": 53765,
         "threads": 8,
         "type": "skeleton_call"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 3411978,
+        "elements": 65536,
+        "end": 54843,
         "label": "B",
+        "line": 306,
+        "object_id": 1003,
+        "region": "Double-iteration",
+        "start": 53931,
+        "time": 54843,
+        "type": "transfer"
+    },
+    {
+        "data_file": "snapshots/B@10.txt",
+        "end": 58497,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "B",
+        "line": 106,
+        "object_id": 1003,
+        "region": "Double-iteration",
+        "start": 53782,
+        "type": "snapshot"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "device-to-host",
+        "elements": 65536,
+        "end": 59163,
+        "label": "A",
         "line": 306,
         "object_id": 1002,
         "region": "Double-iteration",
-        "start": 3398256,
-        "time": 3411978,
+        "start": 58598,
+        "time": 59163,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 3863197,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1002
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 3398256,
-        "type": "external"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 3864347,
+        "data_file": "snapshots/A@11.txt",
+        "end": 63042,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "A",
-        "line": 306,
-        "object_id": 1001,
+        "line": 107,
+        "object_id": 1002,
         "region": "Double-iteration",
-        "start": 3863209,
-        "time": 3864347,
-        "type": "transfer"
+        "start": 58500,
+        "type": "snapshot"
     },
     {
-        "elwise_inputs": [],
-        "end": 4296231,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1001
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 3863208,
-        "type": "external"
-    },
-    {
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "Double-iteration",
-        "line": 211,
+        "line": 103,
         "region_depth": 1,
-        "time": 4296234,
+        "time": 63045,
         "type": "region"
     },
     {
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 4296826,
+        "end": 63574,
         "label": "Internal (overlap-wrap)",
         "line": 258,
-        "object_id": 1056,
+        "object_id": 1051,
         "region": "Double-iteration",
-        "start": 4296275,
-        "time": 4296826,
+        "start": 63062,
+        "time": 63574,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
-            1001
+            1002
         ],
-        "end": 4296869,
+        "end": 63589,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 93,
-        "object_id": 1000,
+        "line": 104,
+        "object_id": 1001,
         "outputs": [
-            1002
+            1003
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 4296829,
+        "start": 63575,
         "threads": 8,
         "type": "skeleton_call"
     },
@@ -812,142 +855,271 @@
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 4309376,
+        "end": 64514,
+        "label": "Internal (overlap-wrap)",
+        "line": 258,
+        "object_id": 1054,
+        "region": "Double-iteration",
+        "start": 63601,
+        "time": 64514,
+        "type": "transfer"
+    },
+    {
+        "backend": "OpenCL",
+        "elements": [
+            256,
+            256
+        ],
+        "elwise_inputs": [
+            1003
+        ],
+        "end": 64532,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 105,
+        "object_id": 1001,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1004
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 64515,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "device-to-host",
+        "elements": 65536,
+        "end": 65425,
+        "label": "B",
+        "line": 306,
+        "object_id": 1003,
+        "region": "Double-iteration",
+        "start": 64644,
+        "time": 65425,
+        "type": "transfer"
+    },
+    {
+        "data_file": "snapshots/B@12.txt",
+        "end": 69115,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "B",
+        "line": 106,
+        "object_id": 1003,
+        "region": "Double-iteration",
+        "start": 64534,
+        "type": "snapshot"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "device-to-host",
+        "elements": 65536,
+        "end": 69843,
+        "label": "A",
+        "line": 306,
+        "object_id": 1002,
+        "region": "Double-iteration",
+        "start": 69228,
+        "time": 69843,
+        "type": "transfer"
+    },
+    {
+        "data_file": "snapshots/A@13.txt",
+        "end": 73844,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "A",
+        "line": 107,
+        "object_id": 1002,
+        "region": "Double-iteration",
+        "start": 69123,
+        "type": "snapshot"
+    },
+    {
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "Double-iteration",
+        "line": 103,
+        "region_depth": 1,
+        "time": 73847,
+        "type": "region"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "host-to-device",
+        "elements": 1,
+        "end": 74432,
         "label": "Internal (overlap-wrap)",
         "line": 258,
         "object_id": 1059,
         "region": "Double-iteration",
-        "start": 4296927,
-        "time": 4309376,
+        "start": 73867,
+        "time": 74432,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
             1002
         ],
-        "end": 4309426,
+        "end": 74449,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 94,
-        "object_id": 1000,
+        "line": 104,
+        "object_id": 1001,
         "outputs": [
-            1001
+            1003
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 4309406,
+        "start": 74433,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "host-to-device",
+        "elements": 1,
+        "end": 75347,
+        "label": "Internal (overlap-wrap)",
+        "line": 258,
+        "object_id": 1062,
+        "region": "Double-iteration",
+        "start": 74460,
+        "time": 75347,
+        "type": "transfer"
+    },
+    {
+        "backend": "OpenCL",
+        "elements": [
+            256,
+            256
+        ],
+        "elwise_inputs": [
+            1003
+        ],
+        "end": 75358,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 105,
+        "object_id": 1001,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1004
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 75348,
         "threads": 8,
         "type": "skeleton_call"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 4321825,
+        "elements": 65536,
+        "end": 76229,
         "label": "B",
         "line": 306,
-        "object_id": 1002,
+        "object_id": 1003,
         "region": "Double-iteration",
-        "start": 4309448,
-        "time": 4321825,
+        "start": 75484,
+        "time": 76229,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 4755427,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1002
-        ],
+        "data_file": "snapshots/B@14.txt",
+        "end": 79947,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "B",
+        "line": 106,
+        "object_id": 1003,
         "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 4309447,
-        "type": "external"
+        "start": 75360,
+        "type": "snapshot"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 4756497,
+        "elements": 65536,
+        "end": 80675,
         "label": "A",
         "line": 306,
-        "object_id": 1001,
+        "object_id": 1002,
         "region": "Double-iteration",
-        "start": 4755430,
-        "time": 4756497,
+        "start": 80043,
+        "time": 80675,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 5171117,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1001
-        ],
+        "data_file": "snapshots/A@15.txt",
+        "end": 84575,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "A",
+        "line": 107,
+        "object_id": 1002,
         "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 4755429,
-        "type": "external"
+        "start": 79954,
+        "type": "snapshot"
     },
     {
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "Double-iteration",
-        "line": 211,
+        "line": 103,
         "region_depth": 1,
-        "time": 5171123,
+        "time": 84581,
         "type": "region"
     },
     {
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 5171905,
+        "end": 85151,
         "label": "Internal (overlap-wrap)",
         "line": 258,
-        "object_id": 1066,
+        "object_id": 1067,
         "region": "Double-iteration",
-        "start": 5171145,
-        "time": 5171905,
+        "start": 84598,
+        "time": 85151,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
-            1001
+            1002
         ],
-        "end": 5171945,
+        "end": 85167,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 93,
-        "object_id": 1000,
+        "line": 104,
+        "object_id": 1001,
         "outputs": [
-            1002
+            1003
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 5171906,
+        "start": 85152,
         "threads": 8,
         "type": "skeleton_call"
     },
@@ -955,142 +1127,135 @@
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 5186114,
+        "end": 86077,
         "label": "Internal (overlap-wrap)",
         "line": 258,
-        "object_id": 1069,
+        "object_id": 1070,
         "region": "Double-iteration",
-        "start": 5171956,
-        "time": 5186114,
+        "start": 85187,
+        "time": 86077,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
-            1002
+            1003
         ],
-        "end": 5186154,
+        "end": 86097,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 94,
-        "object_id": 1000,
+        "line": 105,
+        "object_id": 1001,
         "outputs": [
-            1001
+            1002
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 5186118,
+        "start": 86078,
         "threads": 8,
         "type": "skeleton_call"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 5201107,
+        "elements": 65536,
+        "end": 87152,
         "label": "B",
         "line": 306,
-        "object_id": 1002,
+        "object_id": 1003,
         "region": "Double-iteration",
-        "start": 5186159,
-        "time": 5201107,
+        "start": 86250,
+        "time": 87152,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 5617473,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1002
-        ],
+        "data_file": "snapshots/B@16.txt",
+        "end": 90873,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "B",
+        "line": 106,
+        "object_id": 1003,
         "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 5186158,
-        "type": "external"
+        "start": 86099,
+        "type": "snapshot"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 5619091,
+        "elements": 65536,
+        "end": 91644,
         "label": "A",
         "line": 306,
-        "object_id": 1001,
+        "object_id": 1002,
         "region": "Double-iteration",
-        "start": 5617476,
-        "time": 5619091,
+        "start": 90986,
+        "time": 91644,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 6026808,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1001
-        ],
+        "data_file": "snapshots/A@17.txt",
+        "end": 95335,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "A",
+        "line": 107,
+        "object_id": 1002,
         "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 5617475,
-        "type": "external"
+        "start": 90876,
+        "type": "snapshot"
     },
     {
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "Double-iteration",
-        "line": 211,
+        "line": 103,
         "region_depth": 1,
-        "time": 6026811,
+        "time": 95338,
         "type": "region"
     },
     {
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 6027587,
+        "end": 95908,
         "label": "Internal (overlap-wrap)",
         "line": 258,
-        "object_id": 1076,
+        "object_id": 1075,
         "region": "Double-iteration",
-        "start": 6026843,
-        "time": 6027587,
+        "start": 95363,
+        "time": 95908,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
-            1001
+            1002
         ],
-        "end": 6027675,
+        "end": 95923,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 93,
-        "object_id": 1000,
+        "line": 104,
+        "object_id": 1001,
         "outputs": [
-            1002
+            1003
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 6027606,
+        "start": 95909,
         "threads": 8,
         "type": "skeleton_call"
     },
@@ -1098,417 +1263,259 @@
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 6042075,
+        "end": 96811,
         "label": "Internal (overlap-wrap)",
         "line": 258,
-        "object_id": 1079,
+        "object_id": 1078,
         "region": "Double-iteration",
-        "start": 6027688,
-        "time": 6042075,
+        "start": 95934,
+        "time": 96811,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
-            1002
+            1003
         ],
-        "end": 6042112,
+        "end": 96822,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 94,
-        "object_id": 1000,
+        "line": 105,
+        "object_id": 1001,
         "outputs": [
-            1001
+            1002
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 6042079,
+        "start": 96812,
         "threads": 8,
         "type": "skeleton_call"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 6055646,
+        "elements": 65536,
+        "end": 97830,
         "label": "B",
         "line": 306,
-        "object_id": 1002,
+        "object_id": 1003,
         "region": "Double-iteration",
-        "start": 6042115,
-        "time": 6055646,
+        "start": 96962,
+        "time": 97830,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 6469167,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1002
-        ],
+        "data_file": "snapshots/B@18.txt",
+        "end": 101508,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "B",
+        "line": 106,
+        "object_id": 1003,
         "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 6042114,
-        "type": "external"
+        "start": 96824,
+        "type": "snapshot"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 6470253,
+        "elements": 65536,
+        "end": 102190,
         "label": "A",
         "line": 306,
-        "object_id": 1001,
+        "object_id": 1002,
         "region": "Double-iteration",
-        "start": 6469170,
-        "time": 6470253,
+        "start": 101641,
+        "time": 102190,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 7011509,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1001
-        ],
+        "data_file": "snapshots/A@19.txt",
+        "end": 106723,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "A",
+        "line": 107,
+        "object_id": 1002,
         "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 6469169,
-        "type": "external"
+        "start": 101512,
+        "type": "snapshot"
     },
     {
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "Double-iteration",
-        "line": 211,
+        "line": 103,
         "region_depth": 1,
-        "time": 7011512,
+        "time": 106728,
         "type": "region"
     },
     {
         "backend": "OpenCL",
         "direction": "host-to-device",
         "elements": 1,
-        "end": 7012321,
+        "end": 107327,
+        "label": "Internal (overlap-wrap)",
+        "line": 258,
+        "object_id": 1083,
+        "region": "Double-iteration",
+        "start": 106751,
+        "time": 107327,
+        "type": "transfer"
+    },
+    {
+        "backend": "OpenCL",
+        "elements": [
+            256,
+            256
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 107345,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "update",
+        "line": 104,
+        "object_id": 1001,
+        "outputs": [
+            1003
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [
+            1004
+        ],
+        "region": "Double-iteration",
+        "scalar_inputs": [],
+        "start": 107328,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "host-to-device",
+        "elements": 1,
+        "end": 108209,
         "label": "Internal (overlap-wrap)",
         "line": 258,
         "object_id": 1086,
         "region": "Double-iteration",
-        "start": 7011564,
-        "time": 7012321,
+        "start": 107369,
+        "time": 108209,
         "type": "transfer"
     },
     {
         "backend": "OpenCL",
         "elements": [
-            2048,
-            2048
+            256,
+            256
         ],
         "elwise_inputs": [
-            1001
+            1003
         ],
-        "end": 7012342,
+        "end": 108219,
         "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "update",
-        "line": 93,
-        "object_id": 1000,
+        "line": 105,
+        "object_id": 1001,
         "outputs": [
             1002
         ],
         "pattern": "MapOverlap 2D",
         "proxy_inputs": [
-            1003
+            1004
         ],
         "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 7012324,
-        "threads": 8,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 1,
-        "end": 7025860,
-        "label": "Internal (overlap-wrap)",
-        "line": 258,
-        "object_id": 1089,
-        "region": "Double-iteration",
-        "start": 7012371,
-        "time": 7025860,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            2048,
-            2048
-        ],
-        "elwise_inputs": [
-            1002
-        ],
-        "end": 7025882,
-        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
-        "label": "update",
-        "line": 94,
-        "object_id": 1000,
-        "outputs": [
-            1001
-        ],
-        "pattern": "MapOverlap 2D",
-        "proxy_inputs": [
-            1003
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 7025864,
+        "start": 108210,
         "threads": 8,
         "type": "skeleton_call"
     },
     {
         "backend": "OpenCL",
         "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 7042200,
+        "elements": 65536,
+        "end": 109171,
         "label": "B",
+        "line": 306,
+        "object_id": 1003,
+        "region": "Double-iteration",
+        "start": 108394,
+        "time": 109171,
+        "type": "transfer"
+    },
+    {
+        "data_file": "snapshots/B@20.txt",
+        "end": 112910,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
+        "label": "B",
+        "line": 106,
+        "object_id": 1003,
+        "region": "Double-iteration",
+        "start": 108222,
+        "type": "snapshot"
+    },
+    {
+        "backend": "OpenCL",
+        "direction": "device-to-host",
+        "elements": 65536,
+        "end": 113625,
+        "label": "A",
         "line": 306,
         "object_id": 1002,
         "region": "Double-iteration",
-        "start": 7025886,
-        "time": 7042200,
+        "start": 113016,
+        "time": 113625,
         "type": "transfer"
     },
     {
-        "elwise_inputs": [],
-        "end": 7579387,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1002
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 7025885,
-        "type": "external"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 7583599,
+        "data_file": "snapshots/A@21.txt",
+        "end": 118082,
+        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
         "label": "A",
-        "line": 306,
-        "object_id": 1001,
-        "region": "Double-iteration",
-        "start": 7579390,
-        "time": 7583599,
-        "type": "transfer"
-    },
-    {
-        "elwise_inputs": [],
-        "end": 8068770,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1001
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 7579389,
-        "type": "external"
-    },
-    {
-        "label": "Double-iteration",
-        "line": 211,
-        "region_depth": 1,
-        "time": 8068773,
-        "type": "region"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 1,
-        "end": 8069418,
-        "label": "Internal (overlap-wrap)",
-        "line": 258,
-        "object_id": 1096,
-        "region": "Double-iteration",
-        "start": 8068797,
-        "time": 8069418,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            2048,
-            2048
-        ],
-        "elwise_inputs": [
-            1001
-        ],
-        "end": 8069438,
-        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
-        "label": "update",
-        "line": 93,
-        "object_id": 1000,
-        "outputs": [
-            1002
-        ],
-        "pattern": "MapOverlap 2D",
-        "proxy_inputs": [
-            1003
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 8069420,
-        "threads": 8,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 1,
-        "end": 8084754,
-        "label": "Internal (overlap-wrap)",
-        "line": 258,
-        "object_id": 1099,
-        "region": "Double-iteration",
-        "start": 8069452,
-        "time": 8084754,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            2048,
-            2048
-        ],
-        "elwise_inputs": [
-            1002
-        ],
-        "end": 8084774,
-        "file": "/Users/august/Developer/skepu-alpha/examples/cellular_automaton.cpp",
-        "label": "update",
-        "line": 94,
-        "object_id": 1000,
-        "outputs": [
-            1001
-        ],
-        "pattern": "MapOverlap 2D",
-        "proxy_inputs": [
-            1003
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 8084757,
-        "threads": 8,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 8100108,
-        "label": "B",
-        "line": 306,
+        "line": 107,
         "object_id": 1002,
         "region": "Double-iteration",
-        "start": 8084778,
-        "time": 8100108,
-        "type": "transfer"
+        "start": 112914,
+        "type": "snapshot"
     },
     {
         "elwise_inputs": [],
-        "end": 8665870,
-        "file": "",
+        "end": 128803,
+        "file": "..//skepu-headers/src/skepu-lib/io.hpp",
         "label": "I/O",
-        "line": 0,
+        "line": 54,
         "outputs": [],
         "proxy_inputs": [
             1002
         ],
-        "region": "Double-iteration",
         "scalar_inputs": [],
-        "start": 8084777,
-        "type": "external"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "device-to-host",
-        "elements": 4194304,
-        "end": 8666983,
-        "label": "A",
-        "line": 306,
-        "object_id": 1001,
-        "region": "Double-iteration",
-        "start": 8665879,
-        "time": 8666983,
-        "type": "transfer"
-    },
-    {
-        "elwise_inputs": [],
-        "end": 9226706,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1001
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 8665878,
-        "type": "external"
-    },
-    {
-        "elwise_inputs": [],
-        "end": 9773399,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1001
-        ],
-        "scalar_inputs": [],
-        "start": 9226709,
+        "start": 118088,
         "type": "external"
     },
     {
         "label": "Rules",
         "line": 308,
-        "object_id": 1003,
-        "time": 9773470,
+        "object_id": 1004,
+        "time": 128876,
         "type": "deallocation"
     },
     {
         "label": "B",
         "line": 308,
-        "object_id": 1002,
-        "time": 9773771,
+        "object_id": 1003,
+        "time": 128966,
         "type": "deallocation"
     },
     {
         "label": "A",
         "line": 308,
-        "object_id": 1001,
-        "time": 9774060,
+        "object_id": 1002,
+        "time": 129022,
         "type": "deallocation"
     }
 ]

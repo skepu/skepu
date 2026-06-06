@@ -1,0 +1,24 @@
+{
+  "root": [
+    "benchmark.hpp",
+    "blas.hpp",
+    "complex.hpp",
+    "filter.hpp",
+    "io.hpp",
+    "ml.hpp",
+    "util.hpp"
+  ],
+  "dnn": [
+    "activation.hpp",
+    "conv1d.hpp",
+    "conv2d.hpp",
+    "csv_io.hpp",
+    "dense.hpp",
+    "dnn_support.hpp",
+    "dropout.hpp",
+    "flatten.hpp",
+    "layer.hpp",
+    "pool2d.hpp",
+    "sequential_model.hpp"
+  ]
+}

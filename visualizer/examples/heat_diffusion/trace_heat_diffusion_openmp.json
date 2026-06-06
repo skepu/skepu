@@ -1,0 +1,772 @@
+[
+    {
+        "label": "DomainA",
+        "line": 278,
+        "object_id": 1001,
+        "time": 1,
+        "type": "allocation"
+    },
+    {
+        "label": "DomainB",
+        "line": 278,
+        "object_id": 1002,
+        "time": 632,
+        "type": "allocation"
+    },
+    {
+        "end": 667,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "Domain",
+        "line": 128,
+        "object_ids": [
+            1001,
+            1002
+        ],
+        "start": 667,
+        "type": "virtual_container",
+        "virtual_id": 1025
+    },
+    {
+        "elwise_inputs": [],
+        "end": 673,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "[external]",
+        "line": 130,
+        "outputs": [
+            1001,
+            1002
+        ],
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 668,
+        "type": "external"
+    },
+    {
+        "data_file": "snapshots/DomainA@1.txt",
+        "end": 1842,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainA",
+        "line": 147,
+        "object_id": 1001,
+        "start": 675,
+        "type": "snapshot"
+    },
+    {
+        "data_file": "snapshots/DomainB@2.txt",
+        "end": 2753,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainB",
+        "line": 148,
+        "object_id": 1002,
+        "start": 1845,
+        "type": "snapshot"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 3046,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 151,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 2777,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 3142,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 152,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 3054,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "data_file": "snapshots/DomainB@3.txt",
+        "end": 5336,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainB",
+        "line": 153,
+        "object_id": 1002,
+        "start": 3149,
+        "type": "snapshot"
+    },
+    {
+        "data_file": "snapshots/DomainA@4.txt",
+        "end": 6343,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainA",
+        "line": 154,
+        "object_id": 1001,
+        "start": 5341,
+        "type": "snapshot"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 6433,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 151,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 6348,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 6543,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 152,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 6437,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "data_file": "snapshots/DomainB@5.txt",
+        "end": 7994,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainB",
+        "line": 153,
+        "object_id": 1002,
+        "start": 6546,
+        "type": "snapshot"
+    },
+    {
+        "data_file": "snapshots/DomainA@6.txt",
+        "end": 9085,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainA",
+        "line": 154,
+        "object_id": 1001,
+        "start": 7997,
+        "type": "snapshot"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 9236,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 151,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 9090,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 9328,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 152,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 9248,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "data_file": "snapshots/DomainB@7.txt",
+        "end": 10864,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainB",
+        "line": 153,
+        "object_id": 1002,
+        "start": 9331,
+        "type": "snapshot"
+    },
+    {
+        "data_file": "snapshots/DomainA@8.txt",
+        "end": 12189,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainA",
+        "line": 154,
+        "object_id": 1001,
+        "start": 10876,
+        "type": "snapshot"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 12312,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 151,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 12196,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 12418,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 152,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 12317,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "data_file": "snapshots/DomainB@9.txt",
+        "end": 14554,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainB",
+        "line": 153,
+        "object_id": 1002,
+        "start": 12427,
+        "type": "snapshot"
+    },
+    {
+        "data_file": "snapshots/DomainA@10.txt",
+        "end": 17081,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainA",
+        "line": 154,
+        "object_id": 1001,
+        "start": 14560,
+        "type": "snapshot"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 17265,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 151,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 17103,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 17358,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 152,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 17271,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "data_file": "snapshots/DomainB@11.txt",
+        "end": 18977,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainB",
+        "line": 153,
+        "object_id": 1002,
+        "start": 17362,
+        "type": "snapshot"
+    },
+    {
+        "data_file": "snapshots/DomainA@12.txt",
+        "end": 20044,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainA",
+        "line": 154,
+        "object_id": 1001,
+        "start": 18988,
+        "type": "snapshot"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 20232,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 151,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 20048,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 20372,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 152,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 20237,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "data_file": "snapshots/DomainB@13.txt",
+        "end": 21543,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainB",
+        "line": 153,
+        "object_id": 1002,
+        "start": 20374,
+        "type": "snapshot"
+    },
+    {
+        "data_file": "snapshots/DomainA@14.txt",
+        "end": 22688,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainA",
+        "line": 154,
+        "object_id": 1001,
+        "start": 21545,
+        "type": "snapshot"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 22813,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 151,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 22690,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 22924,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 152,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 22816,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "data_file": "snapshots/DomainB@15.txt",
+        "end": 24504,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainB",
+        "line": 153,
+        "object_id": 1002,
+        "start": 22927,
+        "type": "snapshot"
+    },
+    {
+        "data_file": "snapshots/DomainA@16.txt",
+        "end": 26056,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainA",
+        "line": 154,
+        "object_id": 1001,
+        "start": 24510,
+        "type": "snapshot"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 26360,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 151,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 26063,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 26604,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 152,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 26436,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "data_file": "snapshots/DomainB@17.txt",
+        "end": 27886,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainB",
+        "line": 153,
+        "object_id": 1002,
+        "start": 26607,
+        "type": "snapshot"
+    },
+    {
+        "data_file": "snapshots/DomainA@18.txt",
+        "end": 29008,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainA",
+        "line": 154,
+        "object_id": 1001,
+        "start": 27888,
+        "type": "snapshot"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 29123,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 151,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 29010,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 29257,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 152,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 29125,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "data_file": "snapshots/DomainB@19.txt",
+        "end": 30495,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainB",
+        "line": 153,
+        "object_id": 1002,
+        "start": 29260,
+        "type": "snapshot"
+    },
+    {
+        "data_file": "snapshots/DomainA@20.txt",
+        "end": 31729,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainA",
+        "line": 154,
+        "object_id": 1001,
+        "start": 30497,
+        "type": "snapshot"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1001
+        ],
+        "end": 31847,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 151,
+        "object_id": 1000,
+        "outputs": [
+            1002
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 31731,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            64,
+            64
+        ],
+        "elwise_inputs": [
+            1002
+        ],
+        "end": 31983,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "update",
+        "line": 152,
+        "object_id": 1000,
+        "outputs": [
+            1001
+        ],
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 31850,
+        "threads": 8,
+        "type": "skeleton_call"
+    },
+    {
+        "data_file": "snapshots/DomainB@21.txt",
+        "end": 33250,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainB",
+        "line": 153,
+        "object_id": 1002,
+        "start": 31987,
+        "type": "snapshot"
+    },
+    {
+        "data_file": "snapshots/DomainA@22.txt",
+        "end": 34677,
+        "file": "/Users/august/Developer/skepu-alpha/examples/heat_diffusion.cpp",
+        "label": "DomainA",
+        "line": 154,
+        "object_id": 1001,
+        "start": 33251,
+        "type": "snapshot"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 36057,
+        "file": "..//skepu-headers/src/skepu-lib/io.hpp",
+        "label": "I/O",
+        "line": 54,
+        "outputs": [],
+        "proxy_inputs": [
+            1001
+        ],
+        "scalar_inputs": [],
+        "start": 34679,
+        "type": "external"
+    },
+    {
+        "label": "DomainB",
+        "line": 308,
+        "object_id": 1002,
+        "time": 36059,
+        "type": "deallocation"
+    },
+    {
+        "label": "DomainA",
+        "line": 308,
+        "object_id": 1001,
+        "time": 36060,
+        "type": "deallocation"
+    }
+]

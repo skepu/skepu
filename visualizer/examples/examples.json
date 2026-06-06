@@ -5,6 +5,7 @@
       "openmp": "horner/trace_horner_openmp.json",
       "opencl": "horner/trace_horner_opencl.json"
     },
+    "snapshot_archive" : "horner/snapshots_horner.zip",
     "cpp_files": ["horner/horner.cpp"]
   },
   {
@@ -13,6 +14,7 @@
       "openmp": "cellular_automaton/trace_cellular_automaton_openmp.json",
       "opencl": "cellular_automaton/trace_cellular_automaton_opencl.json"
     },
+    "snapshot_archive" : "cellular_automaton/snapshots_cellular_automaton.zip",
     "cpp_files": ["cellular_automaton/cellular_automaton.cpp"]
   },
   {
@@ -30,5 +32,13 @@
       "opencl": "dotproduct/trace_dotproduct_opencl.json"
     },
     "cpp_files": ["dotproduct/dotproduct.cpp"]
+  },
+  {
+    "title": "Heat Diffusion",
+    "trace": {
+      "openmp": "heat_diffusion/trace_heat_diffusion_openmp.json"
+    },
+    "snapshot_archive" : "heat_diffusion/snapshots_heat_diffusion.zip",
+    "cpp_files": ["heat_diffusion/heat_diffusion.cpp"]
   }
 ]

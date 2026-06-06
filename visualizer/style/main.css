@@ -1,0 +1,1455 @@
+/* ── Highlight / selection colour ────────────────────────────────────────── */
+/* Sync with HIGHLIGHT_COLOR_LIGHT / HIGHLIGHT_COLOR_DARK in state.js.        */
+:root {
+  --highlight:       #0055cc;
+  --highlight-alpha: rgba(0, 85, 204, 0.18);
+}
+html.dark-mode {
+  --highlight:       #e8720c;
+  --highlight-alpha: rgba(232, 114, 12, 0.22);
+}
+
+body, html {
+  padding: 0; margin: 0;
+  display: flex;
+  flex-flow: column;
+  height: 100%;
+  background-color: black;
+}
+code, pre {
+  margin: 0;
+}
+.outer_container
+{
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  background-color: white;
+}
+#left_pane
+{
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+#menubar
+{
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  background-color: #ddd;
+  border-bottom: 1px solid #aaa;
+  font-family: sans-serif;
+  font-size: 0.8em;
+  user-select: none;
+  position: relative;
+  z-index: 100;
+}
+
+#hidden-controls
+{
+  display: none;
+}
+
+/* Top-level menu item */
+.menu
+{
+  position: relative;
+}
+
+.menu-title, .menu-anfang
+{
+  display: block;
+  background: none;
+  border: none;
+  padding: 0.1em 0.7em;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: bold;
+  white-space: nowrap;
+  height: 100%;
+}
+
+.menu-anfang
+{
+    cursor: pointer;
+    font-size: 1.15em;
+    position: relative;
+    top: 0.05em;
+    text-decoration: none;
+    color: inherit !important;
+}
+
+.menu-title:hover,
+.menu.open > .menu-title
+{
+  background-color: #bbb;
+}
+
+/* Dropdowns */
+.menu > .dropdown
+{
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #aaa;
+  box-shadow: 2px 4px 10px rgba(0,0,0,0.18);
+  min-width: 170px;
+  z-index: 1000;
+  font-size: 1.1em;
+}
+
+.menu.open > .dropdown
+{
+  display: block;
+}
+
+.dropdown button,
+.submenu-title
+{
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.35em 0.75em;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.dropdown button:hover,
+.submenu:hover > .submenu-title
+{
+  background-color: #ddeeff;
+}
+
+/* Keyboard shortcut hint — pushed to the right edge of the menu item */
+.menu-key
+{
+  margin-left: auto;
+  padding-left: 1.5em;
+  font-size: 0.9em;
+  flex-shrink: 0;
+}
+
+/* Check/radio icon column */
+.menu-icon
+{
+  display: inline-block;
+  width: 1.3em;
+  text-align: center;
+  margin-right: 0.3em;
+  flex-shrink: 0;
+  color: #333;
+}
+
+/* Color-spectrum dropdown — wider to fit swatch + note */
+.dropdown-spectrum
+{
+  min-width: 220px;
+}
+
+/* Small gradient swatch shown next to each spectrum option */
+.spectrum-swatch
+{
+  display: inline-block;
+  margin-left: auto;
+  padding-left: 0.6em;
+  width: 3.5em;
+  height: 1em;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Separator */
+.menu-sep
+{
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 0.2em 0;
+}
+
+/* Submenus */
+.submenu
+{
+  position: relative;
+}
+
+.submenu-title
+{
+  justify-content: space-between;
+}
+
+.menu-arrow
+{
+  margin-left: 1.5em;
+  opacity: 0.5;
+  font-size: 0.85em;
+  flex-shrink: 0;
+}
+
+.submenu > .dropdown
+{
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 100%;
+  background: white;
+  border: 1px solid #aaa;
+  box-shadow: 2px 4px 10px rgba(0,0,0,0.18);
+  min-width: 170px;
+  z-index: 1001;
+}
+
+.submenu:hover > .dropdown
+{
+  display: block;
+}
+
+/* Trace form dropdown */
+.dropdown-wide
+{
+  min-width: 240px;
+  padding: 0.6em 0.8em;
+}
+
+.menu-form-row
+{
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.5em;
+  padding: 0 0.7em;
+}
+
+.menu-form-row label
+{
+  font-size: 0.85em;
+  color: #666;
+  margin-bottom: 0.2em;
+}
+
+.menu-form-row input[type="file"]
+{
+  font-size: 0.9em;
+}
+
+.menu-form-row input[type="submit"],
+#load-trace-btn
+{
+  display: block;
+  cursor: pointer;
+  padding: 0.35em 0.7em;
+  width: 100%;
+  border: none;
+  border-radius: 0.3em;
+  font-family: inherit;
+  font-weight: bold;
+  text-align: center;
+  background: #1a6abf;
+  color: #fff;
+}
+#load-trace-btn:hover { background: #134e8c; }
+#alert-bar
+{
+  display: none;
+  flex: 0 0 auto;
+  background-color: #fffbe6;
+  color: #7a5200;
+  border-bottom: 1px solid #f0d060;
+  font-family: monospace;
+  font-size: 0.75em;
+  padding: 0.2em 0.8em;
+  text-align: center;
+}
+
+/* Render-in-progress indicator ─────────────────────────────────────── */
+@keyframes _spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+#render-indicator
+{
+  display: none;   /* hidden while idle */
+  align-items: center;
+}
+
+#render-indicator.active
+{
+  display: flex;
+}
+
+.render-spinner
+{
+  display: inline-block;
+  width:  0.85em;
+  height: 0.85em;
+  border: 2px solid #bbb;
+  border-top-color: #555;
+  border-radius: 50%;
+  animation: _spin 0.75s linear infinite;
+  flex-shrink: 0;
+  margin-right: 0.35em;
+  vertical-align: middle;
+}
+
+/* Right-aligned ⓘ info button */
+.menu-info-btn
+{
+  margin-left: auto;
+}
+
+.menu-info-title
+{
+  font-size: 1.1em;
+  padding: 0.2em 0.7em;
+}
+
+/* Larger info dropdown, anchored to the right edge.
+   Specificity must match .menu > .dropdown (0,2,0) so the left:auto here
+   beats the left:0 set there — same specificity, later in file wins. */
+.menu > .dropdown-info
+{
+  left: auto;
+  right: 0;
+  min-width: 200px;
+  padding: 0.6em 0.9em;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+
+.dropdown-info p
+{
+  margin: 0.3em 0;
+  white-space: nowrap;
+}
+
+.dropdown-info a
+{
+  color: #336;
+}
+
+#visualization
+{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-flow: column;
+  position: relative;   /* anchor for #cy-layout-overlay */
+}
+
+/* Overlay shown while dagre is running — covers the graph so the intermediate
+   (pre-layout) node positions are never visible to the user.              */
+#cy-layout-overlay
+{
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: rgba(255, 255, 255, 1);
+  align-items: center;
+  justify-content: center;
+}
+
+#cy-layout-overlay.active
+{
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+#cy-stop-btn
+{
+  background: none;
+  border: 1.5px solid #aaa;
+  border-radius: 0.4em;
+  padding: 0.3em 0.9em;
+  font-family: monospace;
+  font-size: 0.85em;
+  color: #555;
+  cursor: pointer;
+  opacity: 0.85;
+}
+#cy-stop-btn:hover { border-color: #666; color: #222; opacity: 1; }
+
+html.dark-mode #cy-layout-overlay { background: rgba(26, 24, 31, 1); }
+html.dark-mode #cy-stop-btn { border-color: #555; color: #aaa; }
+html.dark-mode #cy-stop-btn:hover { border-color: #999; color: #ddd; }
+
+/* When a canvas snapshot is set as the overlay background, hide the spinner
+   and stop button — the old graph provides context and the transition is fast
+   enough that a loading indicator would just be distracting noise.        */
+#cy-layout-overlay.has-snapshot .cy-layout-spinner,
+#cy-layout-overlay.has-snapshot #cy-stop-btn { display: none; }
+
+/* Simulation progress bar — thin strip anchored to the bottom of #visualization */
+#sim-progress {
+  display: none;           /* hidden when simulation is inactive */
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 5;
+  background: rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  overflow: visible;
+  transition: height 0.12s;
+}
+#sim-progress:hover,
+#sim-progress.sim-dragging {
+  height: 5px;
+}
+#sim-progress-fill {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  width: 0%;
+  background: #0055cc;
+  transition: width 0.15s linear;
+  pointer-events: none;
+}
+#sim-progress.sim-dragging #sim-progress-fill {
+  transition: none;
+}
+#sim-progress-handle {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 0%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 10px;
+  background: #0055cc;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+}
+#sim-progress:hover #sim-progress-handle,
+#sim-progress.sim-dragging #sim-progress-handle {
+  opacity: 1;
+}
+#sim-ticks {
+  display: none;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+#sim-progress.sim-dragging #sim-ticks {
+  display: block;
+}
+.sim-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.35);
+}
+html.dark-mode #sim-progress          { background: rgba(255, 255, 255, 0.08); }
+html.dark-mode #sim-progress-fill     { background: #e8720c; }
+html.dark-mode #sim-progress-handle   { background: #e8720c; }
+
+.cy-layout-spinner
+{
+  width:  3.2em;
+  height: 3.2em;
+  border: 5px solid #ddd;
+  border-top-color: #555;
+  border-radius: 50%;
+  animation: _spin 0.8s linear infinite;
+}
+
+/* Prevent the Cytoscape canvas from swallowing pointer events while any menu is open */
+#left_pane:has(.menu.open) #visualization
+{
+  pointer-events: none;
+}
+#legend {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.6em 2em;
+  padding: 0.5em 1em 0.6em;
+  font-size: 0.72em;
+  font-family: sans-serif;
+  border-top: 1px solid #ddd;
+  background: #fafafa;
+}
+
+.legend-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+
+.legend-section-title {
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  font-size: 0.82em;
+  color: #999;
+  margin-bottom: 0.1em;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15em 1.1em;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  white-space: nowrap;
+  line-height: 1.6;
+  border-radius: 3px;
+  padding: 0 0.25em;
+  transition: background-color 0.1s;
+}
+
+.legend-item-hovered {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+html.dark-mode .legend-item-hovered {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Spectrum bar section */
+.legend-spectrum-section {
+  min-width: 10em;
+}
+
+.legend-spectrum-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.legend-spec-end {
+  font-size: 0.9em;
+  color: #999;
+}
+
+#color-bar {
+  display: inline-block;
+  width: 10.8em;
+  height: 1.1em;
+  border-radius: 2px;
+  background: linear-gradient(to right, #0f0, #f00);
+  position: relative;
+  top: 0;
+}
+
+#cy {
+  flex: 1 1 auto;
+  min-height: 4em;
+  isolation: isolate;  /* confine Cytoscape's canvas z-indexes so #sim-progress sits above them */
+  background: white;   /* opaque base so the snapshot overlay (background:inherit) is solid */
+}
+
+#gantt-pane
+{
+  flex: 0 0 0;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-top: 2px solid #aaa;
+  min-height: 0;
+  transition: flex-basis 0.15s ease;
+}
+
+
+#gantt-svg-container
+{
+  flex: 1 1 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 0;
+}
+
+.gantt-bar.gantt-selected
+{
+  stroke: var(--highlight) !important;
+  stroke-width: 2.5 !important;
+}
+
+#cy:hover
+{
+/*  box-shadow: 0 0 3em gray inset;*/
+  cursor: pointer;
+}
+#right_pane
+{
+  display: flex;
+  flex-flow: column;
+  flex: 0 0 380px;
+  min-width: 0;
+}
+#cpp_container
+{
+  tab-size: 3;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+#cpp_tab_bar
+{
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  scrollbar-width: none;       /* Firefox */
+  background-color: #f0f0f0;
+  border-bottom: 1px solid #ccc;
+}
+#cpp_tab_bar::-webkit-scrollbar { display: none; }  /* Chrome / Safari */
+
+.cpp-tab
+{
+  background: none;
+  border: none;
+  border-right: 1px solid #ccc;
+  padding: 0.5em 1em;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.8em;
+  white-space: nowrap;
+  color: #555;
+}
+
+.cpp-tab:hover
+{
+  background-color: #e4e4e4;
+}
+
+.cpp-tab.active
+{
+  background-color: white;
+  color: black;
+  font-weight: 600;
+  border-bottom: 2px solid white;
+  border-top: 2px solid #0055cc;
+  margin-bottom: -1px;
+}
+
+#cpp_tab_panes
+{
+  flex: 1 1 auto;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cpp-tab-pane
+{
+  display: none;
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  overflow-y: auto;
+}
+
+.cpp-tab-pane.active
+{
+  display: block;
+}
+
+/* ── Syntax-highlight loading state ────────────────────────────────────── */
+/* Panes start with hljs-loading in the HTML so raw code is never visible  */
+/* before highlight.js runs.  The class is removed by _highlightBlock().   */
+.cpp-tab-pane.hljs-loading pre {
+  visibility: hidden;
+}
+/* Centered spinner shown only when the loading pane is also active         */
+.cpp-tab-pane.hljs-loading.active::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2em;
+  height: 2em;
+  margin: -1em 0 0 -1em;
+  border: 3px solid #ddd;
+  border-top-color: #888;
+  border-radius: 50%;
+  animation: hljs-spin 0.7s linear infinite;
+  pointer-events: none;
+}
+@keyframes hljs-spin {
+  to { transform: rotate(360deg); }
+}
+html.dark-mode .cpp-tab-pane.hljs-loading.active::after {
+  border-color: #3a3848;
+  border-top-color: #9890b0;
+}
+#info_window
+{
+  flex: 0 0 0em;
+}
+.highlight
+{
+  background-color: yellow;
+}
+
+
+#info_window
+{
+  font-family: sans-serif;
+  font-size: 0.8em;
+  word-wrap: anywhere;
+  z-index: 999;
+  transition: 0.3s flex;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#info_window.resizing
+{
+  transition: none;
+  user-select: none;
+}
+
+#info-resizer
+{
+  flex: 0 0 5px;
+  background-color: #bbb;
+  cursor: ns-resize;
+}
+
+#info-resizer:hover
+{
+  background-color: #999;
+}
+
+#info-heading
+{
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0.45em 0.8em;
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #777;
+  background: none;
+  border-bottom: 1px solid #e4e4e4;
+}
+
+#info-content
+{
+  flex: 1 1 auto;
+  overflow-y: scroll;
+  min-height: 0;
+}
+
+/* Key–value rows */
+.info-row
+{
+  display: flex;
+  align-items: baseline;
+  gap: 0.6em;
+  padding: 0.3em 0.8em;
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.info-row:last-child
+{
+  border-bottom: none;
+}
+
+.info-key
+{
+  flex: 0 0 auto;
+  min-width: 7em;
+  text-align: right;
+  color: #999;
+  font-weight: 600;
+  font-size: 0.9em;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.info-value
+{
+  flex: 1 1 0;
+  min-width: 0;
+  word-break: break-word;
+  color: #1a1a1a;
+}
+
+/* Container dependency tags — used in compound edge info */
+.info-containers
+{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em;
+  padding: 0.1em 0;
+}
+
+.info-ctag
+{
+  display: inline-flex;
+  align-items: center;
+  background: #eef2f8;
+  border: 1px solid #c8d4e8;
+  border-radius: 3px;
+  padding: 0.1em 0.5em;
+  font-family: monospace;
+  font-size: 0.88em;
+  white-space: nowrap;
+  color: #334466;
+}
+
+.info-ctag em
+{
+  font-style: normal;
+  color: #8899bb;
+  margin-left: 0.3em;
+  font-size: 0.85em;
+}
+
+
+/* ── Content-snapshot heatmap ─────────────────────────────────────────────── */
+#heatmap-container {
+  padding: 0.5em 0.7em 0;
+  border-top: 1px solid #e4e4e4;
+  margin-top: 0.3em;
+}
+#heatmap-container:empty {
+  display: none;
+  padding: 0;
+  margin: 0;
+  border: none;
+}
+.heatmap-dim-label {
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #666;
+  margin-bottom: 0.4em;
+}
+.heatmap-canvas-wrap {
+  width: 100%;
+  overflow: hidden;   /* crop if canvas is somehow wider than the pane */
+  display: flex;
+  justify-content: center;
+}
+.heatmap-canvas {
+  display: block;
+  border-radius: 3px;
+}
+.heatmap-legend {
+  margin-top: 0.35em;
+  margin-bottom: 0.5em;
+}
+.heatmap-legend-title {
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #777;
+  margin-bottom: 0.3em;
+}
+.heatmap-legend-bar {
+  display: block;
+  width: 100%;
+  height: 12px;
+  border-radius: 2px;
+}
+.heatmap-legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78em;
+  font-family: monospace;
+  color: #444;
+  margin-top: 0.2em;
+}
+.heatmap-legend-minmax-label {
+  font-size: 0.9em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #777;
+}
+
+.heatmap-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  margin-top: 0.5em;
+}
+/* Outer-axis nav rows sit immediately above the canvas with tighter spacing */
+.heatmap-nav.heatmap-nav-outer {
+  margin-top: 0.25em;
+  margin-bottom: 0.1em;
+}
+.heatmap-nav-axis-label {
+  font-size: 0.78em;
+  font-family: monospace;
+  color: #777;
+  min-width: 2.5em;
+  text-align: right;
+}
+.heatmap-nav-btn {
+  background: none;
+  border: 1px solid #bbb;
+  border-radius: 0.3em;
+  padding: 0.1em 0.55em;
+  font-family: monospace;
+  font-size: 1em;
+  color: #444;
+  cursor: pointer;
+  line-height: 1.4;
+}
+.heatmap-nav-btn:hover { border-color: #777; color: #111; }
+.heatmap-nav-counter {
+  font-family: monospace;
+  font-size: 0.82em;
+  color: #666;
+  min-width: 5em;
+  text-align: center;
+}
+
+html.dark-mode #heatmap-container              { border-top-color: #3a3848; }
+html.dark-mode .heatmap-dim-label              { color: #b8b0cc; }
+html.dark-mode .heatmap-legend-title           { color: #9088a8; }
+html.dark-mode .heatmap-legend-labels          { color: #d0cce0; }
+html.dark-mode .heatmap-legend-minmax-label    { color: #9088a8; }
+html.dark-mode .heatmap-nav-btn                { border-color: #504860; color: #b8b0cc; }
+html.dark-mode .heatmap-nav-btn:hover          { border-color: #b8b0cc; color: #f0ecff; }
+html.dark-mode .heatmap-nav-counter            { color: #9088a8; }
+html.dark-mode .heatmap-nav-axis-label         { color: #7868a0; }
+
+#plot {
+  /* no fixed height — let the SVG scroll naturally inside #info-content */
+}
+
+.plot-heading {
+  padding: 0.45em 0.8em 0.2em;
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #777;
+  border-top: 1px solid #e4e4e4;
+  margin-top: 0.3em;
+}
+
+#plot svg {
+  padding: 4px 0 4px 0;
+}
+
+/* Compact stats grid used in the duration plot section */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 0.35em 0.8em 0.5em;
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.stat-cell {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35em;
+  padding: 0.15em 0.3em;
+}
+
+.stat-key {
+  font-size: 0.78em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #aaa;
+}
+
+.stat-val {
+  font-size: 0.95em;
+  color: #1a1a1a;
+}
+
+
+
+
+
+
+
+pre code.hljs
+{
+  padding: 0 !important;
+  font-size: 0.8em;
+}
+
+.hljs-ln-numbers
+{
+  text-align: right;
+  color: #bbb;
+  border-right: 1px solid #ddd;
+  vertical-align: top;
+  padding-right: 2em !important;
+  padding-left: 0.6em !important;
+  margin-right: 1em;
+}
+
+/* for block of code */
+.hljs-ln-code
+{
+  padding-left: .5em !important;
+}
+
+.hljs-ln tr:hover
+{
+  background-color: #ddd;
+}
+
+/* Dark code theme — conditioned on hljs-theme-dark class, not on dark mode toggle */
+body.hljs-theme-dark .hljs-ln-numbers
+{
+  color: #555;
+  border-right-color: #3a3848;
+}
+
+body.hljs-theme-dark .hljs-ln tr:hover
+{
+  background-color: rgba(255,255,255,0.07);
+}
+
+
+.badge
+{
+  background-color: var(--highlight);
+  color: white;   /* overridden in dark mode below — orange bg suits black text */
+  font-size: 0.9em;
+  border-radius: 100%;
+  cursor: pointer;
+  display: inline-block;
+  height: 1.5em;
+  width: 1.5em;
+  line-height: 1.5em;
+  position: relative;
+  right: -1.75em;
+  margin-left: -1.5em;
+  text-align: center;
+  transition: 0.3s transform;
+}
+
+.badge:hover
+{
+  transform: scale(1.2);
+}
+
+/* Graph-hover highlight — applied by SourceCodeView when the pointer enters the
+   corresponding Cytoscape node or edge. */
+.badge.badge-node-hover
+{
+  transform: scale(1.3);
+  box-shadow: 0 0 0 3px var(--highlight), 0 0 8px 2px rgba(0,0,0,0.25);
+  z-index: 10;
+}
+
+/* SVG arrow path highlighted when the corresponding Cytoscape edge is hovered. */
+path.badge-arrow-hover
+{
+  stroke-width: 3;
+  stroke: var(--highlight);
+  opacity: 1 !important;
+}
+
+/* Tab title highlighted when the hovered graph node has a badge in an inactive tab. */
+.cpp-tab.badge-tab-hover
+{
+  color: var(--highlight);
+  border-top-color: var(--highlight);
+  font-weight: 600;
+}
+
+.line-selected
+{
+  background-color: var(--highlight-alpha) !important;
+}
+
+
+#split-gutter
+{
+  flex: 0 0 7px;
+  background-color: #777;
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+  background-repeat: no-repeat;
+  background-position: 50%;
+  cursor: col-resize;
+}
+
+/* ── Dark mode ───────────────────────────────────────────────────────────── */
+/* Applied by toggling .dark-mode on <body>.  Cytoscape node/edge colors are
+   handled in graph.js via isDark() branches in stylesheet functions.          */
+
+html.dark-mode,
+html.dark-mode body,
+html.dark-mode .outer_container {
+  background: rgb(26, 24, 31);
+  color: #d8d4e2;
+}
+
+
+/* Menubar / navigation */
+html.dark-mode nav#menubar,
+html.dark-mode .menu,
+html.dark-mode .dropdown,
+html.dark-mode .submenu > .dropdown {
+  background: #2c283c;
+  border-color: #3a3848;
+  color: #d8d4e2;
+}
+html.dark-mode .menu-title,
+html.dark-mode .menu-action,
+html.dark-mode .menu-check,
+html.dark-mode .menu-radio,
+html.dark-mode .submenu-title {
+  color: #d8d4e2;
+}
+html.dark-mode .menu-title:hover,
+html.dark-mode .menu.open > .menu-title,
+html.dark-mode .menu-action:hover,
+html.dark-mode .menu-check:hover,
+html.dark-mode .menu-radio:hover,
+html.dark-mode .submenu-title:hover {
+  background: #464359;
+}
+html.dark-mode a { color: #e8720c; }
+html.dark-mode #load-trace-btn        { background: #c45f00; }
+html.dark-mode #load-trace-btn:hover  { background: #e8720c; }
+
+/* Cytoscape graph canvas */
+html.dark-mode #cy {
+  background: rgb(26, 24, 31);
+}
+
+/* Gantt / timeline */
+html.dark-mode #gantt-pane,
+html.dark-mode #gantt-svg-container {
+  background: rgb(26, 24, 31);
+  border-top-color: #3a3848;
+}
+html.dark-mode #gantt-svg-container svg {
+  background: rgb(26, 24, 31);
+}
+
+/* Source / right pane */
+html.dark-mode #right_pane {
+  background: #1e1c26;
+  border-color: #3a3848;
+}
+html.dark-mode .cpp-tab {
+  background: #2a2838;
+  color: #c0bcd0;
+  border-color: #3a3848;
+}
+html.dark-mode .cpp-tab.active {
+  background: #1e1c26;
+  color: #e8e4f0;
+  border-top-color: #e8720c;
+}
+html.dark-mode .cpp-tab-pane {
+  background: #1e1c26;
+}
+
+/* Info pane */
+html.dark-mode #info_window {
+  background: #1e1c26;
+  border-color: #3a3848;
+  color: #d8d4e2;
+}
+html.dark-mode #info-heading {
+  color: #9890b0;
+  border-bottom-color: #3a3848;
+}
+
+html.dark-mode .info-row {
+  border-bottom-color: #252330;
+}
+
+html.dark-mode .info-key {
+  color: #6a6480;
+}
+
+html.dark-mode .info-value {
+  color: #d8d4e2;
+}
+
+html.dark-mode .plot-heading {
+  color: #9890b0;
+  border-top-color: #3a3848;
+}
+
+html.dark-mode .stat-grid {
+  border-bottom-color: #252330;
+}
+
+html.dark-mode .stat-key {
+  color: #6a6480;
+}
+
+html.dark-mode .stat-val {
+  color: #d8d4e2;
+}
+
+html.dark-mode .info-ctag {
+  background: #22202e;
+  border-color: #3a3848;
+  color: #a8b4cc;
+}
+
+html.dark-mode .info-ctag em {
+  color: #5a5470;
+}
+html.dark-mode #info-resizer {
+  background: #3a3848;
+}
+
+/* Alert bar */
+html.dark-mode #alert-bar {
+  background: #4a3820;
+  color: #f0d090;
+  border-color: #7a6040;
+}
+
+/* Legend */
+html.dark-mode #legend {
+  background: #1a1820;
+  border-color: #3a3848;
+  color: #d8d4e2;
+}
+
+html.dark-mode .legend-section-title {
+  color: #6a6480;
+}
+
+html.dark-mode .legend-spec-end {
+  color: #6a6480;
+}
+
+/* Split gutter */
+html.dark-mode #split-gutter {
+  background-color: #3a3848;
+}
+
+
+/* Layout overlay spinner */
+html.dark-mode .cy-layout-spinner {
+  border-color: #3a3848;
+  border-top-color: #a090c8;
+}
+
+/* Menubar render-in-progress spinner */
+html.dark-mode .render-spinner {
+  border-color: #3a3848;
+  border-top-color: #a090c8;
+}
+
+/* Gutter badge — orange background in dark mode reads better with black text */
+html.dark-mode .badge {
+  color: black;
+}
+
+/* Highlighted source line — colour adapts via --highlight-alpha custom property above */
+
+/* Menu check/radio icon column */
+html.dark-mode .menu-icon {
+  color: #c8c4d8;
+}
+
+/* Menu separator — subtler in dark mode */
+html.dark-mode .menu-sep {
+  border-top-color: #3a3848;
+}
+
+/* Colors menu spectrum buttons and code-theme radio buttons */
+html.dark-mode .spectrum-radio,
+html.dark-mode .hljs-theme-radio {
+  color: #d8d4e2;
+}
+html.dark-mode .spectrum-radio:hover,
+html.dark-mode .hljs-theme-radio:hover {
+  background: #3a3848;
+}
+
+/* Generic dropdown button hover (catches hljs-theme-radio and any other unlisted buttons) */
+html.dark-mode .dropdown button:hover,
+html.dark-mode .submenu:hover > .submenu-title {
+  background-color: #464359;
+}
+
+/* Source-tab bar */
+html.dark-mode #cpp_tab_bar {
+  background-color: #22202a;
+  border-bottom-color: #3a3848;
+}
+html.dark-mode .cpp-tab:hover {
+  background-color: #3a3848;
+}
+
+/* ── Cytoscape hover tooltip ─────────────────────────────────────────────── */
+#cy-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background: rgba(28, 28, 28, 0.93);
+  color: #e8e8e8;
+  font: 0.76em/1.65 monospace;
+  padding: 5px 9px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: pre;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  display: none;
+  max-width: 320px;
+}
+
+/* ── Welcome panel (shown before any trace is loaded) ────────────────────── */
+#welcome-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3em 1em;
+  background: #f5f5f7;
+}
+
+#welcome-panel.hidden { display: none; }
+
+.welcome-card {
+  background: #fff;
+  border-radius: 0.8em;
+  padding: 3em 4em;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  font-family: monospace;
+}
+
+.welcome-logo {
+  display: block;
+  margin: 0 auto 1em;
+  width: 60%;
+  height: auto;
+}
+
+.logo-small
+{
+    height: 16px;
+    margin: 3px 0 0 4px;
+}
+
+.logo.logo-dark { display: none; }
+html.dark-mode .logo { display: none; }
+html.dark-mode .logo.logo-dark { display: block; }
+
+.welcome-card h1 {
+  margin: 0 0 0.15em;
+  font-size: 1.25em;
+  text-align: center;
+  display: none;
+}
+
+.welcome-card .welcome-subtitle {
+  text-align: center;
+  color: #666;
+  font-size: 0.85em;
+  margin-bottom: 1.5em;
+  display: none;
+}
+
+.welcome-card h3 {
+  font-size: 0.95em;
+  margin: 2em 0 0.5em;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.3em;
+}
+
+.welcome-card ol {
+  margin: 0 0 0.75em;
+  padding-left: 1.6em;
+  font-size: 0.88em;
+  line-height: 1.7;
+  padding-inline-start: 3em;
+}
+
+.welcome-card ol code {
+  background: #f0f0f2;
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+  font-size: 0.95em;
+}
+
+.welcome-card .welcome-hint {
+  font-size: 0.85em;
+  color: #555;
+  margin: 0;
+}
+
+.welcome-card .welcome-hint strong { color: #333; }
+
+#welcome-examples-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-top: 0.4em;
+}
+
+.welcome-example-btn {
+  background: #1a6abf;
+  color: #fff;
+  border: none;
+  border-radius: 0.4em;
+  padding: 0.35em 0.75em;
+  font-family: monospace;
+  font-size: 0.83em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.welcome-example-btn:hover { background: #134e8c; }
+
+/* Dark mode */
+html.dark-mode #welcome-panel { background: #1a1a24; }
+html.dark-mode .welcome-card {
+  background: #26242f;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+html.dark-mode .welcome-card h1          { color: #c8c0d8; }
+html.dark-mode .welcome-card .welcome-subtitle { color: #888; }
+html.dark-mode .welcome-card h3          { color: #b0a8c0; border-color: #3a3848; }
+html.dark-mode .welcome-card ol          { color: #b0a8c0; }
+html.dark-mode .welcome-card ol code     { background: #1e1c28; color: #e0d8f0; }
+html.dark-mode .welcome-card .welcome-hint { color: #888; }
+html.dark-mode .welcome-card .welcome-hint strong { color: #b0a8c0; }
+
+/* Welcome mode — hide source pane and gutter regardless of user toggle.
+   Removed from body by worker-loader.js when the first trace is loaded;
+   the user's stored preference (already applied as an inline style) then
+   takes over automatically without any extra JS. */
+body.welcome-mode #right_pane,
+body.welcome-mode #split-gutter { display: none !important; }

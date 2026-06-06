@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trace Performance Visualization Tool for SkePU</title>
+    <!-- Apply dark mode before first paint to prevent flash -->
+    <script>
+      (function() {
+        try {
+          var s = JSON.parse(localStorage.getItem('skepu-visualizer-settings-v1'));
+          if (s && s.layout && s.layout['dark-mode'])
+            document.documentElement.classList.add('dark-mode');
+        } catch(e) {}
+      })();
+    </script>
+
+    <!-- App stylesheet (relative to frontend/) -->
+    <link rel="stylesheet" href="./style/main.css"/>
+    <link rel="stylesheet" href="./script/static/cmu-font/fonts/cmuserif_roman/stylesheet.css"/>
+
+    <!-- jQuery -->
+    <script src="./script/static/jquery/jquery-3.7.1.min.js"></script>
+    <script src="./script/static/jquery-scrollto/jquery.scrollTo.min.js"></script>
+
+    <!-- Cytoscape -->
+    <script src="./script/static/cytoscape/cytoscape.min.js"></script>
+    <script src="./script/static/dagre/dagre.min.js"></script>
+    <script src="./script/static/cytoscape-dagre/cytoscape-dagre.js"></script>
+    <script src="./script/static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js"></script>
+
+    <!-- Highlight.js -->
+    <link id="hljs-theme" rel="stylesheet" href="./script/static/highlight/styles/default.css">
+    <script src="./script/static/highlight/highlight.min.js"></script>
+    <script src="./script/static/highlight-line-numbers/highlightjs-line-numbers.min.js"></script>
+
+    <!-- Worker URLs — injected as classic scripts so ES modules can read them
+         as globals.  Paths are relative to this HTML file (frontend/). -->
+    <script>var DAGRE_WORKER_URL = "./script/workers/dagre-worker.js";</script>
+    <script>var ELK_WORKER_URL   = "./script/static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js";</script>
+
+    <!-- TRACE_LINE_RANGES — starts empty; updated after each trace load. -->
+    <script>var TRACE_LINE_RANGES = [];</script>
+
+    <!-- Worker-loader module: spawns the visualizer worker, registers it with
+         transport.js, and builds the examples menu.  Must appear before ui.js
+         so that initWorkerBackend() is called before load() triggers the first
+         graph fetch. -->
+    <script type="module" src="./script/workers/worker-loader.js"></script>
+
+    <!-- Entry-point ES module. -->
+    <script type="module" src="./script/ui.js"></script>
+</head>
+<body class="welcome-mode" onload="load();">
+
+    <div class="outer_container">
+      <div id="left_pane">
+        <nav id="menubar">
+
+          <div class="menu"><a class="menu-anfang" href=".">
+              <img src="./SkeVU logo.png" alt="SkePU logo" class="logo logo-small">
+              <img src="./SkeVU logo-white.png" alt="SkePU logo" class="logo logo-small logo-dark">
+          </a></div>
+
+          <!-- File menu -->
+          <div class="menu">
+            <button class="menu-title" onclick="menuToggle(event,this)">Files</button>
+            <div class="dropdown">
+
+              <!-- Examples submenu — populated dynamically by worker-loader.js -->
+              <div id="examples-submenu-placeholder"></div>
+
+              <!-- File upload form — handled by loadFiles() in worker-loader.js
+                   instead of a traditional form POST. -->
+              <div onclick="event.stopPropagation()">
+                <div class="menu-form-row">
+                  <label>Trace File</label>
+                  <input id="trace-file-input" type="file" accept=".json">
+                </div>
+                <div class="menu-form-row">
+                  <label>Source File(s)</label>
+                  <input id="cpp-files-input" type="file" accept=".cpp,.hpp" multiple>
+                </div>
+                <div class="menu-form-row">
+                  <label>Snapshots (zip)</label>
+                  <input id="snapshot-zip-input" type="file" accept=".zip">
+                </div>
+                <div class="menu-form-row">
+                  <button id="load-trace-btn" onclick="loadFiles();menuClose()">Load Trace</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- View menu -->
+          <div class="menu">
+            <button class="menu-title" onclick="menuToggle(event,this)">View</button>
+            <div class="dropdown">
+                <div class="submenu">
+                    <div class="submenu-title">Graph Mode<span class="menu-arrow">▸</span></div>
+                    <div class="dropdown">
+                        <button class="menu-radio" data-ctrl="graph-mode" data-value="dependence-dag"        onclick="menuSelectRadio(this)"><span class="menu-icon">✓</span>Dependence DAG</button>
+                        <button class="menu-radio" data-ctrl="graph-mode" data-value="program-tree"        onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Program Tree</button>
+                    </div>
+                </div>
+              <div class="menu-sep"></div>
+              <button class="menu-action" onclick="fetchViewDataAndRender();menuClose()">Apply Settings<span class="menu-key">Space</span></button>
+              <button class="menu-action" onclick="menuRestoreDefaults();fetchViewDataAndRender()">Restore Defaults</button>
+              <button class="menu-action" onclick="recenterGraph();menuClose()">Reset View</button>
+              <button class="menu-action" onclick="renderImage();menuClose()">Save Image</button>
+              <div class="menu-sep"></div>
+              <button id="menu-check-legend"   class="menu-check" onclick="toggleLegend();menuClose()"><span class="menu-icon"></span>Legend</button>
+              <button id="menu-check-timeline" class="menu-check" onclick="toggleGanttPane();menuClose()"><span class="menu-icon"></span>Timeline<span class="menu-key">G</span></button>
+              <button id="menu-check-source"     class="menu-check" onclick="toggleSourcePane();menuClose()"><span class="menu-icon"></span>Source Panel<span class="menu-key">S</span></button>
+              <button id="menu-check-code-paths" class="menu-check" onclick="toggleCodePaths();menuClose()"><span class="menu-icon"></span>Code Paths</button>
+              <div class="menu-sep"></div>
+              <div class="menu-form-row" onclick="event.stopPropagation()" style="padding:0.35em 0.75em">
+                <label style="font-size:0.85em;color:#666">Timeline Scale: <span id="gantt-scale-label">1×</span></label>
+                <input type="range" id="gantt-scale" min="1" max="20" step="1" value="1"
+                  oninput="ganttScaleChanged(this.value)" style="width:100%">
+              </div>
+              <div class="menu-sep"></div>
+              <div class="submenu">
+                <button class="submenu-title menu-action">Source Code Theme<span class="menu-arrow">▶</span></button>
+                <div class="dropdown">
+                  <button class="hljs-theme-radio" data-theme="default"           onclick="setHljsTheme('default');menuClose()">          <span class="menu-icon">✓</span>Default (light)</button>
+                  <button class="hljs-theme-radio" data-theme="github"            onclick="setHljsTheme('github');menuClose()">           <span class="menu-icon"></span>GitHub (light)</button>
+                  <button class="hljs-theme-radio" data-theme="intellij-light"    onclick="setHljsTheme('intellij-light');menuClose()">   <span class="menu-icon"></span>IntelliJ (light)</button>
+                  <button class="hljs-theme-radio" data-theme="vs"                onclick="setHljsTheme('vs');menuClose()">               <span class="menu-icon"></span>Visual Studio (light)</button>
+                  <div class="menu-sep"></div>
+                  <button class="hljs-theme-radio" data-theme="atom-one-dark"     onclick="setHljsTheme('atom-one-dark');menuClose()">    <span class="menu-icon"></span>Atom One Dark</button>
+                  <button class="hljs-theme-radio" data-theme="github-dark"       onclick="setHljsTheme('github-dark');menuClose()">      <span class="menu-icon"></span>GitHub Dark</button>
+                  <button class="hljs-theme-radio" data-theme="monokai"           onclick="setHljsTheme('monokai');menuClose()">          <span class="menu-icon"></span>Monokai</button>
+                  <button class="hljs-theme-radio" data-theme="nord"              onclick="setHljsTheme('nord');menuClose()">             <span class="menu-icon"></span>Nord</button>
+                  <button class="hljs-theme-radio" data-theme="tokyo-night-dark"  onclick="setHljsTheme('tokyo-night-dark');menuClose()"> <span class="menu-icon"></span>Tokyo Night</button>
+                  <button class="hljs-theme-radio" data-theme="vs2015"            onclick="setHljsTheme('vs2015');menuClose()">           <span class="menu-icon"></span>VS 2015 (dark)</button>
+                </div>
+              </div>
+              <button id="menu-check-dark" class="menu-check" onclick="toggleDarkMode();menuClose()"><span class="menu-icon"></span>Dark mode<span class="menu-key">M</span></button>
+            </div>
+          </div>
+
+          <!-- Nodes menu -->
+          <div class="menu">
+            <button class="menu-title" onclick="menuToggle(event,this)">Nodes</button>
+            <div class="dropdown">
+              <button class="menu-check" data-ctrl="container-updates"      onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Updates<span class="menu-key">U</span></button>
+              <button class="menu-check" data-ctrl="container-allocations"  onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Allocations<span class="menu-key">A</span></button>
+              <button class="menu-check" data-ctrl="container-deallocations" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Deallocations<span class="menu-key">D</span></button>
+              <button class="menu-check" data-ctrl="container-transfers"    onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Transfers<span class="menu-key">T</span></button>
+              <button class="menu-check" data-ctrl="element-accesses"       onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Element Accesses</button>
+              <div class="menu-sep"></div>
+              <button class="menu-check" data-ctrl="show_regions"           onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Regions<span class="menu-key">R</span></button>
+              <div class="menu-sep"></div>
+              <div class="submenu">
+                <div class="submenu-title">Color<span class="menu-arrow">▸</span></div>
+                <div class="dropdown">
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="duration-total"        onclick="menuSelectRadio(this)"><span class="menu-icon">✓</span>Total Time</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="elements"              onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Elements</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="duration-per-element"  onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Time/element</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="iterations"            onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Iterations</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="duration-cv"           onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Duration Variance</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="dag-depth"             onclick="menuSelectRadio(this)"><span class="menu-icon"></span>DAG Depth</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="nesting-level"         onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Nesting Level</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="fan-in"                onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Fan-In</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="fan-out"               onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Fan-Out</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="total-order"           onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Program Sequence</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="pattern"               onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Pattern</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="backend"               onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Backend</button>
+                </div>
+              </div>
+              <div class="submenu">
+                <div class="submenu-title">Size<span class="menu-arrow">▸</span></div>
+                <div class="dropdown">
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="fixed"               onclick="menuSelectRadio(this)"><span class="menu-icon">✓</span>Fixed</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="duration-total"      onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Total Time</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="elements"            onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Elements</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="duration-per-element" onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Time/element</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="iterations"          onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Iterations</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="duration-cv"         onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Duration Variance</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="nesting-level"       onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Nesting Level</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="fan-in"              onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Fan-In</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="fan-out"             onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Fan-Out</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Edges menu -->
+          <div class="menu">
+            <button class="menu-title" onclick="menuToggle(event,this)">Edges</button>
+            <div class="dropdown">
+              <button class="menu-check" data-ctrl="anti-deps"           onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Anti-Dependences<span class="menu-key">N</span></button>
+              <button class="menu-check" data-ctrl="virtual-alias-edges" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Virtual Datasets</button>
+              <button class="menu-check" data-ctrl="edge-labels"         onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Labels<span class="menu-key">L</span></button>
+              <div class="menu-sep"></div>
+              <div class="submenu">
+                <div class="submenu-title">Direction<span class="menu-arrow">▸</span></div>
+                <div class="dropdown">
+                  <button class="menu-radio" data-ctrl="direction" data-value="vertical"   onclick="menuSelectRadio(this)"><span class="menu-icon">✓</span>Vertical</button>
+                  <button class="menu-radio" data-ctrl="direction" data-value="horizontal" onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Horizontal</button>
+                </div>
+              </div>
+              <div class="submenu">
+                <div class="submenu-title">Width<span class="menu-arrow">▸</span></div>
+                <div class="dropdown">
+                  <button class="menu-radio" data-ctrl="edge-width" data-value="fixed"          onclick="menuSelectRadio(this)"><span class="menu-icon">✓</span>Fixed</button>
+                  <button class="menu-radio" data-ctrl="edge-width" data-value="elements"       onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Elements</button>
+                  <button class="menu-radio" data-ctrl="edge-width" data-value="iterations"     onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Iterations</button>
+                  <button class="menu-radio" data-ctrl="edge-width" data-value="order-span"     onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Program Order Span</button>
+                  <button class="menu-radio" data-ctrl="edge-width" data-value="critical-path"  onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Critical Path</button>
+                  <button class="menu-radio" data-ctrl="edge-width" data-value="cross-backend"  onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Cross-Backend</button>
+                </div>
+              </div>
+              <div class="submenu">
+                <div class="submenu-title">Opacity<span class="menu-arrow">▸</span></div>
+                <div class="dropdown">
+                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="fixed"         onclick="menuSelectRadio(this)"><span class="menu-icon">✓</span>Fixed</button>
+                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="elements"      onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Elements</button>
+                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="iterations"    onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Iterations</button>
+                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="order-span"    onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Program Order Span</button>
+                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="critical-path" onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Critical Path</button>
+                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="cross-backend" onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Cross-Backend</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions menu -->
+          <div class="menu">
+            <button class="menu-title" onclick="menuToggle(event,this)">Actions</button>
+            <div class="dropdown">
+              <div class="submenu">
+                <div class="submenu-title">Simulate<span class="menu-arrow">▸</span></div>
+                <div class="dropdown">
+                  <button id="sim-btn-playpause" class="menu-action" onclick="simToggle();menuClose()">Play<span class="menu-key">P</span></button>
+                  <button class="menu-action" onclick="simStop();menuClose()">Stop</button>
+                </div>
+              </div>
+              <div class="menu-sep"></div>
+              <button class="menu-action" onclick="zoomGanttToMeasuredInterval();menuClose()">Zoom to Measured Interval<span class="menu-key">Z</span></button>
+              <button class="menu-action" onclick="(function(){var tabs=Array.from(document.querySelectorAll('.cpp-tab'));if(tabs.length>1){var cur=tabs.findIndex(function(t){return t.classList.contains('active');});var next=(cur+1)%tabs.length;switchTab(tabs[next],next);}})();menuClose()">Next Source Tab<span class="menu-key">Tab</span></button>
+              <div class="menu-sep"></div>
+              <div class="submenu">
+                <div class="submenu-title">Selected Node<span class="menu-arrow">▸</span></div>
+                <div class="dropdown">
+                  <button class="menu-action" onclick="collapseSelectedRecursively();menuClose()">Collapse Recursive<span class="menu-key">C</span></button>
+                  <button class="menu-action" onclick="expandSelectedRecursively();menuClose()">Expand Recursive<span class="menu-key">E</span></button>
+                  <button class="menu-action" onclick="collapseSelected();menuClose()">Collapse Once<span class="menu-key">-</span></button>
+                  <button class="menu-action" onclick="expandSelected();menuClose()">Expand Once<span class="menu-key">+</span></button>
+                </div>
+              </div>
+              <div class="submenu">
+                <div class="submenu-title">All Regions<span class="menu-arrow">▸</span></div>
+                <div class="dropdown">
+                  <button class="menu-action" onclick="collapseAllRegions();menuClose()">Collapse</button>
+                  <button class="menu-action" onclick="expandAllRegions();menuClose()">Expand</button>
+                </div>
+              </div>
+              <div class="submenu">
+                <div class="submenu-title">All Fusions<span class="menu-arrow">▸</span></div>
+                <div class="dropdown">
+                  <button class="menu-action" onclick="collapseAllFusions();menuClose()">Collapse</button>
+                  <button class="menu-action" onclick="expandAllFusions();menuClose()">Expand</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Color Spectrum menu -->
+          <div class="menu">
+            <button class="menu-title" onclick="menuToggle(event,this)">Colors</button>
+            <div class="dropdown dropdown-spectrum">
+              <button class="spectrum-radio" data-spectrum="default"   onclick="colorSpectrumChanged('default');menuClose()">  <span class="menu-icon">✓</span>Red–Green <span class="spectrum-swatch" style="background:linear-gradient(to right,#00ff00,#ff0000)"></span></button>
+              <button class="spectrum-radio" data-spectrum="viridis"   onclick="colorSpectrumChanged('viridis');menuClose()">  <span class="menu-icon"></span>Viridis   <span class="spectrum-swatch" style="background:linear-gradient(to right,#440154,#2a788e,#22a884,#fde725)"></span></button>
+              <button class="spectrum-radio" data-spectrum="plasma"    onclick="colorSpectrumChanged('plasma');menuClose()">   <span class="menu-icon"></span>Plasma    <span class="spectrum-swatch" style="background:linear-gradient(to right,#0d0887,#b83289,#f48849,#f0f921)"></span></button>
+              <button class="spectrum-radio" data-spectrum="inferno"   onclick="colorSpectrumChanged('inferno');menuClose()">  <span class="menu-icon"></span>Inferno   <span class="spectrum-swatch" style="background:linear-gradient(to right,#000004,#57106e,#f98c0a,#fcffa4)"></span></button>
+              <button class="spectrum-radio" data-spectrum="cividis"   onclick="colorSpectrumChanged('cividis');menuClose()">  <span class="menu-icon"></span>Cividis   <span class="spectrum-swatch" style="background:linear-gradient(to right,#00224e,#5f5a80,#fde725)"></span></button>
+              <button class="spectrum-radio" data-spectrum="cool-warm" onclick="colorSpectrumChanged('cool-warm');menuClose()"><span class="menu-icon"></span>Cool–Warm <span class="spectrum-swatch" style="background:linear-gradient(to right,#3b4cc0,#ddd,#b40426)"></span></button>
+              <button class="spectrum-radio" data-spectrum="grayscale" onclick="colorSpectrumChanged('grayscale');menuClose()"><span class="menu-icon"></span>Grayscale <span class="spectrum-swatch" style="background:linear-gradient(to right,#f0f0f0,#141414)"></span></button>
+            </div>
+          </div>
+
+          <!-- Advanced menu -->
+          <div class="menu">
+            <button class="menu-title" onclick="menuToggle(event,this)">Advanced</button>
+            <div class="dropdown">
+              <button class="menu-check" data-ctrl="collapse_iteration" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Aggregate iteration<span class="menu-key">I</span></button>
+              <button class="menu-check" data-ctrl="fusion_analysis"    onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Fusion analysis<span class="menu-key">F</span></button>
+            </div>
+          </div>
+
+          <!-- Render indicator -->
+          <div id="render-indicator" class="menu">
+            <button class="menu-title" onclick="menuToggle(event,this)"
+                    style="display:flex;align-items:center;font-weight:normal;padding-right:0.6em">
+              <span class="render-spinner"></span>Rendering…
+            </button>
+            <div class="dropdown dropdown-info" style="right:0;left:auto;min-width:170px;padding:0.4em 0">
+              <button class="menu-action" onclick="stopRendering()">Stop rendering</button>
+            </div>
+          </div>
+
+          <!-- Info button -->
+          <div class="menu menu-info-btn">
+            <button class="menu-title menu-info-title" onclick="menuToggle(event,this)" title="Trace statistics">ⓘ</button>
+            <div class="dropdown dropdown-info">
+              <p><strong>Trace events:</strong> <span id="event-count">—</span></p>
+              <p><strong>Nodes:</strong> <span id="node-count">—</span></p>
+              <p><strong>Edges:</strong> <span id="edge-count">—</span></p>
+              <p><strong>Gantt bars:</strong> <span id="gantt-count">—</span></p>
+              <p><strong>Snapshots:</strong> <span id="snapshot-count">—</span></p>
+              <p><strong>Analysis time:</strong> <span id="modeling-time">—</span> ms</p>
+              <p><strong>Rendering time:</strong> <span id="rendering-time">—</span> ms</p>
+              <p><strong>Total response time:</strong> <span id="response-time">—</span> ms</p>
+              <hr class="menu-sep">
+              <p><a href="https://skepu.github.io" target="_blank">SkePU website</a></p>
+            </div>
+          </div>
+
+        </nav>
+        <div id="alert-bar"></div>
+
+        <script>
+          // ── Menu helpers ──────────────────────────────────────────────────────
+          function syncExternalMenuIcons() {
+            var lb = document.getElementById('menu-check-legend');
+            if (lb) lb.querySelector('.menu-icon').textContent = State._legendOpen ? '✓' : '';
+            var tb = document.getElementById('menu-check-timeline');
+            if (tb) tb.querySelector('.menu-icon').textContent = State._ganttPaneOpen ? '✓' : '';
+            var sb = document.getElementById('menu-check-source');
+            if (sb) sb.querySelector('.menu-icon').textContent = State._sourcePaneOpen ? '✓' : '';
+            var cp = document.getElementById('menu-check-code-paths');
+            if (cp) cp.querySelector('.menu-icon').textContent = State._codePaths ? '✓' : '';
+            var db = document.getElementById('menu-check-dark');
+            if (db) db.querySelector('.menu-icon').textContent = State._darkMode ? '✓' : '';
+            // hljs theme icons are owned by SourceCodeView (window.setHljsTheme /
+            // window._applyHljsTheme wired in graph.js).
+            if (State.sourceView) State.sourceView.syncThemeIcons();
+          }
+
+          function openInfoPane() {
+            var rightEl = document.getElementById('right_pane');
+            if (State._infoPaneRatio > 0 && rightEl) {
+              var h = Math.round(State._infoPaneRatio * rightEl.offsetHeight);
+              document.getElementById('info_window').style.flex = '0 0 ' + h + 'px';
+            } else {
+              document.getElementById('info_window').style.flex = '0 0 10em';
+            }
+          }
+
+          function menuToggle(event, btn) {
+            event.stopPropagation();
+            var menu   = btn.closest('.menu');
+            var isOpen = menu.classList.contains('open');
+            menuClose();
+            if (!isOpen) menu.classList.add('open');
+          }
+          function menuClose() {
+            document.querySelectorAll('.menu.open').forEach(function(m) { m.classList.remove('open'); });
+          }
+          document.addEventListener('click', menuClose);
+
+          // switchTab / setHljsTheme / _applyHljsTheme / badgeClick are
+          // window globals wired by SourceCodeView in graph.js.
+
+          document.querySelectorAll('.menu-title').forEach(function(btn) {
+            btn.addEventListener('mouseenter', function() {
+              if (document.querySelector('.menu.open')) {
+                menuClose();
+                btn.closest('.menu').classList.add('open');
+              }
+            });
+          });
+
+          // menuRestoreDefaults needs to call into settings.js — that module
+          // exports it via window in ui.js, but in worker mode we also need it.
+          // It is wired up to window in settings.js → ui.js, so it will be
+          // available after the modules initialise.
+        </script>
+
+        <div id="visualization">
+          <!-- Welcome panel — visible before the first trace is loaded.
+               Hidden by worker-loader.js after a successful load. -->
+          <div id="welcome-panel">
+            <div class="welcome-card">
+              <img src="./SkeVU logo.svg" alt="SkePU logo" class="logo welcome-logo">
+              <img src="./SkeVU logo-white.svg" alt="SkePU logo" class="logo welcome-logo logo-dark">
+              <h1>SkeVU — SkePU Visualizer</h1>
+              <p class="welcome-subtitle">Performance visualizer for <a href="https://skepu.github.io" target="_blank">SkePU</a> programs</p>
+
+              <h3>Load your own trace</h3>
+              <ol>
+                <li>Build your program with the precompiler and <code>-DSKEPU_TRACING</code>.</li>
+                <li>A <code>trace.json</code> is written to the working directory after execution.</li>
+                <li>Use <strong>Files › Load Trace</strong> to upload the JSON and any source files.</li>
+              </ol>
+
+              <div id="welcome-examples-section" style="display:none">
+                <h3>Load a built-in example</h3>
+                <div id="welcome-examples-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="cy"></div>
+          <div id="sim-progress">
+            <div id="sim-ticks"></div>
+            <div id="sim-progress-fill"></div>
+            <div id="sim-progress-handle"></div>
+          </div>
+          <div id="cy-layout-overlay">
+            <span class="cy-layout-spinner"></span>
+            <button id="cy-stop-btn" onclick="stopRendering()">&#9632; Stop</button>
+          </div>
+        </div>
+        <div id="legend"></div>
+      </div>
+
+      <div id="split-gutter"></div>
+
+      <!-- Source / info pane -->
+      <div id="right_pane">
+        <div id="cpp_container">
+          <!-- Tab bar and tab panes are empty on first load;
+               worker-loader.js populates them after each trace load. -->
+          <div id="cpp_tab_bar"></div>
+          <div id="cpp_tab_panes">
+            <div class="cpp-tab-pane active">
+              <pre style="color:#888;padding:1em">Load a trace file or select an example from the Files menu to get started.</pre>
+            </div>
+          </div>
+        </div>
+        <div id="info_window">
+          <div id="info-resizer"></div>
+          <h3 id="info-heading"></h3>
+          <div id="info-content">
+            <div id="info"></div>
+            <div id="heatmap-container"></div>
+            <div id="plot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="gantt-pane">
+      <div id="gantt-svg-container"></div>
+    </div>
+
+</body>
+</html>
