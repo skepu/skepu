@@ -544,72 +544,39 @@ namespace skepu
 	struct Pool3D
 	{
 		int si, sj, sk;
-		size_t size_i, size_j, size_k;
-		size_t offset[3];
 		size_t stride1, stride2;
 		Index3D idx;
 		const T *data;
-		Edge edge = Edge::None;
-		T pad;
+
+#ifdef SKEPU_CUDA
+        __host__ __device__
+#endif
+        T operator()(int i, int j, int k) const
+        {
+            int ii = this->idx.i + i;
+            int jj = this->idx.j + j;
+            int kk = this->idx.k + k;
+            return data[ii * this->stride1 + jj * this->stride2 + kk];
+        }
 		
-		#ifdef SKEPU_CUDA
-				__host__ __device__
-		#endif
-				T operator()(int i, int j, int k) const
-				{
-					int ii = offset[0] + this->idx.i + i;
-					int jj = offset[1] + this->idx.j + j;
-					int kk = offset[2] + this->idx.k + k;
-					size_t offset;
-					
-					switch (this->edge)
-					{
-					case Edge::Cyclic:
-						offset =
-							((ii + this->size_i) % this->size_i) * this->stride1 +
-							((jj + this->size_j) % this->size_j) * this->stride2 +
-							((kk + this->size_k) % this->size_k);
-						return data[offset];
-					case Edge::Pad:
-						if ((0 <= ii && ii < size_i) && (0 <= jj && jj < size_j) &&
-								(0 <= kk && kk < size_k))
-							return data[ii * this->stride1 + jj * this->stride2 + kk];
-						else return this->pad;
-					case Edge::Duplicate:
-						offset =
-							future_std::clamp<int>(ii, 0, this->size_i-1) * this->stride1 +
-							future_std::clamp<int>(jj, 0, this->size_j-1) * this->stride2 +
-							future_std::clamp<int>(kk, 0, this->size_k-1);
-						return data[offset];
-					default:
-						return data[ii * this->stride1 + jj * this->stride2 + kk];
-					}
-				}
-		/*
+        Pool3D(Tensor3<T> const& ten, int arg_si, int arg_sj, int arg_sk, Edge arg_edge, T arg_pad)
+        :	si(arg_si), sj(arg_sj), sk(arg_sk),
+            stride1(ten.m_stride_1),
+            stride2(ten.m_stride_2),
+            idx{0, 0, 0},
+            data(ten.getAddress())
+        {}
+
 #ifdef SKEPU_CUDA
 	__host__ __device__
 #endif
-		T operator()(size_t i, size_t j, size_t k) const
-		{
-			int ii = this->idx.i + i;
-			int jj = this->idx.j + j;
-			int kk = this->idx.k + k;
-			return data[ii * this->stride1 + jj * this->stride2 + kk];
-		}*/
-		
-#ifdef SKEPU_CUDA
-	__host__ __device__
-#endif
-	Pool3D(Tensor3<T> const& ten, int pool_size[3], size_t ofst[3], Edge arg_edge, T arg_pad)
-	:	si(pool_size[0]), sj(pool_size[1]), sk(pool_size[2]),
-		offset{ofst[0], ofst[1], ofst[2]},
-		size_i(ten.size_i()), size_j(ten.size_j()), size_k(ten.size_k()),
-		stride1(ten.m_stride_1),
-		stride2(ten.m_stride_2),
-		edge(arg_edge),
-		pad(arg_pad),
-		data(ten.getAddress())
-	{}
+        Pool3D(int arg_si, int arg_sj, int arg_sk, size_t arg_stride1, size_t arg_stride2, T *arg_data)
+        :	si(arg_si), sj(arg_sj), sk(arg_sk),
+            stride1(arg_stride1),
+            stride2(arg_stride2),
+            idx{0, 0, 0},
+            data(arg_data)
+        {}
 	};
 	
 	template<typename T>

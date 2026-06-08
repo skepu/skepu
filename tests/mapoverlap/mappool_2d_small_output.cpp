@@ -48,12 +48,13 @@ void compare(skepu::Matrix<int>& actual, std::vector<std::vector<int>>& expected
 
 auto pool = skepu::MapPool(poolSum);
 
-constexpr int size_upper_bound = 20;
+constexpr int size_upper_bound = 40;
+constexpr int size_lower_bound = 40;
 
 TEST_CASE("Fundamentals")
 {
-    for (int in_size_i = 1; in_size_i <= size_upper_bound; ++in_size_i)
-        for (int in_size_j = 1; in_size_j <= size_upper_bound; ++in_size_j)
+    for (int in_size_i = size_lower_bound; in_size_i <= size_upper_bound; ++in_size_i)
+        for (int in_size_j = size_lower_bound; in_size_j <= size_upper_bound; ++in_size_j)
         {
             skepu::Matrix<int> input(in_size_i, in_size_j, 1);
             skepu::external(skepu::read(input), [&]{

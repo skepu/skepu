@@ -498,13 +498,29 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_2D_kernel({{KERNEL_PARAMS}}
 )
 {
   extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} {{SHARED_BUFFER}}[];
-	size_t skepu_xx = blockIdx.x * blockDim.x;
-	size_t skepu_yy = blockIdx.y * blockDim.y;
+	size_t skepu_xx = blockIdx.x * blockDim.x * skepu_stride_x;
+	size_t skepu_yy = blockIdx.y * blockDim.y * skepu_stride_y;
 
-	size_t skepu_x = skepu_xx + threadIdx.x;
-	size_t skepu_y = skepu_yy + threadIdx.y;
+	size_t skepu_x = skepu_xx/skepu_stride_x + threadIdx.x;
+	size_t skepu_y = skepu_yy/skepu_stride_y + threadIdx.y;
+
+    if (skepu_is_pool)
+        if ((skepu_overlap_x == 0 || skepu_overlap_x <= skepu_stride_x) &&
+            (skepu_overlap_y == 0 || skepu_overlap_y <= skepu_stride_y))
+        {
+            if (skepu_x < skepu_out_cols && skepu_y < skepu_out_rows)
+            {
+                {{INDEX_INITIALIZER}}
+                auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{PERFECT_MAPPOOL_ARGS}});
+        
+                size_t skepu_i = skepu_y * skepu_out_cols + skepu_x;
+                size_t skepu_global_prng_id = skepu_i;
+                {{OUTPUT_BINDINGS}}
+            }
+            return;
+        }
 	
-   size_t skepu_offset_x = skepu_is_pool ? 0 : ((skepu_out_cols - skepu_in_cols) / 2 + skepu_overlap_x);
+    size_t skepu_offset_x = skepu_is_pool ? 0 : ((skepu_out_cols - skepu_in_cols) / 2 + skepu_overlap_x);
 	size_t skepu_offset_y = skepu_is_pool ? 0 : ((skepu_out_rows - skepu_in_rows) / 2 + skepu_overlap_y);
 
 	
@@ -573,22 +589,40 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_3D_kernel({{KERNEL_PARAMS}}
 	const size_t skepu_in_size_i, const size_t skepu_in_size_j, const size_t skepu_in_size_k, 
 	const size_t skepu_out_size_i, const size_t skepu_out_size_j, const size_t skepu_out_size_k, 
 	size_t skepu_overlap_i, size_t skepu_overlap_j, size_t skepu_overlap_k,
+    size_t skepu_stride_i, size_t skepu_stride_j, size_t skepu_stride_k,
 	const size_t skepu_shared_size_i, const size_t skepu_shared_size_j, const size_t skepu_shared_size_k,
-	skepu::Edge skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad
+	int skepu_is_pool, skepu::Edge skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad
 )
 {
   extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} {{SHARED_BUFFER}}[];
-	size_t skepu_kk = blockIdx.x * blockDim.x;
-	size_t skepu_jj = blockIdx.y * blockDim.y;
-	size_t skepu_ii = blockIdx.z * blockDim.z;
+	size_t skepu_kk = blockIdx.x * blockDim.x * skepu_stride_k;
+	size_t skepu_jj = blockIdx.y * blockDim.y * skepu_stride_j;
+	size_t skepu_ii = blockIdx.z * blockDim.z * skepu_stride_i;
 
-	size_t skepu_k = skepu_kk + threadIdx.x;
-	size_t skepu_j = skepu_jj + threadIdx.y;
-	size_t skepu_i = skepu_ii + threadIdx.z;
+	size_t skepu_k = skepu_kk/skepu_stride_k + threadIdx.x;
+	size_t skepu_j = skepu_jj/skepu_stride_j + threadIdx.y;
+	size_t skepu_i = skepu_ii/skepu_stride_i + threadIdx.z;
 
-   size_t skepu_offset_i = (skepu_out_size_i - skepu_in_size_i) / 2 + skepu_overlap_i;
-   size_t skepu_offset_j = (skepu_out_size_j - skepu_in_size_j) / 2 + skepu_overlap_j;
-   size_t skepu_offset_k = (skepu_out_size_k - skepu_in_size_k) / 2 + skepu_overlap_k;
+    if (skepu_is_pool)
+        if ((skepu_overlap_i == 0 || skepu_overlap_i <= skepu_stride_i) &&
+            (skepu_overlap_j == 0 || skepu_overlap_j <= skepu_stride_j) &&
+            (skepu_overlap_k == 0 || skepu_overlap_k <= skepu_stride_k))
+        {
+            if (skepu_i < skepu_out_size_i && skepu_j < skepu_out_size_j && skepu_k < skepu_out_size_k)
+            {
+                {{INDEX_INITIALIZER}}
+                auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{PERFECT_MAPPOOL_ARGS}});
+        
+                skepu_i = skepu_i * skepu_out_size_j * skepu_out_size_k + skepu_j * skepu_out_size_k + skepu_k;
+                size_t skepu_global_prng_id = skepu_i;
+                {{OUTPUT_BINDINGS}}
+            }
+            return;
+        }
+
+    size_t skepu_offset_i = skepu_is_pool ? 0 : ((skepu_out_size_i - skepu_in_size_i) / 2 + skepu_overlap_i);
+    size_t skepu_offset_j = skepu_is_pool ? 0 : ((skepu_out_size_j - skepu_in_size_j) / 2 + skepu_overlap_j);
+    size_t skepu_offset_k = skepu_is_pool ? 0 : ((skepu_out_size_k - skepu_in_size_k) / 2 + skepu_overlap_k);
 	
 	
 	if (skepu_i < skepu_out_size_i + skepu_overlap_i * 2 && skepu_j < skepu_out_size_j + skepu_overlap_j * 2 && skepu_k < skepu_out_size_k + skepu_overlap_k * 2)
@@ -822,16 +856,38 @@ std::string createMapOverlapKernelProgramHelper_CU(SkeletonInstance &instance, U
 	if (dim == 1)
 		SSMapOverlapFuncArgs << "{(int)overlap, 1, &" << sdataName << "[skepu_tid + overlap]}";
 	else if (dim == 2)
-   {
-      if (mapOverlapFunc.regionParam->isPool)
-		   SSMapOverlapFuncArgs << "{(int)skepu_overlap_y, (int)skepu_overlap_x, skepu_sharedCols, &" << sdataName << "[(threadIdx.y * skepu_stride_y) * skepu_sharedCols + (threadIdx.x * skepu_stride_x)]}";
-      else
-      	SSMapOverlapFuncArgs << "{(int)skepu_overlap_y, (int)skepu_overlap_x, skepu_sharedCols, &" << sdataName << "[(threadIdx.y + skepu_overlap_y) * skepu_sharedCols + (threadIdx.x + skepu_overlap_x)]}";
-   }
+    {
+        if (mapOverlapFunc.regionParam->isPool)
+        {
+            SSMapOverlapFuncArgs << "{(int)skepu_overlap_y, (int)skepu_overlap_x, skepu_sharedCols, &" << sdataName << "[(threadIdx.y * skepu_stride_y) * skepu_sharedCols + (threadIdx.x * skepu_stride_x)]}";
+            ss_perfect_mappool_args << "{(int)skepu_overlap_y, (int)skepu_overlap_x,"
+                                    <<  "skepu_in_cols,"
+                                    <<  "&skepu_input[skepu_y * skepu_stride_y * skepu_in_cols +"
+                                                 <<  "skepu_x * skepu_stride_x]}";
+        }
+        else
+        SSMapOverlapFuncArgs << "{(int)skepu_overlap_y, (int)skepu_overlap_x, skepu_sharedCols, &" << sdataName << "[(threadIdx.y + skepu_overlap_y) * skepu_sharedCols + (threadIdx.x + skepu_overlap_x)]}";
+    }
 	else if (dim == 3)
-		SSMapOverlapFuncArgs
+    {
+        if (mapOverlapFunc.regionParam->isPool)
+        {
+            SSMapOverlapFuncArgs
 			<< "{(int)skepu_overlap_i, (int)skepu_overlap_j, (int)skepu_overlap_k, skepu_shared_size_j * skepu_shared_size_k, skepu_shared_size_k, &"
-			<< sdataName << "[(threadIdx.z + skepu_overlap_i) * skepu_shared_size_j * skepu_shared_size_k + (threadIdx.y + skepu_overlap_j) * skepu_shared_size_k + (threadIdx.x + skepu_overlap_k)]}";
+			<< sdataName << "[(threadIdx.z * skepu_stride_i) * skepu_shared_size_j * skepu_shared_size_k + (threadIdx.y * skepu_stride_j) * skepu_shared_size_k + (threadIdx.x * skepu_stride_k)]}";
+
+            ss_perfect_mappool_args << "{(int)skepu_overlap_i, (int)skepu_overlap_j, (int)skepu_overlap_k,"
+                                    <<  "skepu_in_size_j * skepu_in_size_k,"
+                                    <<  "skepu_in_size_k,"
+                                    <<  "&skepu_input[skepu_i * skepu_stride_i * skepu_in_size_j * skepu_in_size_k +"
+                                                 <<  "skepu_j * skepu_stride_j * skepu_in_size_k +"
+                                                 <<  "skepu_k * skepu_stride_k]}";
+        }
+        else
+            SSMapOverlapFuncArgs
+                << "{(int)skepu_overlap_i, (int)skepu_overlap_j, (int)skepu_overlap_k, skepu_shared_size_j * skepu_shared_size_k, skepu_shared_size_k, &"
+                << sdataName << "[(threadIdx.z + skepu_overlap_i) * skepu_shared_size_j * skepu_shared_size_k + (threadIdx.y + skepu_overlap_j) * skepu_shared_size_k + (threadIdx.x + skepu_overlap_k)]}";
+    }
    else if (dim == 4)
    {
         if (mapOverlapFunc.regionParam->isPool)

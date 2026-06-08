@@ -73,7 +73,7 @@ namespace skepu
 						break;
 
 					bool modifiedSomething = false;
-					for (int prime : {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71}) // First 20 primes
+					for (int prime : first_20_primes) // First 20 primes
 					{
 						if (numThreads.z % prime == 0)
 						{

@@ -322,12 +322,9 @@ namespace skepu
 		size_t m_GPUThreads {defaultGPUThreads};
 		size_t m_blocks {defaultGPUBlocks};
 
-		// OpenMP parameters
-#ifdef SKEPU_OPENMP
-		size_t m_CPUThreads {(size_t)omp_get_max_threads()};
-#else
+
 		size_t m_CPUThreads {defaultCPUThreads};
-#endif
+
 		Backend::Scheduling m_openmp_scheduling_mode = Backend::Scheduling::Static;
 		size_t m_openmp_chunk_size {Backend::chunkSizeDefault};
 

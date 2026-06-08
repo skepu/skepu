@@ -265,6 +265,17 @@ static {{TYPE_CL}} skepu_pool_access_2d_{{CONTAINED_TYPE_CL}}(skepu_pool2d_{{CON
 { return r.data[i * r.stride + j]; }
 )~~~";
 
+static const std::string OpenCLPool2DTemplateGlobal = R"~~~(
+typedef struct {
+	__global {{TYPE_CL}} *data;
+	int si, sj;
+	size_t stride;
+} skepu_pool2d_{{CONTAINED_TYPE_CL}}_global;
+
+static {{TYPE_CL}} skepu_pool_access_2d_{{CONTAINED_TYPE_CL}}_global(skepu_pool2d_{{CONTAINED_TYPE_CL}}_global r, int i, int j)
+{ return r.data[i * r.stride + j]; }
+)~~~";
+
 static const std::string OpenCLPool3DTemplate = R"~~~(
 typedef struct {
 	__local {{TYPE_CL}} *data;
@@ -273,6 +284,17 @@ typedef struct {
 } skepu_pool3d_{{CONTAINED_TYPE_CL}};
 
 static {{TYPE_CL}} skepu_pool_access_3d_{{CONTAINED_TYPE_CL}}(skepu_pool3d_{{CONTAINED_TYPE_CL}} r, int i, int j, int k)
+{ return r.data[i * r.stride1 * r.stride2 + j * r.stride2 + k]; }
+)~~~";
+
+static const std::string OpenCLPool3DTemplateGlobal = R"~~~(
+typedef struct {
+	__global {{TYPE_CL}} *data;
+	int si, sj, sk;
+	size_t stride1, stride2;
+} skepu_pool3d_{{CONTAINED_TYPE_CL}}_global;
+
+static {{TYPE_CL}} skepu_pool_access_3d_{{CONTAINED_TYPE_CL}}_global(skepu_pool3d_{{CONTAINED_TYPE_CL}}_global r, int i, int j, int k)
 { return r.data[i * r.stride1 * r.stride2 + j * r.stride2 + k]; }
 )~~~";
 
@@ -314,8 +336,8 @@ static {{TYPE_CL}} skepu_pool_access_4d_{{CONTAINED_TYPE_CL}}_global(skepu_pool4
 		switch (dim)
 		{
 		case 1: retval = OpenCLPool1DTemplate; break;
-		case 2: retval = OpenCLPool2DTemplate; break;
-		case 3: retval = OpenCLPool3DTemplate; break;
+		case 2: retval = OpenCLPool2DTemplate + "\n" + OpenCLPool2DTemplateGlobal; break;
+		case 3: retval = OpenCLPool3DTemplate + "\n" + OpenCLPool3DTemplateGlobal; break;
 		case 4: retval = OpenCLPool4DTemplate + "\n" + OpenCLPool4DTemplateGlobal; break;
 		};
 	}
@@ -910,8 +932,29 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 
 	SSFuncSource << transformedSource << "\n}\n\n";
     if (UserFunction::RegionParam *param = Func.regionParam)
-        if (param->containerType == ContainerType::Pool4D)
+        if (param->containerType == ContainerType::Pool2D ||
+			param->containerType == ContainerType::Pool3D ||
+			param->containerType == ContainerType::Pool4D )
         {
+            std::string dim = "";
+
+            switch (param->containerType)
+            {
+                case ContainerType::Pool1D: // unsupported at the moment
+                    dim = "1";
+                    SkePUAbort("global access to OpenCL MapPool1D not implemented yet");
+                    break;
+                case ContainerType::Pool2D:
+                    dim = "2";
+                    break;
+                case ContainerType::Pool3D:
+                    dim = "3";
+                    break;
+                case ContainerType::Pool4D:
+                    dim = "4";
+                    break;
+            }
+            
             std::stringstream SSGlobalFuncSource;
             SSGlobalFuncSource << "static ";
             if (Func.multipleReturnTypes.size() > 0)
@@ -919,7 +962,7 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
             else
                 SSGlobalFuncSource << Func.returnTypeNameOpenCL();
             
-            std::string original = "skepu_pool4d_" + transformToCXXIdentifier(param->resolvedTypeName);
+            std::string original = "skepu_pool"+ dim + "d_" + transformToCXXIdentifier(param->resolvedTypeName);
             std::string replacement = original + "_global";
             std::string param_list = SSFuncParamList.str();
             replaceTextInString(param_list, original, replacement);
@@ -928,7 +971,7 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
             for (UserFunction::TemplateArgument &arg : Func.templateArguments)
                 SSGlobalFuncSource << "typedef " << arg.rawTypeName << " " << arg.paramName << ";\n";
             
-            original = "skepu_pool_access_4d_" + transformToCXXIdentifier(param->resolvedTypeName);
+            original = "skepu_pool_access_" + dim + "d_" + transformToCXXIdentifier(param->resolvedTypeName);
             replacement = original + "_global";
             replaceTextInString(transformedSource, original, replacement);
             SSGlobalFuncSource << transformedSource << "\n}\n\n";

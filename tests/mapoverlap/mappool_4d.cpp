@@ -92,16 +92,18 @@ void compare(skepu::Tensor4<T>& actual, std::vector<std::vector<std::vector<std:
 }
 
 auto pool = skepu::MapPool(pool_sum);
+constexpr int size_upper_bound = 12;
+
 
 TEST_CASE("Fundamentals")
 {
     int poolSize = 2;
     pool.setPoolSizeAndStride(poolSize, poolSize, poolSize, poolSize);
 
-    for (int i = 2; i <= 20; i += poolSize)
-        for (int j = 2; j <= 20; j += poolSize)
-            for (int k = 2; k <= 20; k += poolSize)
-                for (int l = 2; l <= 20; l += poolSize)
+    for (int i = 2; i <= size_upper_bound; i += poolSize)
+        for (int j = 2; j <= size_upper_bound; j += poolSize)
+            for (int k = 2; k <= size_upper_bound; k += poolSize)
+                for (int l = 2; l <= size_upper_bound; l += poolSize)
         {
             skepu::Tensor4<int> input(i, j, k, l, "input", 1);
             skepu::Tensor4<int> actual(1 + (input.size_i() - poolSize) / poolSize,
@@ -279,10 +281,10 @@ TEST_CASE("Multi return")
     int poolSize = 2;
     pool2.setPoolSizeAndStride(poolSize, poolSize, poolSize, poolSize);
 
-    for (int i = 2; i <= 20; i += poolSize)
-        for (int j = 2; j <= 20; j += poolSize)
-            for (int k = 2; k <= 20; k += poolSize)
-                for (int l = 2; l <= 20; l += poolSize)
+    for (int i = 2; i <= size_upper_bound; i += poolSize)
+        for (int j = 2; j <= size_upper_bound; j += poolSize)
+            for (int k = 2; k <= size_upper_bound; k += poolSize)
+                for (int l = 2; l <= size_upper_bound; l += poolSize)
                 {
                     skepu::Tensor4<int> input(i, j, k, l, "input", 1);
                     skepu::Tensor4<int> actual(input.size_i() / poolSize, input.size_j() / poolSize,

@@ -21,10 +21,10 @@ namespace skepu
 			auto &res = get<0>(std::forward<CallArgs>(args)...);
 			auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 			Device_CL *device = this->m_environment->m_devices_CL[deviceID];
-			const size_t in_rows  = arg.total_rows();
-			const size_t in_cols  = arg.total_cols();
-			const size_t out_rows = res.total_rows();
-			const size_t out_cols = res.total_cols();
+			const size_t in_size_i  = arg.size_i();
+			const size_t in_size_j  = arg.size_j();
+			const size_t out_size_i = res.size_i();
+			const size_t out_size_j = res.size_j();
 			const size_t maxThreads = this->m_selected_spec->GPUThreads();
 			
 			// Sets the pad and edge policy values that are sent to the kernel
@@ -32,8 +32,8 @@ namespace skepu
 			const T pad = (this->m_edge == Edge::Pad) ? this->m_pad : T{};
 			std::vector<T> wrap(1);
 			
-			auto elwiseMemP = std::make_tuple(get<EI>(std::forward<CallArgs>(args)...).updateDevice_CL(get<EI>(std::forward<CallArgs>(args)...).getAddress(), in_rows,  in_cols,  device, true)...);
-			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getParent().getAddress(), out_rows, out_cols, device, false)...);
+			auto elwiseMemP = std::make_tuple(get<EI>(std::forward<CallArgs>(args)...).updateDevice_CL(get<EI>(std::forward<CallArgs>(args)...).getAddress(), in_size_i,  in_size_j,  device, true)...);
+			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getParent().getAddress(), out_size_i, out_size_j, device, false)...);
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(),
 				get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
 				
@@ -48,33 +48,71 @@ namespace skepu
 			
 			size_t numThreads[2], numBlocks[2];
 			size_t sizeLength = (size_t)std::sqrt(maxThreads);
-			numThreads[0] = std::min<size_t>(out_cols, sizeLength);
-			numThreads[1] = std::min<size_t>(out_rows, sizeLength);
-			numBlocks[0] = (size_t)((out_cols + numThreads[0] - 1) / numThreads[0]) * numThreads[0];
-			numBlocks[1] = (size_t)((out_rows + numThreads[1] - 1) / numThreads[1]) * numThreads[1];
+			numThreads[0] = this->isPool ? out_size_j : std::min<size_t>(out_size_j, sizeLength);
+			numThreads[1] = this->isPool ? out_size_i : std::min<size_t>(out_size_i, sizeLength);
+			numBlocks[0] = this->isPool ? 1 : (size_t)((out_size_j + numThreads[0] - 1) / numThreads[0]) * numThreads[0];
+			numBlocks[1] = this->isPool ? 1 : (size_t)((out_size_i + numThreads[1] - 1) / numThreads[1]) * numThreads[1];
 			
-			size_t sharedCols;
-			size_t sharedRows;
+			size_t shared_j = numThreads[0] + this->m_overlap[1] * 2;
+			size_t shared_i = numThreads[1] + this->m_overlap[0] * 2;
+			size_t shared_mem =  shared_i * shared_j * sizeof(T);
 
 			if (this->isPool)
 			{
-				sharedCols = (numThreads[0] - 1) * this->m_strides[1] + this->m_overlap[1];
-				sharedRows = (numThreads[1] - 1) * this->m_strides[0] + this->m_overlap[0];
-			}
-			else
-			{
-				sharedCols = numThreads[0] + this->m_overlap[1] * 2;
-				sharedRows = numThreads[1] + this->m_overlap[0] * 2;
-			}
 
-			const size_t sharedMemSize =  sharedRows * sharedCols * sizeof(T);
+                cl_ulong available_memory_per_block;
+                clGetDeviceInfo(device->getDeviceID(), CL_DEVICE_LOCAL_MEM_SIZE, sizeof(cl_ulong), &available_memory_per_block, 0);
+
+				while (true)
+				{
+                    if ((this->m_overlap[0] == 0 || this->m_overlap[0] <= this->m_strides[0]) &&
+                        (this->m_overlap[1] == 0 || this->m_overlap[1] <= this->m_strides[1]))
+                    {
+                        shared_j = 0;
+                        shared_i = 0;
+                    }
+                    else
+                    {
+                        shared_j = std::min(in_size_j, in_size_j/numBlocks[0] + this->m_overlap[1] - this->m_strides[1]);
+                        shared_i = std::min(in_size_i, in_size_i/numBlocks[1] + this->m_overlap[0] - this->m_strides[0]);
+                    }
+                    shared_mem = shared_i * shared_j * sizeof(T);
+
+					if (shared_mem <= available_memory_per_block && numThreads[0]*numThreads[1] <= 512)
+						break;
+
+					bool modifiedSomething = false;
+					for (int prime : first_20_primes)
+					{
+						if (numThreads[1] % prime == 0)
+						{
+							numThreads[1] /= prime;
+							numBlocks[1] *= prime;
+							modifiedSomething = true;
+							break;
+						}
+						
+						if (numThreads[0] % prime == 0)
+						{
+							numThreads[0] /= prime;
+							numBlocks[0] *= prime;
+							modifiedSomething = true;
+							break;
+						}
+					}
+					if (!modifiedSomething)
+						SKEPU_ERROR("Could not find a valid setup of threads and blocks when running MapPool4D CUDA Kernel");
+				}
+                numBlocks[0] *= numThreads[0];
+                numBlocks[1] *= numThreads[1];
+			}
 			
 			DEBUG_TEXT_LEVEL1("OpenCL MapOverlap 2D: device = " << deviceID << ", numThreads = "
 				<< "[" << numThreads[0] << " x " << numThreads[1] << "]" 
-				<< ", numBlocks = " << "[" << numBlocks[0] << " x " << numBlocks[1] << "], shmem = " << sharedMemSize); 
+				<< ", numBlocks = " << "[" << numBlocks[0] << " x " << numBlocks[1] << "], shmem = " << shared_mem); 
 			
-			size_t threads = std::min<size_t>(out_rows * out_cols, numBlocks[0] * numBlocks[1] * numThreads[0] * numThreads[1]);
-			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(out_rows * out_cols, threads);
+			size_t threads = std::min<size_t>(out_size_i * out_size_j, numBlocks[0] * numBlocks[1] * numThreads[0] * numThreads[1]);
+			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(out_size_i * out_size_j, threads);
 			auto randomMemP = random.updateDevice_CL(random.getAddress(), threads, device, true);
 			
 			CLKernel::mapOverlap2D(
@@ -85,18 +123,18 @@ namespace skepu
 				std::make_tuple(&get<AI>(std::forward<CallArgs>(args)...).getParent(), std::get<AI-InArity-OutArity>(anyMemP))...,
 				get<CI>(std::forward<CallArgs>(args)...)...,
 				get<0>(std::forward<CallArgs>(args)...).getParent().size_info(),
-				out_rows, out_cols,
+				out_size_i, out_size_j,
 				this->m_overlap[0], this->m_overlap[1],
 				this->m_strides[0], this->m_strides[1],
-				in_rows, in_cols, sharedRows, sharedCols,
+				in_size_i, in_size_j, shared_i, shared_j,
 				(int)(this->isPool ? 1 : 0), edge, pad, &wrapMemP,
-				sharedMemSize
+				shared_mem
 			);
 			
 			// Make sure the data is marked as changed by the device
 			pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
-			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 2D", this, {in_rows, in_cols},
+			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 2D", this, {in_size_i, in_size_j},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
@@ -116,12 +154,12 @@ namespace skepu
 		{
 			auto &res = get<0>(std::forward<CallArgs>(args)...);
 			auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
-			const size_t in_rows  = arg.total_rows();
-			const size_t in_cols  = arg.total_cols();
-			const size_t out_rows = res.total_rows();
-			const size_t out_cols = res.total_cols();
-			const size_t numRowsPerSlice = out_rows / numDevices;
-			const size_t restRows = out_rows % numDevices;
+			const size_t in_size_i  = arg.size_i();
+			const size_t in_size_j  = arg.size_j();
+			const size_t out_size_i = res.size_i();
+			const size_t out_size_j = res.size_j();
+			const size_t numRowsPerSlice = out_size_i / numDevices;
+			const size_t restRows = out_size_i % numDevices;
 			const size_t maxThreads = this->m_selected_spec->GPUThreads();
 			
 			// Sets the pad and edge policy values that are sent to the kernel
@@ -140,8 +178,8 @@ namespace skepu
 				const size_t outRows = numRowsPerSlice + ((i == numDevices - 1) ? restRows : 0);
 				const size_t inRows = outRows + 2 * this->m_overlap[1]; // no matter which device, number of input rows is same.
 				
-				auto elwiseMemP = std::make_tuple(get<EI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<EI>(std::forward<CallArgs>(args)...).getAddress() + i * numRowsPerSlice * in_cols, inRows, in_cols, device, true)...);
-				auto outMemP    = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + i * numRowsPerSlice * out_cols, outRows, out_cols, device, false)...);
+				auto elwiseMemP = std::make_tuple(get<EI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<EI>(std::forward<CallArgs>(args)...).getAddress() + i * numRowsPerSlice * in_size_j, inRows, in_size_j, device, true)...);
+				auto outMemP    = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + i * numRowsPerSlice * out_size_j, outRows, out_size_j, device, false)...);
 			
 				// Copy wrap vector to device.
 				DeviceMemPointer_CL<T> wrapMemP(&wrap[0], wrap.size(), device);
@@ -152,21 +190,21 @@ namespace skepu
 				wrapMemP.copyHostToDevice();
 				
 				size_t numBlocks[2], numThreads[2];
-				numThreads[0] = std::min<size_t>(out_cols, 16);
-				numThreads[1] = std::min(out_rows, maxThreads / 16);
-				numBlocks[0] = (size_t)((out_cols + numThreads[0] - 1) / numThreads[0]) * numThreads[0];
+				numThreads[0] = std::min<size_t>(out_size_j, 16);
+				numThreads[1] = std::min(out_size_i, maxThreads / 16);
+				numBlocks[0] = (size_t)((out_size_j + numThreads[0] - 1) / numThreads[0]) * numThreads[0];
 				numBlocks[1] = (size_t)((outRows + numThreads[1] - 1) / numThreads[1]) * numThreads[1];
 				
-				const size_t sharedRows = numThreads[1] + this->m_overlap[1] * 2;
-				const size_t sharedCols = numThreads[0] + this->m_overlap[0] * 2;
-				const size_t sharedMemSize =  sharedRows * sharedCols * sizeof(T);
+				const size_t shared_i = numThreads[1] + this->m_overlap[1] * 2;
+				const size_t shared_j = numThreads[0] + this->m_overlap[0] * 2;
+				const size_t shared_mem =  shared_i * shared_j * sizeof(T);
 				const size_t stride = numThreads[0] + this->m_overlap[0] * 2;
 			
 				auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(),
 					get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
 					
-				size_t threads = std::min<size_t>(outRows * out_cols, numBlocks[0] * numBlocks[1] * numThreads[0] * numThreads[1]);
-				auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(outRows * out_cols, threads);
+				size_t threads = std::min<size_t>(outRows * out_size_j, numBlocks[0] * numBlocks[1] * numThreads[0] * numThreads[1]);
+				auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(outRows * out_size_j, threads);
 				auto randomMemP = random.updateDevice_CL(random.getAddress(), threads, device, true);
 				
 				CLKernel::mapOverlap2D(
@@ -177,18 +215,18 @@ namespace skepu
 					std::make_tuple(&get<AI>(std::forward<CallArgs>(args)...).getParent(), std::get<AI-InArity-OutArity>(anyMemP))...,
 					get<CI>(std::forward<CallArgs>(args)...)...,
 					get<0>(std::forward<CallArgs>(args)...).getParent().size_info(),
-					outRows, out_cols,
+					outRows, out_size_j,
 					this->m_overlap[1], this->m_overlap[0],
 					this->m_strides[0], this->m_strides[1],
-					in_rows, in_cols, sharedRows, sharedCols,
+					in_size_i, in_size_j, shared_i, shared_j,
 					(int)(this->isPool ? 1 : 0), edge, pad, &wrapMemP,
-					sharedMemSize
+					shared_mem
 				);
 				
 				// Make sure the data is marked as changed by the device
 				pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 				pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
-				SKEPU_TRACE_CALL(trace_handle, "MapOverlap 2D", this, {in_rows, in_cols},
+				SKEPU_TRACE_CALL(trace_handle, "MapOverlap 2D", this, {in_size_i, in_size_j},
 					{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 					{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 					{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
