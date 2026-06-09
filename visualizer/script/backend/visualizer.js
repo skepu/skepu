@@ -248,7 +248,7 @@ async function _handleLoad({ traceJson, traceFilename = 'trace.json', cppFiles =
 // Result: same as _handleLoad
 
 async function _handleLoadExample({ index, backend }) {
-    const exUrl   = new URL('../../examples/examples.json', _BASE_URL).href;
+    const exUrl   = new URL('../examples/examples.json', _BASE_URL).href;
     const examples = await fetch(exUrl).then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); });
 
     if (index < 0 || index >= examples.length)
@@ -261,7 +261,7 @@ async function _handleLoadExample({ index, backend }) {
         throw new Error('Backend not available for this example: ' + chosen);
 
     const traceRelPath = traceDict[chosen];
-    const traceUrl     = new URL('../../examples/' + traceRelPath, _BASE_URL).href;
+    const traceUrl     = new URL('../examples/' + traceRelPath, _BASE_URL).href;
     const traceText    = await fetch(traceUrl).then(r => { if (!r.ok) throw new Error(r.statusText); return r.text(); });
 
     _traceJsonRaw    = traceText;
@@ -275,7 +275,7 @@ async function _handleLoadExample({ index, backend }) {
 
     // Fetch accompanying source files.
     for (const relPath of (ex.cpp_files ?? [])) {
-        const url = new URL('../../examples/' + relPath, _BASE_URL).href;
+        const url = new URL('../examples/' + relPath, _BASE_URL).href;
         try {
             const content = await fetch(url).then(r => r.ok ? r.text() : Promise.reject(r.statusText));
             _cppFiles[relPath.split('/').pop()] = content;
