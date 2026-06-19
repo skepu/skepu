@@ -58,50 +58,23 @@ namespace skepu
 			numBlocks.y = this->isPool ? 1 : (out_size_j + numThreads.y - 1) / numThreads.y;
 			numBlocks.z = this->isPool ? 1 : (out_size_i + numThreads.z - 1) / numThreads.z;
 
-			size_t sharedL = std::min<size_t>(out_size_l, numThreads_0a) + this->m_overlap[3] * 2;
-			size_t sharedK = std::min<size_t>(out_size_k, numThreads.x / numThreads_0a) + this->m_overlap[2] * 2;
-			size_t sharedJ = std::min<size_t>(out_size_j, numThreads.y) + this->m_overlap[1] * 2;
-			size_t sharedI = std::min<size_t>(out_size_i, numThreads.z) + this->m_overlap[0] * 2;
+			size_t sharedL = std::min<size_t>(std::max<size_t>(in_size_l, out_size_l), numThreads_0a) + this->m_overlap[3] * 2;
+			size_t sharedK = std::min<size_t>(std::max<size_t>(in_size_k, out_size_k), numThreads.x / numThreads_0a) + this->m_overlap[2] * 2;
+			size_t sharedJ = std::min<size_t>(std::max<size_t>(in_size_j, out_size_j), numThreads.y) + this->m_overlap[1] * 2;
+			size_t sharedI = std::min<size_t>(std::max<size_t>(in_size_i, out_size_i), numThreads.z) + this->m_overlap[0] * 2;
 			size_t sharedMemSize =  sharedI * sharedJ * sharedK * sharedL * sizeof(T);
 
 			if (this->isPool)
 			{
-                sharedMemSize = 0;
-				while (true)
-				{
-					if (numThreads.x*numThreads.y*numThreads.z <= 512)
-						break;
+				cudaDeviceProp properties;
+                cudaGetDeviceProperties(&properties, deviceID);
 
-					bool modifiedSomething = false;
-					for (int prime : first_20_primes) // First 20 primes
-					{
-						if (numThreads.z % prime == 0)
-						{
-							numThreads.z /= prime;
-							numBlocks.z *= prime;
-							modifiedSomething = true;
-							break;
-						}
-						
-						if (numThreads.y % prime == 0)
-						{
-							numThreads.y /= prime;
-							numBlocks.y *= prime;
-							modifiedSomething = true;
-							break;
-						}
-						
-						if (numThreads.x % prime == 0)
-						{
-							numThreads.x /= prime;
-							numBlocks.x *= prime;
-							modifiedSomething = true;
-							break;
-						}
-					}
-					if (!modifiedSomething)
-						SKEPU_ERROR("Could not find a valid setup of threads and blocks when running MapPool4D CUDA Kernel");
-				}
+				bool should_use_global_memory = true;
+
+				this->template configurePoolKernelParameters<T, unsigned, 3, 4>(properties.maxThreadsPerBlock, {&numThreads.x, &numThreads.y, &numThreads.z}, {&numBlocks.x, &numBlocks.y, &numBlocks.z},
+														 						should_use_global_memory, properties.sharedMemPerBlock, {&sharedI, &sharedJ, &sharedK, &sharedL}, {in_size_i, in_size_j, in_size_k, in_size_l});
+
+				sharedMemSize = 0;
 			}
 			
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).cudaProxy(deviceID, MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])...);

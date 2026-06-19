@@ -60,49 +60,20 @@ namespace skepu
 			if (this->isPool)
 			{
 
-                cl_ulong available_memory_per_block;
-                clGetDeviceInfo(device->getDeviceID(), CL_DEVICE_LOCAL_MEM_SIZE, sizeof(cl_ulong), &available_memory_per_block, 0);
+                size_t max_memory_per_work_group;
+                clGetDeviceInfo(device->getDeviceID(), CL_DEVICE_LOCAL_MEM_SIZE, sizeof(size_t), &max_memory_per_work_group, 0);
 
-				while (true)
-				{
-                    if ((this->m_overlap[0] == 0 || this->m_overlap[0] <= this->m_strides[0]) &&
-                        (this->m_overlap[1] == 0 || this->m_overlap[1] <= this->m_strides[1]))
-                    {
-                        shared_j = 0;
-                        shared_i = 0;
-                    }
-                    else
-                    {
-                        shared_j = std::min(in_size_j, in_size_j/numBlocks[0] + this->m_overlap[1] - this->m_strides[1]);
-                        shared_i = std::min(in_size_i, in_size_i/numBlocks[1] + this->m_overlap[0] - this->m_strides[0]);
-                    }
-                    shared_mem = shared_i * shared_j * sizeof(T);
+				size_t max_threads_per_work_group;
+				clGetKernelWorkGroupInfo(CLKernel::kernels(deviceID), device->getDeviceID(), CL_KERNEL_WORK_GROUP_SIZE, sizeof(size_t), &max_threads_per_work_group, 0);
 
-					if (shared_mem <= available_memory_per_block && numThreads[0]*numThreads[1] <= 512)
-						break;
 
-					bool modifiedSomething = false;
-					for (int prime : first_20_primes)
-					{
-						if (numThreads[1] % prime == 0)
-						{
-							numThreads[1] /= prime;
-							numBlocks[1] *= prime;
-							modifiedSomething = true;
-							break;
-						}
-						
-						if (numThreads[0] % prime == 0)
-						{
-							numThreads[0] /= prime;
-							numBlocks[0] *= prime;
-							modifiedSomething = true;
-							break;
-						}
-					}
-					if (!modifiedSomething)
-						SKEPU_ERROR("Could not find a valid setup of threads and blocks when running MapPool4D CUDA Kernel");
-				}
+				bool should_use_global_memory = (this->m_overlap[0] == 0 || this->m_overlap[0] <= this->m_strides[0]) &&
+												(this->m_overlap[1] == 0 || this->m_overlap[1] <= this->m_strides[1]);
+
+				this->template configurePoolKernelParameters<T, size_t, 2, 2>(max_threads_per_work_group, {&numThreads[0], &numThreads[1]}, {&numBlocks[0], &numBlocks[1]},
+														 					  should_use_global_memory, max_memory_per_work_group, {&shared_i, &shared_j}, {in_size_i, in_size_j});
+
+				shared_mem = shared_i * shared_j * sizeof(T);
                 numBlocks[0] *= numThreads[0];
                 numBlocks[1] *= numThreads[1];
 			}

@@ -61,46 +61,13 @@ namespace skepu
                 cudaDeviceProp properties;
                 cudaGetDeviceProperties(&properties, deviceID);
 
-				while (true)
-				{
-                    if ((this->m_overlap[0] == 0 || this->m_overlap[0] <= this->m_strides[0]) &&
-                        (this->m_overlap[1] == 0 || this->m_overlap[1] <= this->m_strides[1]))
-                    {
-                        shared_j = 0;
-                        shared_i = 0;
-                    }
-                    else
-                    {
-                        shared_j = std::min(in_size_j, in_size_j/numBlocks.x + this->m_overlap[1] - this->m_strides[1]);
-                        shared_i = std::min(in_size_i, in_size_i/numBlocks.y + this->m_overlap[0] - this->m_strides[0]);
-                    }
-                    shared_mem = shared_i * shared_j * sizeof(T);
+				bool should_use_global_memory = (this->m_overlap[0] == 0 || this->m_overlap[0] <= this->m_strides[0]) &&
+                        						(this->m_overlap[1] == 0 || this->m_overlap[1] <= this->m_strides[1]);
 
-					if (shared_mem <= properties.sharedMemPerBlock && numThreads.x*numThreads.y <= 512)
-						break;
-
-					bool modifiedSomething = false;
-					for (int prime : first_20_primes)
-					{
-						if (numThreads.y % prime == 0)
-						{
-							numThreads.y /= prime;
-							numBlocks.y *= prime;
-							modifiedSomething = true;
-							break;
-						}
-						
-						if (numThreads.x % prime == 0)
-						{
-							numThreads.x /= prime;
-							numBlocks.x *= prime;
-							modifiedSomething = true;
-							break;
-						}
-					}
-					if (!modifiedSomething)
-						SKEPU_ERROR("Could not find a valid setup of threads and blocks when running MapPool4D CUDA Kernel");
-				}
+				this->template configurePoolKernelParameters<T, unsigned, 2, 2>(properties.maxThreadsPerBlock, {&numThreads.x, &numThreads.y}, {&numBlocks.x, &numBlocks.y},
+														 						should_use_global_memory, properties.sharedMemPerBlock, {&shared_i, &shared_j}, {in_size_i, in_size_j});
+				
+				shared_mem = shared_i * shared_j * sizeof(T);
 			}
 			
 			DEBUG_TEXT_LEVEL1("CUDA MapOverlap kernel: size = " << out_size_i * out_size_j << ", one device, numBlocks = [" << numBlocks.x << "x" << numBlocks.y << "], numThreads = [" << numThreads.x << "x" << numThreads.y << "]");

@@ -44,6 +44,51 @@ namespace skepu
                 return this->isRegularInputSizeValid(in_size, out_size);
 			}
 
+			template <typename T, typename U, unsigned N, unsigned M>
+			void configurePoolKernelParameters(size_t max_threads_per_block, const std::array<U*, N>& num_threads, const std::array<U*, N>& num_blocks,
+											   bool should_use_global_memory, size_t max_shared_memory_per_block, const std::array<size_t*, M>& shared_memory, const std::array<size_t, M>& in_size)
+			{
+				while (true)
+				{
+					if (should_use_global_memory)
+						for (size_t* shared_memory : shared_memory)
+							*shared_memory = 0;
+					else if (N == M)
+						for (int n = N-1; n >= 0; --n)
+							*shared_memory[N-n-1] = std::min(in_size[N-n-1], in_size[N-n-1]/(*num_blocks[n]) + this->m_overlap[n] - this->m_strides[n]);
+
+					U total_threads = 1;
+					for (U* numThread : num_threads)
+						total_threads *= *numThread;
+
+					size_t total_shared_memory = sizeof(T);
+					for (size_t* shared_mem : shared_memory)
+						total_shared_memory *= *shared_mem;
+
+					if (total_threads <= max_threads_per_block && total_shared_memory <= max_shared_memory_per_block)
+						break;
+
+					bool modifiedSomething = false;
+					for (int prime : first_20_primes)
+					{
+						for (int n = N - 1; n >= 0; --n)
+							if (*num_threads[n] % prime == 0)
+							{
+								*num_threads[n] /= prime;
+								*num_blocks[n] *= prime;
+								modifiedSomething = true;
+								goto configure_pool_kernel_parameters_while_end;
+							}
+					}
+					configure_pool_kernel_parameters_while_end:
+					if (!modifiedSomething)
+					{
+						std::string dim = std::to_string(M);
+						SKEPU_ERROR("Could not find a valid setup of threads and blocks when running MapPool" << dim << "D Kernel");
+					}
+				}
+			}
+
         public:
             using ResultArg = std::tuple<T>;
             using ElwiseArgs = std::tuple<T>;
