@@ -3,6 +3,7 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
+#include <test_helper_automatic_setup.hpp>
 
 template <typename T>
 using vector3 = std::vector<std::vector<std::vector<T>>>;

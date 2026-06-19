@@ -3,7 +3,7 @@
 #define SKEPU_DEBUG 3
 #include <skepu>
 #include <skepu-lib/io.hpp>
-
+#include <test_helper_automatic_setup.hpp>
 
 float over_3d(skepu::Region3D<int> r, skepu::Ten3<float> stencil)
 {

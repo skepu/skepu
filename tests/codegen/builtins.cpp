@@ -1,10 +1,10 @@
 //#define SKEPU_ENABLE_EXCEPTIONS
-#define PRECISION 1E-3
-
 #include "../../external/catch2/catch.hpp"
 
 #include <iostream>
 #include <skepu>
+#include <test_helper_automatic_setup.hpp>
+#include <test_helper_functions.hpp>
 #include <cmath>
 
 using namespace std;
@@ -37,16 +37,6 @@ auto skepu_ceil     = skepu::Map<1>([](float f) -> float { return ceil(f); });
 auto skepu_floor    = skepu::Map<1>([](float f) -> float { return floor(f); });
 auto skepu_erf      = skepu::Map<1>([](float f) -> float { return erf(f); });
 auto skepu_printf   = skepu::Map<1>([](float f, float val) -> float { printf("Hello, world!"); return val; });
-
-
-void is_similar(float a, float b)
-{
-	CHECK((
-		(isnan(a) && isnan(b)) ||
-		(isinf(a) && isinf(b)) ||
-		(a == Approx(b).epsilon(PRECISION)))
-	);
-}
 
 
 TEST_CASE("Test built-in math functions")
@@ -96,7 +86,7 @@ TEST_CASE("Test built-in math functions")
 	skepu::external(skepu::read(res, in), [&]
 	{
 		for(size_t i = 0; i < N; ++i)
-			is_similar(res(i), std::abs((int)in(i)));
+			is_similar(res(i), static_cast<float>(std::abs((int)in(i))));
 	});
 	
 	
@@ -132,7 +122,7 @@ TEST_CASE("Test built-in math functions")
 	skepu::external(skepu::read(res, in), [&]
 	{
 		for(size_t i = 0; i < N; ++i)
-			is_similar(res(i), std::pow(in(i), 2));
+			is_similar(res(i), static_cast<float>(std::pow(in(i), 2)));
 	});
 	
 	
@@ -312,6 +302,6 @@ TEST_CASE("Test built-in math functions")
 	skepu::external(skepu::read(res, in), [&]
 	{
 		for(size_t i = 0; i < N; ++i)
-			is_similar(res(i), 0);
+			is_similar(res(i), 0.0f);
 	});
 }

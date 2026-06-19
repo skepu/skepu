@@ -1,7 +1,7 @@
 #include "../../external/catch2/catch.hpp"
 
 #include <skepu>
-
+#include <test_helper_automatic_setup.hpp>
 
 auto square = skepu::Map<2>([](float a, float b) { return a * b; });
 

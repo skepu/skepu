@@ -3,6 +3,7 @@
 #include <skepu>
 #include <skepu-lib/util.hpp>
 #include <skepu-lib/io.hpp>
+#include <test_helper_automatic_setup.hpp>
 
 void check_values(skepu::Vector<int> v, int expected)
 {

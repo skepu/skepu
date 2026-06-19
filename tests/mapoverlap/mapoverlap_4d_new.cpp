@@ -3,31 +3,12 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
-#include <cmath>
+#include <test_helper_automatic_setup.hpp>
+#include <test_helper_functions.hpp>
 #include <type_traits>
 
 template <typename T>
 using vector4 = std::vector<std::vector<std::vector<std::vector<T>>>>;
-
-#define PRECISION 1E-3
-template <typename T>
-void is_similar(T a, T b)
-{
-	CHECK((
-		(std::isnan(a) && std::isnan(b)) ||
-		(std::isinf(a) && std::isinf(b)) ||
-		(a == Approx(b).epsilon(PRECISION)))
-	);
-}
-
-int clamp(int const& val, int const& min, int const& max)
-{
-    if (val < min)
-        return min;
-    if (val > max)
-        return max;
-    return val;
-}
 
 int overlap_sum(skepu::Region4D<int> r)
 {
@@ -103,10 +84,10 @@ vector4<int> generate_expected(skepu::Tensor4<int>& input, std::tuple<int, int, 
                                         switch (edge)
                                         {
                                             case skepu::Edge::Duplicate:
-                                                ii = clamp(ii, 0, input.size_i() - 1);
-                                                jj = clamp(jj, 0, input.size_j() - 1);
-                                                kk = clamp(kk, 0, input.size_k() - 1);
-                                                ll = clamp(ll, 0, input.size_l() - 1);
+                                                ii = std::clamp(ii, 0, static_cast<int>(input.size_i() - 1));
+                                                jj = std::clamp(jj, 0, static_cast<int>(input.size_j() - 1));
+                                                kk = std::clamp(kk, 0, static_cast<int>(input.size_k() - 1));
+                                                ll = std::clamp(ll, 0, static_cast<int>(input.size_l() - 1));
                                                 break;
                                             case skepu::Edge::Cyclic:
                                                 ii = (ii + input.size_i()) % input.size_i();
@@ -409,10 +390,10 @@ std::pair<vector4<int>, vector4<float>> generate_expected_2(skepu::Tensor4<int>&
                                         switch (edge)
                                         {
                                             case skepu::Edge::Duplicate:
-                                                ii = clamp(ii, 0, input.size_i() - 1);
-                                                jj = clamp(jj, 0, input.size_j() - 1);
-                                                kk = clamp(kk, 0, input.size_k() - 1);
-                                                ll = clamp(ll, 0, input.size_l() - 1);
+                                                ii = std::clamp(ii, 0, static_cast<int>(input.size_i() - 1));
+                                                jj = std::clamp(jj, 0, static_cast<int>(input.size_j() - 1));
+                                                kk = std::clamp(kk, 0, static_cast<int>(input.size_k() - 1));
+                                                ll = std::clamp(ll, 0, static_cast<int>(input.size_l() - 1));
                                                 break;
                                             case skepu::Edge::Cyclic:
                                                 ii = (ii + input.size_i()) % input.size_i();

@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <skepu>
+#include <test_helper_automatic_setup.hpp>
 
 skepu::multiple<int, float>
 test1_f(skepu::Index1D index, int a, int b, skepu::Vec<float> c, int d)

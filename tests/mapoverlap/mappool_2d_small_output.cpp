@@ -3,6 +3,7 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
+#include <test_helper_automatic_setup.hpp>
 
 int poolSum(skepu::Pool2D<int> p)
 {

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <skepu>
 #include <skepu-lib/complex.hpp>
+#include <test_helper_automatic_setup.hpp>
 
 using Complex = skepu::complex::complex<float>;
 using InnerType = Complex::value_type;

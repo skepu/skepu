@@ -3,16 +3,7 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
-
-
-int clamp(int const& val, int const& min, int const& max)
-{
-    if (val < min)
-        return min;
-    if (val > max)
-        return max;
-    return val;
-}
+#include <test_helper_automatic_setup.hpp>
 
 int overlap_sum(skepu::Region1D<int> r)
 {
@@ -55,7 +46,7 @@ std::vector<std::vector<int>> generate_expected(skepu::Matrix<int>& input, int o
                         switch (edge)
                         {
                             case skepu::Edge::Duplicate:
-                                pos = clamp(pos, 0, input.total_cols() - 1);
+                                pos = std::clamp(pos, 0, static_cast<int>(input.total_cols() - 1));
                                 break;
                             case skepu::Edge::Cyclic:
                                 pos = (pos + input.total_cols()) % input.total_cols();
@@ -92,7 +83,7 @@ std::vector<std::vector<int>> generate_expected(skepu::Matrix<int>& input, int o
                         switch (edge)
                         {
                             case skepu::Edge::Duplicate:
-                                pos = clamp(pos, 0, input.total_rows() - 1);
+                                pos = std::clamp(pos, 0, static_cast<int>(input.total_rows() - 1));
                                 break;
                             case skepu::Edge::Cyclic:
                                 pos = (pos + input.total_rows()) % input.total_rows();
@@ -286,7 +277,7 @@ std::vector<std::vector<std::vector<int>>> generate_expected_2(skepu::Matrix<int
                         switch (edge)
                         {
                             case skepu::Edge::Duplicate:
-                                pos = clamp(pos, 0, input.total_cols() - 1);
+                                pos = std::clamp(pos, 0, static_cast<int>(input.total_cols() - 1));
                                 break;
                             case skepu::Edge::Cyclic:
                                 pos = (pos + input.total_cols()) % input.total_cols();
@@ -325,7 +316,7 @@ std::vector<std::vector<std::vector<int>>> generate_expected_2(skepu::Matrix<int
                         switch (edge)
                         {
                             case skepu::Edge::Duplicate:
-                                pos = clamp(pos, 0, input.total_rows() - 1);
+                                pos = std::clamp(pos, 0, static_cast<int>(input.total_rows() - 1));
                                 break;
                             case skepu::Edge::Cyclic:
                                 pos = (pos + input.total_rows()) % input.total_rows();

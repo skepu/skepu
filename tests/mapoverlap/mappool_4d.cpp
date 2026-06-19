@@ -3,31 +3,12 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
-#include <cmath>
+#include <test_helper_automatic_setup.hpp>
+#include <test_helper_functions.hpp>
 #include <type_traits>
 
 template <typename T>
 using vector4 = std::vector<std::vector<std::vector<std::vector<T>>>>;
-
-#define PRECISION 1E-3
-template <typename T>
-void is_similar(T a, T b)
-{
-	CHECK((
-		(std::isnan(a) && std::isnan(b)) ||
-		(std::isinf(a) && std::isinf(b)) ||
-		(a == Approx(b).epsilon(PRECISION)))
-	);
-}
-
-int clamp(int const& val, int const& min, int const& max)
-{
-    if (val < min)
-        return min;
-    if (val > max)
-        return max;
-    return val;
-}
 
 int pool_sum(skepu::Pool4D<int> p)
 {

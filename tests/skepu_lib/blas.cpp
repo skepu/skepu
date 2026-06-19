@@ -7,7 +7,7 @@
 
 #include <skepu-lib/blas.hpp>
 #include <skepu-lib/io.hpp>
-
+#include <test_helper_automatic_setup.hpp>
 
 TEST_CASE("BLAS level 1")
 {

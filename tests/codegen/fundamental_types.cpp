@@ -1,22 +1,10 @@
 #include "../../external/catch2/catch.hpp"
 
 #include <skepu>
+#include <test_helper_automatic_setup.hpp>
+#include <test_helper_functions.hpp>
 
 // see https://en.cppreference.com/w/cpp/language/types.html
-
-
-#include <cmath>
-#define PRECISION 1E-3
-template <typename T>
-void is_similar(T a, T b)
-{
-	CHECK((
-		(std::isnan(a) && std::isnan(b)) ||
-		(std::isinf(a) && std::isinf(b)) ||
-		(a == Approx(b).epsilon(PRECISION)))
-	);
-}
-
 
 int uf_int(int a)
 {

@@ -5,7 +5,7 @@
 #include <skepu>
 
 #include <skepu-lib/io.hpp>
-
+#include <test_helper_automatic_setup.hpp>
 
 // TODO: Indirect user functions
 // TODO: Higher random counts

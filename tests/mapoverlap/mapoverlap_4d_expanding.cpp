@@ -2,15 +2,7 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
-
-int clamp(int const& val, int const& min, int const& max)
-{
-    if (val < min)
-        return min;
-    if (val > max)
-        return max;
-    return val;
-}
+#include <test_helper_automatic_setup.hpp>
 
 int overlap4D(skepu::Region4D<int> r)
 {
@@ -90,10 +82,10 @@ std::vector<std::vector<std::vector<std::vector<int>>>> generateExpected(skepu::
                                         switch (edge)
                                         {
                                             case skepu::Edge::Duplicate:
-                                                ii = clamp(ii, 0, input.size_i() - 1);
-                                                jj = clamp(jj, 0, input.size_j() - 1);
-                                                kk = clamp(kk, 0, input.size_k() - 1);
-                                                ll = clamp(ll, 0, input.size_l() - 1);
+                                                ii = std::clamp(ii, 0, static_cast<int>(input.size_i() - 1));
+                                                jj = std::clamp(jj, 0, static_cast<int>(input.size_j() - 1));
+                                                kk = std::clamp(kk, 0, static_cast<int>(input.size_k() - 1));
+                                                ll = std::clamp(ll, 0, static_cast<int>(input.size_l() - 1));
                                                 break;
                                             case skepu::Edge::Cyclic:
                                                 ii = (ii + input.size_i()) % input.size_i();

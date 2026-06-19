@@ -3,6 +3,7 @@
 #include <skepu>
 #include <skepu-lib/util.hpp>
 #include <skepu-lib/io.hpp>
+#include <test_helper_automatic_setup.hpp>
 
 auto sum = skepu::Reduce(skepu::util::add<float>);
 auto max_sum = skepu::Reduce(skepu::util::add<float>, skepu::util::max<float>);

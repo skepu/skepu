@@ -2,7 +2,7 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
-
+#include <test_helper_automatic_setup.hpp>
 
 float over_2d(skepu::Region2D<int> r, const skepu::Mat<float> stencil)
 {

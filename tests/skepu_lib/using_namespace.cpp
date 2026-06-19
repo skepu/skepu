@@ -5,7 +5,7 @@
 #include <skepu-lib/complex.hpp>
 #include <skepu-lib/util.hpp>
 #include <skepu-lib/io.hpp>
-
+#include <test_helper_automatic_setup.hpp>
 
 float test_uf(float a, float b){ return a + b;}
 

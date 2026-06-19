@@ -2,6 +2,7 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
+#include <test_helper_automatic_setup.hpp>
 
 float plus_f(float a, float b)
 {

@@ -1,6 +1,7 @@
 #include "../../external/catch2/catch.hpp"
 
 #include <skepu>
+#include <test_helper_automatic_setup.hpp>
 
 // Test 1
 namespace ufs1
