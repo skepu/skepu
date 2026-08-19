@@ -300,6 +300,13 @@ namespace skepu
 				this->setStride(p);
 			}
 
+			// For LSP CodeComplete
+			template<typename... CallArgs>
+			auto operator()(CallArgs&&... args)
+			{
+				return MapOverlap3D<Ret, Args...>::operator()(std::forward<CallArgs>(args)...);
+			}
+
 			MapPool3D(MapFunc map): MapOverlap3D<Ret, Args...>(map) {}
 		};
     } // impl

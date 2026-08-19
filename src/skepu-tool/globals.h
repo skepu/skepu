@@ -47,15 +47,20 @@ extern std::unordered_map<const clang::TypeDecl*, UserType*> UserTypes;
 // User functions, name maps to AST entry and indexed indicator
 extern std::unordered_map<const clang::VarDecl*, UserConstant*> UserConstants;
 
-//extern std::unordered_set<std::pair<clang::CXXOperatorCallExpr *, std::string>> skeletonInvocations;
 
-
-extern const std::unordered_map<std::string, Skeleton> Skeletons;
-
+extern const std::unordered_map<std::string, Skeleton> SkeletonsLookup;
+extern std::unordered_map<Skeleton::Type, std::string> SkeletonDescriptions;
 
 extern clang::Rewriter GlobalRewriter;
 
-//extern clang::SourceManager *SM;
+#ifdef SKEPU_LSP
+extern std::vector<Skeleton*> Skeletons;
+extern std::vector<SkeletonInvocation*> SkeletonInvocations;
+
+extern std::vector<SkepuContainerInvocation*> ContainerInvocations;
+extern std::vector<SkepuContainer*> Containers;
+#endif
+
 
 const std::string SkePU_UF_Prefix {"skepu_userfunction_"};
 extern size_t GlobalSkeletonIndex;
@@ -63,12 +68,75 @@ extern size_t GlobalSkeletonIndex;
 [[noreturn]] void SkePUAbort(std::string msg);
 llvm::raw_ostream& SkePULog();
 
-void replaceTextInString(std::string& text, const std::string &find, const std::string &replace);
-std::string templateString(std::string templ, std::vector<std::pair<std::string, std::string>> replacements);
-std::string transformToCXXIdentifier(std::string &in);
-std::string getSourceAsString(clang::SourceRange range);
+inline void replaceTextInString(std::string& text, const std::string &find, const std::string &replace)
+{
+	std::string::size_type pos = 0;
+	while ((pos = text.find(find, pos)) != std::string::npos)
+	{
+		text.replace(pos, find.length(), replace);
+		pos += replace.length();
+	}
+}
+
+inline std::string templateString(std::string templ, std::vector<std::pair<std::string, std::string>> replacements)
+{
+	for(std::pair<std::string, std::string> &element : replacements)
+		replaceTextInString(templ, element.first, element.second);
+	return templ;
+}
+
+inline std::string transformToCXXIdentifier(std::string &in)
+{
+	std::string out = in;
+	replaceTextInString(out, ".", "__dot__");
+	replaceTextInString(out, " ", "__space__");
+	replaceTextInString(out, ":", "__colon__");
+	replaceTextInString(out, "-", "__hyphen__");
+	replaceTextInString(out, "<", "__lt__");
+	replaceTextInString(out, ">", "__gt__");
+	return out;
+}
+
+inline std::string getSourceAsString(clang::SourceRange range)
+{
+	int rangeSize = GlobalRewriter.getRangeSize(range);
+	SkePULog() << "Range size: " << rangeSize << "\n";
+	if (rangeSize == -1)
+		return "";
+
+	clang::SourceLocation startLoc = range.getBegin();
+	const char *strStart = GlobalRewriter.getSourceMgr().getCharacterData(startLoc);
+
+	std::string exprString;
+	exprString.assign(strStart, rangeSize);
+
+	return exprString;
+}
 
 
 // Library markers
 extern bool didFindBlas;
 extern clang::SourceLocation blasBegin, blasEnd;
+
+#ifdef SKEPU_LSP
+class SkepuMatcher
+{
+public:
+    SkepuMatcher(llvm::StringRef File);    
+
+    bool runMatcher();
+
+    std::vector<Skeleton*> _Skeletons;
+    std::vector<UserFunction*> _Userfunctions;
+    std::vector<UserType*> _UserTypes;
+    std::vector<UserConstant*> _UserConstants;
+    std::vector<SkepuContainer*> _Containers;
+    std::vector<std::string> _SkeletonTypes;
+    std::unordered_map<std::string, Skeleton> _SkeletonsStandard;
+
+    std::unordered_map<std::string, std::string> _SkeletonDescriptions;
+
+private:
+    llvm::StringRef File;
+};
+#endif

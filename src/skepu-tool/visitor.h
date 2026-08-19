@@ -1,5 +1,10 @@
+#pragma once
+
 #include "globals.h"
-#include "code_gen.h"
+
+#ifdef SKEPU_LSP
+#include "data_structures.h"
+#endif
 
 // ------------------------------
 // AST visitor
@@ -7,9 +12,13 @@
 
 UserFunction *HandleUserFunction(clang::FunctionDecl *f);
 UserType *HandleUserType(const clang::CXXRecordDecl *t);
-bool HandleSkeletonInstance(clang::VarDecl *d);
 
-
+#ifdef SKEPU_LSP
+Skeleton* 
+#else
+bool
+#endif
+HandleSkeletonInstance(clang::VarDecl *d);
 
 
 class SkePUASTVisitor : public clang::RecursiveASTVisitor<SkePUASTVisitor>
@@ -20,6 +29,10 @@ public:
 
 	bool VisitVarDecl(clang::VarDecl *d);
 	bool VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr *c);
+
+#ifdef SKEPU_LSP
+	bool VisitCallExpr(clang::CallExpr *ce);
+#endif
 
 	std::unordered_set<clang::VarDecl *> &SkeletonInstances;
 
@@ -39,5 +52,4 @@ public:
 
 private:
 	SkePUASTVisitor Visitor;
-
 };

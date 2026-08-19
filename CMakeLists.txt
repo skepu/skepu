@@ -20,7 +20,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/CMake)
 include(skepu-options)
 include(SkePUHelpers)
 
-# We need to apply our patches to the llvm work tree, if it has not alredy been
+# We need to apply our patches to the llvm work tree, if it has not already been
 # done.
 if(NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/llvm/clang/tools/skepu-tool)
 	message(STATUS "[SkePU] Patching llvm")

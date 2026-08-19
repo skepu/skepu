@@ -337,6 +337,13 @@ namespace skepu
 				this->setStride(p);
 			}
 
+			// For LSP CodeComplete
+			template<typename... CallArgs>
+			auto operator()(CallArgs&&... args)
+			{
+				return MapOverlap4D<Ret, Args...>::operator()(std::forward<CallArgs>(args)...);
+			}
+
 			MapPool4D(MapFunc map): MapOverlap4D<Ret, Args...>(map) {}
 		};
 

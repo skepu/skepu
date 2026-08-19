@@ -10,6 +10,7 @@ Individual contributor names are listed below in chronological order of earliest
 - August Ernstsson
 - Henrik Henriksson
 - Johan Ahlqvist
+- David Berntsson
 
 (The above list are contributions to the public SkePU
  software distribution; for further contributors see our

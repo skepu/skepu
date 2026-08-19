@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <cstddef>
 #include <map>
+#include <cassert>
 
 #include "backend/malloc_allocator.h"
 
@@ -73,6 +74,17 @@ namespace skepu
 
 	template <typename T>
 	class StridedVectorIterator;
+
+
+	template <typename T>
+	class container
+	{
+	public:
+		container()
+		{
+			throw std::logic_error("skepu::container is not a real class, use either of the following: skepu::Vector, skepu::Matrix, skepu::Tensor3, skepu::Tensor4");
+		}
+	};
 
 	/*!
 	*  \class Vector

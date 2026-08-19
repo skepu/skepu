@@ -645,6 +645,8 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CL(
 					<< ".col_indices = " << param.name << "_col_indices, "
 					<< ".count = skepu_size_" << param.name << " };\n";
 				break;
+			default:
+				break;
 		}
 		SSMapFuncArgs << param.name;
 		first = false;
@@ -953,6 +955,8 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
                 case ContainerType::Pool4D:
                     dim = "4";
                     break;
+				default:
+					break;
             }
             
             std::stringstream SSGlobalFuncSource;

@@ -13,10 +13,15 @@
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 
-#include "globals.h"
 #include "data_structures.h"
+#include "globals.h"
 #include "visitor.h"
+
+#ifdef SKEPU_LSP
+#include <regex>
+#else
 #include "code_gen_cl.h"
+#endif
 
 using namespace clang;
 using namespace clang::ast_matchers;
@@ -144,6 +149,24 @@ UserConstant::UserConstant(const VarDecl *v)
 {
 	this->name = v->getNameAsString();
 	this->typeName = v->getType().getAsString();
+	
+	#ifdef SKEPU_LSP
+		SourceRange sr = v->getInit()->IgnoreImpCasts()->getSourceRange();
+		SourceManager &SM = v->getASTContext().getSourceManager();
+		clangd::Range clangdRange;
+		clangdRange.start.line = SM.getSpellingLineNumber(sr.getBegin());
+		clangdRange.start.character = SM.getSpellingColumnNumber(sr.getBegin());
+		clangdRange.end.line = SM.getSpellingLineNumber(sr.getEnd());
+		clangdRange.end.character = SM.getSpellingColumnNumber(sr.getEnd());
+
+		if(clangdRange.start.line > 0)
+		{
+			clangdRange.start.line--;
+			clangdRange.end.line--;
+		}
+		
+		this->selectionRange = clangdRange;
+	#endif
 
 	SourceRange SRInit = v->getInit()->IgnoreImpCasts()->getSourceRange();
 	this->definition = Lexer::getSourceText(CharSourceRange::getTokenRange(SRInit), GlobalRewriter.getSourceMgr(), LangOptions(), 0);
@@ -165,7 +188,24 @@ UserType::UserType(const CXXRecordDecl *t)
 
 	this->typeNameOpenCL = transformToCXXIdentifier(resolvedTypeName);
 	// End same as Param
-	
+
+	#ifdef SKEPU_LSP
+		SourceRange sr = t->getSourceRange();
+		SourceManager &SM = t->getASTContext().getSourceManager();
+		clangd::Range clangdRange;
+		clangdRange.start.line = SM.getSpellingLineNumber(sr.getBegin());
+		clangdRange.start.character = SM.getSpellingColumnNumber(sr.getBegin());
+		clangdRange.end.line = SM.getSpellingLineNumber(sr.getEnd());
+		clangdRange.end.character = SM.getSpellingColumnNumber(sr.getEnd());
+
+		if(clangdRange.start.line > 0)
+		{
+			clangdRange.start.line--;
+			clangdRange.end.line--;
+		}
+		
+		this->selectionRange = clangdRange;
+	#endif
 	
 	if (const RecordDecl *r = dyn_cast<RecordDecl>(t))
 	{
@@ -179,19 +219,20 @@ UserType::UserType(const CXXRecordDecl *t)
 				this->requiresDoublePrecision = true;
 		}
 	}
+	#ifndef SKEPU_LSP
+		static const std::string RunTimeTypeNameFunc = R"~~~(
+		namespace skepu { template<> std::string getDataTypeCL<{{TYPE_NAME}}>() { return "struct {{TYPE_NAME}}"; } }
+		namespace skepu { template<> std::string getDataTypeDefCL<{{TYPE_NAME}}>() { return {{TYPE_DEF}}; } }
+		)~~~";
 
-	static const std::string RunTimeTypeNameFunc = R"~~~(
-	namespace skepu { template<> std::string getDataTypeCL<{{TYPE_NAME}}>() { return "struct {{TYPE_NAME}}"; } }
-	namespace skepu { template<> std::string getDataTypeDefCL<{{TYPE_NAME}}>() { return {{TYPE_DEF}}; } }
-	)~~~";
-
-	if (GenCL)
-	{
-		std::string typeNameFunc = RunTimeTypeNameFunc;
-		replaceTextInString(typeNameFunc, "{{TYPE_NAME}}", this->name);
-		replaceTextInString(typeNameFunc, "{{TYPE_DEF}}", "R\"~~~(" + generateUserTypeCode_CL(*this) + ")~~~\"");
-		GlobalRewriter.InsertText(t->getEndLoc().getLocWithOffset(2), typeNameFunc);
-	}
+		if (GenCL)
+		{
+			std::string typeNameFunc = RunTimeTypeNameFunc;
+			replaceTextInString(typeNameFunc, "{{TYPE_NAME}}", this->name);
+			replaceTextInString(typeNameFunc, "{{TYPE_DEF}}", "R\"~~~(" + generateUserTypeCode_CL(*this) + ")~~~\"");
+			GlobalRewriter.InsertText(t->getEndLoc().getLocWithOffset(2), typeNameFunc);
+		}
+	#endif
 }
 
 std::string random_string(size_t length)
@@ -308,7 +349,7 @@ UserFunction::RandomAccessParam::RandomAccessParam(const ParmVarDecl *p)
 	
 	if (auto *typedeft = dyn_cast<TypedefType>(this->containedType))
 		this->containedType = typedeft->desugar().getTypePtr();
-		
+
 		
 //	this->containedType->dump();
 	this->resolvedTypeName = this->containedType->getCanonicalTypeInternal().getAsString();
@@ -467,7 +508,7 @@ UserFunction::RandomParam::RandomParam(const ParmVarDecl *p)
 	if (auto *referenceType = dyn_cast<ReferenceType>(type))
 		type = referenceType->getPointeeType().getTypePtr();
 	
-	
+
 	const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
 	if (templateType->template_arguments().size() > 0)
 		this->randomCount = templateType->template_arguments()[0].getAsExpr()->EvaluateKnownConstInt(p->getASTContext()).getExtValue();
@@ -524,8 +565,6 @@ std::string UserFunction::Param::typeNameOpenCL() const
 		return "skepu_complex_float"; // todo fix templated type
 	}
 	
-	
-	
 	return this->resolvedTypeName;
 }
 
@@ -535,8 +574,6 @@ std::string UserFunction::RandomAccessParam::innerTypeNameOpenCL() const
 	{
 		return "skepu_complex_float"; // todo fix templated type
 	}
-	
-	
 	
 	return this->escapedTypeName;
 }
@@ -607,7 +644,7 @@ UserFunction::UserFunction(CXXMethodDecl *f, VarDecl *d)
 		this->codeLocation = DeclCtx->getSourceRange().getBegin();
 }
 
-UserFunction::UserFunction(FunctionDecl *f)
+UserFunction::UserFunction(clang::FunctionDecl *f)
 : astDeclNode(f), requiresDoublePrecision(false)
 {
 	// Function name
@@ -615,6 +652,28 @@ UserFunction::UserFunction(FunctionDecl *f)
 
 	// Code location
 	this->codeLocation = f->getSourceRange().getEnd().getLocWithOffset(1);
+
+	#ifdef SKEPU_LSP
+		SourceManager &SM = f->getASTContext().getSourceManager();
+
+		FullSourceLoc startLoc(f->getSourceRange().getBegin(), SM);
+		FullSourceLoc endLoc(f->getSourceRange().getEnd(), SM);
+
+		clangd::Range clangdRange;
+		clangdRange.start.line = startLoc.getLineNumber();
+		clangdRange.start.character =startLoc.getColumnNumber();
+		clangdRange.end.line = endLoc.getLineNumber();
+		clangdRange.end.character = endLoc.getColumnNumber();
+
+		this->range = clangdRange;
+
+		clangdRange.start.line = SM.getSpellingLineNumber(f->getNameInfo().getBeginLoc());
+		clangdRange.start.character = SM.getSpellingColumnNumber(f->getNameInfo().getBeginLoc());
+		clangdRange.end.line = SM.getSpellingLineNumber(f->getNameInfo().getEndLoc());
+		clangdRange.end.character = SM.getSpellingColumnNumber(f->getNameInfo().getEndLoc());
+		
+		this->selectionRange = clangdRange;
+	#endif
 
 	std::stringstream SSUniqueName;
 	SSUniqueName << this->rawName;
@@ -778,7 +837,7 @@ std::string UserFunction::returnTypeNameOpenCL()
 std::string UserFunction::multiReturnTypeNameGPU()
 {
 	std::string multiReturnType = "skepu_multiple";
-		for (std::string type : this->multipleReturnTypes)
+		for (std::string &type : this->multipleReturnTypes)
 		{
 			replaceTextInString(type, "struct ", "");
 			multiReturnType += "_" + transformToCXXIdentifier(type);
@@ -887,3 +946,146 @@ void UserFunction::updateArgLists(size_t arity, size_t Harity)
 		<< "Deduced random access arity: " << this->anyContainerParams.size() << "\n"
 		<< "Deduced scalar arity: " << this->anyScalarParams.size() << "\n";
 }
+
+#ifdef SKEPU_LSP
+std::string Skeleton::getDetails() const
+{
+	std::ostringstream oss;
+	oss << this->name << "(";
+	
+	for(UserFunction* param : this->parameters)
+	{
+		if (param != this->parameters.front())
+            oss << ", ";
+        oss << param->resolvedReturnTypeName;
+	}
+
+	oss << ")";
+	return oss.str();
+}
+
+void Skeleton::constructLayout()
+{
+	std::string IndexND = "";
+	if(this->parameters.back()->indexed1D)
+	{
+		IndexND = "Vector";
+	}
+	else if(this->parameters.back()->indexed2D)
+	{
+		IndexND = "Matrix";
+	}
+	else if(this->parameters.back()->indexed3D)
+	{
+		IndexND = "Tensor3";
+	}else if(this->parameters.back()->indexed4D)
+	{
+		IndexND = "Tensor4";
+	}
+
+	std::string retType = "";
+	if(!this->parameters.empty())
+	{
+		retType = this->parameters.back()->resolvedReturnTypeName;
+	}
+
+	std::string tmpParam = retType;
+	std::vector<std::string> retTypes;
+	if (tmpParam.find("tuple") != std::string::npos) {
+		// Multiret
+		std::regex pattern("<([^<>]+)>");
+		// Iterator for matching
+		std::sregex_iterator iter(tmpParam.begin(), tmpParam.end(), pattern);
+		std::sregex_iterator end;
+
+		if (iter != end) {
+			std::smatch match = *iter;
+			std::string keywords = match.str(1); // Extracting the captured group
+
+			// Splitting the keywords based on comma (',') delimiter
+			std::regex comma_pattern("\\s*,\\s*");
+			std::sregex_token_iterator key_iter(keywords.begin(), keywords.end(), comma_pattern, -1);
+			std::sregex_token_iterator key_end;
+
+			// Storing each keyword in a vector and printing
+			std::vector<std::string> keyword_vector;
+			while (key_iter != key_end) {
+				std::string keyword = *key_iter;
+				retTypes.push_back(keyword);
+				++key_iter;
+			}
+		}
+	}
+	else
+	{
+		retTypes.push_back(tmpParam);
+	}
+
+	std::string tmp{};
+
+	if(this->name == "Map" || this->name == "MapPairs" 
+	|| this->name == "MapPairsReduce" || this->name == "MapOverlap1D"
+	|| this->name == "MapOverlap2D" || this->name == "MapOverlap3D"
+	|| this->name == "MapOverlap4D")
+	{			
+		int counter{0};
+		for(auto const& elem : retTypes)
+		{
+			std::string resvParam{};
+			if(IndexND != "")
+			{
+				resvParam = "Return: skepu::" + IndexND + "<" +  elem + ">& Return" + std::to_string(counter);
+			}
+			else 
+			{
+				resvParam = "Return: " + elem + "& Return" + std::to_string(counter) + " | (Can be skepu container)";
+			}
+			this->resolvedParams.push_back(resvParam) ;
+			++counter;
+		}
+		this->resolvedReturnType = "void";
+	}
+	else 
+	{
+		if(!retTypes.empty())
+		{
+			this->resolvedReturnType = retTypes[0];
+		}
+		else 
+		{
+			this->resolvedReturnType = "void";
+		}
+	}
+
+	if(!this->parameters.empty())
+	{
+		for(auto const& elem : this->parameters[0]->elwiseParams)
+		{
+			std::string resvParam{};
+			if(IndexND != "")
+			{
+				resvParam = "skepu::" + IndexND + "<" + elem.resolvedTypeName + "> " + elem.name;
+			}
+			else 
+			{
+				resvParam = elem.resolvedTypeName + " "+ elem.name + " | (Can be skepu container of " + elem.resolvedTypeName + " type)";
+			}
+			this->resolvedParams.push_back(resvParam) ;
+			//std::string elemStr = "skepu::" + IndexND + "<" + elem.resolvedTypeName + "> " + elem.name;
+			//this->resolvedParams.push_back(elemStr);
+		}
+
+		for(auto const& elem : this->parameters[0]->anyContainerParams)
+		{
+			std::string elemStr ="skepu::"+ toString(elem.containerType)+"<"+elem.resolvedTypeName + "> " + elem.name;
+			this->resolvedParams.push_back(elemStr);
+		}
+
+		for(auto const& elem : this->parameters[0]->anyScalarParams)
+		{
+			std::string elemStr = elem.resolvedTypeName + " " + elem.name;
+			this->resolvedParams.push_back(elemStr);
+		}
+	}
+}
+#endif

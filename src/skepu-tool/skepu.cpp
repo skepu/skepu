@@ -1,12 +1,16 @@
 #include "globals.h"
 #include "visitor.h"
 
-using namespace clang;
+#ifdef SKEPU_LSP
+#include "support/Logger.h"
+#include <filesystem>
+#include "clang/AST/Type.h"
+#endif
+
 
 // ------------------------------
 // Precompiler options
 // ------------------------------
-
 
 llvm::cl::OptionCategory SkePUCategory("SkePU precompiler options");
 
@@ -26,6 +30,7 @@ llvm::cl::opt<bool> DoNotGenLineDirectives("no-preserve-lines", llvm::cl::desc("
 
 llvm::cl::opt<std::string> AllowedFuncNames("fnames", llvm::cl::desc("Function names which are allowed to be called from user functions (separated by space, e.g. -fnames \"conj csqrt\")"), llvm::cl::cat(SkePUCategory));
 
+
 // Derived
 static std::string mainFileName;
 std::string inputFileName;
@@ -36,15 +41,53 @@ std::string inputFileName;
 // ------------------------------
 
 // User functions, name maps to AST entry and indexed indicator
-std::unordered_map<const FunctionDecl*, UserFunction*> UserFunctions;
+std::unordered_map<const clang::FunctionDecl*, UserFunction*> UserFunctions;
 
 // User functions, name maps to AST entry and indexed indicator
-std::unordered_map<const TypeDecl*, UserType*> UserTypes;
+std::unordered_map<const clang::TypeDecl*, UserType*> UserTypes;
 
 // User functions, name maps to AST entry and indexed indicator
-std::unordered_map<const VarDecl*, UserConstant*> UserConstants;
+std::unordered_map<const clang::VarDecl*, UserConstant*> UserConstants;
 
-//std::unordered_set<std::pair<CXXOperatorCallExpr *, std::string>> skeletonInvocations;
+#ifdef SKEPU_LSP
+std::vector<Skeleton*> Skeletons;
+std::vector<SkeletonInvocation*> SkeletonInvocations;
+
+std::vector<SkepuContainerInvocation*> ContainerInvocations;
+std::vector<SkepuContainer*> Containers;
+
+
+void clearGlobals()
+{
+	for (auto& pair : UserFunctions)
+		delete pair.second;
+	UserFunctions.clear();
+
+	for (auto& pair : UserTypes)
+		delete pair.second;
+	UserTypes.clear();
+
+	for (auto& pair : UserConstants)
+		delete pair.second;
+	UserConstants.clear();
+
+	for (auto& pair : SkeletonInvocations)
+		delete pair;
+	SkeletonInvocations.clear();
+
+	for (auto& pair : Skeletons)
+		delete pair;
+	Skeletons.clear();
+
+	for (auto& pair : ContainerInvocations)
+		delete pair;
+	ContainerInvocations.clear();
+	
+	for (auto& pair : Containers)
+		delete pair;
+	Containers.clear();
+}
+#endif
 
 // Explicitly allowed functions to call from user functions
 std::unordered_set<std::string> AllowedFunctionNamesCalledInUFs
@@ -67,7 +110,7 @@ std::unordered_set<std::string> AllowedFunctionNamesCalledInUFs
 };
 
 // Skeleton types lookup from internal SkePU class template name
-const std::unordered_map<std::string, Skeleton> Skeletons =
+const std::unordered_map<std::string, Skeleton> SkeletonsLookup =
 {
 	{"MapImpl",              {"Map",                Skeleton::Type::Map,                1, 1}},
 	{"Reduce1D",             {"Reduce1D",           Skeleton::Type::Reduce1D,           1, 1}},
@@ -87,14 +130,51 @@ const std::unordered_map<std::string, Skeleton> Skeletons =
 	{"CallImpl",             {"Call",               Skeleton::Type::Call,               1, 1}},
 };
 
-Rewriter GlobalRewriter;
+std::unordered_map<Skeleton::Type, std::string> SkeletonDescriptions =
+{
+	{Skeleton::Type::Map, 
+  "Data-parallel element-wise application of a function with arbitrary arity."},
+	{Skeleton::Type::Reduce1D, 
+  "Reduction with 1D and 2D variations."},
+	{Skeleton::Type::Reduce2D, 
+  "Reduction with 1D and 2D variations."},
+	{Skeleton::Type::MapReduce, 
+  "Efficient chaining of Map and Reduce."},
+	{Skeleton::Type::Scan, 
+  "Generalized prefix sum."},
+	{Skeleton::Type::MapOverlap1D, 
+  "Stencil operation in 1D."},
+	{Skeleton::Type::MapOverlap2D, 
+  "Stencil operation in 2D."},
+	{Skeleton::Type::MapOverlap3D, 
+  "Stencil operation in 3D."},
+	{Skeleton::Type::MapOverlap4D, 
+  "Stencil operation in 4D."},
+  	{Skeleton::Type::MapPool1D, 
+  "Pool operation in 1D."},
+	{Skeleton::Type::MapPool2D, 
+  "Pool operation in 2D."},
+	{Skeleton::Type::MapPool3D, 
+  "Pool operation in 3D."},
+	{Skeleton::Type::MapPool4D, 
+  "Pool operation in 4D."},
+	{Skeleton::Type::MapPairs, 
+  "Cartesian product-style computation."},
+	{Skeleton::Type::MapPairsReduce, 
+  "Efficient chaining of MapPairs and Reduce."},
+	{Skeleton::Type::Call, 
+  "Generic multi-variant component."},
+};
+
+
+
+clang::Rewriter GlobalRewriter;
 size_t GlobalSkeletonIndex = 0;
+
 
 // Library markers
 bool didFindBlas = false;
 clang::SourceLocation blasBegin, blasEnd;
-
-
 
 llvm::raw_ostream& SkePULog()
 {
@@ -104,76 +184,206 @@ llvm::raw_ostream& SkePULog()
 		return llvm::nulls();
 }
 
-
 // For each source file provided to the tool, a new FrontendAction is created.
-class SkePUFrontendAction : public ASTFrontendAction
+class SkePUFrontendAction : public clang::ASTFrontendAction
 {
 public:
 
-	bool BeginSourceFileAction(CompilerInstance &CI) override
+	bool BeginSourceFileAction(clang::CompilerInstance &CI) override
 	{
 		inputFileName = this->getCurrentFile().str();
-		if (Verbose) SkePULog() << "** BeginSourceFileAction for: " << inputFileName << "\n";
+		SkePULog() << "** BeginSourceFileAction for: " << inputFileName << "\n";
 		return true;
 	}
 
 	void EndSourceFileAction() override
 	{
-		SourceManager &SM = GlobalRewriter.getSourceMgr();
-		SourceLocation SLStart = SM.getLocForStartOfFile(SM.getMainFileID());
+		#ifdef SKEPU_LSP          
+			for (clang::VarDecl *d : this->SkeletonInstances)
+			{
+				Skeleton *skeleton = HandleSkeletonInstance(d);
+				if(skeleton != nullptr)
+					Skeletons.push_back(skeleton);
+			}
+			for(SkeletonInvocation *Invocation: SkeletonInvocations)
+			{
+				for(Skeleton *skeleton: Skeletons)
+				{
+					if(skeleton == nullptr || Invocation == nullptr)
+						continue;
 
-		GlobalRewriter.InsertText(SLStart, "#define SKEPU_PRECOMPILED 1\n");
-		if (GenOMP)  GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENMP 1\n");
-		if (GenCL)   GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENCL 1\n");
-		if (GenCUDA) GlobalRewriter.InsertText(SLStart, "#define SKEPU_CUDA 1\n");
-		if (GenStarPUMPI) GlobalRewriter.InsertText(SLStart, "#define SKEPU_STARPU_MPI 1\n");
-//		if (!DoNotGenLineDirectives)
-//			GlobalRewriter.InsertText(SLStart, "#line 1 \"" + inputFileName + "\"\n");
+					// TODO: Check if some more data points need to be compared such as special names and such
+					if(Invocation->retType.isNull())
+					{
+						//clangd::log("Invocation ret is null");
+					}
 
-        SkePULog() << "Found " << this->SkeletonInstances.size() << " skeleton instances\n";
+					if(skeleton->retType.isNull())
+					{
+						//clangd::log("Skeleton ret is null");
+					}
+				
+					if(skeleton->variableName == Invocation->variableName && skeleton->retType == Invocation->retType)
+					{
+						skeleton->invocations.push_back(Invocation);
+					}
+				}
+			}
+		#else
+			clang::SourceManager &SM = GlobalRewriter.getSourceMgr();
+			clang::SourceLocation SLStart = SM.getLocForStartOfFile(SM.getMainFileID());
 
-		for (VarDecl *d : this->SkeletonInstances)
-			HandleSkeletonInstance(d);
+			GlobalRewriter.InsertText(SLStart, "#define SKEPU_PRECOMPILED 1\n");
+			if (GenOMP)  GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENMP 1\n");
+			if (GenCL)   GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENCL 1\n");
+			if (GenCUDA) GlobalRewriter.InsertText(SLStart, "#define SKEPU_CUDA 1\n");
+			if (GenStarPUMPI) GlobalRewriter.InsertText(SLStart, "#define SKEPU_STARPU_MPI 1\n");
+			//if (!DoNotGenLineDirectives)
+			//	GlobalRewriter.InsertText(SLStart, "#line 1 \"" + inputFileName + "\"\n");
 
-		if (didFindBlas)
-		{
-			std::string blasTransformedCode = GlobalRewriter.getRewrittenText(SourceRange(blasBegin, blasEnd));
-			blasTransformedCode = "\n/* BEGIN BLAS.HPP INJECTION */\n//" + blasTransformedCode + ";\n/* END BLAS.HPP INJECTION*/\n";
+			SkePULog() << "Found " << this->SkeletonInstances.size() << " skeleton instances\n";
+
+			for (clang::VarDecl *d : this->SkeletonInstances)
+				HandleSkeletonInstance(d);
+
+			if (didFindBlas)
+			{
+				std::string blasTransformedCode = GlobalRewriter.getRewrittenText(clang::SourceRange(blasBegin, blasEnd));
+				blasTransformedCode = "\n/* BEGIN BLAS.HPP INJECTION */\n//" + blasTransformedCode + ";\n/* END BLAS.HPP INJECTION*/\n";
 
 
-			FileID blasFile = GlobalRewriter.getSourceMgr().getFileID(blasBegin);
-			SourceLocation blasIncludeLoc = GlobalRewriter.getSourceMgr().getIncludeLoc(blasFile);
-			unsigned blasIncludeLine = GlobalRewriter.getSourceMgr().getSpellingLineNumber(blasIncludeLoc);
-			blasIncludeLoc = GlobalRewriter.getSourceMgr().translateLineCol(SM.getMainFileID(), blasIncludeLine, 0);
+				clang::FileID blasFile = GlobalRewriter.getSourceMgr().getFileID(blasBegin);
+				clang::SourceLocation blasIncludeLoc = GlobalRewriter.getSourceMgr().getIncludeLoc(blasFile);
+				unsigned blasIncludeLine = GlobalRewriter.getSourceMgr().getSpellingLineNumber(blasIncludeLoc);
+				blasIncludeLoc = GlobalRewriter.getSourceMgr().translateLineCol(SM.getMainFileID(), blasIncludeLine, 0);
 
-			GlobalRewriter.InsertText(blasIncludeLoc, blasTransformedCode);
-		}
+				GlobalRewriter.InsertText(blasIncludeLoc, blasTransformedCode);
+			}
 
-		if (Verbose) SkePULog() << "** EndSourceFileAction for: " << inputFileName << "\n";
+			if (Verbose) SkePULog() << "** EndSourceFileAction for: " << inputFileName << "\n";
 
-		// Now emit the rewritten buffer.
-		std::error_code EC;
-		llvm::raw_fd_ostream OutFile(
-			mainFileName, EC, llvm::sys::fs::FileAccess::FA_Write);
-		GlobalRewriter.getEditBuffer(SM.getMainFileID()).write(OutFile);
-		OutFile.close();
+			// Now emit the rewritten buffer.
+			std::error_code EC;
+			llvm::raw_fd_ostream OutFile(
+				mainFileName, EC, llvm::sys::fs::FileAccess::FA_Write);
+			GlobalRewriter.getEditBuffer(SM.getMainFileID()).write(OutFile);
+			OutFile.close();
+		#endif
 	}
 
-	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override
+
+	std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance &CI, llvm::StringRef file) override
 	{
-		if (Verbose) SkePULog() << "** Creating AST consumer for: " << file << "\n";
+    	SkePULog() << "** Creating AST consumer for: " << file << "\n";
 		GlobalRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
 		return std::make_unique<SkePUASTConsumer>(&CI.getASTContext(), this->SkeletonInstances);
 	}
+
+#ifdef SKEPU_LSP
+	const std::unordered_set<clang::VarDecl *> &getResults() const
+	{
+		return SkeletonInstances;
+	}
+#endif
 
 private:
 	std::unordered_set<clang::VarDecl *> SkeletonInstances;
 };
 
+#ifdef SKEPU_LSP
+SkepuMatcher::SkepuMatcher(llvm::StringRef File)
+: File(File)
+{}
 
+bool SkepuMatcher::runMatcher()
+{
+	std::filesystem::path p(File.str());
+
+	// Not cross-platform, see https://stackoverflow.com/questions/1528298/get-path-of-executable
+	std::filesystem::path skepuDir(std::filesystem::canonical("/proc/self/exe"));//.parent_path().parent_path().parent_path().parent_path());
+	while (!skepuDir.empty())
+	{
+		std::filesystem::path skepu_headers = skepuDir / "skepu-headers";
+		std::filesystem::path llvm_dir = skepuDir / "llvm";
+
+		if (std::filesystem::is_directory(skepu_headers) &&
+			std::filesystem::is_directory(llvm_dir))
+				break;
+		
+		std::filesystem::path parent = skepuDir.parent_path();
+
+		if (skepuDir == parent)
+			return false;
+
+		skepuDir = parent;
+	}
+
+	std::string headerPath = skepuDir.string() + "/llvm/clang/lib/Headers";// tmpPathSkepuEx + "/../llvm/clang/lib/Headers";
+	std::string skepuSrcPath = skepuDir.string() + "/skepu-headers/src"; //tmpPathSkepuEx + "/../skepu-headers/src";
+  
+
+	std::string filePath = p.parent_path().string() +"/"+ p.filename().string();
+	std::string seperator = "--";
+	std::string cXX = "-std=c++20";
+	std::string expansion = "-Wno-expansion-to-defined";
+	std::string include = "-I ";
+	std::string argIncludeSkepu = "-include" + skepuSrcPath + "/skepu";
+	std::string argSkepu ="-I" + skepuSrcPath;
+		
+	clang::tooling::FixedCompilationDatabase Compilations(
+		".",
+		{
+			"-std=c++20",
+			"-Wno-expansion-to-defined",
+			"-I ",
+			headerPath,
+			argIncludeSkepu,
+			argSkepu
+		}
+	);
+
+	std::vector<std::string> Sources = {
+		filePath
+	};
+
+	clang::tooling::ClangTool Tool(Compilations, Sources);
+
+	clearGlobals();
+
+	// This might be inefficient, it could be better to integrate SkePUFrontendAction
+	// or the SkePUASTConsumer into 
+	Tool.run(clang::tooling::newFrontendActionFactory<SkePUFrontendAction>().get());
+
+	this->_Skeletons = std::move(Skeletons);
+	this->_Containers = std::move(Containers);
+
+	for (const auto& pair : SkeletonsLookup)
+		this->_SkeletonsStandard.insert(std::make_pair(pair.first, pair.second));
+
+	for(auto&& p: SkeletonsLookup )
+	{
+		this->_SkeletonDescriptions[p.second.name] = SkeletonDescriptions[p.second.type];
+		this->_SkeletonTypes.push_back(p.second.name);
+	}
+
+	for(auto& skeleton : this->_Skeletons)
+		skeleton->description = "Skeleton of " + skeleton->name + ": " + SkeletonDescriptions.find(skeleton->type)->second;
+
+	for(auto par : UserFunctions)
+		_Userfunctions.push_back(std::move(par.second));
+
+	for(auto par : UserConstants)
+		_UserConstants.push_back(std::move(par.second));
+
+	for(auto par : UserTypes)
+		_UserTypes.push_back(std::move(par.second));
+
+	return true;
+}
+#else
 int main(int argc, const char **argv)
 {
-    auto expectedParser = tooling::CommonOptionsParser::create(argc, argv, SkePUCategory);
+    auto expectedParser = clang::tooling::CommonOptionsParser::create(argc, argv, SkePUCategory);
 
     if (!expectedParser)
     {
@@ -183,8 +393,8 @@ int main(int argc, const char **argv)
     }
 
 
-	tooling::CommonOptionsParser& op = expectedParser.get();
-	tooling::ClangTool Tool(op.getCompilations(), op.getSourcePathList());
+	clang::tooling::CommonOptionsParser& op = expectedParser.get();
+	clang::tooling::ClangTool Tool(op.getCompilations(), op.getSourcePathList());
 
 	if (ResultName == "")
 		ResultName = op.getSourcePathList()[0];
@@ -210,5 +420,6 @@ int main(int argc, const char **argv)
 	for (std::string &name : Names)
 		AllowedFunctionNamesCalledInUFs.insert(name);
 
-	return Tool.run(tooling::newFrontendActionFactory<SkePUFrontendAction>().get());
+	return Tool.run(clang::tooling::newFrontendActionFactory<SkePUFrontendAction>().get());
 }
+#endif

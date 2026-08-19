@@ -11,21 +11,6 @@ std::string lineDirectiveForSourceLoc(SourceLocation &loc)
 	return directive.str();
 }
 
-std::string getSourceAsString(SourceRange range)
-{
-	int rangeSize = GlobalRewriter.getRangeSize(range);
-	SkePULog() << "Range size: " << rangeSize << "\n";
-	if (rangeSize == -1)
-		return "";
-
-	SourceLocation startLoc = range.getBegin();
-	const char *strStart = GlobalRewriter.getSourceMgr().getCharacterData(startLoc);
-
-	std::string exprString;
-	exprString.assign(strStart, rangeSize);
-
-	return exprString;
-}
 
 std::string removeNamespacesFromTypeName(std::string type)
 {
@@ -108,34 +93,11 @@ void printParamList(std::ostream &o, UserFunction &Func, bool isCuda = false)
 }
 
 
-void replaceTextInString(std::string& text, const std::string &find, const std::string &replace)
-{
-	std::string::size_type pos = 0;
-	while ((pos = text.find(find, pos)) != std::string::npos)
-	{
-		text.replace(pos, find.length(), replace);
-		pos += replace.length();
-	}
-}
 
-std::string templateString(std::string templ, std::vector<std::pair<std::string, std::string>> replacements)
-{
-	for(std::pair<std::string, std::string> &element : replacements)
-		replaceTextInString(templ, element.first, element.second);
-	return templ;
-}
 
-std::string transformToCXXIdentifier(std::string &in)
-{
-	std::string out = in;
-	replaceTextInString(out, ".", "__dot__");
-	replaceTextInString(out, " ", "__space__");
-	replaceTextInString(out, ":", "__colon__");
-	replaceTextInString(out, "-", "__hyphen__");
-	replaceTextInString(out, "<", "__lt__");
-	replaceTextInString(out, ">", "__gt__");
-	return out;
-}
+
+
+
 
 
 

@@ -418,7 +418,7 @@ namespace skepu
 				checkMatrixSizes(firstOutputRows, this->expectedInputSize(firstOutputCols, 0),
 								 generateRowwiseCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
-				int overlap = this->m_overlap[0];
+				const int overlap = this->m_overlap[0];
 				T start[3*overlap], end[3*overlap];
 
 				size_t rowWidth = arg.total_cols();
