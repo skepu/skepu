@@ -91,7 +91,7 @@ namespace skepu
 
 				this->template configurePoolKernelParameters<T, size_t, 3, 4>(max_threads_per_work_group, {&numThreads[0], &numThreads[1], &numThreads[2]}, {&numBlocks[0], &numBlocks[1], &numBlocks[2]},
 														 					  should_use_global_memory, max_memory_per_work_group, {&sharedI, &sharedJ, &sharedK, &sharedL}, {in_size_i, in_size_j, in_size_k, in_size_l});
-				sharedMemSize = 0;
+				sharedMemSize = 1;
 				numBlocks[0] *= numThreads[0];
                 numBlocks[1] *= numThreads[1];
                 numBlocks[2] *= numThreads[2];

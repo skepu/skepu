@@ -81,7 +81,7 @@ namespace skepu
 				this->template configurePoolKernelParameters<T, size_t, 3, 3>(max_threads_per_work_group, {&numThreads[0], &numThreads[1], &numThreads[2]}, {&numBlocks[0], &numBlocks[1], &numBlocks[2]},
 														 					  should_use_global_memory, max_memory_per_work_group, {&shared_i, &shared_j, &shared_k}, {in_size_i, in_size_j, in_size_k});
 
-				shared_mem = shared_i * shared_j * shared_k * sizeof(T);
+				shared_mem = std::max<size_t>(shared_i * shared_j * shared_k * sizeof(T), 1);
                 numBlocks[0] *= numThreads[0];
                 numBlocks[1] *= numThreads[1];
                 numBlocks[2] *= numThreads[2];

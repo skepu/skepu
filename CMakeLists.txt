@@ -122,8 +122,6 @@ add_subdirectory(skepu-headers)
 
 # Now add the skepu-tool tests
 if(SKEPU_ENABLE_TESTING)
-	find_package(Catch2 3)
-
 	# If skepu headers tests were not enabled, we add the catch2_main target here.
 	if(NOT TARGET catch2_main)
 		add_subdirectory(${CMAKE_SOURCE_DIR}/skepu-headers/tests/catch2_main)
