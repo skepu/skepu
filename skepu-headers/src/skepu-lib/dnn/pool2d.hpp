@@ -263,6 +263,12 @@ namespace skepu::dnn::impl
     #endif
 	}
     
+	std::string describe() const override
+	{
+		return "MaxPooling2D kernel=" + std::to_string(std::get<0>(this->m_kernel)) + "x" + std::to_string(std::get<1>(this->m_kernel))
+			+ this->common_attributes(false);
+	}
+
 	std::string summary() override
 	{
 		std::stringstream os;

@@ -59,3 +59,15 @@ skepu_add_test_case_hybrid_cuda(skepu_external)
 # skepu_add_test_case_cuda(using_namespace)
 # skepu_add_test_case_hybrid_opencl(using_namespace)
 # skepu_add_test_case_hybrid_cuda(using_namespace)
+
+# ------------------------------------------------
+#   DNN library (skepu-lib/dnn)
+#   Gradient checks, Adam, predict/evaluate and a synthetic training run (no data files needed)
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(dnn)
+
+# Regression test on the logs of the MNIST / CIFAR-10 / signal examples. Cases whose data sets
+# are missing from examples/data are skipped; see dnn_regression/README.md.
+add_test(NAME dnn_regression
+	COMMAND ${CMAKE_CURRENT_LIST_DIR}/dnn_regression/run.sh --cxx ${CMAKE_CXX_COMPILER} --tol 1e-2)

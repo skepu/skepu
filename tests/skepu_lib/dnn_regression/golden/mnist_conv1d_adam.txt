@@ -1,0 +1,103 @@
+Epoch 0 Train Batch 1 - Loss: 2.45699 - Accuracy: 0.125
+Epoch 0 Train Batch 2 - Loss: 2.38355 - Accuracy: 0.09375
+Epoch 0 Train Batch 3 - Loss: 2.44359 - Accuracy: 0.1875
+Epoch 0 Train Batch 4 - Loss: 2.31704 - Accuracy: 0.21875
+Epoch 0 Train Batch 5 - Loss: 2.23125 - Accuracy: 0.1875
+Epoch 0 Train Batch 6 - Loss: 2.23644 - Accuracy: 0.21875
+Epoch 0 Train Batch 7 - Loss: 2.16539 - Accuracy: 0.28125
+Epoch 0 Train Batch 8 - Loss: 2.14377 - Accuracy: 0.21875
+Epoch 0 Train Batch 9 - Loss: 2.14605 - Accuracy: 0.3125
+Epoch 0 Train Batch 10 - Loss: 2.01645 - Accuracy: 0.46875
+Epoch 0 Train Batch 11 - Loss: 2.1179 - Accuracy: 0.28125
+Epoch 0 Train Batch 12 - Loss: 2.03559 - Accuracy: 0.46875
+Epoch 0 Train Batch 13 - Loss: 2.02377 - Accuracy: 0.40625
+Epoch 0 Train Batch 14 - Loss: 1.97589 - Accuracy: 0.59375
+Epoch 0 Train Batch 15 - Loss: 1.93702 - Accuracy: 0.5625
+Epoch 0 Train Batch 16 - Loss: 2.11838 - Accuracy: 0.21875
+Epoch 0 Train Batch 17 - Loss: 2.09335 - Accuracy: 0.25
+Epoch 0 Train Batch 18 - Loss: 1.95363 - Accuracy: 0.5
+Epoch 0 Train Batch 19 - Loss: 1.99357 - Accuracy: 0.3125
+Epoch 0 Train Batch 20 - Loss: 2.10867 - Accuracy: 0.3125
+Epoch 0 Train Batch 21 - Loss: 1.86051 - Accuracy: 0.59375
+Epoch 0 Train Batch 22 - Loss: 1.72923 - Accuracy: 0.625
+Epoch 0 Train Batch 23 - Loss: 1.82215 - Accuracy: 0.53125
+Epoch 0 Train Batch 24 - Loss: 1.93876 - Accuracy: 0.4375
+Epoch 0 Train Batch 25 - Loss: 1.8397 - Accuracy: 0.53125
+Epoch 0 Train Batch 26 - Loss: 1.65996 - Accuracy: 0.625
+Epoch 0 Train Batch 27 - Loss: 1.71768 - Accuracy: 0.4375
+Epoch 0 Train Batch 28 - Loss: 1.6417 - Accuracy: 0.59375
+Epoch 0 Train Batch 29 - Loss: 1.68421 - Accuracy: 0.5625
+Epoch 0 Train Batch 30 - Loss: 1.80387 - Accuracy: 0.53125
+Epoch 0 Train Batch 31 - Loss: 1.60711 - Accuracy: 0.65625
+Epoch 0 Train Batch 32 - Loss: 1.6381 - Accuracy: 0.59375
+Epoch 0 Train Batch 33 - Loss: 1.62658 - Accuracy: 0.5625
+Epoch 0 Train Batch 34 - Loss: 1.73351 - Accuracy: 0.5
+Epoch 0 Train Batch 35 - Loss: 1.58703 - Accuracy: 0.53125
+Epoch 0 Train Batch 36 - Loss: 1.78811 - Accuracy: 0.4375
+Epoch 0 Train Batch 37 - Loss: 1.43751 - Accuracy: 0.65625
+Epoch 0 Train Batch 38 - Loss: 1.18397 - Accuracy: 0.75
+Epoch 0 Train Batch 39 - Loss: 1.46922 - Accuracy: 0.5625
+Epoch 0 Train Batch 40 - Loss: 1.3269 - Accuracy: 0.625
+Epoch 0 Train Batch 41 - Loss: 1.38503 - Accuracy: 0.53125
+Epoch 0 Train Batch 42 - Loss: 1.29705 - Accuracy: 0.71875
+Epoch 0 Train Batch 43 - Loss: 1.25118 - Accuracy: 0.59375
+Epoch 0 Train Batch 44 - Loss: 1.32233 - Accuracy: 0.625
+Epoch 0 Train Batch 45 - Loss: 1.30048 - Accuracy: 0.65625
+Epoch 0 Train Batch 46 - Loss: 1.16892 - Accuracy: 0.71875
+Epoch 0 Train Batch 47 - Loss: 1.14603 - Accuracy: 0.75
+Epoch 0 Train Batch 48 - Loss: 1.4659 - Accuracy: 0.5625
+Epoch 0 Train Batch 49 - Loss: 1.06129 - Accuracy: 0.8125
+Epoch 0 Train Batch 50 - Loss: 1.23144 - Accuracy: 0.71875
+Epoch 0 Train Batch 51 - Loss: 1.09123 - Accuracy: 0.6875
+Epoch 0 Train Batch 52 - Loss: 0.993445 - Accuracy: 0.8125
+Epoch 0 Train Batch 53 - Loss: 0.842991 - Accuracy: 0.875
+Epoch 0 Train Batch 54 - Loss: 0.692836 - Accuracy: 0.84375
+Epoch 0 Train Batch 55 - Loss: 0.894515 - Accuracy: 0.84375
+Epoch 0 Train Batch 56 - Loss: 1.03932 - Accuracy: 0.71875
+Epoch 0 Train Batch 57 - Loss: 1.0274 - Accuracy: 0.71875
+Epoch 0 Train Batch 58 - Loss: 0.864348 - Accuracy: 0.8125
+Epoch 0 Train Batch 59 - Loss: 0.906784 - Accuracy: 0.75
+Epoch 0 Train Batch 60 - Loss: 0.752737 - Accuracy: 0.90625
+Epoch 0 Train Batch 61 - Loss: 0.874845 - Accuracy: 0.71875
+Epoch 0 Train Batch 62 - Loss: 0.882863 - Accuracy: 0.59375
+Epoch 0 Train Batch 63 - Loss: 0.890109 - Accuracy: 0.78125
+Epoch 0 Train Batch 64 - Loss: 0.828959 - Accuracy: 0.8125
+Epoch 0 Train Batch 65 - Loss: 0.805289 - Accuracy: 0.8125
+Epoch 0 Train Batch 66 - Loss: 0.64679 - Accuracy: 0.9375
+Epoch 0 Train Batch 67 - Loss: 0.817937 - Accuracy: 0.875
+Epoch 0 Train Batch 68 - Loss: 0.55442 - Accuracy: 0.84375
+Epoch 0 Train Batch 69 - Loss: 0.712456 - Accuracy: 0.84375
+Epoch 0 Train Batch 70 - Loss: 0.6034 - Accuracy: 0.875
+Epoch 0 Train Batch 71 - Loss: 0.621676 - Accuracy: 0.75
+Epoch 0 Train Batch 72 - Loss: 0.740184 - Accuracy: 0.75
+Epoch 0 Train Batch 73 - Loss: 0.689954 - Accuracy: 0.78125
+Epoch 0 Train Batch 74 - Loss: 0.594023 - Accuracy: 0.8125
+Epoch 0 Train Batch 75 - Loss: 0.704866 - Accuracy: 0.78125
+Epoch 0 Train Batch 76 - Loss: 1.01336 - Accuracy: 0.6875
+Epoch 0 Train Batch 77 - Loss: 0.792468 - Accuracy: 0.71875
+Epoch 0 Train Batch 78 - Loss: 0.569101 - Accuracy: 0.875
+Epoch 0 Train Batch 79 - Loss: 0.3735 - Accuracy: 0.9375
+Epoch 0 Train Batch 80 - Loss: 0.755725 - Accuracy: 0.71875
+Epoch 0 Train Batch 81 - Loss: 0.464492 - Accuracy: 0.84375
+Epoch 0 Train Batch 82 - Loss: 0.572306 - Accuracy: 0.84375
+Epoch 0 Train Batch 83 - Loss: 0.765631 - Accuracy: 0.75
+Epoch 0 Train Batch 84 - Loss: 0.710086 - Accuracy: 0.84375
+Epoch 0 Train Batch 85 - Loss: 0.646486 - Accuracy: 0.78125
+Epoch 0 Train Batch 86 - Loss: 0.536778 - Accuracy: 0.90625
+Epoch 0 Train Batch 87 - Loss: 0.640246 - Accuracy: 0.78125
+Epoch 0 Train Batch 88 - Loss: 0.654247 - Accuracy: 0.84375
+Epoch 0 Train Batch 89 - Loss: 0.600508 - Accuracy: 0.75
+Epoch 0 Train Batch 90 - Loss: 0.453369 - Accuracy: 0.875
+Epoch 0 Train Loss: 1.31384 Train Acc: 0.626042 Validation Loss: 0.595585 Validation Acc: 0.80625
+Test loss: 0.687434 Test accuracy: 0.754545
+Matrix: (10 X 10)
+28 0 0 1 0 0 0 0 0 0 
+0 40 0 3 0 0 0 0 0 1 
+0 2 28 3 0 0 0 2 2 0 
+0 1 0 25 0 2 0 0 0 0 
+0 0 0 0 23 0 3 0 0 15 
+0 0 0 7 2 14 1 2 1 4 
+1 0 2 1 1 0 19 0 1 0 
+0 3 0 0 0 0 0 25 0 9 
+0 1 0 3 0 0 0 1 13 3 
+0 1 0 1 0 0 0 0 1 34 

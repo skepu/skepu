@@ -155,7 +155,7 @@ namespace skepu::dnn::impl
 	void init_parameters() override
 	{
 		// Keep pretrained parameters
-		if (this->m_pretrained_params != SKEPU_DNN_NO_PRETRAINED_PARAMS)
+		if (this->m_pretrained_params != SKEPU_DNN_NO_PRETRAINED_PARAMS || this->m_keep_params)
 			return;
 
 		// Weights
@@ -275,6 +275,30 @@ namespace skepu::dnn::impl
 		return (this->m_layer_level != Level::Input) ? &this->m_temp : nullptr;
 	}
     
+	std::string describe() const override
+	{
+		return "Dense units=" + std::to_string(this->m_out) + this->common_attributes(true);
+	}
+
+	void write_params(std::ostream &os) override
+	{
+		std::vector<float> v;
+		for (size_t i = 0; i < m_weights.size_i(); ++i)
+			for (size_t j = 0; j < m_weights.size_j(); ++j) v.push_back(m_weights(i, j));
+		for (size_t i = 0; i < m_biases.size(); ++i) v.push_back(m_biases(i));
+		write_values(os, v);
+	}
+
+	void read_params(std::istream &is) override
+	{
+		std::vector<float> v = read_values(is, m_weights.size() + m_biases.size());
+		size_t n = 0;
+		for (size_t i = 0; i < m_weights.size_i(); ++i)
+			for (size_t j = 0; j < m_weights.size_j(); ++j) m_weights(i, j) = v[n++];
+		for (size_t i = 0; i < m_biases.size(); ++i) m_biases(i) = v[n++];
+		this->m_keep_params = true;
+	}
+
 	void apply_update(Optimizer<T> &opt, float learning_rate) override
 	{
 		opt.update(*this, "Dense", m_weights, m_dW, m_biases, m_db, learning_rate);

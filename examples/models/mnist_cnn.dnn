@@ -1,0 +1,9 @@
+skepu-dnn-model 1
+# Small convolutional network for 28x28 grayscale images (MNIST), 10 classes
+input 28 28 1
+layer Conv2D features=8 kernel=3x3 weights=He_uniform biases=Zero activation=ReLU
+layer MaxPooling2D kernel=2x2
+layer Conv2D features=16 kernel=3x3 weights=He_uniform biases=Zero activation=ReLU
+layer MaxPooling2D kernel=2x2
+layer Flatten
+layer Dense units=10 weights=Xavier_uniform biases=Zero activation=SoftMax

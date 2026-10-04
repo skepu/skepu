@@ -100,6 +100,11 @@ namespace skepu::dnn::impl
 		return &this->m_temp;
 	}
     
+	std::string describe() const override
+	{
+		return "Dropout rate=" + std::to_string(this->m_dropout_rate) + this->common_attributes(false);
+	}
+
 	std::string summary() override {
 		std::stringstream os;
 		os << Layer<T>::summary();

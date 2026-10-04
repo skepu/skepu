@@ -62,6 +62,8 @@ public:
 		return &this->m_temp;
 	}
 
+	std::string describe() const override { return "Flatten" + this->common_attributes(false); }
+
 	std::string summary() override
 	{
 		std::stringstream os;

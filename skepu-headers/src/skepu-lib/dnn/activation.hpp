@@ -298,6 +298,8 @@ namespace skepu::dnn::impl
 		return target;
 	}
     
+	std::string describe() const override { return ""; } // part of the description of the preceding layer
+
 	std::string summary() override
 	{
 		std::ostringstream os;

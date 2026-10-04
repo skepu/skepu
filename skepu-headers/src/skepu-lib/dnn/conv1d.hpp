@@ -70,6 +70,12 @@ namespace skepu::dnn::impl
 		return std::move(*this);
 	}
 
+	std::string describe() const override
+	{
+		return "Conv1D features=" + std::to_string(this->m_no_features) + " kernel=" + std::to_string(std::get<1>(this->m_kernel))
+			+ this->common_attributes(true);
+	}
+
 	void setup(Dimensions input_size) override
 	{
 		if (std::get<1>(input_size) != 1)
@@ -109,6 +115,11 @@ namespace skepu::dnn::impl
 	{
 		this->m_kernel = {1, (int)k};
 		return std::move(*this);
+	}
+
+	std::string describe() const override
+	{
+		return "MaxPooling1D kernel=" + std::to_string(std::get<1>(this->m_kernel)) + this->common_attributes(false);
 	}
 
 	void setup(Dimensions input_size) override

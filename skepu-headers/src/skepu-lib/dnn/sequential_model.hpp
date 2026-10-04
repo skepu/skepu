@@ -201,7 +201,7 @@ public:
 		Act activationFunc = l.m_act;
 		l.m_batch_size = this->m_batch_size;
 		l.m_layer_id = ++ this->m_layers_count;
-		l.m_prng = &this->m_prng;
+		l.m_prng = this->m_prng.get();
 		this->m_layers.push_back(std::make_shared<typename std::remove_reference<ConcreteLayer>::type>(std::forward<ConcreteLayer>(l)));
 
 		// The activation function of a layer is a separate layer that shares its id
@@ -219,6 +219,36 @@ public:
 	    SKEPU_TRACE_SCOPE("Model param init");
 		for (auto &current : this->m_layers)
 			current->init_parameters();
+	}
+
+	// Saves the model structure and its parameters to a text file (see load_model() for the format).
+	// The batch size, loss and optimizer are not part of the file.
+	void save(const std::string &path)
+	{
+		this->init();
+		std::ofstream os(path);
+		if (!os)
+			SKEPU_ERROR("SkePU-DNN: cannot write model file " << path);
+
+		os << "skepu-dnn-model 1\n";
+		os << "input " << std::get<1>(this->m_input_size) << " " << std::get<2>(this->m_input_size) << " " << std::get<3>(this->m_input_size) << "\n";
+		for (auto &layer : this->m_layers)
+		{
+			const std::string d = layer->describe();
+			if (!d.empty()) os << "layer " << d << "\n";
+		}
+		os << "params\n";
+		size_t index = 0;
+		for (auto &layer : this->m_layers)
+		{
+			if (layer->describe().empty()) continue;
+			if (layer->is_trainable())
+			{
+				os << "block " << index << "\n";
+				layer->write_params(os);
+			}
+			++index;
+		}
 	}
 
 	void serialize(std::string base_file_name)
@@ -621,7 +651,9 @@ protected:
 
 	std::vector<std::shared_ptr<Layer<T>>> m_layers{};
 	size_t m_layers_count = 0;
-	skepu::PRNG m_prng{0}; // default seed
+	// Heap-allocated so that the pointer given to the layers stays valid when the model is moved
+	// (models are usually built as temporaries and moved into place)
+	std::unique_ptr<skepu::PRNG> m_prng = std::make_unique<skepu::PRNG>(0); // default seed
 
 	Dimensions m_input_size;
 	size_t m_batch_size;
@@ -654,6 +686,135 @@ SequentialModel<T> &operator<<(SequentialModel<T> &model, ConcreteLayer &&layer)
 
 namespace skepu::dnn
 {
+    // Model files: a line-based text format that describes a model and, optionally, its parameters.
+    //
+    //   skepu-dnn-model 1
+    //   input <height> <width> <channels>        (the batch size is given when loading)
+    //   layer Conv2D features=8 kernel=3x3 weights=He_uniform biases=Zero activation=ReLU
+    //   layer MaxPooling2D kernel=2x2 activation=None
+    //   layer Flatten activation=None
+    //   layer Dense units=10 weights=Xavier_uniform biases=Zero activation=SoftMax
+    //   params                                    (optional section)
+    //   block <layer index> / <count> / <values>  (one block per layer with parameters)
+    //
+    // Layer types: Dense (units), Conv2D (features, kernel=HxW), Conv1D (features, kernel=K),
+    // MaxPooling2D (kernel=HxW), MaxPooling1D (kernel=K), Flatten, Dropout (rate).
+    // Attributes that are left out get the library defaults. '#' starts a comment.
+    // Without a params section the parameters are initialized according to the layers' `weights` and
+    // `biases` attributes; with one they are loaded and kept by fit().
+    template <typename T = float>
+    impl::SequentialModel<T> load_model(const std::string &path, size_t batch_size)
+    {
+	std::ifstream in(path);
+	if (!in)
+		SKEPU_ERROR("SkePU-DNN: cannot open model file " << path);
+
+	size_t line_no = 0;
+	std::string line;
+	auto fail = [&](const std::string &what) { SKEPU_ERROR("SkePU-DNN: " << path << ":" << line_no << ": " << what); };
+	auto next_line = [&](std::string &out) -> bool
+	{
+		while (std::getline(in, out))
+		{
+			++line_no;
+			auto hash = out.find('#');
+			if (hash != std::string::npos) out.erase(hash);
+			if (out.find_first_not_of(" \t\r") != std::string::npos) return true;
+		}
+		return false;
+	};
+
+	if (!next_line(line) || line.compare(0, 16, "skepu-dnn-model ") != 0) fail("not a skepu-dnn-model file");
+	if (std::stoi(line.substr(16)) != 1) fail("unsupported model file version");
+
+	size_t h = 0, w = 0, c = 0;
+	if (!next_line(line)) fail("missing 'input' line");
+	{
+		std::istringstream ss(line);
+		std::string key;
+		ss >> key >> h >> w >> c;
+		if (key != "input" || !ss) fail("expected 'input <height> <width> <channels>'");
+	}
+
+	impl::SequentialModel<T> model(Dimensions{batch_size, h, w, c});
+	bool has_params = false;
+
+	while (next_line(line))
+	{
+		std::istringstream ss(line);
+		std::string key, type;
+		ss >> key;
+		if (key == "params") { has_params = true; break; }
+		if (key != "layer" || !(ss >> type)) fail("expected 'layer <Type> [key=value ...]'");
+
+		std::map<std::string, std::string> attr;
+		std::string token;
+		while (ss >> token)
+		{
+			auto eq = token.find('=');
+			if (eq == std::string::npos) fail("expected key=value, got '" + token + "'");
+			attr[token.substr(0, eq)] = token.substr(eq + 1);
+		}
+		auto get = [&](const std::string &name) -> std::string
+		{
+			if (!attr.count(name)) fail(type + " needs the attribute '" + name + "'");
+			return attr[name];
+		};
+		auto get_size = [&](const std::string &name) { return (size_t)std::stoul(get(name)); };
+		auto get_kernel2d = [&]() -> std::pair<size_t, size_t>
+		{
+			std::string k = get("kernel");
+			auto x = k.find('x');
+			if (x == std::string::npos) fail("kernel must be given as HxW");
+			return {std::stoul(k.substr(0, x)), std::stoul(k.substr(x + 1))};
+		};
+		// Common attributes, then add the layer to the model
+		auto finish = [&](auto &&layer)
+		{
+			Init init;
+			Act act;
+			if (attr.count("weights")) { if (!init_from_string(attr["weights"], init)) fail("unknown init '" + attr["weights"] + "'"); layer.weights(init); }
+			if (attr.count("biases"))  { if (!init_from_string(attr["biases"], init)) fail("unknown init '" + attr["biases"] + "'"); layer.biases(init); }
+			if (attr.count("activation")) { if (!act_from_string(attr["activation"], act)) fail("unknown activation '" + attr["activation"] + "'"); layer.activation(act); }
+			model.add(std::move(layer));
+		};
+
+		if (type == "Dense")             finish(Dense<T>(get_size("units")));
+		else if (type == "Conv2D")       { auto k = get_kernel2d(); auto l = Conv2D<T>((int)get_size("features")); l.kernel(k.first, k.second); finish(std::move(l)); }
+		else if (type == "Conv1D")       { auto l = Conv1D<T>((int)get_size("features")); l.kernel(get_size("kernel")); finish(std::move(l)); }
+		else if (type == "MaxPooling2D") { auto k = get_kernel2d(); auto l = MaxPooling2D<T>(); l.kernel(k.first, k.second); finish(std::move(l)); }
+		else if (type == "MaxPooling1D") { auto l = MaxPooling1D<T>(); l.kernel(get_size("kernel")); finish(std::move(l)); }
+		else if (type == "Flatten")      finish(Flatten<T>());
+		else if (type == "Dropout")      finish(Dropout<T>(std::stof(get("rate"))));
+		else fail("unknown layer type '" + type + "'");
+	}
+
+	model.init();
+	if (!has_params)
+	{
+		model.init_parameters();
+		return model;
+	}
+
+	// Layers that are described in the file (the activation layers are not)
+	std::vector<impl::Layer<T> *> described;
+	for (size_t i = 0; i < model.layerCount(); ++i)
+		if (!model.getLayer(i).describe().empty()) described.push_back(&model.getLayer(i));
+
+	while (next_line(line))
+	{
+		std::istringstream ss(line);
+		std::string key;
+		size_t index = 0;
+		ss >> key >> index;
+		if (key != "block" || !ss || index >= described.size() || !described[index]->is_trainable())
+			fail("expected 'block <index of a layer with parameters>'");
+		described[index]->read_params(in);
+		line_no = 0; // parameter values are not counted line by line
+	}
+	return model;
+    }
+
     template <typename T = float, typename... Args>
     impl::SequentialModel<T> SequentialModel(Args &&...args)
     {

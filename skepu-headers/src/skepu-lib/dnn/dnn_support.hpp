@@ -255,6 +255,48 @@ enum class Opt { SGD, Adam};
 
 using ModelType = float;
 
+// Names used in model files
+inline const char *to_string(Init i)
+{
+	switch (i)
+	{
+	case Init::Uniform: return "Uniform";
+	case Init::Zero: return "Zero";
+	case Init::Xavier_uniform: return "Xavier_uniform";
+	case Init::Xavier_normal: return "Xavier_normal";
+	case Init::He_uniform: return "He_uniform";
+	case Init::He_normal: return "He_normal";
+	}
+	return "Uniform";
+}
+
+inline const char *to_string(Act a)
+{
+	switch (a)
+	{
+	case Act::None: return "None";
+	case Act::ReLU: return "ReLU";
+	case Act::Sigmoid: return "Sigmoid";
+	case Act::TanH: return "TanH";
+	case Act::SoftMax: return "SoftMax";
+	}
+	return "None";
+}
+
+inline bool init_from_string(const std::string &s, Init &out)
+{
+	for (Init i : {Init::Uniform, Init::Zero, Init::Xavier_uniform, Init::Xavier_normal, Init::He_uniform, Init::He_normal})
+		if (s == to_string(i)) { out = i; return true; }
+	return false;
+}
+
+inline bool act_from_string(const std::string &s, Act &out)
+{
+	for (Act a : {Act::None, Act::ReLU, Act::Sigmoid, Act::TanH, Act::SoftMax})
+		if (s == to_string(a)) { out = a; return true; }
+	return false;
+}
+
 struct DebugSink {
 	template <typename T> DebugSink &operator<<(T const &) { return *this; }
 };

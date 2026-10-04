@@ -1,0 +1,9 @@
+Epoch 0 Train Batch 1 - Loss: 0.720685 - Accuracy: 0.5625
+Epoch 0 Train Batch 2 - Loss: 0.67053 - Accuracy: 0.5625
+Epoch 0 Train Loss: 0.695607 Train Acc: 0.5625 Validation Loss: 0.625643 Validation Acc: 0.90625
+Epoch 1 Train Batch 1 - Loss: 0.64994 - Accuracy: 0.625
+Epoch 1 Train Batch 2 - Loss: 0.612942 - Accuracy: 1
+Epoch 1 Train Loss: 0.631441 Train Acc: 0.8125 Validation Loss: 0.563958 Validation Acc: 1
+Test loss: 0.573448 Test accuracy: 1
+12 0 
+0 20 
