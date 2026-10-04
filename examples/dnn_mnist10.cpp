@@ -129,7 +129,6 @@ int main(int argc, char *argv[])
 	skepu::Tensor4<float> test_x  = first_n(test_images, n_test, model_name == "conv1d");
 	skepu::Tensor4<float> train_y = labels_to_onehot(train_labels_raw, n_train, num_classes);
 	skepu::Tensor4<float> test_y  = labels_to_onehot(test_labels_raw, n_test, num_classes);
-	train_x.flush(); train_y.flush(); test_x.flush(); test_y.flush();
 
 	std::cout << "Training on " << n_train << " samples, testing on " << n_test << " samples\n";
 

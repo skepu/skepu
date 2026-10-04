@@ -431,11 +431,6 @@ public:
 			skel_flatmap(valid_split_y, train_y.begin() + train_size * sample_size(train_y));
 		}
 
-        // GPU backend bug: following is needed to correct software coherency
-		train_split_x.flush();
-		train_split_y.flush();
-		valid_split_x.flush();
-		valid_split_y.flush();
 
 		Tensor4<T> batched_train_x(
 			this->m_batch_size,

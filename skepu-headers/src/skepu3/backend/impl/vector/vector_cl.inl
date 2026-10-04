@@ -39,6 +39,9 @@ namespace skepu
 		}
 		else if (result->second->m_effectiveHostDataPointer != start || result->second->m_numElements != numElements)
 		{
+			// A different part of the vector is requested: the existing allocation may hold the only up-to-date
+			// copy of the data (written by a skeleton), so bring it back to the host before releasing it.
+			updateHost_CL();
 			m_deviceMemPointers_CL.erase(result->first);
 			delete result->second;
 			auto temp = new backend::DeviceMemPointer_CL<T>{start, numElements, device, this->getLabel()};

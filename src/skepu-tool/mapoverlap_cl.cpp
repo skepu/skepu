@@ -1133,7 +1133,7 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
 		skepu_ii *= skepu_overlap_i;
 		
 		
-		if (get_group_id(0) == get_global_size(1) / get_local_size(1) - 1) // Is this wrong? Shouldn't it be 0 in all calls?
+		if (get_group_id(0) == get_global_size(0) / get_local_size(0) - 1) // last block in the first dimension
 		{
 			size_t rem_a = skepu_out_size_l % skepu_numThreads_0a;
 			size_t rem_b = skepu_out_size_k % skepu_numThreads_0b;

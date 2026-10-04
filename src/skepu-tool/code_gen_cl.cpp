@@ -393,17 +393,20 @@ std::string generateOpenCLComplex()
 
 
 
-std::string generateOpenCLRandom()
+// The normalized random numbers are float unless the user function needs double precision:
+// Apple's OpenCL front end defines cl_khr_fp64, but Metal cannot create pipelines for kernels that
+// use double, so the type cannot be selected with #ifdef cl_khr_fp64 in the kernel.
+std::string generateOpenCLRandom(bool doublePrecision)
 {
 static const std::string OpenCLRandomTemplate = R"~~~(
 #define RND_STATE_T ulong
-#define RND_NORMALIZED_T double
+#define RND_NORMALIZED_T @RND_NORMALIZED_TYPE@
 	
 #define RND_MOD ((1LL << 48)-1)
 #define RND_EXP 1
 #define RND_BASE 0x5deece66d
 #define RND_INC 11
-#define RND_NORMAL_DIV (1LL << 31)
+#define RND_NORMAL_DIV 2147483648.0f // 1LL << 31 as an exact float literal: Apple's OpenCL compiler crashes on the shift expression and cannot create a pipeline from an integer literal here
 
 typedef struct {
 	RND_STATE_T m_state;
@@ -418,10 +421,16 @@ RND_STATE_T skepu_random_get(__global skepu_random *prng)
 
 RND_NORMALIZED_T skepu_random_get_normalized(__global skepu_random *prng)
 {
-	return (RND_NORMALIZED_T)skepu_random_get(prng) / RND_NORMAL_DIV;
+	// Two statements: Apple's OpenCL compiler fails to create a pipeline for
+	// 'return (float)ulong_expression / constant;' in a helper function
+	RND_NORMALIZED_T r = (RND_NORMALIZED_T)skepu_random_get(prng);
+	r = r / RND_NORMAL_DIV;
+	return r;
 }
 )~~~";
-	return OpenCLRandomTemplate;
+	std::string source = OpenCLRandomTemplate;
+	source.replace(source.find("@RND_NORMALIZED_TYPE@"), std::string("@RND_NORMALIZED_TYPE@").size(), doublePrecision ? "double" : "float");
+	return source;
 }
 
 
@@ -437,7 +446,7 @@ void handleRandomParam_CL(
 {
 	if (UserFunction::RandomParam *param = func.randomParam)
 	{
-		sourceStream << generateOpenCLRandom();
+		sourceStream << generateOpenCLRandom(func.requiresDoublePrecision);
 		if (!first) { SSMapFuncArgs << ", "; }
 		first = false;
 		SSMapFuncArgs << "&" << param->name << "[skepu_global_prng_id]";

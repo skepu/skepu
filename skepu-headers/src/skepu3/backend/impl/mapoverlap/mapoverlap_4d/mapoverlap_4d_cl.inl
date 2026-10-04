@@ -76,7 +76,8 @@ namespace skepu
 			const size_t sharedK = (numThreads[0] / numThreads_0a) + this->m_overlap[2] * 2;
 			const size_t sharedJ = numThreads[1] + this->m_overlap[1] * 2;
 			const size_t sharedI = numThreads[2] + this->m_overlap[0] * 2;*/
-			 size_t sharedL = std::min<size_t>(in_size_l, numThreads_0a) + this->m_overlap[3] * 2;
+			 // With the innermost dimension kept in one block, the tile must hold all of its input extent
+			 size_t sharedL = (atomicInnerMostDimension ? in_size_l : std::min<size_t>(in_size_l, numThreads_0a)) + this->m_overlap[3] * 2;
 			 size_t sharedK = std::min<size_t>(in_size_k, numThreads[0] / numThreads_0a) + this->m_overlap[2] * 2;
 			 size_t sharedJ = std::min<size_t>(in_size_j, numThreads[1]) + this->m_overlap[1] * 2;
 			 size_t sharedI = std::min<size_t>(in_size_i, numThreads[2]) + this->m_overlap[0] * 2;

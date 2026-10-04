@@ -26,9 +26,12 @@ using namespace skepu::dnn;
 
 static std::mt19937 rng(1234);
 
+// The tests run on the sequential implementation by default. When built with the precompiler, the
+// backend can be selected with the environment variable SKEPU_TEST_BACKEND (CPU, OpenMP, OpenCL, ...).
 static void use_sequential_cpu()
 {
-	static skepu::BackendSpec spec{"cpu"};
+	const char *backend = std::getenv("SKEPU_TEST_BACKEND");
+	static skepu::BackendSpec spec{backend ? backend : "cpu"};
 	skepu::setGlobalBackendSpec(spec);
 	rng.seed(1234);
 }
@@ -67,6 +70,7 @@ struct ParamRef
 {
 	std::function<float&(size_t)> w, b;   // flat parameter access
 	std::function<float&(size_t)> dw, db; // flat gradient access
+	std::function<void()> touch;           // call after writing through w/b/dw/db: marks the device copies as outdated
 	size_t nw, nb;
 };
 
@@ -83,6 +87,7 @@ static bool get_params(skepu::dnn::impl::Layer<float> &layer, ParamRef &r)
 		r.dw = [&dW](size_t i) -> float& { return dW[i]; };
 		r.b  = [&B](size_t i) -> float& { return B[i]; };
 		r.db = [&dB](size_t i) -> float& { return dB[i]; };
+		r.touch = [&W, &dW, &B, &dB] { W.invalidateDeviceData(); dW.invalidateDeviceData(); B.invalidateDeviceData(); dB.invalidateDeviceData(); };
 		return true;
 	}
 	if (auto *d = dynamic_cast<skepu::dnn::impl::Dense<float>*>(&layer))
@@ -95,6 +100,7 @@ static bool get_params(skepu::dnn::impl::Layer<float> &layer, ParamRef &r)
 		r.dw = [&dW](size_t i) -> float& { return dW[i]; };
 		r.b  = [&B](size_t i) -> float& { return B[i]; };
 		r.db = [&dB](size_t i) -> float& { return dB[i]; };
+		r.touch = [&W, &dW, &B, &dB] { W.invalidateDeviceData(); dW.invalidateDeviceData(); B.invalidateDeviceData(); dB.invalidateDeviceData(); };
 		return true;
 	}
 	return false;
@@ -113,7 +119,10 @@ static bool gradcheck(const std::string &name, Model &model, Loss loss, skepu::T
 		{
 			ParamRef r;
 			if (get_params(model.getLayer(idx), r))
-				for (size_t i = 0; i < r.nb; ++i) r.b(i) += bias_shift;
+				{
+					for (size_t i = 0; i < r.nb; ++i) r.b(i) += bias_shift;
+					r.touch();
+				}
 		}
 	skepu::dnn::impl::LossFunction<float> lf(loss);
 
@@ -145,9 +154,9 @@ static bool gradcheck(const std::string &name, Model &model, Loss loss, skepu::T
 		auto check = [&](float &p, float analytic, const char *kind, size_t i)
 		{
 			float old = p;
-			p = old + eps; float lp = loss_of(model, lf, x, y);
-			p = old - eps; float lm = loss_of(model, lf, x, y);
-			p = old;
+			p = old + eps; r.touch(); float lp = loss_of(model, lf, x, y);
+			p = old - eps; r.touch(); float lm = loss_of(model, lf, x, y);
+			p = old; r.touch();
 			float numeric = (lp - lm) / (2 * eps);
 			double err = std::fabs(numeric - analytic) / std::max(1e-2, (double)(std::fabs(numeric) + std::fabs(analytic)));
 			max_err = std::max(max_err, err);
@@ -197,6 +206,7 @@ static bool adam_check(const std::string &name, Model &model, size_t layer_idx)
 		std::vector<float> gw(r.nw), gb(r.nb);
 		for (size_t i = 0; i < r.nw; ++i) { gw[i] = d(rng); r.dw(i) = gw[i]; }
 		for (size_t i = 0; i < r.nb; ++i) { gb[i] = d(rng); r.db(i) = gb[i]; }
+		r.touch();
 		opt.step(layer, lr);
 		get_params(layer, r); // refresh host copies after the skeleton calls
 		for (size_t i = 0; i < r.nw; ++i) host_adam(w[i], gw[i], mw[i], vw[i], t);

@@ -90,7 +90,6 @@ int main(int argc, char *argv[])
 	skepu::Tensor4<float> test_x(n_test, 1, SIGNAL_LENGTH, 1, "test signals"), test_y(n_test, 1, 1, NUM_CLASSES, "test labels");
 	generate(train_x, train_y, rng, 0.3f);
 	generate(test_x, test_y, rng, 0.3f);
-	train_x.flush(); train_y.flush(); test_x.flush(); test_y.flush();
 
 	// Input shape: batch x 1 x length x channels
 	auto build_conv1d = [&]

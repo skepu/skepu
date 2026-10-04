@@ -16,7 +16,7 @@ std::string generateOpenCLTensor3Proxy(UserFunction::RandomAccessParam const& pa
 std::string generateOpenCLTensor4Proxy(UserFunction::RandomAccessParam const& param);
 
 std::string generateOpenCLRegion(size_t dim, UserFunction::RegionParam const& param);
-std::string generateOpenCLRandom();
+std::string generateOpenCLRandom(bool doublePrecision = false);
 
 std::string generateOpenCLMultipleReturn(UserFunction &UF);
 std::string generateUserFunctionCode_CL(UserFunction &Func);

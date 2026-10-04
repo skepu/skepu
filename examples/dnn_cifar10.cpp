@@ -64,7 +64,6 @@ int main(int argc, char *argv[])
 	cifar10::channel_stats(*train_x, mean, stddev);
 	cifar10::standardize(*train_x, mean, stddev);
 	cifar10::standardize(*test_x, mean, stddev);
-	train_x->flush(); train_y->flush(); test_x->flush(); test_y->flush();
 
 	std::cout << "CIFAR-10: " << train_x->size_i() << " training samples, " << test_x->size_i() << " test samples\n";
 

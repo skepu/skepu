@@ -282,6 +282,9 @@ namespace skepu::dnn::impl
 
 	void write_params(std::ostream &os) override
 	{
+		// Parameters may live on a device (after init_parameters or training): fetch them first
+		m_weights.updateHost();
+		m_biases.updateHost();
 		std::vector<float> v;
 		for (size_t i = 0; i < m_weights.size_i(); ++i)
 			for (size_t j = 0; j < m_weights.size_j(); ++j) v.push_back(m_weights(i, j));
@@ -296,6 +299,9 @@ namespace skepu::dnn::impl
 		for (size_t i = 0; i < m_weights.size_i(); ++i)
 			for (size_t j = 0; j < m_weights.size_j(); ++j) m_weights(i, j) = v[n++];
 		for (size_t i = 0; i < m_biases.size(); ++i) m_biases(i) = v[n++];
+		// Host writes through operator() do not necessarily invalidate the device copies
+		m_weights.invalidateDeviceData();
+		m_biases.invalidateDeviceData();
 		this->m_keep_params = true;
 	}
 

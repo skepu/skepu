@@ -299,12 +299,7 @@ int main(int argc, char *argv[])
 	// WritePngFileMatrix(outputMatrix, outputFile + "-average.png", colorType, imageInfo);
 	std::cout << "Time for pre processing : " << (timeTaken.count() / 10E6) << "\n";*/
     
-    /*********************** Correction for GPU   ************************** */     
-    // GPU software coherency bug: the following lines are reqired as workaround
-	train_images->flush();
-	train_labels->flush();
-	test_images->flush();
-	test_labels->flush();
+
 
 
 /* 	train_labels = cut_tensor4(train_labels, train_labels.size_i());
