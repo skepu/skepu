@@ -98,9 +98,10 @@ namespace skepu
 			size_t threads = std::min<size_t>(out_size_i * out_size_j * out_size_k * out_size_l, numBlocks[0] * numBlocks[1] * numBlocks[2] * numThreads[0] * numThreads[1] * numThreads[2]); // handle division factor
 			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(out_size_i * out_size_j * out_size_k * out_size_l, threads);
 			auto randomMemP = random.updateDevice_CL(random.getAddress(), threads, device, true);
+			cl_event event;
 			
 			CLKernel::mapOverlap4D(
-				deviceID, numThreads, numBlocks,
+				&event, deviceID, numThreads, numBlocks,
 				std::get<OI>(outMemP)...,
 				randomMemP,
 				std::get<EI-OutArity>(elwiseMemP)...,
@@ -119,6 +120,7 @@ namespace skepu
 			// Make sure the data is marked as changed by the device
 			pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
+		    SKEPU_TRACING_WAIT_CL(event);
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 4D", this, {in_size_i, in_size_j, in_size_k, in_size_l},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},

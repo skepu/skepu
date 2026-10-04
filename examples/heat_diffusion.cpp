@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 		auto update = skepu::MapOverlap(heat1D);
 		update.setOverlap(1);
 		update.setEdgeMode(skepu::Edge::None);
-		update.setUpdateMode(skepu::UpdateMode::RedBlack);
+	//	update.setUpdateMode(skepu::UpdateMode::RedBlack);
 		skepu::Vector<float> domain(size, 0);
 		
 		domain(0) = 0;
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 		}
 		
 		skepu::io::cout << domain << "\n";
-		exit(0);
+		return 0;
 	}
 #endif
 	
@@ -123,29 +123,40 @@ int main(int argc, char *argv[])
 		auto update = skepu::MapOverlap(heat2D);
 		update.setOverlap(1, 1);
 		update.setEdgeMode(skepu::Edge::None);
-		update.setUpdateMode(skepu::UpdateMode::RedBlack);
-		skepu::Matrix<float> domain(size, size, 0);
+	//	update.setUpdateMode(skepu::UpdateMode::RedBlack);
+		skepu::Matrix<float> domain(size, size, "DomainA", 0), domainB(size, size, "DomainB", 0);
+		SKEPU_TRACE_VIRTUAL_DATASET("Domain", domain, domainB);
+
+		skepu::external([&]
+		{	
+    		for (size_t i = 0; i < size; ++i)
+    		{
+    			domainB(i, 0) = 2;
+                domain(i, 0) = 2;
+    			domainB(i, size-1) = 2;
+                domain(i, size-1) = 2;
+    		}
+    		
+    		for (size_t i = 0; i < size; ++i)
+    		{
+    			domainB(size-1, i) = 5;
+                domain(size-1, i) = 5;
+    		}
+         }, skepu::write(domain, domainB));
 		
-		for (size_t i = 0; i < size; ++i)
-		{
-			domain(i, 0) = 2;
-			domain(i, size-1) = 2;
-		}
-		
-		for (size_t i = 0; i < size; ++i)
-		{
-			domain(0, i) = 0;
-			domain(size-1, i) = 5;
-		}
-		
+		SKEPU_TRACE_SNAPSHOT(domain);
+		SKEPU_TRACE_SNAPSHOT(domainB);
 		for (size_t i = 0; i < iters; ++i)
 		{
-			update(domain, domain);
+			update(domainB, domain);
+			update(domain, domainB);
+			SKEPU_TRACE_SNAPSHOT(domainB);
+			SKEPU_TRACE_SNAPSHOT(domain);
 		}
 		
 		skepu::io::cout << domain << "\n";
 	//	WritePngFileBinaryMatrix(domain);
-		exit(0);
+	    return 0;
 	}
 #endif
 	
@@ -155,7 +166,7 @@ int main(int argc, char *argv[])
 		auto update = skepu::MapOverlap(heat3D);
 		update.setOverlap(1, 1, 1);
 		update.setEdgeMode(skepu::Edge::None);
-		update.setUpdateMode(skepu::UpdateMode::RedBlack);
+	//	update.setUpdateMode(skepu::UpdateMode::RedBlack);
 		skepu::Tensor3<float> domain(size, size, size, 0);
 		
 		for (size_t i = 0; i < size; ++i)
@@ -175,7 +186,7 @@ int main(int argc, char *argv[])
 		}
 		
 		skepu::io::cout << domain << "\n";
-		exit(0);
+		return 0;
 	}
 #endif
 
@@ -185,7 +196,7 @@ int main(int argc, char *argv[])
 		auto update = skepu::MapOverlap(heat4D);
 		update.setOverlap(1, 1, 1, 1);
 		update.setEdgeMode(skepu::Edge::None);
-		update.setUpdateMode(skepu::UpdateMode::RedBlack);
+	//	update.setUpdateMode(skepu::UpdateMode::RedBlack);
 		skepu::Tensor4<float> domain(size, size, size, size, 0);
 		
 		for (size_t i = 0; i < size; ++i)
@@ -208,10 +219,8 @@ int main(int argc, char *argv[])
 		}
 		
 		skepu::io::cout << domain << "\n";
-		exit(0);
+		return 0;
 	}
 #endif
 	
-	return 0;
 }
-

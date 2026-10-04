@@ -168,6 +168,7 @@ namespace skepu
 	public: //-- Constructors & Destructor --//
 
 		Vector();
+		Vector(std::string label);
 		Vector(const Vector& vec);
 		Vector(Vector&& vec);
 		Vector(std::initializer_list<T> l);
@@ -247,7 +248,7 @@ namespace skepu
 		T& at(size_type loc);
 #endif // SKEPU_PRECOMPILED
 
-        const skepu::Scalar<T> elem(size_type loc);
+        const skepu::Scalar<T> elem(size_type index SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM);
 
 		void swap(Vector<T>& from);
 

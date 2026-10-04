@@ -78,10 +78,10 @@ const std::unordered_map<std::string, Skeleton> Skeletons =
 	{"MapOverlap2D",         {"MapOverlap2D",       Skeleton::Type::MapOverlap2D,       1, 1}},
 	{"MapOverlap3D",         {"MapOverlap3D",       Skeleton::Type::MapOverlap3D,       1, 1}},
 	{"MapOverlap4D",         {"MapOverlap4D",       Skeleton::Type::MapOverlap4D,       1, 1}},
-	{"MapPool1D",            {"MapPool1D",          Skeleton::Type::MapPool1D,          1, 4}},
+	{"MapPool1D",            {"MapOverlap1D",          Skeleton::Type::MapPool1D,          1, 4}},
 	{"MapPool2D",            {"MapPool2D",          Skeleton::Type::MapPool2D,          1, 1}},
-	{"MapPool3D",            {"MapPool3D",          Skeleton::Type::MapPool3D,          1, 1}},
-	{"MapPool4D",            {"MapPool4D",          Skeleton::Type::MapPool4D,          1, 1}},
+	{"MapPool3D",            {"MapOverlap3D",          Skeleton::Type::MapPool3D,          1, 1}},
+	{"MapPool4D",            {"MapOverlap4D",          Skeleton::Type::MapPool4D,          1, 1}},
 	{"MapPairsImpl",         {"MapPairs",           Skeleton::Type::MapPairs,           1, 1}},
 	{"MapPairsReduceImpl",   {"MapPairsReduce",     Skeleton::Type::MapPairsReduce,     2, 1}},
 	{"CallImpl",             {"Call",               Skeleton::Type::Call,               1, 1}},
@@ -90,10 +90,25 @@ const std::unordered_map<std::string, Skeleton> Skeletons =
 Rewriter GlobalRewriter;
 size_t GlobalSkeletonIndex = 0;
 
-// Library markers
-bool didFindBlas = false;
-clang::SourceLocation blasBegin, blasEnd;
+namespace library_markers
+{
+    bool foundBlas = false;
+    clang::SourceLocation blasBegin, blasEnd;
+    
+    bool foundML = false;
+    clang::SourceLocation mlBegin, mlEnd;
+    clang::SourceLocation sequentialModelBegin, sequentialModelEnd;
+    clang::SourceLocation dnnSupportBegin, dnnSupportEnd;
+    clang::SourceLocation activationBegin, activationEnd;
+    clang::SourceLocation layerBegin, layerEnd;
+    clang::SourceLocation denseBegin, denseEnd;
+    clang::SourceLocation dropoutBegin, dropoutEnd;
+    clang::SourceLocation flattenBegin, flattenEnd;
+    clang::SourceLocation conv1dBegin, conv1dEnd;
+    clang::SourceLocation conv2dBegin, conv2dEnd;
+    clang::SourceLocation pool2dBegin, pool2dEnd;
 
+}
 
 
 llvm::raw_ostream& SkePULog()
@@ -104,6 +119,32 @@ llvm::raw_ostream& SkePULog()
 		return llvm::nulls();
 }
 
+void libraryFileHandlerHelper(bool found, SourceLocation start, SourceLocation end, SourceLocation injectionLoc, std::string name)
+{
+    if (!found) return;
+
+    // Get transformed source code to inject
+    SourceManager &SM = GlobalRewriter.getSourceMgr();
+	std::string transformedCode = GlobalRewriter.getRewrittenText(SourceRange(start, end));
+
+	// Find injection point
+	FileID file = GlobalRewriter.getSourceMgr().getFileID(injectionLoc);
+	SourceLocation includeLoc = GlobalRewriter.getSourceMgr().getIncludeLoc(file);
+	unsigned includeLine = GlobalRewriter.getSourceMgr().getSpellingLineNumber(includeLoc);
+	includeLoc = GlobalRewriter.getSourceMgr().translateLineCol(SM.getMainFileID(), includeLine, 0);
+
+	// Perform injection
+	std::string insertion;
+	insertion += "\n/* BEGIN " + name + ".HPP INJECTION */\n";
+	if (!DoNotGenLineDirectives)
+		insertion += lineDirectiveForSourceLoc(start) + "\n//";
+	insertion += transformedCode;
+	insertion += ";\n/* END " + name + ".HPP INJECTION*/\n";
+	if (!DoNotGenLineDirectives)
+		insertion += lineDirectiveForSourceLoc(includeLoc) + "\n";
+
+	GlobalRewriter.InsertText(includeLoc, insertion);
+}
 
 // For each source file provided to the tool, a new FrontendAction is created.
 class SkePUFrontendAction : public ASTFrontendAction
@@ -127,27 +168,28 @@ public:
 		if (GenCL)   GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENCL 1\n");
 		if (GenCUDA) GlobalRewriter.InsertText(SLStart, "#define SKEPU_CUDA 1\n");
 		if (GenStarPUMPI) GlobalRewriter.InsertText(SLStart, "#define SKEPU_STARPU_MPI 1\n");
-//		if (!DoNotGenLineDirectives)
-//			GlobalRewriter.InsertText(SLStart, "#line 1 \"" + inputFileName + "\"\n");
+		if (!DoNotGenLineDirectives)
+		    GlobalRewriter.InsertText(SLStart, lineDirectiveForSourceLoc(SLStart) + "\n");
 
         SkePULog() << "Found " << this->SkeletonInstances.size() << " skeleton instances\n";
 
 		for (VarDecl *d : this->SkeletonInstances)
 			HandleSkeletonInstance(d);
+		
+    
+		libraryFileHandlerHelper(library_markers::foundBlas, library_markers::blasBegin, library_markers::blasEnd, library_markers::blasBegin, "BLAS");
 
-		if (didFindBlas)
-		{
-			std::string blasTransformedCode = GlobalRewriter.getRewrittenText(SourceRange(blasBegin, blasEnd));
-			blasTransformedCode = "\n/* BEGIN BLAS.HPP INJECTION */\n//" + blasTransformedCode + ";\n/* END BLAS.HPP INJECTION*/\n";
-
-
-			FileID blasFile = GlobalRewriter.getSourceMgr().getFileID(blasBegin);
-			SourceLocation blasIncludeLoc = GlobalRewriter.getSourceMgr().getIncludeLoc(blasFile);
-			unsigned blasIncludeLine = GlobalRewriter.getSourceMgr().getSpellingLineNumber(blasIncludeLoc);
-			blasIncludeLoc = GlobalRewriter.getSourceMgr().translateLineCol(SM.getMainFileID(), blasIncludeLine, 0);
-
-			GlobalRewriter.InsertText(blasIncludeLoc, blasTransformedCode);
-		}
+		libraryFileHandlerHelper(library_markers::foundML, library_markers::mlBegin,         library_markers::mlEnd, library_markers::mlBegin, "ML");
+		libraryFileHandlerHelper(library_markers::foundML, library_markers::dnnSupportBegin, library_markers::dnnSupportEnd, library_markers::mlBegin, "DNN_SUPPORT");
+		libraryFileHandlerHelper(library_markers::foundML, library_markers::layerBegin,      library_markers::layerEnd, library_markers::mlBegin, "LAYER");
+		libraryFileHandlerHelper(library_markers::foundML, library_markers::activationBegin, library_markers::activationEnd, library_markers::mlBegin, "ACTIVATION");
+		libraryFileHandlerHelper(library_markers::foundML, library_markers::denseBegin,      library_markers::denseEnd, library_markers::mlBegin, "DENSE");
+		libraryFileHandlerHelper(library_markers::foundML, library_markers::dropoutBegin,    library_markers::dropoutEnd, library_markers::mlBegin, "DROPOUT");
+	 	libraryFileHandlerHelper(library_markers::foundML, library_markers::flattenBegin,    library_markers::flattenEnd, library_markers::mlBegin, "FLATTEN");
+		libraryFileHandlerHelper(library_markers::foundML, library_markers::conv1dBegin,     library_markers::conv1dEnd, library_markers::mlBegin, "CONV1D");
+		libraryFileHandlerHelper(library_markers::foundML, library_markers::conv2dBegin,     library_markers::conv2dEnd, library_markers::mlBegin, "CONV2D");
+		libraryFileHandlerHelper(library_markers::foundML, library_markers::pool2dBegin,     library_markers::pool2dEnd, library_markers::mlBegin, "POOL2D");
+		libraryFileHandlerHelper(library_markers::foundML, library_markers::sequentialModelBegin, library_markers::sequentialModelEnd, library_markers::mlBegin, "SEQUENTIAL_MODEL");
 
 		if (Verbose) SkePULog() << "** EndSourceFileAction for: " << inputFileName << "\n";
 

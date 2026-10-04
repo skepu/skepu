@@ -16,6 +16,7 @@ namespace skepu
 			using Base = MapOverlapPar<MapOverlapFunc, SkeletonType::MapOverlap4D>;
 			using Base::InArity;
 			using Base::OutArity;
+			using typename Base::RegionType;
 			using typename Base::T;
 			using typename Base::F;
 
@@ -219,8 +220,8 @@ namespace skepu
 				size_t size_k = get<0>(std::forward<CallArgs>(args)...).size_k();
 				size_t size_l = get<0>(std::forward<CallArgs>(args)...).size_l();
 
-				checkTensor4Sizes(this->expectedInputSize(size_i, 0), this->expectedInputSize(size_j, 1), this->expectedInputSize(size_k, 2), this->expectedInputSize(size_l, 3),
-				generateCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
+			//	checkTensor4Sizes(this->expectedInputSize(size_i, 0), this->expectedInputSize(size_j, 1), this->expectedInputSize(size_k, 2), this->expectedInputSize(size_l, 3),
+			//	generateCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
 				// Remove later
 				auto &res = get<0>(std::forward<CallArgs>(args)...);

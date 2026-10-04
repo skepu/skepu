@@ -287,12 +287,72 @@ bool SkePUASTVisitor::VisitVarDecl(VarDecl *d)
 		std::string varName = d->getNameAsString();
 		if (varName == "startOfBlasHPP")
 		{
-			blasBegin = d->getSourceRange().getEnd();
-			didFindBlas = true;
+			library_markers::blasBegin = d->getSourceRange().getEnd();
+			library_markers::foundBlas = true;
 		}
 		else if (varName == "endOfBlasHPP")
-			blasEnd = d->getSourceRange().getEnd();
-//		d->dump();
+			library_markers::blasEnd = d->getSourceRange().getEnd();
+
+		if (varName == "startOf_ML_HPP")
+		{
+			library_markers::mlBegin = d->getSourceRange().getEnd();
+			library_markers::foundML = true;
+		}
+		else if (varName == "endOf_ML_HPP")
+			library_markers::mlEnd = d->getSourceRange().getEnd();
+
+		if (varName == "startOf_SequentialModel_HPP")
+    		library_markers::sequentialModelBegin = d->getSourceRange().getEnd();
+		else if (varName == "endOf_SequentialModel_HPP")
+			library_markers::sequentialModelEnd = d->getSourceRange().getEnd();
+
+		if (varName == "startOf_DNN_Support_HPP")
+    		library_markers::dnnSupportBegin = d->getSourceRange().getEnd();
+		else if (varName == "endOf_DNN_Support_HPP")
+			library_markers::dnnSupportEnd = d->getSourceRange().getEnd();
+
+		if (varName == "startOf_Activation_HPP")
+    		library_markers::activationBegin = d->getSourceRange().getEnd();
+		else if (varName == "endOf_Activation_HPP")
+			library_markers::activationEnd = d->getSourceRange().getEnd();
+
+		if (varName == "startOf_Layer_HPP")
+    		library_markers::layerBegin = d->getSourceRange().getEnd();
+		else if (varName == "endOf_Layer_HPP")
+			library_markers::layerEnd = d->getSourceRange().getEnd();
+
+		if (varName == "startOf_Dense_HPP")
+    		library_markers::denseBegin = d->getSourceRange().getEnd();
+		else if (varName == "endOf_Dense_HPP")
+			library_markers::denseEnd = d->getSourceRange().getEnd();
+
+		if (varName == "startOf_Dropout_HPP")
+    		library_markers::dropoutBegin = d->getSourceRange().getEnd();
+		else if (varName == "endOf_Dropout_HPP")
+			library_markers::dropoutEnd = d->getSourceRange().getEnd();
+
+		if (varName == "startOf_Flatten_HPP")
+    		library_markers::flattenBegin = d->getSourceRange().getEnd();
+		else if (varName == "endOf_Flatten_HPP")
+			library_markers::flattenEnd = d->getSourceRange().getEnd();
+
+		if (varName == "startOf_Conv1D_HPP")
+    		library_markers::conv1dBegin = d->getSourceRange().getEnd();
+		else if (varName == "endOf_Conv1D_HPP")
+			library_markers::conv1dEnd = d->getSourceRange().getEnd();
+
+		if (varName == "startOf_Conv2D_HPP")
+    		library_markers::conv2dBegin = d->getSourceRange().getEnd();
+		else if (varName == "endOf_Conv2D_HPP")
+			library_markers::conv2dEnd = d->getSourceRange().getEnd();
+
+		if (varName == "startOf_Pool2D_HPP")
+    		library_markers::pool2dBegin = d->getSourceRange().getEnd();
+		else if (varName == "endOf_Pool2D_HPP")
+			library_markers::pool2dEnd = d->getSourceRange().getEnd();
+
+
+		//		d->dump();
 	}
 
 

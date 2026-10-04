@@ -54,6 +54,7 @@ write(
  * \param op	The operator to call.
  * \param cw	The list of writeable containers.
  */
+/*
 template<
 	typename ... ContR,
 	typename OP,
@@ -63,7 +64,7 @@ external(
 	std::tuple<label::read, ContR...> cr,
 	OP && op,
 	std::tuple<label::write, ContW...> cw) noexcept
--> void;
+	-> void;*/
 
 template<
 	size_t ... CI,
@@ -89,35 +90,45 @@ complete_write(
 	pack_expand((std::get<CI>(cs).invalidateDeviceData(),0)...);
 }
 
+
+
+
 template<typename OP>
 void inline
-external(OP && op) noexcept
+external(
+    OP && op
+    SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM) noexcept
 {
 	op();
 }
 
 template<typename ... ContR, typename OP>
 void inline
-external(std::tuple<label::read, ContR...> cr, OP && op) noexcept
+external(
+    std::tuple<label::read, ContR...> cr,
+    OP && op
+    SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM) noexcept
 {
 	auto constexpr read_indices = typename make_pack_indices<sizeof...(ContR) +1, 1>::type{};
 
 	SKEPU_TRACE_START_EVENT(trace_handle);
 	prepare_read(read_indices, cr);
 	op();
-	SKEPU_TRACE_EXTERNAL(trace_handle, "[external]", {}, tracing::get_all_addresses_tuple(cr));
+	SKEPU_TRACE_EXTERNAL(trace_handle, "[external]", SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS, {}, tracing::get_all_addresses_tuple(cr));
 }
 
 template<typename OP, typename ... ContW>
 void inline
-external(OP && op, std::tuple<label::write, ContW...> cw) noexcept
+external(
+    OP && op,
+    std::tuple<label::write, ContW...> cw
+    SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM) noexcept
 {
 	auto constexpr write_indices = typename make_pack_indices<sizeof...(ContW) +1, 1>::type{};
-
 	SKEPU_TRACE_START_EVENT(trace_handle);
 	op();
 	complete_write(write_indices, cw);
-	SKEPU_TRACE_EXTERNAL(trace_handle, "[external]", tracing::get_all_addresses_tuple(cw), {});
+	SKEPU_TRACE_EXTERNAL(trace_handle, "[external]", SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS, tracing::get_all_addresses_tuple(cw), {});
 }
 
 template<typename ... ContR, typename OP, typename ... ContW>
@@ -125,7 +136,8 @@ void inline
 external(
 	std::tuple<label::read, ContR...> cr,
 	OP && op,
-	std::tuple<label::write, ContW...> cw) noexcept
+	std::tuple<label::write, ContW...> cw
+	SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM) noexcept
 {
 	auto constexpr read_indices = typename make_pack_indices<sizeof...(ContR) +1, 1>::type{};
 	auto constexpr write_indices = typename make_pack_indices<sizeof...(ContW) +1, 1>::type{};
@@ -134,7 +146,7 @@ external(
 	prepare_read(read_indices, cr);
 	op();
 	complete_write(write_indices, cw);
-	SKEPU_TRACE_EXTERNAL(trace_handle, "[external]",
+	SKEPU_TRACE_EXTERNAL(trace_handle, "[external]", SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS,
 		tracing::get_all_addresses_tuple(cw),
 		tracing::get_all_addresses_tuple(cr)
 	);
@@ -146,35 +158,46 @@ external(
 
 template<typename OP>
 void inline
-external(std::string label, OP && op) noexcept
+external(
+    std::string label,
+    OP && op
+    SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM) noexcept
 {
 	SKEPU_TRACE_START_EVENT(trace_handle);
 	op();
-	SKEPU_TRACE_EXTERNAL(trace_handle, label, {}, {});
+	SKEPU_TRACE_EXTERNAL(trace_handle, label, SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS, {}, {});
 }
 
 template<typename ... ContR, typename OP>
 void inline
-external(std::string label, std::tuple<label::read, ContR...> cr, OP && op) noexcept
+external(
+    std::string label,
+    std::tuple<label::read, ContR...> cr,
+    OP && op
+    SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM) noexcept
 {
 	auto constexpr read_indices = typename make_pack_indices<sizeof...(ContR) +1, 1>::type{};
 
 	SKEPU_TRACE_START_EVENT(trace_handle);
 	prepare_read(read_indices, cr);
 	op();
-	SKEPU_TRACE_EXTERNAL(trace_handle, label, {}, tracing::get_all_addresses_tuple(cr));
+	SKEPU_TRACE_EXTERNAL(trace_handle, label, SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS, {}, tracing::get_all_addresses_tuple(cr));
 }
 
 template<typename OP, typename ... ContW>
 void inline
-external(std::string label, OP && op, std::tuple<label::write, ContW...> cw) noexcept
+external(
+    std::string label,
+    OP && op,
+    std::tuple<label::write, ContW...> cw
+    SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM) noexcept
 {
 	auto constexpr write_indices = typename make_pack_indices<sizeof...(ContW) +1, 1>::type{};
 
 	SKEPU_TRACE_START_EVENT(trace_handle);
 	op();
 	complete_write(write_indices, cw);
-	SKEPU_TRACE_EXTERNAL(trace_handle, label, tracing::get_all_addresses_tuple(cw), {});
+	SKEPU_TRACE_EXTERNAL(trace_handle, label, SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS, tracing::get_all_addresses_tuple(cw), {});
 }
 
 template<typename ... ContR, typename OP, typename ... ContW>
@@ -183,7 +206,8 @@ external(
 	std::string label,
 	std::tuple<label::read, ContR...> cr,
 	OP && op,
-	std::tuple<label::write, ContW...> cw) noexcept
+	std::tuple<label::write, ContW...> cw
+	SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM) noexcept
 {
 	auto constexpr read_indices = typename make_pack_indices<sizeof...(ContR) +1, 1>::type{};
 	auto constexpr write_indices = typename make_pack_indices<sizeof...(ContW) +1, 1>::type{};
@@ -192,7 +216,7 @@ external(
 	prepare_read(read_indices, cr);
 	op();
 	complete_write(write_indices, cw);
-	SKEPU_TRACE_EXTERNAL(trace_handle, label,
+	SKEPU_TRACE_EXTERNAL(trace_handle, label, SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS,
 		tracing::get_all_addresses_tuple(cw),
 		tracing::get_all_addresses_tuple(cr)
 	);

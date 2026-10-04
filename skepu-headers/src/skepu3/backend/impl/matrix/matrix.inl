@@ -142,6 +142,13 @@ Matrix<T>::Matrix()
   DEBUG_TEXT_LEVEL1("Matrix: Constructor to an empty state");
 }
 
+template <typename T>
+inline Matrix<T>::Matrix(std::string label)
+:	Matrix<T>{}
+{
+    this->setLabel(label);
+}
+
 /*!
  *  Constructor, used to allocate memory ($_rows * _cols$). With a value ot initialize all elements.
  * \param _rows Number of rows in the matrix.

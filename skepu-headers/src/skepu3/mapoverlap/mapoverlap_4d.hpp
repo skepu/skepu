@@ -179,8 +179,8 @@ namespace skepu
 				DEBUG_TEXT_LEVEL1("Native C++ " << Name << ": kernel = " << this->m_overlap[0] << " x " << this->m_overlap[1] << " x " << this->m_overlap[2] << " x " << this->m_overlap[3]);
 				DEBUG_TEXT_LEVEL1("Native C++ " << Name << ": strides = " << this->m_strides[0] << " x " << this->m_strides[1] << " x " << this->m_strides[2] << " x " << this->m_strides[3]);
 
-				checkTensor4Sizes(this->expectedInputSize(size_i, 0), this->expectedInputSize(size_j, 1), this->expectedInputSize(size_k, 2), this->expectedInputSize(size_l, 3),
-				generateCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
+			//	checkTensor4Sizes(this->expectedInputSize(size_i, 0), this->expectedInputSize(size_j, 1), this->expectedInputSize(size_k, 2), this->expectedInputSize(size_l, 3),
+			//	generateCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
 				SKEPU_TRACE_START_EVENT(trace_handle);
 				auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);

@@ -1,9 +1,6 @@
 #pragma once
-
 #include <skepu>
-
 #ifndef SKEPU_PRECOMPILED
-
 static skepu::PrecompilerMarker startOfBlasHPP;
 
 #include <skepu-lib/complex.hpp>
@@ -905,5 +902,4 @@ my_matrix = skepu::TriangleMatrix()
 }}
 
 static skepu::PrecompilerMarker endOfBlasHPP;
-
 #endif // SKEPU_PRECOMPILED

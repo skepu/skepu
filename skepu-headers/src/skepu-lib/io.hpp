@@ -57,6 +57,14 @@ ostream &operator<<(ostream &s, C &arg)
   return s;
 }
 
+template<typename C, REQUIRES_VALUE(is_skepu_scalar<C>)>
+ostream &operator<<(ostream &s, C &arg)
+{
+    SKEPU_TRACE_SCALAR_IO(arg.m_ids, "Output", __FILE__, __LINE__);
+    s.m_stream << arg;
+    return s;
+}
+
 template<typename T>
 ostream &&operator<<(ostream &&s, T const& arg)
 {

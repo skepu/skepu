@@ -13,6 +13,24 @@
 #endif
 #endif
 
+#if __cplusplus >= 202002L
+#include <source_location>
+#define SKEPU_USE_STD_SOURCE_LOCATION
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM , const std::source_location loc = std::source_location::current()
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER , const std::source_location loc
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_FORWARD_ARG , loc
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS loc.file_name(), loc.line()
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_FILE loc.file_name()
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_LINE loc.line()
+#else
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_FORWARD_ARG
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS "", 0
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_FILE ""
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_LINE 0
+#endif
+
 #ifdef SKEPU_TRACING
 #include "../../external/nlohmann/json.hpp"
 #endif
@@ -28,25 +46,42 @@ namespace skepu
 	{
 		using TraceID = UniqueIdentifier::ID;
 		static const std::string defaultTraceFilename = "skepu_trace.json";
+		static const std::string defaultSnapshotDir = "./";
 
 #ifndef SKEPU_TRACE_FILE
-#define SKEPU_TRACE_FILE defaultTraceFilename
+#define SKEPU_TRACE_FILE_NAME defaultTraceFilename
+#else
+#define SKEPU_TRACE_FILE_NAME SKEPU_STRINGIFY_NESTED(SKEPU_TRACE_FILE)
 #endif
 
-//#define SKEPU_USE_STD_SOURCE_LOCATION
+#ifndef SKEPU_TRACE_SNAPSHOT_DIR
+#define SKEPU_TRACE_SNAPSHOT_DIR_NAME defaultSnapshotDir
+#else
+#define SKEPU_TRACE_SNAPSHOT_DIR_NAME SKEPU_STRINGIFY_NESTED(SKEPU_TRACE_SNAPSHOT_DIR)
+#endif
+
+// Synchronous OpenCL kernels when tracing is enabled
+#ifdef SKEPU_TRACING
+	#define SKEPU_TRACING_WAIT_CL(event) clWaitForEvents(1, &event);
+#else
+    #define SKEPU_TRACING_WAIT_CL(event)
+#endif
 
 #ifdef SKEPU_TRACING
 #define SKEPU_TRACE_START_EVENT(handle_symbol) auto handle_symbol = skepu::tracing::tracer().startEvent();
 #define SKEPU_TRACE_CALL(...) skepu::tracing::tracer().call(__VA_ARGS__)
 #define SKEPU_TRACE_EXTERNAL(...) skepu::tracing::tracer().external(__VA_ARGS__)
-#define SKEPU_TRACE_SCOPE(label) skepu::tracing::Scope scope(label, __LINE__)
-#define SKEPU_TRACE_REGION_BEGIN(label) skepu::tracing::tracer().beginRegion(label, __LINE__)
+#define SKEPU_TRACE_SCOPE(label) skepu::tracing::Scope scope(label)
+#define SKEPU_TRACE_REGION_BEGIN(...) skepu::tracing::tracer().beginRegion(__VA_ARGS__)
 #define SKEPU_TRACE_REGION_END() skepu::tracing::tracer().endRegion()
-#define SKEPU_TRACE_REGION(label, work) skepu::tracing::tracer().region(label, __LINE__, work)
-#define SKEPU_TRACE_ALLOCATION(...) tracing::tracer().allocation(__VA_ARGS__)
-#define SKEPU_TRACE_DEALLOCATION(...) tracing::tracer().deallocation(__VA_ARGS__)
-#define SKEPU_TRACE_TRANSFER(...) tracing::tracer().transfer(__VA_ARGS__)
-#define SKEPU_TRACE_ELEMENT_ACCESS(...) tracing::tracer().element_access(__VA_ARGS__)
+#define SKEPU_TRACE_REGION(...) skepu::tracing::tracer().region(__VA_ARGS__)
+#define SKEPU_TRACE_ALLOCATION(...) skepu::tracing::tracer().allocation(__VA_ARGS__)
+#define SKEPU_TRACE_DEALLOCATION(...) skepu::tracing::tracer().deallocation(__VA_ARGS__)
+#define SKEPU_TRACE_TRANSFER(...) skepu::tracing::tracer().transfer(__VA_ARGS__)
+#define SKEPU_TRACE_ELEMENT_ACCESS(...) skepu::tracing::tracer().element_access(__VA_ARGS__)
+#define SKEPU_TRACE_SCALAR_IO(...) skepu::tracing::tracer().scalar_io(__VA_ARGS__)
+#define SKEPU_TRACE_SNAPSHOT(...) skepu::tracing::tracer().data_snapshot(__VA_ARGS__)
+#define SKEPU_TRACE_VIRTUAL_DATASET(...) skepu::tracing::tracer().virtual_dataset(__VA_ARGS__)
 #else
 #define SKEPU_TRACE_START_EVENT(handle_symbol)
 #define SKEPU_TRACE_CALL(...)
@@ -54,11 +89,14 @@ namespace skepu
 #define SKEPU_TRACE_SCOPE(label)
 #define SKEPU_TRACE_REGION_BEGIN(label)
 #define SKEPU_TRACE_REGION_END()
-#define SKEPU_TRACE_REGION(label, work)
+#define SKEPU_TRACE_REGION(...)
 #define SKEPU_TRACE_ALLOCATION(...)
 #define SKEPU_TRACE_DEALLOCATION(...)
 #define SKEPU_TRACE_TRANSFER(...)
 #define SKEPU_TRACE_ELEMENT_ACCESS(...)
+#define SKEPU_TRACE_SCALAR_IO(...)
+#define SKEPU_TRACE_SNAPSHOT(...)
+#define SKEPU_TRACE_VIRTUAL_DATASET(...)
 #endif
 
 		struct EventHandle
@@ -73,7 +111,7 @@ namespace skepu
 
 		struct Scope
 		{
-			Scope(std::string const& label, int line);
+			Scope(std::string const& label SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM);
 			~Scope();
 		};
 
@@ -89,7 +127,8 @@ namespace skepu
 			void allocation(TraceID id, std::string const& label, int line);
 			void deallocation(TraceID id, std::string const& label, int line);
 			void transfer(EventHandle &h, TraceID id, std::string const& label, int line, size_t elements, std::string direction, std::string backend);
-			void element_access(TraceID id, TraceID source_id, size_t index, std::string const& label, int line);
+			void element_access(TraceID id, TraceID source_id, size_t index, std::string const& label, std::string const& file, int line);
+			void scalar_io(std::vector<TraceID> const& ids, std::string const& label, std::string const& file, int line);
 
 			void call(
 				EventHandle &h,
@@ -116,17 +155,28 @@ namespace skepu
 			void external(
 				EventHandle &h,
 				std::string const& label,
+				std::string const& file,
+				int line,
 				std::vector<TraceID> &&outputs,
-				std::vector<TraceID> &&inputs
-#ifdef SKEPU_USE_STD_SOURCE_LOCATION
-				, const std::source_location location = std::source_location::current()
-#endif
-);
+				std::vector<TraceID> &&inputs);
 
-			void beginRegion(std::string const& label, int line);
+			template<typename DataContainer>
+			void data_snapshot(
+			    DataContainer &data
+				SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM
+			);
+
+			template<template<typename> typename C1, template<typename> typename C2, typename T1, typename T2>
+			void virtual_dataset(
+			    std::string const& label,
+			    C1<T1> &data1, C2<T2> &data2
+				SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM
+			);
+
+			void beginRegion(std::string const& label SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM);
 			void endRegion();
-			void region(std::string const& label, int line,
-				std::function<void(void)> &&work_func);
+			void region(std::string const& label,
+				std::function<void(void)> &&work_func SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM);
 
 		private:
 #ifdef SKEPU_TRACING

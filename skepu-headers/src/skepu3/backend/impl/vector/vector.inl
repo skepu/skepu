@@ -112,6 +112,13 @@ namespace skepu
 	{
 		DEBUG_TEXT_LEVEL1("Vector: Constructor to an empty state");
 	}
+
+	template <typename T>
+	inline Vector<T>::Vector(std::string label)
+	:	Vector<T>{}
+	{
+	    this->setLabel(label);
+	}
 	
 	/*!
 	 *  The copy occurs w.r.t. elements. As copy constructor creates a new storage.
@@ -538,11 +545,11 @@ namespace skepu
 #endif // SKEPU_PRECOMPILED
 
     template <typename T>
-	const Scalar<T> Vector<T>::elem(size_type loc)
+	const Scalar<T> Vector<T>::elem(size_type index SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER)
 	{
 	    updateHost();
-		auto res = Scalar<T>(this->m_data[loc]);
-		SKEPU_TRACE_ELEMENT_ACCESS(res.m_ids[0], this->m_object_id, loc, this->getLabel(), __LINE__);
+		auto res = Scalar<T>(this->m_data[index]);
+		SKEPU_TRACE_ELEMENT_ACCESS(res.m_ids[0], this->m_object_id, index, this->getLabel(), SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS);
 		return res;
 	}
 	

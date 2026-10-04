@@ -1,5 +1,11 @@
 #pragma once
 
+// Hack to fix Apple bug
+#ifndef _Static_assert
+#  define _Static_assert(expr, msg) static_assert(expr, msg)
+#endif
+//#include <mach/message.h>
+
 #ifndef CL_TARGET_OPENCL_VERSION
 #define CL_TARGET_OPENCL_VERSION 300
 #endif

@@ -876,7 +876,7 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 		if (!first) { SSFuncParamList << ", "; }
 //	if (param.astDeclNode->getOriginalType()->isPointerType())
 //		SSFuncParamList << "__global ";
-		SSFuncParamList << param.typeNameOpenCL() << " " << param.name;
+		SSFuncParamList << param.rawTypeName << " " << param.name;
 		first = false;
 	}
 

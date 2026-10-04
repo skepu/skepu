@@ -86,6 +86,8 @@ namespace skepu
 			namespace Keys
 			{
 				static const std::string OBJECT_ID{"object_id"};
+				static const std::string OBJECT_IDS{"object_ids"};
+				static const std::string VIRTUAL_ID{"virtual_id"};
 				static const std::string TYPE{"type"};
 				static const std::string LABEL{"label"};
 				static const std::string TIME{"time"};
@@ -107,6 +109,7 @@ namespace skepu
 				static const std::string PRNG{"prng"};
 				static const std::string SOURCE{"source"};
 				static const std::string INDEX{"index"};
+				static const std::string DATA_FILE{"data_file"};
 			}
 
 			namespace Values
@@ -120,6 +123,8 @@ namespace skepu
 					static const std::string TRANSFER{"transfer"};
 					static const std::string REGION{"region"};
 					static const std::string EXTERNAL{"external"};
+					static const std::string SNAPSHOT{"snapshot"};
+					static const std::string VIRTUAL_DATASET{"virtual_container"};
 				}
 			}
 		}
@@ -160,7 +165,7 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 
-			auto capture = [=](){
+			auto capture = [=, this]{
 			nlohmann::json entry;
 			entry[Schema::Keys::OBJECT_ID] = id;
 			entry[Schema::Keys::TYPE]  = Schema::Values::Types::ALLOCATION;
@@ -180,7 +185,7 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 
-			auto capture = [=](){
+			auto capture = [=, this]{
 			nlohmann::json entry;
 			entry[Schema::Keys::OBJECT_ID] = id;
 			entry[Schema::Keys::TYPE]  = Schema::Values::Types::DEALLOCATION;
@@ -195,12 +200,12 @@ namespace skepu
 #endif
 		}
 
-		inline void Tracer::element_access(TraceID id, TraceID source_id, size_t index, std::string const& label, int line)
+		inline void Tracer::element_access(TraceID id, TraceID source_id, size_t index, std::string const& label, std::string const& file, int line)
 		{
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 
-			auto capture = [=](){
+			auto capture = [=, this]{
 			nlohmann::json entry;
 			entry[Schema::Keys::OBJECT_ID] = id;
 			entry[Schema::Keys::SOURCE] = source_id;
@@ -229,7 +234,7 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 
-			auto capture = [=](){
+			auto capture = [=, this]{
 			nlohmann::json entry;
 			entry[Schema::Keys::OBJECT_ID] = id;
 			entry[Schema::Keys::TYPE]  = Schema::Values::Types::TRANSFER;
@@ -273,7 +278,7 @@ namespace skepu
 			std::string label = skel_instance->getLabel();
 			size_t threads = backend->CPUThreads();
 
-			auto capture = [=](){
+			auto capture = [=, this]{
 			nlohmann::json entry;
 			entry[Schema::Keys::OBJECT_ID] = id;
 			entry[Schema::Keys::TYPE]    = Schema::Values::Types::CALL;
@@ -325,17 +330,16 @@ namespace skepu
 
 		inline void Tracer::external(EventHandle &h,
 			std::string const& label,
+			std::string const& file,
+			int line,
 			std::vector<TraceID> &&outputs,
 			std::vector<TraceID> &&inputs
-#ifdef SKEPU_USE_STD_SOURCE_LOCATION
-			, const std::source_location location = std::source_location::current()
-#endif
 		)
 		{
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 
-			auto capture = [=](){
+			auto capture = [=, this]{
 			nlohmann::json entry;
 			entry[Schema::Keys::TYPE]    = Schema::Values::Types::EXTERNAL;
 			entry[Schema::Keys::LABEL]   = label;
@@ -345,13 +349,33 @@ namespace skepu
 			entry[Schema::Keys::PROXY_INPUTS]  = inputs;
 			entry[Schema::Keys::SCALAR_INPUTS] = std::vector<TraceID>{};
 			entry[Schema::Keys::OUTPUTS]       = outputs;
-#ifdef SKEPU_USE_STD_SOURCE_LOCATION
-			entry[Schema::Keys::FILE]          = location.file_name();
-			entry[Schema::Keys::LINE]          = location.line();
-#else
-			entry[Schema::Keys::FILE]          = "";
-			entry[Schema::Keys::LINE]          = 0;
+			entry[Schema::Keys::FILE]          = file;
+			entry[Schema::Keys::LINE]          = line;
+			if (!this->m_region_stack.empty())
+				entry[Schema::Keys::REGION] = this->m_region_stack.top();
+
+			this->m_trace_json.push_back(entry);
+			}; this->m_captures.push_back(capture);
 #endif
+		}
+		
+		inline void Tracer::scalar_io(std::vector<TraceID> const& ids, std::string const& label, std::string const& file, int line)
+		{
+#ifdef SKEPU_TRACING
+			unsigned long now = timestamp_now();
+
+			auto capture = [=, this]{
+			nlohmann::json entry;
+			entry[Schema::Keys::TYPE]  = Schema::Values::Types::EXTERNAL;
+			entry[Schema::Keys::LABEL] = label;
+			entry[Schema::Keys::START] = now;
+			entry[Schema::Keys::END]   = now;
+			entry[Schema::Keys::ELWISE_INPUTS] = std::vector<TraceID>{};
+			entry[Schema::Keys::PROXY_INPUTS]  = std::vector<TraceID>{};
+			entry[Schema::Keys::SCALAR_INPUTS] = ids;
+			entry[Schema::Keys::OUTPUTS]       = std::vector<TraceID>{};
+			entry[Schema::Keys::FILE]          = "";
+			entry[Schema::Keys::LINE]          = line;
 			if (!this->m_region_stack.empty())
 				entry[Schema::Keys::REGION] = this->m_region_stack.top();
 
@@ -360,17 +384,129 @@ namespace skepu
 #endif
 		}
 
-		inline void Tracer::beginRegion(std::string const& label, int line)
+		template<typename C>
+		inline void snapshot_serializer(C &data, std::string &fname);
+
+		template<typename T>
+		inline void snapshot_serializer(skepu::Vector<T> &data, std::string &fname)
+		{
+			std::ofstream fs(fname);
+			data.flush();
+			{
+			    fs << 1 << " ";
+    			fs << data.size() << "\n";
+    			for (size_t i = 0; i < data.size(); ++i)
+    			{
+    				fs << data(i) << " ";
+    			}
+    	    }
+		}
+
+		template<typename T>
+		inline void snapshot_serializer(skepu::Matrix<T> &data, std::string &fname)
+		{
+			std::ofstream fs(fname);
+			data.flush();
+			{
+			    fs << 2 << " ";
+    			fs << data.size_i() << " " << data.size_j() << "\n";
+    			for (size_t i = 0; i < data.size_i(); ++i)
+    			{
+                    for (size_t j = 0; j < data.size_j(); ++j)
+        			{
+           				fs << data(i, j) << " ";
+                    }
+    			}
+    	    }
+		}
+
+ 		template<typename C
+        //, REQUIRES_VALUE(is_skepu_container<C>)
+        >
+		inline void Tracer::data_snapshot(
+		    C &data
+			SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER
+		)
+		{
+#ifdef SKEPU_TRACING
+		    static int counter = 0;
+			counter++;
+
+			auto id = data.getObjectID();
+			auto label = data.getLabel();
+			unsigned long start = timestamp_now();
+			std::stringstream ss_fname;
+			ss_fname << SKEPU_TRACE_SNAPSHOT_DIR_NAME << "/";
+			ss_fname << label << "@" << counter << ".txt";
+			auto fname = ss_fname.str();
+            std::cout << "Test: " << label << " UID: " << counter << "\n" << "File name: " << fname << "\n";
+            snapshot_serializer(data, fname);
+
+            unsigned long end = timestamp_now();
+      
+			auto capture = [=, this]{
+			nlohmann::json entry;
+			entry[Schema::Keys::TYPE]      = Schema::Values::Types::SNAPSHOT;
+			entry[Schema::Keys::OBJECT_ID] = id;
+			entry[Schema::Keys::LABEL]     = label;
+			entry[Schema::Keys::START]     = start;
+			entry[Schema::Keys::END]       = end;
+			entry[Schema::Keys::DATA_FILE] = fname;
+			entry[Schema::Keys::FILE]      = SKEPU_EXTERNAL_SOURCE_LOCATION_FILE;
+			entry[Schema::Keys::LINE]      = SKEPU_EXTERNAL_SOURCE_LOCATION_LINE;
+			if (!this->m_region_stack.empty())
+				entry[Schema::Keys::REGION] = this->m_region_stack.top();
+      
+			this->m_trace_json.push_back(entry);
+			}; this->m_captures.push_back(capture);
+         
+#endif
+		}
+
+		template<template<typename> typename C1, template<typename> typename C2, typename T1, typename T2
+		//, REQUIRES_VALUE(is_skepu_container<C1> && is_skepu_container<C2>)
+		>
+		inline void Tracer::virtual_dataset(
+		    std::string const& label,
+		    C1<T1> &data1, C2<T2> &data2
+			SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER
+		)
+		{
+#ifdef SKEPU_TRACING
+            unsigned long time = timestamp_now();
+
+            std::vector<TraceID> ids{ data1.getObjectID(), data2.getObjectID() };
+                
+            auto capture = [=, this]{
+            nlohmann::json entry;
+            entry[Schema::Keys::TYPE]       = Schema::Values::Types::VIRTUAL_DATASET;
+            entry[Schema::Keys::VIRTUAL_ID] = UniqueIdentifier::generate();
+            entry[Schema::Keys::OBJECT_IDS] = ids;
+            entry[Schema::Keys::LABEL]      = label;
+            entry[Schema::Keys::START]      = time;
+            entry[Schema::Keys::END]        = time;
+            entry[Schema::Keys::FILE]       = SKEPU_EXTERNAL_SOURCE_LOCATION_FILE;
+            entry[Schema::Keys::LINE]       = SKEPU_EXTERNAL_SOURCE_LOCATION_LINE;
+            if (!this->m_region_stack.empty())
+            entry[Schema::Keys::REGION] = this->m_region_stack.top();
+                
+            this->m_trace_json.push_back(entry);
+            }; this->m_captures.push_back(capture);
+#endif
+		}
+
+		inline void Tracer::beginRegion(std::string const& label SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER)
 		{
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 
-			auto capture = [=](){
+			auto capture = [=, this]{
 			nlohmann::json entry;
 			entry[Schema::Keys::TYPE]  = Schema::Values::Types::REGION;
 			entry[Schema::Keys::LABEL] = label;
 			entry[Schema::Keys::TIME]  = now;
-			entry[Schema::Keys::LINE]  = line;
+			entry[Schema::Keys::FILE]  = SKEPU_EXTERNAL_SOURCE_LOCATION_FILE;
+			entry[Schema::Keys::LINE]  = SKEPU_EXTERNAL_SOURCE_LOCATION_LINE;
 			entry[Schema::Keys::DEPTH] = this->m_region_stack.size() + 1;
 			if (!this->m_region_stack.empty())
 				entry[Schema::Keys::REGION] = this->m_region_stack.top();
@@ -384,20 +520,20 @@ namespace skepu
 		inline void Tracer::endRegion()
 		{
 #ifdef SKEPU_TRACING
-			auto capture = [=](){
+			auto capture = [=, this]{
 			this->m_region_stack.pop();
 			}; this->m_captures.push_back(capture);
 #endif
 		}
 
-		inline void Tracer::region(std::string const& label, int line, std::function<void(void)> &&work_func)
+		inline void Tracer::region(std::string const& label, std::function<void(void)> &&work_func SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER)
 		{
-			this->beginRegion(label, line);
+			this->beginRegion(label SKEPU_EXTERNAL_SOURCE_LOCATION_FORWARD_ARG);
 			work_func();
 			this->endRegion();
 		}
 
-		static Tracer internal_defaultGlobalTracer(SKEPU_STRINGIFY_NESTED(SKEPU_TRACE_FILE));
+		static Tracer internal_defaultGlobalTracer(SKEPU_TRACE_FILE_NAME);
 
 		// Enables global tracer across multiple translation units
 		inline Tracer **internal_GlobalTracerAccessor()
@@ -422,9 +558,9 @@ namespace skepu
 		}
 
 
-		inline Scope::Scope(std::string const& label, int line)
+		inline Scope::Scope(std::string const& label SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER)
 		{
-			tracer().beginRegion(label, line);
+			tracer().beginRegion(label SKEPU_EXTERNAL_SOURCE_LOCATION_FORWARD_ARG);
 		}
 
 		inline Scope::~Scope()

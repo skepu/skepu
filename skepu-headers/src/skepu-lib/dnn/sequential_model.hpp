@@ -1,13 +1,109 @@
 #pragma once
 #include <skepu>
 #ifndef SKEPU_PRECOMPILED
-
 static skepu::PrecompilerMarker startOf_SequentialModel_HPP;
 
-#include "layer.hpp"
-#include "conv1d.hpp"
-#include "conv2d.hpp"
-#include "conv1d.hpp"
+
+
+namespace skepu::dnn::impl
+{
+template<typename T = float>
+class Optimizer
+{
+public:
+	Optimizer(Opt opt_type): m_optimizer_type(opt_type) {}
+
+	void step(Layer<T>& layer)
+	{
+		if (this->m_optimizer_type == Opt::SGD)
+		{
+			if (auto* conv_layer = dynamic_cast<Conv2D<T>*>(&layer))
+			{
+				Tensor4<T>& m_weights = layer.get_weights();
+				Tensor4<T>& m_dW  = layer.get_gradients();
+
+				Vector<T>& m_biases = layer.get_biases();
+				Vector<T>& m_db = layer.get_biases_gradients();
+				auto learning_rate = layer.m_learning_rate;
+
+                skel_update_params.setLabel(layer.label() + " Dense Update Weights");
+    			skel_update_params(m_weights, m_weights, m_dW, learning_rate);
+    			skel_update_params.setLabel(layer.label() + " Dense Update Biases");
+    			skel_update_params(m_biases, m_biases, m_db, learning_rate);
+			}// conv
+			else if (auto* conv_layer = dynamic_cast<Dense<T>*>(&layer))
+			{
+				Matrix<T>& m_weights = layer.get_d_weights(); 
+				Matrix<T>& m_dW  = layer.get_d_gradients();
+
+				Vector<T>& m_biases = layer.get_biases();
+				Vector<T>& m_db = layer.get_biases_gradients();
+				auto learning_rate = layer.m_learning_rate;
+				
+				skel_update_params.setLabel(layer.label() + " Conv2D Update Weights");
+				skel_update_params(m_weights, m_weights, m_dW, learning_rate);
+				skel_update_params.setLabel(layer.label() + " Conv2D Update Biases");
+				skel_update_params(m_biases, m_biases, m_db, learning_rate);
+			}// dense 
+			
+		}// end if sgd
+	}
+
+private:
+	Opt m_optimizer_type;
+};
+
+
+
+template <typename T = float>
+class LossFunction
+{
+public:
+   	LossFunction(Loss type): m_loss_type(type) {}
+
+   	// forward pass 
+   	skepu::Scalar<float> compute_loss(Tensor4<T>& batched_train_y, Tensor4<T>& predicted, size_t batch_size)
+    {
+  		skepu::Vector<float> temp_loss(batch_size, "Loss temp");
+  		skepu::Scalar<float> computed_loss = 0;
+
+  		if (this->m_loss_type == Loss::CategoricalCrossEntropy)
+  		{
+ 			skel_cross_entropy_batched_loss_map(temp_loss, batched_train_y, predicted);	
+	 		computed_loss += -skel_cross_entropy_batched_loss_reduce(temp_loss) / (float)batch_size;
+  		}
+  		else if (this->m_loss_type == Loss::BinaryCrossEntropy)
+  		{
+ 			skel_binary_cross_entropy_loss_map(temp_loss, batched_train_y, predicted);
+  		    computed_loss += -skel_cross_entropy_batched_loss_reduce(temp_loss) / (float)batch_size;	
+  		}
+  		return computed_loss;
+   	}
+
+	// backward pass
+	Tensor4<T> compute_gradient(Tensor4<T>& predicted, Tensor4<T>& batched_train_y)
+	{
+		Tensor4<T> initial_gradient( // move out of loop
+			predicted.size_i(), predicted.size_j(),
+			predicted.size_k(), predicted.size_l(),
+			"Initial gradient"
+		);
+
+		if (this->m_loss_type == Loss::CategoricalCrossEntropy)
+		{
+			skel_delta(initial_gradient, predicted, batched_train_y);			
+		}
+		else if (this->m_loss_type == Loss::BinaryCrossEntropy)
+		{
+			skel_delta_bce(initial_gradient, predicted, batched_train_y);			
+		}
+		return initial_gradient;	
+	}
+
+private:
+    Loss m_loss_type; 
+};
+
 
 
 template <typename T = float>
@@ -29,6 +125,7 @@ public:
 
 	void init()
 	{
+	    SKEPU_TRACE_SCOPE("Model Init");
 		if (this->m_initialized)
 			SKEPU_ERROR("SkePU-DNN: Attempting to initialize an already initialized SequentialModel");
 
@@ -45,7 +142,6 @@ public:
 		this->m_layers[this->m_layers.size() - 1]->m_layer_level = Level::Output;
 
 		// Allocate data
-		tracing::tracer().beginRegion("Model data allocation", __LINE__);
 		Dimensions input_size = this->m_input_size;
 		for (auto &current : this->m_layers)
 		{
@@ -54,7 +150,6 @@ public:
 			current->setup(input_size); // on each layer
 			input_size = current->m_output_size;
 		}
-		tracing::tracer().endRegion();
 
 		this->m_initialized = true;
 	}
@@ -79,24 +174,21 @@ public:
 
 	void init_parameters()
 	{
-		tracing::tracer().region("Model param init", __LINE__, [&]
-		{
-			for (auto &current : this->m_layers)
-				current->init_parameters();
-		});
+	    SKEPU_TRACE_SCOPE("Model param init");
+		for (auto &current : this->m_layers)
+			current->init_parameters();
 	}
 
 	void serialize(std::string base_file_name)
 	{
-		tracing::tracer().region("Serialize model parameters", __LINE__, [&]
-		{
-			for (auto &current : this->m_layers)
-				current->serialize(base_file_name);
-		});
+		SKEPU_TRACE_SCOPE("Serialize model parameters");
+		for (auto &current : this->m_layers)
+			current->serialize(base_file_name);
 	}
 
 	Tensor4<T> &forward(Tensor4<T> &inputs, bool is_training=false)
 	{
+	    SKEPU_TRACE_SCOPE("Forward");
 		if (!this->m_initialized)
 			SKEPU_ERROR("SkePU-DNN: Attempting to use (forward pass) a not-initialized SequentialModel")
 
@@ -115,31 +207,86 @@ public:
 		return *temp;
 	}
 
-	std::tuple<float, float> evaluate(Tensor4<T> &test_x, Tensor4<T> &test_y, skepu::Matrix<int> *confusion_matrix = nullptr)
+	std::tuple<skepu::Scalar<float>, skepu::Scalar<float>>
+	evaluate(Tensor4<T> &test_x, Tensor4<T> &test_y, skepu::Matrix<int> *confusion_matrix = nullptr)
 	{
+        SKEPU_TRACE_SCOPE("Model Evaluate");
 		if (!this->m_initialized)
 			this->init();
-
+		
+		size_t num_valid_batches = test_x.size_i() / this->m_batch_size;
+ 		size_t remainder_valid_batch = test_x.size_i() % this->m_batch_size;
+		if (remainder_valid_batch > 0 ) num_valid_batches = num_valid_batches + 1;
+		
 		Tensor4<T> batched_test_x(
-				this->m_batch_size,
-				std::get<1>(this->m_input_size),
-				std::get<2>(this->m_input_size),
-				std::get<3>(this->m_input_size),
-				"Batch eval data X"
+			this->m_batch_size,
+			std::get<1>(this->m_input_size),
+			std::get<2>(this->m_input_size),
+			std::get<3>(this->m_input_size),
+			"Batch eval data X"
 		);
 		Tensor4<T> batched_test_y(this->m_batch_size, 1, 1, test_y.size_l(), "Batch eval data Y");
+
+		size_t remainder_test_batch_allocate = remainder_valid_batch;
+		if (remainder_test_batch_allocate == 0) remainder_test_batch_allocate = 1;
+
+       	// skepu::Tensor4<float> r_batch_data(remainder_test_batch_allocate, test_x.size_j(),test_x.size_k(), test_x.size_l());
+       	// skepu::Tensor4<float> r_batch_label(remainder_test_batch_allocate, test_y.size_j(),test_y.size_k(), test_y.size_l());
 
 		skepu::Vector<float> temp_loss(this->m_batch_size, "Loss temp");
 		skepu::Vector<int>   temp_acc(this->m_batch_size, "Accuracy temp");
 
-		float total_loss = 0, total_accuracy =0 ;
-		const size_t mini_batch_count = test_x.size_i() / this->m_batch_size;
-		for (size_t mini_batch = 0; mini_batch < mini_batch_count; ++mini_batch) //mini_batch_count
+		skepu::Scalar<float> total_loss = 0, total_accuracy = 0;
+		// const size_t mini_batch_count = test_x.size_i() / this->m_batch_size;
+
+		// Tensor4<float> *actual_batched_test_x = nullptr;
+		// Tensor4<float> *actual_batched_test_y = nullptr;
+
+		if (this->m_override_batch_count >= 0)
+			num_valid_batches = std::min(num_valid_batches, (size_t)this->m_override_batch_count);
+
+		for (size_t mini_batch = 0; mini_batch < num_valid_batches; ++mini_batch)
 		{
-			skel_flatmap.setLabel("Copy batch eval data X");
-			skel_flatmap(batched_test_x, test_x.begin() + mini_batch * batched_test_x.size());
-			skel_flatmap.setLabel("Copy batch eval data Y");
-			skel_flatmap(batched_test_y, test_y.begin() + mini_batch * batched_test_y.size());
+		    SKEPU_TRACE_SCOPE("Batch");
+			if (mini_batch == (num_valid_batches - 1) && remainder_valid_batch > 0)
+            {
+                // skel_flatmap(r_batch_data, test_x.begin() + mini_batch * r_batch_data.size());
+                // skel_flatmap(r_batch_label, test_y.begin() + mini_batch * r_batch_label.size());
+				// std::cout << "error 4 "<< mini_batch <<" \n";
+				skel_flatmap.setLabel("Copy batch test data X");
+				skel_flatmap(batched_test_x, test_x.begin() + mini_batch * batched_test_x.size() - (this->m_batch_size - remainder_valid_batch) * batched_test_x.size_j() * batched_test_x.size_k() * batched_test_x.size_l()); // remainder + (remainder - batch_size) 
+				skel_flatmap.setLabel("Copy batch test data Y");
+				skel_flatmap(batched_test_y, test_y.begin() + mini_batch * batched_test_y.size() - (this->m_batch_size - remainder_valid_batch) * batched_test_y.size_j() * batched_test_y.size_k() * batched_test_y.size_l());
+				// actual_batched_test_x = &r_batch_data;
+				// actual_batched_test_y = &r_batch_label;
+                // std::cout << "remainder batch: " << r_batch_data.size_i()<< '\n';
+                // display_image(r_batch_data);
+ 			}	
+            else
+            {
+				// skepu::io::cout << batched_test_y << "\n";
+				// std::cout << "size of batched test y: "<<string_tensor_size(batched_test_y)<< "\n";
+				// std::cout << "size of  test y: "<<string_tensor_size(test_y) << "\n";
+
+                skel_flatmap.setLabel("Copy batch eval data X");
+				skel_flatmap(batched_test_x, test_x.begin() + mini_batch * batched_test_x.size());
+				skel_flatmap.setLabel("Copy batch eval data Y");
+				
+				// test_y.flush();
+				// batched_test_y.flush();
+					
+				skel_flatmap(batched_test_y, test_y.begin() + mini_batch * batched_test_y.size());
+				
+				// actual_batched_test_x = &batched_test_x;
+				// actual_batched_test_y = &batched_test_y;
+
+	            // std::cout << "full batch " <<batch_index <<" size: " <<batch_data.size_i() << '\n';
+ 			}
+
+			// skel_flatmap.setLabel("Copy batch eval data X");
+			// skel_flatmap(batched_test_x, test_x.begin() + mini_batch * batched_test_x.size());
+			// skel_flatmap.setLabel("Copy batch eval data Y");
+			// skel_flatmap(batched_test_y, test_y.begin() + mini_batch * batched_test_y.size());
 
 			auto &predicted = this->forward(batched_test_x);
 
@@ -150,50 +297,71 @@ public:
 			accuracy += (float)skel_accuracy_batched(batched_test_y, predicted) / this->m_batch_size;*/
 
 			// Map+Reduce variant
+
+			// Tensor4<T> grad = loss_function->compute_gradient(predicted, batched_train_y);
+			// Tensor4<T> *gradient = &grad;
+
 			skel_cross_entropy_batched_loss_map.setLabel("Crossentropy A");
 			skel_cross_entropy_batched_loss_reduce.setLabel("Crossentropy B");
 			skel_accuracy_batched_map.setLabel("Accuracy A");
 			skel_accuracy_batched_reduce.setLabel("Accuracy B");
-			skel_cross_entropy_batched_loss_map(temp_loss, batched_test_y, predicted);
+			// skel_cross_entropy_batched_loss_map(temp_loss, batched_test_y, predicted);
 			skel_accuracy_batched_map(temp_acc, batched_test_y, predicted);
-			float loss = -skel_cross_entropy_batched_loss_reduce(temp_loss) / this->m_batch_size;
-			float accuracy = (float)skel_accuracy_batched_reduce(temp_acc) / this->m_batch_size;
+			// float loss = -skel_cross_entropy_batched_loss_reduce(temp_loss) / this->m_batch_size;
+
+			skepu::Scalar<float> loss = loss_function->compute_loss(batched_test_y, predicted, this->m_batch_size);
+			skepu::Scalar<float> accuracy = skel_accuracy_batched_reduce(temp_acc) / (float)this->m_batch_size;
 
 			total_loss += loss;
 			total_accuracy += accuracy;
 
-			std::cout << "Valid Batch " << mini_batch + 1 << " - Loss: " << loss << " - Accuracy: " << accuracy << std::endl;
+			// std::cout << "Batch " << mini_batch + 1 << " - Loss: " << loss << " - Accuracy: " << accuracy << std::endl;
 
 			if (confusion_matrix)
 			{
-				for (size_t i = 0; i < batched_test_y.size_i(); ++i) { // rows
-					int actual_label = 0; //true
-					int predicted_label = 0; // predicted
-					float max_actual = 0, max_predicted = 0;
-					for (size_t j = 0; j < batched_test_y.size_l(); ++j) { // cols
-						if (batched_test_y(i,0,0, j) > max_actual)
-						{
-							max_actual = batched_test_y(i, 0, 0, j);
-							actual_label = j;
-						}
-						if (predicted(i,0,0, j) > max_predicted)
-						{
-							max_predicted = predicted(i, 0, 0, j);
-							predicted_label = j;
-						}
-					}
-          (*confusion_matrix)(actual_label, predicted_label) += 1;
-        } // end of j loop
-			} // end of if
-
-
+			    skepu::external("Compute Confusion Matrix", skepu::read(batched_test_y, predicted), [&]
+			    {
+    				for (size_t i = 0; i < batched_test_y.size_i(); ++i)
+    				{
+    					int actual_label = 0;
+    					int predicted_label = 0;
+    					float max_actual = 0, max_predicted = 0;
+    					for (size_t j = 0; j < batched_test_y.size_l(); ++j)
+    					{
+    						if (batched_test_y(i, 0, 0, j) > max_actual)
+    						{
+    							max_actual = batched_test_y(i, 0, 0, j);
+    							actual_label = j;
+    						}
+    						if (predicted(i, 0, 0, j) > max_predicted)
+    						{
+    							max_predicted = predicted(i, 0, 0, j);
+    							predicted_label = j;
+    						}
+    					}
+                        (*confusion_matrix)(actual_label, predicted_label) += 1;
+                    }
+    			}, skepu::write(*confusion_matrix));
+            }
 		}
 
-		return {total_loss / mini_batch_count, total_accuracy / mini_batch_count}; // correct?
+		return { total_loss / num_valid_batches, total_accuracy / num_valid_batches }; // correct? yes :) mini_batch_count
 	}
 
-	void display_image(skepu::Tensor4<float> &train_images){
 
+
+
+
+
+
+
+
+
+
+
+	
+	void display_image(skepu::Tensor4<float> &train_images)
+	{
 	  int batch = train_images.size_i();
 	  int height = train_images.size_j();
 	  int width = train_images.size_k();
@@ -221,10 +389,80 @@ public:
 	  }
 	}
 
+	// std::string name = "29_Jan_2025_opencl";
+	void store_results_per_batch(std::string name, int epoch, int batch_index, double loss, double accuracy){
+	  std::ofstream file;
+
+	// Open the file in append mode (std::ios::app)
+	file.open("./result_final_1_7_Mar/training_results_per_batch_"+ name +".csv", std::ios::app);
+
+	// If the file is empty, add a header line (optional)
+	if (file.tellp() == 0) {
+	    file << "Epoch, Batch_Index, Loss,  Accuracy \n";
+	}
+
+	// Write the values to the file as a new line
+	file << epoch << ","
+	     << batch_index << ","
+	     << loss << ","
+	     << accuracy << "\n";
 
 
-	void fit(Tensor4<T> &train_x, Tensor4<T> &train_y, int epochs, float learning_rate, float validation_split,  bool print_progress=true)
+	file.close();
+	}
+
+	void store_results(std::string name, int batch_size, double learning_rate, int e,double average_epoch_loss_t,
+   double average_b_accuracy, double average_epoch_loss_v,double average_v_accuracy )
+   {
+     std::ofstream file;
+
+   // Open the file in append mode (std::ios::app)
+   file.open("./result_final_1_7_Mar/training_results_"+ name +".csv", std::ios::app);
+
+   // If the file is empty, add a header line (optional)
+   if (file.tellp() == 0) {
+       file << "Batch Size,Learning Rate,Epoch,Train Loss,Train Accuracy,Validation Loss,Validation Accuracy\n";
+   }
+
+   // Write the values to the file as a new line
+   file << batch_size << ","
+        << learning_rate << ","
+        << e << ","
+        << average_epoch_loss_t << ","
+        << average_b_accuracy << ","
+        << average_epoch_loss_v << ","
+        << average_v_accuracy << "\n";
+
+   file.close();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	// compiling loss function and optimizer 
+	void configure(Loss loss_type, Opt optimizer_type){
+		loss_function = std::make_unique<LossFunction<T>>(loss_type);
+		optimizer = std::make_unique<Optimizer<T>>(optimizer_type);
+		compiled = true;
+	}
+
+
+	// fit -> training 
+	void fit(Tensor4<T> &train_x, Tensor4<T> &train_y, int epochs, float learning_rate, float validation_split,  const std::string &name, bool print_progress=true)
 	{
+	    SKEPU_TRACE_SCOPE("Model Fit");
+		if (!compiled) throw std::runtime_error("Model must be compiled before training ");
+
 		if (!this->m_initialized)
 			this->init();
 
@@ -233,24 +471,24 @@ public:
 
 		size_t valid_size = train_x.size_i() * validation_split;
 		size_t train_size = train_x.size_i() - valid_size ;
-		std::cout << "total train_x: " << train_x.size_i() << '\n';
-		std::cout << "valid_size: " <<valid_size <<" train_size: " <<train_size << '\n';
+		// std::cout << "total train_x: " << train_x.size_i() << '\n';
+		// std::cout << "valid_size: " <<valid_size <<" train_size: " <<train_size << '\n';
 
 		Tensor4<T> train_split_x(
-				train_size,
-				std::get<1>(this->m_input_size),
-				std::get<2>(this->m_input_size),
-				std::get<3>(this->m_input_size),
-				"Split train data X"
+			train_size,
+			std::get<1>(this->m_input_size),
+			std::get<2>(this->m_input_size),
+			std::get<3>(this->m_input_size),
+			"Split train data X"
 		);
 		Tensor4<T> train_split_y(train_size, 1, 1, train_y.size_l(), "Split train data Y");
 
 		Tensor4<T> valid_split_x(
-				valid_size,
-				std::get<1>(this->m_input_size),
-				std::get<2>(this->m_input_size),
-				std::get<3>(this->m_input_size),
-				"Split valid data X"
+			valid_size,
+			std::get<1>(this->m_input_size),
+			std::get<2>(this->m_input_size),
+			std::get<3>(this->m_input_size),
+			"Split valid data X"
 		);
 		Tensor4<T> valid_split_y(valid_size, 1, 1, train_y.size_l(), "Split valid data Y");
 
@@ -267,41 +505,104 @@ public:
 		skel_flatmap.setLabel("Copy split valid data Y");
 		skel_flatmap(valid_split_y, train_y.begin() + train_size * train_y.size_j() * train_y.size_k() * train_y.size_l());
 
-		// std::cout << "valid_split_x: " <<valid_split_x.size_i()<< " valid_split_x " << '\n';
-		// display_image(valid_split_x);
+		size_t num_train_batches = train_split_x.size_i() / this->m_batch_size;
+ 		size_t remainder_train_batch = train_split_x.size_i() % this->m_batch_size;
+		
+ 		// size_t num_valid_batches = valid_x.size_i()/this->m_batch_size;
+ 		// size_t remainder_valid_batch = valid_x.size_i()%this->m_batch_size;
+
+		// std::cout << "train batch count: " << num_train_batches <<" remainder: " <<remainder_train_batch <<"\n";
+		// std::cout << "valid bacth count: " << num_valid_batches <<" remainder: " <<remainder_valid_batch <<"\n";
+
+		if (remainder_train_batch > 0) num_train_batches = num_train_batches + 1 ;
+		
+        // GPU backend bug: following is needed to correct software coherency
+		train_split_x.flush();
+		train_split_y.flush();
+		valid_split_x.flush();
+		valid_split_y.flush();
+
+		// train_split_y = cut_tensor4(train_split_y, train_split_y.size_i());
+		// train_split_x = cut_tensor4(train_split_x, train_split_x.size_i());
+		// valid_split_x = cut_tensor4(valid_split_x, valid_split_x.size_i());
+		// valid_split_y = cut_tensor4(valid_split_y, valid_split_y.size_i());
 
 		Tensor4<T> batched_train_x(
-				this->m_batch_size,
+			this->m_batch_size,
+			std::get<1>(this->m_input_size),
+			std::get<2>(this->m_input_size),
+			std::get<3>(this->m_input_size),
+			"Batch train data X"
+		);
+		
+		Tensor4<T> batched_train_y(this->m_batch_size, 1, 1, train_y.size_l(), "Batch train data Y");
+
+		size_t remainder_train_batch_allocate = remainder_train_batch;
+		if (remainder_train_batch_allocate == 0) remainder_train_batch_allocate = 1;
+       	// skepu::Tensor4<float> r_batch_data(remainder_train_batch_allocate, train_split_x.size_j(),train_split_x.size_k(), train_split_x.size_l());
+       	// skepu::Tensor4<float> r_batch_label(remainder_train_batch_allocate, train_split_y.size_j(),train_split_y.size_k(), train_split_y.size_l());
+
+	/*	Tensor4<T> r_batch_data(
+				remainder_train_batch_allocate,
 				std::get<1>(this->m_input_size),
 				std::get<2>(this->m_input_size),
 				std::get<3>(this->m_input_size),
-				"Batch train data X"
+				"r_batch_data train data X"
 		);
-		Tensor4<T> batched_train_y(this->m_batch_size, 1, 1, train_y.size_l(), "Batch train data Y");
+		Tensor4<T> r_batch_label(remainder_train_batch_allocate, 1, 1, train_y.size_l(), "r_batch_label train data Y");*/
 
-
-		skepu::Vector<float> temp_loss(this->m_batch_size, "Loss temp");
-		skepu::Vector<int>   temp_acc(this->m_batch_size, "Accuracy temp");
+		// skepu::Vector<float> temp_loss(this->m_batch_size, "Loss temp");
+		skepu::Vector<int> temp_acc(this->m_batch_size, "Accuracy temp");
 
 		for (size_t epoch = 0; epoch < epochs; ++epoch) // epoch
 		{
-			float total_train_loss = 0, total_train_accuracy = 0;
-			// std::stringstream ss; ss << "Epoch " << (epoch + 1);
-			// tracing::tracer().region("Epoch", __LINE__, [&]()
-			// {
+		    SKEPU_TRACE_SCOPE("Epoch");
+			skepu::Scalar<float> total_train_loss = 0, total_train_accuracy = 0;
+			std::stringstream ss; ss << "Epoch " << (epoch + 1);
 			// dnn_debug << "Epoch " << (epoch + 1) << "\n";
 
-			const size_t mini_batch_count = train_split_x.size_i() / this->m_batch_size;
-			std::cout << "batches: " <<mini_batch_count << '\n';
+			// const size_t mini_batch_count = train_split_x.size_i() / this->m_batch_size;
 
-			for (size_t mini_batch = 0; mini_batch < mini_batch_count; ++mini_batch) // mini batches, mini_batch_count
+			// std::cout << "batches: " <<mini_batch_count << '\n';
+
+		//	Tensor4<float> *actual_batched_train_x = nullptr;
+		//	Tensor4<float> *actual_batched_train_y = nullptr;
+			// std::cout << "Loop execute for " << num_train_batches << " batches \n";
+
+			if (this->m_override_batch_count >= 0)
+			    num_train_batches = std::min(num_train_batches, (size_t)this->m_override_batch_count);
+			
+			for (size_t mini_batch = 0; mini_batch < num_train_batches ; ++mini_batch) //  mini_batch_count , mini batches, mini_batch_count
 			{
+			    SKEPU_TRACE_SCOPE("Batch");
+				if (mini_batch == (num_train_batches - 1) && remainder_train_batch > 0)
+     			{
+					// std::cout <<"problem here, offset: " << mini_batch * batched_train_x.size() - (this->m_batch_size - remainder_train_batch) * batched_train_x.size_j() * batched_train_x.size_k() * batched_train_x.size_l()  << "\n";
+                    skel_flatmap(batched_train_x, train_split_x.begin() + mini_batch * batched_train_x.size() - (this->m_batch_size - remainder_train_batch) * batched_train_x.size_j() * batched_train_x.size_k() * batched_train_x.size_l()); // remainder + (remainder - batch_size) 
+       				skel_flatmap(batched_train_y, train_split_y.begin() + mini_batch * batched_train_y.size() - (this->m_batch_size - remainder_train_batch) * batched_train_y.size_j() * batched_train_y.size_k() * batched_train_y.size_l());
+				//	actual_batched_train_x = &r_batch_data;
+				//	actual_batched_train_y = &r_batch_label;				
+                //  std::cout << "remainder batch: " << r_batch_data.size_i()<< '\n';
+       			//	display_image(r_batch_data);
+     			}
+     			else
+                {
+      			 	skel_flatmap.setLabel("Copy batch training data X");
+					skel_flatmap(batched_train_x, train_split_x.begin() + mini_batch * batched_train_x.size());
+					skel_flatmap.setLabel("Copy batch training data Y");
+					skel_flatmap(batched_train_y, train_split_y.begin() + mini_batch * batched_train_y.size());
+				//	actual_batched_train_x = &batched_train_x;
+				//	actual_batched_train_y = &batched_train_y;
+
+		       // std::cout << "full batch " <<batch_index <<" size: " <<batch_data.size_i() << '\n';
+     			}
+
 		// 		/************************ prepare batch - copying **************************/
 				// dnn_debug << "\nMini-batch " << (mini_batch + 1) << " / " << mini_batch_count << "\n";
-				skel_flatmap.setLabel("Copy batch training data X");
-				skel_flatmap(batched_train_x, train_split_x.begin() + mini_batch * batched_train_x.size());
-				skel_flatmap.setLabel("Copy batch training data Y");
-				skel_flatmap(batched_train_y, train_split_y.begin() + mini_batch * batched_train_y.size());
+				// skel_flatmap.setLabel("Copy batch training data X");
+				// skel_flatmap(batched_train_x, train_split_x.begin() + mini_batch * batched_train_x.size());
+				// skel_flatmap.setLabel("Copy batch training data Y");
+				// skel_flatmap(batched_train_y, train_split_y.begin() + mini_batch * batched_train_y.size());
 
 				// std::cout << "batched_train_x: " <<batched_train_x.size_i()<< " batched_train_x  " << '\n';
 				 // display_image(batched_train_x);
@@ -309,26 +610,23 @@ public:
 		// 		// skepu::io::cout << batched_train_x << '\n';
 		// 		/************************ forward **************************/
 		// 		std::stringstream ss; ss << "Epoch " << (epoch + 1) << " batch " << (mini_batch + 1) << " forward";
-		// 		tracing::tracer().beginRegion("Forward", __LINE__);
-		 			auto &predicted = this->forward(batched_train_x, true);
-		// 		tracing::tracer().endRegion();
-		//
+				auto &predicted = this->forward(batched_train_x, true);
 
 				// std::cout << "predicted : " << predicted << '\n';
 
-				Tensor4<T> initial_gradient( // move out of loop
-						predicted.size_i(), predicted.size_j(),
-						predicted.size_k(), predicted.size_l(),
-						"Initial gradient"
-				);
+				// Tensor4<T> initial_gradient( // move out of loop
+				// 		predicted.size_i(), predicted.size_j(),
+				// 		predicted.size_k(), predicted.size_l(),
+				// 		"Initial gradient"
+				// );
 
-				skel_delta.setLabel("Loss gradient");
-				skel_delta(initial_gradient, predicted, batched_train_y);
-				Tensor4<T> *gradient = &initial_gradient;
+				// skel_delta.setLabel("Loss gradient");
+				// skel_delta(initial_gradient, predicted, batched_train_y);
+				// Tensor4<T> *gradient = &initial_gradient;
+				Tensor4<T> grad = loss_function->compute_gradient(predicted, batched_train_y);
+				Tensor4<T> *gradient = &grad;
 				// dnn_debug << "Initial gradient: " << *gradient << "\n";
-		//
-		// 		// accuracy
-				float loss = 0, accuracy = 0;
+				skepu::Scalar<float> accuracy = 0;
 
 				// skel_cross_entropy_batched_loss_map.setLabel("Crossentropy A");
 				// skel_cross_entropy_batched_loss_reduce.setLabel("Crossentropy B");
@@ -336,15 +634,21 @@ public:
 				// skel_accuracy_batched_reduce.setLabel("Accuracy B");
 
 		// 		/// check
-				skel_cross_entropy_batched_loss_map(temp_loss, batched_train_y, predicted);
+				// skel_cross_entropy_batched_loss_map(temp_loss, batched_train_y, predicted);
+				// loss += -skel_cross_entropy_batched_loss_reduce(temp_loss) / this->m_batch_size;
+				
 				skel_accuracy_batched_map(temp_acc, batched_train_y, predicted);
-				loss += -skel_cross_entropy_batched_loss_reduce(temp_loss) / this->m_batch_size;
-				accuracy += (float)skel_accuracy_batched_reduce(temp_acc) / this->m_batch_size;
+				accuracy += skel_accuracy_batched_reduce(temp_acc) / (float)this->m_batch_size;
+				skepu::Scalar<float> loss = loss_function->compute_loss(batched_train_y, predicted, this->m_batch_size);
 
-				total_train_loss +=loss;
-				total_train_accuracy +=accuracy;
+				total_train_loss += loss;
+				total_train_accuracy += accuracy;
 
-				std::cout << "Train Batch " << mini_batch + 1 << " - Loss: " << loss << " - Accuracy: " << accuracy << std::endl;
+				skepu::io::cout
+				    << "Epoch " << epoch
+					<< " Train Batch " << mini_batch + 1
+					<< " - Loss: " << loss
+					<< " - Accuracy: " << accuracy << "\n";
 
 		// 		std::cout << "-- Mini-batch " << std::setw(6) << (mini_batch + 1) << " / " << std::setw(6) << mini_batch_count;
 		// 		std::cout << " [";
@@ -360,34 +664,40 @@ public:
 		//
 		// 		/************** back ward pass ***************/
 		// 		std::stringstream ss2; ss2 << "Epoch " << (epoch + 1) << " batch " << (mini_batch + 1) << " backward";
-		// 		tracing::tracer().beginRegion("Backward", __LINE__);
+		 		SKEPU_TRACE_REGION_BEGIN("Backward");
 				for (auto it = this->m_layers.rbegin(); it != this->m_layers.rend(); ++it)
 				{
 					auto &current_layer = **it;
 					Tensor4<T> *forward_inputs = ((it + 1) != this->m_layers.rend()) ? &(**(it + 1)).m_vals : &batched_train_x;
 
 					if (current_layer.is_trainable()) current_layer.m_learning_rate = learning_rate;
-
 					gradient = current_layer.backward(forward_inputs, gradient, &batched_train_y);
+					if (current_layer.is_trainable()) optimizer->step(current_layer);
+
 		// 			dnn_debug << "Outgoing gradient: " << *gradient << "\n";
 				}
-		// 		tracing::tracer().endRegion();
-
+		 		SKEPU_TRACE_REGION_END();
+				
+                // store_results_per_batch(name, epoch + 1, mini_batch + 1, loss, accuracy);
 		 	} // end of mini batch
 		//
 		// 	if (print_progress)
 		// 	{
 		// 		std::stringstream ss; ss << "Epoch " << (epoch + 1) << " evaluate";
-		// 		tracing::tracer().beginRegion("Epoch evaluate", __LINE__);
-				auto score = this->evaluate(valid_split_x, valid_split_y);
-
-		// 		tracing::tracer().endRegion(); // \033[K
+			auto score = this->evaluate(valid_split_x, valid_split_y);
 		// 		std::cout << "- Epoch " << std::setw(4) << (epoch + 1) << " / " << std::setw(4) << epochs << ":";
 		// 		std::cout << " Valid Loss: " << std::setw(10) << std::get<0>(score) << ", Valid Accuracy: " << std::setw(10) << std::get<1>(score) << "\n";
 		// 	}
-		// }); // tracer epoch end
-
-
+		    
+            skepu::io::cout
+                << "Epoch " << epoch
+                << " Train Loss: " << total_train_loss / num_train_batches
+                << " Train Acc: " << total_train_accuracy / num_train_batches
+                << " Validation Loss: " << std::get<0>(score)
+                << " Validation Acc: " << std::get<1>(score)
+                << "\n";
+			
+            // store_results(name , this->m_batch_size, learning_rate, epoch + 1, total_train_loss/num_train_batches, total_train_accuracy/num_train_batches, std::get<0>(score), std::get<1>(score) );
 		 } // end of epoch loop
 
 
@@ -405,6 +715,12 @@ public:
 
 	Layer<T> &getLayer(size_t i) { return *this->m_layers[i]; }
 
+	void setBatchCountOverride(int bc)
+	{
+	    std::cout << "Overriding batch count with : " << bc << "\n";
+	    this->m_override_batch_count = bc;
+	}
+
 protected:
 	bool m_initialized = false;
 
@@ -416,7 +732,14 @@ protected:
 	size_t m_batch_size;
 
 	Tensor4<T> *m_result = nullptr;
+
+	std::unique_ptr<LossFunction<T>> loss_function; 
+	std::unique_ptr<Optimizer<T>> optimizer;
+	bool compiled = false;
+
+	int m_override_batch_count = -1;
 };
+
 
 template <typename T, typename ConcreteLayer>
 SequentialModel<T> &&operator<<(SequentialModel<T> &&model, ConcreteLayer &&layer)
@@ -431,49 +754,17 @@ SequentialModel<T> &operator<<(SequentialModel<T> &model, ConcreteLayer &&layer)
 	model.add(std::forward<ConcreteLayer>(layer));
 	return model;
 }
-} // namespace impl
 
-template <typename T = float, typename... Args>
-impl::Dense<T> Dense(Args &&...args)
-{
-	return impl::Dense<T>(std::forward<Args>(args)...);
 }
 
-template <typename T = float, typename... Args>
-impl::Conv1D<T> Conv1D(Args &&...args)
+namespace skepu::dnn
 {
-	return impl::Conv1D<T>(std::forward<Args>(args)...);
+    template <typename T = float, typename... Args>
+    impl::SequentialModel<T> SequentialModel(Args &&...args)
+    {
+    	return impl::SequentialModel<T>(std::forward<Args>(args)...);
+    }
 }
-
-template <typename T = float, typename... Args>
-impl::Conv2D<T> Conv2D(Args &&...args)
-{
-	return impl::Conv2D<T>(std::forward<Args>(args)...);
-}
-
-template <typename T = float, typename... Args>
-impl::MaxPooling2D<T> MaxPooling2D(Args &&...args)
-{
-	return impl::MaxPooling2D<T>(std::forward<Args>(args)...);
-}
-
-template <typename T = float, typename... Args>
-impl::Flatten<T> Flatten(Args &&...args)
-{
-	return impl::Flatten<T>(std::forward<Args>(args)...);
-}
-
-template <typename T = float, typename... Args>
-impl::Dropout<T> Dropout(Args &&...args)
-{
-	return impl::Dropout<T>(std::forward<Args>(args)...);
-}
-
-template <typename T = float, typename... Args>
-impl::SequentialModel<T> SequentialModel(Args &&...args)
-{
-	return impl::SequentialModel<T>(std::forward<Args>(args)...);
-}
-
 
 static skepu::PrecompilerMarker endOf_SequentialModel_HPP;
+#endif // SKEPU_PRECOMPILED

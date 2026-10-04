@@ -48,6 +48,7 @@ namespace skepu
 			T m_pad {};
             int m_overlap[4] = {1, 1, 1, 1};
             StrideList<4> m_strides{1, 1, 1, 1};
+            bool m_mirror_mode = false;
 
             size_t getSmallestAllowedInputSizePool(size_t out_size, size_t dim) const
             {

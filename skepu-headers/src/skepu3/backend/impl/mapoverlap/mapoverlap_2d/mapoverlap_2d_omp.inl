@@ -31,7 +31,7 @@ namespace skepu
 			RegionType region{arg, this->m_overlap[0], this->m_overlap[1], this->m_edge, this->m_pad};
 			
 			Index2D offset{0, 0};
-            if (!this->isPool)
+            if (!this->isPool && !this->m_mirror_mode)
             {
                 if (this->m_edge == Edge::None)
                 {
@@ -45,14 +45,17 @@ namespace skepu
                 }
             }
 
+            size_t out_i = (this->m_mirror_mode) ? this->m_overlap[0] : 0;
+            size_t out_j = (this->m_mirror_mode) ? this->m_overlap[1] : 0;
+
 			size_t threads = std::min<size_t>(out_size_i, omp_get_max_threads());
 			size_t final_size = out_size_i * out_size_j;
 			size_t work_unit = out_size_j;
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(final_size, threads, work_unit);
 			
 #pragma omp parallel for schedule(runtime) firstprivate(region)
-			for (size_t i = 0; i < out_size_i; i++)
-				for (size_t j = 0; j < out_size_j; j++)
+			for (size_t i = out_i; i < out_size_i - out_i; i++)
+				for (size_t j = out_j; j < out_size_j - out_j; j++)
 					if (p == Parity::None || index_parity(p, i, j))
 					{
 						region.idx = Index2D{(i + offset.row) * this->m_strides[0], (j + offset.col) *this->m_strides[1]};

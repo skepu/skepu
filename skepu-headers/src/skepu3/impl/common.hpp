@@ -23,7 +23,6 @@
 #include <cassert>
 #include <algorithm>
 #include <functional>
-#include <cstdbool>
 #include <iomanip>
 #include <unordered_map>
 #include <atomic>

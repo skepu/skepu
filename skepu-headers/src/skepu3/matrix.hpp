@@ -219,6 +219,7 @@ namespace skepu
 	public:
 
 		Matrix();
+		Matrix(std::string label);
 		Matrix(const Matrix<T>& copy);
 		Matrix(Matrix<T>&& move);
 		Matrix(size_type _rows, size_type _cols, const T& val = T());

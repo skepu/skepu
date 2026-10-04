@@ -199,6 +199,11 @@ function(skepu_add_executable name)
 					-fnames="${_skepu_fnames}"
 					${CMAKE_CURRENT_LIST_DIR}/${_file}
 					--
+					-I /usr/local/include
+          -I /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1
+          -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/include
+          -I /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include
+          -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
 					"${_include_generators}"
 			DEPENDS ${CMAKE_CURRENT_LIST_DIR}/${_file}
 			BYPRODUCTS ${_output_dir}/${_target_byprod}

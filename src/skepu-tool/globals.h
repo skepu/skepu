@@ -67,8 +67,37 @@ void replaceTextInString(std::string& text, const std::string &find, const std::
 std::string templateString(std::string templ, std::vector<std::pair<std::string, std::string>> replacements);
 std::string transformToCXXIdentifier(std::string &in);
 std::string getSourceAsString(clang::SourceRange range);
+std::string lineDirectiveForSourceLoc(clang::SourceLocation &loc, int offset = 0);
+
+namespace library_markers
+{
+    extern bool foundBlas;
+    extern clang::SourceLocation blasBegin, blasEnd;
+    
+    extern bool foundML;
+    extern clang::SourceLocation mlBegin, mlEnd;
+    extern clang::SourceLocation sequentialModelBegin, sequentialModelEnd;
+    extern clang::SourceLocation dnnSupportBegin, dnnSupportEnd;
+    extern clang::SourceLocation activationBegin, activationEnd;
+    extern clang::SourceLocation layerBegin, layerEnd;
+    extern clang::SourceLocation denseBegin, denseEnd;
+    extern clang::SourceLocation dropoutBegin, dropoutEnd;
+    extern clang::SourceLocation flattenBegin, flattenEnd;
+    extern clang::SourceLocation conv1dBegin, conv1dEnd;
+    extern clang::SourceLocation conv2dBegin, conv2dEnd;
+    extern clang::SourceLocation pool2dBegin, pool2dEnd;
+
+    
+    extern std::unordered_map<std::string, std::pair<std::string, std::string>> markerSymbols;
+    /* = 
+     {
+        {"blas.hpp", {"startOfBlasHPP", "endOfBlasHPP"}},
+        
 
 
-// Library markers
-extern bool didFindBlas;
-extern clang::SourceLocation blasBegin, blasEnd;
+        
+     */
+
+    extern std::unordered_map<std::string, clang::SourceLocation> rangeBegins;
+    extern std::unordered_map<std::string, clang::SourceLocation> rangeEnds;
+}

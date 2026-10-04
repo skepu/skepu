@@ -1375,7 +1375,7 @@ public:
 	{{TEMPLATE_HEADER}}
 	static void mapOverlap4D
 	(
-		size_t skepu_deviceID, size_t skepu_localSize[3], size_t skepu_globalSize[3],
+		cl_event *event, size_t skepu_deviceID, size_t skepu_localSize[3], size_t skepu_globalSize[3],
 		{{HOST_KERNEL_PARAMS}} {{SIZES_TUPLE_PARAM}}
 		size_t skepu_out_i, size_t skepu_out_j, size_t skepu_out_k, size_t skepu_out_l,
 		size_t skepu_overlap_i, size_t skepu_overlap_j, size_t skepu_overlap_k, size_t skepu_overlap_l,
@@ -1397,7 +1397,7 @@ public:
 		);
 		clSetKernelArg(kernels(skepu_deviceID), {{KERNEL_ARG_COUNT}} + 22, skepu_sharedMemSize, NULL);
 		cl_int skepu_err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(skepu_deviceID)->getQueue(),
-			kernels(skepu_deviceID), 3, NULL, skepu_globalSize, skepu_localSize, 0, NULL, NULL);
+			kernels(skepu_deviceID), 3, NULL, skepu_globalSize, skepu_localSize, 0, NULL, event);
 		CL_CHECK_ERROR(skepu_err, "Error launching MapOverlap 4D kernel");
 	}
 };

@@ -31,7 +31,7 @@ namespace skepu
 			
 			auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 			
-			Region4D<T> region{arg,
+			RegionType region{arg,
 				this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_overlap[3],
 				this->m_edge, this->m_pad,
 				(size_i - arg.size_i()) / 2 * this->m_overlap[0], (size_j - arg.size_j()) / 2 * this->m_overlap[1],

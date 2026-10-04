@@ -16,6 +16,7 @@ namespace skepu
 			using Base = MapOverlapPar<MapOverlapFunc, SkeletonType::MapOverlap3D>;
 			using Base::InArity;
 			using Base::OutArity;
+			using typename Base::RegionType;
 			using typename Base::T;
 			using typename Base::F;
 

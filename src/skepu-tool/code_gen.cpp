@@ -3,11 +3,13 @@
 
 using namespace clang;
 
-std::string lineDirectiveForSourceLoc(SourceLocation &loc)
+std::string lineDirectiveForSourceLoc(SourceLocation &loc, int offset)
 {
 	std::stringstream directive;
-//	if (!DoNotGenLineDirectives)
-//		directive << "#line " << GlobalRewriter.getSourceMgr().getSpellingLineNumber(loc) << " \"" + inputFileName << "\"\n";
+	if (!DoNotGenLineDirectives)
+		directive << "#line "
+		    << GlobalRewriter.getSourceMgr().getSpellingLineNumber(loc) + offset
+			<< " \"" + GlobalRewriter.getSourceMgr().getBufferName(loc).str() << "\"";
 	return directive.str();
 }
 
@@ -492,7 +494,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 	printParamList(SSSkepuFunctorStruct, UF);
 	SSSkepuFunctorStruct << ")\n{" << replaceReferencesToOtherUFs(Backend::CPU, UF, [InstanceName] (UserFunction &UF) { return SkePU_UF_Prefix + InstanceName + "_" + UF.uniqueName + "::CPU"; }) << "\n}\n";
 	SSSkepuFunctorStruct << "#undef SKEPU_USING_BACKEND_CPU\n};\n\n";
-	SSSkepuFunctorStruct << lineDirectiveForSourceLoc(loc);
+	SSSkepuFunctorStruct << lineDirectiveForSourceLoc(loc) << "\n";
 
 	if (GlobalRewriter.InsertTextAfter(loc, SSSkepuFunctorStruct.str()))
 		SkePUAbort("Code gen target source loc not rewritable: UF " + UF.uniqueName + " for instance" + InstanceName);
@@ -650,7 +652,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		{
 			loc = dyn_cast<FunctionDecl>(DeclCtx)->getSourceRange().getBegin();
 		}*/
-		if (GlobalRewriter.InsertText(loc, "#include \"" + KernelName_CU + ".cu\"\n" + lineDirectiveForSourceLoc(loc)))
+		if (GlobalRewriter.InsertText(loc, "#include \"" + KernelName_CU + ".cu\"\n" + lineDirectiveForSourceLoc(loc) + "\n"))
 			SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
 	}
 	else
@@ -724,7 +726,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			break;
 		}
 
-		if (GlobalRewriter.InsertText(loc, "#include \"" + KernelName_CL + "_cl_source.inl\"\n" + lineDirectiveForSourceLoc(loc)))
+		if (GlobalRewriter.InsertText(loc, "#include \"" + KernelName_CL + "_cl_source.inl\"\n" + lineDirectiveForSourceLoc(loc) + "\n"))
 			SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
 
 		SSTemplateArgs << ", CLWrapperClass_" << KernelName_CL;
@@ -734,11 +736,19 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		SSTemplateArgs << ", void";
 	}
 
+	SourceLocation declStart = d->getSourceRange().getBegin();
+	SourceLocation declEnd = d->getSourceRange().getEnd();
+	
 	if(d->getStorageClass() == clang::StorageClass::SC_Static)
 		SSNewDecl << "static ";
-	SSNewDecl << "skepu::backend::" << skeleton.name << "<" << SSTemplateArgs.str() << "> " << InstanceName << "(" << SSCallArgs.str() << ")";
+	SSNewDecl
+	    << "skepu::backend::" << skeleton.name
+		<< "<" << SSTemplateArgs.str()
+		<< "> " << InstanceName << "("
+		<< SSCallArgs.str() << ");\n"
+		<< lineDirectiveForSourceLoc(declEnd, 1) + "//";
 
-	if (GlobalRewriter.InsertText(d->getSourceRange().getBegin(), SSNewDecl.str()))
+	if (GlobalRewriter.InsertText(declStart, SSNewDecl.str()))
 		SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
 
 	return true;

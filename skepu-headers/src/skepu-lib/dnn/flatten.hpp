@@ -1,12 +1,13 @@
 #pragma once
 #include <skepu>
 #ifndef SKEPU_PRECOMPILED
-
 static skepu::PrecompilerMarker startOf_Flatten_HPP;
 
 
+float flatten_uf(float x) { return x; }
 
-
+namespace skepu::dnn::impl
+{
 template <typename T = float>
 class Flatten : public Layer<T>
 {
@@ -25,10 +26,13 @@ public:
 			std::get<1>(input_size) * std::get<2>(input_size) * std::get<3>(input_size)
 		};
 
-		this->m_temp.init(
-			std::get<0>(input_size), std::get<1>(input_size),
-			std::get<2>(input_size), std::get<3>(input_size)
-		);
+        if (this->m_layer_level != Level::Input)
+		{
+    		this->m_temp.init(
+    			std::get<0>(input_size), std::get<1>(input_size),
+    			std::get<2>(input_size), std::get<3>(input_size)
+    		);
+		}
 
 		Layer<T>::setup(input_size);
 	}
@@ -71,6 +75,16 @@ private:
 	Tensor4<T> m_temp;
 };
 
+}
 
+namespace skepu::dnn
+{
+    template <typename T = float, typename... Args>
+    impl::Flatten<T> Flatten(Args &&...args)
+    {
+        return impl::Flatten<T>(std::forward<Args>(args)...);
+    }
+}
 
 static skepu::PrecompilerMarker endOf_Flatten_HPP;
+#endif // SKEPU_PRECOMPILED

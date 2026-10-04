@@ -235,7 +235,7 @@ namespace skepu
 			outMemP.copyDeviceToHost(1);
 			
 			res = ReduceFunc::CPU(res, partialRes);
-			auto scalar_res = Scalar<typename ReduceFunc::Ret>(res);
+			auto scalar_res = Scalar<T>(res);
 			SKEPU_TRACE_CALL(trace_handle, "Reduce", this, {size}, tracing::scalar_labels(scalar_res), {arg.getParent().getObjectID()}, {}, {});
 			return scalar_res;
 		}

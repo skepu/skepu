@@ -48,6 +48,56 @@ public:
 		this->m_value += rhs;
 	}
 
+	template<typename Raw>
+	void operator-=(Raw rhs)
+	{
+		this->m_value -= rhs;
+	}
+
+	template<typename Raw>
+	void operator*=(Raw rhs)
+	{
+		this->m_value *= rhs;
+	}
+
+	template<typename Raw>
+	void operator/=(Raw rhs)
+	{
+		this->m_value /= rhs;
+	}
+
+
+	
+	template<typename Raw>
+	void operator+=(Scalar<Raw> rhs)
+	{
+		this->m_value += rhs.m_value;
+		this->m_ids.insert(this->m_ids.end(), rhs.m_ids.begin(), rhs.m_ids.end());
+	}
+
+	template<typename Raw>
+	void operator-=(Scalar<Raw> rhs)
+	{
+		this->m_value -= rhs.m_value;
+		this->m_ids.insert(this->m_ids.end(), rhs.m_ids.begin(), rhs.m_ids.end());
+	}
+
+	template<typename Raw>
+	void operator*=(Scalar<Raw> rhs)
+	{
+		this->m_value *= rhs.m_value;
+		this->m_ids.insert(this->m_ids.end(), rhs.m_ids.begin(), rhs.m_ids.end());
+	}
+
+	template<typename Raw>
+	void operator/=(Scalar<Raw> rhs)
+	{
+		this->m_value /= rhs.m_value;
+		this->m_ids.insert(this->m_ids.end(), rhs.m_ids.begin(), rhs.m_ids.end());
+	}
+
+	
+
 //	friend std::ostream &operator<< <T>(std::ostream &, Scalar<T>);
 };
 
@@ -72,6 +122,14 @@ using scalar_wrapper_t = typename scalar_wrapper<T>::type;
 
 
 
+template<typename T>
+struct is_skepu_scalar: std::false_type {};
+
+template<typename T>
+struct is_skepu_scalar<skepu::Scalar<T>>: std::true_type {};
+
+
+
 // Operator overloads
 
 template<typename T>
@@ -89,51 +147,51 @@ Scalar<T> operator-(Scalar<T> scal)
 
 
 template<typename T, typename Raw>
-Scalar<T> operator+(Scalar<T> lhs_scal, Raw rhs)
+decltype(auto) operator+(Scalar<T> lhs_scal, Raw rhs)
 {
-	return Scalar<T>(lhs_scal.m_value + rhs, lhs_scal.m_ids);
+	return Scalar<decltype(lhs_scal.m_value + rhs)>(lhs_scal.m_value + rhs, lhs_scal.m_ids);
 }
 
 template<typename T, typename Raw>
-Scalar<T> operator-(Scalar<T> lhs_scal, Raw rhs)
+decltype(auto) operator-(Scalar<T> lhs_scal, Raw rhs)
 {
-	return Scalar<T>(lhs_scal.m_value - rhs, lhs_scal.m_ids);
+	return Scalar<decltype(lhs_scal.m_value - rhs)>(lhs_scal.m_value - rhs, lhs_scal.m_ids);
 }
 
 template<typename T, typename Raw>
-Scalar<T> operator*(Scalar<T> lhs_scal, Raw rhs)
+decltype(auto) operator*(Scalar<T> lhs_scal, Raw rhs)
 {
-	return Scalar<T>(lhs_scal.m_value * rhs, lhs_scal.m_ids);
+	return Scalar<decltype(lhs_scal.m_value * rhs)>(lhs_scal.m_value * rhs, lhs_scal.m_ids);
 }
 
 template<typename T, typename Raw>
-Scalar<T> operator/(Scalar<T> lhs_scal, Raw rhs)
+decltype(auto) operator/(Scalar<T> lhs_scal, Raw rhs)
 {
-	return Scalar<T>(lhs_scal.m_value / rhs, lhs_scal.m_ids);
+	return Scalar<decltype(lhs_scal.m_value / rhs)>(lhs_scal.m_value / rhs, lhs_scal.m_ids);
 }
 
 template<typename T, typename Raw>
-Scalar<T> operator%(Scalar<T> lhs_scal, Raw rhs)
+decltype(auto) operator%(Scalar<T> lhs_scal, Raw rhs)
 {
-	return Scalar<T>(lhs_scal.m_value % rhs, lhs_scal.m_ids);
+	return Scalar<decltype(lhs_scal.m_value % rhs)>(lhs_scal.m_value % rhs, lhs_scal.m_ids);
 }
 
 template<typename T, typename Raw>
-Scalar<T> operator&(Scalar<T> lhs_scal, Raw rhs)
+decltype(auto) operator&(Scalar<T> lhs_scal, Raw rhs)
 {
-	return Scalar<T>(lhs_scal.m_value & rhs, lhs_scal.m_ids);
+	return Scalar<decltype(lhs_scal.m_value & rhs)>(lhs_scal.m_value & rhs, lhs_scal.m_ids);
 }
 
 template<typename T, typename Raw>
-Scalar<T> operator|(Scalar<T> lhs_scal, Raw rhs)
+decltype(auto) operator|(Scalar<T> lhs_scal, Raw rhs)
 {
-	return Scalar<T>(lhs_scal.m_value | rhs, lhs_scal.m_ids);
+	return Scalar<decltype(lhs_scal.m_value | rhs)>(lhs_scal.m_value | rhs, lhs_scal.m_ids);
 }
 
 template<typename T, typename Raw>
-Scalar<T> operator^(Scalar<T> lhs_scal, Raw rhs)
+decltype(auto) operator^(Scalar<T> lhs_scal, Raw rhs)
 {
-	return Scalar<T>(lhs_scal.m_value ^ rhs, lhs_scal.m_ids);
+	return Scalar<decltype(lhs_scal.m_value ^ rhs)>(lhs_scal.m_value ^ rhs, lhs_scal.m_ids);
 }
 
 template<typename T, typename Raw>
@@ -167,15 +225,15 @@ Scalar<bool> operator>=(Scalar<T> lhs_scal, Raw rhs)
 }
 
 template<typename T, typename Raw>
-Scalar<T> operator<<(Scalar<T> lhs_scal, Raw rhs)
+decltype(auto) operator<<(Scalar<T> lhs_scal, Raw rhs)
 {
-	return Scalar<T>(lhs_scal.m_value << rhs, lhs_scal.m_ids);
+	return Scalar<decltype(lhs_scal.m_value << rhs)>(lhs_scal.m_value << rhs, lhs_scal.m_ids);
 }
 
 template<typename T, typename Raw>
-Scalar<T> operator>>(Scalar<T> lhs_scal, Raw rhs)
+decltype(auto) operator>>(Scalar<T> lhs_scal, Raw rhs)
 {
-	return Scalar<T>(lhs_scal.m_value >> rhs, lhs_scal.m_ids);
+	return Scalar<decltype(lhs_scal.m_value >> rhs)>(lhs_scal.m_value >> rhs, lhs_scal.m_ids);
 }
 
 

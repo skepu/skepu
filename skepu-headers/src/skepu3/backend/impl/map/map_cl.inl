@@ -39,6 +39,7 @@ namespace skepu
 
 			DEBUG_TEXT_LEVEL1("OpenCL Map: numDevices " << numDevices);
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			std::vector<cl_event> events(numDevices);
 
 			for (size_t i = 0; i < numDevices; ++i)
 			{
@@ -60,7 +61,7 @@ namespace skepu
 				auto randomMemP = random.updateDevice_CL(random.getAddress(), threads, device, true);
 
 				CLKernel::map(
-					i, numThreads, numBlocks * numThreads,
+					&events[i], i, numThreads, numBlocks * numThreads,
 					std::get<OI>(outMemP)...,
 					randomMemP,
 					std::get<EI-outArity>(elwiseMemP)...,
@@ -75,14 +76,16 @@ namespace skepu
 				pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
 			}
 
+			for (size_t i = 0; i < numDevices; ++i) SKEPU_TRACING_WAIT_CL(events[i]);
 			SKEPU_TRACE_CALL(trace_handle, "Map", this, {size},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
-				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...)
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapFunc::randomCount>()
 			);
 
-			synchronize();
+		//	synchronize();
 		}
 
 

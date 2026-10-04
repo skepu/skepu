@@ -15,7 +15,7 @@
 
 # Default path to the SkePU installation
 # Override in Makefile.in
-SKEPU_SRC_PATH = ../
+SKEPU_SRC_PATH = $(dir $(lastword $(MAKEFILE_LIST)))/../
 
 # Default path to LLVM build directory (relative to SkePU installation path)
 # Override in Makefile.in
@@ -35,7 +35,7 @@ SKEPU_OPTIONS = -std=c++17 -O3 -g
 
 # Default values for SkePU backend compiler options
 # Override in Makefile.in
-PRECOMPILER_OPTIONS = --no-preserve-lines #--verbose
+PRECOMPILER_OPTIONS = #--no-preserve-lines #--verbose
 
 # Backend-specific flags
 # Override in Makefile.in
@@ -68,7 +68,7 @@ Makefile.in:
 	./generate_makefile.in.sh
 
 # Overrides default values for various paths and options
-include Makefile.in
+include $(dir $(lastword $(MAKEFILE_LIST)))Makefile.in
 
 
 # ------------------------------------------------------------------- #
@@ -98,6 +98,7 @@ PAR_DIR     = parallel
 SEQ_DIR     = sequential
 CLUSTER_DIR = cluster
 RUN_DIR     = run
+SNAPSHOT_DIR ?= snapshots
 
 # All SkePU example programs (used for 'make all-[parallel|sequential|cluster]' and 'make clean').
 
@@ -107,9 +108,10 @@ PROGS += cma
 #PROGS += conjugate_gradient # Error related to repeated instantiations of different types in SkePU BLAS
 PROGS += coulombic
 PROGS += dotproduct
-PROGS += edgedetect
+#PROGS += edgedetect
 PROGS += heat_diffusion # no red-black update mode in CUDA
 PROGS += horner
+PROGS += image_manip
 PROGS += mandelbrot
 PROGS += maxmin
 PROGS += median
@@ -128,14 +130,14 @@ PROGS += taylor
 
 RUN_BACKEND = OpenCL
 SIZE_BACKEND = 2048
-lookup.cellular_automaton  := 2 $(SIZE_BACKEND) 10 $(RUN_BACKEND)
+lookup.cellular_automaton  := 2 256 10 0.1 $(RUN_BACKEND)
 lookup.cma                 := $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.conjugate_gradient  := 256 $(RUN_BACKEND)
 lookup.coulombic           := $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.dotproduct          := $(SIZE_BACKEND) $(RUN_BACKEND)
-lookup.heat_diffusion      := 2 $(SIZE_BACKEND) 10 $(RUN_BACKEND)
+lookup.heat_diffusion      := 2 64 10 $(RUN_BACKEND)
 lookup.horner              := 3 1 2 3 4 $(SIZE_BACKEND) $(RUN_BACKEND)
-lookup.image_manip         := data/test_image.png result_image blur 3 $(RUN_BACKEND)
+lookup.image_manip         := data/goose.png result_image blur 3 $(RUN_BACKEND)
 lookup.mandelbrot          := 256 256 $(RUN_BACKEND)
 lookup.maxmin              := $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.miller_rabin        := $(RUN_BACKEND)
@@ -148,8 +150,8 @@ lookup.nbody               := 100 100 $(RUN_BACKEND)
 lookup.nbody_mappairs      := 100 100 $(RUN_BACKEND)
 lookup.ppmcc               := $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.psnr                := 128 128 $(RUN_BACKEND)
-lookup.taylor              := 0.1 $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.riemann_sum         := 0 1 $(SIZE_BACKEND) $(RUN_BACKEND)
+lookup.taylor              := 0.1 $(SIZE_BACKEND) $(RUN_BACKEND)
 
 
 TESTS          = $(addprefix $(SEQ_DIR)/,      $(PROGS))
@@ -207,33 +209,6 @@ all-cluster: $(CLUSTER_TESTS)
 
 all-run: $(RUN_TESTS)
 
-
-
-
-capi:
-	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name cskepu_precompiled $(SKEPU_INCLUDE_PATH)/cskepu.cpp  -dir ./test_build $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) -c ./test_build/cskepu_precompiled.$(FILETYPE)  $(TARGET_FLAGS) -o ./test_build/cskepu.o
-
-	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name c_skeleton_precompiled c_skeleton.cpp  -dir ./test_build $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) -c ./test_build/c_skeleton_precompiled.$(FILETYPE)  $(TARGET_FLAGS) -o ./test_build/c_skeleton.o
-
-	clang -c skepu_in_c.c -I $(SKEPU_INCLUDE_PATH) -o ./test_build/skepu_in_c.o
-	$(CXX) ./test_build/cskepu.o ./test_build/skepu_in_c.o ./test_build/c_skeleton.o $(TARGET_FLAGS) -o ./test_build/skepu_in_c
-
-
-fapi:
-	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name cskepu_precompiled $(SKEPU_INCLUDE_PATH)/cskepu.cpp  -dir ./test_build $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) -c ./test_build/cskepu_precompiled.$(FILETYPE)  $(TARGET_FLAGS) -o ./test_build/cskepu.o
-
-	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name c_skeleton_precompiled c_skeleton.cpp  -dir ./test_build $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) -c ./test_build/c_skeleton_precompiled.$(FILETYPE)  $(TARGET_FLAGS) -o ./test_build/c_skeleton.o
-
-	gfortran -c $(SKEPU_INCLUDE_PATH)/fskepu.f90 -o ./test_build/fskepu.o
-	gfortran -c f_skeleton.f90 -o ./test_build/f_skeleton.o
-
-	gfortran -c skepu_in_fortran.f90 -I $(SKEPU_INCLUDE_PATH) -o ./test_build/skepu_in_fortran.o
-	$(CXX) -lgfortran ./test_build/cskepu.o ./test_build/fskepu.o ./test_build/skepu_in_fortran.o ./test_build/c_skeleton.o ./test_build/f_skeleton.o $(TARGET_FLAGS) -o ./test_build/skepu_in_fortran
-
 all: Makefile.in all-sequential all-parallel all-cluster
 
 $(PAR_DIR):
@@ -248,6 +223,9 @@ $(CLUSTER_DIR):
 $(RUN_DIR):
 	@mkdir -p $(RUN_DIR)
 
+$(SNAPSHOT_DIR):
+	@mkdir -p $(SNAPSHOT_DIR)	
+
 # Builds a single sequential test program.
 $(SEQ_DIR)/% : %.cpp $(SEQ_DIR)
 	$(DBGR) $(SEQ_CXX) $(SEQ_FLAGS) lodepng.cpp $< -o $@
@@ -255,38 +233,13 @@ $(SEQ_DIR)/% : %.cpp $(SEQ_DIR)
 # Precompiles and builds a single parallel test program.
 $(PAR_DIR)/%: %.cpp $(PAR_DIR)
 	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name $*_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS) -o $@
+	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS) -DSKEPU_TRACE_FILE="trace_$*.json" -DSKEPU_TRACE_SNAPSHOT_DIR="$(SNAPSHOT_DIR)" -o $@
 
 # Precompiles and builds a single parallel test program.
-$(PAR_DIR)/image_manip: image_manip.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name image_manip_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS)  -o $@
-
-# Precompiles and builds a single parallel test program.
-$(PAR_DIR)/demo: demo.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name demo_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS)  -o $@
-
-# Precompiles and builds a single parallel test program.
-$(PAR_DIR)/fusion_eval: fusion_eval.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name fusion_eval_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS)  -o $@
-
-# Precompiles and builds a single parallel test program.
-$(PAR_DIR)/perlin: perlin.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name perlin_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS)  -o $@
-
-# Precompiles and builds a single parallel test program.
-$(PAR_DIR)/uniformnoise: uniformnoise.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name uniformnoise_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS)  -o $@
-
-# Precompiles and builds a single parallel test program.
-$(PAR_DIR)/multi: multi1.cpp multi2.cpp $(PAR_DIR)
-	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name multi1_precompiled multi1.cpp  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name multi2_precompiled multi2.cpp  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) -fopenmp $(PAR_DIR)/multi1_precompiled.$(FILETYPE) $(PAR_DIR)/multi2_precompiled.$(FILETYPE)  $(TARGET_FLAGS)  -o $@
+$(PAR_DIR)/multifile: multifile_1.cpp multifile_2.cpp $(PAR_DIR)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name multifile_1_precompiled multifile_1.cpp  -dir $(PAR_DIR) $(SKEPU_FLAGS)
+	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name multifile_2_precompiled multifile_2.cpp  -dir $(PAR_DIR) $(SKEPU_FLAGS)
+	$(DBGR) $(CXX) -fopenmp $(PAR_DIR)/multifile_1_precompiled.$(FILETYPE) $(PAR_DIR)/multifile_2_precompiled.$(FILETYPE)  $(TARGET_FLAGS)  -o $@
 
 $(CLUSTER_DIR)/%.o: %.cpp $(CLUSTER_DIR)
 	@echo "Precompiling $<"
@@ -302,14 +255,22 @@ $(CLUSTER_DIR)/%: $(CLUSTER_DIR)/%.o
 lodeppng.o:
 	@$(CLUSTER_CXX) -std=c++11 -fopenmp -o $@ lodepng.cpp $(CLUSTER_LIBS)
 
-$(CLUSTER_DIR)/image_manip: $(CLUSTER_DIR)/image_manip.o lodepng.o
-	@echo "Linking $*"
-	@$(CLUSTER_CXX) -std=c++11 -fopenmp -o $@ $< lodepng.o $(CLUSTER_LIBS)
-
-
-$(RUN_DIR)/% : $(PAR_DIR)/% $(RUN_DIR)
+# Run an example program while collecting log file
+$(RUN_DIR)/% : $(PAR_DIR)/% $(RUN_DIR) $(SNAPSHOT_DIR)
 	$< ${lookup.$*} > $@.log 2>&1
+	$(MAKE) pack-snapshots ARCHIVE_TITLE=snapshots_$*
 
+
+ARCHIVE_TITLE ?= 
+pack-snapshots:
+	@cd $(SNAPSHOT_DIR) && \
+		if ls *.txt 1>/dev/null 2>&1; then \
+		  zip -qj $(CURDIR)/$(ARCHIVE_TITLE).zip *.txt && \
+		  rm *.txt && \
+		  echo "$(ARCHIVE_TITLE).zip created from $(SNAPSHOT_DIR)/*.txt (existing files removed)"; \
+		else \
+		  echo "No snapshot files in $(SNAPSHOT_DIR)."; \
+		fi
 
 # Deletes all temporary files (including all precompiled sources) and binaries.
 clean:

@@ -148,6 +148,14 @@ namespace skepu
 				size_t out_size_j = first_output.size_j();
 				size_t in_size_i = input.size_i();
 				size_t in_size_j = input.size_j();
+
+				if (out_size_i == in_size_i
+				    && out_size_j == out_size_j)
+				{
+				    this->m_mirror_mode = true;
+					std::cout << "Using mirror mode\n";
+					return;
+				}
 				
 				if (!this->isInputSizeValid(out_size_i, in_size_i, 0))
 					SKEPU_ERROR(generateCallMetadata()
