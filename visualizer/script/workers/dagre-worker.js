@@ -26,7 +26,7 @@
  * { type: 'error', message: <string> }
  */
 
-importScripts('../static/dagre/dagre.min.js');
+importScripts('../../static/dagre/dagre.min.js');
 
 // ── Compound-node layout tuning ──────────────────────────────────────────────
 // This flag is intentionally duplicated from main.js so the worker is

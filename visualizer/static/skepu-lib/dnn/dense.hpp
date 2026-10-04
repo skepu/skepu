@@ -15,7 +15,7 @@ float fully_connected_batched_uf(
 	size_t class_index = index.l;
 	float res = bias(class_index);
 	for (size_t i = 0; i < weights.rows; ++i)
-		res += weights(i, class_index) * in(0, 0, batch_index, i);
+		res += weights(i, class_index) * in(batch_index, 0, 0, i);
 	return res;
 }
 
@@ -154,6 +154,10 @@ namespace skepu::dnn::impl
     
 	void init_parameters() override
 	{
+		// Keep pretrained parameters
+		if (this->m_pretrained_params != SKEPU_DNN_NO_PRETRAINED_PARAMS || this->m_keep_params)
+			return;
+
 		// Weights
 		if (this->m_init_weights == Init::Xavier_uniform)
 		{
@@ -166,11 +170,11 @@ namespace skepu::dnn::impl
 			skel_init_random_uniform(this->m_weights, -limit, limit);
 		}
 		else if(this->m_init_weights == Init::Xavier_normal){
-			double limit = sqrt(2.0 / (this->m_weights.size_i() + this->m_out));
+			double limit = sqrt(6.0 / (this->m_weights.size_i() + this->m_out)); // uniform with the variance of Xavier-normal
     
 			skel_init_random_uniform.setLabel(this->label() + " Random-init dense weights");
 			skel_init_random_uniform.setPRNG(*this->m_prng);
-			skel_init_random_uniform(this->m_weights, 0.0 , limit); // this need to be normal random
+			skel_init_random_uniform(this->m_weights, -limit, limit);
 		}
 		else if (this->m_init_weights == Init::He_uniform){
 			double limit = sqrt(6.0 / (this->m_weights.size_i()));
@@ -180,11 +184,11 @@ namespace skepu::dnn::impl
 			skel_init_random_uniform(this->m_weights, -limit, limit);
 		}
 		else if (this->m_init_weights == Init::He_normal){
-			double limit = sqrt(2.0 / (this->m_weights.size_i()));
+			double limit = sqrt(6.0 / (this->m_weights.size_i())); // uniform with the variance of He-normal
     
 			skel_init_random_uniform.setLabel(this->label() + " Random-init dense weights");
 			skel_init_random_uniform.setPRNG(*this->m_prng);
-			skel_init_random_uniform(this->m_weights, 0.0 , limit); // this need to be normal random
+			skel_init_random_uniform(this->m_weights, -limit, limit);
 		}
 		else if (this->m_init_weights == Init::Uniform)
 		{
@@ -197,7 +201,7 @@ namespace skepu::dnn::impl
 		}
 		else if (this->m_init_weights == Init::Zero)
 		{
-			dnn_debug << "Dense initialize biases to zero\n";
+			dnn_debug << "Dense initialize weights to zero\n";
 			skel_init_zero.setLabel(this->label() + " Zero-init dense weights");
 			skel_init_zero(this->m_weights);
 		}
@@ -271,11 +275,46 @@ namespace skepu::dnn::impl
 		return (this->m_layer_level != Level::Input) ? &this->m_temp : nullptr;
 	}
     
-	Matrix<T>&  get_d_weights() override { return m_weights; }
-	Matrix<T>&  get_d_gradients() override { return m_dW; }
+	std::string describe() const override
+	{
+		return "Dense units=" + std::to_string(this->m_out) + this->common_attributes(true);
+	}
+
+	void write_params(std::ostream &os) override
+	{
+		// Parameters may live on a device (after init_parameters or training): fetch them first
+		m_weights.updateHost();
+		m_biases.updateHost();
+		std::vector<float> v;
+		for (size_t i = 0; i < m_weights.size_i(); ++i)
+			for (size_t j = 0; j < m_weights.size_j(); ++j) v.push_back(m_weights(i, j));
+		for (size_t i = 0; i < m_biases.size(); ++i) v.push_back(m_biases(i));
+		write_values(os, v);
+	}
+
+	void read_params(std::istream &is) override
+	{
+		std::vector<float> v = read_values(is, m_weights.size() + m_biases.size());
+		size_t n = 0;
+		for (size_t i = 0; i < m_weights.size_i(); ++i)
+			for (size_t j = 0; j < m_weights.size_j(); ++j) m_weights(i, j) = v[n++];
+		for (size_t i = 0; i < m_biases.size(); ++i) m_biases(i) = v[n++];
+		// Host writes through operator() do not necessarily invalidate the device copies
+		m_weights.invalidateDeviceData();
+		m_biases.invalidateDeviceData();
+		this->m_keep_params = true;
+	}
+
+	void apply_update(Optimizer<T> &opt, float learning_rate) override
+	{
+		opt.update(*this, "Dense", m_weights, m_dW, m_biases, m_db, learning_rate);
+	}
+
+	Matrix<T>&  get_d_weights() { return m_weights; }
+	Matrix<T>&  get_d_gradients() { return m_dW; }
     
-	Vector<T>&  get_biases() override { return m_biases; }
-	Vector<T>&  get_biases_gradients() override { return m_db; }
+	Vector<T>&  get_biases() { return m_biases; }
+	Vector<T>&  get_biases_gradients() { return m_db; }
     
     
     

@@ -1,5 +1,10 @@
 #pragma once
 #include <skepu>
+#include <iomanip>
+#include <limits>
+#include <sstream>
+#include <fstream>
+#include <vector>
 #ifndef SKEPU_PRECOMPILED
 static skepu::PrecompilerMarker startOf_Layer_HPP;
 
@@ -7,6 +12,30 @@ static skepu::PrecompilerMarker startOf_Layer_HPP;
 
 namespace skepu::dnn::impl
 {
+    template <typename T> class Optimizer; // defined in sequential_model.hpp
+
+    // Text I/O of parameter values for model files: a count, then the values (9 significant digits
+    // reproduce a float exactly)
+    inline void write_values(std::ostream &os, const std::vector<float> &v)
+    {
+	os << v.size() << "\n" << std::setprecision(std::numeric_limits<float>::max_digits10);
+	for (size_t i = 0; i < v.size(); ++i)
+		os << v[i] << ((i % 8 == 7 || i + 1 == v.size()) ? "\n" : " ");
+    }
+
+    inline std::vector<float> read_values(std::istream &is, size_t expected)
+    {
+	size_t n = 0;
+	is >> n;
+	if (n != expected)
+		SKEPU_ERROR("SkePU-DNN: model file has " << n << " parameter values for a layer that needs " << expected);
+	std::vector<float> v(n);
+	for (auto &x : v) is >> x;
+	if (!is)
+		SKEPU_ERROR("SkePU-DNN: model file ended while reading parameters");
+	return v;
+    }
+
     template <typename T = float>
     class Layer
     {
@@ -48,31 +77,33 @@ namespace skepu::dnn::impl
 	// Override for layer classes with trainable parameters.
 	virtual bool is_trainable() const { return false; }
     
-	virtual Tensor4<T>& get_weights() {
-		// Tensor4<T> dummy;
-		// return dummy;
-		throw std::logic_error("get_weights() must be implemented in a derived class.");
+	// Applies one optimizer step to the layer's trainable parameters (after its backward pass).
+	// Layers with parameters override this and pass their weights, biases and gradients to the
+	// optimizer; the optimizer picks the update for the container types it is given.
+	virtual void apply_update(Optimizer<T> &opt, float learning_rate) { /* No parameters */ }
+
+	// Description of the layer for model files: "<Type> key=value ...", including its activation
+	// function. Activation layers return "" and are skipped (they belong to the layer before them).
+	virtual std::string describe() const
+	{
+		SKEPU_ERROR("SkePU-DNN: this layer type cannot be saved to a model file");
+		return "";
 	}
-	virtual Tensor4<T>& get_gradients() {
-		throw std::logic_error("get_gradients() must be implemented in a derived class.");
+
+	// Writes/reads the trainable parameters as text for model files (layers without parameters do nothing)
+	virtual void write_params(std::ostream &os) {}
+	virtual void read_params(std::istream &is) {}
+
+	// " weights=X biases=Y activation=Z", the attributes shared by the layers with parameters
+	std::string common_attributes(bool with_init) const
+	{
+		std::ostringstream os;
+		if (with_init)
+			os << " weights=" << to_string(this->m_init_weights) << " biases=" << to_string(this->m_init_biases);
+		os << " activation=" << to_string(this->m_act);
+		return os.str();
 	}
-    
-	virtual Vector<T>& get_biases() {
-		throw std::logic_error("get_biases() must be implemented in a derived class.");
-	}
-	virtual Vector<T>& get_biases_gradients() {
-		throw std::logic_error("get_biases_gradients() must be implemented in a derived class.");
-	}	
-	
-	virtual Matrix<T>& get_d_weights() {
-		throw std::logic_error("get_d_weights() must be implemented in a derived class.");
-	}
-	virtual Matrix<T>& get_d_gradients() {
-		throw std::logic_error("get_d_gradients() must be implemented in a derived class.");
-	}
-    
-    
-    
+
 	std::string label()
 	{
 		std::ostringstream os;
@@ -140,9 +171,10 @@ namespace skepu::dnn::impl
 	Level m_layer_level = Level::Hidden;
     
 	bool m_is_setup = false;
+	bool m_keep_params = false; // parameters were loaded from a model file: fit() must not re-initialize them
 	bool m_in_place = false; // when possible
     
-	PRNG *m_prng;
+	PRNG *m_prng = nullptr; // owned by the model
     
 	size_t m_batch_size;
 	Dimensions m_output_size;
@@ -153,10 +185,6 @@ namespace skepu::dnn::impl
     
 	std::string m_pretrained_params = SKEPU_DNN_NO_PRETRAINED_PARAMS;
     
-	std::shared_ptr<Layer> *predecessor = nullptr;
-	std::shared_ptr<Layer> *successor = nullptr;
-    
-	float m_learning_rate = 0;
 	Tensor4<T> m_vals;
     
 	friend class SequentialLayer;

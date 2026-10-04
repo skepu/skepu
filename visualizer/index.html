@@ -16,27 +16,27 @@
 
     <!-- App stylesheet (relative to frontend/) -->
     <link rel="stylesheet" href="./style/main.css"/>
-    <link rel="stylesheet" href="./script/static/cmu-font/fonts/cmuserif_roman/stylesheet.css"/>
+    <link rel="stylesheet" href="./static/cmu-font/fonts/cmuserif_roman/stylesheet.css"/>
 
     <!-- jQuery -->
-    <script src="./script/static/jquery/jquery-3.7.1.min.js"></script>
-    <script src="./script/static/jquery-scrollto/jquery.scrollTo.min.js"></script>
+    <script src="./static/jquery/jquery-3.7.1.min.js"></script>
+    <script src="./static/jquery-scrollto/jquery.scrollTo.min.js"></script>
 
     <!-- Cytoscape -->
-    <script src="./script/static/cytoscape/cytoscape.min.js"></script>
-    <script src="./script/static/dagre/dagre.min.js"></script>
-    <script src="./script/static/cytoscape-dagre/cytoscape-dagre.js"></script>
-    <script src="./script/static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js"></script>
+    <script src="./static/cytoscape/cytoscape.min.js"></script>
+    <script src="./static/dagre/dagre.min.js"></script>
+    <script src="./static/cytoscape-dagre/cytoscape-dagre.js"></script>
+    <script src="./static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js"></script>
 
     <!-- Highlight.js -->
-    <link id="hljs-theme" rel="stylesheet" href="./script/static/highlight/styles/default.css">
-    <script src="./script/static/highlight/highlight.min.js"></script>
-    <script src="./script/static/highlight-line-numbers/highlightjs-line-numbers.min.js"></script>
+    <link id="hljs-theme" rel="stylesheet" href="./static/highlight/styles/default.css">
+    <script src="./static/highlight/highlight.min.js"></script>
+    <script src="./static/highlight-line-numbers/highlightjs-line-numbers.min.js"></script>
 
     <!-- Worker URLs — injected as classic scripts so ES modules can read them
          as globals.  Paths are relative to this HTML file (frontend/). -->
     <script>var DAGRE_WORKER_URL = "./script/workers/dagre-worker.js";</script>
-    <script>var ELK_WORKER_URL   = "./script/static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js";</script>
+    <script>var ELK_WORKER_URL   = "./static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js";</script>
 
     <!-- TRACE_LINE_RANGES — starts empty; updated after each trace load. -->
     <script>var TRACE_LINE_RANGES = [];</script>

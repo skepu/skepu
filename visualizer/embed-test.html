@@ -422,19 +422,19 @@
 
   <!-- Cytoscape and layout engines must be loaded as classic scripts so that
        cytoscape and ELK are available as window globals when GraphView.js runs. -->
-  <script src="./script/static/cytoscape/cytoscape.min.js"></script>
-  <script src="./script/static/dagre/dagre.min.js"></script>
-  <script src="./script/static/cytoscape-dagre/cytoscape-dagre.js"></script>
-  <script src="./script/static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js"></script>
+  <script src="./static/cytoscape/cytoscape.min.js"></script>
+  <script src="./static/dagre/dagre.min.js"></script>
+  <script src="./static/cytoscape-dagre/cytoscape-dagre.js"></script>
+  <script src="./static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js"></script>
 
   <!-- jQuery + scrollTo (required by SourceCodeView.highlightSourceLine) -->
-  <script src="./script/static/jquery/jquery-3.7.1.min.js"></script>
-  <script src="./script/static/jquery-scrollto/jquery.scrollTo.min.js"></script>
+  <script src="./static/jquery/jquery-3.7.1.min.js"></script>
+  <script src="./static/jquery-scrollto/jquery.scrollTo.min.js"></script>
 
   <!-- Highlight.js (required by SourceCodeView.highlightAllBlocks) -->
-  <link id="hljs-theme-src" rel="stylesheet" href="./script/static/highlight/styles/default.css">
-  <script src="./script/static/highlight/highlight.min.js"></script>
-  <script src="./script/static/highlight-line-numbers/highlightjs-line-numbers.min.js"></script>
+  <link id="hljs-theme-src" rel="stylesheet" href="./static/highlight/styles/default.css">
+  <script src="./static/highlight/highlight.min.js"></script>
+  <script src="./static/highlight-line-numbers/highlightjs-line-numbers.min.js"></script>
 </head>
 <body>
 
@@ -586,7 +586,7 @@
     // ── Worker URLs ─────────────────────────────────────────────────────────
     const BASE         = new URL('../', location.href).href;
     const DAGRE_WORKER = BASE + './script/workers/dagre-worker.js';
-    const ELK_WORKER   = BASE + './script/static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js';
+    const ELK_WORKER   = BASE + './static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js';
     const VIZ_WORKER   = BASE + './script/backend/visualizer.js';
 
     // ── WorkerSession ───────────────────────────────────────────────────────

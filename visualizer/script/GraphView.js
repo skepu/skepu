@@ -167,7 +167,7 @@ export class GraphView {
     this._dagreWorkerUrl = options.dagreWorkerUrl
       || new URL('./workers/dagre-worker.js', import.meta.url).href;
     this._elkWorkerUrl   = options.elkWorkerUrl
-      || new URL('./static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js', import.meta.url).href;
+      || new URL('../static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js', import.meta.url).href;
 
     // Callbacks.
     this._onEdgeClick     = options.onEdgeClick     || null;

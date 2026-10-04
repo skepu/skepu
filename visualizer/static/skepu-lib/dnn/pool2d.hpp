@@ -14,11 +14,15 @@ float pool_max_backward_uf(
 	size_t pool_size_k
 )
 {
-	float maxval = 0;
-	size_t max_idx_j = 0;
-	size_t max_idx_k = 0;
+	// Elements outside the pooled area (input size not divisible by pool size) get no gradient
+	if (index.j >= gradient.size_j * pool_size_j || index.k >= gradient.size_k * pool_size_k)
+		return 0;
+
 	size_t base_j = (size_t)(index.j / pool_size_j) * pool_size_j;
 	size_t base_k = (size_t)(index.k / pool_size_k) * pool_size_k;
+	float maxval = inputs(index.i, base_j, base_k, index.l);
+	size_t max_idx_j = base_j;
+	size_t max_idx_k = base_k;
 
 	// Find the index of the max value in the pool of forward-inputs
 	for (size_t j = 0; j < pool_size_j; ++j)
@@ -67,8 +71,9 @@ float pool_max_masked_backward_uf(
 
 	char maskval = mask(index.i, small_j, small_k, index.l);
 
-	size_t max_idx_j = small_j * pool_size_j + (char)(maskval / 2); //pool_size_j
-	size_t max_idx_k = small_k * pool_size_k + (maskval % 2); // j
+	// The mask stores j * pool_size_k + k of the maximum within the pool window
+	size_t max_idx_j = small_j * pool_size_j + (size_t)(maskval / pool_size_k);
+	size_t max_idx_k = small_k * pool_size_k + (size_t)(maskval % pool_size_k);
 
 	// If this index is the index of the max value, the gradient is 1
 	// and implicitly multiplied with the incoming gradient
@@ -258,6 +263,12 @@ namespace skepu::dnn::impl
     #endif
 	}
     
+	std::string describe() const override
+	{
+		return "MaxPooling2D kernel=" + std::to_string(std::get<0>(this->m_kernel)) + "x" + std::to_string(std::get<1>(this->m_kernel))
+			+ this->common_attributes(false);
+	}
+
 	std::string summary() override
 	{
 		std::stringstream os;

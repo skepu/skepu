@@ -39,8 +39,8 @@ let _graph           = null;   // DirectedGraph from the most recent 'graph' cal
 // Base URL for fetching examples and library files — one level above this
 // script, i.e. the visualizer root.
 const _BASE_URL     = new URL('..', import.meta.url).href;
-const _LIB_ROOT_URL = _BASE_URL + './static/skepu-lib/';
-const _LIB_DNN_URL  = _BASE_URL + './static/skepu-lib/dnn/';
+const _LIB_ROOT_URL = _BASE_URL + '../static/skepu-lib/';
+const _LIB_DNN_URL  = _BASE_URL + '../static/skepu-lib/dnn/';
 
 // Cached index of available library headers: { root: [...], dnn: [...] }.
 // null = not yet fetched; { root: [], dnn: [] } = fetched but unavailable.

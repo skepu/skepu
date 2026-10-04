@@ -40,5 +40,13 @@
     },
     "snapshot_archive" : "heat_diffusion/snapshots_heat_diffusion.zip",
     "cpp_files": ["heat_diffusion/heat_diffusion.cpp"]
+  },
+  {
+    "title": "DNN CIFAR-10 (small CNN)",
+    "trace": {
+      "openmp": "dnn_cifar10/trace_dnn_cifar10_openmp.json",
+      "opencl": "dnn_cifar10/trace_dnn_cifar10_opencl.json"
+    },
+    "cpp_files": ["dnn_cifar10/dnn_cifar10.cpp"]
   }
 ]
