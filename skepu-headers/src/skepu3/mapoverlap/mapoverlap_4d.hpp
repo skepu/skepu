@@ -185,7 +185,12 @@ namespace skepu
 				SKEPU_TRACE_START_EVENT(trace_handle);
 				auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 
-				RegionType region{arg, this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_overlap[3], this->m_edge, this->m_pad};
+				RegionType region{arg,
+					this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_overlap[3],
+					this->m_edge, this->m_pad,
+					region_offset(size_i, arg.size_i(), this->m_overlap[0]), region_offset(size_j, arg.size_j(), this->m_overlap[1]),
+					region_offset(size_k, arg.size_k(), this->m_overlap[2]), region_offset(size_l, arg.size_l(), this->m_overlap[3])
+				};
 
 				auto random = this->template prepareRandom<randomCount>(size_i * size_j * size_k * size_l);
 

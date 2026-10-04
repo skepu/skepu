@@ -12,7 +12,7 @@ float convolutional_2d_uf(
 	skepu::Vec<float> DNN_CONST bias
 )
 {
-	float res = 0.0; //bias(index.l);
+	float res = bias(index.l);
 	for (int i = -in.oj; i <= in.oj; ++i)
 		for (int j = -in.ok; j <= in.ok; ++j)
 		{
@@ -72,7 +72,7 @@ float propagate_conv_2d_weight_gradient_uf(
 			for (size_t k = 0; k < gradient.size_k; ++k)
 				// sum += inputs(b, j + index.i, k + index.j, index.k) * gradient(b, gradient.size_j - 1 - j, gradient.size_k - 1 - k, index.l); // indexing!!!
         sum += inputs(b, j + index.i, k + index.j, index.k) * gradient(b,  j, k , index.l);
-	return sum;
+	return sum / num_batches;
 }
 
 float propagate_conv_2d_bias_gradient_uf(
@@ -88,7 +88,7 @@ float propagate_conv_2d_bias_gradient_uf(
       }
     }
   }
-	return sum;
+	return sum / num_batches;
 }
 
 
@@ -219,6 +219,10 @@ namespace skepu::dnn::impl
     
 	void init_parameters() override
 	{
+		// Keep pretrained parameters
+		if (this->m_pretrained_params != SKEPU_DNN_NO_PRETRAINED_PARAMS)
+			return;
+
 		// Weights
 		if (this->m_init_weights == Init::Xavier_uniform)
 		{
@@ -235,11 +239,11 @@ namespace skepu::dnn::impl
 		else if (this->m_init_weights == Init::Xavier_normal){
 			int fan_in = this->m_weights.size_k() * std::get<0>(this->m_kernel) * std::get<1>(this->m_kernel);
 		  int fan_out = this->m_no_features * std::get<0>(this->m_kernel) * std::get<1>(this->m_kernel);
-		  double limit = std::sqrt(2.0 / (fan_in + fan_out));
+		  double limit = std::sqrt(6.0 / (fan_in + fan_out)); // uniform with the variance of Xavier-normal
     
 			skel_init_random_uniform.setPRNG(*this->m_prng);
 			skel_init_random_uniform.setLabel(this->label() + " Random-init Conv2D weights");
-			skel_init_random_uniform(this->m_weights, 0.0, limit);
+			skel_init_random_uniform(this->m_weights, -limit, limit);
 		}
 		else if (this->m_init_weights == Init::He_uniform){
 			int fan_in = this->m_weights.size_k() * std::get<0>(this->m_kernel) * std::get<1>(this->m_kernel);
@@ -253,11 +257,11 @@ namespace skepu::dnn::impl
 		else if (this->m_init_weights == Init::He_normal){
 			int fan_in = this->m_weights.size_k() * std::get<0>(this->m_kernel) * std::get<1>(this->m_kernel);
 		  // int fan_out = this->m_no_features * std::get<0>(this->m_kernel) * std::get<1>(this->m_kernel);
-		  double limit = std::sqrt(2.0 / (fan_in));
+		  double limit = std::sqrt(6.0 / (fan_in)); // uniform with the variance of He-normal
     
 			skel_init_random_uniform.setPRNG(*this->m_prng);
 			skel_init_random_uniform.setLabel(this->label() + " Random-init Conv2D weights");
-			skel_init_random_uniform(this->m_weights, 0.0, limit);
+			skel_init_random_uniform(this->m_weights, -limit, limit);
 		}
 		else if (this->m_init_weights == Init::Uniform)
 		{
@@ -346,6 +350,12 @@ namespace skepu::dnn::impl
 		{
 			skel_conv_2d.setEdgeMode(skepu::Edge::Pad);
 			skel_conv_2d.setPad(0);
+		}
+		else
+		{
+			// "Valid" convolution: output (y, x) uses input window starting at (y, x).
+			// Must be set explicitly, the MapOverlap default (Duplicate) computes a "same"-style convolution.
+			skel_conv_2d.setEdgeMode(skepu::Edge::None);
 		}
     
 		dnn_debug << "Conv2D weights: " << this->m_weights << "\n";

@@ -201,12 +201,20 @@ namespace skepu
 		{}
 	};
 	
+	// Offset of a MapOverlap4D input region relative to the output index, along one dimension:
+	// (output size - input size) / 2 if the dimension has overlap, otherwise 0.
+	// Negative for "valid" convolutions (output smaller than input), positive for "full" ones.
+	inline long region_offset(size_t out_size, size_t in_size, int overlap)
+	{
+		return (overlap > 0) ? ((long)out_size - (long)in_size) / 2 : 0;
+	}
+
 	template<typename T>
 	struct Region4D
 	{
 		int oi, oj, ok, ol;
 		size_t size_i, size_j, size_k, size_l;
-		size_t offset_i, offset_j, offset_k, offset_l;
+		long offset_i, offset_j, offset_k, offset_l; // signed: (output size - input size) / 2 along dimensions with overlap
 		size_t stride1, stride2, stride3;
 		Index4D idx;
 		const T *data;
@@ -215,10 +223,10 @@ namespace skepu
 		
 		T operator()(int i, int j, int k, int l) const
 		{
-			int ii = this->idx.i + i + (this->edge != Edge::None ? -this->offset_i : 0);
-			int jj = this->idx.j + j + (this->edge != Edge::None ? -this->offset_j : 0);
-			int kk = this->idx.k + k + (this->edge != Edge::None ? -this->offset_k : 0);
-			int ll = this->idx.l + l + (this->edge != Edge::None ? -this->offset_l : 0);
+			int ii = (int)this->idx.i + i - (this->edge != Edge::None ? (int)this->offset_i : 0);
+			int jj = (int)this->idx.j + j - (this->edge != Edge::None ? (int)this->offset_j : 0);
+			int kk = (int)this->idx.k + k - (this->edge != Edge::None ? (int)this->offset_k : 0);
+			int ll = (int)this->idx.l + l - (this->edge != Edge::None ? (int)this->offset_l : 0);
 			size_t offset;
 			
 			switch (this->edge)
@@ -248,7 +256,7 @@ namespace skepu
 		}
 
 		Region4D(Tensor4<T> const& ten, int arg_oi, int arg_oj, int arg_ok, int arg_ol, Edge arg_edge, T arg_pad,
-		size_t arg_offset_i = 0, size_t arg_offset_j = 0, size_t arg_offset_k = 0, size_t arg_offset_l = 0)
+		long arg_offset_i = 0, long arg_offset_j = 0, long arg_offset_k = 0, long arg_offset_l = 0)
 		:	oi(arg_oi), oj(arg_oj), ok(arg_ok), ol(arg_ol),
 			size_i(ten.size_i()), size_j(ten.size_j()), size_k(ten.size_k()), size_l(ten.size_l()),
 			stride1(ten.m_stride_1),
@@ -633,7 +641,7 @@ namespace skepu
 		}
 	
 	Pool4D(Tensor4<T> const& ten, int arg_si, int arg_sj, int arg_sk, int arg_sl, Edge arg_edge, T arg_pad,
-	size_t arg_offset_i = 0, size_t arg_offset_j = 0, size_t arg_offset_k = 0, size_t arg_offset_l = 0)
+	long arg_offset_i = 0, long arg_offset_j = 0, long arg_offset_k = 0, long arg_offset_l = 0)
 	:	si(arg_si), sj(arg_sj), sk(arg_sk), sl(arg_sl),
 		stride1(ten.m_stride_1),
 		stride2(ten.m_stride_2),

@@ -15,6 +15,13 @@ float sigmoid_prime_uf(float x)
 	return sigma_x * (1 - sigma_x);
 }
 
+// Backward pass: x is the pre-activation input, g the incoming gradient
+float sigmoid_backward_uf(float x, float g)
+{
+	float sigma_x = sigmoid_uf(x);
+	return g * sigma_x * (1 - sigma_x);
+}
+
 // forward oass
 float relu_uf(float x) { return (x > 0) ? x : 0; }
 
@@ -56,6 +63,13 @@ float tanh_prime_uf(float x)
 {
 	float t = tanh(x);
 	return 1 - t * t;
+}
+
+// Backward pass: x is the pre-activation input, g the incoming gradient
+float tanh_backward_uf(float x, float g)
+{
+	float t = tanh(x);
+	return g * (1 - t * t);
 }
 
 
@@ -153,9 +167,9 @@ auto softmax_prime  = skepu::Map<0>(softmax_prime_uf);
 auto skel_act_tanh = skepu::Map(tanh_uf);
 
 
-auto skel_act_sigmoid_prime = skepu::Map(sigmoid_prime_uf);
+auto skel_act_sigmoid_prime = skepu::Map(sigmoid_backward_uf);
 auto skel_act_relu_prime = skepu::Map(relu_prime_uf);
-auto skel_act_tanh_prime = skepu::Map(tanh_prime_uf);
+auto skel_act_tanh_prime = skepu::Map(tanh_backward_uf);
 
 
 
@@ -174,7 +188,7 @@ namespace skepu::dnn::impl
 	{
 		this->m_vals.setLabel(this->label() + " Activation values");
 		this->m_temp_vals.setLabel(this->label() + " Activation temporaries");
-	//	this->m_temp_backprop.setLabel(this->label() + " Activation gradients");
+		this->m_temp_backprop.setLabel(this->label() + " Activation gradients");
     
 		this->m_output_size = input_size;
     
@@ -190,10 +204,13 @@ namespace skepu::dnn::impl
     		);
 		}
     
-	/* 	this->m_temp_backprop.init(
-			std::get<0>(this->m_output_size), std::get<1>(this->m_output_size),
-			std::get<2>(this->m_output_size), std::get<3>(this->m_output_size)
-			);*/
+		if (this->m_act == Act::SoftMax)
+		{
+			this->m_temp_backprop.init(
+				std::get<0>(this->m_output_size), std::get<1>(this->m_output_size),
+				std::get<2>(this->m_output_size), std::get<3>(this->m_output_size)
+			);
+		}
     
 		Layer<T>::setup(input_size);
 	}
@@ -257,7 +274,7 @@ namespace skepu::dnn::impl
 		else if (this->m_act == Act::Sigmoid)
 		{
 			skel_act_sigmoid_prime.setLabel(this->label() + " Sigmoid derivative");
-			skel_act_sigmoid_prime(*target, *inputs);
+			skel_act_sigmoid_prime(*target, *inputs, *gradient);
 		}
 		else if (this->m_act == Act::SoftMax)
 		{
@@ -267,13 +284,15 @@ namespace skepu::dnn::impl
 		  skepu::Tensor3<float> jacobian(inputs->size_i(),n_class, n_class);
     
 		  softmax_jacobian(jacobian, this->m_vals);
+		  // Output must not alias the incoming gradient: each output element reads the whole input row
+		  target = &this->m_temp_backprop;
 		  softmax_prime(*target, *gradient, jacobian, n_class);
     
 		}
 		else if (this->m_act == Act::TanH)
 		{
 			skel_act_tanh_prime.setLabel(this->label() + " TanH derivative");
-			skel_act_tanh_prime(*target, *inputs);
+			skel_act_tanh_prime(*target, *inputs, *gradient);
 		}
     
 		return target;

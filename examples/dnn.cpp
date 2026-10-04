@@ -75,7 +75,7 @@ binary_class(skepu::Tensor4<float> &train_images, skepu::Vector<mnist::label_t> 
                     for (int w = 0; w < train_images.size_k(); w++)
                         for (int c  = 0; c < train_images.size_l(); c++)
                             (*filtered_images)(index, h, w, c) = train_images(i, h, w, c);
-                (*filtered_labels)(index, 0, 0, 0) = (train_labels_temp(i) == 0) ? 0 : 1;  
+                (*filtered_labels)(index, 0, 0, 0) = (train_labels_temp(i) == class_a) ? 0 : 1;  
                 index++;
             }   
         }
@@ -111,7 +111,7 @@ void csv_results(int batch_size, std::string backend, int run, double test_loss,
 
 int main(int argc, char *argv[])
 {
-	if (argc < 5)
+	if (argc < 6)
 	{
 		std::cout << "Usage: " << argv[0] << " batch_size learning_rate epochs backend run \n";
 		exit(1);
@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
 	
 	/*********************** Testing   ************************** */ 
     double test_loss = 0, test_acc = 0;    
-	skepu::Matrix<int> confusion_matrix(num_classes, num_classes, "Confusion Matrix", 0);
+	skepu::Matrix<int> confusion_matrix(2, 2, "Confusion Matrix", 0); // binary classification
 	auto testingtimeTaken = skepu::benchmark::measureExecTime([&]
 	{   
 		auto score = model.evaluate(*test_images, *test_labels, &confusion_matrix);

@@ -15,7 +15,7 @@ float fully_connected_batched_uf(
 	size_t class_index = index.l;
 	float res = bias(class_index);
 	for (size_t i = 0; i < weights.rows; ++i)
-		res += weights(i, class_index) * in(0, 0, batch_index, i);
+		res += weights(i, class_index) * in(batch_index, 0, 0, i);
 	return res;
 }
 
@@ -154,6 +154,10 @@ namespace skepu::dnn::impl
     
 	void init_parameters() override
 	{
+		// Keep pretrained parameters
+		if (this->m_pretrained_params != SKEPU_DNN_NO_PRETRAINED_PARAMS)
+			return;
+
 		// Weights
 		if (this->m_init_weights == Init::Xavier_uniform)
 		{
@@ -166,11 +170,11 @@ namespace skepu::dnn::impl
 			skel_init_random_uniform(this->m_weights, -limit, limit);
 		}
 		else if(this->m_init_weights == Init::Xavier_normal){
-			double limit = sqrt(2.0 / (this->m_weights.size_i() + this->m_out));
+			double limit = sqrt(6.0 / (this->m_weights.size_i() + this->m_out)); // uniform with the variance of Xavier-normal
     
 			skel_init_random_uniform.setLabel(this->label() + " Random-init dense weights");
 			skel_init_random_uniform.setPRNG(*this->m_prng);
-			skel_init_random_uniform(this->m_weights, 0.0 , limit); // this need to be normal random
+			skel_init_random_uniform(this->m_weights, -limit, limit);
 		}
 		else if (this->m_init_weights == Init::He_uniform){
 			double limit = sqrt(6.0 / (this->m_weights.size_i()));
@@ -180,11 +184,11 @@ namespace skepu::dnn::impl
 			skel_init_random_uniform(this->m_weights, -limit, limit);
 		}
 		else if (this->m_init_weights == Init::He_normal){
-			double limit = sqrt(2.0 / (this->m_weights.size_i()));
+			double limit = sqrt(6.0 / (this->m_weights.size_i())); // uniform with the variance of He-normal
     
 			skel_init_random_uniform.setLabel(this->label() + " Random-init dense weights");
 			skel_init_random_uniform.setPRNG(*this->m_prng);
-			skel_init_random_uniform(this->m_weights, 0.0 , limit); // this need to be normal random
+			skel_init_random_uniform(this->m_weights, -limit, limit);
 		}
 		else if (this->m_init_weights == Init::Uniform)
 		{
@@ -197,7 +201,7 @@ namespace skepu::dnn::impl
 		}
 		else if (this->m_init_weights == Init::Zero)
 		{
-			dnn_debug << "Dense initialize biases to zero\n";
+			dnn_debug << "Dense initialize weights to zero\n";
 			skel_init_zero.setLabel(this->label() + " Zero-init dense weights");
 			skel_init_zero(this->m_weights);
 		}

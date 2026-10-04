@@ -28,7 +28,7 @@ template <typename T> skepu::multiple<T, char> dropout_masked_uf(skepu::Random<1
 
 template <typename T> T dropout_masked_backprop_uf(T gradient, char enabled, float rate)
 {
-	return enabled ? gradient/* / (1.0 - rate)*/ : 0; // todo check
+	return enabled ? gradient / (1.0f - rate) : 0; // matches inverted-dropout scaling in forward
 }
 
 

@@ -186,9 +186,9 @@ public:
 		libraryFileHandlerHelper(library_markers::foundML, library_markers::denseBegin,      library_markers::denseEnd, library_markers::mlBegin, "DENSE");
 		libraryFileHandlerHelper(library_markers::foundML, library_markers::dropoutBegin,    library_markers::dropoutEnd, library_markers::mlBegin, "DROPOUT");
 	 	libraryFileHandlerHelper(library_markers::foundML, library_markers::flattenBegin,    library_markers::flattenEnd, library_markers::mlBegin, "FLATTEN");
-		libraryFileHandlerHelper(library_markers::foundML, library_markers::conv1dBegin,     library_markers::conv1dEnd, library_markers::mlBegin, "CONV1D");
 		libraryFileHandlerHelper(library_markers::foundML, library_markers::conv2dBegin,     library_markers::conv2dEnd, library_markers::mlBegin, "CONV2D");
 		libraryFileHandlerHelper(library_markers::foundML, library_markers::pool2dBegin,     library_markers::pool2dEnd, library_markers::mlBegin, "POOL2D");
+		libraryFileHandlerHelper(library_markers::foundML, library_markers::conv1dBegin,     library_markers::conv1dEnd, library_markers::mlBegin, "CONV1D"); // after CONV2D and POOL2D: Conv1D/MaxPooling1D derive from them
 		libraryFileHandlerHelper(library_markers::foundML, library_markers::sequentialModelBegin, library_markers::sequentialModelEnd, library_markers::mlBegin, "SEQUENTIAL_MODEL");
 
 		if (Verbose) SkePULog() << "** EndSourceFileAction for: " << inputFileName << "\n";

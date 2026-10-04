@@ -39,8 +39,8 @@ namespace skepu
 			RegionType region{arg,
 				this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_overlap[3],
 				this->m_edge, this->m_pad,
-				(size_i - arg.size_i()) / 2 * this->m_overlap[0], (size_j - arg.size_j()) / 2 * this->m_overlap[1],
-				(size_k - arg.size_k()) / 2 * this->m_overlap[2], (size_l - arg.size_l()) / 2 * this->m_overlap[3]
+				region_offset(size_i, arg.size_i(), this->m_overlap[0]), region_offset(size_j, arg.size_j(), this->m_overlap[1]),
+				region_offset(size_k, arg.size_k(), this->m_overlap[2]), region_offset(size_l, arg.size_l(), this->m_overlap[3])
 			};
 
 		/*	Index4D start{0, 0, 0, 0}, end{size_i, size_j, size_k, size_l};

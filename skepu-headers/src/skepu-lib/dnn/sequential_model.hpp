@@ -2,55 +2,102 @@
 #include <skepu>
 #ifndef SKEPU_PRECOMPILED
 static skepu::PrecompilerMarker startOf_SequentialModel_HPP;
+#include <map>
 
 
 
 namespace skepu::dnn::impl
 {
+// Parameter optimizers (SGD, Adam), applied per trainable layer right after its backward pass.
+// Adam keeps first/second moment estimates for every parameter, allocated lazily per layer.
 template<typename T = float>
 class Optimizer
 {
 public:
-	Optimizer(Opt opt_type): m_optimizer_type(opt_type) {}
+	Optimizer(Opt opt_type, float beta1 = 0.9f, float beta2 = 0.999f, float epsilon = 1e-8f)
+	: m_optimizer_type(opt_type), m_beta1(beta1), m_beta2(beta2), m_epsilon(epsilon) {}
+
+	// Forget all optimizer state (e.g. when the parameters are re-initialized)
+	void reset()
+	{
+		this->m_dense_state.clear();
+		this->m_conv_state.clear();
+	}
 
 	void step(Layer<T>& layer)
 	{
-		if (this->m_optimizer_type == Opt::SGD)
+		if (auto* conv_layer = dynamic_cast<Conv2D<T>*>(&layer))
 		{
-			if (auto* conv_layer = dynamic_cast<Conv2D<T>*>(&layer))
-			{
-				Tensor4<T>& m_weights = layer.get_weights();
-				Tensor4<T>& m_dW  = layer.get_gradients();
-
-				Vector<T>& m_biases = layer.get_biases();
-				Vector<T>& m_db = layer.get_biases_gradients();
-				auto learning_rate = layer.m_learning_rate;
-
-                skel_update_params.setLabel(layer.label() + " Dense Update Weights");
-    			skel_update_params(m_weights, m_weights, m_dW, learning_rate);
-    			skel_update_params.setLabel(layer.label() + " Dense Update Biases");
-    			skel_update_params(m_biases, m_biases, m_db, learning_rate);
-			}// conv
-			else if (auto* conv_layer = dynamic_cast<Dense<T>*>(&layer))
-			{
-				Matrix<T>& m_weights = layer.get_d_weights(); 
-				Matrix<T>& m_dW  = layer.get_d_gradients();
-
-				Vector<T>& m_biases = layer.get_biases();
-				Vector<T>& m_db = layer.get_biases_gradients();
-				auto learning_rate = layer.m_learning_rate;
-				
-				skel_update_params.setLabel(layer.label() + " Conv2D Update Weights");
-				skel_update_params(m_weights, m_weights, m_dW, learning_rate);
-				skel_update_params.setLabel(layer.label() + " Conv2D Update Biases");
-				skel_update_params(m_biases, m_biases, m_db, learning_rate);
-			}// dense 
-			
-		}// end if sgd
+			// Also covers Conv1D, which is a Conv2D with a (1 x K) kernel
+			this->update(layer, "Conv2D", layer.get_weights(), layer.get_gradients(), this->m_conv_state);
+		}
+		else if (auto* dense_layer = dynamic_cast<Dense<T>*>(&layer))
+		{
+			this->update(layer, "Dense", layer.get_d_weights(), layer.get_d_gradients(), this->m_dense_state);
+		}
 	}
 
 private:
+	// Adam moment estimates and step counter of one layer
+	template <typename Weights>
+	struct AdamState
+	{
+		Weights m_w, v_w;
+		Vector<T> m_b, v_b;
+		size_t t = 0;
+	};
+
+	static Matrix<T> make_like(const Matrix<T> &w) { return Matrix<T>(w.size_i(), w.size_j(), "Adam moment"); }
+	static Tensor4<T> make_like(const Tensor4<T> &w) { return Tensor4<T>(w.size_i(), w.size_j(), w.size_k(), w.size_l(), "Adam moment"); }
+
+	template <typename Weights>
+	AdamState<Weights> &state_for(std::map<const Layer<T>*, AdamState<Weights>> &states, const Layer<T> &layer, const Weights &w, const Vector<T> &b)
+	{
+		auto it = states.find(&layer);
+		if (it == states.end())
+		{
+			it = states.emplace(&layer, AdamState<Weights>{make_like(w), make_like(w), Vector<T>(b.size(), "Adam moment"), Vector<T>(b.size(), "Adam moment"), 0}).first;
+			skel_init_zero(it->second.m_w);
+			skel_init_zero(it->second.v_w);
+			skel_init_zero(it->second.m_b);
+			skel_init_zero(it->second.v_b);
+		}
+		return it->second;
+	}
+
+	template <typename Weights>
+	void update(Layer<T>& layer, const std::string &kind, Weights &w, Weights &dw, std::map<const Layer<T>*, AdamState<Weights>> &states)
+	{
+		Vector<T>& b = layer.get_biases();
+		Vector<T>& db = layer.get_biases_gradients();
+		const float lr = layer.m_learning_rate;
+
+		if (this->m_optimizer_type == Opt::SGD)
+		{
+			skel_update_params.setLabel(layer.label() + " " + kind + " Update Weights");
+			skel_update_params(w, w, dw, lr);
+			skel_update_params.setLabel(layer.label() + " " + kind + " Update Biases");
+			skel_update_params(b, b, db, lr);
+		}
+		else if (this->m_optimizer_type == Opt::Adam)
+		{
+			AdamState<Weights> &st = this->state_for(states, layer, w, b);
+			st.t++;
+			// Bias correction of the moment estimates
+			const float corr1 = 1.f - std::pow(this->m_beta1, (float)st.t);
+			const float corr2 = 1.f - std::pow(this->m_beta2, (float)st.t);
+
+			skel_adam_update.setLabel(layer.label() + " " + kind + " Adam Weights");
+			skel_adam_update(w, st.m_w, st.v_w, w, dw, st.m_w, st.v_w, lr, this->m_beta1, this->m_beta2, this->m_epsilon, corr1, corr2);
+			skel_adam_update.setLabel(layer.label() + " " + kind + " Adam Biases");
+			skel_adam_update(b, st.m_b, st.v_b, b, db, st.m_b, st.v_b, lr, this->m_beta1, this->m_beta2, this->m_epsilon, corr1, corr2);
+		}
+	}
+
 	Opt m_optimizer_type;
+	float m_beta1, m_beta2, m_epsilon;
+	std::map<const Layer<T>*, AdamState<Matrix<T>>> m_dense_state;
+	std::map<const Layer<T>*, AdamState<Tensor4<T>>> m_conv_state;
 };
 
 
@@ -60,6 +107,16 @@ class LossFunction
 {
 public:
    	LossFunction(Loss type): m_loss_type(type) {}
+
+	// Per-sample (negated) log-likelihood terms: out(i) = sum_c y_c log(p_c) for the batch item i.
+	// The loss of an item is -out(i).
+	void compute_log_likelihoods(Tensor4<T>& batched_train_y, Tensor4<T>& predicted, skepu::Vector<float>& out)
+	{
+		if (this->m_loss_type == Loss::CategoricalCrossEntropy)
+			skel_cross_entropy_batched_loss_map(out, batched_train_y, predicted);
+		else if (this->m_loss_type == Loss::BinaryCrossEntropy)
+			skel_binary_cross_entropy_loss_map(out, batched_train_y, predicted);
+	}
 
    	// forward pass 
    	skepu::Scalar<float> compute_loss(Tensor4<T>& batched_train_y, Tensor4<T>& predicted, size_t batch_size)
@@ -91,7 +148,7 @@ public:
 
 		if (this->m_loss_type == Loss::CategoricalCrossEntropy)
 		{
-			skel_delta(initial_gradient, predicted, batched_train_y);			
+			skel_delta_cce(initial_gradient, predicted, batched_train_y);
 		}
 		else if (this->m_loss_type == Loss::BinaryCrossEntropy)
 		{
@@ -213,6 +270,11 @@ public:
         SKEPU_TRACE_SCOPE("Model Evaluate");
 		if (!this->m_initialized)
 			this->init();
+
+		if (test_x.size_i() == 0)
+			return { skepu::Scalar<float>(0.f), skepu::Scalar<float>(0.f) };
+		if (test_x.size_i() < this->m_batch_size)
+			SKEPU_ERROR("SkePU-DNN: evaluation data (" << test_x.size_i() << " samples) is smaller than the batch size (" << this->m_batch_size << ")");
 		
 		size_t num_valid_batches = test_x.size_i() / this->m_batch_size;
  		size_t remainder_valid_batch = test_x.size_i() % this->m_batch_size;
@@ -236,19 +298,23 @@ public:
 		skepu::Vector<float> temp_loss(this->m_batch_size, "Loss temp");
 		skepu::Vector<int>   temp_acc(this->m_batch_size, "Accuracy temp");
 
-		skepu::Scalar<float> total_loss = 0, total_accuracy = 0;
+		// Exact per-sample sums: the last batch overlaps the previous one when the data size is not a
+		// multiple of the batch size, so its first (batch_size - remainder) items must not be counted twice
+		double sum_loss = 0, sum_correct = 0;
+		size_t counted_samples = 0;
 		// const size_t mini_batch_count = test_x.size_i() / this->m_batch_size;
 
 		// Tensor4<float> *actual_batched_test_x = nullptr;
 		// Tensor4<float> *actual_batched_test_y = nullptr;
 
+		const size_t total_valid_batches = num_valid_batches; // before any batch-count override
 		if (this->m_override_batch_count >= 0)
 			num_valid_batches = std::min(num_valid_batches, (size_t)this->m_override_batch_count);
 
 		for (size_t mini_batch = 0; mini_batch < num_valid_batches; ++mini_batch)
 		{
 		    SKEPU_TRACE_SCOPE("Batch");
-			if (mini_batch == (num_valid_batches - 1) && remainder_valid_batch > 0)
+			if (mini_batch == (total_valid_batches - 1) && remainder_valid_batch > 0)
             {
                 // skel_flatmap(r_batch_data, test_x.begin() + mini_batch * r_batch_data.size());
                 // skel_flatmap(r_batch_label, test_y.begin() + mini_batch * r_batch_label.size());
@@ -301,42 +367,53 @@ public:
 			// Tensor4<T> grad = loss_function->compute_gradient(predicted, batched_train_y);
 			// Tensor4<T> *gradient = &grad;
 
-			skel_cross_entropy_batched_loss_map.setLabel("Crossentropy A");
-			skel_cross_entropy_batched_loss_reduce.setLabel("Crossentropy B");
 			skel_accuracy_batched_map.setLabel("Accuracy A");
-			skel_accuracy_batched_reduce.setLabel("Accuracy B");
-			// skel_cross_entropy_batched_loss_map(temp_loss, batched_test_y, predicted);
 			skel_accuracy_batched_map(temp_acc, batched_test_y, predicted);
-			// float loss = -skel_cross_entropy_batched_loss_reduce(temp_loss) / this->m_batch_size;
+			loss_function->compute_log_likelihoods(batched_test_y, predicted, temp_loss);
 
-			skepu::Scalar<float> loss = loss_function->compute_loss(batched_test_y, predicted, this->m_batch_size);
-			skepu::Scalar<float> accuracy = skel_accuracy_batched_reduce(temp_acc) / (float)this->m_batch_size;
+			// Skip the items of an overlapping remainder batch that were already evaluated
+			const size_t skip = (mini_batch == (total_valid_batches - 1) && remainder_valid_batch > 0)
+				? (this->m_batch_size - remainder_valid_batch) : 0;
 
-			total_loss += loss;
-			total_accuracy += accuracy;
-
-			// std::cout << "Batch " << mini_batch + 1 << " - Loss: " << loss << " - Accuracy: " << accuracy << std::endl;
+			skepu::external("Accumulate evaluation metrics", skepu::read(temp_loss, temp_acc), [&]
+			{
+				for (size_t i = skip; i < this->m_batch_size; ++i)
+				{
+					sum_loss -= temp_loss(i);
+					sum_correct += temp_acc(i);
+				}
+			});
+			counted_samples += this->m_batch_size - skip;
 
 			if (confusion_matrix)
 			{
 			    skepu::external("Compute Confusion Matrix", skepu::read(batched_test_y, predicted), [&]
 			    {
-    				for (size_t i = 0; i < batched_test_y.size_i(); ++i)
+    				for (size_t i = skip; i < batched_test_y.size_i(); ++i)
     				{
     					int actual_label = 0;
     					int predicted_label = 0;
-    					float max_actual = 0, max_predicted = 0;
-    					for (size_t j = 0; j < batched_test_y.size_l(); ++j)
+    					if (batched_test_y.size_l() == 1)
     					{
-    						if (batched_test_y(i, 0, 0, j) > max_actual)
+    						// Single output (binary classification): threshold at 0.5
+    						actual_label = (batched_test_y(i, 0, 0, 0) > 0.5f) ? 1 : 0;
+    						predicted_label = (predicted(i, 0, 0, 0) > 0.5f) ? 1 : 0;
+    					}
+    					else
+    					{
+    						float max_actual = -1e30f, max_predicted = -1e30f;
+    						for (size_t j = 0; j < batched_test_y.size_l(); ++j)
     						{
-    							max_actual = batched_test_y(i, 0, 0, j);
-    							actual_label = j;
-    						}
-    						if (predicted(i, 0, 0, j) > max_predicted)
-    						{
-    							max_predicted = predicted(i, 0, 0, j);
-    							predicted_label = j;
+    							if (batched_test_y(i, 0, 0, j) > max_actual)
+    							{
+    								max_actual = batched_test_y(i, 0, 0, j);
+    								actual_label = j;
+    							}
+    							if (predicted(i, 0, 0, j) > max_predicted)
+    							{
+    								max_predicted = predicted(i, 0, 0, j);
+    								predicted_label = j;
+    							}
     						}
     					}
                         (*confusion_matrix)(actual_label, predicted_label) += 1;
@@ -345,7 +422,8 @@ public:
             }
 		}
 
-		return { total_loss / num_valid_batches, total_accuracy / num_valid_batches }; // correct? yes :) mini_batch_count
+		const double n = (double)std::max<size_t>(counted_samples, 1);
+		return { skepu::Scalar<float>((float)(sum_loss / n)), skepu::Scalar<float>((float)(sum_correct / n)) };
 	}
 
 
@@ -450,9 +528,10 @@ public:
 
 
 	// compiling loss function and optimizer 
-	void configure(Loss loss_type, Opt optimizer_type){
+	// Adam hyperparameters (beta1, beta2, epsilon) are ignored by SGD
+	void configure(Loss loss_type, Opt optimizer_type, float adam_beta1 = 0.9f, float adam_beta2 = 0.999f, float adam_epsilon = 1e-8f){
 		loss_function = std::make_unique<LossFunction<T>>(loss_type);
-		optimizer = std::make_unique<Optimizer<T>>(optimizer_type);
+		optimizer = std::make_unique<Optimizer<T>>(optimizer_type, adam_beta1, adam_beta2, adam_epsilon);
 		compiled = true;
 	}
 
@@ -468,9 +547,12 @@ public:
 
 		// (Re-)initialize layer trainable parameters
 		this->init_parameters();
+		optimizer->reset();
 
 		size_t valid_size = train_x.size_i() * validation_split;
 		size_t train_size = train_x.size_i() - valid_size ;
+		if (train_size < this->m_batch_size)
+			SKEPU_ERROR("SkePU-DNN: training data (" << train_size << " samples after validation split) is smaller than the batch size (" << this->m_batch_size << ")");
 		// std::cout << "total train_x: " << train_x.size_i() << '\n';
 		// std::cout << "valid_size: " <<valid_size <<" train_size: " <<train_size << '\n';
 
@@ -483,14 +565,16 @@ public:
 		);
 		Tensor4<T> train_split_y(train_size, 1, 1, train_y.size_l(), "Split train data Y");
 
+		// A validation split of 0 samples is allowed (validation is then skipped); containers must be non-empty
+		const size_t valid_alloc = std::max<size_t>(valid_size, 1);
 		Tensor4<T> valid_split_x(
-			valid_size,
+			valid_alloc,
 			std::get<1>(this->m_input_size),
 			std::get<2>(this->m_input_size),
 			std::get<3>(this->m_input_size),
 			"Split valid data X"
 		);
-		Tensor4<T> valid_split_y(valid_size, 1, 1, train_y.size_l(), "Split valid data Y");
+		Tensor4<T> valid_split_y(valid_alloc, 1, 1, train_y.size_l(), "Split valid data Y");
 
 		skel_flatmap.setLabel("Copy Split training data X");
 		skel_flatmap(train_split_x, train_x.begin());
@@ -500,10 +584,13 @@ public:
 		// std::cout << "train_split_x: " <<train_split_x.size_i()<< " train_split_x " << '\n';
 		// display_image(train_split_x);
 
-		skel_flatmap.setLabel("Copy split valid data X");
-		skel_flatmap(valid_split_x, train_x.begin() + train_size * train_x.size_j() * train_x.size_k() * train_x.size_l());
-		skel_flatmap.setLabel("Copy split valid data Y");
-		skel_flatmap(valid_split_y, train_y.begin() + train_size * train_y.size_j() * train_y.size_k() * train_y.size_l());
+		if (valid_size > 0)
+		{
+			skel_flatmap.setLabel("Copy split valid data X");
+			skel_flatmap(valid_split_x, train_x.begin() + train_size * train_x.size_j() * train_x.size_k() * train_x.size_l());
+			skel_flatmap.setLabel("Copy split valid data Y");
+			skel_flatmap(valid_split_y, train_y.begin() + train_size * train_y.size_j() * train_y.size_k() * train_y.size_l());
+		}
 
 		size_t num_train_batches = train_split_x.size_i() / this->m_batch_size;
  		size_t remainder_train_batch = train_split_x.size_i() % this->m_batch_size;
@@ -515,6 +602,7 @@ public:
 		// std::cout << "valid bacth count: " << num_valid_batches <<" remainder: " <<remainder_valid_batch <<"\n";
 
 		if (remainder_train_batch > 0) num_train_batches = num_train_batches + 1 ;
+		const size_t total_train_batches = num_train_batches; // before any batch-count override
 		
         // GPU backend bug: following is needed to correct software coherency
 		train_split_x.flush();
@@ -575,7 +663,7 @@ public:
 			for (size_t mini_batch = 0; mini_batch < num_train_batches ; ++mini_batch) //  mini_batch_count , mini batches, mini_batch_count
 			{
 			    SKEPU_TRACE_SCOPE("Batch");
-				if (mini_batch == (num_train_batches - 1) && remainder_train_batch > 0)
+				if (mini_batch == (total_train_batches - 1) && remainder_train_batch > 0)
      			{
 					// std::cout <<"problem here, offset: " << mini_batch * batched_train_x.size() - (this->m_batch_size - remainder_train_batch) * batched_train_x.size_j() * batched_train_x.size_k() * batched_train_x.size_l()  << "\n";
                     skel_flatmap(batched_train_x, train_split_x.begin() + mini_batch * batched_train_x.size() - (this->m_batch_size - remainder_train_batch) * batched_train_x.size_j() * batched_train_x.size_k() * batched_train_x.size_l()); // remainder + (remainder - batch_size) 
@@ -684,7 +772,12 @@ public:
 		// 	if (print_progress)
 		// 	{
 		// 		std::stringstream ss; ss << "Epoch " << (epoch + 1) << " evaluate";
-			auto score = this->evaluate(valid_split_x, valid_split_y);
+			// Validation needs at least one full batch; otherwise it is skipped (reported as 0)
+			std::tuple<skepu::Scalar<float>, skepu::Scalar<float>> score{0.f, 0.f};
+			if (valid_size >= this->m_batch_size)
+				score = this->evaluate(valid_split_x, valid_split_y);
+			else if (epoch == 0)
+				std::cout << "SkePU-DNN: validation set (" << valid_size << " samples) smaller than the batch size, skipping validation\n";
 		// 		std::cout << "- Epoch " << std::setw(4) << (epoch + 1) << " / " << std::setw(4) << epochs << ":";
 		// 		std::cout << " Valid Loss: " << std::setw(10) << std::get<0>(score) << ", Valid Accuracy: " << std::setw(10) << std::get<1>(score) << "\n";
 		// 	}
@@ -714,6 +807,8 @@ public:
 	}
 
 	Layer<T> &getLayer(size_t i) { return *this->m_layers[i]; }
+
+	size_t layerCount() const { return this->m_layers.size(); }
 
 	void setBatchCountOverride(int bc)
 	{

@@ -21,9 +21,9 @@ static skepu::PrecompilerMarker startOf_ML_HPP;
 #include "dnn/dense.hpp"
 #include "dnn/dropout.hpp"
 #include "dnn/flatten.hpp"
-#include "dnn/conv1d.hpp"
 #include "dnn/conv2d.hpp"
 #include "dnn/pool2d.hpp"
+#include "dnn/conv1d.hpp" // builds on Conv2D and MaxPooling2D
 #include "dnn/sequential_model.hpp"
 #endif // SKEPU_PRECOMPILED
 
