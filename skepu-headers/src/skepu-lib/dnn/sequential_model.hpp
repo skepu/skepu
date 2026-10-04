@@ -343,9 +343,10 @@ public:
 		skepu::Vector<float> temp_loss(this->m_batch_size, "Loss temp");
 		skepu::Vector<int>   temp_acc(this->m_batch_size, "Accuracy temp");
 
-		// Exact per-sample sums: the last batch overlaps the previous one when the data size is not a
-		// multiple of the batch size, so its first (batch_size - remainder) items must not be counted twice
-		double sum_loss = 0, sum_correct = 0;
+		// Exact sums over the samples: the last batch overlaps the previous one when the data size is not a
+		// multiple of the batch size, so its first (batch_size - remainder) items are left out of the reductions.
+		// Scalars (rather than plain numbers) keep track of the skeleton calls the results come from.
+		skepu::Scalar<float> sum_loss = 0, sum_correct = 0;
 		size_t counted_samples = 0;
 
 		BatchPlan plan(test_x.size_i(), this->m_batch_size, this->m_override_batch_count);
@@ -363,22 +364,29 @@ public:
 			// Skip the items of an overlapping remainder batch that were already evaluated
 			const size_t skip = plan.skip(mini_batch);
 
-			skepu::external("Accumulate evaluation metrics", skepu::read(temp_loss, temp_acc), [&]
+			if (skip == 0)
 			{
-				for (size_t i = skip; i < this->m_batch_size; ++i)
-				{
-					sum_loss -= temp_loss(i);
-					sum_correct += temp_acc(i);
-				}
-			});
+				sum_loss += -skel_cross_entropy_batched_loss_reduce(temp_loss);
+				sum_correct += skel_accuracy_batched_reduce(temp_acc);
+			}
+			else
+			{
+				// Only the items not seen before: reduce a copy of the tail of the per-sample results
+				skepu::Vector<float> tail_loss(this->m_batch_size - skip, "Loss tail");
+				skepu::Vector<int>   tail_acc(this->m_batch_size - skip, "Accuracy tail");
+				skel_flatmap(tail_loss, temp_loss.begin() + skip);
+				skel_copy_int(tail_acc, temp_acc.begin() + skip);
+				sum_loss += -skel_cross_entropy_batched_loss_reduce(tail_loss);
+				sum_correct += skel_accuracy_batched_reduce(tail_acc);
+			}
 			counted_samples += this->m_batch_size - skip;
 
 			if (confusion_matrix)
 				this->accumulate_confusion(batched_test_y, predicted, skip, *confusion_matrix);
 		}
 
-		const double n = (double)std::max<size_t>(counted_samples, 1);
-		return { skepu::Scalar<float>((float)(sum_loss / n)), skepu::Scalar<float>((float)(sum_correct / n)) };
+		const float n = (float)std::max<size_t>(counted_samples, 1);
+		return { sum_loss / n, sum_correct / n };
 	}
 
 	// Trains the model with mini-batch gradient descent. The last validation_split fraction of the data

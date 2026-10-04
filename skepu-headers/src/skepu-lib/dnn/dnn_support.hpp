@@ -202,6 +202,9 @@ float flatmap_uf(float a) { return a; }
 
 auto skel_flatmap = skepu::Map(flatmap_uf);
 
+int copy_int_uf(int a) { return a; }
+auto skel_copy_int = skepu::Map(copy_int_uf);
+
 // Keep these!
 //auto skel_cross_entropy_batched_loss = skepu::MapReduce<0>(cross_entropy_batched_uf, sum_uf<float>);
 //auto skel_accuracy_batched = skepu::MapReduce<0>(accuracy_batched_uf, sum_uf<int>);
