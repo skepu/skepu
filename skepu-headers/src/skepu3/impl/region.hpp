@@ -221,8 +221,31 @@ namespace skepu
 		Edge edge = Edge::None;
 		T pad;
 		
+		// Hot path of convolutions: with Edge::None every access is a plain offset into the data.
+		// Kept tiny so that it gets inlined into user functions; edge handling is out of line.
+		// (Inlining the Edge::Pad path as well was measured to be slower.)
 		T operator()(int i, int j, int k, int l) const
 		{
+			if (this->edge == Edge::None)
+				return data[((int)this->idx.i + i + oi) * this->stride1 + ((int)this->idx.j + j + oj) * this->stride2
+					+ ((int)this->idx.k + k + ok) * this->stride3 + ((int)this->idx.l + l + ol)];
+			return this->edge_access(i, j, k, l);
+		}
+
+		T edge_access(int i, int j, int k, int l) const
+		{
+			if (this->edge == Edge::Pad)
+			{
+				// Unsigned comparison covers both ii < 0 and ii >= size
+				const size_t pi = (size_t)((int)this->idx.i + i - (int)this->offset_i);
+				const size_t pj = (size_t)((int)this->idx.j + j - (int)this->offset_j);
+				const size_t pk = (size_t)((int)this->idx.k + k - (int)this->offset_k);
+				const size_t pl = (size_t)((int)this->idx.l + l - (int)this->offset_l);
+				if (pi < this->size_i && pj < this->size_j && pk < this->size_k && pl < this->size_l)
+					return data[pi * this->stride1 + pj * this->stride2 + pk * this->stride3 + pl];
+				return this->pad;
+			}
+
 			int ii = (int)this->idx.i + i - (this->edge != Edge::None ? (int)this->offset_i : 0);
 			int jj = (int)this->idx.j + j - (this->edge != Edge::None ? (int)this->offset_j : 0);
 			int kk = (int)this->idx.k + k - (this->edge != Edge::None ? (int)this->offset_k : 0);
