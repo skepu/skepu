@@ -403,11 +403,16 @@ namespace skepu::dnn::impl
 		return (this->m_layer_level != Level::Input) ? &this->m_temp : nullptr;
 	}
     
-	Tensor4<T>& get_weights() override { return m_weights; }
-	Tensor4<T>& get_gradients() override { return m_dW; }
+	void apply_update(Optimizer<T> &opt, float learning_rate) override
+	{
+		opt.update(*this, "Conv2D", m_weights, m_dW, m_biases, m_db, learning_rate);
+	}
+
+	Tensor4<T>& get_weights() { return m_weights; }
+	Tensor4<T>& get_gradients() { return m_dW; }
     
-	Vector<T>& get_biases() override {return m_biases; }
-	Vector<T>& get_biases_gradients() override {return m_db; }
+	Vector<T>& get_biases() { return m_biases; }
+	Vector<T>& get_biases_gradients() { return m_db; }
     
     
     protected:

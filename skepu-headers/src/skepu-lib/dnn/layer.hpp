@@ -7,6 +7,8 @@ static skepu::PrecompilerMarker startOf_Layer_HPP;
 
 namespace skepu::dnn::impl
 {
+    template <typename T> class Optimizer; // defined in sequential_model.hpp
+
     template <typename T = float>
     class Layer
     {
@@ -48,31 +50,11 @@ namespace skepu::dnn::impl
 	// Override for layer classes with trainable parameters.
 	virtual bool is_trainable() const { return false; }
     
-	virtual Tensor4<T>& get_weights() {
-		// Tensor4<T> dummy;
-		// return dummy;
-		throw std::logic_error("get_weights() must be implemented in a derived class.");
-	}
-	virtual Tensor4<T>& get_gradients() {
-		throw std::logic_error("get_gradients() must be implemented in a derived class.");
-	}
-    
-	virtual Vector<T>& get_biases() {
-		throw std::logic_error("get_biases() must be implemented in a derived class.");
-	}
-	virtual Vector<T>& get_biases_gradients() {
-		throw std::logic_error("get_biases_gradients() must be implemented in a derived class.");
-	}	
-	
-	virtual Matrix<T>& get_d_weights() {
-		throw std::logic_error("get_d_weights() must be implemented in a derived class.");
-	}
-	virtual Matrix<T>& get_d_gradients() {
-		throw std::logic_error("get_d_gradients() must be implemented in a derived class.");
-	}
-    
-    
-    
+	// Applies one optimizer step to the layer's trainable parameters (after its backward pass).
+	// Layers with parameters override this and pass their weights, biases and gradients to the
+	// optimizer; the optimizer picks the update for the container types it is given.
+	virtual void apply_update(Optimizer<T> &opt, float learning_rate) { /* No parameters */ }
+
 	std::string label()
 	{
 		std::ostringstream os;
@@ -153,10 +135,6 @@ namespace skepu::dnn::impl
     
 	std::string m_pretrained_params = SKEPU_DNN_NO_PRETRAINED_PARAMS;
     
-	std::shared_ptr<Layer> *predecessor = nullptr;
-	std::shared_ptr<Layer> *successor = nullptr;
-    
-	float m_learning_rate = 0;
 	Tensor4<T> m_vals;
     
 	friend class SequentialLayer;

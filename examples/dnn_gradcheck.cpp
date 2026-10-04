@@ -164,7 +164,6 @@ static bool adam_check(const std::string &name, Model &model, size_t layer_idx)
 	get_params(layer, r);
 
 	const float lr = 0.01f, b1 = 0.9f, b2 = 0.999f, eps = 1e-8f;
-	layer.m_learning_rate = lr;
 	skepu::dnn::impl::Optimizer<float> opt(Opt::Adam, b1, b2, eps);
 
 	std::vector<double> w(r.nw), b(r.nb), mw(r.nw, 0), vw(r.nw, 0), mb(r.nb, 0), vb(r.nb, 0);
@@ -185,7 +184,7 @@ static bool adam_check(const std::string &name, Model &model, size_t layer_idx)
 		std::vector<float> gw(r.nw), gb(r.nb);
 		for (size_t i = 0; i < r.nw; ++i) { gw[i] = d(rng); r.dw(i) = gw[i]; }
 		for (size_t i = 0; i < r.nb; ++i) { gb[i] = d(rng); r.db(i) = gb[i]; }
-		opt.step(layer);
+		opt.step(layer, lr);
 		get_params(layer, r); // refresh host copies after the skeleton calls
 		for (size_t i = 0; i < r.nw; ++i) host_adam(w[i], gw[i], mw[i], vw[i], t);
 		for (size_t i = 0; i < r.nb; ++i) host_adam(b[i], gb[i], mb[i], vb[i], t);
@@ -194,6 +193,40 @@ static bool adam_check(const std::string &name, Model &model, size_t layer_idx)
 	}
 	bool ok = max_diff < 1e-5;
 	std::cout << "max |host - skeleton| over 5 Adam steps: " << max_diff << (ok ? "  OK" : "  FAIL") << "\n";
+	return ok;
+}
+
+// predict() on a dataset whose size is not a multiple of the batch size must equal the batch-wise forward pass
+static bool predict_check()
+{
+	std::cout << "=== predict() with a remainder batch ===\n";
+	const size_t B = 4, N = 11; // 2 full batches + remainder 3
+	auto model = SequentialModel(Dimensions{B, 1, 1, 6})
+		<< Dense(5).weights(Init::Xavier_uniform).biases(Init::Uniform).activation(Act::TanH)
+		<< Dense(3).weights(Init::Xavier_uniform).biases(Init::Uniform).activation(Act::SoftMax);
+	model.init();
+	model.init_parameters();
+
+	skepu::Tensor4<float> x(N, 1, 1, 6), y(N, 1, 1, 3);
+	fill_random(x, -1, 1); fill_labels(y);
+	skepu::Tensor4<float> pred = model.predict(x);
+
+	double max_diff = 0;
+	bool shape_ok = pred.size_i() == N && pred.size_l() == 3;
+	for (size_t start : {(size_t)0, (size_t)4, N - B}) // full batches and the overlapping last batch
+	{
+		skepu::Tensor4<float> bx(B, 1, 1, 6);
+		for (size_t i = 0; i < B; ++i)
+			for (size_t l = 0; l < 6; ++l)
+				bx(i, 0, 0, l) = x(start + i, 0, 0, l);
+		auto &out = model.forward(bx, false);
+		out.updateHost();
+		for (size_t i = 0; i < B; ++i)
+			for (size_t l = 0; l < 3; ++l)
+				max_diff = std::max(max_diff, (double)std::fabs(out(i, 0, 0, l) - pred(start + i, 0, 0, l)));
+	}
+	bool ok = shape_ok && max_diff < 1e-6;
+	std::cout << "shape " << pred.size_i() << " x " << pred.size_l() << ", max |predict - forward| = " << max_diff << (ok ? "  OK" : "  FAIL") << "\n";
 	return ok;
 }
 
@@ -268,6 +301,8 @@ int main(int argc, char *argv[])
 		auto conv_model = SequentialModel(Dimensions{B, 6, 6, 2}) << Conv2D(3).kernel(3, 3).weights(Init::Xavier_uniform).biases(Init::Uniform);
 		ok &= adam_check("Adam step, Conv2D", conv_model, 0);
 	}
+
+	ok &= predict_check();
 
 	std::cout << (ok ? "\nALL GRADIENT CHECKS PASSED\n" : "\nSOME GRADIENT CHECKS FAILED\n");
 	return ok ? 0 : 1;

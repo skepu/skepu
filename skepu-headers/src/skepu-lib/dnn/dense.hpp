@@ -275,11 +275,16 @@ namespace skepu::dnn::impl
 		return (this->m_layer_level != Level::Input) ? &this->m_temp : nullptr;
 	}
     
-	Matrix<T>&  get_d_weights() override { return m_weights; }
-	Matrix<T>&  get_d_gradients() override { return m_dW; }
+	void apply_update(Optimizer<T> &opt, float learning_rate) override
+	{
+		opt.update(*this, "Dense", m_weights, m_dW, m_biases, m_db, learning_rate);
+	}
+
+	Matrix<T>&  get_d_weights() { return m_weights; }
+	Matrix<T>&  get_d_gradients() { return m_dW; }
     
-	Vector<T>&  get_biases() override { return m_biases; }
-	Vector<T>&  get_biases_gradients() override { return m_db; }
+	Vector<T>&  get_biases() { return m_biases; }
+	Vector<T>&  get_biases_gradients() { return m_db; }
     
     
     
