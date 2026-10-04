@@ -66,6 +66,20 @@ skepu_add_test_case_hybrid_cuda(skepu_external)
 # ------------------------------------------------
 
 skepu_add_test_case_sequential(dnn)
+# With the precompiler: the same tests on the other backends. The backend is selected with the
+# environment variable SKEPU_TEST_BACKEND (the test program runs on the sequential backend otherwise).
+skepu_add_test_case_cpu(dnn)
+skepu_add_test_case_openmp(dnn)
+skepu_add_test_case_opencl(dnn)
+if(TEST dnn_cpu)
+	set_tests_properties(dnn_cpu PROPERTIES ENVIRONMENT "SKEPU_TEST_BACKEND=CPU")
+endif()
+if(TEST dnn_openmp)
+	set_tests_properties(dnn_openmp PROPERTIES ENVIRONMENT "SKEPU_TEST_BACKEND=OpenMP")
+endif()
+if(TEST dnn_opencl)
+	set_tests_properties(dnn_opencl PROPERTIES ENVIRONMENT "SKEPU_TEST_BACKEND=OpenCL")
+endif()
 
 # Regression test on the logs of the MNIST / CIFAR-10 / signal examples. Cases whose data sets
 # are missing from examples/data are skipped; see dnn_regression/README.md.

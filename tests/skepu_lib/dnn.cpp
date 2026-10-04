@@ -37,14 +37,24 @@ static void use_sequential_cpu()
 }
 static const float g_eps = 3e-3f; // finite-difference step; large steps are noisy near ReLU kinks
 
+// std::uniform_real_distribution and std::normal_distribution are not specified exactly and give different
+// numbers with different standard libraries, std::mt19937 is. Building the distributions on its raw output
+// makes the data (and the logs of the regression test) the same with every compiler.
+static float uniform01(std::mt19937 &rng) { return (float)(rng() >> 8) * (1.0f / 16777216.0f); } // [0, 1)
+static float uniform(std::mt19937 &rng, float lo, float hi) { return lo + (hi - lo) * uniform01(rng); }
+static float normal(std::mt19937 &rng, float sigma) // Box-Muller
+{
+	const float u1 = 1.0f - uniform01(rng), u2 = uniform01(rng);
+	return sigma * std::sqrt(-2.0f * std::log(u1)) * std::cos(6.28318530718f * u2);
+}
+
 static void fill_random(skepu::Tensor4<float> &t, float lo, float hi)
 {
-	std::uniform_real_distribution<float> d(lo, hi);
 	for (size_t i = 0; i < t.size_i(); ++i)
 		for (size_t j = 0; j < t.size_j(); ++j)
 			for (size_t k = 0; k < t.size_k(); ++k)
 				for (size_t l = 0; l < t.size_l(); ++l)
-					t(i, j, k, l) = d(rng);
+					t(i, j, k, l) = uniform(rng, lo, hi);
 }
 
 // One-hot (or binary) labels
@@ -192,7 +202,6 @@ static bool adam_check(const std::string &name, Model &model, size_t layer_idx)
 	for (size_t i = 0; i < r.nw; ++i) w[i] = r.w(i);
 	for (size_t i = 0; i < r.nb; ++i) b[i] = r.b(i);
 
-	std::uniform_real_distribution<float> d(-1, 1);
 	auto host_adam = [&](double &p, double g, double &m, double &v, int t)
 	{
 		m = b1 * m + (1 - b1) * g;
@@ -204,8 +213,8 @@ static bool adam_check(const std::string &name, Model &model, size_t layer_idx)
 	for (int t = 1; t <= 5; ++t)
 	{
 		std::vector<float> gw(r.nw), gb(r.nb);
-		for (size_t i = 0; i < r.nw; ++i) { gw[i] = d(rng); r.dw(i) = gw[i]; }
-		for (size_t i = 0; i < r.nb; ++i) { gb[i] = d(rng); r.db(i) = gb[i]; }
+		for (size_t i = 0; i < r.nw; ++i) { gw[i] = uniform(rng, -1, 1); r.dw(i) = gw[i]; }
+		for (size_t i = 0; i < r.nb; ++i) { gb[i] = uniform(rng, -1, 1); r.db(i) = gb[i]; }
 		r.touch();
 		opt.step(layer, lr);
 		get_params(layer, r); // refresh host copies after the skeleton calls
@@ -258,13 +267,11 @@ static bool predict_check()
 static void generate_signals(skepu::Tensor4<float> &x, skepu::Tensor4<float> &y, float noise)
 {
 	const size_t length = x.size_k(), classes = y.size_l();
-	std::uniform_real_distribution<float> period_dist(8.f, 20.f), phase_dist(0.f, 1.f), amp_dist(0.7f, 1.3f);
-	std::normal_distribution<float> noise_dist(0.f, noise);
 	const float two_pi = 6.28318530718f;
 	for (size_t i = 0; i < x.size_i(); ++i)
 	{
 		const size_t cls = i % classes;
-		const float period = period_dist(rng), phase = phase_dist(rng), amp = amp_dist(rng);
+		const float period = uniform(rng, 8.f, 20.f), phase = uniform(rng, 0.f, 1.f), amp = uniform(rng, 0.7f, 1.3f);
 		for (size_t t = 0; t < length; ++t)
 		{
 			float u = (float)t / period + phase;
@@ -277,7 +284,7 @@ static void generate_signals(skepu::Tensor4<float> &x, skepu::Tensor4<float> &y,
 			case 2: v = 2.f * u - 1.f; break;
 			case 3: v = 1.f - 4.f * std::fabs(u - 0.5f); break;
 			}
-			x(i, 0, t, 0) = amp * v + noise_dist(rng);
+			x(i, 0, t, 0) = amp * v + normal(rng, noise);
 		}
 		for (size_t c = 0; c < classes; ++c)
 			y(i, 0, 0, c) = (c == cls) ? 1.f : 0.f;

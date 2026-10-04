@@ -1,3 +1,27 @@
+# System include directories for the precompiler. skepu-tool is a libclang tool: it does not find the
+# system headers of the compiler that builds the project, so they are passed explicitly.
+# On macOS they are taken from the active developer directory (Xcode or the Command Line Tools),
+# not from a fixed Xcode.app location.
+set(SKEPU_TOOL_SYSTEM_INCLUDE_FLAGS -I /usr/local/include)
+if(APPLE)
+	execute_process(COMMAND xcrun --show-sdk-path
+		OUTPUT_VARIABLE _skepu_sdk OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+	execute_process(COMMAND xcode-select -p
+		OUTPUT_VARIABLE _skepu_devdir OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+	execute_process(COMMAND xcrun clang++ -print-resource-dir
+		OUTPUT_VARIABLE _skepu_clang_resdir OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+	if(_skepu_sdk AND _skepu_clang_resdir)
+		list(APPEND SKEPU_TOOL_SYSTEM_INCLUDE_FLAGS
+			-I ${_skepu_sdk}/usr/include/c++/v1
+			-I ${_skepu_clang_resdir}/include
+			-I ${_skepu_sdk}/usr/include
+			-I ${_skepu_devdir}/usr/include)
+	else()
+		message(WARNING "SkePU: could not determine the macOS SDK or clang resource directory "
+			"(xcrun failed); skepu-tool may not find the system headers")
+	endif()
+endif()
+
 # Function to filter sources and build options from argument list.
 macro(skepu_filter_args)
 	set(_fnames_arg OFF)
@@ -199,11 +223,7 @@ function(skepu_add_executable name)
 					-fnames="${_skepu_fnames}"
 					${CMAKE_CURRENT_LIST_DIR}/${_file}
 					--
-					-I /usr/local/include
-          -I /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1
-          -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/include
-          -I /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include
-          -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
+					${SKEPU_TOOL_SYSTEM_INCLUDE_FLAGS}
 					"${_include_generators}"
 			DEPENDS ${CMAKE_CURRENT_LIST_DIR}/${_file}
 			BYPRODUCTS ${_output_dir}/${_target_byprod}

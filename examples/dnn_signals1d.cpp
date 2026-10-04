@@ -26,17 +26,26 @@ constexpr size_t SIGNAL_LENGTH = 64;
 constexpr size_t NUM_CLASSES = 4;
 static const char *class_names[NUM_CLASSES] = {"sine", "square", "sawtooth", "triangle"};
 
+// std::uniform_real_distribution and std::normal_distribution are not specified exactly and give different
+// numbers with different standard libraries, std::mt19937 is. Building the distributions on its raw output
+// makes the data (and the logs of the regression test) the same with every compiler.
+static float uniform01(std::mt19937 &rng) { return (float)(rng() >> 8) * (1.0f / 16777216.0f); } // [0, 1)
+static float uniform(std::mt19937 &rng, float lo, float hi) { return lo + (hi - lo) * uniform01(rng); }
+static float normal(std::mt19937 &rng, float sigma) // Box-Muller
+{
+	const float u1 = 1.0f - uniform01(rng), u2 = uniform01(rng);
+	return sigma * std::sqrt(-2.0f * std::log(u1)) * std::cos(6.28318530718f * u2);
+}
+
 // Fill x (n x 1 x SIGNAL_LENGTH x 1) and one-hot y (n x 1 x 1 x NUM_CLASSES)
 static void generate(skepu::Tensor4<float> &x, skepu::Tensor4<float> &y, std::mt19937 &rng, float noise)
 {
-	std::uniform_real_distribution<float> period_dist(8.f, 20.f), phase_dist(0.f, 1.f), amp_dist(0.7f, 1.3f);
-	std::normal_distribution<float> noise_dist(0.f, noise);
 	const float two_pi = 6.28318530718f;
 
 	for (size_t i = 0; i < x.size_i(); ++i)
 	{
 		const size_t cls = i % NUM_CLASSES;
-		const float period = period_dist(rng), phase = phase_dist(rng), amp = amp_dist(rng);
+		const float period = uniform(rng, 8.f, 20.f), phase = uniform(rng, 0.f, 1.f), amp = uniform(rng, 0.7f, 1.3f);
 		for (size_t t = 0; t < SIGNAL_LENGTH; ++t)
 		{
 			float u = (float)t / period + phase;
@@ -49,7 +58,7 @@ static void generate(skepu::Tensor4<float> &x, skepu::Tensor4<float> &y, std::mt
 			case 2: v = 2.f * u - 1.f; break;
 			case 3: v = 1.f - 4.f * std::fabs(u - 0.5f); break;
 			}
-			x(i, 0, t, 0) = amp * v + noise_dist(rng);
+			x(i, 0, t, 0) = amp * v + normal(rng, noise);
 		}
 		for (size_t c = 0; c < NUM_CLASSES; ++c)
 			y(i, 0, 0, c) = (c == cls) ? 1.f : 0.f;
