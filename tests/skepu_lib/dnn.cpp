@@ -70,7 +70,7 @@ struct ParamRef
 {
 	std::function<float&(size_t)> w, b;   // flat parameter access
 	std::function<float&(size_t)> dw, db; // flat gradient access
-	std::function<void()> touch;           // call after writing through w/b/dw/db: marks the device copies as outdated
+	std::function<void()> touch;           // call after writing through w/b/dw/db (skepu::external write): marks the device copies as outdated
 	size_t nw, nb;
 };
 
@@ -81,26 +81,26 @@ static bool get_params(skepu::dnn::impl::Layer<float> &layer, ParamRef &r)
 	{
 		auto &W = c->get_weights(); auto &dW = c->get_gradients();
 		auto &B = c->get_biases();  auto &dB = c->get_biases_gradients();
-		W.updateHost(); dW.updateHost(); B.updateHost(); dB.updateHost();
+		skepu::external(skepu::read(W, dW, B, dB), [] {});
 		r.nw = W.size(); r.nb = B.size();
 		r.w  = [&W](size_t i) -> float& { return W[i]; };
 		r.dw = [&dW](size_t i) -> float& { return dW[i]; };
 		r.b  = [&B](size_t i) -> float& { return B[i]; };
 		r.db = [&dB](size_t i) -> float& { return dB[i]; };
-		r.touch = [&W, &dW, &B, &dB] { W.invalidateDeviceData(); dW.invalidateDeviceData(); B.invalidateDeviceData(); dB.invalidateDeviceData(); };
+		r.touch = [&W, &dW, &B, &dB] { skepu::external([] {}, skepu::write(W, dW, B, dB)); };
 		return true;
 	}
 	if (auto *d = dynamic_cast<skepu::dnn::impl::Dense<float>*>(&layer))
 	{
 		auto &W = d->get_d_weights(); auto &dW = d->get_d_gradients();
 		auto &B = d->get_biases();    auto &dB = d->get_biases_gradients();
-		W.updateHost(); dW.updateHost(); B.updateHost(); dB.updateHost();
+		skepu::external(skepu::read(W, dW, B, dB), [] {});
 		r.nw = W.size(); r.nb = B.size();
 		r.w  = [&W](size_t i) -> float& { return W[i]; };
 		r.dw = [&dW](size_t i) -> float& { return dW[i]; };
 		r.b  = [&B](size_t i) -> float& { return B[i]; };
 		r.db = [&dB](size_t i) -> float& { return dB[i]; };
-		r.touch = [&W, &dW, &B, &dB] { W.invalidateDeviceData(); dW.invalidateDeviceData(); B.invalidateDeviceData(); dB.invalidateDeviceData(); };
+		r.touch = [&W, &dW, &B, &dB] { skepu::external([] {}, skepu::write(W, dW, B, dB)); };
 		return true;
 	}
 	return false;
@@ -243,7 +243,7 @@ static bool predict_check()
 			for (size_t l = 0; l < 6; ++l)
 				bx(i, 0, 0, l) = x(start + i, 0, 0, l);
 		auto &out = model.forward(bx, false);
-		out.updateHost();
+		skepu::external(skepu::read(out), [] {});
 		for (size_t i = 0; i < B; ++i)
 			for (size_t l = 0; l < 3; ++l)
 				max_diff = std::max(max_diff, (double)std::fabs(out(i, 0, 0, l) - pred(start + i, 0, 0, l)));

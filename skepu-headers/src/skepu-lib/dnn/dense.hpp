@@ -282,26 +282,26 @@ namespace skepu::dnn::impl
 
 	void write_params(std::ostream &os) override
 	{
-		// Parameters may live on a device (after init_parameters or training): fetch them first
-		m_weights.updateHost();
-		m_biases.updateHost();
 		std::vector<float> v;
-		for (size_t i = 0; i < m_weights.size_i(); ++i)
-			for (size_t j = 0; j < m_weights.size_j(); ++j) v.push_back(m_weights(i, j));
-		for (size_t i = 0; i < m_biases.size(); ++i) v.push_back(m_biases(i));
+		skepu::external(this->label() + " write params", skepu::read(m_weights, m_biases), [&]
+		{
+			for (size_t i = 0; i < m_weights.size_i(); ++i)
+				for (size_t j = 0; j < m_weights.size_j(); ++j) v.push_back(m_weights(i, j));
+			for (size_t i = 0; i < m_biases.size(); ++i) v.push_back(m_biases(i));
+		});
 		write_values(os, v);
 	}
 
 	void read_params(std::istream &is) override
 	{
 		std::vector<float> v = read_values(is, m_weights.size() + m_biases.size());
-		size_t n = 0;
-		for (size_t i = 0; i < m_weights.size_i(); ++i)
-			for (size_t j = 0; j < m_weights.size_j(); ++j) m_weights(i, j) = v[n++];
-		for (size_t i = 0; i < m_biases.size(); ++i) m_biases(i) = v[n++];
-		// Host writes through operator() do not necessarily invalidate the device copies
-		m_weights.invalidateDeviceData();
-		m_biases.invalidateDeviceData();
+		skepu::external(this->label() + " read params", [&]
+		{
+			size_t n = 0;
+			for (size_t i = 0; i < m_weights.size_i(); ++i)
+				for (size_t j = 0; j < m_weights.size_j(); ++j) m_weights(i, j) = v[n++];
+			for (size_t i = 0; i < m_biases.size(); ++i) m_biases(i) = v[n++];
+		}, skepu::write(m_weights, m_biases));
 		this->m_keep_params = true;
 	}
 
