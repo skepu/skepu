@@ -50,6 +50,20 @@ OPENCL_FLAGS = -I /usr/local/cuda/include -L /usr/local/cuda/lib64/ -lOpenCL -Wn
 CXX = clang++
 SEQ_CXX = clang++
 
+# System include paths for the SkePU precompiler. skepu-tool is a libclang tool and does not find the
+# system headers of the machine by itself on macOS, so they are derived from the active toolchain
+# (Xcode or the Command Line Tools). Set SKEPU_TOOL_USER_FLAGS in Makefile.in to use other paths.
+ifeq ($(shell uname -s),Darwin)
+SKEPU_SDK          := $(shell xcrun --show-sdk-path 2>/dev/null)
+SKEPU_CLANG_RESDIR := $(shell xcrun clang++ -print-resource-dir 2>/dev/null)
+SKEPU_DEVDIR       := $(shell xcode-select -p 2>/dev/null)
+ifneq ($(and $(SKEPU_SDK),$(SKEPU_CLANG_RESDIR)),)
+SKEPU_TOOL_USER_FLAGS ?= -I /usr/local/include \
+	-I $(SKEPU_SDK)/usr/include/c++/v1 -I $(SKEPU_CLANG_RESDIR)/include \
+	-I $(SKEPU_SDK)/usr/include -I $(SKEPU_DEVDIR)/usr/include
+endif
+endif
+
 # Uncomment for launching SkePU precompiler in debugger
 # DBGR = lldb --
 
