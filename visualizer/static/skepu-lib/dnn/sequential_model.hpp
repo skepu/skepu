@@ -5,7 +5,6 @@ static skepu::PrecompilerMarker startOf_SequentialModel_HPP;
 #include <map>
 
 
-
 namespace skepu::dnn::impl
 {
 // Parameter optimizers (SGD, Adam), applied per trainable layer right after its backward pass.
@@ -95,12 +94,11 @@ private:
 };
 
 
-
 template <typename T = float>
 class LossFunction
 {
 public:
-   	LossFunction(Loss type): m_loss_type(type) {}
+	LossFunction(Loss type): m_loss_type(type) {}
 
 	// Per-sample (negated) log-likelihood terms: out(i) = sum_c y_c log(p_c) for the batch item i.
 	// The loss of an item is -out(i).
@@ -112,24 +110,24 @@ public:
 			skel_binary_cross_entropy_loss_map(out, batched_train_y, predicted);
 	}
 
-   	// forward pass 
-   	skepu::Scalar<float> compute_loss(Tensor4<T>& batched_train_y, Tensor4<T>& predicted, size_t batch_size)
-    {
-  		skepu::Vector<float> temp_loss(batch_size, "Loss temp");
-  		skepu::Scalar<float> computed_loss = 0;
+	// forward pass
+	skepu::Scalar<float> compute_loss(Tensor4<T>& batched_train_y, Tensor4<T>& predicted, size_t batch_size)
+	{
+		skepu::Vector<float> temp_loss(batch_size, "Loss temp");
+		skepu::Scalar<float> computed_loss = 0;
 
-  		if (this->m_loss_type == Loss::CategoricalCrossEntropy)
-  		{
- 			skel_cross_entropy_batched_loss_map(temp_loss, batched_train_y, predicted);	
-	 		computed_loss += -skel_cross_entropy_batched_loss_reduce(temp_loss) / (float)batch_size;
-  		}
-  		else if (this->m_loss_type == Loss::BinaryCrossEntropy)
-  		{
- 			skel_binary_cross_entropy_loss_map(temp_loss, batched_train_y, predicted);
-  		    computed_loss += -skel_cross_entropy_batched_loss_reduce(temp_loss) / (float)batch_size;	
-  		}
-  		return computed_loss;
-   	}
+		if (this->m_loss_type == Loss::CategoricalCrossEntropy)
+		{
+			skel_cross_entropy_batched_loss_map(temp_loss, batched_train_y, predicted);
+			computed_loss += -skel_cross_entropy_batched_loss_reduce(temp_loss) / (float)batch_size;
+		}
+		else if (this->m_loss_type == Loss::BinaryCrossEntropy)
+		{
+			skel_binary_cross_entropy_loss_map(temp_loss, batched_train_y, predicted);
+			computed_loss += -skel_cross_entropy_batched_loss_reduce(temp_loss) / (float)batch_size;
+		}
+		return computed_loss;
+	}
 
 	// backward pass
 	Tensor4<T> compute_gradient(Tensor4<T>& predicted, Tensor4<T>& batched_train_y)
@@ -146,15 +144,14 @@ public:
 		}
 		else if (this->m_loss_type == Loss::BinaryCrossEntropy)
 		{
-			skel_delta_bce(initial_gradient, predicted, batched_train_y);			
+			skel_delta_bce(initial_gradient, predicted, batched_train_y);
 		}
-		return initial_gradient;	
+		return initial_gradient;
 	}
 
 private:
-    Loss m_loss_type; 
+	Loss m_loss_type;
 };
-
 
 
 template <typename T = float>
@@ -177,7 +174,7 @@ public:
 	// Sets up all layers (allocates their data). Safe to call more than once.
 	void init()
 	{
-	    SKEPU_TRACE_SCOPE("Model Init");
+		SKEPU_TRACE_SCOPE("Model Init");
 		if (this->m_initialized)
 			return;
 
@@ -216,7 +213,7 @@ public:
 
 	void init_parameters()
 	{
-	    SKEPU_TRACE_SCOPE("Model param init");
+		SKEPU_TRACE_SCOPE("Model param init");
 		for (auto &current : this->m_layers)
 			current->init_parameters();
 	}
@@ -260,7 +257,7 @@ public:
 
 	Tensor4<T> &forward(Tensor4<T> &inputs, bool is_training=false)
 	{
-	    SKEPU_TRACE_SCOPE("Forward");
+		SKEPU_TRACE_SCOPE("Forward");
 		if (!this->m_initialized)
 			SKEPU_ERROR("SkePU-DNN: Attempting to use (forward pass) a not-initialized SequentialModel")
 
@@ -323,7 +320,7 @@ public:
 	std::tuple<skepu::Scalar<float>, skepu::Scalar<float>>
 	evaluate(Tensor4<T> &test_x, Tensor4<T> &test_y, skepu::Matrix<int> *confusion_matrix = nullptr)
 	{
-        SKEPU_TRACE_SCOPE("Model Evaluate");
+		SKEPU_TRACE_SCOPE("Model Evaluate");
 		this->init();
 		this->require_configured("evaluate");
 
@@ -352,7 +349,7 @@ public:
 		BatchPlan plan(test_x.size_i(), this->m_batch_size, this->m_override_batch_count);
 		for (size_t mini_batch = 0; mini_batch < plan.used; ++mini_batch)
 		{
-		    SKEPU_TRACE_SCOPE("Batch");
+			SKEPU_TRACE_SCOPE("Batch");
 			this->load_batch(test_x, test_y, batched_test_x, batched_test_y, plan.first_sample(mini_batch));
 
 			auto &predicted = this->forward(batched_test_x);
@@ -392,9 +389,9 @@ public:
 	// Trains the model with mini-batch gradient descent. The last validation_split fraction of the data
 	// is held out for validation after every epoch (the data is used in order, it is not shuffled).
 	// `name` is currently unused.
-	void fit(Tensor4<T> &train_x, Tensor4<T> &train_y, int epochs, float learning_rate, float validation_split,  const std::string &name, bool print_progress=true)
+	void fit(Tensor4<T> &train_x, Tensor4<T> &train_y, int epochs, float learning_rate, float validation_split,  const std::string &/*name*/, bool print_progress=true)
 	{
-	    SKEPU_TRACE_SCOPE("Model Fit");
+		SKEPU_TRACE_SCOPE("Model Fit");
 		this->require_configured("fit");
 		this->init();
 
@@ -457,12 +454,12 @@ public:
 
 		for (int epoch = 0; epoch < epochs; ++epoch)
 		{
-		    SKEPU_TRACE_SCOPE("Epoch");
+			SKEPU_TRACE_SCOPE("Epoch");
 			skepu::Scalar<float> total_train_loss = 0, total_train_accuracy = 0;
 
 			for (size_t mini_batch = 0; mini_batch < plan.used; ++mini_batch)
 			{
-			    SKEPU_TRACE_SCOPE("Batch");
+				SKEPU_TRACE_SCOPE("Batch");
 				this->load_batch(train_split_x, train_split_y, batched_train_x, batched_train_y, plan.first_sample(mini_batch));
 
 				// Forward
@@ -487,7 +484,7 @@ public:
 						<< " - Accuracy: " << accuracy << "\n";
 
 				// Backward, updating the parameters of each layer right after its backward pass
-		 		SKEPU_TRACE_REGION_BEGIN("Backward");
+				SKEPU_TRACE_REGION_BEGIN("Backward");
 				for (auto it = this->m_layers.rbegin(); it != this->m_layers.rend(); ++it)
 				{
 					auto &current_layer = **it;
@@ -496,8 +493,8 @@ public:
 					gradient = current_layer.backward(forward_inputs, gradient, &batched_train_y);
 					if (current_layer.is_trainable()) optimizer->step(current_layer, learning_rate);
 				}
-		 		SKEPU_TRACE_REGION_END();
-		 	}
+				SKEPU_TRACE_REGION_END();
+			}
 
 			// Validation needs at least one full batch; otherwise it is skipped (reported as 0)
 			std::tuple<skepu::Scalar<float>, skepu::Scalar<float>> score{0.f, 0.f};
@@ -519,30 +516,29 @@ public:
 
 	void display_image(skepu::Tensor4<float> &train_images)
 	{
-	  int height = train_images.size_j();
-	  int width = train_images.size_k();
-	  int channel = train_images.size_l();
+		int height = train_images.size_j();
+		int width = train_images.size_k();
+		int channel = train_images.size_l();
 
-	  for(size_t b =0; b < 5; ++b){
-	    for(size_t i =0; i < height; ++i){
-	      for(size_t j =0; j < width; ++j){
-	        for(size_t c =0; c < channel; ++c){
-
-	          if (train_images(b,i,j,c) > 0.75) {
-	               std::cout << "#"; // Dense pixel
-	           } else if (train_images(b,i,j,c) > 0.5) {
-	               std::cout << "+"; // Medium pixel
-	           } else if(train_images(b,i,j,c) >0.25){
-	             std::cout << "." ;
-	           } else {
-	               std::cout << " "; // Sparse pixel
-	           }
-	        }
-	      }
-	      std::cout << '\n';
-	    }
-	    std::cout << '\n';
-	  }
+		for(size_t b =0; b < 5; ++b){
+		for(size_t i =0; i < height; ++i){
+			for(size_t j =0; j < width; ++j){
+			for(size_t c =0; c < channel; ++c){
+				if (train_images(b,i,j,c) > 0.75) {
+					std::cout << "#"; // Dense pixel
+				} else if (train_images(b,i,j,c) > 0.5) {
+					std::cout << "+"; // Medium pixel
+				} else if(train_images(b,i,j,c) >0.25){
+					std::cout << "." ;
+				} else {
+					std::cout << " "; // Sparse pixel
+				}
+			}
+		}
+		std::cout << '\n';
+		}
+		std::cout << '\n';
+	}
 	}
 
 	std::string summary()
@@ -561,8 +557,8 @@ public:
 
 	void setBatchCountOverride(int bc)
 	{
-	    std::cout << "Overriding batch count with : " << bc << "\n";
-	    this->m_override_batch_count = bc;
+		std::cout << "Overriding batch count with : " << bc << "\n";
+		this->m_override_batch_count = bc;
 	}
 
 protected:
@@ -577,8 +573,8 @@ protected:
 
 		BatchPlan(size_t arg_samples, size_t arg_batch_size, int override_count)
 		: samples(arg_samples), batch_size(arg_batch_size),
-		  total(arg_samples / arg_batch_size + ((arg_samples % arg_batch_size) > 0 ? 1 : 0)),
-		  remainder(arg_samples % arg_batch_size), used(total)
+		total(arg_samples / arg_batch_size + ((arg_samples % arg_batch_size) > 0 ? 1 : 0)),
+		remainder(arg_samples % arg_batch_size), used(total)
 		{
 			if (override_count >= 0)
 				used = std::min(total, (size_t)override_count);
@@ -663,7 +659,7 @@ protected:
 
 	Tensor4<T> *m_result = nullptr;
 
-	std::unique_ptr<LossFunction<T>> loss_function; 
+	std::unique_ptr<LossFunction<T>> loss_function;
 	std::unique_ptr<Optimizer<T>> optimizer;
 	bool compiled = false;
 
@@ -684,30 +680,30 @@ SequentialModel<T> &operator<<(SequentialModel<T> &model, ConcreteLayer &&layer)
 	model.add(std::forward<ConcreteLayer>(layer));
 	return model;
 }
-
 }
 
 namespace skepu::dnn
 {
-    // Model files: a line-based text format that describes a model and, optionally, its parameters.
-    //
-    //   skepu-dnn-model 1
-    //   input <height> <width> <channels>        (the batch size is given when loading)
-    //   layer Conv2D features=8 kernel=3x3 weights=He_uniform biases=Zero activation=ReLU
-    //   layer MaxPooling2D kernel=2x2 activation=None
-    //   layer Flatten activation=None
-    //   layer Dense units=10 weights=Xavier_uniform biases=Zero activation=SoftMax
-    //   params                                    (optional section)
-    //   block <layer index> / <count> / <values>  (one block per layer with parameters)
-    //
-    // Layer types: Dense (units), Conv2D (features, kernel=HxW), Conv1D (features, kernel=K),
-    // MaxPooling2D (kernel=HxW), MaxPooling1D (kernel=K), Flatten, Dropout (rate).
-    // Attributes that are left out get the library defaults. '#' starts a comment.
-    // Without a params section the parameters are initialized according to the layers' `weights` and
-    // `biases` attributes; with one they are loaded and kept by fit().
-    template <typename T = float>
-    impl::SequentialModel<T> load_model(const std::string &path, size_t batch_size)
-    {
+	// Model files: a line-based text format that describes a model and, optionally, its parameters.
+	//
+	//   skepu-dnn-model 1
+	//   input <height> <width> <channels>        (the batch size is given when loading)
+	//   layer Conv2D features=8 kernel=3x3 weights=He_uniform biases=Zero activation=ReLU
+	//   layer MaxPooling2D kernel=2x2 activation=None
+	//   layer Flatten activation=None
+	//   layer Dense units=10 weights=Xavier_uniform biases=Zero activation=SoftMax
+//   (activation: None, ReLU, LeakyReLU, ELU, Sigmoid, TanH or SoftMax)
+	//   params                                    (optional section)
+	//   block <layer index> / <count> / <values>  (one block per layer with parameters)
+	//
+	// Layer types: Dense (units), Conv2D (features, kernel=HxW), Conv1D (features, kernel=K),
+	// MaxPooling2D/AvgPooling2D (kernel=HxW), MaxPooling1D/AvgPooling1D (kernel=K), Flatten, Dropout (rate).
+	// Attributes that are left out get the library defaults. '#' starts a comment.
+	// Without a params section the parameters are initialized according to the layers' `weights` and
+	// `biases` attributes; with one they are loaded and kept by fit().
+	template <typename T = float>
+	impl::SequentialModel<T> load_model(const std::string &path, size_t batch_size)
+	{
 	std::ifstream in(path);
 	if (!in)
 		SKEPU_ERROR("SkePU-DNN: cannot open model file " << path);
@@ -787,6 +783,8 @@ namespace skepu::dnn
 		else if (type == "Conv1D")       { auto l = Conv1D<T>((int)get_size("features")); l.kernel(get_size("kernel")); finish(std::move(l)); }
 		else if (type == "MaxPooling2D") { auto k = get_kernel2d(); auto l = MaxPooling2D<T>(); l.kernel(k.first, k.second); finish(std::move(l)); }
 		else if (type == "MaxPooling1D") { auto l = MaxPooling1D<T>(); l.kernel(get_size("kernel")); finish(std::move(l)); }
+		else if (type == "AvgPooling2D") { auto k = get_kernel2d(); auto l = AvgPooling2D<T>(); l.kernel(k.first, k.second); finish(std::move(l)); }
+		else if (type == "AvgPooling1D") { auto l = AvgPooling1D<T>(); l.kernel(get_size("kernel")); finish(std::move(l)); }
 		else if (type == "Flatten")      finish(Flatten<T>());
 		else if (type == "Dropout")      finish(Dropout<T>(std::stof(get("rate"))));
 		else fail("unknown layer type '" + type + "'");
@@ -816,13 +814,13 @@ namespace skepu::dnn
 		line_no = 0; // parameter values are not counted line by line
 	}
 	return model;
-    }
+	}
 
-    template <typename T = float, typename... Args>
-    impl::SequentialModel<T> SequentialModel(Args &&...args)
-    {
-    	return impl::SequentialModel<T>(std::forward<Args>(args)...);
-    }
+	template <typename T = float, typename... Args>
+	impl::SequentialModel<T> SequentialModel(Args &&...args)
+	{
+		return impl::SequentialModel<T>(std::forward<Args>(args)...);
+	}
 }
 
 static skepu::PrecompilerMarker endOf_SequentialModel_HPP;

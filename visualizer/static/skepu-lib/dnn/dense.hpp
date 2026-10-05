@@ -49,36 +49,35 @@ auto skel_propagate_dense_weight_gradient = skepu::Map(propagate_dense_weight_gr
 auto skel_propagate_dense_bias_gradient   = skepu::Map(propagate_dense_bias_gradient_uf);
 
 
-
 namespace skepu::dnn::impl
 {
-    template <typename T = float>
-    class Dense : public Layer<T>
-    {
-    public:
+	template <typename T = float>
+	class Dense : public Layer<T>
+	{
+	public:
 	Dense(size_t arg_output_size) : Layer<T>(), m_out(arg_output_size) {}
-    
+
 	Dense(Dense &&source) : Layer<T>(std::move(source))
 	{
 		this->m_weights = std::move(source.m_weights);
 		this->m_biases = std::move(source.m_biases);
 		this->m_out = source.m_out;
 	}
-    
+
 	~Dense() override = default;
-    
+
 	Dense &&weights(Init arg_init) override
 	{
 		Layer<T>::weights(arg_init);
 		return std::move(*this);
 	}
-    
+
 	Dense &&biases(Init arg_init) override
 	{
 		Layer<T>::biases(arg_init);
 		return std::move(*this);
 	}
-    
+
 	void setup(Dimensions input_size) override
 	{
 		this->m_vals.setLabel(this->label() + " Dense values");
@@ -87,36 +86,36 @@ namespace skepu::dnn::impl
 		this->m_dW.setLabel(this->label() + " Dense weight-deltas");
 		this->m_db.setLabel(this->label() + " Dense bias-deltas");
 		this->m_temp.setLabel(this->label() + " Dense gradient");
-    
+
 		size_t out = this->m_out;
 		size_t in = std::get<3>(input_size);
-    
+
 		this->m_weights.init(in, out);
 		this->m_biases.init(out);
-    
+
 		this->m_output_size = {std::get<0>(input_size), 1, 1, out};
-    
+
 		this->load_pretrained();
 		Layer<T>::setup(input_size);
-    
+
 		// Backprop temporaries
 		this->m_db.init(this->m_biases.size());
-        this->m_dW.init(this->m_weights.size_i(), this->m_weights.size_j());
+		this->m_dW.init(this->m_weights.size_i(), this->m_weights.size_j());
 		if (this->m_layer_level != Level::Input)
 		{
-    		this->m_temp.init(
-    			std::get<0>(input_size), std::get<1>(input_size),
-    			std::get<2>(input_size), std::get<3>(input_size)
-    		);
+			this->m_temp.init(
+				std::get<0>(input_size), std::get<1>(input_size),
+				std::get<2>(input_size), std::get<3>(input_size)
+			);
 		}
 	}
-    
+
 	virtual void serialize(std::string base_file_name) override
 	{
 		skepu::external(this->label() + " serialize", skepu::read(this->m_weights, this->m_biases), [&]
 		{
 			std::ofstream ofs(base_file_name + "_" + this->label() + ".csv");
-    
+
 			for (size_t i = 0; i < this->m_weights.size_i(); i++)
 			{
 				for (size_t j = 0; j < this->m_weights.size_j(); j++)
@@ -125,20 +124,20 @@ namespace skepu::dnn::impl
 					ofs << "\n";
 				}
 			}
-    
+
 			for (size_t i = 0; i < this->m_biases.size_i(); i++)
 				ofs << this->m_biases(i) << "\n";
 		});
 	}
-    
+
 	bool is_trainable() const override { return true; }
-    
+
 	Dense &&pretrained(std::string fname) override
 	{
 		Layer<T>::pretrained(fname);
 		return std::move(*this);
 	}
-    
+
 	void load_pretrained() override
 	{
 		if (this->m_pretrained_params != SKEPU_DNN_NO_PRETRAINED_PARAMS)
@@ -147,11 +146,9 @@ namespace skepu::dnn::impl
 			std::vector<float> temp = deserialize_csv_helper<float>(this->m_pretrained_params);
 			auto it = load_from_vector(this->m_weights, temp, temp.begin());
 			it = load_from_vector(this->m_biases, temp, it);
-			dnn_debug << "Dense loaded biases: " << this->m_biases << "\n";
-			dnn_debug << "Dense loaded weights: " << this->m_weights << "\n";
 		}
 	}
-    
+
 	void init_parameters() override
 	{
 		// Keep pretrained parameters
@@ -161,39 +158,35 @@ namespace skepu::dnn::impl
 		// Weights
 		if (this->m_init_weights == Init::Xavier_uniform)
 		{
-			dnn_debug << "Dense initialize weights to random uniform\n";
-    
 			double limit = sqrt(6.0 / (this->m_weights.size_i() + this->m_out));
-    
+
 			skel_init_random_uniform.setLabel(this->label() + " Random-init dense weights");
 			skel_init_random_uniform.setPRNG(*this->m_prng);
 			skel_init_random_uniform(this->m_weights, -limit, limit);
 		}
 		else if(this->m_init_weights == Init::Xavier_normal){
 			double limit = sqrt(6.0 / (this->m_weights.size_i() + this->m_out)); // uniform with the variance of Xavier-normal
-    
+
 			skel_init_random_uniform.setLabel(this->label() + " Random-init dense weights");
 			skel_init_random_uniform.setPRNG(*this->m_prng);
 			skel_init_random_uniform(this->m_weights, -limit, limit);
 		}
 		else if (this->m_init_weights == Init::He_uniform){
 			double limit = sqrt(6.0 / (this->m_weights.size_i()));
-    
+
 			skel_init_random_uniform.setLabel(this->label() + " Random-init dense weights");
 			skel_init_random_uniform.setPRNG(*this->m_prng);
 			skel_init_random_uniform(this->m_weights, -limit, limit);
 		}
 		else if (this->m_init_weights == Init::He_normal){
 			double limit = sqrt(6.0 / (this->m_weights.size_i())); // uniform with the variance of He-normal
-    
+
 			skel_init_random_uniform.setLabel(this->label() + " Random-init dense weights");
 			skel_init_random_uniform.setPRNG(*this->m_prng);
 			skel_init_random_uniform(this->m_weights, -limit, limit);
 		}
 		else if (this->m_init_weights == Init::Uniform)
 		{
-			dnn_debug << "Dense initialize weights to random uniform\n";
-    
 			double limit = 1.0;
 			skel_init_random_uniform.setLabel(this->label() + " Random-init dense weights");
 			skel_init_random_uniform.setPRNG(*this->m_prng);
@@ -201,80 +194,63 @@ namespace skepu::dnn::impl
 		}
 		else if (this->m_init_weights == Init::Zero)
 		{
-			dnn_debug << "Dense initialize weights to zero\n";
 			skel_init_zero.setLabel(this->label() + " Zero-init dense weights");
 			skel_init_zero(this->m_weights);
 		}
-    
+
 		// Biases
 		if (this->m_init_biases == Init::Uniform)
 		{
-			dnn_debug << "Dense initialize weights to random uniform\n";
 			skel_init_random_uniform.setPRNG(*this->m_prng);
 			skel_init_random_uniform.setLabel(this->label() + " Random-init dense biases");
 			skel_init_random_uniform(this->m_biases, -1.0, 1.0);
 		}
 		else if (this->m_init_biases == Init::Zero) {
-			dnn_debug << "Dense initialize biases to zero\n";
 			skel_init_zero.setLabel(this->label() + " Zero-init dense biases");
 			skel_init_zero(this->m_biases);
 		}
-    
-		dnn_debug << "Dense initialized biases: " << this->m_biases << "\n";
-		dnn_debug << "Dense initialized weights: " << this->m_weights << "\n";
 	}
-    
+
 	Dense &&activation(Act new_act) override
 	{
 		Layer<T>::activation(new_act);
 		return std::move(*this);
 	}
-    
+
 	std::string summary() override
 	{
 		std::ostringstream os;
 		os << Layer<T>::summary() << "Dense layer params{("
-			 << this->m_weights.size_i() << " x " << this->m_weights.size_j()
-			 << ") + " << this->m_biases.size() << " = "
-			 << (this->m_weights.size() + this->m_biases.size()) << "}";
+				<< this->m_weights.size_i() << " x " << this->m_weights.size_j()
+				<< ") + " << this->m_biases.size() << " = "
+				<< (this->m_weights.size() + this->m_biases.size()) << "}";
 		return os.str();
 	}
-    
-	Tensor4<T> *forward(Tensor4<T> *inputs, bool is_training=false) override
+
+	Tensor4<T> *forward(Tensor4<T> *inputs, bool /*is_training*/=false) override
 	{
-		//	dnn_debug << "Dense input: " << string_tensor_size(*inputs) << "\n";
-		//	dnn_debug << "Dense vals: " << string_tensor_size(this->m_vals) << "\n";
 		skel_dense.setLabel(this->label() + " Dense forward");
 		skel_dense(this->m_vals, this->m_biases, this->m_weights, *inputs);
-		//	dnn_debug << "Dense inputs: " << *inputs << "\n";
-		//	dnn_debug << "Dense vals: " << this->m_vals << "\n";
-    
+
 		return &this->m_vals;
 	}
-    
+
 	// inputs: tensor in shape (batch, 1, 1, N)
-	Tensor4<T> *backward(Tensor4<T> *inputs, Tensor4<T> *gradient, Tensor4<T> *y) override
+	Tensor4<T> *backward(Tensor4<T> *inputs, Tensor4<T> *gradient, Tensor4<T> */*y*/) override
 	{
-		dnn_debug << "Dense backprop\n";
-		dnn_debug << "Dense vals: " << string_tensor_size(this->m_vals) << "\n";
-		dnn_debug << "Dense input: " << string_tensor_size(*inputs) << "\n";
-	//	dnn_debug << "Dense gradient: " << string_tensor_size(*gradient) << "\n";
-	//	dnn_debug << "Dense temp: " << string_tensor_size(this->m_temp) << "\n";
-	//	dnn_debug << "Dense weights: " << this->m_weights.total_rows() << " x " << this->m_weights.total_cols() << "\n";
-    
 		skel_propagate_loss_gradient.setLabel(this->label() + " Dense backprop-grad");
 		skel_propagate_dense_weight_gradient.setLabel(this->label() + " Dense backprop weights");
 		skel_propagate_dense_bias_gradient.setLabel(this->label() + " Dense backprop biases");
-    
+
 		if (this->m_layer_level != Level::Input)
 			skel_propagate_loss_gradient(this->m_temp, *gradient, this->m_weights);
-    
+
 		skel_propagate_dense_weight_gradient(this->m_dW, *inputs, *gradient);
 		skel_propagate_dense_bias_gradient(this->m_db, *gradient);
-    
+
 		return (this->m_layer_level != Level::Input) ? &this->m_temp : nullptr;
 	}
-    
+
 	std::string describe() const override
 	{
 		return "Dense units=" + std::to_string(this->m_out) + this->common_attributes(true);
@@ -282,26 +258,26 @@ namespace skepu::dnn::impl
 
 	void write_params(std::ostream &os) override
 	{
-		// Parameters may live on a device (after init_parameters or training): fetch them first
-		m_weights.updateHost();
-		m_biases.updateHost();
 		std::vector<float> v;
-		for (size_t i = 0; i < m_weights.size_i(); ++i)
-			for (size_t j = 0; j < m_weights.size_j(); ++j) v.push_back(m_weights(i, j));
-		for (size_t i = 0; i < m_biases.size(); ++i) v.push_back(m_biases(i));
+		skepu::external(this->label() + " write params", skepu::read(m_weights, m_biases), [&]
+		{
+			for (size_t i = 0; i < m_weights.size_i(); ++i)
+				for (size_t j = 0; j < m_weights.size_j(); ++j) v.push_back(m_weights(i, j));
+			for (size_t i = 0; i < m_biases.size(); ++i) v.push_back(m_biases(i));
+		});
 		write_values(os, v);
 	}
 
 	void read_params(std::istream &is) override
 	{
 		std::vector<float> v = read_values(is, m_weights.size() + m_biases.size());
-		size_t n = 0;
-		for (size_t i = 0; i < m_weights.size_i(); ++i)
-			for (size_t j = 0; j < m_weights.size_j(); ++j) m_weights(i, j) = v[n++];
-		for (size_t i = 0; i < m_biases.size(); ++i) m_biases(i) = v[n++];
-		// Host writes through operator() do not necessarily invalidate the device copies
-		m_weights.invalidateDeviceData();
-		m_biases.invalidateDeviceData();
+		skepu::external(this->label() + " read params", [&]
+		{
+			size_t n = 0;
+			for (size_t i = 0; i < m_weights.size_i(); ++i)
+				for (size_t j = 0; j < m_weights.size_j(); ++j) m_weights(i, j) = v[n++];
+			for (size_t i = 0; i < m_biases.size(); ++i) m_biases(i) = v[n++];
+		}, skepu::write(m_weights, m_biases));
 		this->m_keep_params = true;
 	}
 
@@ -312,32 +288,30 @@ namespace skepu::dnn::impl
 
 	Matrix<T>&  get_d_weights() { return m_weights; }
 	Matrix<T>&  get_d_gradients() { return m_dW; }
-    
+
 	Vector<T>&  get_biases() { return m_biases; }
 	Vector<T>&  get_biases_gradients() { return m_db; }
-    
-    
-    
+
+
 	protected:
 	size_t m_out = 0;
-    
+
 	Matrix<T> m_weights;
 	Vector<T> m_biases;
-    
+
 	Vector<T> m_db;
 	Matrix<T> m_dW;
 	Tensor4<T> m_temp;
-    };
-    
+	};
 }
 
 namespace skepu::dnn
 {
-    template <typename T = float, typename... Args>
-    impl::Dense<T> Dense(Args &&...args)
-    {
+	template <typename T = float, typename... Args>
+	impl::Dense<T> Dense(Args &&...args)
+	{
 	return impl::Dense<T>(std::forward<Args>(args)...);
-    }
+	}
 }
 
 static skepu::PrecompilerMarker endOf_Dense_HPP;
