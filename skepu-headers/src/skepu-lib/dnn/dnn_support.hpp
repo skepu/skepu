@@ -15,7 +15,6 @@ float cross_entropy_batched_uf(
 	for (size_t i = 0; i < y.size_l; ++i)
 		res += y(item, 0, 0, i) * log(s(item, 0, 0, i) + epsilon);
 	return res;
-
 }
 
 int accuracy_batched_uf(
@@ -91,7 +90,6 @@ adam_update_uf(float w, float g, float m, float v,
 }
 
 template <typename T> T sum_uf(T a, T b) { return a + b; }
-
 
 
 // Initialization
@@ -269,18 +267,6 @@ static auto &dnn_debug = std::cout;
 #else
 static auto &dnn_debug = debugSink;
 #endif
-
-}
-
-namespace skepu::dnn::impl
-{
-template <typename T> std::string string_tensor_size(Tensor4<T> &t)
-{
-	std::ostringstream os;
-	os << "(" << t.size_i() << " x " << t.size_j() << " x " << t.size_k() << " x " << t.size_l() << ")";
-	return os.str();
-}
-
 }
 
 static skepu::PrecompilerMarker endOf_DNN_Support_HPP;

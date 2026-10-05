@@ -111,6 +111,8 @@ namespace skepu::dnn::impl
 
 	~MaxPooling1D() override = default;
 
+	using MaxPooling2D<T>::kernel; // the two-argument form is valid too: (1 x k)
+
 	MaxPooling1D &&kernel(size_t k)
 	{
 		this->m_kernel = {1, (int)k};
@@ -152,6 +154,8 @@ namespace skepu::dnn::impl
 	AvgPooling1D(AvgPooling1D &&source) : AvgPooling2D<T>(std::move(source)) {}
 
 	~AvgPooling1D() override = default;
+
+	using AvgPooling2D<T>::kernel; // the two-argument form is valid too: (1 x k)
 
 	AvgPooling1D &&kernel(size_t k)
 	{

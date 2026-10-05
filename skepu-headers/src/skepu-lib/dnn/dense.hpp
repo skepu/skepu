@@ -146,8 +146,6 @@ namespace skepu::dnn::impl
 			std::vector<float> temp = deserialize_csv_helper<float>(this->m_pretrained_params);
 			auto it = load_from_vector(this->m_weights, temp, temp.begin());
 			it = load_from_vector(this->m_biases, temp, it);
-			dnn_debug << "Dense loaded biases: " << this->m_biases << "\n";
-			dnn_debug << "Dense loaded weights: " << this->m_weights << "\n";
 		}
 	}
 
@@ -160,8 +158,6 @@ namespace skepu::dnn::impl
 		// Weights
 		if (this->m_init_weights == Init::Xavier_uniform)
 		{
-			dnn_debug << "Dense initialize weights to random uniform\n";
-
 			double limit = sqrt(6.0 / (this->m_weights.size_i() + this->m_out));
 
 			skel_init_random_uniform.setLabel(this->label() + " Random-init dense weights");
@@ -191,8 +187,6 @@ namespace skepu::dnn::impl
 		}
 		else if (this->m_init_weights == Init::Uniform)
 		{
-			dnn_debug << "Dense initialize weights to random uniform\n";
-
 			double limit = 1.0;
 			skel_init_random_uniform.setLabel(this->label() + " Random-init dense weights");
 			skel_init_random_uniform.setPRNG(*this->m_prng);
@@ -200,7 +194,6 @@ namespace skepu::dnn::impl
 		}
 		else if (this->m_init_weights == Init::Zero)
 		{
-			dnn_debug << "Dense initialize weights to zero\n";
 			skel_init_zero.setLabel(this->label() + " Zero-init dense weights");
 			skel_init_zero(this->m_weights);
 		}
@@ -208,19 +201,14 @@ namespace skepu::dnn::impl
 		// Biases
 		if (this->m_init_biases == Init::Uniform)
 		{
-			dnn_debug << "Dense initialize weights to random uniform\n";
 			skel_init_random_uniform.setPRNG(*this->m_prng);
 			skel_init_random_uniform.setLabel(this->label() + " Random-init dense biases");
 			skel_init_random_uniform(this->m_biases, -1.0, 1.0);
 		}
 		else if (this->m_init_biases == Init::Zero) {
-			dnn_debug << "Dense initialize biases to zero\n";
 			skel_init_zero.setLabel(this->label() + " Zero-init dense biases");
 			skel_init_zero(this->m_biases);
 		}
-
-		dnn_debug << "Dense initialized biases: " << this->m_biases << "\n";
-		dnn_debug << "Dense initialized weights: " << this->m_weights << "\n";
 	}
 
 	Dense &&activation(Act new_act) override
@@ -239,7 +227,7 @@ namespace skepu::dnn::impl
 		return os.str();
 	}
 
-	Tensor4<T> *forward(Tensor4<T> *inputs, bool is_training=false) override
+	Tensor4<T> *forward(Tensor4<T> *inputs, bool /*is_training*/=false) override
 	{
 		skel_dense.setLabel(this->label() + " Dense forward");
 		skel_dense(this->m_vals, this->m_biases, this->m_weights, *inputs);
@@ -248,12 +236,8 @@ namespace skepu::dnn::impl
 	}
 
 	// inputs: tensor in shape (batch, 1, 1, N)
-	Tensor4<T> *backward(Tensor4<T> *inputs, Tensor4<T> *gradient, Tensor4<T> *y) override
+	Tensor4<T> *backward(Tensor4<T> *inputs, Tensor4<T> *gradient, Tensor4<T> */*y*/) override
 	{
-		dnn_debug << "Dense backprop\n";
-		dnn_debug << "Dense vals: " << string_tensor_size(this->m_vals) << "\n";
-		dnn_debug << "Dense input: " << string_tensor_size(*inputs) << "\n";
-
 		skel_propagate_loss_gradient.setLabel(this->label() + " Dense backprop-grad");
 		skel_propagate_dense_weight_gradient.setLabel(this->label() + " Dense backprop weights");
 		skel_propagate_dense_bias_gradient.setLabel(this->label() + " Dense backprop biases");
@@ -319,7 +303,6 @@ namespace skepu::dnn::impl
 	Matrix<T> m_dW;
 	Tensor4<T> m_temp;
 	};
-
 }
 
 namespace skepu::dnn

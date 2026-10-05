@@ -65,7 +65,6 @@ float new_softmax_uf_1(skepu::Index4D index, skepu::Ten4<float> input)
 	}
 
 	return max_value;
-
 }
 
 float new_softmax_uf_2(skepu::Index4D index, skepu::Ten4<float> input, skepu::Ten4<float>  max_vals)
@@ -86,7 +85,7 @@ float new_softmax_uf_3(skepu::Index4D index, float x, skepu::Ten4<float> sums, s
 
 float softmax_prime_uf(skepu::Index4D index , skepu::Ten4<float> gradient, skepu::Ten3<float> jacobian, int num_classes){
 	float res = 0.0;
-	for(size_t j = 0; j < num_classes; ++j){
+	for (int j = 0; j < num_classes; ++j){
 		res += jacobian(index.i , index.l, j ) * gradient(index.i, 0,0,j);
 	}
 	return res;
@@ -94,14 +93,12 @@ float softmax_prime_uf(skepu::Index4D index , skepu::Ten4<float> gradient, skepu
 
 
 float softmax_jacobian_uf(skepu::Index3D index , skepu::Ten4<float> s ){
-
 	if ( index.j == index.k ){
 		return s(index.i ,0 ,0 , index.j) * ((float) 1.0 - s(index.i ,0 ,0 , index.j) );
 	}
 	else {
 		return -s(index.i ,0 ,0 , index.j) * s(index.i ,0 ,0 , index.k);
 	}
-
 }
 
 
@@ -169,9 +166,8 @@ namespace skepu::dnn::impl
 		Layer<T>::setup(input_size);
 	}
 
-	Tensor4<T> *forward(Tensor4<T> *inputs, bool is_training=false) override
+	Tensor4<T> *forward(Tensor4<T> *inputs, bool /*is_training*/=false) override
 	{
-
 		Tensor4<T> *target = (this->m_in_place) ? inputs : &this->m_vals;
 
 		if (this->m_act == Act::ReLU)
@@ -186,14 +182,11 @@ namespace skepu::dnn::impl
 		}
 		else if (this->m_act == Act::SoftMax)
 		{
-			dnn_debug << "Softmax input: " << *inputs << "\n";
-
 			Tensor4<T> m_temp_value_max_reduce (inputs->size_i(),inputs->size_j(),inputs->size_k(), 1);
 
 			new_softmax_skel_1(m_temp_value_max_reduce, *inputs);
 			new_softmax_skel_2(this->m_temp_vals, *inputs, m_temp_value_max_reduce);
 			new_softmax_skel_3(*target, *inputs, this->m_temp_vals, m_temp_value_max_reduce);
-
 		}
 		else if (this->m_act == Act::TanH)
 		{
@@ -213,10 +206,8 @@ namespace skepu::dnn::impl
 		return target;
 	}
 
-	Tensor4<T> *backward(Tensor4<T> *inputs, Tensor4<T> *gradient, Tensor4<T> *y) override
+	Tensor4<T> *backward(Tensor4<T> *inputs, Tensor4<T> *gradient, Tensor4<T> */*y*/) override
 	{
-		dnn_debug << "Activation function backprop\n";
-
 		Tensor4<T> *target = gradient;
 
 		if (this->m_act == Act::ReLU)
@@ -231,7 +222,6 @@ namespace skepu::dnn::impl
 		}
 		else if (this->m_act == Act::SoftMax)
 		{
-
 			int n_class = this->m_vals.size_l();
 
 			skepu::Tensor3<float> jacobian(inputs->size_i(),n_class, n_class);
@@ -240,7 +230,6 @@ namespace skepu::dnn::impl
 			// Output must not alias the incoming gradient: each output element reads the whole input row
 			target = &this->m_temp_backprop;
 			softmax_prime(*target, *gradient, jacobian, n_class);
-
 		}
 		else if (this->m_act == Act::TanH)
 		{

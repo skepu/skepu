@@ -17,7 +17,6 @@ float convolutional_2d_uf(
 		{
 			for (size_t k = 0; k < weights.size_k; ++k) // loop over input features
 			{
-
 				res += weights(i + in.oj, j + in.ok, k, index.l) * in(0, i, j, k - index.l);
 			}
 		}
@@ -29,7 +28,6 @@ float conv_2d_backward_uf(
 	skepu::Region4D<float> gradient,
 	skepu::Ten4<float> DNN_CONST weights)
 {
-
 		float res = 0;
 		for (int i = -gradient.oj; i <= gradient.oj; ++i)
 			for (int j = -gradient.ok; j <= gradient.ok; ++j){
@@ -118,9 +116,6 @@ namespace skepu::dnn::impl
 		this->m_db.setLabel(this->label() + " Conv2D bias deltas");
 		this->m_temp.setLabel(this->label() + " Conv2D gradient");
 
-		size_t out = std::get<0>(this->m_output_size);
-		size_t in = std::get<0>(input_size);
-
 		this->m_weights.init(
 			std::get<0>(this->m_kernel),
 			std::get<1>(this->m_kernel),
@@ -188,8 +183,6 @@ namespace skepu::dnn::impl
 			std::vector<float> temp = deserialize_csv_helper<float>(this->m_pretrained_params);
 			auto it = load_from_vector(this->m_weights, temp, temp.begin());
 			it = load_from_vector(this->m_biases, temp, it);
-			dnn_debug << "Conv2D loaded biases: " << this->m_biases << "\n";
-			dnn_debug << "Conv2D loaded weights: " << this->m_weights << "\n";
 		}
 	}
 
@@ -202,7 +195,6 @@ namespace skepu::dnn::impl
 		// Weights
 		if (this->m_init_weights == Init::Xavier_uniform)
 		{
-			dnn_debug << "Conv2D initialize weights to random uniform\n";
 			int fan_in = this->m_weights.size_k() * std::get<0>(this->m_kernel) * std::get<1>(this->m_kernel);
 			int fan_out = this->m_no_features * std::get<0>(this->m_kernel) * std::get<1>(this->m_kernel);
 			double limit = std::sqrt(6.0 / (fan_in + fan_out));
@@ -238,15 +230,12 @@ namespace skepu::dnn::impl
 		}
 		else if (this->m_init_weights == Init::Uniform)
 		{
-			dnn_debug << "Conv2D initialize weights to random uniform\n";
 			skel_init_random_uniform.setPRNG(*this->m_prng);
 			skel_init_random_uniform.setLabel(this->label() + " Random-init Conv2D weights");
 			skel_init_random_uniform(this->m_weights, -1.0, 1.0);
-
 		}
 		else if (this->m_init_weights == Init::Zero)
 		{
-			dnn_debug << "Conv2D initialize weights to zero\n";
 			skel_init_zero.setLabel(this->label() + " Zero-init Conv2D weights");
 			skel_init_zero(this->m_weights);
 		}
@@ -254,14 +243,12 @@ namespace skepu::dnn::impl
 		// Biases
 		if (this->m_init_biases == Init::Uniform)
 		{
-			dnn_debug << "Conv2D initialize biases to random uniform\n";
 			skel_init_random_uniform.setPRNG(*this->m_prng);
 			skel_init_random_uniform.setLabel(this->label() + " Random-init Conv2D biases");
 			skel_init_random_uniform(this->m_biases, -1.0, 1.0);
 		}
 		else if (this->m_init_biases == Init::Zero)
 		{
-			dnn_debug << "Conv2D initialize biases to zero\n";
 			skel_init_zero.setLabel(this->label() + " Zero-init Conv2D biases");
 			skel_init_zero(this->m_biases);
 		}
@@ -315,11 +302,8 @@ namespace skepu::dnn::impl
 		return os.str();
 	}
 
-	Tensor4<T> *forward(Tensor4<T> *inputs, bool is_training=false) override
+	Tensor4<T> *forward(Tensor4<T> *inputs, bool /*is_training*/=false) override
 	{
-		dnn_debug << "Conv2D input: " << string_tensor_size(*inputs) << "\n";
-		dnn_debug << "Conv2D vals: " << string_tensor_size(this->m_vals) << "\n";
-
 		skel_conv_2d.setOverlap(0, (std::get<0>(this->m_kernel) - 1) / 2, (std::get<1>(this->m_kernel) - 1) / 2, /*this->m_no_features - 1*/ 0);
 		skel_conv_2d.setStride(1, 1, 1, 1);
 
@@ -327,26 +311,16 @@ namespace skepu::dnn::impl
 		// Must be set explicitly, the MapOverlap default (Duplicate) computes a "same"-style convolution.
 		skel_conv_2d.setEdgeMode(skepu::Edge::None);
 
-		dnn_debug << "Conv2D weights: " << this->m_weights << "\n";
-		dnn_debug << "Conv2D biases: " << this->m_biases << "\n";
 
 		skel_conv_2d.setLabel(this->label() + " Conv2D forward");
 		skel_conv_2d(this->m_vals, *inputs, this->m_weights, this->m_biases);
 
-		dnn_debug << "Conv2D inputs: " << *inputs << "\n";
-		dnn_debug << "Conv2D vals: " << this->m_vals << "\n";
 
 		return &this->m_vals;
 	}
 
-	Tensor4<T> *backward(Tensor4<T> *inputs, Tensor4<T> *gradient, Tensor4<T> *y) override
+	Tensor4<T> *backward(Tensor4<T> *inputs, Tensor4<T> *gradient, Tensor4<T> */*y*/) override
 	{
-		dnn_debug << "Conv2D backprop\n";
-		dnn_debug << "Conv2D vals size: " << string_tensor_size(this->m_vals) << "\n";
-		dnn_debug << "Conv2D input size: " << string_tensor_size(*inputs) << "\n";
-		dnn_debug << "Conv2D gradient size: " << string_tensor_size(*gradient) << "\n";
-		dnn_debug << "Conv2D temp size: " << string_tensor_size(this->m_temp) << "\n";
-
 		if (this->m_layer_level != Level::Input)
 		{
 			skel_conv_2d_backward.setOverlap(0, (std::get<0>(this->m_kernel) - 1) / 2, (std::get<1>(this->m_kernel) - 1) / 2, /*this->m_no_features - 1*/ 0);

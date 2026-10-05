@@ -14,7 +14,6 @@ template <typename T> skepu::multiple<T, char> dropout_masked_uf(skepu::Random<1
 		char mask = 1;
 		return skepu::ret( (el/(1 - rate)), mask);
 	}
-
 }
 
 template <typename T> T dropout_masked_backprop_uf(T gradient, char enabled, float rate)
@@ -50,9 +49,6 @@ namespace skepu::dnn::impl
 		this->m_mask.setLabel(this->label() + " Dropout mask");
 		this->m_temp.setLabel(this->label() + " Dropout gradient");
 
-		size_t out = std::get<0>(this->m_output_size);
-		size_t in = std::get<0>(input_size);
-
 		this->m_output_size = input_size;
 		Layer<T>::setup(input_size);
 
@@ -81,7 +77,7 @@ namespace skepu::dnn::impl
 		return &this->m_vals;
 	}
 
-	Tensor4<T> *backward(Tensor4<T> *inputs, Tensor4<T> *gradient, Tensor4<T> *y) override
+	Tensor4<T> *backward(Tensor4<T> */*inputs*/, Tensor4<T> *gradient, Tensor4<T> */*y*/) override
 	{
 		skel_dropout_backprop_masked.setLabel(this->label() + " Dropout backward");
 		skel_dropout_backprop_masked(this->m_temp, *gradient, this->m_mask, this->m_dropout_rate);
@@ -105,7 +101,6 @@ namespace skepu::dnn::impl
 	Tensor4<char> m_mask;
 	Tensor4<T> m_temp;
 	};
-
 }
 
 namespace skepu::dnn

@@ -29,7 +29,7 @@ std::vector<T> deserialize_csv_helper(std::string fname)
 
 
 template<typename T>
-typename std::vector<T>::iterator load_from_vector(skepu::Vector<T> &output, std::vector<T> &input, typename std::vector<T>::iterator it)
+typename std::vector<T>::iterator load_from_vector(skepu::Vector<T> &output, std::vector<T> &/*input*/, typename std::vector<T>::iterator it)
 {
 	for (size_t i = 0; i < output.size(); ++i)
 	{
@@ -40,7 +40,7 @@ typename std::vector<T>::iterator load_from_vector(skepu::Vector<T> &output, std
 
 
 template<typename T>
-typename std::vector<T>::iterator load_from_vector(skepu::Matrix<T> &output, std::vector<T> &input, typename std::vector<T>::iterator it)
+typename std::vector<T>::iterator load_from_vector(skepu::Matrix<T> &output, std::vector<T> &/*input*/, typename std::vector<T>::iterator it)
 {
 	for (size_t i = 0; i < output.size_i(); ++i)
 	{
@@ -54,7 +54,7 @@ typename std::vector<T>::iterator load_from_vector(skepu::Matrix<T> &output, std
 
 
 template<typename T>
-typename std::vector<T>::iterator load_from_vector(skepu::Tensor3<T> &output, std::vector<T> &input, typename std::vector<T>::iterator it)
+typename std::vector<T>::iterator load_from_vector(skepu::Tensor3<T> &output, std::vector<T> &/*input*/, typename std::vector<T>::iterator it)
 {
 	for (size_t i = 0; i < output.size_i(); ++i)
 	{
@@ -70,7 +70,7 @@ typename std::vector<T>::iterator load_from_vector(skepu::Tensor3<T> &output, st
 }
 
 template<typename T>
-typename std::vector<T>::iterator load_from_vector(skepu::Tensor4<T> &output, std::vector<T> &input, typename std::vector<T>::iterator it)
+typename std::vector<T>::iterator load_from_vector(skepu::Tensor4<T> &output, std::vector<T> &/*input*/, typename std::vector<T>::iterator it)
 {
 	for (size_t i = 0; i < output.size_i(); ++i)
 	{

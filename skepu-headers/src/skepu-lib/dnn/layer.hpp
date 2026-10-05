@@ -79,7 +79,7 @@ namespace skepu::dnn::impl
 	// Applies one optimizer step to the layer's trainable parameters (after its backward pass).
 	// Layers with parameters override this and pass their weights, biases and gradients to the
 	// optimizer; the optimizer picks the update for the container types it is given.
-	virtual void apply_update(Optimizer<T> &opt, float learning_rate) { /* No parameters */ }
+	virtual void apply_update(Optimizer<T> &/*opt*/, float /*learning_rate*/) { /* No parameters */ }
 
 	// Description of the layer for model files: "<Type> key=value ...", including its activation
 	// function. Activation layers return "" and are skipped (they belong to the layer before them).
@@ -90,8 +90,8 @@ namespace skepu::dnn::impl
 	}
 
 	// Writes/reads the trainable parameters as text for model files (layers without parameters do nothing)
-	virtual void write_params(std::ostream &os) {}
-	virtual void read_params(std::istream &is) {}
+	virtual void write_params(std::ostream &/*os*/) {}
+	virtual void read_params(std::istream &/*is*/) {}
 
 	// " weights=X biases=Y activation=Z", the attributes shared by the layers with parameters
 	std::string common_attributes(bool with_init) const
@@ -132,7 +132,7 @@ namespace skepu::dnn::impl
 	}
 
 	// Subclasses must set their output size before calling super here!
-	virtual void setup(Dimensions input_size)
+	virtual void setup(Dimensions /*input_size*/)
 	{
 		this->m_is_setup = true;
 
@@ -141,17 +141,17 @@ namespace skepu::dnn::impl
 				std::get<2>(this->m_output_size), std::get<3>(this->m_output_size));
 	}
 
-	virtual void serialize(std::string base_file_name)
+	virtual void serialize(std::string /*base_file_name*/)
 	{
 		// No default action
 	}
 
-	[[noreturn]] virtual Tensor4<T> *forward(Tensor4<T> *inputs, bool is_training=false)
+	[[noreturn]] virtual Tensor4<T> *forward(Tensor4<T> */*inputs*/, bool /*is_training*/=false)
 	{
 		SKEPU_ERROR("Layer: calling pure virtual 'forward' member function");
 	}
 
-	[[noreturn]] virtual Tensor4<T> *backward(Tensor4<T> *inputs, Tensor4<T> *gradient, Tensor4<T> *y)
+	[[noreturn]] virtual Tensor4<T> *backward(Tensor4<T> */*inputs*/, Tensor4<T> */*gradient*/, Tensor4<T> */*y*/)
 	{
 		SKEPU_ERROR("Layer: calling pure virtual 'backward' member function");
 	}

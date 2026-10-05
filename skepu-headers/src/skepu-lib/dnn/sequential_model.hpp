@@ -389,7 +389,7 @@ public:
 	// Trains the model with mini-batch gradient descent. The last validation_split fraction of the data
 	// is held out for validation after every epoch (the data is used in order, it is not shuffled).
 	// `name` is currently unused.
-	void fit(Tensor4<T> &train_x, Tensor4<T> &train_y, int epochs, float learning_rate, float validation_split,  const std::string &name, bool print_progress=true)
+	void fit(Tensor4<T> &train_x, Tensor4<T> &train_y, int epochs, float learning_rate, float validation_split,  const std::string &/*name*/, bool print_progress=true)
 	{
 		SKEPU_TRACE_SCOPE("Model Fit");
 		this->require_configured("fit");
@@ -524,7 +524,6 @@ public:
 		for(size_t i =0; i < height; ++i){
 			for(size_t j =0; j < width; ++j){
 			for(size_t c =0; c < channel; ++c){
-
 				if (train_images(b,i,j,c) > 0.75) {
 					std::cout << "#"; // Dense pixel
 				} else if (train_images(b,i,j,c) > 0.5) {
@@ -681,7 +680,6 @@ SequentialModel<T> &operator<<(SequentialModel<T> &model, ConcreteLayer &&layer)
 	model.add(std::forward<ConcreteLayer>(layer));
 	return model;
 }
-
 }
 
 namespace skepu::dnn

@@ -40,8 +40,8 @@ max_pooling_masked_uf(skepu::Pool4D<float> DNN_CONST pool)
 {
 	float maxval = pool(0,0,0,0);
 	char mask = 0;
-	for (size_t j = 0; j < pool.sj; ++j){
-		for (size_t k = 0; k < pool.sk; ++k)
+	for (int j = 0; j < pool.sj; ++j){
+		for (int k = 0; k < pool.sk; ++k)
 		{
 			float val = pool(0, j, k, 0);
 			if (val > maxval)
@@ -57,8 +57,8 @@ max_pooling_masked_uf(skepu::Pool4D<float> DNN_CONST pool)
 float avg_pooling_uf(skepu::Pool4D<float> DNN_CONST pool)
 {
 	float sum = 0;
-	for (size_t j = 0; j < pool.sj; ++j)
-		for (size_t k = 0; k < pool.sk; ++k)
+	for (int j = 0; j < pool.sj; ++j)
+		for (int k = 0; k < pool.sk; ++k)
 			sum += pool(0, j, k, 0);
 	return sum / (pool.sj * pool.sk);
 }
@@ -231,33 +231,21 @@ namespace skepu::dnn::impl
 		return os.str();
 	}
 
-	Tensor4<T> *forward(Tensor4<T> *inputs, bool is_training=false) override
+	Tensor4<T> *forward(Tensor4<T> *inputs, bool /*is_training*/=false) override
 	{
-		dnn_debug << "MaxPool2D input: " << string_tensor_size(*inputs) << "\n";
-		dnn_debug << "MaxPool2D vals: " << string_tensor_size(this->m_vals) << "\n";
 		skel_pool_max_masked.setPoolSize(1, std::get<0>(this->m_kernel), std::get<1>(this->m_kernel), 1);
 		// todo: override with set strides
 		skel_pool_max_masked.setStride(1, std::get<0>(this->m_kernel), std::get<1>(this->m_kernel), 1);
 		skel_pool_max_masked.setLabel(this->label() + " MaxPool2D forward");
 		skel_pool_max_masked(this->m_vals, this->m_mask, *inputs);
-		dnn_debug << "MaxPool2D inputs: " << *inputs << "\n";
-		dnn_debug << "MaxPool2D vals: " << this->m_vals << "\n";
 
 		return &this->m_vals;
 	}
 
-	Tensor4<T> *backward(Tensor4<T> *inputs, Tensor4<T> *gradient, Tensor4<T> *y) override
+	Tensor4<T> *backward(Tensor4<T> */*inputs*/, Tensor4<T> *gradient, Tensor4<T> */*y*/) override
 	{
-		dnn_debug << "MaxPool2D backprop\n";
-		dnn_debug << "MaxPool2D vals size: " << string_tensor_size(this->m_vals) << "\n";
-		dnn_debug << "MaxPool2D input size: " << string_tensor_size(*inputs) << "\n";
-		dnn_debug << "MaxPool2D gradient size: " << string_tensor_size(*gradient) << "\n";
-		dnn_debug << "MaxPool2D temp size: " << string_tensor_size(this->m_temp) << "\n";
 		skel_pool_max_masked_backward.setLabel(this->label() + " MaxPool2D backward");
 		skel_pool_max_masked_backward(this->m_temp, *gradient, this->m_mask, std::get<0>(this->m_kernel), std::get<1>(this->m_kernel));
-		dnn_debug << "MaxPool2D inputs: " << *inputs << "\n";
-		dnn_debug << "MaxPool2D gradient: " << *gradient << "\n";
-		dnn_debug << "MaxPool2D vals: " << this->m_temp << "\n";
 
 		return &this->m_temp;
 	}
@@ -334,7 +322,7 @@ namespace skepu::dnn::impl
 		return os.str();
 	}
 
-	Tensor4<T> *forward(Tensor4<T> *inputs, bool is_training=false) override
+	Tensor4<T> *forward(Tensor4<T> *inputs, bool /*is_training*/=false) override
 	{
 		skel_pool_avg.setPoolSize(1, std::get<0>(this->m_kernel), std::get<1>(this->m_kernel), 1);
 		skel_pool_avg.setStride(1, std::get<0>(this->m_kernel), std::get<1>(this->m_kernel), 1);
@@ -344,7 +332,7 @@ namespace skepu::dnn::impl
 		return &this->m_vals;
 	}
 
-	Tensor4<T> *backward(Tensor4<T> *inputs, Tensor4<T> *gradient, Tensor4<T> *y) override
+	Tensor4<T> *backward(Tensor4<T> */*inputs*/, Tensor4<T> *gradient, Tensor4<T> */*y*/) override
 	{
 		skel_pool_avg_backward.setLabel(this->label() + " AvgPool2D backward");
 		skel_pool_avg_backward(this->m_temp, *gradient, std::get<0>(this->m_kernel), std::get<1>(this->m_kernel));
