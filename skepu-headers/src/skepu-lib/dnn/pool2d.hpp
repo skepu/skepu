@@ -64,9 +64,27 @@ float avg_pooling_uf(skepu::Pool4D<float> DNN_CONST pool)
 }
 
 
+// Gradient of average pooling: every input element gets the gradient of its pool divided by the pool size;
+// elements outside the pooled area (input size not divisible by the pool size) get none.
+float pool_avg_backward_uf(
+	skepu::Index4D index,
+	skepu::Ten4<float> gradient,
+	size_t pool_size_j,
+	size_t pool_size_k
+)
+{
+	if (index.j >= gradient.size_j * pool_size_j || index.k >= gradient.size_k * pool_size_k)
+		return 0;
+
+	return gradient(index.i, index.j / pool_size_j, index.k / pool_size_k, index.l) / (float)(pool_size_j * pool_size_k);
+}
+
+
 auto skel_pool_max_masked = skepu::MapPool(max_pooling_masked_uf);
+auto skel_pool_avg = skepu::MapPool(avg_pooling_uf);
 
 auto skel_pool_max_masked_backward = skepu::Map<0>(pool_max_masked_backward_uf);
+auto skel_pool_avg_backward = skepu::Map<0>(pool_avg_backward_uf);
 
 
 namespace skepu::dnn::impl
@@ -249,6 +267,104 @@ namespace skepu::dnn::impl
 	Tensor4<T> m_temp;
 	Tensor4<char> m_mask;
 	};
+}
+
+namespace skepu::dnn::impl
+{
+	template <typename T = float>
+	class AvgPooling2D : public Subsampling2D<T>
+	{
+	public:
+	AvgPooling2D() : Subsampling2D<T>() {}
+
+	AvgPooling2D(AvgPooling2D &&source)
+			: Subsampling2D<T>(std::move(source))
+	{
+	}
+
+	~AvgPooling2D() override = default;
+
+	AvgPooling2D &&kernel(size_t k1, size_t k2) override
+	{
+		Subsampling2D<T>::kernel(k1, k2);
+		return std::move(*this);
+	}
+
+	AvgPooling2D &&stride(size_t s1, size_t s2) override
+	{
+		Subsampling2D<T>::stride(s1, s2);
+		return std::move(*this);
+	}
+
+	AvgPooling2D &&padding(bool new_padding) override
+	{
+		Subsampling2D<T>::padding(new_padding);
+		return std::move(*this);
+	}
+
+	void setup(Dimensions input_size) override
+	{
+		this->m_vals.setLabel(this->label() + " AvgPool2D values");
+		this->m_temp.setLabel(this->label() + " AvgPool2D gradients");
+
+		Subsampling2D<T>::setup(input_size);
+
+		// Backprop temporary
+		if (this->m_layer_level != Level::Input)
+		{
+			this->m_temp.init(
+				std::get<0>(input_size), std::get<1>(input_size),
+				std::get<2>(input_size), std::get<3>(input_size)
+			);
+		}
+	}
+
+	std::string describe() const override
+	{
+		return "AvgPooling2D kernel=" + std::to_string(std::get<0>(this->m_kernel)) + "x" + std::to_string(std::get<1>(this->m_kernel))
+			+ this->common_attributes(false);
+	}
+
+	std::string summary() override
+	{
+		std::stringstream os;
+		os << Layer<T>::summary();
+		os << "AvgPooling2D layer with kernel size ";
+		os << "{" << std::get<0>(this->m_kernel) << ", " << std::get<1>(this->m_kernel) << "}";
+		return os.str();
+	}
+
+	Tensor4<T> *forward(Tensor4<T> *inputs, bool is_training=false) override
+	{
+		skel_pool_avg.setPoolSize(1, std::get<0>(this->m_kernel), std::get<1>(this->m_kernel), 1);
+		skel_pool_avg.setStride(1, std::get<0>(this->m_kernel), std::get<1>(this->m_kernel), 1);
+		skel_pool_avg.setLabel(this->label() + " AvgPool2D forward");
+		skel_pool_avg(this->m_vals, *inputs);
+
+		return &this->m_vals;
+	}
+
+	Tensor4<T> *backward(Tensor4<T> *inputs, Tensor4<T> *gradient, Tensor4<T> *y) override
+	{
+		skel_pool_avg_backward.setLabel(this->label() + " AvgPool2D backward");
+		skel_pool_avg_backward(this->m_temp, *gradient, std::get<0>(this->m_kernel), std::get<1>(this->m_kernel));
+
+		return &this->m_temp;
+	}
+
+	private:
+
+	Tensor4<T> m_temp;
+	};
+}
+
+namespace skepu::dnn
+{
+	template <typename T = float, typename... Args>
+	impl::AvgPooling2D<T> AvgPooling2D(Args &&...args)
+	{
+	return impl::AvgPooling2D<T>(std::forward<Args>(args)...);
+	}
 }
 
 namespace skepu::dnn

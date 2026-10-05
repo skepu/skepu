@@ -694,11 +694,12 @@ namespace skepu::dnn
 	//   layer MaxPooling2D kernel=2x2 activation=None
 	//   layer Flatten activation=None
 	//   layer Dense units=10 weights=Xavier_uniform biases=Zero activation=SoftMax
+//   (activation: None, ReLU, LeakyReLU, ELU, Sigmoid, TanH or SoftMax)
 	//   params                                    (optional section)
 	//   block <layer index> / <count> / <values>  (one block per layer with parameters)
 	//
 	// Layer types: Dense (units), Conv2D (features, kernel=HxW), Conv1D (features, kernel=K),
-	// MaxPooling2D (kernel=HxW), MaxPooling1D (kernel=K), Flatten, Dropout (rate).
+	// MaxPooling2D/AvgPooling2D (kernel=HxW), MaxPooling1D/AvgPooling1D (kernel=K), Flatten, Dropout (rate).
 	// Attributes that are left out get the library defaults. '#' starts a comment.
 	// Without a params section the parameters are initialized according to the layers' `weights` and
 	// `biases` attributes; with one they are loaded and kept by fit().
@@ -784,6 +785,8 @@ namespace skepu::dnn
 		else if (type == "Conv1D")       { auto l = Conv1D<T>((int)get_size("features")); l.kernel(get_size("kernel")); finish(std::move(l)); }
 		else if (type == "MaxPooling2D") { auto k = get_kernel2d(); auto l = MaxPooling2D<T>(); l.kernel(k.first, k.second); finish(std::move(l)); }
 		else if (type == "MaxPooling1D") { auto l = MaxPooling1D<T>(); l.kernel(get_size("kernel")); finish(std::move(l)); }
+		else if (type == "AvgPooling2D") { auto k = get_kernel2d(); auto l = AvgPooling2D<T>(); l.kernel(k.first, k.second); finish(std::move(l)); }
+		else if (type == "AvgPooling1D") { auto l = AvgPooling1D<T>(); l.kernel(get_size("kernel")); finish(std::move(l)); }
 		else if (type == "Flatten")      finish(Flatten<T>());
 		else if (type == "Dropout")      finish(Dropout<T>(std::stof(get("rate"))));
 		else fail("unknown layer type '" + type + "'");

@@ -206,7 +206,7 @@ enum class Level { Input, Hidden, Output };
 
 enum class Init { Uniform, Zero, Xavier_uniform, Xavier_normal, He_uniform, He_normal };
 
-enum class Act { None, ReLU, Sigmoid, TanH, SoftMax };
+enum class Act { None, ReLU, Sigmoid, TanH, SoftMax, LeakyReLU, ELU };
 
 enum class Loss { CategoricalCrossEntropy, BinaryCrossEntropy };
 
@@ -237,6 +237,8 @@ inline const char *to_string(Act a)
 	case Act::ReLU: return "ReLU";
 	case Act::Sigmoid: return "Sigmoid";
 	case Act::TanH: return "TanH";
+	case Act::LeakyReLU: return "LeakyReLU";
+	case Act::ELU: return "ELU";
 	case Act::SoftMax: return "SoftMax";
 	}
 	return "None";
@@ -251,7 +253,7 @@ inline bool init_from_string(const std::string &s, Init &out)
 
 inline bool act_from_string(const std::string &s, Act &out)
 {
-	for (Act a : {Act::None, Act::ReLU, Act::Sigmoid, Act::TanH, Act::SoftMax})
+	for (Act a : {Act::None, Act::ReLU, Act::Sigmoid, Act::TanH, Act::SoftMax, Act::LeakyReLU, Act::ELU})
 		if (s == to_string(a)) { out = a; return true; }
 	return false;
 }

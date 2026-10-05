@@ -137,6 +137,48 @@ namespace skepu::dnn::impl
 		return os.str();
 	}
 	};
+
+
+	// Average pooling along the sequence dimension, with stride equal to the pool size
+	template <typename T = float>
+	class AvgPooling1D : public AvgPooling2D<T>
+	{
+	public:
+	AvgPooling1D() : AvgPooling2D<T>()
+	{
+		this->m_kernel = {1, 2}; // default
+	}
+
+	AvgPooling1D(AvgPooling1D &&source) : AvgPooling2D<T>(std::move(source)) {}
+
+	~AvgPooling1D() override = default;
+
+	AvgPooling1D &&kernel(size_t k)
+	{
+		this->m_kernel = {1, (int)k};
+		return std::move(*this);
+	}
+
+	std::string describe() const override
+	{
+		return "AvgPooling1D kernel=" + std::to_string(std::get<1>(this->m_kernel)) + this->common_attributes(false);
+	}
+
+	void setup(Dimensions input_size) override
+	{
+		if (std::get<1>(input_size) != 1)
+			SKEPU_ERROR("SkePU-DNN: AvgPooling1D expects input shape (batch, 1, length, channels), got height " << std::get<1>(input_size));
+		AvgPooling2D<T>::setup(input_size);
+	}
+
+	std::string summary() override
+	{
+		std::stringstream os;
+		os << Layer<T>::summary();
+		os << "AvgPooling1D layer with pool size " << std::get<1>(this->m_kernel);
+		return os.str();
+	}
+	};
 }
 
 namespace skepu::dnn
@@ -151,6 +193,12 @@ namespace skepu::dnn
 	impl::MaxPooling1D<T> MaxPooling1D(Args &&...args)
 	{
 	return impl::MaxPooling1D<T>(std::forward<Args>(args)...);
+	}
+
+	template <typename T = float, typename... Args>
+	impl::AvgPooling1D<T> AvgPooling1D(Args &&...args)
+	{
+	return impl::AvgPooling1D<T>(std::forward<Args>(args)...);
 	}
 }
 

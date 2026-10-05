@@ -571,3 +571,74 @@ TEST_CASE("DNN rejects unsupported strides and padding")
 	auto model = SequentialModel(Dimensions{4, 8, 8, 1}) << MaxPooling2D().kernel(2, 2).stride(1, 1);
 	REQUIRE_THROWS(model.init());
 }
+
+TEST_CASE("DNN gradients: leaky ReLU and ELU activations")
+{
+	use_sequential_cpu();
+	const size_t B = 4;
+	for (Act act : {Act::LeakyReLU, Act::ELU})
+	{
+		auto model = SequentialModel(Dimensions{B, 1, 1, 8})
+			<< Dense(6).weights(Init::Xavier_uniform).biases(Init::Uniform).activation(act)
+			<< Dense(3).weights(Init::Xavier_uniform).biases(Init::Uniform).activation(Act::SoftMax);
+		skepu::Tensor4<float> x(B, 1, 1, 8), y(B, 1, 1, 3);
+		fill_random(x, -1, 1); fill_labels(y);
+		// Biases shifted by +0.5 to keep the units away from the kink at 0
+		REQUIRE(gradcheck(std::string("MLP ") + to_string(act) + " + softmax / CCE", model, Loss::CategoricalCrossEntropy, x, y, 0.5f));
+	}
+}
+
+TEST_CASE("DNN gradients: average pooling")
+{
+	use_sequential_cpu();
+	const size_t B = 4;
+	{
+		auto model = SequentialModel(Dimensions{B, 9, 9, 2})   // 9 is not divisible by 2: the last row/column is not pooled
+			<< Conv2D(3).kernel(3, 3).weights(Init::Xavier_uniform).biases(Init::Uniform).activation(Act::TanH)
+			<< AvgPooling2D().kernel(2, 2)
+			<< Flatten()
+			<< Dense(3).weights(Init::Xavier_uniform).biases(Init::Uniform).activation(Act::SoftMax);
+		skepu::Tensor4<float> x(B, 9, 9, 2), y(B, 1, 1, 3);
+		fill_random(x, 0, 1); fill_labels(y);
+		REQUIRE(gradcheck("CNN conv + avgpool2d + softmax / CCE", model, Loss::CategoricalCrossEntropy, x, y));
+	}
+	{
+		auto model = SequentialModel(Dimensions{B, 1, 14, 2})
+			<< Conv1D(3).kernel(3).weights(Init::Xavier_uniform).biases(Init::Uniform).activation(Act::TanH)
+			<< AvgPooling1D().kernel(3)
+			<< Flatten()
+			<< Dense(1).weights(Init::Xavier_uniform).biases(Init::Uniform).activation(Act::Sigmoid);
+		skepu::Tensor4<float> x(B, 1, 14, 2), y(B, 1, 1, 1);
+		fill_random(x, -1, 1); fill_labels(y);
+		REQUIRE(gradcheck("CNN1D conv1d + avgpool1d + sigmoid / BCE", model, Loss::BinaryCrossEntropy, x, y));
+	}
+}
+
+TEST_CASE("DNN model files: the new activations and average pooling")
+{
+	use_sequential_cpu();
+	const std::string path = (std::filesystem::temp_directory_path() / "skepu_dnn_test_new_layers.txt").string();
+	std::ofstream(path) <<
+		"skepu-dnn-model 1\n"
+		"input 1 16 1\n"
+		"layer Conv1D features=4 kernel=3 activation=LeakyReLU\n"
+		"layer AvgPooling1D kernel=2\n"
+		"layer Conv1D features=4 kernel=3 activation=ELU\n"
+		"layer Flatten\n"
+		"layer Dense units=3 activation=SoftMax\n";
+	auto model = load_model(path, 4);
+	skepu::Tensor4<float> x(4, 1, 16, 1);
+	fill_random(x, -1, 1);
+	skepu::Tensor4<float> out = model.predict(x);
+	REQUIRE(out.size_l() == 3);
+
+	// Saved and loaded again, the same model
+	const std::string path2 = path + ".2";
+	model.save(path2);
+	auto loaded = load_model(path2, 4);
+	skepu::Tensor4<float> out2 = loaded.predict(x);
+	for (size_t l = 0; l < 3; ++l)
+		REQUIRE(out2(0, 0, 0, l) == out(0, 0, 0, l));
+	std::filesystem::remove(path);
+	std::filesystem::remove(path2);
+}

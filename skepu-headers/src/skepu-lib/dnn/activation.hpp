@@ -16,38 +16,28 @@ float sigmoid_backward_uf(float x, float g)
 	return g * sigma_x * (1 - sigma_x);
 }
 
-// forward oass
+// ReLU, leaky ReLU (slope 0.01 for negative inputs) and ELU (alpha = 1).
+// The backward functions take the pre-activation input x and the incoming gradient g.
 float relu_uf(float x) { return (x > 0) ? x : 0; }
 
-float leaky_relu_uf(float x) { return (x > 0) ? x :(0.01 * x); }
-
-float P_relu_uf(float x, float alpha ){ return (x > 0) ? x :(alpha * x);}
-
-float elu_uf(float x, float alpha){
-	return (x > 0) ? x : alpha * (std::exp(x) - 1);
-}
-
-// bacCKWRaRD PASS
 float relu_prime_uf(float x, float g)
 {
-	return (x > 0) ? g : 0 ;
+	return (x > 0) ? g : 0;
 }
 
-float leaky_relu_prime_uf(float x)
+float leaky_relu_uf(float x) { return (x > 0) ? x : 0.01f * x; }
+
+float leaky_relu_backward_uf(float x, float g)
 {
-	return (x > 0) ? 1.0 : 0.01 ;
+	return (x > 0) ? g : 0.01f * g;
 }
 
-float P_relu_prime_uf(float x, float alpha)
+float elu_uf(float x) { return (x > 0) ? x : exp(x) - 1.0f; }
+
+float elu_backward_uf(float x, float g)
 {
-	return (x > 0) ? 1.0 : alpha ;
+	return (x > 0) ? g : g * exp(x);
 }
-
-float elu_prime_uf(float x, float alpha)
-{
-	return (x > 0) ? 1.0 : alpha * std::exp(x);
-}
-
 
 float tanh_uf(float x) { return tanh(x); }
 
@@ -127,11 +117,15 @@ auto softmax_jacobian = skepu::Map<0>(softmax_jacobian_uf);
 auto softmax_prime  = skepu::Map<0>(softmax_prime_uf);
 
 auto skel_act_tanh = skepu::Map(tanh_uf);
+auto skel_act_leaky_relu = skepu::Map(leaky_relu_uf);
+auto skel_act_elu = skepu::Map(elu_uf);
 
 
 auto skel_act_sigmoid_prime = skepu::Map(sigmoid_backward_uf);
 auto skel_act_relu_prime = skepu::Map(relu_prime_uf);
 auto skel_act_tanh_prime = skepu::Map(tanh_backward_uf);
+auto skel_act_leaky_relu_backward = skepu::Map(leaky_relu_backward_uf);
+auto skel_act_elu_backward = skepu::Map(elu_backward_uf);
 
 
 namespace skepu::dnn::impl
@@ -206,6 +200,16 @@ namespace skepu::dnn::impl
 			skel_act_tanh.setLabel(this->label() + " TanH");
 			skel_act_tanh(*target, *inputs);
 		}
+		else if (this->m_act == Act::LeakyReLU)
+		{
+			skel_act_leaky_relu.setLabel(this->label() + " LeakyReLU");
+			skel_act_leaky_relu(*target, *inputs);
+		}
+		else if (this->m_act == Act::ELU)
+		{
+			skel_act_elu.setLabel(this->label() + " ELU");
+			skel_act_elu(*target, *inputs);
+		}
 		return target;
 	}
 
@@ -243,6 +247,16 @@ namespace skepu::dnn::impl
 			skel_act_tanh_prime.setLabel(this->label() + " TanH derivative");
 			skel_act_tanh_prime(*target, *inputs, *gradient);
 		}
+		else if (this->m_act == Act::LeakyReLU)
+		{
+			skel_act_leaky_relu_backward.setLabel(this->label() + " LeakyReLU derivative");
+			skel_act_leaky_relu_backward(*target, *inputs, *gradient);
+		}
+		else if (this->m_act == Act::ELU)
+		{
+			skel_act_elu_backward.setLabel(this->label() + " ELU derivative");
+			skel_act_elu_backward(*target, *inputs, *gradient);
+		}
 
 		return target;
 	}
@@ -262,6 +276,10 @@ namespace skepu::dnn::impl
 			os << "SoftMax";
 		else if (this->m_act == Act::TanH)
 			os << "TanH";
+		else if (this->m_act == Act::LeakyReLU)
+			os << "LeakyReLU";
+		else if (this->m_act == Act::ELU)
+			os << "ELU";
 		os << (this->m_in_place ? " (in-place) " : " (not in-place) ");
 		return os.str();
 	}
