@@ -1,5 +1,4 @@
-#find_package(Catch2 2 REQUIRED)
-#add_subdirectory(catch2_main)
+add_subdirectory(catch2_main)
 
 # Use add_mpi_test(<name> <command>) to get a parallel mpi test added.
 # Will make sure that mpirun is called on the executable and that STARPU_NCPU

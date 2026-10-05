@@ -3,27 +3,9 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
-#include <cmath>
+#include <test_helper_automatic_setup.hpp>
+#include <test_helper_functions.hpp>
 #include <type_traits>
-#define PRECISION 1E-3
-template <typename T>
-void is_similar(T a, T b)
-{
-	CHECK((
-		(std::isnan(a) && std::isnan(b)) ||
-		(std::isinf(a) && std::isinf(b)) ||
-		(a == Approx(b).epsilon(PRECISION)))
-	);
-}
-
-int clamp(int const& val, int const& min, int const& max)
-{
-    if (val < min)
-        return min;
-    if (val > max)
-        return max;
-    return val;
-}
 
 int pool_sum(skepu::Pool2D<int> p)
 {
@@ -73,13 +55,15 @@ void compare(skepu::Matrix<T>& actual, std::vector<std::vector<T>>& expected)
 
 auto pool = skepu::MapPool(pool_sum);
 
+constexpr int size_upper_bound = 50;
+
 TEST_CASE("Fundamentals")
 {
     int poolSize = 2;
     pool.setPoolSizeAndStride(poolSize, poolSize);
 
-    for (int rows = 2; rows <= 20; rows += poolSize)
-        for (int cols = 2; cols <= 20; cols += poolSize)
+    for (int rows = 2; rows <= size_upper_bound; rows += poolSize)
+        for (int cols = 2; cols <= size_upper_bound; cols += poolSize)
         {
             skepu::Matrix<int> input(rows, cols, 1);
             skepu::Matrix<int> actual(input.total_rows() / poolSize, input.total_cols() / poolSize, 0);
@@ -92,7 +76,10 @@ TEST_CASE("Fundamentals")
             }, skepu::write(input));
 
 
-            INFO("input size = " + std::to_string(rows) + "x" + std::to_string(cols));
+            INFO("input size = " + std::to_string(rows) + "x" + std::to_string(cols) +
+                 ", output size = " + std::to_string(actual.size_i()) + "x" + std::to_string(actual.size_j()) + 
+                 ", pool size = " + std::to_string(poolSize) + "x" + std::to_string(poolSize) +
+                 ", stride = " + std::to_string(poolSize) + "x" + std::to_string(poolSize));
             pool(actual, input);
             expected = generate_expected(input, pool.getPoolSize(), pool.getStride());
             compare(actual, expected);
@@ -119,7 +106,10 @@ TEST_CASE("Stride sizes")
             }, skepu::write(input));
 
 
-            INFO("input size = " + std::to_string(input.total_rows()) + "x" + std::to_string(input.total_cols()) + ", output size = " + std::to_string(actual.total_rows()) + "x" + std::to_string(actual.total_cols()));
+            INFO("input size = " + std::to_string(input.total_rows()) + "x" + std::to_string(input.total_cols()) +
+                 ", output size = " + std::to_string(actual.total_rows()) + "x" + std::to_string(actual.total_cols()) +
+                 ", pool size = " + std::to_string(pool_size_y) + "x" + std::to_string(pool_size_x) + 
+                 ", stride = " + std::to_string(stride_y) + "x" + std::to_string(stride_x));
             pool(actual, input);
             expected = generate_expected(input, pool.getPoolSize(), pool.getStride());
             compare(actual, expected);
@@ -210,8 +200,8 @@ TEST_CASE("Multi return")
     int poolSize = 2;
     pool2.setPoolSizeAndStride(poolSize, poolSize);
 
-    for (int rows = 2; rows <= 20; rows += poolSize)
-        for (int cols = 2; cols <= 20; cols += poolSize)
+    for (int rows = 2; rows <= size_upper_bound; rows += poolSize)
+        for (int cols = 2; cols <= size_upper_bound; cols += poolSize)
         {
             skepu::Matrix<int> input(rows, cols, 1);
             skepu::Matrix<int> actual(input.total_rows() / poolSize, input.total_cols() / poolSize, 0);

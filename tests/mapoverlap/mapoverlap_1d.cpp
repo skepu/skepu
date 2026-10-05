@@ -2,6 +2,7 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
+#include <test_helper_automatic_setup.hpp>
 
 int rotate_f(skepu::Region1D<int> r, int dir)
 {

@@ -62,34 +62,42 @@ namespace skepu
 			bool atomicInnerMostDimension = true;
 			if (atomicInnerMostDimension) numThreads_0a = out_size_l;
 				
-			numThreads[0] = std::min<size_t>(out_size_k, std::min<size_t>(maxThreads / numThreads_0a, sizeLength)) * numThreads_0a;
-			numThreads[1] = std::min<size_t>(out_size_j, std::min<size_t>(maxThreads / numThreads[0], sizeLength));
-			numThreads[2] = std::min(out_size_i, maxThreads / (numThreads[0] * numThreads[1]));
+			numThreads[0] = this->isPool ? out_size_k * out_size_l : std::min<size_t>(out_size_k, std::min<size_t>(maxThreads / numThreads_0a, sizeLength)) * numThreads_0a;
+			numThreads[1] = this->isPool ? out_size_j : std::min<size_t>(out_size_j, std::min<size_t>(maxThreads / numThreads[0], sizeLength));
+			numThreads[2] = this->isPool ? out_size_i : std::min(out_size_i, maxThreads / (numThreads[0] * numThreads[1]));
 			
 			
 			size_t numBlocks_0a = (size_t)((out_size_l + numThreads_0a - 1) / numThreads_0a) * numThreads_0a;
-			numBlocks[0] = (size_t)((out_size_k * out_size_l + numThreads[0] - 1) / numThreads[0]) * numThreads[0];
-			numBlocks[1] = (size_t)((out_size_j + numThreads[1] - 1) / numThreads[1]) * numThreads[1];
-			numBlocks[2] = (size_t)((out_size_i + numThreads[2] - 1) / numThreads[2]) * numThreads[2];
+			numBlocks[0] = this->isPool ? 1 : (size_t)((out_size_k * out_size_l + numThreads[0] - 1) / numThreads[0]) * numThreads[0];
+			numBlocks[1] = this->isPool ? 1 : (size_t)((out_size_j + numThreads[1] - 1) / numThreads[1]) * numThreads[1];
+			numBlocks[2] = this->isPool ? 1 : (size_t)((out_size_i + numThreads[2] - 1) / numThreads[2]) * numThreads[2];
+
+			// The tile has to hold the input extent a block reads, also when the output is larger than the input
+			// (expanding) and, with the innermost dimension kept in one block, all of that dimension.
+			size_t sharedL = (atomicInnerMostDimension ? std::max<size_t>(in_size_l, out_size_l) : std::min<size_t>(std::max<size_t>(in_size_l, out_size_l), numThreads_0a)) + this->m_overlap[3] * 2;
+			size_t sharedK = std::min<size_t>(std::max<size_t>(in_size_k, out_size_k), numThreads[0] / numThreads_0a) + this->m_overlap[2] * 2;
+			size_t sharedJ = std::min<size_t>(std::max<size_t>(in_size_j, out_size_j), numThreads[1]) + this->m_overlap[1] * 2;
+			size_t sharedI = std::min<size_t>(std::max<size_t>(in_size_i, out_size_i), numThreads[2]) + this->m_overlap[0] * 2;
+			size_t sharedMemSize =  sharedI * sharedJ * sharedK * sharedL * sizeof(T);
 			
-		/*	const size_t sharedL = numThreads_0a + this->m_overlap[3] * 2;
-			const size_t sharedK = (numThreads[0] / numThreads_0a) + this->m_overlap[2] * 2;
-			const size_t sharedJ = numThreads[1] + this->m_overlap[1] * 2;
-			const size_t sharedI = numThreads[2] + this->m_overlap[0] * 2;*/
-			 // With the innermost dimension kept in one block, the tile must hold all of its input extent
-			 size_t sharedL = (atomicInnerMostDimension ? in_size_l : std::min<size_t>(in_size_l, numThreads_0a)) + this->m_overlap[3] * 2;
-			 size_t sharedK = std::min<size_t>(in_size_k, numThreads[0] / numThreads_0a) + this->m_overlap[2] * 2;
-			 size_t sharedJ = std::min<size_t>(in_size_j, numThreads[1]) + this->m_overlap[1] * 2;
-			 size_t sharedI = std::min<size_t>(in_size_i, numThreads[2]) + this->m_overlap[0] * 2;
-			 size_t sharedMemSize =  sharedI * sharedJ * sharedK * sharedL * sizeof(T);
-			
+
+
 			if (this->isPool)
 			{
-				sharedL = std::min<size_t>(out_size_l, numThreads_0a) * this->m_overlap[3];
-				sharedK = std::min<size_t>(out_size_k, numThreads[0] / numThreads_0a) * this->m_overlap[2];
-				sharedJ = std::min<size_t>(out_size_j, numThreads[1]) * this->m_overlap[1];
-				sharedI = std::min<size_t>(out_size_i, numThreads[2]) * this->m_overlap[0];
-				sharedMemSize =  sharedI * sharedJ * sharedK * sharedL * sizeof(T);
+				size_t max_memory_per_work_group;
+                clGetDeviceInfo(device->getDeviceID(), CL_DEVICE_LOCAL_MEM_SIZE, sizeof(size_t), &max_memory_per_work_group, 0);
+
+				size_t max_threads_per_work_group;
+				clGetKernelWorkGroupInfo(CLKernel::kernels(deviceID), device->getDeviceID(), CL_KERNEL_WORK_GROUP_SIZE, sizeof(size_t), &max_threads_per_work_group, 0);
+
+				bool should_use_global_memory = true;
+
+				this->template configurePoolKernelParameters<T, size_t, 3, 4>(max_threads_per_work_group, {&numThreads[0], &numThreads[1], &numThreads[2]}, {&numBlocks[0], &numBlocks[1], &numBlocks[2]},
+														 					  should_use_global_memory, max_memory_per_work_group, {&sharedI, &sharedJ, &sharedK, &sharedL}, {in_size_i, in_size_j, in_size_k, in_size_l});
+				sharedMemSize = 1;
+				numBlocks[0] *= numThreads[0];
+                numBlocks[1] *= numThreads[1];
+                numBlocks[2] *= numThreads[2];
 			}
 			
 			DEBUG_TEXT_LEVEL1("OpenCL " << name << " 4D: device = " << deviceID << ", numThreads = "
@@ -111,6 +119,7 @@ namespace skepu
 				get<0>(std::forward<CallArgs>(args)...).getParent().size_info(),
 				out_size_i, out_size_j, out_size_k, out_size_l, 
 				this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_overlap[3],
+                this->m_strides[0], this->m_strides[1], this->m_strides[2], this->m_strides[3],
 				in_size_i, in_size_j, in_size_k, in_size_l, 
 				sharedI, sharedJ, sharedK, sharedL,
 				numThreads_0a, numBlocks_0a,

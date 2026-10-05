@@ -1,10 +1,12 @@
 #include "globals.h"
-#include "code_gen.h"
 #include "visitor.h"
 
-using namespace clang;
+#ifndef SKEPU_LSP
+#include "code_gen.h"
+#endif
 
-std::unordered_set<std::string> SkeletonInstances;
+
+std::unordered_set<std::string> SkeletonInstancesString;
 
 [[noreturn]] void SkePUAbort(std::string msg)
 {
@@ -16,7 +18,7 @@ std::unordered_set<std::string> SkeletonInstances;
 // AST visitor
 // ------------------------------
 
-UserFunction *HandleUserFunction(FunctionDecl *f)
+UserFunction *HandleUserFunction(clang::FunctionDecl *f)
 {
 	// Check so that this userfunction has not been treated already
 	if (UserFunctions.find(f) != UserFunctions.end())
@@ -32,41 +34,41 @@ UserFunction *HandleUserFunction(FunctionDecl *f)
 }
 
 
-UserFunction *HandleFunctionPointerArg(Expr *ArgExpr)
+UserFunction *HandleFunctionPointerArg(clang::Expr *ArgExpr)
 {
 	// Check that the argument is a declaration reference
-	if (!(DeclRefExpr::classof(ArgExpr)))
+	if (!(clang::DeclRefExpr::classof(ArgExpr)))
 		SkePUAbort("Userfunction argument not a DeclRefExpr");
 
 	// Get the referee delcaration of the argument declaration reference
-	ValueDecl *ValDecl = dyn_cast<DeclRefExpr>(ArgExpr)->getDecl();
+	clang::ValueDecl *ValDecl = clang::dyn_cast<clang::DeclRefExpr>(ArgExpr)->getDecl();
 
 	// Check that the argument refers to a function declaration
-	if (!FunctionDecl::classof(ValDecl))
+	if (!clang::FunctionDecl::classof(ValDecl))
 		SkePUAbort("Userfunction argument not referencing a function declaration");
 
 	// Get the function declaration and function name
-	FunctionDecl *UserFunc = dyn_cast<FunctionDecl>(ValDecl);
+	clang::FunctionDecl *UserFunc = clang::dyn_cast<clang::FunctionDecl>(ValDecl);
 	std::string FuncName = UserFunc->getNameInfo().getName().getAsString();
 
 	return HandleUserFunction(UserFunc);
 }
 
-UserFunction *HandleLambdaArg(Expr *ArgExpr, VarDecl *d)
+UserFunction *HandleLambdaArg(clang::Expr *ArgExpr, clang::VarDecl *d)
 {
-	Expr *Arg = ArgExpr;
+	clang::Expr *Arg = ArgExpr;
 
-	if (MaterializeTemporaryExpr *MatTempExpr = dyn_cast<MaterializeTemporaryExpr>(Arg))
+	if (clang::MaterializeTemporaryExpr *MatTempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(Arg))
 		Arg = MatTempExpr->getSubExpr();
 
-	LambdaExpr *Lambda = dyn_cast<LambdaExpr>(Arg);
+	clang::LambdaExpr *Lambda = clang::dyn_cast<clang::LambdaExpr>(Arg);
 	if (!Lambda)
 		SkePUAbort("User function (assumed lambda) argument not a lambda");
 
 	if (Lambda->capture_size() > 0)
 		SkePUAbort("User function lambda argument has non-empty capture list");
 
-	CXXMethodDecl *CallOperator = Lambda->getCallOperator();
+	clang::CXXMethodDecl *CallOperator = Lambda->getCallOperator();
 
 	UserFunction *UF = new UserFunction(CallOperator, d);
 	UserFunctions[CallOperator] = UF;
@@ -75,114 +77,119 @@ UserFunction *HandleLambdaArg(Expr *ArgExpr, VarDecl *d)
 }
 
 
-const Skeleton::Type* DeclIsValidSkeleton(VarDecl *d)
+const Skeleton::Type* DeclIsValidSkeleton(clang::VarDecl *d)
 {
-	if (isa<ParmVarDecl>(d))
+	if (clang::isa<clang::ParmVarDecl>(d))
 		return nullptr;
 
-	if (d->isThisDeclarationADefinition() != VarDecl::DefinitionKind::Definition)
+	if (d->isThisDeclarationADefinition() != clang::VarDecl::DefinitionKind::Definition)
 		return nullptr;
 
-	Expr *InitExpr = d->getInit();
+	clang::Expr *InitExpr = d->getInit();
 	if (!InitExpr)
 		return nullptr;
 
     InitExpr = InitExpr->IgnoreImplicit();
 
 
-	if (auto *CleanUpExpr = dyn_cast<ExprWithCleanups>(InitExpr))
+	if (auto *CleanUpExpr = clang::dyn_cast<clang::ExprWithCleanups>(InitExpr))
 		InitExpr = CleanUpExpr->getSubExpr();
 
-	auto *ConstructExpr = dyn_cast<CXXConstructExpr>(InitExpr);
+	auto *ConstructExpr = clang::dyn_cast<clang::CXXConstructExpr>(InitExpr);
 
-	if (ConstructExpr && ConstructExpr->getConstructionKind() != CXXConstructionKind::Complete)
+	if (ConstructExpr && ConstructExpr->getConstructionKind() != clang::CXXConstructionKind::Complete)
 		return nullptr;
 
 	auto *TempExpr = InitExpr;
 
-	if (auto *MatTempExpr = dyn_cast<MaterializeTemporaryExpr>(TempExpr))
+	if (auto *MatTempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(TempExpr))
 		TempExpr = MatTempExpr->getSubExpr();
 
-	if (auto *BindTempExpr = dyn_cast<CXXBindTemporaryExpr>(TempExpr))
+	if (auto *BindTempExpr = clang::dyn_cast<clang::CXXBindTemporaryExpr>(TempExpr))
 		TempExpr = BindTempExpr->getSubExpr();
 
-	CallExpr *CExpr = dyn_cast<CallExpr>(TempExpr);
+	clang::CallExpr *CExpr = clang::dyn_cast<clang::CallExpr>(TempExpr);
 	if (!CExpr)
 		return nullptr;
 
 	if (CExpr->getNumArgs() == 0)
 		return nullptr;
 
-	const FunctionDecl *Callee = CExpr->getDirectCallee();
+	const clang::FunctionDecl *Callee = CExpr->getDirectCallee();
 
     if (!Callee)
         return nullptr;
 
-    const Type *RetType = Callee->getReturnType().getTypePtr();
+    const clang::Type *RetType = Callee->getReturnType().getTypePtr();
 
-	if (isa<DecltypeType>(RetType))
-		RetType = dyn_cast<DecltypeType>(RetType)->getUnderlyingType().getTypePtr();
+	if (clang::isa<clang::DecltypeType>(RetType))
+		RetType = clang::dyn_cast<clang::DecltypeType>(RetType)->getUnderlyingType().getTypePtr();
 
-	if (!isa<TemplateSpecializationType>(RetType))
+	if (!clang::isa<clang::TemplateSpecializationType>(RetType))
 		return nullptr;
 
-	const TemplateDecl *Template = RetType->getAs<TemplateSpecializationType>()->getTemplateName().getAsTemplateDecl();
+	const clang::TemplateDecl *Template = RetType->getAs<clang::TemplateSpecializationType>()->getTemplateName().getAsTemplateDecl();
 	std::string TypeName = Template->getNameAsString();
 
 	SkePULog() << "Candidate: " << TypeName << "\n";
 
-	if (Skeletons.find(TypeName) == Skeletons.end())
+	if (SkeletonsLookup.find(TypeName) == SkeletonsLookup.end())
 		return nullptr;
 
-	SkePULog() << "Accepted " << Skeletons.at(TypeName).name << "!\n";
+	SkePULog() << "Accepted " << SkeletonsLookup.at(TypeName).name << "!\n";
 
-	return &Skeletons.at(TypeName).type;
+	return &SkeletonsLookup.at(TypeName).type;
 }
 
-bool HandleSkeletonInstance(VarDecl *d)
+#ifdef SKEPU_LSP
+Skeleton* 
+#else
+bool
+#endif
+HandleSkeletonInstance(clang::VarDecl *d)
 {
-	if (d->isThisDeclarationADefinition() != VarDecl::DefinitionKind::Definition)
+	if (d->isThisDeclarationADefinition() != clang::VarDecl::DefinitionKind::Definition)
 		SkePUAbort("Not a definition");
 
-	Expr *InitExpr = d->getInit();
+	clang::Expr *InitExpr = d->getInit();
 
     if (!InitExpr)
 		SkePUAbort("Not an expression");
 
     InitExpr = InitExpr->IgnoreImplicit();
 
-	if (isa<ExprWithCleanups>(InitExpr))
-		InitExpr = dyn_cast<ExprWithCleanups>(InitExpr)->getSubExpr();
+	if (clang::isa<clang::ExprWithCleanups>(InitExpr))
+		InitExpr = clang::dyn_cast<clang::ExprWithCleanups>(InitExpr)->getSubExpr();
 
-	CXXConstructExpr *ConstructExpr = dyn_cast<CXXConstructExpr>(InitExpr);
-	if (ConstructExpr && ConstructExpr->getConstructionKind() != CXXConstructionKind::Complete)
+	clang::CXXConstructExpr *ConstructExpr = clang::dyn_cast<clang::CXXConstructExpr>(InitExpr);
+	if (ConstructExpr && ConstructExpr->getConstructionKind() != clang::CXXConstructionKind::Complete)
 		SkePUAbort("Not a complete constructor");
 
-    Expr *TempExpr = InitExpr;
+    clang::Expr *TempExpr = InitExpr;
 
-    if (isa<MaterializeTemporaryExpr>(TempExpr))
-        TempExpr = dyn_cast<MaterializeTemporaryExpr>(TempExpr)->getSubExpr();
+    if (clang::isa<clang::MaterializeTemporaryExpr>(TempExpr))
+        TempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(TempExpr)->getSubExpr();
 
-	if (isa<CXXBindTemporaryExpr>(TempExpr))
-		TempExpr = dyn_cast<CXXBindTemporaryExpr>(TempExpr)->getSubExpr();
+	if (clang::isa<clang::CXXBindTemporaryExpr>(TempExpr))
+		TempExpr = clang::dyn_cast<clang::CXXBindTemporaryExpr>(TempExpr)->getSubExpr();
 
-	CallExpr *CExpr = dyn_cast<CallExpr>(TempExpr);
+	clang::CallExpr *CExpr = clang::dyn_cast<clang::CallExpr>(TempExpr);
 	if (!CExpr)
 		SkePUAbort("Not a call expression");
 
 
-	const FunctionDecl *Callee = CExpr->getDirectCallee();
-	const Type *RetType = Callee->getReturnType().getTypePtr();
+	const clang::FunctionDecl *Callee = CExpr->getDirectCallee();
+	const clang::Type *RetType = Callee->getReturnType().getTypePtr();
 
-	if (isa<DecltypeType>(RetType))
-		RetType = dyn_cast<DecltypeType>(RetType)->getUnderlyingType().getTypePtr();
+	if (clang::isa<clang::DecltypeType>(RetType))
+		RetType = clang::dyn_cast<clang::DecltypeType>(RetType)->getUnderlyingType().getTypePtr();
 
-	const TemplateSpecializationType *Template = RetType->getAs<TemplateSpecializationType>();
+	const clang::TemplateSpecializationType *Template = RetType->getAs<clang::TemplateSpecializationType>();
 	std::string TypeName = Template->getTemplateName().getAsTemplateDecl()->getNameAsString();
-	Skeleton::Type skeletonType = Skeletons.at(TypeName).type;
-
+	Skeleton::Type skeletonType = SkeletonsLookup.at(TypeName).type;
+	
 	std::string InstanceName = d->getNameAsString();
-	SkeletonInstances.insert(InstanceName);
+	SkeletonInstancesString.insert(InstanceName);
 
 	std::vector<size_t> arity = { 0, 2 };
 	switch (skeletonType)
@@ -216,16 +223,16 @@ bool HandleSkeletonInstance(VarDecl *d)
 
 	std::vector<UserFunction*> FuncArgs;
 	size_t i = 0;
-	for (Expr *expr : CExpr->arguments())
+	for (clang::Expr *expr : CExpr->arguments())
 	{
 		UserFunction *UF;
 
 		// The argument may be an implcit cast, get the underlying expression
-		if (ImplicitCastExpr *ImplExpr = dyn_cast<ImplicitCastExpr>(expr))
+		if (clang::ImplicitCastExpr *ImplExpr = clang::dyn_cast<clang::ImplicitCastExpr>(expr))
 			UF = HandleFunctionPointerArg(ImplExpr->IgnoreImpCasts());
 
 		// It can also be an explicit cast, get the underlying expression
-		else if (UnaryOperator *UnaryCastExpr = dyn_cast<UnaryOperator>(expr))
+		else if (clang::UnaryOperator *UnaryCastExpr = clang::dyn_cast<clang::UnaryOperator>(expr))
 			UF = HandleFunctionPointerArg(UnaryCastExpr->getSubExpr());
 
 		// The user function is probably defined as a lambda
@@ -240,11 +247,46 @@ bool HandleSkeletonInstance(VarDecl *d)
 			UF->updateArgLists(arity[i++]);
 	}
 
-	return transformSkeletonInvocation(Skeletons.at(TypeName), InstanceName, FuncArgs, arity, d);
+
+	#ifdef SKEPU_LSP
+		Skeleton *skeleton = new Skeleton{};
+		skeleton->type = SkeletonsLookup.at(TypeName).type;
+		skeleton->name = SkeletonsLookup.at(TypeName).name;
+		skeleton->userfunctionArgAmount = SkeletonsLookup.at(TypeName).userfunctionArgAmount;
+		skeleton->deviceKernelAmount = SkeletonsLookup.at(TypeName).deviceKernelAmount;
+
+		skeleton->variableName = d->getNameAsString();
+		skeleton->parameters = FuncArgs;
+		skeleton->retType = Callee->getReturnType();
+
+		clang::SourceManager &SM = Callee->getASTContext().getSourceManager();
+		clang::SourceRange range = d->getSourceRange();
+
+		clang::clangd::Range clangdRange;
+		clangdRange.start.line = SM.getSpellingLineNumber(range.getBegin()) - 1;
+		clangdRange.start.character = SM.getSpellingColumnNumber(range.getBegin());
+		clangdRange.end.line = SM.getSpellingLineNumber(range.getEnd()) - 1;
+		clangdRange.end.character = SM.getSpellingColumnNumber(range.getEnd());
+
+		skeleton->selectionRange = clangdRange;
+		clangdRange.start.character = 0;
+		clangdRange.end.character = SM.getSpellingColumnNumber(range.getEnd()) + 1;
+		skeleton->range = clangdRange;
+
+		skeleton->location = d->getLocation();
+		skeleton->locationString = d->getLocation().printToString(d->getASTContext().getSourceManager());
+
+
+		skeleton->constructLayout();
+		
+		return skeleton;
+	#else
+		return transformSkeletonInvocation(SkeletonsLookup.at(TypeName), InstanceName, FuncArgs, arity, d);
+	#endif
 }
 
 // Returns nullptr if the user type can be ignored
-UserType *HandleUserType(const CXXRecordDecl *t)
+UserType *HandleUserType(const clang::CXXRecordDecl *t)
 {
 	if (!t)
 		return nullptr;
@@ -261,9 +303,6 @@ UserType *HandleUserType(const CXXRecordDecl *t)
 
 	SkePULog() << "Found user type: " << name << "\n";
 
-//	if (!t->isCLike())
-//		SkePUAbort("User type is not C-like and not supported (run verbose for more details)\n");
-
 	// Check if already handled, otherwise construct and add
 	if (UserTypes.find(t) == UserTypes.end())
 		UserTypes[t] = new UserType(t);
@@ -272,217 +311,175 @@ UserType *HandleUserType(const CXXRecordDecl *t)
 }
 
 
-SkePUASTVisitor::SkePUASTVisitor(ASTContext *ctx, std::unordered_set<clang::VarDecl *> &instanceSet)
+SkePUASTVisitor::SkePUASTVisitor(clang::ASTContext *ctx, std::unordered_set<clang::VarDecl *> &instanceSet)
 : SkeletonInstances(instanceSet), Context(ctx)
 {}
 
-bool SkePUASTVisitor::VisitVarDecl(VarDecl *d)
-{
-//	if (!this->Context->getSourceManager().isInMainFile(d->getBeginLoc()))
-//		return RecursiveASTVisitor<SkePUASTVisitor>::VisitVarDecl(d);
-
-	std::string typeName = d->getType().getAsString();
-	if (typeName.find("skepu::PrecompilerMarker") != std::string::npos)
-	{
-		std::string varName = d->getNameAsString();
-		if (varName == "startOfBlasHPP")
+bool SkePUASTVisitor::VisitVarDecl(clang::VarDecl *d)
+{	
+	#ifndef SKEPU_LSP
+		std::string typeName = d->getType().getAsString();
+		if (typeName.find("skepu::PrecompilerMarker") != std::string::npos)
 		{
-			library_markers::blasBegin = d->getSourceRange().getEnd();
-			library_markers::foundBlas = true;
+			std::string varName = d->getNameAsString();
+			// Library files (blas.hpp, the DNN library) are transformed with the program that includes them,
+			// and their transformed text is injected at the include (see libraryFileHandlerHelper).
+			struct Marker { const char *begin, *end; clang::SourceLocation *beginLoc, *endLoc; bool *found; };
+			static const Marker markers[] = {
+				{"startOfBlasHPP",                 "endOfBlasHPP",                 &library_markers::blasBegin,            &library_markers::blasEnd,            &library_markers::foundBlas},
+				{"startOf_ML_HPP",                 "endOf_ML_HPP",                 &library_markers::mlBegin,              &library_markers::mlEnd,              &library_markers::foundML},
+				{"startOf_SequentialModel_HPP",    "endOf_SequentialModel_HPP",    &library_markers::sequentialModelBegin, &library_markers::sequentialModelEnd, nullptr},
+				{"startOf_DNN_Support_HPP",        "endOf_DNN_Support_HPP",        &library_markers::dnnSupportBegin,      &library_markers::dnnSupportEnd,      nullptr},
+				{"startOf_Activation_HPP",         "endOf_Activation_HPP",         &library_markers::activationBegin,      &library_markers::activationEnd,      nullptr},
+				{"startOf_Layer_HPP",              "endOf_Layer_HPP",              &library_markers::layerBegin,           &library_markers::layerEnd,           nullptr},
+				{"startOf_Dense_HPP",              "endOf_Dense_HPP",              &library_markers::denseBegin,           &library_markers::denseEnd,           nullptr},
+				{"startOf_Dropout_HPP",            "endOf_Dropout_HPP",            &library_markers::dropoutBegin,         &library_markers::dropoutEnd,         nullptr},
+				{"startOf_Flatten_HPP",            "endOf_Flatten_HPP",            &library_markers::flattenBegin,         &library_markers::flattenEnd,         nullptr},
+				{"startOf_Conv1D_HPP",             "endOf_Conv1D_HPP",             &library_markers::conv1dBegin,          &library_markers::conv1dEnd,          nullptr},
+				{"startOf_Conv2D_HPP",             "endOf_Conv2D_HPP",             &library_markers::conv2dBegin,          &library_markers::conv2dEnd,          nullptr},
+				{"startOf_Pool2D_HPP",             "endOf_Pool2D_HPP",             &library_markers::pool2dBegin,          &library_markers::pool2dEnd,          nullptr},
+			};
+			for (const Marker &m : markers)
+			{
+				if (varName == m.begin)
+				{
+					*m.beginLoc = d->getSourceRange().getEnd();
+					if (m.found) *m.found = true;
+				}
+				else if (varName == m.end)
+					*m.endLoc = d->getSourceRange().getEnd();
+			}
 		}
-		else if (varName == "endOfBlasHPP")
-			library_markers::blasEnd = d->getSourceRange().getEnd();
+	#endif
 
-		if (varName == "startOf_ML_HPP")
-		{
-			library_markers::mlBegin = d->getSourceRange().getEnd();
-			library_markers::foundML = true;
-		}
-		else if (varName == "endOf_ML_HPP")
-			library_markers::mlEnd = d->getSourceRange().getEnd();
-
-		if (varName == "startOf_SequentialModel_HPP")
-    		library_markers::sequentialModelBegin = d->getSourceRange().getEnd();
-		else if (varName == "endOf_SequentialModel_HPP")
-			library_markers::sequentialModelEnd = d->getSourceRange().getEnd();
-
-		if (varName == "startOf_DNN_Support_HPP")
-    		library_markers::dnnSupportBegin = d->getSourceRange().getEnd();
-		else if (varName == "endOf_DNN_Support_HPP")
-			library_markers::dnnSupportEnd = d->getSourceRange().getEnd();
-
-		if (varName == "startOf_Activation_HPP")
-    		library_markers::activationBegin = d->getSourceRange().getEnd();
-		else if (varName == "endOf_Activation_HPP")
-			library_markers::activationEnd = d->getSourceRange().getEnd();
-
-		if (varName == "startOf_Layer_HPP")
-    		library_markers::layerBegin = d->getSourceRange().getEnd();
-		else if (varName == "endOf_Layer_HPP")
-			library_markers::layerEnd = d->getSourceRange().getEnd();
-
-		if (varName == "startOf_Dense_HPP")
-    		library_markers::denseBegin = d->getSourceRange().getEnd();
-		else if (varName == "endOf_Dense_HPP")
-			library_markers::denseEnd = d->getSourceRange().getEnd();
-
-		if (varName == "startOf_Dropout_HPP")
-    		library_markers::dropoutBegin = d->getSourceRange().getEnd();
-		else if (varName == "endOf_Dropout_HPP")
-			library_markers::dropoutEnd = d->getSourceRange().getEnd();
-
-		if (varName == "startOf_Flatten_HPP")
-    		library_markers::flattenBegin = d->getSourceRange().getEnd();
-		else if (varName == "endOf_Flatten_HPP")
-			library_markers::flattenEnd = d->getSourceRange().getEnd();
-
-		if (varName == "startOf_Conv1D_HPP")
-    		library_markers::conv1dBegin = d->getSourceRange().getEnd();
-		else if (varName == "endOf_Conv1D_HPP")
-			library_markers::conv1dEnd = d->getSourceRange().getEnd();
-
-		if (varName == "startOf_Conv2D_HPP")
-    		library_markers::conv2dBegin = d->getSourceRange().getEnd();
-		else if (varName == "endOf_Conv2D_HPP")
-			library_markers::conv2dEnd = d->getSourceRange().getEnd();
-
-		if (varName == "startOf_Pool2D_HPP")
-    		library_markers::pool2dBegin = d->getSourceRange().getEnd();
-		else if (varName == "endOf_Pool2D_HPP")
-			library_markers::pool2dEnd = d->getSourceRange().getEnd();
-
-
-		//		d->dump();
-	}
-
-
-
-
-
-
-	// Change this condition to check for skeleon class names, (and namespace too?)
-//	if (d->hasAttr<SkepuInstanceAttr>())
 	if (DeclIsValidSkeleton(d))
 	{
 		SkePULog() << "Found instance: " << d->getNameAsString() << "\n";
-
 		SkeletonInstances.insert(d);
 	}
-	else if (d->hasAttr<SkepuUserConstantAttr>())
+	else if (d->hasAttr<clang::SkepuUserConstantAttr>())
 	{
 		SkePULog() << "Found user constant: " << d->getNameAsString() << "\n";
-		if (!(d->isConstexpr() && d->hasDefinition() == VarDecl::Definition))
-		{
+		if (!(d->isConstexpr() && d->hasDefinition() == clang::VarDecl::Definition))
 			SkePULog() << "Invalid!\n"; // TODO: diagnostic
-		}
 		UserConstants[d] = new UserConstant(d);
 	}
+
 	return RecursiveASTVisitor<SkePUASTVisitor>::VisitVarDecl(d);
 }
 
-bool SkePUASTVisitor::VisitCXXOperatorCallExpr(CXXOperatorCallExpr *c)
+bool SkePUASTVisitor::VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr *c)
 {
-	if (c->getOperator() == OO_Call)
-	{
-		Expr *arg =	c->getArg(0);
-		std::string type = arg->getType().getDesugaredType(*this->Context).getAsString();
-		//SkePULog() << "THE TYPE: " << type << "\n";
-
-		for (auto skeleton : Skeletons)
+	#ifndef SKEPU_LSP
+		if (c->getOperator() == clang::OO_Call)
 		{
-			std::string skeletonName = std::get<0>(skeleton);
-			if (type.find(skeletonName) != std::string::npos)
+			clang::Expr *arg =	c->getArg(0);
+			std::string type = arg->getType().getDesugaredType(*this->Context).getAsString();
+
+			for (auto skeleton : SkeletonsLookup)
 			{
-				SkePULog() << "Found skeleton call " << type << "\n";
-				//arg->dump();
-
-				if (isa<ImplicitCastExpr>(arg))
-					arg = dyn_cast<ImplicitCastExpr>(arg)->getSubExpr();
-
-				ValueDecl *valuedecl = nullptr;
-				if (isa<DeclRefExpr>(arg))
-		 			valuedecl = dyn_cast<DeclRefExpr>(arg)->getDecl();
-
-			//	valuedecl->dump();
-
-				VarDecl *vardecl = nullptr;
-				if (valuedecl && isa<VarDecl>(valuedecl))
-			 		vardecl = dyn_cast<VarDecl>(valuedecl);
-
-				// The skeleton is not called through a variable, e.g. through a
-				// data member of a wrapper class (as in code generated by SkePY).
-				// There is no instance to rewrite here, so leave the call alone.
-				if (!vardecl)
+				std::string skeletonName = std::get<0>(skeleton);
+				if (type.find(skeletonName) != std::string::npos)
 				{
-					SkePULog() << "Skipping skeleton call that is not made through a variable\n";
-					continue;
+					SkePULog() << "Found skeleton call " << type << "\n";
+
+					if (clang::isa<clang::ImplicitCastExpr>(arg))
+						arg = clang::dyn_cast<clang::ImplicitCastExpr>(arg)->getSubExpr();
+
+					clang::ValueDecl *valuedecl = nullptr;
+					if (clang::isa<clang::DeclRefExpr>(arg))
+						valuedecl = clang::dyn_cast<clang::DeclRefExpr>(arg)->getDecl();
+
+					clang::VarDecl *vardecl = nullptr;
+					if (valuedecl && clang::isa<clang::VarDecl>(valuedecl))
+						vardecl = clang::dyn_cast<clang::VarDecl>(valuedecl);
+
+					// The skeleton is not called through a variable, e.g. through a
+					// data member of a wrapper class (as in code generated by SkePY).
+					// There is no instance to rewrite here, so leave the call alone.
+					if (!vardecl)
+					{
+						SkePULog() << "Skipping skeleton call that is not made through a variable\n";
+						continue;
+					}
+
+					std::string instance_name = vardecl->getNameAsString();
+					SkePULog() << "Calling instance of name: " << instance_name << "\n";
+
+					// (a call in a function template is visited once per instantiation)
+					static std::set<unsigned> rewrittenCalls;
+					if (!rewrittenCalls.insert(c->getSourceRange().getBegin().getRawEncoding()).second)
+						continue;
+
+					std::string file_name = this->Context->getSourceManager().getFilename(c->getSourceRange().getBegin()).str();
+					unsigned line_nr = this->Context->getSourceManager().getSpellingLineNumber(c->getSourceRange().getBegin());
+
+					std::stringstream ss;
+					ss << "(" << instance_name << ".setSourceLoc(\"" << file_name << "\", " << line_nr << ") , ";
+
+					GlobalRewriter.InsertText(c->getSourceRange().getBegin(), ss.str());
+					GlobalRewriter.InsertTextBefore(c->getSourceRange().getEnd(), ")");
 				}
-
-				std::string instance_name = vardecl->getNameAsString();
-				SkePULog() << "Calling instance of name: " << instance_name << "\n";
-
-			//	skeletonInvocations.insert({c, instance_name});
-
-				// (a call in a function template is visited once per instantiation)
-				static std::set<unsigned> rewrittenCalls;
-				if (!rewrittenCalls.insert(c->getSourceRange().getBegin().getRawEncoding()).second)
-					continue;
-
-				std::string file_name = this->Context->getSourceManager().getFilename(c->getSourceRange().getBegin()).str();
-				unsigned line_nr = this->Context->getSourceManager().getSpellingLineNumber(c->getSourceRange().getBegin());
-
-				std::stringstream ss;
-				ss << "(" << instance_name << ".setSourceLoc(\"" << file_name << "\", " << line_nr << ") , ";
-
-				GlobalRewriter.InsertText(c->getSourceRange().getBegin(), ss.str());
-				GlobalRewriter.InsertTextBefore(c->getSourceRange().getEnd(), ")");
-
 			}
 		}
-	}
 
-//	return RecursiveASTVisitor<SkePUASTVisitor>::VisitCallExpr(c);
+		auto callee = c->getCallee();
 
-	auto callee = c->getCallee();
-
-	if (ImplicitCastExpr *ImplExpr = dyn_cast<ImplicitCastExpr>(callee))
-		callee = ImplExpr->IgnoreImpCasts();
-
-/*
-	if (auto *UnresolvedLookup = dyn_cast<UnresolvedLookupExpr>(callee))
-	{
-		std::string name = UnresolvedLookup->getName().getAsString();
-		SkePULog() << "Found unresolved lookup expr " << UnresolvedLookup->getName() <<"\n";
-
-		bool allowed = std::find(AllowedFunctionNamesCalledInUFs.begin(), AllowedFunctionNamesCalledInUFs.end(), name)
-			!= AllowedFunctionNamesCalledInUFs.end();
-		if (!allowed)
-			GlobalRewriter.getSourceMgr().getDiagnostics().Report(c->getBeginLoc(), diag::err_skepu_userfunction_call) << name;
-
-		return allowed;
-	}*/
-
-	/*
-	FunctionDecl *Func = c->getDirectCallee();
-	std::string name = Func->getName();*/
-
+		if (clang::ImplicitCastExpr *ImplExpr = clang::dyn_cast<clang::ImplicitCastExpr>(callee))
+			callee = ImplExpr->IgnoreImpCasts();
+	#endif
 	return RecursiveASTVisitor<SkePUASTVisitor>::VisitCallExpr(c);
 }
 
+#ifdef SKEPU_LSP
+bool SkePUASTVisitor::VisitCallExpr(clang::CallExpr *ce){
+	clang::SourceLocation startLoc = ce->getBeginLoc();
+	clang::SourceManager &sourceManager = Context->getSourceManager();
+	if (sourceManager.isMacroBodyExpansion(startLoc)) {
+		// If it's a macro expansion, get the spelling location
+		startLoc = sourceManager.getSpellingLoc(startLoc);
+	}
+
+	if (clang::FunctionDecl *FD = ce->getDirectCallee()) {
+        // Get variable that was called
+		if (ce->getNumArgs() <= 0) {
+			return true;
+		}
+		clang::Expr *argExpr = ce->getArg(0);
+		if (clang::DeclRefExpr *DRE = clang::dyn_cast<clang::DeclRefExpr>(argExpr)) {
+			if (clang::VarDecl *VD = clang::dyn_cast<clang::VarDecl>(DRE->getDecl())) {
+				if(DeclIsValidSkeleton(VD))
+				{					
+					SkeletonInvocation *skeletonInvocation = new SkeletonInvocation{};
+
+					skeletonInvocation->retType = VD->getType();
+					skeletonInvocation->variableName = VD->getNameAsString();
+
+					skeletonInvocation->invloc = FD->getPointOfInstantiation();
+					skeletonInvocation->defloc = VD->getLocation();
+
+					skeletonInvocation->invLocationString = FD->getPointOfInstantiation().printToString(Context->getSourceManager()) ;
+					skeletonInvocation->defLocationString = VD->getLocation().printToString(Context->getSourceManager());
+					
+					SkeletonInvocations.push_back(skeletonInvocation);
+				}
+			}
+		}	
+	}
+	return true;
+}
+#endif
 
 // Implementation of the ASTConsumer interface for reading an AST produced by the Clang parser.
-SkePUASTConsumer::SkePUASTConsumer(ASTContext *ctx, std::unordered_set<clang::VarDecl *> &instanceSet)
+SkePUASTConsumer::SkePUASTConsumer(clang::ASTContext *ctx, std::unordered_set<clang::VarDecl *> &instanceSet)
 : Visitor(ctx, instanceSet)
 {}
 
 // Override the method that gets called for each parsed top-level
 // declaration.
-bool SkePUASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
+bool SkePUASTConsumer::HandleTopLevelDecl(clang::DeclGroupRef DR)
 {
-	for (DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b)
-	{
-		// Traverse the declaration using our AST visitor.
+	for (clang::DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b)
 		Visitor.TraverseDecl(*b);
-	}
 	return true;
 }

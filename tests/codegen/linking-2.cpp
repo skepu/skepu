@@ -1,7 +1,6 @@
 #include <iostream>
 #include <skepu>
 
-
 template<typename T>
 T arr2(skepu::Index1D row, const skepu::Mat<T> m, const skepu::Vec<T> v)
 {

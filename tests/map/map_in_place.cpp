@@ -3,7 +3,7 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
-
+#include <test_helper_automatic_setup.hpp>
 
 int update_map(int value, int increment)
 {

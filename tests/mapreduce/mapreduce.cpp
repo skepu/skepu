@@ -2,6 +2,7 @@
 
 #include <skepu>
 #include <math.h>
+#include <test_helper_automatic_setup.hpp>
 
 int test1(skepu::Index1D in, int a)
 {

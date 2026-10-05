@@ -2,7 +2,7 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
-
+#include <test_helper_automatic_setup.hpp>
 
 float over_4d(skepu::Region4D<int> r, skepu::Ten4<float> stencil)
 {

@@ -32,7 +32,7 @@ namespace skepu
         template<typename Ret, typename... Args>
 		class MapOverlap3D: public MapOverlapSeq<Pool3D, Ret, Args...>, public SeqSkeletonBase
 		{
-        private:
+        protected:
             using Base = MapOverlapSeq<Pool3D, Ret, Args...>;
 			using Base::randomCount; // cannot use this->randomCount as template argument
 			using Base::OutArity;
@@ -44,15 +44,6 @@ namespace skepu
 			void setBackend(BackendSpec) {}
 			void resetBackend() {}
 
-			void setOverlap(int o)
-			{
-                if (o < 0)
-                    SKEPU_ERROR("Overlap cannot be less than 0");
-				this->m_overlap[0] = o;
-				this->m_overlap[1] = o;
-				this->m_overlap[2] = o;
-			}
-
 			void setOverlap(int oi, int oj, int ok)
 			{
                 if (oi < 0 || oj < 0 || ok < 0)
@@ -60,6 +51,11 @@ namespace skepu
 				this->m_overlap[0] = oi;
 				this->m_overlap[1] = oj;
 				this->m_overlap[2] = ok;
+			}
+
+            void setOverlap(int o)
+			{
+                this->setOverlap(o, o, o);
 			}
 
 			std::tuple<int, int, int> getOverlap() const
@@ -76,141 +72,141 @@ namespace skepu
                 this->m_strides[2] = sk;
 			}
 
+            void setStride(int s)
+			{
+                this->setStride(s, s, s);
+			}
+
+            std::tuple<int, int, int> getStride() const
+			{
+				return std::make_tuple(this->m_strides[0], this->m_strides[1], this->m_strides[2]);
+			}
+
 		private:
 
-			/*template<size_t dim>
-			size_t expectedInputSize(size_t size) const
-			{
-				size_t side = this->m_overlap[dim]; // With Pool
-				if (!isPool) side = 2*this->m_overlap[dim] + 1; // With Region
-
-				size_t inputSize = side + this->m_strides[dim] * (size - 1);
-
-				if (isPool && this->m_edge != Edge::None)
-					inputSize -= (side - 1) * 2;
-				else if (!isPool && this->m_edge != Edge::None)
-					inputSize -= 2 * this->m_overlap[dim];
-
-				return inputSize;
-			}*/
-
 			template<typename First, typename... Rest>
-			void checkOutputTensor3Sizes(size_t expected_size_i, size_t expected_size_j, size_t expected_size_k, size_t i, std::string const& callMetadata, First&& first, Rest&&... rest)
+			void checkOutputTensor3Sizes(size_t expected_size_i, size_t expected_size_j, size_t expected_size_k,
+                                         size_t i, First&& first, Rest&&... rest)
 			{
 				if (first.size_i() != expected_size_i)
-					SKEPU_ERROR(callMetadata
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninvalid output tensor3 size i"
 					<< "\nexpected output tensor3 size i: " << colorRed(expected_size_i)
 					<< "\noutput tensor (label: " << first.getLabel() << ", index: " << i << ", size i: " << colorRed(first.size_i()) << ")");
 				
 				if (first.size_j() != expected_size_j)
-					SKEPU_ERROR(callMetadata
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninvalid output tensor3 size j"
 					<< "\nexpected output tensor3 size j: " << colorRed(expected_size_j)
 					<< "\noutput tensor (label: " << first.getLabel() << ", index: " << i << ", size j: " << colorRed(first.size_j()) << ")");
 				
 				if (first.size_k() != expected_size_k)
-					SKEPU_ERROR(callMetadata
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninvalid output tensor3 size k"
 					<< "\nexpected output tensor3 size k: " << colorRed(expected_size_k)
 					<< "\noutput tensor (label: " << first.getLabel() << ", index: " << i << ", size k: " << colorRed(first.size_k()) << ")");
 
-				checkOutputTensor3Sizes(expected_size_i, expected_size_j, expected_size_k, i+1, callMetadata, rest...);
+				checkOutputTensor3Sizes(expected_size_i, expected_size_j, expected_size_k, i+1, rest...);
 			}
 
-			void checkOutputTensor3Sizes(size_t expected_size_i, size_t expected_size_j, size_t expected_size_k, size_t i, std::string const& callMetadata){}
+			void checkOutputTensor3Sizes(size_t expected_size_i, size_t expected_size_j, size_t expected_size_k, size_t i){}
 
-			template<size_t... OI, size_t... EI, typename... CallArgs>
-			void checkTensor3Sizes(size_t expected_input_size_i, size_t expected_input_size_j, size_t expected_input_size_k, std::string const& callMetadata,
-								   pack_indices<OI...>, pack_indices<EI...>, CallArgs&&... args)
+			template<size_t... OI, typename... CallArgs>
+			void checkTensor3Sizes(pack_indices<OI...>, CallArgs&&... args)
 			{
-				auto& firstOutput = get<0>(std::forward<CallArgs>(args)...);
+				auto& first_output = get<0>(std::forward<CallArgs>(args)...);
 				auto& input = get<OutArity>(std::forward<CallArgs>(args)...);
 
-				size_t first_output_size_i = firstOutput.size_i();
-				size_t first_output_size_j = firstOutput.size_j();
-				size_t first_output_size_k = firstOutput.size_k();
-				size_t input_size_i = input.size_i();
-				size_t input_size_j = input.size_j();
-				size_t input_size_k = input.size_k();
+				size_t out_size_i = first_output.size_i();
+				size_t out_size_j = first_output.size_j();
+				size_t out_size_k = first_output.size_k();
+				size_t in_size_i = input.size_i();
+				size_t in_size_j = input.size_j();
+				size_t in_size_k = input.size_k();
 				
-				if (input_size_i != expected_input_size_i)
-					SKEPU_ERROR(callMetadata
+				if (!this->isInputSizeValid(out_size_i, in_size_i, 0) && this->m_overlap[0] > 0)
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninput/output tensor3 size i mismatch"
-					<< "\nfirst output tensor3 (label: " << firstOutput.getLabel() << ", size i: " << first_output_size_i << ")"
-					<< "\nexpected input tensor3 size i: " << colorRed(expected_input_size_i)
-					<< "\ninput tensor3 (label: " << input.getLabel() << ", size i: " << colorRed(input_size_i) << ")");
+					<< "\nfirst output tensor3 (label: " << first_output.getLabel() << ", size i: " << out_size_i << ")"
+					<< "\nexpected input tensor3 size i: "
+                    << (this->isPool ? ">= " + colorRed(this->getSmallestAllowedInputSizePool(out_size_i, 0)) :
+                        this->m_edge != skepu::Edge::None ? colorRed(std::to_string(out_size_i) + " ± 2n") :
+                                      colorRed(this->getAllowedInputSizeNone(out_size_i, 0)))
+					<< "\ninput tensor3 (label: " << input.getLabel() << ", size i: " << colorRed(in_size_i) << ")");
 				
-				if (input_size_j != expected_input_size_j)
-					SKEPU_ERROR(callMetadata
+				if (!this->isInputSizeValid(out_size_j, in_size_j, 1) && this->m_overlap[1] > 0)
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninput/output tensor3 size j mismatch"
-					<< "\nfirst output tensor3 (label: " << firstOutput.getLabel() << ", size j: " << first_output_size_j << ")"
-					<< "\nexpected input tensor3 size j: " << colorRed(expected_input_size_j)
-					<< "\ninput tensor3 (label: " << input.getLabel() << ", size j: " << colorRed(input_size_j) << ")");
+					<< "\nfirst output tensor3 (label: " << first_output.getLabel() << ", size j: " << out_size_j << ")"
+					<< "\nexpected input tensor3 size j: "
+                    << (this->isPool ? ">= " + colorRed(this->getSmallestAllowedInputSizePool(out_size_j, 1)) :
+                        this->m_edge != skepu::Edge::None ? colorRed(std::to_string(out_size_j) + " ± 2n") :
+                                      colorRed(this->getAllowedInputSizeNone(out_size_j, 1)))
+					<< "\ninput tensor3 (label: " << input.getLabel() << ", size j: " << colorRed(in_size_j) << ")");
 
-				if (input_size_k != expected_input_size_k)
-					SKEPU_ERROR(callMetadata
+				if (!this->isInputSizeValid(out_size_k, in_size_k, 2) && this->m_overlap[2] > 0)
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninput/output tensor3 size k mismatch"
-					<< "\nfirst output tensor3 (label: " << firstOutput.getLabel() << ", size k: " << first_output_size_k << ")"
-					<< "\nexpected input tensor3 size k: " << colorRed(expected_input_size_k)
-					<< "\ninput tensor3 (label: " << input.getLabel() << ", size k: " << colorRed(input_size_k) << ")");
+					<< "\nfirst output tensor3 (label: " << first_output.getLabel() << ", size k: " << out_size_k << ")"
+					<< "\nexpected input tensor3 size k: "
+                    << (this->isPool ? ">= " + colorRed(this->getSmallestAllowedInputSizePool(out_size_k, 2)) :
+                        this->m_edge != skepu::Edge::None ? colorRed(std::to_string(out_size_k) + " ± 2n") :
+                                      colorRed(this->getAllowedInputSizeNone(out_size_k, 2)))
+					<< "\ninput tensor3 (label: " << input.getLabel() << ", size k: " << colorRed(in_size_k) << ")");
 				
-				checkOutputTensor3Sizes(first_output_size_i, first_output_size_j, first_output_size_k, 1, callMetadata, get<OI>(std::forward<CallArgs>(args)...)...);
+				checkOutputTensor3Sizes(out_size_i, out_size_j, out_size_k, 1, get<OI>(std::forward<CallArgs>(args)...)...);
 			}
 
 			std::string generateCallMetadata()
 			{
-				return "MapOverlap3D call, label: " + this->getLabel() + ", Edge mode: " + to_string(this->getEdgeMode());
+				return "MapOverlap3D call, label: " + this->getLabel() + ", Edge mode: " + to_string(this->getEdgeMode()) +
+                    ", Overlap: (" + std::to_string(this->m_overlap[0]) + ", " + std::to_string(this->m_overlap[1]) +
+                    ", " + std::to_string(this->m_overlap[2]) + ")";
 			}
 
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
 			void apply(Parity p, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 			{
-				size_t size_i = get<0>(std::forward<CallArgs>(args)...).size_i();
-				size_t size_j = get<0>(std::forward<CallArgs>(args)...).size_j();
-				size_t size_k = get<0>(std::forward<CallArgs>(args)...).size_k();
+				size_t out_size_i = get<0>(std::forward<CallArgs>(args)...).size_i();
+				size_t out_size_j = get<0>(std::forward<CallArgs>(args)...).size_j();
+				size_t out_size_k = get<0>(std::forward<CallArgs>(args)...).size_k();
 
-				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap3D: size = " << size_i << " x " << size_j << " x" << size_k);
+				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap3D: size = " << out_size_i << " x " << out_size_j << " x" << out_size_k);
 
-				checkTensor3Sizes(this->expectedInputSize(size_i, 0), this->expectedInputSize(size_j, 1), this->expectedInputSize(size_k, 2),
-				generateCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
+				checkTensor3Sizes(this->out_indices, std::forward<CallArgs>(args)...);
 
 				auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 
-				size_t offset[3];
-				for (size_t d = 0; d < 3; ++d)
-				{
-					if (!this->isPool && this->m_edge != Edge::None)
-					{
-						offset[d] = 0;
-					}
-					else if (!this->isPool && this->m_edge == Edge::None)
-					{
-						offset[d] = this->m_overlap[d];
-					}
-					else if (this->isPool && this->m_edge != Edge::None)
-					{
-						offset[d] = -this->m_overlap[d] / 2;
-					}
-					else if (this->isPool && this->m_edge == Edge::None)
-					{
-						offset[d] = 0;
-					}
-				}
-
 				RegionType region{arg, this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_edge, this->m_pad};
 
-				auto random = this->template prepareRandom<randomCount>(size_i * size_j * size_k);
+				auto random = this->template prepareRandom<randomCount>(out_size_i * out_size_j * out_size_k);
 
-				for (size_t i = 0; i < size_i; i++)
-					for (size_t j = 0; j < size_j; j++)
-						for (size_t k = 0; k < size_k; k++)
+                Index3D offset{0, 0, 0};
+                if (!this->isPool)
+                {
+                    if (this->m_edge == Edge::None)
+                    {
+                        offset.i = this->m_overlap[0];
+                        offset.j = this->m_overlap[1];
+                        offset.k = this->m_overlap[2];
+                    }
+                    else
+                    {
+                        offset.i = (arg.size_i() - out_size_i) / 2;
+                        offset.j = (arg.size_j() - out_size_j) / 2;
+                        offset.k = (arg.size_k() - out_size_k) / 2;
+                    }
+                }
+
+				for (size_t i = 0; i < out_size_i; i++)
+					for (size_t j = 0; j < out_size_j; j++)
+						for (size_t k = 0; k < out_size_k; k++)
 							if (p == Parity::None || index_parity(p, i, j, k))
 							{
 								region.idx = Index3D{
-									(i + offset[0]) * this->m_strides[0],
-									(j + offset[1]) * this->m_strides[1],
-									(k + offset[2]) * this->m_strides[2]
+									(i + offset.i) * this->m_strides[0],
+									(j + offset.j) * this->m_strides[1],
+									(k + offset.k) * this->m_strides[2]
 								};
 								auto res = F::forward(this->mapFunc, Index3D{i,j,k}, random, region,
 									get<AI>(std::forward<CallArgs>(args)...).hostProxy()...,
@@ -257,11 +253,21 @@ namespace skepu
 		class MapPool3D: public MapOverlap3D<Ret, Args...>
 		{
 			using MapFunc = std::function<Ret(Args...)>;
+            using typename MapOverlap3D<Ret, Args...>::T;
 
 		public:
-			void setOverlap(size_t, size_t, size_t) = delete;
-		//	void setEdgeMode(Edge) = delete;
+			void setOverlap(int, int, int) = delete;
+            void setOverlap(int) = delete;
+			std::tuple<int, int, int> getOverlap() const = delete;
+
+			void setEdgeMode(Edge) = delete;
+            void getEdgeMode() const = delete;
+
+			void setPad(T) = delete;
+            T getPad() const = delete;
+
 			void setUpdateMode(UpdateMode) = delete;
+            UpdateMode getUpdateMode() const = delete;
 
 			void setPoolSize(int pi, int pj, int pk)
 			{
@@ -270,6 +276,35 @@ namespace skepu
 				this->m_overlap[0] = pi;
 				this->m_overlap[1] = pj;
 				this->m_overlap[2] = pk;
+			}
+
+            void setPoolSize(int p)
+			{
+				this->setPoolSize(p, p, p);
+			}
+
+			std::tuple<int, int, int> getPoolSize() const
+			{
+				return std::make_tuple(this->m_overlap[0], this->m_overlap[1], this->m_overlap[2]);
+			}
+
+			void setPoolSizeAndStride(int pi, int pj, int pk)
+			{
+				this->setPoolSize(pi, pj, pk);
+				this->setStride(pi, pj, pk);
+			}
+
+			void setPoolSizeAndStride(int p)
+			{
+				this->setPoolSize(p);
+				this->setStride(p);
+			}
+
+			// For LSP CodeComplete
+			template<typename... CallArgs>
+			auto operator()(CallArgs&&... args)
+			{
+				return MapOverlap3D<Ret, Args...>::operator()(std::forward<CallArgs>(args)...);
 			}
 
 			MapPool3D(MapFunc map): MapOverlap3D<Ret, Args...>(map) {}

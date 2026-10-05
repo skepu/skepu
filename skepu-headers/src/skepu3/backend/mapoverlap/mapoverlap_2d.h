@@ -162,7 +162,7 @@ namespace skepu
 				}
 				this->m_mirror_mode = false;
 				
-				if (!this->isInputSizeValid(out_size_i, in_size_i, 0))
+				if (!this->isInputSizeValid(out_size_i, in_size_i, 0) && this->m_overlap[0] > 0)
 					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninput/output matrix row count mismatch"
 					<< "\nfirst output matrix (label: " << first_output.getLabel() << ", rows: " << out_size_i << ")"
@@ -172,7 +172,7 @@ namespace skepu
                                       colorRed(this->getAllowedInputSizeNone(out_size_i, 0)))
 					<< "\ninput matrix (label: " << input.getLabel() << ", rows: " << colorRed(in_size_i) << ")");
 				
-				if (!this->isInputSizeValid(out_size_j, in_size_j, 1))
+				if (!this->isInputSizeValid(out_size_j, in_size_j, 1) && this->m_overlap[1] > 0)
 					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninput/output matrix col count mismatch"
 					<< "\nfirst output matrix (label: " << first_output.getLabel() << ", cols: " << out_size_j << ")"
@@ -182,7 +182,7 @@ namespace skepu
                                       colorRed(this->getAllowedInputSizeNone(out_size_j, 1)))
 					<< "\ninput matrix (label: " << input.getLabel() << ", cols: " << colorRed(in_size_j) << ")");
 				
-				checkOutputMatrixSizes(out_size_i, out_size_j, 0, get<OI>(std::forward<CallArgs>(args)...)...);
+				checkOutputMatrixSizes(out_size_i, out_size_j, 1, get<OI>(std::forward<CallArgs>(args)...)...);
 			}
 
 			std::string generateCallMetadata()

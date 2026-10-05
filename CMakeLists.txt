@@ -20,7 +20,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/CMake)
 include(skepu-options)
 include(SkePUHelpers)
 
-# We need to apply our patches to the llvm work tree, if it has not alredy been
+# We need to apply our patches to the llvm work tree, if it has not already been
 # done.
 if(NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/llvm/clang/tools/skepu-tool)
 	message(STATUS "[SkePU] Patching llvm")
@@ -133,8 +133,6 @@ add_subdirectory(skepu-headers)
 
 # Now add the skepu-tool tests
 if(SKEPU_ENABLE_TESTING)
-	find_package(Catch2 3)
-
 	# If skepu headers tests were not enabled, we add the catch2_main target here.
 	if(NOT TARGET catch2_main)
 		add_subdirectory(${CMAKE_SOURCE_DIR}/skepu-headers/tests/catch2_main)

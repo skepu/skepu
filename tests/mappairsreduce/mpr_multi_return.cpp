@@ -3,6 +3,7 @@
 #include <iostream>
 #include <skepu>
 #include <skepu-lib/util.hpp>
+#include <test_helper_automatic_setup.hpp>
 
 skepu::multiple<int, int> uf_multi(int a, int b)
 {

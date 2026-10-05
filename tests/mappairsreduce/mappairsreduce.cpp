@@ -4,7 +4,7 @@
 #include <skepu>
 #include <skepu-lib/util.hpp>
 #include <skepu-lib/io.hpp>
-
+#include <test_helper_automatic_setup.hpp>
 
 int uf1(skepu::Index2D testidx, int a, int b)
 {

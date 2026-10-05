@@ -6,7 +6,7 @@
 #include <math.h>
 
 #include <skepu>
-
+#include <test_helper_automatic_setup.hpp>
 
 bool or_reduce (bool a, bool b)
 {

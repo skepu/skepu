@@ -83,6 +83,8 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CU(
 			case ContainerType::MatCol:
 				SSProxiesUpdate << param.name << ".data = skepu_" << param.name << "_base + skepu_i;\n";
 				break;
+			default:
+				break;
 		}
 	}
 

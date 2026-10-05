@@ -21,14 +21,14 @@ namespace skepu
 		return impl::Reduce1D<T>(red);
 	}
 
-	// For function pointers
+	// Reduce1D utilizing function pointer
 	template<typename T>
 	impl::Reduce1D<T> Reduce(T(*red)(T, T))
 	{
 		return ReduceWrapper((std::function<T(T, T)>)red);
 	}
 
-	// For lambdas and functors
+	// Reduce1D utilizing lambda
 	template<typename T>
 	auto Reduce(T red) -> decltype(ReduceWrapper(lambda_cast(red)))
 	{

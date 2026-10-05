@@ -3,27 +3,12 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
-#include <cmath>
+#include <test_helper_automatic_setup.hpp>
+#include <test_helper_functions.hpp>
 #include <type_traits>
-#define PRECISION 1E-3
-template <typename T>
-void is_similar(T a, T b)
-{
-	CHECK((
-		(std::isnan(a) && std::isnan(b)) ||
-		(std::isinf(a) && std::isinf(b)) ||
-		(a == Approx(b).epsilon(PRECISION)))
-	);
-}
 
-int clamp(int const& val, int const& min, int const& max)
-{
-    if (val < min)
-        return min;
-    if (val > max)
-        return max;
-    return val;
-}
+template <typename T>
+using vector4 = std::vector<std::vector<std::vector<std::vector<T>>>>;
 
 int overlap_sum(skepu::Region4D<int> r)
 {
@@ -36,10 +21,10 @@ int overlap_sum(skepu::Region4D<int> r)
     return val;
 }
 
-std::vector<std::vector<std::vector<std::vector<int>>>> generate_expected(skepu::Tensor4<int>& input, std::tuple<int, int, int, int> overlap, skepu::Edge edge, int pad = 0)
+vector4<int> generate_expected(skepu::Tensor4<int>& input, std::tuple<int, int, int, int> overlap, skepu::Edge edge, int pad = 0)
 {
     input.flush();
-    std::vector<std::vector<std::vector<std::vector<int>>>> res;
+    vector4<int> res;
     int outsize[4];
     if (edge == skepu::Edge::None)
     {
@@ -67,13 +52,14 @@ std::vector<std::vector<std::vector<std::vector<int>>>> generate_expected(skepu:
         }
     }
 
-    int data[(std::get<0>(overlap) * 2 + 1) * (std::get<1>(overlap) * 2 + 1) * (std::get<2>(overlap) * 2 + 1) * (std::get<3>(overlap) * 2 + 1)];
+    const size_t elementsInRegion = (std::get<0>(overlap) * 2 + 1) * (std::get<1>(overlap) * 2 + 1) * (std::get<2>(overlap) * 2 + 1) * (std::get<3>(overlap) * 2 + 1);
+    int data[elementsInRegion];
     
     skepu::Region4D<int> region(std::get<0>(overlap), std::get<1>(overlap), std::get<2>(overlap), std::get<3>(overlap),
                                 input.size_i(), input.size_j(), input.size_k(), input.size_l(),
                                 (std::get<1>(overlap) * 2 + 1) * (std::get<2>(overlap) * 2 + 1) * (std::get<3>(overlap) * 2 + 1),
                                 (std::get<2>(overlap) * 2 + 1) * (std::get<3>(overlap) * 2 + 1),
-                                std::get<3>(overlap) * 2 + 1, data);
+                                std::get<3>(overlap) * 2 + 1, &data[elementsInRegion/2]);
     
     for (int i = 0; i < res.size(); ++i)
         for (int j = 0; j < res[i].size(); ++j)
@@ -98,10 +84,10 @@ std::vector<std::vector<std::vector<std::vector<int>>>> generate_expected(skepu:
                                         switch (edge)
                                         {
                                             case skepu::Edge::Duplicate:
-                                                ii = clamp(ii, 0, input.size_i() - 1);
-                                                jj = clamp(jj, 0, input.size_j() - 1);
-                                                kk = clamp(kk, 0, input.size_k() - 1);
-                                                ll = clamp(ll, 0, input.size_l() - 1);
+                                                ii = std::clamp(ii, 0, static_cast<int>(input.size_i() - 1));
+                                                jj = std::clamp(jj, 0, static_cast<int>(input.size_j() - 1));
+                                                kk = std::clamp(kk, 0, static_cast<int>(input.size_k() - 1));
+                                                ll = std::clamp(ll, 0, static_cast<int>(input.size_l() - 1));
                                                 break;
                                             case skepu::Edge::Cyclic:
                                                 ii = (ii + input.size_i()) % input.size_i();
@@ -184,7 +170,7 @@ TEST_CASE("Fundamentals")
                                         input(ii, jj, kk, ll) = ++val;
 
                         skepu::Tensor4<int> actual(input.size_i(), input.size_j(), input.size_k(), input.size_l(), "Output", 0);
-                        std::vector<std::vector<std::vector<std::vector<int>>>> expected;
+                        vector4<int> expected;
                         overlap.setOverlap(overlap_radius[0], overlap_radius[1], overlap_radius[2], overlap_radius[3]);
                         overlap.setPad(1);
                         
@@ -233,7 +219,7 @@ TEST_CASE("Overlap ranges")
                     input(ii, jj, kk, ll) = ++val;
 
     skepu::Tensor4<int> actual(input.size_i(), input.size_j(), input.size_k(), input.size_l(), "Output", 0);
-    std::vector<std::vector<std::vector<std::vector<int>>>> expected;
+    vector4<int> expected;
     overlap.setPad(1);
 
     for (int i = 0; i <= overlapUpperBound; ++i)
@@ -272,11 +258,15 @@ TEST_CASE("Invalid sizes")
     overlapOffset[1] = std::get<1>(overlapOffsetTemp) * 2;
     overlapOffset[2] = std::get<2>(overlapOffsetTemp) * 2;
     overlapOffset[3] = std::get<3>(overlapOffsetTemp) * 2;
-    skepu::Tensor4<int> input(10, 10, 10, 10), correctSize(input.size_i(), input.size_j(), input.size_k(), input.size_l()),
-    small_i(input.size_i()-1, input.size_j(), input.size_k(), input.size_l()), small_j(input.size_i(), input.size_j()-1, input.size_k(), input.size_l()),
-    small_k(input.size_i(), input.size_j(), input.size_k()-1, input.size_l()), small_l(input.size_i(), input.size_j(), input.size_k(), input.size_l()-1),
-    large_i(input.size_i()+1, input.size_j(), input.size_k(), input.size_l()), large_j(input.size_i(), input.size_j()+1, input.size_k(), input.size_l()),
-    large_k(input.size_i(), input.size_j(), input.size_k()+1, input.size_l()), large_l(input.size_i(), input.size_j(), input.size_k(), input.size_l()+1),
+    skepu::Tensor4<int> input(10, 10, 10, 10),
+    small_i(input.size_i()-1, input.size_j(), input.size_k(), input.size_l()),
+    small_j(input.size_i(), input.size_j()-1, input.size_k(), input.size_l()),
+    small_k(input.size_i(), input.size_j(), input.size_k()-1, input.size_l()),
+    small_l(input.size_i(), input.size_j(), input.size_k(), input.size_l()-1),
+    large_i(input.size_i()+1, input.size_j(), input.size_k(), input.size_l()),
+    large_j(input.size_i(), input.size_j()+1, input.size_k(), input.size_l()),
+    large_k(input.size_i(), input.size_j(), input.size_k()+1, input.size_l()),
+    large_l(input.size_i(), input.size_j(), input.size_k(), input.size_l()+1),
     correctSizeNone(input.size_i()-overlapOffset[0], input.size_j()-overlapOffset[1], input.size_k()-overlapOffset[2], input.size_l()-overlapOffset[3]),
     small_i_none(input.size_i()-overlapOffset[0]-1, input.size_j()-overlapOffset[1], input.size_k()-overlapOffset[2], input.size_l()-overlapOffset[3]),
     small_j_none(input.size_i()-overlapOffset[0], input.size_j()-overlapOffset[1]-1, input.size_k()-overlapOffset[2], input.size_l()-overlapOffset[3]),
@@ -330,11 +320,11 @@ skepu::multiple<int, float> overlap_sum_2(skepu::Region4D<int> r)
     return skepu::ret(val, val+0.5f);
 }
 
-std::pair<std::vector<std::vector<std::vector<std::vector<int>>>>, std::vector<std::vector<std::vector<std::vector<float>>>>> generate_expected_2(skepu::Tensor4<int>& input, std::tuple<int, int, int, int> overlap, skepu::Edge edge, int pad = 0)
+std::pair<vector4<int>, vector4<float>> generate_expected_2(skepu::Tensor4<int>& input, std::tuple<int, int, int, int> overlap, skepu::Edge edge, int pad = 0)
 {
     input.flush();
-    std::vector<std::vector<std::vector<std::vector<int>>>> res;
-    std::vector<std::vector<std::vector<std::vector<float>>>> res2;
+    vector4<int> res;
+    vector4<float> res2;
     int outsize[4];
     if (edge == skepu::Edge::None)
     {
@@ -368,13 +358,14 @@ std::pair<std::vector<std::vector<std::vector<std::vector<int>>>>, std::vector<s
         }
     }
 
-    int data[(std::get<0>(overlap) * 2 + 1) * (std::get<1>(overlap) * 2 + 1) * (std::get<2>(overlap) * 2 + 1) * (std::get<3>(overlap) * 2 + 1)];
+    const size_t elementsInRegion = (std::get<0>(overlap) * 2 + 1) * (std::get<1>(overlap) * 2 + 1) * (std::get<2>(overlap) * 2 + 1) * (std::get<3>(overlap) * 2 + 1);
+    int data[elementsInRegion];
     
     skepu::Region4D<int> region(std::get<0>(overlap), std::get<1>(overlap), std::get<2>(overlap), std::get<3>(overlap),
                                 input.size_i(), input.size_j(), input.size_k(), input.size_l(),
                                 (std::get<1>(overlap) * 2 + 1) * (std::get<2>(overlap) * 2 + 1) * (std::get<3>(overlap) * 2 + 1),
                                 (std::get<2>(overlap) * 2 + 1) * (std::get<3>(overlap) * 2 + 1),
-                                std::get<3>(overlap) * 2 + 1, data);
+                                std::get<3>(overlap) * 2 + 1, &data[elementsInRegion/2]);
     
     for (int i = 0; i < res.size(); ++i)
         for (int j = 0; j < res[i].size(); ++j)
@@ -399,10 +390,10 @@ std::pair<std::vector<std::vector<std::vector<std::vector<int>>>>, std::vector<s
                                         switch (edge)
                                         {
                                             case skepu::Edge::Duplicate:
-                                                ii = clamp(ii, 0, input.size_i() - 1);
-                                                jj = clamp(jj, 0, input.size_j() - 1);
-                                                kk = clamp(kk, 0, input.size_k() - 1);
-                                                ll = clamp(ll, 0, input.size_l() - 1);
+                                                ii = std::clamp(ii, 0, static_cast<int>(input.size_i() - 1));
+                                                jj = std::clamp(jj, 0, static_cast<int>(input.size_j() - 1));
+                                                kk = std::clamp(kk, 0, static_cast<int>(input.size_k() - 1));
+                                                ll = std::clamp(ll, 0, static_cast<int>(input.size_l() - 1));
                                                 break;
                                             case skepu::Edge::Cyclic:
                                                 ii = (ii + input.size_i()) % input.size_i();
@@ -457,7 +448,7 @@ TEST_CASE("Multi return")
                     skepu::Tensor4<int> actual(input.size_i(), input.size_j(), input.size_k(), input.size_l(), "Output", 0);
                     skepu::Tensor4<float> actual2(input.size_i(), input.size_j(), input.size_k(), input.size_l(), "Output", 0);
                         
-                    std::pair<std::vector<std::vector<std::vector<std::vector<int>>>>, std::vector<std::vector<std::vector<std::vector<float>>>>> expected;
+                    std::pair<vector4<int>, vector4<float>> expected;
                     for (skepu::Edge edge : regularEdges)
                     {
                         overlap2.setEdgeMode(edge);

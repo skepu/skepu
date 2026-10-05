@@ -201,12 +201,15 @@ namespace skepu
 		{}
 	};
 	
-	// Offset of a MapOverlap4D input region relative to the output index, along one dimension:
-	// (output size - input size) / 2 if the dimension has overlap, otherwise 0.
-	// Negative for "valid" convolutions (output smaller than input), positive for "full" ones.
-	inline long region_offset(size_t out_size, size_t in_size, int overlap)
+	// Position in the input that output index 0 maps to, per dimension (signed):
+	//  - no overlap in the dimension: 0 (the dimension is indexed absolutely, e.g. a channel dimension
+	//    whose size differs between input and output),
+	//  - Edge::None: the overlap (the input is larger by the overlap on each side),
+	//  - otherwise: (input size - output size) / 2.
+	inline long region_offset(size_t out_size, size_t in_size, int overlap, Edge edge)
 	{
-		return (overlap > 0) ? ((long)out_size - (long)in_size) / 2 : 0;
+		if (overlap <= 0) return 0;
+		return (edge == Edge::None) ? (long)overlap : ((long)in_size - (long)out_size) / 2;
 	}
 
 	template<typename T>
@@ -214,7 +217,7 @@ namespace skepu
 	{
 		int oi, oj, ok, ol;
 		size_t size_i, size_j, size_k, size_l;
-		long offset_i, offset_j, offset_k, offset_l; // signed: (output size - input size) / 2 along dimensions with overlap
+		size_t offset_i, offset_j, offset_k, offset_l;
 		size_t stride1, stride2, stride3;
 		Index4D idx;
 		const T *data;
@@ -223,35 +226,22 @@ namespace skepu
 		
 		// Hot path of convolutions: with Edge::None every access is a plain offset into the data.
 		// Kept tiny so that it gets inlined into user functions; edge handling is out of line.
-		// (Inlining the Edge::Pad path as well was measured to be slower.)
 		T operator()(int i, int j, int k, int l) const
 		{
 			if (this->edge == Edge::None)
-				return data[((int)this->idx.i + i + oi) * this->stride1 + ((int)this->idx.j + j + oj) * this->stride2
-					+ ((int)this->idx.k + k + ok) * this->stride3 + ((int)this->idx.l + l + ol)];
+				return data[((int)this->idx.i + i) * this->stride1 + ((int)this->idx.j + j) * this->stride2
+					+ ((int)this->idx.k + k) * this->stride3 + ((int)this->idx.l + l)];
 			return this->edge_access(i, j, k, l);
 		}
 
 		T edge_access(int i, int j, int k, int l) const
 		{
-			if (this->edge == Edge::Pad)
-			{
-				// Unsigned comparison covers both ii < 0 and ii >= size
-				const size_t pi = (size_t)((int)this->idx.i + i - (int)this->offset_i);
-				const size_t pj = (size_t)((int)this->idx.j + j - (int)this->offset_j);
-				const size_t pk = (size_t)((int)this->idx.k + k - (int)this->offset_k);
-				const size_t pl = (size_t)((int)this->idx.l + l - (int)this->offset_l);
-				if (pi < this->size_i && pj < this->size_j && pk < this->size_k && pl < this->size_l)
-					return data[pi * this->stride1 + pj * this->stride2 + pk * this->stride3 + pl];
-				return this->pad;
-			}
-
-			int ii = (int)this->idx.i + i - (this->edge != Edge::None ? (int)this->offset_i : 0);
-			int jj = (int)this->idx.j + j - (this->edge != Edge::None ? (int)this->offset_j : 0);
-			int kk = (int)this->idx.k + k - (this->edge != Edge::None ? (int)this->offset_k : 0);
-			int ll = (int)this->idx.l + l - (this->edge != Edge::None ? (int)this->offset_l : 0);
+			int ii = (int)this->idx.i + i;
+			int jj = (int)this->idx.j + j;
+			int kk = (int)this->idx.k + k;
+			int ll = (int)this->idx.l + l;
 			size_t offset;
-			
+
 			switch (this->edge)
 			{
 			case Edge::Cyclic:
@@ -262,10 +252,10 @@ namespace skepu
 					((ll + this->size_l) % this->size_l);
 				return data[offset];
 			case Edge::Pad:
-				if ((0 <= ii && ii < size_i) && (0 <= jj && jj < size_j) &&
-					  (0 <= kk && kk < size_k) && (0 <= ll && ll < size_l))
+				// Unsigned comparison covers both ii < 0 and ii >= size
+				if ((size_t)ii < size_i && (size_t)jj < size_j && (size_t)kk < size_k && (size_t)ll < size_l)
 					return data[ii * this->stride1 + jj * this->stride2 + kk * this->stride3 + ll];
-				else return this->pad;
+				return this->pad;
 			case Edge::Duplicate:
 				offset =
 					future_std::clamp<int>(ii, 0, this->size_i-1) * this->stride1 +
@@ -274,12 +264,12 @@ namespace skepu
 					future_std::clamp<int>(ll, 0, this->size_l-1);
 				return data[offset];
 			default:
-				return data[(ii + oi) * this->stride1 + (jj + oj) * this->stride2 + (kk + ok) * this->stride3 + (ll + ol)];
+				return data[ii * this->stride1 + jj * this->stride2 + kk * this->stride3 + ll];
 			}
 		}
 
 		Region4D(Tensor4<T> const& ten, int arg_oi, int arg_oj, int arg_ok, int arg_ol, Edge arg_edge, T arg_pad,
-		long arg_offset_i = 0, long arg_offset_j = 0, long arg_offset_k = 0, long arg_offset_l = 0)
+		size_t arg_offset_i = 0, size_t arg_offset_j = 0, size_t arg_offset_k = 0, size_t arg_offset_l = 0)
 		:	oi(arg_oi), oj(arg_oj), ok(arg_ok), ol(arg_ol),
 			size_i(ten.size_i()), size_j(ten.size_j()), size_k(ten.size_k()), size_l(ten.size_l()),
 			stride1(ten.m_stride_1),
@@ -308,7 +298,7 @@ namespace skepu
 	struct Region4DCU
 	{
 		int oi, oj, ok, ol;
-		size_t stride1, stride2, stride3;
+		int stride1, stride2, stride3;
 		const T *data;
 
 #ifdef SKEPU_CUDA
@@ -575,72 +565,39 @@ namespace skepu
 	struct Pool3D
 	{
 		int si, sj, sk;
-		size_t size_i, size_j, size_k;
-		size_t offset[3];
 		size_t stride1, stride2;
 		Index3D idx;
 		const T *data;
-		Edge edge = Edge::None;
-		T pad;
+
+#ifdef SKEPU_CUDA
+        __host__ __device__
+#endif
+        T operator()(int i, int j, int k) const
+        {
+            int ii = this->idx.i + i;
+            int jj = this->idx.j + j;
+            int kk = this->idx.k + k;
+            return data[ii * this->stride1 + jj * this->stride2 + kk];
+        }
 		
-		#ifdef SKEPU_CUDA
-				__host__ __device__
-		#endif
-				T operator()(int i, int j, int k) const
-				{
-					int ii = offset[0] + this->idx.i + i;
-					int jj = offset[1] + this->idx.j + j;
-					int kk = offset[2] + this->idx.k + k;
-					size_t offset;
-					
-					switch (this->edge)
-					{
-					case Edge::Cyclic:
-						offset =
-							((ii + this->size_i) % this->size_i) * this->stride1 +
-							((jj + this->size_j) % this->size_j) * this->stride2 +
-							((kk + this->size_k) % this->size_k);
-						return data[offset];
-					case Edge::Pad:
-						if ((0 <= ii && ii < size_i) && (0 <= jj && jj < size_j) &&
-								(0 <= kk && kk < size_k))
-							return data[ii * this->stride1 + jj * this->stride2 + kk];
-						else return this->pad;
-					case Edge::Duplicate:
-						offset =
-							future_std::clamp<int>(ii, 0, this->size_i-1) * this->stride1 +
-							future_std::clamp<int>(jj, 0, this->size_j-1) * this->stride2 +
-							future_std::clamp<int>(kk, 0, this->size_k-1);
-						return data[offset];
-					default:
-						return data[ii * this->stride1 + jj * this->stride2 + kk];
-					}
-				}
-		/*
+        Pool3D(Tensor3<T> const& ten, int arg_si, int arg_sj, int arg_sk, Edge arg_edge, T arg_pad)
+        :	si(arg_si), sj(arg_sj), sk(arg_sk),
+            stride1(ten.m_stride_1),
+            stride2(ten.m_stride_2),
+            idx{0, 0, 0},
+            data(ten.getAddress())
+        {}
+
 #ifdef SKEPU_CUDA
 	__host__ __device__
 #endif
-		T operator()(size_t i, size_t j, size_t k) const
-		{
-			int ii = this->idx.i + i;
-			int jj = this->idx.j + j;
-			int kk = this->idx.k + k;
-			return data[ii * this->stride1 + jj * this->stride2 + kk];
-		}*/
-		
-#ifdef SKEPU_CUDA
-	__host__ __device__
-#endif
-	Pool3D(Tensor3<T> const& ten, int pool_size[3], size_t ofst[3], Edge arg_edge, T arg_pad)
-	:	si(pool_size[0]), sj(pool_size[1]), sk(pool_size[2]),
-		offset{ofst[0], ofst[1], ofst[2]},
-		size_i(ten.size_i()), size_j(ten.size_j()), size_k(ten.size_k()),
-		stride1(ten.m_stride_1),
-		stride2(ten.m_stride_2),
-		edge(arg_edge),
-		pad(arg_pad),
-		data(ten.getAddress())
-	{}
+        Pool3D(int arg_si, int arg_sj, int arg_sk, size_t arg_stride1, size_t arg_stride2, T *arg_data)
+        :	si(arg_si), sj(arg_sj), sk(arg_sk),
+            stride1(arg_stride1),
+            stride2(arg_stride2),
+            idx{0, 0, 0},
+            data(arg_data)
+        {}
 	};
 	
 	template<typename T>
@@ -664,11 +621,12 @@ namespace skepu
 		}
 	
 	Pool4D(Tensor4<T> const& ten, int arg_si, int arg_sj, int arg_sk, int arg_sl, Edge arg_edge, T arg_pad,
-	long arg_offset_i = 0, long arg_offset_j = 0, long arg_offset_k = 0, long arg_offset_l = 0)
+	size_t arg_offset_i = 0, size_t arg_offset_j = 0, size_t arg_offset_k = 0, size_t arg_offset_l = 0)
 	:	si(arg_si), sj(arg_sj), sk(arg_sk), sl(arg_sl),
 		stride1(ten.m_stride_1),
 		stride2(ten.m_stride_2),
 		stride3(ten.m_stride_3),
+		idx{0, 0, 0, 0},
 		data(ten.getAddress())
 	{}
 
@@ -678,7 +636,7 @@ namespace skepu
 	Pool4D(int arg_si, int arg_sj, int arg_sk, int arg_sl, size_t arg_stride1, size_t arg_stride2, size_t arg_stride3, T *arg_data)
 		:	si(arg_si), sj(arg_sj), sk(arg_sk), sl(arg_sl),
 			stride1(arg_stride1), stride2(arg_stride2), stride3(arg_stride3),
-			data(arg_data)
+			idx{0, 0, 0, 0}, data(arg_data)
 		{}
 	};
 	

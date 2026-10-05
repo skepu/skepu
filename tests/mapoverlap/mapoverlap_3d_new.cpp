@@ -3,27 +3,9 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
-#include <cmath>
+#include <test_helper_automatic_setup.hpp>
+#include <test_helper_functions.hpp>
 #include <type_traits>
-#define PRECISION 1E-3
-template <typename T>
-void is_similar(T a, T b)
-{
-	CHECK((
-		(std::isnan(a) && std::isnan(b)) ||
-		(std::isinf(a) && std::isinf(b)) ||
-		(a == Approx(b).epsilon(PRECISION)))
-	);
-}
-
-int clamp(int const& val, int const& min, int const& max)
-{
-    if (val < min)
-        return min;
-    if (val > max)
-        return max;
-    return val;
-}
 
 int overlap_sum(skepu::Region3D<int> r)
 {
@@ -87,9 +69,9 @@ std::vector<std::vector<std::vector<int>>> generate_expected(skepu::Tensor3<int>
                                 switch (edge)
                                 {
                                     case skepu::Edge::Duplicate:
-                                        ii = clamp(ii, 0, input.size_i() - 1);
-                                        jj = clamp(jj, 0, input.size_j() - 1);
-                                        kk = clamp(kk, 0, input.size_k() - 1);
+                                        ii = std::clamp(ii, 0, static_cast<int>(input.size_i() - 1));
+                                        jj = std::clamp(jj, 0, static_cast<int>(input.size_j() - 1));
+                                        kk = std::clamp(kk, 0, static_cast<int>(input.size_k() - 1));
                                         break;
                                     case skepu::Edge::Cyclic:
                                         ii = (ii + input.size_i()) % input.size_i();
@@ -335,9 +317,9 @@ std::pair<std::vector<std::vector<std::vector<int>>>, std::vector<std::vector<st
                                 switch (edge)
                                 {
                                     case skepu::Edge::Duplicate:
-                                        ii = clamp(ii, 0, input.size_i() - 1);
-                                        jj = clamp(jj, 0, input.size_j() - 1);
-                                        kk = clamp(kk, 0, input.size_k() - 1);
+                                        ii = std::clamp(ii, 0, static_cast<int>(input.size_i() - 1));
+                                        jj = std::clamp(jj, 0, static_cast<int>(input.size_j() - 1));
+                                        kk = std::clamp(kk, 0, static_cast<int>(input.size_k() - 1));
                                         break;
                                     case skepu::Edge::Cyclic:
                                         ii = (ii + input.size_i()) % input.size_i();

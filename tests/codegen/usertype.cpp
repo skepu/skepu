@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <skepu>
-
+#include <test_helper_automatic_setup.hpp>
 struct Complex
 {
 	float re, im;

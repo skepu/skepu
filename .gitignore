@@ -1,8 +1,5 @@
 examples/bin
-build-src-dir
-build
-build_test
-build_17
+/build*/
 skepu.tgz
 bandwidthMeasures.dat
 .ycm_extra_conf.py
@@ -20,3 +17,4 @@ node_modules
 # SkePY: the Shed Skin based Python frontend is a separate (optional) repository,
 # cloned into this directory by hand; it is not a submodule.
 shedskin/
+visualizer/venv

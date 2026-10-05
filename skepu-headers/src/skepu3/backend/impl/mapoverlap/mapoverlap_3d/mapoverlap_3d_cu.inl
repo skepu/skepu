@@ -39,29 +39,56 @@ namespace skepu
 			dim3 numBlocks, numThreads;
 			
 			size_t sizeLength = (size_t)std::cbrt(maxThreads);
-			numThreads.x = std::min<size_t>(out_size_k, sizeLength);
-			numThreads.y = std::min<size_t>(out_size_j, std::min<size_t>(maxThreads / numThreads.x, sizeLength));
-			numThreads.z = std::min(out_size_i, maxThreads / (numThreads.x * numThreads.y));
+			numThreads.x = this->isPool ? out_size_k : std::min<size_t>(out_size_k, sizeLength);
+			numThreads.y = this->isPool ? out_size_j : std::min<size_t>(out_size_j, std::min<size_t>(maxThreads / numThreads.x, sizeLength));
+			numThreads.z = this->isPool ? out_size_i : std::min(out_size_i, maxThreads / (numThreads.x * numThreads.y));
 			
-			numBlocks.x = (out_size_k + numThreads.x - 1) / numThreads.x;
-			numBlocks.y = (out_size_j + numThreads.y - 1) / numThreads.y;
-			numBlocks.z = (out_size_i + numThreads.z - 1) / numThreads.z;
-			
-			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).cudaProxy(deviceID, MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])...);
+
+			numBlocks.x = this->isPool ? 1 : (out_size_k + numThreads.x - 1) / numThreads.x;
+			numBlocks.y = this->isPool ? 1 : (out_size_j + numThreads.y - 1) / numThreads.y;
+			numBlocks.z = this->isPool ? 1 : (out_size_i + numThreads.z - 1) / numThreads.z;
+						
+            size_t shared_i = numThreads.z + this->m_overlap[0] * 2;;
+			size_t shared_j = numThreads.y + this->m_overlap[1] * 2;;
+            size_t shared_k = numThreads.x + this->m_overlap[2] * 2;;
+            size_t shared_mem = shared_i * shared_j * shared_k * sizeof(T);
+
+
+            if (this->isPool)
+			{
+				cudaDeviceProp properties;
+                cudaGetDeviceProperties(&properties, deviceID);
+
+				bool should_use_global_memory = (this->m_overlap[0] == 0 || this->m_overlap[0] <= this->m_strides[0]) &&
+                        						(this->m_overlap[1] == 0 || this->m_overlap[1] <= this->m_strides[1]) &&
+                        						(this->m_overlap[2] == 0 || this->m_overlap[2] <= this->m_strides[2]);
+
+				this->template configurePoolKernelParameters<T, unsigned, 3, 3>(properties.maxThreadsPerBlock, {&numThreads.x, &numThreads.y, &numThreads.z}, {&numBlocks.x, &numBlocks.y, &numBlocks.z},
+														 						should_use_global_memory, properties.sharedMemPerBlock, {&shared_i, &shared_j, &shared_k}, {in_size_i, in_size_j, in_size_k});
+
+				shared_mem = shared_i * shared_j * shared_k * sizeof(T);
+			}
+
+            auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).cudaProxy(deviceID, MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])...);
 		
 			// PRNG support
 			size_t prng_threads = std::min<size_t>(out_size_i * out_size_j * out_size_k, numBlocks.x * numBlocks.y * numBlocks.z * numThreads.x * numThreads.y * numThreads.z);
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(out_size_i * out_size_j * out_size_k, prng_threads);
 			auto randomMemP = random.updateDevice_CU(random.getAddress(), prng_threads, deviceID, AccessMode::ReadWrite);
+
+
+			DEBUG_TEXT_LEVEL1("CUDA MapOverlap3D input: " << in_size_i << "x" << in_size_j << "x" << in_size_k <<
+							  ", output: " << out_size_i << "x" << out_size_j << "x" << out_size_k <<
+							  ", kernel: size = " << out_size_i * out_size_j * out_size_k <<
+							  ", one device, numBlocks = [" << numBlocks.x << "x" << numBlocks.y << "x" << numBlocks.z <<
+							  "], numThreads = [" << numThreads.x << "x" << numThreads.y << "x" << numThreads.z << "]");
 			
-			size_t sharedMem =  (numThreads.x + this->m_overlap[2] * 2) * (numThreads.y + this->m_overlap[1] * 2) * (numThreads.z + this->m_overlap[0] * 2) * sizeof(T);
-			
-			DEBUG_TEXT_LEVEL1("CUDA MapOverlap kernel: size = " << out_size_i * out_size_j * out_size_k << ", one device, numBlocks = [" << numBlocks.x << "x" << numBlocks.y << "x" << numBlocks.z << "], numThreads = [" << numThreads.x << "x" << numThreads.y << "x" << numThreads.z << "]");
-			
+			DEBUG_TEXT_LEVEL1("shared_mem: " << shared_i << "x" << shared_j << "x" << shared_k << "x" << sizeof(T) << " = " << shared_mem);
+
 #ifdef USE_PINNED_MEMORY
-			this->m_cuda_kernel<<<numBlocks, numThreads, sharedMem, this->m_environment->m_devices_CU.at(deviceID)->m_streams[0]>>>
+			this->m_cuda_kernel<<<numBlocks, numThreads, shared_mem, this->m_environment->m_devices_CU.at(deviceID)->m_streams[0]>>>
 #else
-			this->m_cuda_kernel<<<numBlocks, numThreads, sharedMem>>>
+			this->m_cuda_kernel<<<numBlocks, numThreads, shared_mem>>>
 #endif
 			(
 				std::get<OI>(out_mem_p)->getDeviceDataPointer()...,
@@ -72,10 +99,9 @@ namespace skepu
 				in_size_i, in_size_j, in_size_k,
 				out_size_i, out_size_j, out_size_k,
 				this->m_overlap[0], this->m_overlap[1], this->m_overlap[2],
-				numThreads.z + this->m_overlap[0] * 2,
-				numThreads.y + this->m_overlap[1] * 2,
-				numThreads.x + this->m_overlap[2] * 2,
-				this->m_edge, this->m_pad
+                this->m_strides[0], this->m_strides[1], this->m_strides[2],
+				shared_i, shared_j, shared_k,
+				(int)(this->isPool ? 1 : 0), this->m_edge, this->m_pad
 			);
 			
 			// Make sure the data is marked as changed by the device
@@ -92,7 +118,7 @@ namespace skepu
 		void MapOverlap3D<MapOverlapFunc, CUDAKernel, CLKernel>
 		::mapOverlapMultipleThread_CU(size_t numDevices, Parity p, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 		{
-			auto &res = get<0>(std::forward<CallArgs>(args)...);
+			/*auto &res = get<0>(std::forward<CallArgs>(args)...);
 			auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 			const size_t in_size_i = arg.size_i();
 			const size_t in_size_j = arg.size_j();
@@ -102,7 +128,7 @@ namespace skepu
 			const size_t out_size_k = res.size_k();
 			
 			const size_t numRowsPerSlice = out_size_i / numDevices;
-			const size_t restRows = out_size_i % numDevices;
+			const size_t restRows = out_size_i % numDevices;*/
 			
 			// Need to get new values from other devices so that the overlap between devices is up to date.
 			// Bad for performance since whole vector needs to be copied, fix so that only overlap is fetched and updated.

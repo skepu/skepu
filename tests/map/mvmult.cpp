@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <skepu>
+#include <test_helper_automatic_setup.hpp>
 
 template<typename T>
 T arr(skepu::Index1D row, const skepu::Mat<T> m, const skepu::Vec<T> v)

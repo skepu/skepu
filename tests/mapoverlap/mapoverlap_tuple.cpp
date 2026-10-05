@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include <skepu>
+#include <test_helper_automatic_setup.hpp>
 
 
 skepu::multiple<float, int>

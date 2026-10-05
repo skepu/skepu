@@ -16,7 +16,9 @@ namespace skepu
 		void MapOverlap2D<MapOverlapFunc, CUDAKernel, CLKernel>
 		::helper_Hybrid(skepu::Parity p, pack_indices<OI...> oi, pack_indices<EI...> ei, pack_indices<AI...> ai, pack_indices<CI...> ci, CallArgs&&... args)
 		{
-			std::cout << "WARNING: helper_Hybrid is not implemented for Hybrid exection yet. Will run OpenMP version." << std::endl;
+			SKEPU_ERROR((this->isPool ? "MapPool2D" : "MapOverlap2D") << " is not implemented for Hybrid execution");
+            
+            std::cout << "WARNING: helper_Hybrid is not implemented for Hybrid exection yet. Will run OpenMP version." << std::endl;
 			
 			this->helper_OpenMP(p, oi, ei, ai, ci, std::forward<CallArgs>(args)...);
 		}

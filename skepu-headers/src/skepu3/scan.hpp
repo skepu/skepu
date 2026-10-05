@@ -54,7 +54,7 @@ namespace skepu
 			{
 				T running = this->m_initial;
 				
-				if (size != res.size())
+				if (size != res.size() || size != arg.size())
 					SKEPU_ERROR("Non-matching container sizes");
 				
 				// First element

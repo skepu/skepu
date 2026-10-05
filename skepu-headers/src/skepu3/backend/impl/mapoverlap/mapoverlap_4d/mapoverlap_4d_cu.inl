@@ -49,31 +49,35 @@ namespace skepu
 			bool atomicInnerMostDimension = true;
 			if (atomicInnerMostDimension) numThreads_0a = out_size_l;
 
+			
+			numThreads.x = this->isPool ? out_size_k * out_size_l : std::min<size_t>(out_size_k, std::min<size_t>(maxThreads / numThreads_0a, sizeLength)) * numThreads_0a;
+			numThreads.y = this->isPool ? out_size_j : std::min<size_t>(out_size_j, std::min<size_t>(maxThreads / numThreads.x, sizeLength));
+			numThreads.z = this->isPool ? out_size_i : std::min(out_size_i, maxThreads / (numThreads.x * numThreads.y));
 
-			numThreads.x = std::min<size_t>(out_size_k, std::min<size_t>(maxThreads / numThreads_0a, sizeLength)) * numThreads_0a;
-			numThreads.y = std::min<size_t>(out_size_j, std::min<size_t>(maxThreads / numThreads.x, sizeLength));
-			numThreads.z = std::min(out_size_i, maxThreads / (numThreads.x * numThreads.y));
+            numBlocks.x = this->isPool ? 1 : (out_size_k * out_size_l + numThreads.x - 1) / numThreads.x;
+			numBlocks.y = this->isPool ? 1 : (out_size_j + numThreads.y - 1) / numThreads.y;
+			numBlocks.z = this->isPool ? 1 : (out_size_i + numThreads.z - 1) / numThreads.z;
 
-			numBlocks.x = (out_size_k * out_size_l + numThreads.x - 1) / numThreads.x;
-			numBlocks.y = (out_size_j + numThreads.y - 1) / numThreads.y;
-			numBlocks.z = (out_size_i + numThreads.z - 1) / numThreads.z;
-
-			// With the innermost dimension kept in one block, the tile must hold all of its input extent
-			 size_t sharedL = (atomicInnerMostDimension ? in_size_l : std::min<size_t>(in_size_l, numThreads_0a)) + this->m_overlap[3] * 2;
-			size_t sharedK = std::min<size_t>(in_size_k, numThreads.x / numThreads_0a) + this->m_overlap[2] * 2;
-			size_t sharedJ = std::min<size_t>(in_size_j, numThreads.y) + this->m_overlap[1] * 2;
-			size_t sharedI = std::min<size_t>(in_size_i, numThreads.z) + this->m_overlap[0] * 2;
+			// The tile has to hold the input extent a block reads, also when the output is larger than the input
+			// (expanding) and, with the innermost dimension kept in one block, all of that dimension.
+			size_t sharedL = (atomicInnerMostDimension ? std::max<size_t>(in_size_l, out_size_l) : std::min<size_t>(std::max<size_t>(in_size_l, out_size_l), numThreads_0a)) + this->m_overlap[3] * 2;
+			size_t sharedK = std::min<size_t>(std::max<size_t>(in_size_k, out_size_k), numThreads.x / numThreads_0a) + this->m_overlap[2] * 2;
+			size_t sharedJ = std::min<size_t>(std::max<size_t>(in_size_j, out_size_j), numThreads.y) + this->m_overlap[1] * 2;
+			size_t sharedI = std::min<size_t>(std::max<size_t>(in_size_i, out_size_i), numThreads.z) + this->m_overlap[0] * 2;
 			size_t sharedMemSize =  sharedI * sharedJ * sharedK * sharedL * sizeof(T);
 
 			if (this->isPool)
 			{
-				sharedL = std::min<size_t>(out_size_l, numThreads_0a) * this->m_overlap[3];
-				sharedK = std::min<size_t>(out_size_k, numThreads.x / numThreads_0a) * this->m_overlap[2];
-				sharedJ = std::min<size_t>(out_size_j, numThreads.y) * this->m_overlap[1];
-				sharedI = std::min<size_t>(out_size_i, numThreads.z) * this->m_overlap[0];
-				sharedMemSize =  sharedI * sharedJ * sharedK * sharedL * sizeof(T);
-			}
+				cudaDeviceProp properties;
+                cudaGetDeviceProperties(&properties, deviceID);
 
+				bool should_use_global_memory = true;
+
+				this->template configurePoolKernelParameters<T, unsigned, 3, 4>(properties.maxThreadsPerBlock, {&numThreads.x, &numThreads.y, &numThreads.z}, {&numBlocks.x, &numBlocks.y, &numBlocks.z},
+														 						should_use_global_memory, properties.sharedMemPerBlock, {&sharedI, &sharedJ, &sharedK, &sharedL}, {in_size_i, in_size_j, in_size_k, in_size_l});
+
+				sharedMemSize = 0;
+			}
 			
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).cudaProxy(deviceID, MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])...);
 		
@@ -86,8 +90,7 @@ namespace skepu
 			DEBUG_TEXT_LEVEL1("CUDA " << name << " kernel: size = " << out_size_i * out_size_j * out_size_k * out_size_l << "x" << sizeof(T) << ", one device, "
 							  << "numBlocks = [" << numBlocks.x << "x" << numBlocks.y << "x" << numBlocks.z << "], numThreads = [" << numThreads.x << "x" << numThreads.y << "x" << numThreads.z << "], "
 							  << "shmem = " << sharedMemSize);
-			
-			
+
 #ifdef USE_PINNED_MEMORY
 			this->m_cuda_kernel<<<numBlocks, numThreads, sharedMemSize, this->m_environment->m_devices_CU.at(deviceID)->m_streams[0]>>>
 #else
@@ -102,10 +105,19 @@ namespace skepu
 				in_size_i, in_size_j, in_size_k, in_size_l,
 				out_size_i, out_size_j, out_size_k, out_size_l,
 				this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_overlap[3],
+				this->m_strides[0], this->m_strides[1], this->m_strides[2], this->m_strides[3],
 				sharedI, sharedJ, sharedK, sharedL,
 				numThreads_0a,
 				(int)(this->isPool ? 1 : 0), this->m_edge, this->m_pad
 			);
+			cudaError_t syncError = cudaDeviceSynchronize();
+			cudaError_t kernelError = cudaGetLastError();
+
+			if (syncError != cudaSuccess)
+				SKEPU_ERROR("cudaDeviceSynchronize error when running Map" << ((this->isPool) ? "Pool" : "Overlap") << "4D: " << cudaGetErrorString(syncError));
+			
+			if (kernelError != cudaSuccess)
+				SKEPU_ERROR("Kernel launch error when running Map" << ((this->isPool) ? "Pool" : "Overlap") << "4D: " << cudaGetErrorString(kernelError));
 			
 			// Make sure the data is marked as changed by the device
 			pack_expand((std::get<OI>(out_mem_p)->changeDeviceData(), 0)...);

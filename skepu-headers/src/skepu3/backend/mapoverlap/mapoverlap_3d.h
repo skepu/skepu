@@ -12,11 +12,11 @@ namespace skepu
         template<typename MapOverlapFunc, typename CUDAKernel, typename CLKernel>
 		class MapOverlap3D: public MapOverlapPar<MapOverlapFunc, SkeletonType::MapOverlap3D>, public SkeletonBase
 		{
-		private:
+		protected:
 			using Base = MapOverlapPar<MapOverlapFunc, SkeletonType::MapOverlap3D>;
 			using Base::InArity;
 			using Base::OutArity;
-			using typename Base::RegionType;
+            using typename Base::RegionType;
 			using typename Base::T;
 			using typename Base::F;
 
@@ -28,15 +28,6 @@ namespace skepu
 #endif
 			}
 
-			void setOverlap(int o)
-			{
-				if (o < 0)
-					SKEPU_ERROR("Overlap cannot be less than 0");
-				this->m_overlap[0] = o;
-				this->m_overlap[1] = o;
-				this->m_overlap[2] = o;
-			}
-
 			void setOverlap(int oi, int oj, int ok)
 			{
 				if (oi < 0 || oj < 0 || ok < 0)
@@ -44,6 +35,11 @@ namespace skepu
 				this->m_overlap[0] = oi;
 				this->m_overlap[1] = oj;
 				this->m_overlap[2] = ok;
+			}
+
+            void setOverlap(int o)
+			{
+                this->setOverlap(o, o, o);
 			}
 
 			std::tuple<int, int, int> getOverlap() const
@@ -57,7 +53,17 @@ namespace skepu
 					SKEPU_ERROR("Stride cannot be less than 0");
 				this->m_strides[0] = si;
 				this->m_strides[1] = sj;
-				this->m_strides[1] = sk;
+				this->m_strides[2] = sk;
+			}
+
+            void setStride(int s)
+			{
+                this->setStride(s, s, s);
+			}
+
+            std::tuple<int, int, int> getStride() const
+			{
+				return std::make_tuple(this->m_strides[0], this->m_strides[1], this->m_strides[2]);
 			}
 
 			template<typename... Args>
@@ -114,72 +120,83 @@ namespace skepu
 #endif
 
 			template<typename First, typename... Rest>
-			void checkOutputTensor3Sizes(size_t expected_size_i, size_t expected_size_j, size_t expected_size_k, size_t i, std::string const& callMetadata, First&& first, Rest&&... rest)
+			void checkOutputTensor3Sizes(size_t expected_size_i, size_t expected_size_j, size_t expected_size_k,
+                                         size_t i, First&& first, Rest&&... rest)
 			{
 				if (first.size_i() != expected_size_i)
-					SKEPU_ERROR(callMetadata
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninvalid output tensor3 size i"
 					<< "\nexpected output tensor3 size i: " << colorRed(expected_size_i)
 					<< "\noutput tensor (label: " << first.getLabel() << ", index: " << i << ", size i: " << colorRed(first.size_i()) << ")");
 				
 				if (first.size_j() != expected_size_j)
-					SKEPU_ERROR(callMetadata
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninvalid output tensor3 size j"
 					<< "\nexpected output tensor3 size j: " << colorRed(expected_size_j)
 					<< "\noutput tensor (label: " << first.getLabel() << ", index: " << i << ", size j: " << colorRed(first.size_j()) << ")");
 				
 				if (first.size_k() != expected_size_k)
-					SKEPU_ERROR(callMetadata
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninvalid output tensor3 size k"
 					<< "\nexpected output tensor3 size k: " << colorRed(expected_size_k)
 					<< "\noutput tensor (label: " << first.getLabel() << ", index: " << i << ", size k: " << colorRed(first.size_k()) << ")");
 
-				checkOutputTensor3Sizes(expected_size_i, expected_size_j, expected_size_k, i+1, callMetadata, rest...);
+				checkOutputTensor3Sizes(expected_size_i, expected_size_j, expected_size_k, i+1, rest...);
 			}
 
-			void checkOutputTensor3Sizes(size_t expected_size_i, size_t expected_size_j, size_t expected_size_k, size_t i, std::string const& callMetadata){}
+			void checkOutputTensor3Sizes(size_t expected_size_i, size_t expected_size_j, size_t expected_size_k, size_t i){}
 
-			template<size_t... OI, size_t... EI, typename... CallArgs>
-			void checkTensor3Sizes(size_t expected_input_size_i, size_t expected_input_size_j, size_t expected_input_size_k, std::string const& callMetadata,
-								   pack_indices<OI...>, pack_indices<EI...>, CallArgs&&... args)
+			template<size_t... OI, typename... CallArgs>
+			void checkTensor3Sizes(pack_indices<OI...>, CallArgs&&... args)
 			{
-				auto& firstOutput = get<0>(std::forward<CallArgs>(args)...);
+				auto& first_output = get<0>(std::forward<CallArgs>(args)...);
 				auto& input = get<OutArity>(std::forward<CallArgs>(args)...);
 
-				size_t first_output_size_i = firstOutput.size_i();
-				size_t first_output_size_j = firstOutput.size_j();
-				size_t first_output_size_k = firstOutput.size_k();
-				size_t input_size_i = input.size_i();
-				size_t input_size_j = input.size_j();
-				size_t input_size_k = input.size_k();
+				size_t out_size_i = first_output.size_i();
+				size_t out_size_j = first_output.size_j();
+				size_t out_size_k = first_output.size_k();
+				size_t in_size_i = input.size_i();
+				size_t in_size_j = input.size_j();
+				size_t in_size_k = input.size_k();
 				
-				if (input_size_i != expected_input_size_i)
-					SKEPU_ERROR(callMetadata
+				if (!this->isInputSizeValid(out_size_i, in_size_i, 0) && this->m_overlap[0] > 0)
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninput/output tensor3 size i mismatch"
-					<< "\nfirst output tensor3 (label: " << firstOutput.getLabel() << ", size i: " << first_output_size_i << ")"
-					<< "\nexpected input tensor3 size i: " << colorRed(expected_input_size_i)
-					<< "\ninput tensor3 (label: " << input.getLabel() << ", size i: " << colorRed(input_size_i) << ")");
+					<< "\nfirst output tensor3 (label: " << first_output.getLabel() << ", size i: " << out_size_i << ")"
+					<< "\nexpected input tensor3 size i: "
+                    << (this->isPool ? ">= " + colorRed(this->getSmallestAllowedInputSizePool(out_size_i, 0)) :
+                        this->m_edge != skepu::Edge::None ? colorRed(std::to_string(out_size_i) + " ± 2n") :
+                                      colorRed(this->getAllowedInputSizeNone(out_size_i, 0)))
+					<< "\ninput tensor3 (label: " << input.getLabel() << ", size i: " << colorRed(in_size_i) << ")");
 				
-				if (input_size_j != expected_input_size_j)
-					SKEPU_ERROR(callMetadata
-					<< "\ninput/output tensor3 size j mismatch"
-					<< "\nfirst output tensor3 (label: " << firstOutput.getLabel() << ", size j: " << first_output_size_j << ")"
-					<< "\nexpected input tensor3 size j: " << colorRed(expected_input_size_j)
-					<< "\ninput tensor3 (label: " << input.getLabel() << ", size j: " << colorRed(input_size_j) << ")");
-
-				if (input_size_k != expected_input_size_k)
-					SKEPU_ERROR(callMetadata
+                if (!this->isInputSizeValid(out_size_j, in_size_j, 1) && this->m_overlap[1] > 0)   
+                    SKEPU_ERROR(generateCallMetadata()
+                    << "\ninput/output tensor3 size j mismatch"
+                    << "\nfirst output tensor3 (label: " << first_output.getLabel() << ", size j: " << out_size_j << ")"
+                    << "\nexpected input tensor3 size j: "
+                    << (this->isPool ? ">= " + colorRed(this->getSmallestAllowedInputSizePool(out_size_j, 1)) :
+                        this->m_edge != skepu::Edge::None ? colorRed(std::to_string(out_size_j) + " ± 2n") :
+                                      colorRed(this->getAllowedInputSizeNone(out_size_j, 1)))
+                    << "\ninput tensor3 (label: " << input.getLabel() << ", size j: " << colorRed(in_size_j) << ")");
+                
+				if (!this->isInputSizeValid(out_size_k, in_size_k, 2) && this->m_overlap[2] > 0)
+					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninput/output tensor3 size k mismatch"
-					<< "\nfirst output tensor3 (label: " << firstOutput.getLabel() << ", size k: " << first_output_size_k << ")"
-					<< "\nexpected input tensor3 size k: " << colorRed(expected_input_size_k)
-					<< "\ninput tensor3 (label: " << input.getLabel() << ", size k: " << colorRed(input_size_k) << ")");
+					<< "\nfirst output tensor3 (label: " << first_output.getLabel() << ", size k: " << out_size_k << ")"
+					<< "\nexpected input tensor3 size k: "
+                    << (this->isPool ? ">= " + colorRed(this->getSmallestAllowedInputSizePool(out_size_k, 2)) :
+                        this->m_edge != skepu::Edge::None ? colorRed(std::to_string(out_size_k) + " ± 2n") :
+                                      colorRed(this->getAllowedInputSizeNone(out_size_k, 2)))
+					<< "\ninput tensor3 (label: " << input.getLabel() << ", size k: " << colorRed(in_size_k) << ")");
 				
-				checkOutputTensor3Sizes(first_output_size_i, first_output_size_j, first_output_size_k, 1, callMetadata, get<OI>(std::forward<CallArgs>(args)...)...);
+				checkOutputTensor3Sizes(out_size_i, out_size_j, out_size_k, 1, get<OI>(std::forward<CallArgs>(args)...)...);
 			}
 
 			std::string generateCallMetadata()
 			{
-				return "MapOverlap3D call, label: " + this->getLabel() + ", Edge mode: " + to_string(this->getEdgeMode());
+				return "MapOverlap3D call, label: " + this->getLabel() + ", Edge mode: " + to_string(this->getEdgeMode()) +
+                    ", Overlap: (" + std::to_string(this->m_overlap[0]) + ", " + std::to_string(this->m_overlap[1]) +
+                    ", " + std::to_string(this->m_overlap[2]) + ")";
 			}
 
 		public:
@@ -187,17 +204,7 @@ namespace skepu
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
 			auto backendDispatch(Parity p, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args) -> decltype(get<0>(std::forward<CallArgs>(args)...))
 			{
-				size_t size_i = get<0>(std::forward<CallArgs>(args)...).size_i();
-				size_t size_j = get<0>(std::forward<CallArgs>(args)...).size_j();
-				size_t size_k = get<0>(std::forward<CallArgs>(args)...).size_k();
-
-				checkTensor3Sizes(this->expectedInputSize(size_i, 0), this->expectedInputSize(size_j, 1), this->expectedInputSize(size_k, 2),
-				generateCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
-
-				// Remove later
-				auto &res = get<0>(std::forward<CallArgs>(args)...);
-				auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
-				// End remove
+				checkTensor3Sizes(this->out_indices, std::forward<CallArgs>(args)...);
 
 				this->selectBackend(get<0>(std::forward<CallArgs>(args)...).size());
 
@@ -251,6 +258,60 @@ namespace skepu
 				return get<0>(std::forward<CallArgs>(args)...);
 			}
 		}; // MapOverlap3D
+
+        template<typename MapOverlapFunc, typename CUDAKernel, typename CLKernel>
+		class MapPool3D: public MapOverlap3D<MapOverlapFunc, CUDAKernel, CLKernel>
+		{
+		private:
+		using typename MapOverlap3D<MapOverlapFunc, CUDAKernel, CLKernel>::T;
+
+		public:
+			void setOverlap(int, int, int) = delete;
+			void setOverlap(int) = delete;
+			std::tuple<int, int, int> getOverlap() const = delete;
+
+			void setEdgeMode(Edge) = delete;
+			Edge getEdgeMode() const = delete;
+
+			void setPad(T) = delete;
+			T getPad() const = delete;
+			
+			void setUpdateMode(UpdateMode) = delete;
+			UpdateMode getUpdateMode() const = delete;
+
+			void setPoolSize(int pi, int pj, int pk)
+			{
+				if (pi < 0 || pj < 0 || pk < 0)
+                    SKEPU_ERROR("Pool size cannot be less than 0");
+				this->m_overlap[0] = pi;
+				this->m_overlap[1] = pj;
+				this->m_overlap[2] = pk;
+			}
+
+			void setPoolSize(int p)
+			{
+				this->setPoolSize(p, p, p);
+			}
+
+			std::tuple<int, int, int> getPoolSize() const
+			{
+				return std::make_tuple(this->m_overlap[0], this->m_overlap[1], this->m_overlap[2]);
+			}
+
+			void setPoolSizeAndStride(int pi, int pj, int pk)
+			{
+				this->setPoolSize(pi, pj, pk);
+				this->setStride(pi, pj, pk);
+			}
+
+			void setPoolSizeAndStride(int p)
+			{
+				this->setPoolSize(p);
+				this->setStride(p);
+			}
+
+			MapPool3D(std::string label, CUDAKernel kernel): MapOverlap3D<MapOverlapFunc, CUDAKernel, CLKernel>(label, kernel) {}
+		};
 
     } // backend
 

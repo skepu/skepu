@@ -51,22 +51,45 @@ namespace skepu
 			size_t numThreads[3], numBlocks[3];
 
 			size_t sizeLength = (size_t)std::cbrt(maxThreads);
-			numThreads[0] = std::min<size_t>(out_size_k, sizeLength);
-			numThreads[1] = std::min<size_t>(out_size_j, std::min<size_t>(maxThreads / numThreads[0], sizeLength));
-			numThreads[2] = std::min(out_size_i, maxThreads / (numThreads[0] * numThreads[1]));
+			numThreads[0] = this->isPool ? out_size_k : std::min<size_t>(out_size_k, sizeLength);
+			numThreads[1] = this->isPool ? out_size_j : std::min<size_t>(out_size_j, std::min<size_t>(maxThreads / numThreads[0], sizeLength));
+			numThreads[2] = this->isPool ? out_size_i : std::min(out_size_i, maxThreads / (numThreads[0] * numThreads[1]));
 			
-			numBlocks[0] = (size_t)((out_size_k + numThreads[0] - 1) / numThreads[0]) * numThreads[0];
-			numBlocks[1] = (size_t)((out_size_j + numThreads[1] - 1) / numThreads[1]) * numThreads[1];
-			numBlocks[2] = (size_t)((out_size_i + numThreads[2] - 1) / numThreads[2]) * numThreads[2];
+			numBlocks[0] = this->isPool ? 1 : (size_t)((out_size_k + numThreads[0] - 1) / numThreads[0]) * numThreads[0];
+			numBlocks[1] = this->isPool ? 1 : (size_t)((out_size_j + numThreads[1] - 1) / numThreads[1]) * numThreads[1];
+			numBlocks[2] = this->isPool ? 1 : (size_t)((out_size_i + numThreads[2] - 1) / numThreads[2]) * numThreads[2];
 			
-			const size_t sharedK = numThreads[0] + this->m_overlap[2] * 2;
-			const size_t sharedJ = numThreads[1] + this->m_overlap[1] * 2;
-			const size_t sharedI = numThreads[2] + this->m_overlap[0] * 2;
-			const size_t sharedMemSize =  sharedI * sharedJ * sharedK * sizeof(T);
+			size_t shared_k = numThreads[0] + this->m_overlap[2] * 2;
+			size_t shared_j = numThreads[1] + this->m_overlap[1] * 2;
+			size_t shared_i = numThreads[2] + this->m_overlap[0] * 2;
+			size_t shared_mem =  shared_i * shared_j * shared_k * sizeof(T);
+
+            if (this->isPool)
+			{
+
+				size_t max_memory_per_work_group;
+                clGetDeviceInfo(device->getDeviceID(), CL_DEVICE_LOCAL_MEM_SIZE, sizeof(size_t), &max_memory_per_work_group, 0);
+
+				size_t max_threads_per_work_group;
+				clGetKernelWorkGroupInfo(CLKernel::kernels(deviceID), device->getDeviceID(), CL_KERNEL_WORK_GROUP_SIZE, sizeof(size_t), &max_threads_per_work_group, 0);
+
+
+				bool should_use_global_memory = (this->m_overlap[0] == 0 || this->m_overlap[0] <= this->m_strides[0]) &&
+                        						(this->m_overlap[1] == 0 || this->m_overlap[1] <= this->m_strides[1]) &&
+                        						(this->m_overlap[2] == 0 || this->m_overlap[2] <= this->m_strides[2]);
+
+				this->template configurePoolKernelParameters<T, size_t, 3, 3>(max_threads_per_work_group, {&numThreads[0], &numThreads[1], &numThreads[2]}, {&numBlocks[0], &numBlocks[1], &numBlocks[2]},
+														 					  should_use_global_memory, max_memory_per_work_group, {&shared_i, &shared_j, &shared_k}, {in_size_i, in_size_j, in_size_k});
+
+				shared_mem = std::max<size_t>(shared_i * shared_j * shared_k * sizeof(T), 1);
+                numBlocks[0] *= numThreads[0];
+                numBlocks[1] *= numThreads[1];
+                numBlocks[2] *= numThreads[2];
+			}
 			
 			DEBUG_TEXT_LEVEL1("OpenCL MapOverlap 3D: device = " << deviceID << ", numThreads = "
 				<< "[" << numThreads[0] << " x " << numThreads[1] << " x " << numThreads[2] << "]" 
-				<< ", numBlocks = " << "[" << numBlocks[0] << " x " << numBlocks[1] << " x " << numBlocks[2] << "], shmem = " << sharedMemSize);
+				<< ", numBlocks = " << "[" << numBlocks[0] << " x " << numBlocks[1] << " x " << numBlocks[2] << "], shmem = " << shared_mem);
 					
 			size_t threads = std::min<size_t>(out_size_i * out_size_j * out_size_k, numBlocks[0] * numBlocks[1] * numBlocks[2] * numThreads[0] * numThreads[1] * numThreads[2]); // handle division factor
 			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(out_size_i * out_size_j * out_size_k, threads);
@@ -82,10 +105,11 @@ namespace skepu
 				get<0>(std::forward<CallArgs>(args)...).getParent().size_info(),
 				out_size_i, out_size_j, out_size_k, 
 				this->m_overlap[0], this->m_overlap[1], this->m_overlap[2],
+                this->m_strides[0], this->m_strides[1], this->m_strides[2],
 				in_size_i, in_size_j, in_size_k, 
-				sharedI, sharedJ, sharedK,
-				edge, pad, &wrapMemP,
-				sharedMemSize
+				shared_i, shared_j, shared_k,
+				(int)(this->isPool ? 1 : 0), edge, pad, &wrapMemP,
+				shared_mem
 			);
 			
 			// Make sure the data is marked as changed by the device

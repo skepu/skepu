@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <skepu>
-
+#include <test_helper_automatic_setup.hpp>
 
 auto test_sum = skepu::Reduce([](int lhs, int rhs) -> int { return lhs + rhs; });
 auto test_max = skepu::Reduce([](int lhs, int rhs) -> int { return lhs < rhs ? rhs : lhs; });

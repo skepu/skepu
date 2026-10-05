@@ -1,12 +1,16 @@
 #include "globals.h"
 #include "visitor.h"
 
-using namespace clang;
+#ifdef SKEPU_LSP
+#include "support/Logger.h"
+#include <filesystem>
+#include "clang/AST/Type.h"
+#endif
+
 
 // ------------------------------
 // Precompiler options
 // ------------------------------
-
 
 llvm::cl::OptionCategory SkePUCategory("SkePU precompiler options");
 
@@ -26,6 +30,7 @@ llvm::cl::opt<bool> DoNotGenLineDirectives("no-preserve-lines", llvm::cl::desc("
 
 llvm::cl::opt<std::string> AllowedFuncNames("fnames", llvm::cl::desc("Function names which are allowed to be called from user functions (separated by space, e.g. -fnames \"conj csqrt\")"), llvm::cl::cat(SkePUCategory));
 
+
 // Derived
 static std::string mainFileName;
 std::string inputFileName;
@@ -36,15 +41,53 @@ std::string inputFileName;
 // ------------------------------
 
 // User functions, name maps to AST entry and indexed indicator
-std::unordered_map<const FunctionDecl*, UserFunction*> UserFunctions;
+std::unordered_map<const clang::FunctionDecl*, UserFunction*> UserFunctions;
 
 // User functions, name maps to AST entry and indexed indicator
-std::unordered_map<const TypeDecl*, UserType*> UserTypes;
+std::unordered_map<const clang::TypeDecl*, UserType*> UserTypes;
 
 // User functions, name maps to AST entry and indexed indicator
-std::unordered_map<const VarDecl*, UserConstant*> UserConstants;
+std::unordered_map<const clang::VarDecl*, UserConstant*> UserConstants;
 
-//std::unordered_set<std::pair<CXXOperatorCallExpr *, std::string>> skeletonInvocations;
+#ifdef SKEPU_LSP
+std::vector<Skeleton*> Skeletons;
+std::vector<SkeletonInvocation*> SkeletonInvocations;
+
+std::vector<SkepuContainerInvocation*> ContainerInvocations;
+std::vector<SkepuContainer*> Containers;
+
+
+void clearGlobals()
+{
+	for (auto& pair : UserFunctions)
+		delete pair.second;
+	UserFunctions.clear();
+
+	for (auto& pair : UserTypes)
+		delete pair.second;
+	UserTypes.clear();
+
+	for (auto& pair : UserConstants)
+		delete pair.second;
+	UserConstants.clear();
+
+	for (auto& pair : SkeletonInvocations)
+		delete pair;
+	SkeletonInvocations.clear();
+
+	for (auto& pair : Skeletons)
+		delete pair;
+	Skeletons.clear();
+
+	for (auto& pair : ContainerInvocations)
+		delete pair;
+	ContainerInvocations.clear();
+	
+	for (auto& pair : Containers)
+		delete pair;
+	Containers.clear();
+}
+#endif
 
 // Explicitly allowed functions to call from user functions
 std::unordered_set<std::string> AllowedFunctionNamesCalledInUFs
@@ -67,7 +110,7 @@ std::unordered_set<std::string> AllowedFunctionNamesCalledInUFs
 };
 
 // Skeleton types lookup from internal SkePU class template name
-const std::unordered_map<std::string, Skeleton> Skeletons =
+const std::unordered_map<std::string, Skeleton> SkeletonsLookup =
 {
 	{"MapImpl",              {"Map",                Skeleton::Type::Map,                1, 1}},
 	{"Reduce1D",             {"Reduce1D",           Skeleton::Type::Reduce1D,           1, 1}},
@@ -78,62 +121,89 @@ const std::unordered_map<std::string, Skeleton> Skeletons =
 	{"MapOverlap2D",         {"MapOverlap2D",       Skeleton::Type::MapOverlap2D,       1, 1}},
 	{"MapOverlap3D",         {"MapOverlap3D",       Skeleton::Type::MapOverlap3D,       1, 1}},
 	{"MapOverlap4D",         {"MapOverlap4D",       Skeleton::Type::MapOverlap4D,       1, 1}},
-	{"MapPool1D",            {"MapOverlap1D",          Skeleton::Type::MapPool1D,          1, 4}},
+	{"MapPool1D",            {"MapPool1D",          Skeleton::Type::MapPool1D,          1, 4}},
 	{"MapPool2D",            {"MapPool2D",          Skeleton::Type::MapPool2D,          1, 1}},
-	{"MapPool3D",            {"MapOverlap3D",          Skeleton::Type::MapPool3D,          1, 1}},
-	{"MapPool4D",            {"MapOverlap4D",          Skeleton::Type::MapPool4D,          1, 1}},
+	{"MapPool3D",            {"MapPool3D",          Skeleton::Type::MapPool3D,          1, 1}},
+	{"MapPool4D",            {"MapPool4D",          Skeleton::Type::MapPool4D,          1, 1}},
 	{"MapPairsImpl",         {"MapPairs",           Skeleton::Type::MapPairs,           1, 1}},
 	{"MapPairsReduceImpl",   {"MapPairsReduce",     Skeleton::Type::MapPairsReduce,     2, 1}},
 	{"CallImpl",             {"Call",               Skeleton::Type::Call,               1, 1}},
 };
 
-Rewriter GlobalRewriter;
+std::unordered_map<Skeleton::Type, std::string> SkeletonDescriptions =
+{
+	{Skeleton::Type::Map, 
+  "Data-parallel element-wise application of a function with arbitrary arity."},
+	{Skeleton::Type::Reduce1D, 
+  "Reduction with 1D and 2D variations."},
+	{Skeleton::Type::Reduce2D, 
+  "Reduction with 1D and 2D variations."},
+	{Skeleton::Type::MapReduce, 
+  "Efficient chaining of Map and Reduce."},
+	{Skeleton::Type::Scan, 
+  "Generalized prefix sum."},
+	{Skeleton::Type::MapOverlap1D, 
+  "Stencil operation in 1D."},
+	{Skeleton::Type::MapOverlap2D, 
+  "Stencil operation in 2D."},
+	{Skeleton::Type::MapOverlap3D, 
+  "Stencil operation in 3D."},
+	{Skeleton::Type::MapOverlap4D, 
+  "Stencil operation in 4D."},
+  	{Skeleton::Type::MapPool1D, 
+  "Pool operation in 1D."},
+	{Skeleton::Type::MapPool2D, 
+  "Pool operation in 2D."},
+	{Skeleton::Type::MapPool3D, 
+  "Pool operation in 3D."},
+	{Skeleton::Type::MapPool4D, 
+  "Pool operation in 4D."},
+	{Skeleton::Type::MapPairs, 
+  "Cartesian product-style computation."},
+	{Skeleton::Type::MapPairsReduce, 
+  "Efficient chaining of MapPairs and Reduce."},
+	{Skeleton::Type::Call, 
+  "Generic multi-variant component."},
+};
+
+
+
+clang::Rewriter GlobalRewriter;
 size_t GlobalSkeletonIndex = 0;
+
 
 namespace library_markers
 {
-    bool foundBlas = false;
-    clang::SourceLocation blasBegin, blasEnd;
-    
-    bool foundML = false;
-    clang::SourceLocation mlBegin, mlEnd;
-    clang::SourceLocation sequentialModelBegin, sequentialModelEnd;
-    clang::SourceLocation dnnSupportBegin, dnnSupportEnd;
-    clang::SourceLocation activationBegin, activationEnd;
-    clang::SourceLocation layerBegin, layerEnd;
-    clang::SourceLocation denseBegin, denseEnd;
-    clang::SourceLocation dropoutBegin, dropoutEnd;
-    clang::SourceLocation flattenBegin, flattenEnd;
-    clang::SourceLocation conv1dBegin, conv1dEnd;
-    clang::SourceLocation conv2dBegin, conv2dEnd;
-    clang::SourceLocation pool2dBegin, pool2dEnd;
+	bool foundBlas = false;
+	clang::SourceLocation blasBegin, blasEnd;
 
+	bool foundML = false;
+	clang::SourceLocation mlBegin, mlEnd;
+	clang::SourceLocation sequentialModelBegin, sequentialModelEnd;
+	clang::SourceLocation dnnSupportBegin, dnnSupportEnd;
+	clang::SourceLocation activationBegin, activationEnd;
+	clang::SourceLocation layerBegin, layerEnd;
+	clang::SourceLocation denseBegin, denseEnd;
+	clang::SourceLocation dropoutBegin, dropoutEnd;
+	clang::SourceLocation flattenBegin, flattenEnd;
+	clang::SourceLocation conv1dBegin, conv1dEnd;
+	clang::SourceLocation conv2dBegin, conv2dEnd;
+	clang::SourceLocation pool2dBegin, pool2dEnd;
 }
 
-
-llvm::raw_ostream& SkePULog()
+// Injects the transformed text of a library file (from its start/end markers) into the main file, at the include
+void libraryFileHandlerHelper(bool found, clang::SourceLocation start, clang::SourceLocation end, clang::SourceLocation injectionLoc, std::string name)
 {
-	if (Verbose)
-		return llvm::outs();
-	else
-		return llvm::nulls();
-}
+	if (!found) return;
 
-void libraryFileHandlerHelper(bool found, SourceLocation start, SourceLocation end, SourceLocation injectionLoc, std::string name)
-{
-    if (!found) return;
+	clang::SourceManager &SM = GlobalRewriter.getSourceMgr();
+	std::string transformedCode = GlobalRewriter.getRewrittenText(clang::SourceRange(start, end));
 
-    // Get transformed source code to inject
-    SourceManager &SM = GlobalRewriter.getSourceMgr();
-	std::string transformedCode = GlobalRewriter.getRewrittenText(SourceRange(start, end));
+	clang::FileID file = SM.getFileID(injectionLoc);
+	clang::SourceLocation includeLoc = SM.getIncludeLoc(file);
+	unsigned includeLine = SM.getSpellingLineNumber(includeLoc);
+	includeLoc = SM.translateLineCol(SM.getMainFileID(), includeLine, 0);
 
-	// Find injection point
-	FileID file = GlobalRewriter.getSourceMgr().getFileID(injectionLoc);
-	SourceLocation includeLoc = GlobalRewriter.getSourceMgr().getIncludeLoc(file);
-	unsigned includeLine = GlobalRewriter.getSourceMgr().getSpellingLineNumber(includeLoc);
-	includeLoc = GlobalRewriter.getSourceMgr().translateLineCol(SM.getMainFileID(), includeLine, 0);
-
-	// Perform injection
 	std::string insertion;
 	insertion += "\n/* BEGIN " + name + ".HPP INJECTION */\n";
 	if (!DoNotGenLineDirectives)
@@ -146,76 +216,216 @@ void libraryFileHandlerHelper(bool found, SourceLocation start, SourceLocation e
 	GlobalRewriter.InsertText(includeLoc, insertion);
 }
 
+llvm::raw_ostream& SkePULog()
+{
+	if (Verbose)
+		return llvm::outs();
+	else
+		return llvm::nulls();
+}
+
 // For each source file provided to the tool, a new FrontendAction is created.
-class SkePUFrontendAction : public ASTFrontendAction
+class SkePUFrontendAction : public clang::ASTFrontendAction
 {
 public:
 
-	bool BeginSourceFileAction(CompilerInstance &CI) override
+	bool BeginSourceFileAction(clang::CompilerInstance &CI) override
 	{
 		inputFileName = this->getCurrentFile().str();
-		if (Verbose) SkePULog() << "** BeginSourceFileAction for: " << inputFileName << "\n";
+		SkePULog() << "** BeginSourceFileAction for: " << inputFileName << "\n";
 		return true;
 	}
 
 	void EndSourceFileAction() override
 	{
-		SourceManager &SM = GlobalRewriter.getSourceMgr();
-		SourceLocation SLStart = SM.getLocForStartOfFile(SM.getMainFileID());
+		#ifdef SKEPU_LSP          
+			for (clang::VarDecl *d : this->SkeletonInstances)
+			{
+				Skeleton *skeleton = HandleSkeletonInstance(d);
+				if(skeleton != nullptr)
+					Skeletons.push_back(skeleton);
+			}
+			for(SkeletonInvocation *Invocation: SkeletonInvocations)
+			{
+				for(Skeleton *skeleton: Skeletons)
+				{
+					if(skeleton == nullptr || Invocation == nullptr)
+						continue;
 
-		GlobalRewriter.InsertText(SLStart, "#define SKEPU_PRECOMPILED 1\n");
-		if (GenOMP)  GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENMP 1\n");
-		if (GenCL)   GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENCL 1\n");
-		if (GenCUDA) GlobalRewriter.InsertText(SLStart, "#define SKEPU_CUDA 1\n");
-		if (GenStarPUMPI) GlobalRewriter.InsertText(SLStart, "#define SKEPU_STARPU_MPI 1\n");
-		if (!DoNotGenLineDirectives)
-		    GlobalRewriter.InsertText(SLStart, lineDirectiveForSourceLoc(SLStart) + "\n");
+					// TODO: Check if some more data points need to be compared such as special names and such
+					if(Invocation->retType.isNull())
+					{
+						//clangd::log("Invocation ret is null");
+					}
 
-        SkePULog() << "Found " << this->SkeletonInstances.size() << " skeleton instances\n";
+					if(skeleton->retType.isNull())
+					{
+						//clangd::log("Skeleton ret is null");
+					}
+				
+					if(skeleton->variableName == Invocation->variableName && skeleton->retType == Invocation->retType)
+					{
+						skeleton->invocations.push_back(Invocation);
+					}
+				}
+			}
+		#else
+			clang::SourceManager &SM = GlobalRewriter.getSourceMgr();
+			clang::SourceLocation SLStart = SM.getLocForStartOfFile(SM.getMainFileID());
 
-		for (VarDecl *d : this->SkeletonInstances)
-			HandleSkeletonInstance(d);
-		
-    
-		libraryFileHandlerHelper(library_markers::foundBlas, library_markers::blasBegin, library_markers::blasEnd, library_markers::blasBegin, "BLAS");
+			GlobalRewriter.InsertText(SLStart, "#define SKEPU_PRECOMPILED 1\n");
+			if (GenOMP)  GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENMP 1\n");
+			if (GenCL)   GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENCL 1\n");
+			if (GenCUDA) GlobalRewriter.InsertText(SLStart, "#define SKEPU_CUDA 1\n");
+			if (GenStarPUMPI) GlobalRewriter.InsertText(SLStart, "#define SKEPU_STARPU_MPI 1\n");
+			if (!DoNotGenLineDirectives)
+				GlobalRewriter.InsertText(SLStart, lineDirectiveForSourceLoc(SLStart) + "\n");
 
-		libraryFileHandlerHelper(library_markers::foundML, library_markers::mlBegin,         library_markers::mlEnd, library_markers::mlBegin, "ML");
-		libraryFileHandlerHelper(library_markers::foundML, library_markers::dnnSupportBegin, library_markers::dnnSupportEnd, library_markers::mlBegin, "DNN_SUPPORT");
-		libraryFileHandlerHelper(library_markers::foundML, library_markers::layerBegin,      library_markers::layerEnd, library_markers::mlBegin, "LAYER");
-		libraryFileHandlerHelper(library_markers::foundML, library_markers::activationBegin, library_markers::activationEnd, library_markers::mlBegin, "ACTIVATION");
-		libraryFileHandlerHelper(library_markers::foundML, library_markers::denseBegin,      library_markers::denseEnd, library_markers::mlBegin, "DENSE");
-		libraryFileHandlerHelper(library_markers::foundML, library_markers::dropoutBegin,    library_markers::dropoutEnd, library_markers::mlBegin, "DROPOUT");
-	 	libraryFileHandlerHelper(library_markers::foundML, library_markers::flattenBegin,    library_markers::flattenEnd, library_markers::mlBegin, "FLATTEN");
-		libraryFileHandlerHelper(library_markers::foundML, library_markers::conv2dBegin,     library_markers::conv2dEnd, library_markers::mlBegin, "CONV2D");
-		libraryFileHandlerHelper(library_markers::foundML, library_markers::pool2dBegin,     library_markers::pool2dEnd, library_markers::mlBegin, "POOL2D");
-		libraryFileHandlerHelper(library_markers::foundML, library_markers::conv1dBegin,     library_markers::conv1dEnd, library_markers::mlBegin, "CONV1D"); // after CONV2D and POOL2D: Conv1D/MaxPooling1D derive from them
-		libraryFileHandlerHelper(library_markers::foundML, library_markers::sequentialModelBegin, library_markers::sequentialModelEnd, library_markers::mlBegin, "SEQUENTIAL_MODEL");
+			SkePULog() << "Found " << this->SkeletonInstances.size() << " skeleton instances\n";
 
-		if (Verbose) SkePULog() << "** EndSourceFileAction for: " << inputFileName << "\n";
+			for (clang::VarDecl *d : this->SkeletonInstances)
+				HandleSkeletonInstance(d);
 
-		// Now emit the rewritten buffer.
-		std::error_code EC;
-		llvm::raw_fd_ostream OutFile(
-			mainFileName, EC, llvm::sys::fs::FileAccess::FA_Write);
-		GlobalRewriter.getEditBuffer(SM.getMainFileID()).write(OutFile);
-		OutFile.close();
+			namespace lm = library_markers;
+			libraryFileHandlerHelper(lm::foundBlas, lm::blasBegin, lm::blasEnd, lm::blasBegin, "BLAS");
+
+			libraryFileHandlerHelper(lm::foundML, lm::mlBegin,              lm::mlEnd,              lm::mlBegin, "ML");
+			libraryFileHandlerHelper(lm::foundML, lm::dnnSupportBegin,      lm::dnnSupportEnd,      lm::mlBegin, "DNN_SUPPORT");
+			libraryFileHandlerHelper(lm::foundML, lm::layerBegin,           lm::layerEnd,           lm::mlBegin, "LAYER");
+			libraryFileHandlerHelper(lm::foundML, lm::activationBegin,      lm::activationEnd,      lm::mlBegin, "ACTIVATION");
+			libraryFileHandlerHelper(lm::foundML, lm::denseBegin,           lm::denseEnd,           lm::mlBegin, "DENSE");
+			libraryFileHandlerHelper(lm::foundML, lm::dropoutBegin,         lm::dropoutEnd,         lm::mlBegin, "DROPOUT");
+			libraryFileHandlerHelper(lm::foundML, lm::flattenBegin,         lm::flattenEnd,         lm::mlBegin, "FLATTEN");
+			libraryFileHandlerHelper(lm::foundML, lm::conv2dBegin,          lm::conv2dEnd,          lm::mlBegin, "CONV2D");
+			libraryFileHandlerHelper(lm::foundML, lm::pool2dBegin,          lm::pool2dEnd,          lm::mlBegin, "POOL2D");
+			// after CONV2D and POOL2D: Conv1D/MaxPooling1D derive from them
+			libraryFileHandlerHelper(lm::foundML, lm::conv1dBegin,          lm::conv1dEnd,          lm::mlBegin, "CONV1D");
+			libraryFileHandlerHelper(lm::foundML, lm::sequentialModelBegin, lm::sequentialModelEnd, lm::mlBegin, "SEQUENTIAL_MODEL");
+
+			if (Verbose) SkePULog() << "** EndSourceFileAction for: " << inputFileName << "\n";
+
+			// Now emit the rewritten buffer.
+			std::error_code EC;
+			llvm::raw_fd_ostream OutFile(
+				mainFileName, EC, llvm::sys::fs::FileAccess::FA_Write);
+			GlobalRewriter.getEditBuffer(SM.getMainFileID()).write(OutFile);
+			OutFile.close();
+		#endif
 	}
 
-	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override
+
+	std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance &CI, llvm::StringRef file) override
 	{
-		if (Verbose) SkePULog() << "** Creating AST consumer for: " << file << "\n";
+    	SkePULog() << "** Creating AST consumer for: " << file << "\n";
 		GlobalRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
 		return std::make_unique<SkePUASTConsumer>(&CI.getASTContext(), this->SkeletonInstances);
 	}
+
+#ifdef SKEPU_LSP
+	const std::unordered_set<clang::VarDecl *> &getResults() const
+	{
+		return SkeletonInstances;
+	}
+#endif
 
 private:
 	std::unordered_set<clang::VarDecl *> SkeletonInstances;
 };
 
+#ifdef SKEPU_LSP
+SkepuMatcher::SkepuMatcher(llvm::StringRef File)
+: File(File)
+{}
 
+bool SkepuMatcher::runMatcher()
+{
+	std::filesystem::path p(File.str());
+
+	// Not cross-platform, see https://stackoverflow.com/questions/1528298/get-path-of-executable
+	std::filesystem::path skepuDir(std::filesystem::canonical("/proc/self/exe"));//.parent_path().parent_path().parent_path().parent_path());
+	while (!skepuDir.empty())
+	{
+		std::filesystem::path skepu_headers = skepuDir / "skepu-headers";
+		std::filesystem::path llvm_dir = skepuDir / "llvm";
+
+		if (std::filesystem::is_directory(skepu_headers) &&
+			std::filesystem::is_directory(llvm_dir))
+				break;
+		
+		std::filesystem::path parent = skepuDir.parent_path();
+
+		if (skepuDir == parent)
+			return false;
+
+		skepuDir = parent;
+	}
+
+	std::string headerPath = skepuDir.string() + "/llvm/clang/lib/Headers";// tmpPathSkepuEx + "/../llvm/clang/lib/Headers";
+	std::string skepuSrcPath = skepuDir.string() + "/skepu-headers/src"; //tmpPathSkepuEx + "/../skepu-headers/src";
+  
+
+	std::string filePath = p.parent_path().string() +"/"+ p.filename().string();
+	std::string seperator = "--";
+	std::string cXX = "-std=c++20";
+	std::string expansion = "-Wno-expansion-to-defined";
+	std::string include = "-I ";
+	std::string argIncludeSkepu = "-include" + skepuSrcPath + "/skepu";
+	std::string argSkepu ="-I" + skepuSrcPath;
+		
+	clang::tooling::FixedCompilationDatabase Compilations(
+		".",
+		{
+			"-std=c++20",
+			"-Wno-expansion-to-defined",
+			"-I ",
+			headerPath,
+			argIncludeSkepu,
+			argSkepu
+		}
+	);
+
+	std::vector<std::string> Sources = {
+		filePath
+	};
+
+	clang::tooling::ClangTool Tool(Compilations, Sources);
+
+	clearGlobals();
+
+	// This might be inefficient, it could be better to integrate SkePUFrontendAction
+	// or the SkePUASTConsumer into 
+	Tool.run(clang::tooling::newFrontendActionFactory<SkePUFrontendAction>().get());
+
+	this->_Skeletons = std::move(Skeletons);
+	this->_Containers = std::move(Containers);
+
+	for (const auto& pair : SkeletonsLookup)
+		this->_SkeletonsStandard.insert(std::make_pair(pair.first, pair.second));
+
+	for(auto&& p: SkeletonsLookup )
+	{
+		this->_SkeletonDescriptions[p.second.name] = SkeletonDescriptions[p.second.type];
+		this->_SkeletonTypes.push_back(p.second.name);
+	}
+
+	for(auto& skeleton : this->_Skeletons)
+		skeleton->description = "Skeleton of " + skeleton->name + ": " + SkeletonDescriptions.find(skeleton->type)->second;
+
+	for(auto par : UserFunctions)
+		_Userfunctions.push_back(std::move(par.second));
+
+	for(auto par : UserConstants)
+		_UserConstants.push_back(std::move(par.second));
+
+	for(auto par : UserTypes)
+		_UserTypes.push_back(std::move(par.second));
+
+	return true;
+}
+#else
 int main(int argc, const char **argv)
 {
-    auto expectedParser = tooling::CommonOptionsParser::create(argc, argv, SkePUCategory);
+    auto expectedParser = clang::tooling::CommonOptionsParser::create(argc, argv, SkePUCategory);
 
     if (!expectedParser)
     {
@@ -225,8 +435,8 @@ int main(int argc, const char **argv)
     }
 
 
-	tooling::CommonOptionsParser& op = expectedParser.get();
-	tooling::ClangTool Tool(op.getCompilations(), op.getSourcePathList());
+	clang::tooling::CommonOptionsParser& op = expectedParser.get();
+	clang::tooling::ClangTool Tool(op.getCompilations(), op.getSourcePathList());
 
 	if (ResultName == "")
 		ResultName = op.getSourcePathList()[0];
@@ -252,5 +462,6 @@ int main(int argc, const char **argv)
 	for (std::string &name : Names)
 		AllowedFunctionNamesCalledInUFs.insert(name);
 
-	return Tool.run(tooling::newFrontendActionFactory<SkePUFrontendAction>().get());
+	return Tool.run(clang::tooling::newFrontendActionFactory<SkePUFrontendAction>().get());
 }
+#endif

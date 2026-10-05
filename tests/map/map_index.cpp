@@ -1,7 +1,7 @@
 #include "../../external/catch2/catch.hpp"
 
 #include <skepu>
-
+#include <test_helper_automatic_setup.hpp>
 
 int uf_1d_a(skepu::Index1D index)
 {

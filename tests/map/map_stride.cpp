@@ -3,6 +3,7 @@
 #include <iostream>
 #include <skepu>
 #include <skepu-lib/io.hpp>
+#include <test_helper_automatic_setup.hpp>
 
 int add(int a, int b)
 {

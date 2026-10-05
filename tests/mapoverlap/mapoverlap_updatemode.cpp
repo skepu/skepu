@@ -2,7 +2,7 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
-
+#include <test_helper_automatic_setup.hpp>
 
 int updatemode_1d_uf(skepu::Region1D<int> r)
 {
