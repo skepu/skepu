@@ -16,3 +16,7 @@ trace.json
 outputOpenCL.txt
 mandelbrot.png
 node_modules
+
+# SkePY: the Shed Skin based Python frontend is a separate (optional) repository,
+# cloned into this directory by hand; it is not a submodule.
+shedskin/

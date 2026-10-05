@@ -14,6 +14,8 @@ parallel and heterogeneous execution.
 4. A collection of parallel and/or heterogeneous back-ends targeting various
 architectures and systems.
 
+An optional, experimental Python frontend (SkePY) is described in [SKEPY.md](SKEPY.md).
+
 ## Setting up the SkePU source-to-source compiler
 
 ### Cloning with submodules
