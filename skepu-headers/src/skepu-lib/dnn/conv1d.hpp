@@ -21,11 +21,11 @@ static skepu::PrecompilerMarker startOf_Conv1D_HPP;
 
 namespace skepu::dnn::impl
 {
-    // Valid (unpadded) 1D convolution with stride 1: output length = input length - kernel + 1
-    template <typename T = float>
-    class Conv1D : public Conv2D<T>
-    {
-    public:
+	// Valid (unpadded) 1D convolution with stride 1: output length = input length - kernel + 1
+	template <typename T = float>
+	class Conv1D : public Conv2D<T>
+	{
+	public:
 	Conv1D(int no_features) : Conv2D<T>(no_features)
 	{
 		this->m_kernel = {1, 3}; // default
@@ -91,17 +91,17 @@ namespace skepu::dnn::impl
 		os << Layer<T>::summary();
 		os << "Conv1D layer with " << this->m_no_features << " features and kernel size " << std::get<1>(this->m_kernel);
 		os << " train_params{ (" << this->m_weights.size_j() << " x " << this->m_weights.size_k() << " x " << this->m_weights.size_l() << ")"
-			 << this->m_weights.size() << " + " << this->m_biases.size() << "}";
+				<< this->m_weights.size() << " + " << this->m_biases.size() << "}";
 		return os.str();
 	}
-    };
+	};
 
 
-    // Max pooling along the sequence dimension, with stride equal to the pool size
-    template <typename T = float>
-    class MaxPooling1D : public MaxPooling2D<T>
-    {
-    public:
+	// Max pooling along the sequence dimension, with stride equal to the pool size
+	template <typename T = float>
+	class MaxPooling1D : public MaxPooling2D<T>
+	{
+	public:
 	MaxPooling1D() : MaxPooling2D<T>()
 	{
 		this->m_kernel = {1, 2}; // default
@@ -136,22 +136,22 @@ namespace skepu::dnn::impl
 		os << "MaxPooling1D layer with pool size " << std::get<1>(this->m_kernel);
 		return os.str();
 	}
-    };
+	};
 }
 
 namespace skepu::dnn
 {
-    template <typename T = float, typename... Args>
-    impl::Conv1D<T> Conv1D(Args &&...args)
-    {
+	template <typename T = float, typename... Args>
+	impl::Conv1D<T> Conv1D(Args &&...args)
+	{
 	return impl::Conv1D<T>(std::forward<Args>(args)...);
-    }
+	}
 
-    template <typename T = float, typename... Args>
-    impl::MaxPooling1D<T> MaxPooling1D(Args &&...args)
-    {
+	template <typename T = float, typename... Args>
+	impl::MaxPooling1D<T> MaxPooling1D(Args &&...args)
+	{
 	return impl::MaxPooling1D<T>(std::forward<Args>(args)...);
-    }
+	}
 }
 
 static skepu::PrecompilerMarker endOf_Conv1D_HPP;

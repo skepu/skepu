@@ -26,12 +26,12 @@ public:
 			std::get<1>(input_size) * std::get<2>(input_size) * std::get<3>(input_size)
 		};
 
-        if (this->m_layer_level != Level::Input)
+		if (this->m_layer_level != Level::Input)
 		{
-    		this->m_temp.init(
-    			std::get<0>(input_size), std::get<1>(input_size),
-    			std::get<2>(input_size), std::get<3>(input_size)
-    		);
+			this->m_temp.init(
+				std::get<0>(input_size), std::get<1>(input_size),
+				std::get<2>(input_size), std::get<3>(input_size)
+			);
 		}
 
 		Layer<T>::setup(input_size);
@@ -81,11 +81,11 @@ private:
 
 namespace skepu::dnn
 {
-    template <typename T = float, typename... Args>
-    impl::Flatten<T> Flatten(Args &&...args)
-    {
-        return impl::Flatten<T>(std::forward<Args>(args)...);
-    }
+	template <typename T = float, typename... Args>
+	impl::Flatten<T> Flatten(Args &&...args)
+	{
+		return impl::Flatten<T>(std::forward<Args>(args)...);
+	}
 }
 
 static skepu::PrecompilerMarker endOf_Flatten_HPP;

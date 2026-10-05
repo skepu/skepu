@@ -59,8 +59,6 @@ int accuracy_batched_uf(
 }
 
 
-
-
 float mse_prime_uf(float a, float y) { return (y - a) * (y - a) * 0.5; }
 
 float mse_uf(float a, float y) { return y - a; }
@@ -122,7 +120,6 @@ size_t argmax_uf(skepu::Index1D index, skepu::MatRow<float> DNN_CONST y)
 size_t eval_uf(size_t a, size_t b) { return (a == b) ? 1 : 0; }
 
 
-
 // Initialization
 float init_zero_uf() { return 0; }
 
@@ -134,20 +131,18 @@ T init_random_uniform_uf(skepu::Random<1> &rand, T min, T max)
 }
 
 
-
 float propagate_loss_gradient_uf(
-	skepu::Index4D index,
-	skepu::Ten4<float> gradient,
-	skepu::Mat<float> weights)
+skepu::Index4D index,
+skepu::Ten4<float> gradient,
+skepu::Mat<float> weights)
 {
 	float sum = 0;
 	for (size_t i = 0; i < gradient.size_l; ++i)
-  {
-    sum += gradient(index.i, 0, 0, i) * weights(index.l, i);
-  }
+	{
+		sum += gradient(index.i, 0, 0, i) * weights(index.l, i);
+	}
 	return sum;
 }
-
 
 
 /// binary cross entropy
@@ -155,44 +150,43 @@ float propagate_loss_gradient_uf(
 
 float binary_cross_entropy(skepu::Index1D index, skepu::Ten4<float> y, skepu::Ten4<float> y_pred) //s
 {
-    size_t item = index.i;
-    // std::cout<< item << "\n";
-    // std::cout<< y << "\n";
-    
-    float epsilon = 1e-9;
-    float res = 0;
-    float val = y_pred(item,0,0,0);
-    
-      if(val > 1.0 - epsilon){
-          val = 1.0 - epsilon;
-      }
-      if(val < epsilon){
-          val = epsilon;
-      }
-      // res += y(item) * log(y_pred(item,0,0,0)) - (1 - y(item)) * log(1 - y_pred(item,0,0,0));
-      res += y(item,0,0,0) * log(val) + (1 - y(item,0,0,0)) * log(1 - val);
-    
+	size_t item = index.i;
+	// std::cout<< item << "\n";
+	// std::cout<< y << "\n";
 
-    return res;
+	float epsilon = 1e-9;
+	float res = 0;
+	float val = y_pred(item,0,0,0);
+
+	if(val > 1.0 - epsilon){
+		val = 1.0 - epsilon;
+	}
+	if(val < epsilon){
+		val = epsilon;
+	}
+	// res += y(item) * log(y_pred(item,0,0,0)) - (1 - y(item)) * log(1 - y_pred(item,0,0,0));
+	res += y(item,0,0,0) * log(val) + (1 - y(item,0,0,0)) * log(1 - val);
+
+
+	return res;
 }
 
-// backward 
+// backward
 float BCE_grad_uf(skepu::Index4D index, skepu::Ten4<float> y_pred, skepu::Ten4<float> y ){
-  size_t item = index.i;
-  float epsilon = 1e-9;
-  float val = y_pred(item,0,0,0);
-    
-  if(val > 1.0 - epsilon){
-    val = 1.0 - epsilon; }
-  if(val < epsilon){
-    val = epsilon; }
+	size_t item = index.i;
+	float epsilon = 1e-9;
+	float val = y_pred(item,0,0,0);
 
-  // return y_pred(item, 0,0,0) - y(item) ;
-  float numerator = val - y(item,0,0,0) ;
-  float denominator = val * (1 - val);
-  return numerator / denominator ;
+	if(val > 1.0 - epsilon){
+		val = 1.0 - epsilon; }
+	if(val < epsilon){
+		val = epsilon; }
+
+	// return y_pred(item, 0,0,0) - y(item) ;
+	float numerator = val - y(item,0,0,0) ;
+	float denominator = val * (1 - val);
+	return numerator / denominator ;
 }
-
 
 
 // Forward
@@ -235,12 +229,11 @@ auto skel_argmax = skepu::Map(argmax_uf);
 auto skel_propagate_loss_gradient         = skepu::Map(propagate_loss_gradient_uf);
 
 
-
 // bce forward and back ward skel
 // forward
 auto skel_binary_cross_entropy_loss_map = skepu::Map<0>(binary_cross_entropy);
 // auto skel_cross_entropy_batched_loss_reduce = skepu::Reduce(sum_uf<float>);
-// back 
+// back
 auto skel_delta_bce = skepu::Map(BCE_grad_uf);
 
 namespace skepu::dnn {
