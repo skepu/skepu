@@ -81,8 +81,8 @@ namespace skepu::dnn::impl
 	Subsampling2D(Subsampling2D &&source) : Layer<T>(std::move(source))
 	{
 		this->m_kernel = source.m_kernel;
-		this->m_strides = source.m_strides;
-		this->m_padding = source.m_padding;
+		this->m_stride_requested = source.m_stride_requested;
+		this->m_has_stride_request = source.m_has_stride_request;
 		this->m_vals = std::move(source.m_vals);
 	}
 
@@ -90,8 +90,10 @@ namespace skepu::dnn::impl
 
 	void setup(Dimensions input_size) override
 	{
-		size_t out = std::get<0>(this->m_output_size);
-		size_t in = std::get<0>(input_size);
+		if (this->m_has_stride_request && this->m_stride_requested != this->m_kernel)
+			SKEPU_ERROR("SkePU-DNN: pooling supports only a stride equal to the pool size, got ("
+				<< std::get<0>(this->m_stride_requested) << ", " << std::get<1>(this->m_stride_requested) << ") for pool size ("
+				<< std::get<0>(this->m_kernel) << ", " << std::get<1>(this->m_kernel) << ")");
 
 		this->m_output_size = {
 				std::get<0>(input_size),
@@ -109,15 +111,19 @@ namespace skepu::dnn::impl
 		return std::move(*this);
 	}
 
+	// The stride always equals the pool size and the pooling is "valid" (no padding). Other values are
+	// rejected (the stride is checked in setup(), when the kernel size is known) instead of being ignored.
 	virtual Subsampling2D &&stride(size_t s1, size_t s2)
 	{
-		this->m_strides = {s1, s2};
+		this->m_stride_requested = {(int)s1, (int)s2};
+		this->m_has_stride_request = true;
 		return std::move(*this);
 	}
 
 	virtual Subsampling2D &&padding(bool new_padding)
 	{
-		this->m_padding = new_padding;
+		if (new_padding)
+			SKEPU_ERROR("SkePU-DNN: pooling supports only 'valid' mode, padding is not implemented");
 		return std::move(*this);
 	}
 
@@ -134,8 +140,8 @@ namespace skepu::dnn::impl
 	protected:
 	int no_features;
 	std::tuple<int, int> m_kernel{1, 1};  // default
-	std::tuple<int, int> m_strides{1, 1}; // default to pool size
-	bool m_padding = true; // true = "same" in Keras, false = "valid" in Keras
+	std::tuple<int, int> m_stride_requested{1, 1};
+	bool m_has_stride_request = false;
 	};
 
 
@@ -146,11 +152,8 @@ namespace skepu::dnn::impl
 	MaxPooling2D() : Subsampling2D<T>() {}
 
 	MaxPooling2D(MaxPooling2D &&source)
-			: Subsampling2D<T>(std::move(source)) // todo kernel
+			: Subsampling2D<T>(std::move(source))
 	{
-		this->m_kernel = source.m_kernel;
-		this->m_strides = source.m_strides;
-		this->m_padding = source.m_padding;
 	}
 
 	~MaxPooling2D() override = default;

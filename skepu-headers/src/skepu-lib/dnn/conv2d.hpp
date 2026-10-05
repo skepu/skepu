@@ -90,8 +90,6 @@ namespace skepu::dnn::impl
 	: Layer<T>(std::move(source)), m_no_features(source.m_no_features)
 	{
 		this->m_kernel = std::move(source.m_kernel);
-		this->m_strides = std::move(source.m_strides);
-		this->m_padding = std::move(source.m_padding);
 		this->m_no_features = source.m_no_features;
 		this->m_weights.swap(source.m_weights);
 		this->m_biases.swap(source.m_biases);
@@ -281,15 +279,19 @@ namespace skepu::dnn::impl
 		return std::move(*this);
 	}
 
+	// Only stride 1 and "valid" (unpadded) convolution are supported; other values are rejected
+	// instead of being silently ignored.
 	Conv2D &&stride(size_t s1, size_t s2)
 	{
-		this->m_strides = {s1, s2};
+		if (s1 != 1 || s2 != 1)
+			SKEPU_ERROR("SkePU-DNN: Conv2D supports only stride 1, got (" << s1 << ", " << s2 << ")");
 		return std::move(*this);
 	}
 
 	Conv2D &&padding(bool new_padding)
 	{
-		this->m_padding = new_padding;
+		if (new_padding)
+			SKEPU_ERROR("SkePU-DNN: Conv2D supports only 'valid' convolution, padding is not implemented");
 		return std::move(*this);
 	}
 
@@ -309,7 +311,7 @@ namespace skepu::dnn::impl
 				<< (this->m_weights.size_i() * this->m_weights.size_j() *
 						this->m_weights.size_k() * this->m_weights.size_l())
 				<< " + " << this->m_biases.size() << "}";
-		os << " padding{" << (this->m_padding ? "on" : "off") << "}";
+		os << " padding{off}";
 		return os.str();
 	}
 
@@ -319,19 +321,11 @@ namespace skepu::dnn::impl
 		dnn_debug << "Conv2D vals: " << string_tensor_size(this->m_vals) << "\n";
 
 		skel_conv_2d.setOverlap(0, (std::get<0>(this->m_kernel) - 1) / 2, (std::get<1>(this->m_kernel) - 1) / 2, /*this->m_no_features - 1*/ 0);
-		skel_conv_2d.setStride(1, std::get<0>(this->m_strides), std::get<1>(this->m_strides), 1);
+		skel_conv_2d.setStride(1, 1, 1, 1);
 
-		if (this->m_padding)
-		{
-			skel_conv_2d.setEdgeMode(skepu::Edge::Pad);
-			skel_conv_2d.setPad(0);
-		}
-		else
-		{
-			// "Valid" convolution: output (y, x) uses input window starting at (y, x).
-			// Must be set explicitly, the MapOverlap default (Duplicate) computes a "same"-style convolution.
-			skel_conv_2d.setEdgeMode(skepu::Edge::None);
-		}
+		// "Valid" convolution: output (y, x) uses the input window starting at (y, x).
+		// Must be set explicitly, the MapOverlap default (Duplicate) computes a "same"-style convolution.
+		skel_conv_2d.setEdgeMode(skepu::Edge::None);
 
 		dnn_debug << "Conv2D weights: " << this->m_weights << "\n";
 		dnn_debug << "Conv2D biases: " << this->m_biases << "\n";
@@ -356,7 +350,7 @@ namespace skepu::dnn::impl
 		if (this->m_layer_level != Level::Input)
 		{
 			skel_conv_2d_backward.setOverlap(0, (std::get<0>(this->m_kernel) - 1) / 2, (std::get<1>(this->m_kernel) - 1) / 2, /*this->m_no_features - 1*/ 0);
-			skel_conv_2d_backward.setStride(1, std::get<0>(this->m_strides), std::get<1>(this->m_strides), 1); // incorrect - future work...
+			skel_conv_2d_backward.setStride(1, 1, 1, 1);
 			skel_conv_2d_backward.setEdgeMode(skepu::Edge::Pad);
 			skel_conv_2d_backward.setPad(0);
 			skel_conv_2d_backward.setLabel(this->label() + " Conv2D backprop grad");
@@ -421,8 +415,6 @@ namespace skepu::dnn::impl
 	protected:
 	int m_no_features;
 	std::tuple<int, int> m_kernel{3, 3};  // default
-	std::tuple<int, int> m_strides{1, 1}; // default
-	bool m_padding = false; // true = "same" in Keras, false = "valid" in Keras
 
 	Tensor4<T> m_weights;
 	Vector<T> m_biases;

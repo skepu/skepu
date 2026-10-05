@@ -553,3 +553,21 @@ TEST_CASE("DNN model files: description without parameters, and errors")
 	for (auto name : {"skepu_dnn_desc.txt", "skepu_dnn_bad1.txt", "skepu_dnn_bad2.txt", "skepu_dnn_bad3.txt", "skepu_dnn_bad4.txt", "skepu_dnn_bad5.txt"})
 		std::filesystem::remove(dir + "/" + name);
 }
+
+TEST_CASE("DNN rejects unsupported strides and padding")
+{
+	use_sequential_cpu();
+
+	// Supported values are accepted
+	REQUIRE_NOTHROW(Conv2D(2).kernel(3, 3).stride(1, 1).padding(false));
+	REQUIRE_NOTHROW(MaxPooling2D().kernel(2, 2).stride(2, 2).padding(false));
+
+	// Everything else is an error instead of being ignored
+	REQUIRE_THROWS(Conv2D(2).kernel(3, 3).stride(2, 2));
+	REQUIRE_THROWS(Conv2D(2).kernel(3, 3).padding(true));
+	REQUIRE_THROWS(MaxPooling2D().kernel(2, 2).padding(true));
+
+	// The pooling stride must equal the pool size; this is checked when the model is set up
+	auto model = SequentialModel(Dimensions{4, 8, 8, 1}) << MaxPooling2D().kernel(2, 2).stride(1, 1);
+	REQUIRE_THROWS(model.init());
+}
