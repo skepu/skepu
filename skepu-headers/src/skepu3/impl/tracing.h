@@ -5,6 +5,8 @@
 #include <sstream>
 #include <iostream>
 #include <stack>
+#include <mutex>
+#include <atomic>
 
 #ifndef SKEPU_PRECOMPILED
 #ifdef SKEPU_TRACING
@@ -12,6 +14,18 @@
 #undef SKEPU_TRACING
 #endif
 #endif
+
+// The layout and the function bodies of the tracer depend on SKEPU_TRACING. Translation units
+// compiled with and without it can end up in one program (a precompiled source file and a plain
+// one that includes <skepu>, for example). The two variants are therefore different types, in
+// different inline namespaces: otherwise the linker merges the inline functions of the two
+// variants, and an object of one is constructed or destroyed by the code of the other.
+#ifdef SKEPU_TRACING
+#define SKEPU_TRACING_VARIANT_BEGIN inline namespace enabled {
+#else
+#define SKEPU_TRACING_VARIANT_BEGIN inline namespace disabled {
+#endif
+#define SKEPU_TRACING_VARIANT_END }
 
 #if __cplusplus >= 202002L
 #include <source_location>
@@ -44,6 +58,7 @@ namespace skepu
 
 	namespace tracing
 	{
+	SKEPU_TRACING_VARIANT_BEGIN
 		using TraceID = UniqueIdentifier::ID;
 		static const std::string defaultTraceFilename = "skepu_trace.json";
 		static const std::string defaultSnapshotDir = "./";
@@ -166,6 +181,9 @@ namespace skepu
 				SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM
 			);
 
+			template<typename DataContainer>
+			void data_snapshot(DataContainer &data, std::string const& file, int line);
+
 			template<template<typename> typename C1, template<typename> typename C2, typename T1, typename T2>
 			void virtual_dataset(
 			    std::string const& label,
@@ -173,13 +191,25 @@ namespace skepu
 				SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM
 			);
 
+			template<template<typename> typename C1, template<typename> typename C2, typename T1, typename T2>
+			void virtual_dataset(
+			    std::string const& label,
+			    C1<T1> &data1, C2<T2> &data2,
+			    std::string const& file, int line
+			);
+
 			void beginRegion(std::string const& label SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM);
+			// (with an explicit place, for programs that are not C++: SkePY says where in its source)
+			void beginRegion(std::string const& label, std::string const& file, int line);
 			void endRegion();
 			void region(std::string const& label,
 				std::function<void(void)> &&work_func SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM);
 
 		private:
+			void push_capture(std::function<void()> &&capture);
+
 #ifdef SKEPU_TRACING
+			std::mutex m_mutex; // guards m_captures
 			nlohmann::json m_trace_json;
 			std::stack<std::string> m_region_stack;
 			std::vector<std::function<void()>> m_captures;
@@ -189,6 +219,7 @@ namespace skepu
 
 		inline Tracer &tracer();
 
+	SKEPU_TRACING_VARIANT_END
 	}
 }
 

@@ -1,4 +1,4 @@
-/*! `c` grammar compiled for Highlight.js 11.11.1 */
+/*! `c` grammar compiled for Highlight.js 11.12.0 */
 var hljsGrammar = (function () {
   'use strict';
 
@@ -25,11 +25,53 @@ var hljsGrammar = (function () {
     + ')';
 
 
+    // C11 <stdatomic.h> atomic type names. This is an explicit whitelist so that
+    // C11 atomic *functions* (atomic_init, atomic_store, atomic_load,
+    // atomic_fetch_add, ...) are not mistakenly highlighted as types. See #3837.
+    const ATOMIC_TYPES = regex.concat(/\batomic_/, regex.either(
+      'bool',
+      'char',
+      'schar',
+      'uchar',
+      'short',
+      'ushort',
+      'int',
+      'uint',
+      'long',
+      'ulong',
+      'llong',
+      'ullong',
+      'char16_t',
+      'char32_t',
+      'wchar_t',
+      'int_least8_t',
+      'uint_least8_t',
+      'int_least16_t',
+      'uint_least16_t',
+      'int_least32_t',
+      'uint_least32_t',
+      'int_least64_t',
+      'uint_least64_t',
+      'int_fast8_t',
+      'uint_fast8_t',
+      'int_fast16_t',
+      'uint_fast16_t',
+      'int_fast32_t',
+      'uint_fast32_t',
+      'int_fast64_t',
+      'uint_fast64_t',
+      'intptr_t',
+      'uintptr_t',
+      'size_t',
+      'ptrdiff_t',
+      'intmax_t',
+      'uintmax_t'
+    ), /\b/);
     const TYPES = {
       className: 'type',
       variants: [
         { begin: '\\b[a-z\\d_]*_t\\b' },
-        { match: /\batomic_[a-z]{3,6}\b/ }
+        { match: ATOMIC_TYPES }
       ]
 
     };
@@ -51,9 +93,13 @@ var hljsGrammar = (function () {
           end: '\'',
           illegal: '.'
         },
+        // https://en.cppreference.com/w/cpp/language/string_literal
+        // a d-char-sequence never contains parentheses, backslashes or whitespace;
+        // quotes are excluded as well so the closing delimiter cannot swallow the
+        // quote that actually terminates the literal
         hljs.END_SAME_AS_BEGIN({
-          begin: /(?:u8?|U|L)?R"([^()\\ ]{0,16})\(/,
-          end: /\)([^()\\ ]{0,16})"/
+          begin: /(?:u8?|U|L)?R"([^()\\\s"]{0,16})\(/,
+          end: /\)([^()\\\s"]{0,16})"/
         })
       ]
     };
@@ -69,6 +115,32 @@ var hljsGrammar = (function () {
       relevance: 0
     };  
     
+    // `#include` is the only preprocessor directive that takes an angle-bracket
+    // quoted header (`#include <header>`). Scoping that rule to `#include` keeps
+    // the greedy `<...>` match from eating a `>` that belongs to the body of
+    // another directive (e.g. `#define what do { cout << ">"; } while (0)`),
+    // which would otherwise leave an unbalanced `"` and break highlighting for
+    // the rest of the file. See issue #3505.
+    const PREPROCESSOR_INCLUDE = {
+      scope: 'meta',
+      begin: /#\s*include\b/,
+      end: /$/,
+      keywords: { keyword: 'include' },
+      contains: [
+        {
+          // the `\` at the end of a line signaling continuation
+          begin: /\\\n/,
+        },
+        STRINGS,
+        {
+          scope: 'string',
+          begin: /<.*?>/
+        },
+        C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE
+      ]
+    };
+
     const PREPROCESSOR = {
       className: 'meta',
       begin: /#\s*[a-z]+\b/,
@@ -82,14 +154,15 @@ var hljsGrammar = (function () {
           relevance: 0
         },
         hljs.inherit(STRINGS, { className: 'string' }),
-        {
-          className: 'string',
-          begin: /<.*?>/
-        },
         C_LINE_COMMENT_MODE,
         hljs.C_BLOCK_COMMENT_MODE
       ]
     };
+
+    const PREPROCESSORS = [
+      PREPROCESSOR_INCLUDE,
+      PREPROCESSOR
+    ];
 
     const TITLE_MODE = {
       className: 'title',
@@ -98,6 +171,11 @@ var hljsGrammar = (function () {
     };
 
     const FUNCTION_TITLE = regex.optional(NAMESPACE_RE) + hljs.IDENT_RE + '\\s*\\(';
+    // Bounded on purpose: an unbounded quantifier here consumes an arbitrarily
+    // long run of words, and when no function title follows it the engine retries
+    // the title at every token boundary of that run - quadratic in the size of
+    // the document.  See #4362.
+    const MAX_FUNCTION_TYPE_TOKENS = 12;
 
     const C_KEYWORDS = [
       "asm",
@@ -198,7 +276,7 @@ var hljsGrammar = (function () {
     };
 
     const EXPRESSION_CONTAINS = [
-      PREPROCESSOR,
+      ...PREPROCESSORS,
       TYPES,
       C_LINE_COMMENT_MODE,
       hljs.C_BLOCK_COMMENT_MODE,
@@ -238,7 +316,7 @@ var hljsGrammar = (function () {
     };
 
     const FUNCTION_DECLARATION = {
-      begin: '(' + FUNCTION_TYPE_RE + '[\\*&\\s]+)+' + FUNCTION_TITLE,
+      begin: '(' + FUNCTION_TYPE_RE + '[\\*&\\s]+){1,' + MAX_FUNCTION_TYPE_TOKENS + '}' + FUNCTION_TITLE,
       returnBegin: true,
       end: /[{;=]/,
       excludeEnd: true,
@@ -294,7 +372,7 @@ var hljsGrammar = (function () {
         TYPES,
         C_LINE_COMMENT_MODE,
         hljs.C_BLOCK_COMMENT_MODE,
-        PREPROCESSOR
+        ...PREPROCESSORS
       ]
     };
 
@@ -311,7 +389,7 @@ var hljsGrammar = (function () {
         FUNCTION_DECLARATION,
         EXPRESSION_CONTAINS,
         [
-          PREPROCESSOR,
+          ...PREPROCESSORS,
           {
             begin: hljs.IDENT_RE + '::',
             keywords: KEYWORDS

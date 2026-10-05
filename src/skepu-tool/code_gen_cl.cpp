@@ -579,9 +579,11 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CL(
 				break;
 			
 			case ContainerType::MatCol:
+				// The column is the output index modulo the number of columns of the matrix (the
+				// output width has to be the same): skepu_w2 is 1 when the output is a vector.
 				SSKernelParamList << "__global " << param.innerTypeNameOpenCL() << " *" << name << ", size_t skepu_rows_" << param.name << ", size_t skepu_cols_" << param.name << ", ";
 				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_rows(), std::get<0>(" << name << ")->total_cols(), ";
-				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + (skepu_i % skepu_w2)), .rows = skepu_rows_" << param.name << ", .cols = skepu_cols_" << param.name << " };\n";
+				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + (skepu_i % skepu_cols_" << param.name << ")), .rows = skepu_rows_" << param.name << ", .cols = skepu_cols_" << param.name << " };\n";
 				break;
 			
 			case ContainerType::Tensor3:
@@ -810,6 +812,15 @@ std::string generateUserTypeCode_CL(UserType &type)
 
 std::string generateUserFunctionCode_CL(UserFunction &Func)
 {
+	std::set<UserFunction*> emitted;
+	return generateUserFunctionCode_CL(Func, emitted);
+}
+
+std::string generateUserFunctionCode_CL(UserFunction &Func, std::set<UserFunction*> &emitted)
+{
+	if (!emitted.insert(&Func).second)
+		return "";
+
 	std::stringstream SSFuncParamList, SSFuncParams, SSFuncSource;
 
 	SSFuncSource << generateOpenCLMultipleReturn(Func);
@@ -893,7 +904,7 @@ std::string generateUserFunctionCode_CL(UserFunction &Func)
 
 	// Recursive call, potential for circular loop: TODO FIX!!
 	for (UserFunction *RefFunc : Func.ReferencedUFs)
-		SSFuncSource << generateUserFunctionCode_CL(*RefFunc);
+		SSFuncSource << generateUserFunctionCode_CL(*RefFunc, emitted);
 
 
 	// The function itself

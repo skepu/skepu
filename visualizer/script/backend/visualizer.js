@@ -470,19 +470,24 @@ function _handleGetData({ id, nodeId }) {
         const vcLabel  = vcInfo.label;
         const vcObjIds = vcInfo.object_ids;
 
-        // Collect the canonical UpdateNode for each object_id in the group.
-        const oidToNode = {};
+        // Collect the UpdateNodes of each object_id in the group. A container is usually
+        // updated by several nodes (its initialisation and the iterations, which are
+        // coalesced into one node), and its snapshots are spread over all of them.
+        const oidToNodes = {};
         for (const n of _graph.getAllNodes()) {
-            if (n instanceof UpdateNode && String(n.virtualId ?? '') === String(virtualId)) {
-                if (!(n.objectId in oidToNode)) oidToNode[n.objectId] = n;
-            }
+            if (n instanceof UpdateNode && String(n.virtualId ?? '') === String(virtualId))
+                (oidToNodes[n.objectId] ??= []).push(n);
         }
 
-        const siblings     = vcObjIds.map(oid => oidToNode[oid]).filter(Boolean);
-        const siblingLabels = siblings.map(n => n.label);
+        const siblings      = vcObjIds.map(oid => oidToNodes[oid]).filter(Boolean);
+        const siblingLabels = siblings.map(ns => ns[0].label);
 
         if (hasSnapshots && siblings.length > 0) {
-            const fileLists = siblings.map(n => n.snapshotDataFiles ?? []);
+            // (each container's snapshots in execution order: [total_order, file] pairs)
+            const fileLists = siblings.map(ns => ns
+                .flatMap(n => n.snapshotDataFiles ?? [])
+                .sort((a, b) => (a[0] == null ? 1 : 0) - (b[0] == null ? 1 : 0)
+                             || (a[0] ?? 0) - (b[0] ?? 0)));
             const maxIters  = Math.max(...fileLists.map(fl => fl.length), 0);
 
             const combinedFiles  = [];

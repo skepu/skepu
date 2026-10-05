@@ -84,13 +84,24 @@ add_dependencies(SkePU::skepu-tool skepu-tool-llvm)
 install(PROGRAMS ${SKEPU_TOOL_BINARY_DIR}/skepu-tool
 	DESTINATION bin)
 
+# The tracing support (SKEPU_TRACING) includes ../../external/nlohmann/json.hpp from
+# skepu3/impl/tracing.h, which is include/external/nlohmann in an installation.
+install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/external/nlohmann
+	DESTINATION include/external)
+
 # And the target exports are also available, so we install them as well for good
-# measure.
-install(
-	DIRECTORY
-		${SKEPU_TOOL_LLVM_DIR}/${SKEPU_TOOL_TARGETS_DIR}/
-	DESTINATION lib/cmake/SkePU/
-	FILES_MATCHING PATTERN "*.cmake")
+# measure. Older CMake versions write the export files to a fixed directory
+# (SKEPU_TOOL_TARGETS_DIR), newer ones to a directory named by a hash, so look
+# for them at install time instead of relying on one location.
+install(CODE "
+	file(GLOB_RECURSE _skepu_tool_exports
+		\"${SKEPU_TOOL_LLVM_DIR}/tools/clang/tools/skepu-tool/CMakeFiles/Export/*skepu-toolTargets*.cmake\")
+	if(NOT _skepu_tool_exports)
+		message(FATAL_ERROR \"Could not find the skepu-tool export files in ${SKEPU_TOOL_LLVM_DIR}\")
+	endif()
+	file(INSTALL \${_skepu_tool_exports}
+		DESTINATION \"\${CMAKE_INSTALL_PREFIX}/lib/cmake/SkePU\")
+")
 
 # Now that we don't have a llvm subproject, we can actually use the target name
 # clang-headers. So we do. This target is used in the functions skepu_add_*

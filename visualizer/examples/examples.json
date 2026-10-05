@@ -48,5 +48,14 @@
       "opencl": "dnn_cifar10/trace_dnn_cifar10_opencl.json"
     },
     "cpp_files": ["dnn_cifar10/dnn_cifar10.cpp"]
+  },
+  {
+    "title": "Cellular Automaton (SkePY, Python)",
+    "trace": {
+      "openmp": "cellular_automaton_skepy/trace_cellular_automaton_openmp.json",
+      "opencl": "cellular_automaton_skepy/trace_cellular_automaton_opencl.json"
+    },
+    "snapshot_archive": "cellular_automaton_skepy/snapshots_cellular_automaton.zip",
+    "cpp_files": ["cellular_automaton_skepy/cellular_automaton.py"]
   }
 ]

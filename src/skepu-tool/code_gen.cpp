@@ -1,3 +1,4 @@
+#include <map>
 #include "code_gen.h"
 #include "code_gen_cu.h"
 
@@ -162,7 +163,12 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 	SkePULog() << "Modifying UF code for " << nameFunc(UF) << "\n";
 	const FunctionDecl *f = UF.astDeclNode;
 	if (f->getTemplatedKind() == FunctionDecl::TK_FunctionTemplateSpecialization)
-		f = f->getTemplateInstantiationPattern();
+	{
+		// An explicit specialization (template<> ...) has no instantiation
+		// pattern, but it has a body of its own.
+		if (const FunctionDecl *pattern = f->getTemplateInstantiationPattern())
+			f = pattern;
+	}
 
 	// Find references to other userfunctions
 	Rewriter R(GlobalRewriter.getSourceMgr(), LangOptions());
@@ -504,6 +510,25 @@ static int skeletonCounter = 0;
 
 bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, VarDecl *d)
 {
+	// A skeleton instance in a function template is visited once per instantiation, but
+	// it is rewritten once, in the template itself. Another instantiation with the same
+	// user functions needs nothing more; one with other user functions cannot be supported.
+	static std::map<unsigned, std::string> transformedInstances;
+	{
+		std::string signature;
+		for (UserFunction *UF : FuncArgs)
+			signature += UF->uniqueName + ";";
+		auto seen = transformedInstances.find(d->getSourceRange().getBegin().getRawEncoding());
+		if (seen != transformedInstances.end())
+		{
+			if (seen->second != signature)
+				SkePUAbort("Skeleton instance " + InstanceName + " in a function template is instantiated with different user functions (" + seen->second + " and " + signature + "); not supported");
+			SkePULog() << "Skeleton instance " << InstanceName << " in a template was already transformed\n";
+			return true;
+		}
+		transformedInstances[d->getSourceRange().getBegin().getRawEncoding()] = signature;
+	}
+
 	generatedStructs = {};
 	std::stringstream ss;
 	ss << "skepu_skel_" << skeletonCounter++;

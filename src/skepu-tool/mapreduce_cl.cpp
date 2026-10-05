@@ -243,12 +243,13 @@ std::string createMapReduceKernelProgram_CL(SkeletonInstance &instance, UserFunc
 	
 	proxyCodeGenHelper_CL(argsInfo.containerProxyTypes, sourceStream);
 
+	std::set<UserFunction*> emittedUFs;
 	if (mapFunc.refersTo(reduceFunc))
-		sourceStream << generateUserFunctionCode_CL(mapFunc);
+		sourceStream << generateUserFunctionCode_CL(mapFunc, emittedUFs);
 	else if (reduceFunc.refersTo(mapFunc))
-		sourceStream << generateUserFunctionCode_CL(reduceFunc);
+		sourceStream << generateUserFunctionCode_CL(reduceFunc, emittedUFs);
 	else
-		sourceStream << generateUserFunctionCode_CL(mapFunc) << generateUserFunctionCode_CL(reduceFunc);
+		sourceStream << generateUserFunctionCode_CL(mapFunc, emittedUFs) << generateUserFunctionCode_CL(reduceFunc, emittedUFs);
 
 	sourceStream << MapReduceKernelTemplate_CL << ReduceKernelTemplate_CL;
 	

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include <sstream>
 
 #include "code_gen.h"
@@ -19,6 +20,9 @@ std::string generateOpenCLRegion(size_t dim, UserFunction::RegionParam const& pa
 std::string generateOpenCLRandom(bool doublePrecision = false);
 
 std::string generateOpenCLMultipleReturn(UserFunction &UF);
+// A function that is called from several places (or by two of the user functions of a
+// skeleton) must be emitted once; "emitted" collects the ones that already were.
+std::string generateUserFunctionCode_CL(UserFunction &Func, std::set<UserFunction*> &emitted);
 std::string generateUserFunctionCode_CL(UserFunction &Func);
 std::string generateUserTypeCode_CL(UserType &Type);
 

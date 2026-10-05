@@ -17,6 +17,9 @@ namespace skepu
 		void MapPairs<Varity, Harity, MapPairsFunc, CUDAKernel, CLKernel>
 		::mapPairsSingleThread_CU(size_t deviceID, size_t startIdx, size_t Vsize, size_t Hsize, pack_indices<OI...>, pack_indices<VEI...>, pack_indices<HEI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 		{
+			if (this->m_in_place)
+				SKEPU_ERROR("MapPairs in place mode is not implemented for the CUDA backend");
+
 			const size_t size = Vsize * Hsize;
 			auto oArgs = std::forward_as_tuple(get<OI>(std::forward<CallArgs>(args)...)...);
 			auto veArgs = std::forward_as_tuple(get<VEI>(std::forward<CallArgs>(args)...)...);
@@ -73,6 +76,9 @@ namespace skepu
 		void MapPairs<Varity, Harity, MapPairsFunc, CUDAKernel, CLKernel>
 		::mapPairsMultiStream_CU(size_t deviceID, size_t startIdx, size_t Vsize, size_t Hsize, pack_indices<OI...>, pack_indices<VEI...>, pack_indices<HEI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 		{
+			if (this->m_in_place)
+				SKEPU_ERROR("MapPairs in place mode is not implemented for the CUDA backend");
+
 			CHECK_CUDA_ERROR(cudaSetDevice(deviceID));
 			const size_t size = Vsize * Hsize;
 			size_t numKernels = std::min<size_t>(this->m_environment->m_devices_CU.at(deviceID)->getNoConcurrentKernels(), size);
@@ -162,6 +168,9 @@ namespace skepu
 		void MapPairs<Varity, Harity, MapPairsFunc, CUDAKernel, CLKernel>
 		::mapPairsMultiStreamMultiGPU_CU(size_t useNumGPU, size_t startIdx, size_t Vsize, size_t Hsize, pack_indices<OI...>, pack_indices<VEI...>, pack_indices<HEI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 		{
+			if (this->m_in_place)
+				SKEPU_ERROR("MapPairs in place mode is not implemented for the CUDA backend");
+
 #ifdef USE_PINNED_MEMORY
 			const size_t size = Vsize * Hsize;
 			const size_t numElemPerDevice = size / useNumGPU;

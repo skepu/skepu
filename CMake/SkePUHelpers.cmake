@@ -27,6 +27,7 @@ macro(skepu_filter_args)
 	set(_fnames_arg OFF)
 	set(_skepu_src_arg OFF)
 	set(_src_arg OFF)
+	set(_precompile_arg OFF)
 	foreach(arg ${ARGN})
 		if(${arg} STREQUAL "STATIC"
 				OR ${arg} STREQUAL "SHARED"
@@ -47,17 +48,27 @@ macro(skepu_filter_args)
 			set(_fnames_arg ON)
 			set(_src_arg OFF)
 			set(_skepu_src_arg OFF)
+			set(_precompile_arg OFF)
 		elseif(${arg} STREQUAL "SKEPUSRC")
 			set(_fnames_arg OFF)
 			set(_skepu_src_arg ON)
 			set(_src_arg OFF)
+			set(_precompile_arg OFF)
 		elseif(${arg} STREQUAL "SRC")
 			set(_fnames_arg OFF)
 			set(_src_arg ON)
 			set(_skepu_src_arg OFF)
+			set(_precompile_arg OFF)
+		elseif(${arg} STREQUAL "PRECOMPILE_OPTIONS")
+			set(_fnames_arg OFF)
+			set(_src_arg OFF)
+			set(_skepu_src_arg OFF)
+			set(_precompile_arg ON)
 		else()
 			if(_fnames_arg)
 				list(APPEND _skepu_fnames ${arg})
+			elseif(_precompile_arg)
+				list(APPEND _precompile_options ${arg})
 			elseif(_skepu_src_arg)
 				list(APPEND _skepu_src ${arg})
 			elseif(_src_arg)
@@ -167,38 +178,10 @@ macro(skepu_generate_include_generators)
 		$<$<BOOL:${_isid_prop}>:-I$<JOIN:${_isid_prop}, -I>>)
 endmacro(skepu_generate_include_generators)
 
-#	skepu_add_library(<name> [STATIC | SHARED | MODULE] [EXCLUDE_FROM_ALL]
-#		[[CUDA] [OpenCL] [OpenMP] | [MPI]]
-#		SKEPUSRC ssrc1 [ssrc2 ...]
-#		[SRC	src1 [src2 ...]])
-#
-#	A wrapper function to add_library
-#	Creates a library target. Source files listed after SKEPUSRC will be
-#	precompiled with skepu-tool. Other sources, listed after SRC, will be
-#	redirected to add_library. SkePU headers will be included automatically.
-# Note that the user is resposible for enabling CUDA,OpenCL,OpenMP, and OpenMPI
-# within their cmake scripts.
-function(skepu_add_library name)
-
-endfunction(skepu_add_library)
-
-#	skepu_add_executable(<name> [EXCLUDE_FROM_ALL]
-#		[[CUDA] [OpenCL] [OpenMP] | [MPI]]
-#		SKEPUSRC ssrc1 [ssrc2 ...]
-#		[SRC src1 [src2 ...]])
-#
-#	A wrapper function to add_executable.
-#	Creates an executable target. Source files listed after SKEPUSRC will be
-#	precompiled with skepu-tool. SRC will be redirected together with the
-#	precompiled source to add_executable(). The function will automatically
-#	include the SkePU headers.
-# Note that the user is resposible for enabling CUDA,OpenCL,OpenMP, and OpenMPI
-# within their cmake scripts.
-function(skepu_add_executable name)
-	# We need the skepu headers when building.
-	skepu_filter_args(${ARGN})
-	skepu_configure()
-
+# Precompiles the SkePU sources of skepu_add_library/skepu_add_executable with skepu-tool.
+# Expects the results of skepu_filter_args and skepu_configure; sets _precompiled_src,
+# _skepu_targets and _output_dir.
+macro(skepu_precompile)
 	# Just keeps the output directory a bit tidier.
 	set(_output_dir ${CMAKE_CURRENT_BINARY_DIR}/skepu_precompiled)
 	if(NOT EXISTS ${_output_dir})
@@ -209,6 +192,8 @@ function(skepu_add_executable name)
 	# SkePU sources for us.
 	foreach(_file IN LISTS _skepu_src)
 		get_filename_component(_file_name ${_file} NAME_WE)
+		get_filename_component(_file_abs ${_file} ABSOLUTE
+			BASE_DIR ${CMAKE_CURRENT_LIST_DIR})
 		set(_target_name "${name}_${_file_name}_precompiled")
 		set(_target_byprod "${name}_${_file_name}_precompiled${_skepu_ext}")
 		set(_skepu_fnames "${_skepu_fnames}")
@@ -221,11 +206,12 @@ function(skepu_add_executable name)
 					-name ${_target_name}
 					-dir=${_output_dir}
 					-fnames="${_skepu_fnames}"
-					${CMAKE_CURRENT_LIST_DIR}/${_file}
+					${_file_abs}
 					--
 					${SKEPU_TOOL_SYSTEM_INCLUDE_FLAGS}
+					${_precompile_options}
 					"${_include_generators}"
-			DEPENDS ${CMAKE_CURRENT_LIST_DIR}/${_file}
+			DEPENDS ${_file_abs}
 			BYPRODUCTS ${_output_dir}/${_target_byprod}
 			COMMAND_EXPAND_LISTS
 			)
@@ -239,6 +225,57 @@ function(skepu_add_executable name)
 		list(APPEND _precompiled_src ${_output_dir}/${_target_byprod})
 		list(APPEND _skepu_targets ${_target_name})
 	endforeach()
+endmacro(skepu_precompile)
+
+#	skepu_add_library(<name> [STATIC | SHARED | MODULE] [EXCLUDE_FROM_ALL]
+#		[[CUDA] [OpenCL] [OpenMP] | [MPI]]
+#		SKEPUSRC ssrc1 [ssrc2 ...]
+#		[SRC	src1 [src2 ...]]
+#		[PRECOMPILE_OPTIONS opt1 [opt2 ...]])
+#
+#	A wrapper function to add_library
+#	Creates a library target. Source files listed after SKEPUSRC will be
+#	precompiled with skepu-tool. Other sources, listed after SRC, will be
+#	redirected to add_library. SkePU headers will be included automatically.
+#	The library type defaults to STATIC, as for add_library; MODULE is what a
+#	plugin or a Python extension module needs. Options listed after
+#	PRECOMPILE_OPTIONS are passed on to the skepu-tool compiler invocation only.
+# Note that the user is resposible for enabling CUDA,OpenCL,OpenMP, and OpenMPI
+# within their cmake scripts.
+function(skepu_add_library name)
+	skepu_filter_args(${ARGN})
+	skepu_configure()
+	skepu_precompile()
+
+	add_library(${name} ${_lib_type} ${_exclude_from_all} ${_precompiled_src} ${_src})
+	target_include_directories(${name} PRIVATE ${_output_dir})
+	target_link_libraries(${name} PRIVATE ${_target_libs})
+	target_compile_options(${name} PRIVATE ${_target_cxxflags})
+	add_dependencies(${name} ${_skepu_targets})
+endfunction(skepu_add_library)
+
+#	skepu_add_executable(<name> [EXCLUDE_FROM_ALL]
+#		[[CUDA] [OpenCL] [OpenMP] | [MPI]]
+#		SKEPUSRC ssrc1 [ssrc2 ...]
+#		[SRC src1 [src2 ...]]
+#		[PRECOMPILE_OPTIONS opt1 [opt2 ...]])
+#
+#	A wrapper function to add_executable.
+#	Creates an executable target. Source files listed after SKEPUSRC will be
+#	precompiled with skepu-tool. SRC will be redirected together with the
+#	precompiled source to add_executable(). The function will automatically
+#	include the SkePU headers. Source files may be given as absolute paths or
+#	relative to the current CMake list directory. Options listed after
+#	PRECOMPILE_OPTIONS (for example -D definitions) are passed on to the
+#	skepu-tool compiler invocation only; use target_compile_options for the
+#	actual build.
+# Note that the user is resposible for enabling CUDA,OpenCL,OpenMP, and OpenMPI
+# within their cmake scripts.
+function(skepu_add_executable name)
+	# We need the skepu headers when building.
+	skepu_filter_args(${ARGN})
+	skepu_configure()
+	skepu_precompile()
 
 	# Finally add an executable target with both the procompiled source and C++
 	# source (if any). Cmake will use the file extension to figure out if we are

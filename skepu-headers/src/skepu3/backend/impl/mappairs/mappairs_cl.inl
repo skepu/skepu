@@ -13,6 +13,9 @@ namespace skepu
 		void MapPairs<Varity, Harity, MapPairsFunc, CUDAKernel, CLKernel>
 		::mapNumDevices_CL(size_t startIdx, size_t numDevices, size_t Vsize, size_t Hsize, pack_indices<OI...>, pack_indices<VEI...>, pack_indices<HEI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 		{
+			if (this->m_in_place && !CLKernel::inPlaceSupported)
+				SKEPU_ERROR("MapPairs in place mode needs a single output of an arithmetic type on the OpenCL backend");
+
 			constexpr size_t numKernelArgs = numArgs + 3;
 			const size_t numElemPerSlice = (Vsize * Hsize) / numDevices;
 			const size_t rest = (Vsize * Hsize) % numDevices;
@@ -23,7 +26,7 @@ namespace skepu
 				const size_t numElem = numElemPerSlice + ((i == numDevices-1) ? rest : 0);
 				const size_t baseIndex = /*startIdx + */i * numElemPerSlice;
 				
-				pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + baseIndex + startIdx, numElem, device, false), 0)...);
+				pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + baseIndex + startIdx, numElem, device, this->m_in_place), 0)...);
 				pack_expand((get<VEI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<VEI>(std::forward<CallArgs>(args)...).getAddress() + baseIndex, numElem, device, false), 0)...);
 				pack_expand((get<HEI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<HEI>(std::forward<CallArgs>(args)...).getAddress(), Hsize, device, false), 0)...);
 				pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(), get<AI>(std::forward<CallArgs>(args)...).size(), device, false), 0)...);
@@ -42,7 +45,7 @@ namespace skepu
 				DEBUG_TEXT_LEVEL1("OpenCL MapPairs: device " << i << ", numElem = " << numElem << ", numBlocks = " << numBlocks << ", numThreads = " << numThreads);
 				
 				// Copies the elements to the device
-				auto outMemP     = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + baseIndex + startIdx, numElem, device, false)...);
+				auto outMemP     = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + baseIndex + startIdx, numElem, device, this->m_in_place)...);
 				auto VelwiseMemP = std::make_tuple(get<VEI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<VEI>(std::forward<CallArgs>(args)...).getAddress() + baseIndex, numElem, device, true)...);
 				auto HelwiseMemP = std::make_tuple(get<HEI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<HEI>(std::forward<CallArgs>(args)...).getAddress(), Hsize, device, true)...);
 				auto anyMemP = std::make_tuple(cl_helpers::randomAccessArg(get<AI>(std::forward<CallArgs>(args)...).getParent(), device, hasReadAccess(MapPairsFunc::anyAccessMode[AI-Varity-Harity]))...);
@@ -61,7 +64,8 @@ namespace skepu
 					get<CI>(std::forward<CallArgs>(args)...)...,
 					numElem,
 					Vsize, Hsize,
-					baseIndex + startIdx
+					baseIndex + startIdx,
+					this->m_in_place ? 1 : 0
 				);
 				
 				// Make sure the data is marked as changed by the device

@@ -9,7 +9,7 @@ using namespace clang;
 
 const char *MapPairsKernelTemplate_CL = R"~~~(
 #define skepu_w2 skepu_Hsize
-__kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_Vsize, size_t skepu_Hsize, size_t skepu_base)
+__kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_Vsize, size_t skepu_Hsize, size_t skepu_base, int skepu_in_place)
 {
 	size_t skepu_global_prng_id = get_global_id(0);
 	size_t skepu_i = get_global_id(0);
@@ -21,7 +21,7 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_Vsi
 		{{INDEX_INITIALIZER}}
 		{{CONTAINER_PROXIE_INNER}}
 #if !{{USE_MULTIRETURN}}
-		skepu_output[skepu_i] = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
+		{{SINGLE_OUTPUT_ASSIGN}}
 #else
 		{{MULTI_TYPE}} skepu_out_temp = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
 		{{OUTPUT_ASSIGN}}
@@ -36,6 +36,10 @@ const std::string Constructor = R"~~~(
 class {{KERNEL_CLASS}}
 {
 public:
+	
+	// In place mode (adding the result to the old output element) is generated for a single
+	// output of an arithmetic type
+	static constexpr bool inPlaceSupported = {{IN_PLACE_SUPPORTED}};
 	
 	static cl_kernel skepu_kernels(size_t deviceID, cl_kernel *newkernel = nullptr)
 	{
@@ -74,10 +78,10 @@ public:
 	static void map
 	(
 		size_t skepu_deviceID, size_t skepu_localSize, size_t skepu_globalSize, {{HOST_KERNEL_PARAMS}}
-		size_t skepu_n, size_t skepu_Vsize, size_t skepu_Hsize, size_t skepu_base
+		size_t skepu_n, size_t skepu_Vsize, size_t skepu_Hsize, size_t skepu_base, int skepu_in_place
 	)
 	{
-		skepu::backend::cl_helpers::setKernelArgs(skepu_kernels(skepu_deviceID), {{KERNEL_ARGS}} skepu_n, skepu_Vsize, skepu_Hsize, skepu_base);
+		skepu::backend::cl_helpers::setKernelArgs(skepu_kernels(skepu_deviceID), {{KERNEL_ARGS}} skepu_n, skepu_Vsize, skepu_Hsize, skepu_base, skepu_in_place);
 		cl_int skepu_err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(skepu_deviceID)->getQueue(), skepu_kernels(skepu_deviceID), 1, NULL, &skepu_globalSize, &skepu_localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(skepu_err, "Error launching MapPairs kernel");
 	}
@@ -113,6 +117,13 @@ std::string createMapPairsKernelProgram_CL(SkeletonInstance &instance, UserFunct
 	proxyCodeGenHelper_CL(argsInfo.containerProxyTypes, sourceStream);
 	sourceStream << generateUserFunctionCode_CL(mapPairsFunc) << MapPairsKernelTemplate_CL;
 	
+	const bool multiReturn = mapPairsFunc.multipleReturnTypes.size() > 0;
+	const bool inPlaceSupported = !multiReturn && mapPairsFunc.astDeclNode->getReturnType()->isArithmeticType();
+	std::string singleOutputAssign = inPlaceSupported
+		? mapPairsFunc.returnTypeNameOpenCL() + " skepu_res = " + mapPairsFunc.uniqueName + "(" + SSMapPairsFuncArgs.str() + ");\n"
+			"		skepu_output[skepu_i] = skepu_in_place ? skepu_output[skepu_i] + skepu_res : skepu_res;"
+		: "skepu_output[skepu_i] = " + mapPairsFunc.uniqueName + "(" + SSMapPairsFuncArgs.str() + ");";
+
 	std::stringstream SSKernelName;
 	SSKernelName << instance << "_" << transformToCXXIdentifier(ResultName) << "_MapPairsKernel_" << mapPairsFunc.uniqueName << "_Varity_" << mapPairsFunc.Varity << "_Harity_" << mapPairsFunc.Harity;
 	const std::string kernelName = SSKernelName.str();
@@ -133,7 +144,9 @@ std::string createMapPairsKernelProgram_CL(SkeletonInstance &instance, UserFunct
 		{"{{CONTAINER_PROXIE_INNER}}",  argsInfo.proxyInitializerInner},
 		{"{{MULTI_TYPE}}",              mapPairsFunc.multiReturnTypeNameGPU()},
 		{"{{USE_MULTIRETURN}}",         (mapPairsFunc.multipleReturnTypes.size() > 0) ? "1" : "0"},
-		{"{{OUTPUT_ASSIGN}}",           multiOutputAssign}
+		{"{{OUTPUT_ASSIGN}}",           multiOutputAssign},
+		{"{{SINGLE_OUTPUT_ASSIGN}}",    singleOutputAssign},
+		{"{{IN_PLACE_SUPPORTED}}",      inPlaceSupported ? "true" : "false"}
 	});
 	
 	return kernelName;

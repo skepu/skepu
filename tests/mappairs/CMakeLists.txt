@@ -25,3 +25,12 @@ skepu_add_test_case_opencl(mappairs_tuple)
 skepu_add_test_case_cuda(mappairs_tuple)
 skepu_add_test_case_hybrid_opencl(mappairs_tuple)
 skepu_add_test_case_hybrid_cuda(mappairs_tuple)
+
+# ------------------------------------------------
+#   MapPairs in place mode
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mappairs_in_place)
+skepu_add_test_case_cpu(mappairs_in_place)
+skepu_add_test_case_openmp(mappairs_in_place)
+skepu_add_test_case_opencl(mappairs_in_place)

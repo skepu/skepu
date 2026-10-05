@@ -138,7 +138,6 @@ namespace skepu
 			template<size_t randomCount, REQUIRES(randomCount != SKEPU_NO_RANDOM)>
 			Random<randomCount> prepareRandom(size_t size)
 			{
-				std::cout << "In skeleton_base PrepareRandom\n";
 				PRNG* use_prng = this->m_prng;
 				if (this->m_prng == nullptr)
 					use_prng = &getGlobalPRNG();

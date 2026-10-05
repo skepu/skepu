@@ -866,6 +866,14 @@ void UserFunction::updateArgLists(size_t arity, size_t Harity)
 			ReferencedUTs.insert(userType);
 	};
 
+	// (a user type that only appears as the return type, e.g. in a compound literal,
+	// has no variable or parameter that would refer to it)
+	if (this->multipleReturnTypes.empty())
+		scanForType(this->astDeclNode->getReturnType().getTypePtr());
+	else if (const auto *templateType = this->astDeclNode->getReturnType().getTypePtr()->getAs<clang::TemplateSpecializationType>())
+		for (const clang::TemplateArgument &arg : templateType->template_arguments())
+			scanForType(arg.getAsType().getTypePtr());
+
 	for (auto &param : this->elwiseParams)
 		scanForType(param.type);
 

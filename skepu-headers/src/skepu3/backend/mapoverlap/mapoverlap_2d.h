@@ -149,13 +149,18 @@ namespace skepu
 				size_t in_size_i = input.size_i();
 				size_t in_size_j = input.size_j();
 
-				if (out_size_i == in_size_i
-				    && out_size_j == out_size_j)
+				// Mirror mode: the input has the size of the output and there is no edge
+				// handling, so only the interior of the output is computed. With an edge
+				// mode (Pad, Cyclic, Duplicate) an input of the output's size is the normal case
+				// and the whole output is computed.
+				if (this->m_edge == skepu::Edge::None
+				    && out_size_i == in_size_i
+				    && out_size_j == in_size_j)
 				{
 				    this->m_mirror_mode = true;
-					std::cout << "Using mirror mode\n";
 					return;
 				}
+				this->m_mirror_mode = false;
 				
 				if (!this->isInputSizeValid(out_size_i, in_size_i, 0))
 					SKEPU_ERROR(generateCallMetadata()

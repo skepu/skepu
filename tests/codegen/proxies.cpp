@@ -168,3 +168,62 @@ TEST_CASE("MatRow and MatCol index mapping on matrix outputs")
 	});
 	
 }
+
+
+template<typename T>
+T col_sum_f(const skepu::MatCol<T> mc)
+{
+	T res = 0;
+	for (size_t i = 0; i < mc.rows; ++i)
+		res += mc(i);
+	return res;
+}
+
+template<typename T>
+T row_sum_f(const skepu::MatRow<T> mr)
+{
+	T res = 0;
+	for (size_t i = 0; i < mr.cols; ++i)
+		res += mr(i);
+	return res;
+}
+
+auto col_sum = skepu::Map(col_sum_f<float>);
+auto row_sum = skepu::Map(row_sum_f<float>);
+
+TEST_CASE("MatRow and MatCol index mapping on vector outputs")
+{
+	const size_t rows = 7;
+	const size_t cols = 5;
+	
+	skepu::Matrix<float> m(rows, cols);
+	skepu::Vector<float> sums_per_col(cols), sums_per_row(rows);
+	
+	skepu::external([&]
+	{
+		for (size_t i = 0; i < rows; ++i)
+			for (size_t j = 0; j < cols; ++j)
+				m(i, j) = (i * 3 + j) % 8 + 1;
+	}, skepu::write(m));
+	
+	col_sum(sums_per_col, m);
+	row_sum(sums_per_row, m);
+	
+	skepu::external(skepu::read(m, sums_per_col, sums_per_row), [&]
+	{
+		for (size_t j = 0; j < cols; ++j)
+		{
+			float expected = 0;
+			for (size_t i = 0; i < rows; ++i)
+				expected += m(i, j);
+			CHECK(sums_per_col(j) == expected);
+		}
+		for (size_t i = 0; i < rows; ++i)
+		{
+			float expected = 0;
+			for (size_t j = 0; j < cols; ++j)
+				expected += m(i, j);
+			CHECK(sums_per_row(i) == expected);
+		}
+	});
+}

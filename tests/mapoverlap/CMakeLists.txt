@@ -214,3 +214,12 @@ skepu_add_test_case_sequential(mapoverlap_updatemode)
 #skepu_add_test_case_cuda(mapoverlap_updatemode)
 #skepu_add_test_case_hybrid_opencl(mapoverlap_updatemode)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_updatemode)
+
+# ------------------------------------------------
+#   MapOverlap 2D with an edge mode, input and output of the same size
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mapoverlap_2d_edge_modes)
+skepu_add_test_case_cpu(mapoverlap_2d_edge_modes)
+skepu_add_test_case_openmp(mapoverlap_2d_edge_modes)
+skepu_add_test_case_opencl(mapoverlap_2d_edge_modes)

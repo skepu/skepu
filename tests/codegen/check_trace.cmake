@@ -1,0 +1,16 @@
+# Checks a trace file (cmake -DTRACE=file -DCALLS=n [-DTYPE=type] [-DEXACT=ON] -P check_trace.cmake): it
+# must exist and have at least n events of the type (default skeleton_call), exactly n with EXACT.
+if(NOT EXISTS ${TRACE})
+	message(FATAL_ERROR "no trace file ${TRACE}")
+endif()
+if(NOT TYPE)
+	set(TYPE skeleton_call)
+endif()
+file(READ ${TRACE} _trace)
+string(REGEX MATCHALL "\"type\": \"${TYPE}\"" _events "${_trace}")
+list(LENGTH _events _n)
+if(EXACT AND NOT _n EQUAL ${CALLS})
+	message(FATAL_ERROR "${TRACE} has ${_n} ${TYPE} events, expected ${CALLS}")
+elseif(_n LESS ${CALLS})
+	message(FATAL_ERROR "${TRACE} has ${_n} ${TYPE} events, expected ${CALLS}")
+endif()

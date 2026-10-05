@@ -31,6 +31,9 @@
     <!-- Highlight.js -->
     <link id="hljs-theme" rel="stylesheet" href="./static/highlight/styles/default.css">
     <script src="./static/highlight/highlight.min.js"></script>
+    <!-- Python grammar, for the source of SkePY programs (not part of the core build above;
+         without the file the source is shown without highlighting) -->
+    <script src="./static/highlight/languages/python.min.js"></script>
     <script src="./static/highlight-line-numbers/highlightjs-line-numbers.min.js"></script>
 
     <!-- Worker URLs — injected as classic scripts so ES modules can read them
@@ -78,7 +81,7 @@
                 </div>
                 <div class="menu-form-row">
                   <label>Source File(s)</label>
-                  <input id="cpp-files-input" type="file" accept=".cpp,.hpp" multiple>
+                  <input id="cpp-files-input" type="file" accept=".cpp,.hpp,.py" multiple>
                 </div>
                 <div class="menu-form-row">
                   <label>Snapshots (zip)</label>

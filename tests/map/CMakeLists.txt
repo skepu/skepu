@@ -78,3 +78,11 @@ skepu_add_test_case_cuda(map_stride)
 # related to map_hy.inl outisde of it so this is not a valid solution to the issue.
 #skepu_add_test_case_hybrid_opencl(map_stride)
 #skepu_add_test_case_hybrid_cuda(map_stride)
+# ------------------------------------------------
+#   Index of a strided Map
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(map_stride_index)
+skepu_add_test_case_cpu(map_stride_index)
+skepu_add_test_case_openmp(map_stride_index)
+skepu_add_test_case_opencl(map_stride_index)

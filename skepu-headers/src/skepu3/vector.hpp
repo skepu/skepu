@@ -474,6 +474,13 @@ namespace skepu
 			return temp;
 		};
 
+		// The index of an element is its number in the strided sequence, like the index that
+		// the GPU backends give (not its position in the vector)
+		Index1D getIndex() const
+		{
+			return Index1D{VectorIterator<T>::getIndex().i / (size_t)(this->m_stride < 0 ? -this->m_stride : (this->m_stride == 0 ? 1 : this->m_stride))};
+		}
+
 		T& operator()(const ssize_t index = 0)
 		{
 			return this->m_std_iterator[index * this->m_stride];

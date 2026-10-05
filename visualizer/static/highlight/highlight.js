@@ -1,6 +1,6 @@
 /*!
-  Highlight.js v11.11.1 (git: 08cb242e7d)
-  (c) 2006-2025 Josh Goebel <hello@joshgoebel.com> and other contributors
+  Highlight.js v11.12.0 (git: f7f7d3803b)
+  (c) 2006-2026 Josh Goebel <hello@joshgoebel.com> and other contributors
   License: BSD-3-Clause
  */
 var hljs = (function () {
@@ -474,14 +474,17 @@ var hljs = (function () {
     return match && match.index === 0;
   }
 
-  // BACKREF_RE matches an open parenthesis or backreference. To avoid
-  // an incorrect parse, it additionally matches the following:
-  // - [...] elements, where the meaning of parentheses and escapes change
-  // - other escape sequences, so we do not misparse escape sequences as
-  //   interesting elements
-  // - non-matching or lookahead parentheses, which do not capture. These
-  //   follow the '(' with a '?'.
-  const BACKREF_RE = /\[(?:[^\\\]]|\\.)*\]|\(\??|\\([1-9][0-9]*)|\\./;
+  // BACKREF_RE matches an open parenthesis or backreference. To avoid an
+  // incorrect parse, it also matches the constructs where the meaning of
+  // parentheses, escapes, or capture counting changes.
+  const BACKREF_RE = new RegExp(either(
+    /\[(?:[^\\\]]|\\.)*\]/, // a character class, inside which ( and \ lose their meaning
+    /\(\?<(?![=!])[^>]+>/, // a named capture group `(?<name>` (not a lookbehind `(?<=` / `(?<!`)
+    /\(\?'[^']+'/, // a named capture group `(?'name'`
+    /\(\??/, // an opening parenthesis, capturing or non-capturing / lookahead
+    /\\([1-9][0-9]*)/, // a backreference like `\1`
+    /\\./ // any other escape sequence
+  ));
 
   // **INTERNAL** Not intended for outside usage
   // join logically computes regexps.join(separator), but fixes the
@@ -516,7 +519,7 @@ var hljs = (function () {
           out += '\\' + String(Number(match[1]) + offset);
         } else {
           out += match[0];
-          if (match[0] === '(') {
+          if (match[0] === '(' || /^\(\?[<']/.test(match[0])) {
             numCaptures++;
           }
         }
@@ -1558,7 +1561,7 @@ var hljs = (function () {
     return mode;
   }
 
-  var version = "11.11.1";
+  var version = "11.12.0";
 
   class HTMLInjectionError extends Error {
     constructor(reason, html) {
@@ -2080,12 +2083,15 @@ var hljs = (function () {
           }
         }
 
-        // edge case for when illegal matches $ (end of line) which is technically
+        // edge case for when illegal matches $ (end of line/text) which is technically
         // a 0 width match but not a begin/end match so it's not caught by the
-        // first handler (when ignoreIllegals is true)
+        // first handler (when `ignoreIllegals` is true)
         if (match.type === "illegal" && lexeme === "") {
-          // advance so we aren't stuck in an infinite loop
-          modeBuffer += "\n";
+          if (match.index === codeToHighlight.length) ; else {
+            // matched literal `\n` (with `$`) so we must manually add the newline
+            // itself to the modeBuffer so it is not lost when we advance the cursor
+            modeBuffer += "\n";
+          }
           return 1;
         }
 
@@ -2604,7 +2610,7 @@ var hljs = (function () {
 
 })();
 if (typeof exports === 'object' && typeof module !== 'undefined') { module.exports = hljs; }
-/*! `c` grammar compiled for Highlight.js 11.11.1 */
+/*! `c` grammar compiled for Highlight.js 11.12.0 */
   (function(){
     var hljsGrammar = (function () {
   'use strict';
@@ -2632,11 +2638,53 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
     + ')';
 
 
+    // C11 <stdatomic.h> atomic type names. This is an explicit whitelist so that
+    // C11 atomic *functions* (atomic_init, atomic_store, atomic_load,
+    // atomic_fetch_add, ...) are not mistakenly highlighted as types. See #3837.
+    const ATOMIC_TYPES = regex.concat(/\batomic_/, regex.either(
+      'bool',
+      'char',
+      'schar',
+      'uchar',
+      'short',
+      'ushort',
+      'int',
+      'uint',
+      'long',
+      'ulong',
+      'llong',
+      'ullong',
+      'char16_t',
+      'char32_t',
+      'wchar_t',
+      'int_least8_t',
+      'uint_least8_t',
+      'int_least16_t',
+      'uint_least16_t',
+      'int_least32_t',
+      'uint_least32_t',
+      'int_least64_t',
+      'uint_least64_t',
+      'int_fast8_t',
+      'uint_fast8_t',
+      'int_fast16_t',
+      'uint_fast16_t',
+      'int_fast32_t',
+      'uint_fast32_t',
+      'int_fast64_t',
+      'uint_fast64_t',
+      'intptr_t',
+      'uintptr_t',
+      'size_t',
+      'ptrdiff_t',
+      'intmax_t',
+      'uintmax_t'
+    ), /\b/);
     const TYPES = {
       className: 'type',
       variants: [
         { begin: '\\b[a-z\\d_]*_t\\b' },
-        { match: /\batomic_[a-z]{3,6}\b/ }
+        { match: ATOMIC_TYPES }
       ]
 
     };
@@ -2658,9 +2706,13 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
           end: '\'',
           illegal: '.'
         },
+        // https://en.cppreference.com/w/cpp/language/string_literal
+        // a d-char-sequence never contains parentheses, backslashes or whitespace;
+        // quotes are excluded as well so the closing delimiter cannot swallow the
+        // quote that actually terminates the literal
         hljs.END_SAME_AS_BEGIN({
-          begin: /(?:u8?|U|L)?R"([^()\\ ]{0,16})\(/,
-          end: /\)([^()\\ ]{0,16})"/
+          begin: /(?:u8?|U|L)?R"([^()\\\s"]{0,16})\(/,
+          end: /\)([^()\\\s"]{0,16})"/
         })
       ]
     };
@@ -2676,6 +2728,32 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
       relevance: 0
     };  
     
+    // `#include` is the only preprocessor directive that takes an angle-bracket
+    // quoted header (`#include <header>`). Scoping that rule to `#include` keeps
+    // the greedy `<...>` match from eating a `>` that belongs to the body of
+    // another directive (e.g. `#define what do { cout << ">"; } while (0)`),
+    // which would otherwise leave an unbalanced `"` and break highlighting for
+    // the rest of the file. See issue #3505.
+    const PREPROCESSOR_INCLUDE = {
+      scope: 'meta',
+      begin: /#\s*include\b/,
+      end: /$/,
+      keywords: { keyword: 'include' },
+      contains: [
+        {
+          // the `\` at the end of a line signaling continuation
+          begin: /\\\n/,
+        },
+        STRINGS,
+        {
+          scope: 'string',
+          begin: /<.*?>/
+        },
+        C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE
+      ]
+    };
+
     const PREPROCESSOR = {
       className: 'meta',
       begin: /#\s*[a-z]+\b/,
@@ -2689,14 +2767,15 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
           relevance: 0
         },
         hljs.inherit(STRINGS, { className: 'string' }),
-        {
-          className: 'string',
-          begin: /<.*?>/
-        },
         C_LINE_COMMENT_MODE,
         hljs.C_BLOCK_COMMENT_MODE
       ]
     };
+
+    const PREPROCESSORS = [
+      PREPROCESSOR_INCLUDE,
+      PREPROCESSOR
+    ];
 
     const TITLE_MODE = {
       className: 'title',
@@ -2705,6 +2784,11 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
     };
 
     const FUNCTION_TITLE = regex.optional(NAMESPACE_RE) + hljs.IDENT_RE + '\\s*\\(';
+    // Bounded on purpose: an unbounded quantifier here consumes an arbitrarily
+    // long run of words, and when no function title follows it the engine retries
+    // the title at every token boundary of that run - quadratic in the size of
+    // the document.  See #4362.
+    const MAX_FUNCTION_TYPE_TOKENS = 12;
 
     const C_KEYWORDS = [
       "asm",
@@ -2805,7 +2889,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
     };
 
     const EXPRESSION_CONTAINS = [
-      PREPROCESSOR,
+      ...PREPROCESSORS,
       TYPES,
       C_LINE_COMMENT_MODE,
       hljs.C_BLOCK_COMMENT_MODE,
@@ -2845,7 +2929,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
     };
 
     const FUNCTION_DECLARATION = {
-      begin: '(' + FUNCTION_TYPE_RE + '[\\*&\\s]+)+' + FUNCTION_TITLE,
+      begin: '(' + FUNCTION_TYPE_RE + '[\\*&\\s]+){1,' + MAX_FUNCTION_TYPE_TOKENS + '}' + FUNCTION_TITLE,
       returnBegin: true,
       end: /[{;=]/,
       excludeEnd: true,
@@ -2901,7 +2985,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
         TYPES,
         C_LINE_COMMENT_MODE,
         hljs.C_BLOCK_COMMENT_MODE,
-        PREPROCESSOR
+        ...PREPROCESSORS
       ]
     };
 
@@ -2918,7 +3002,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
         FUNCTION_DECLARATION,
         EXPRESSION_CONTAINS,
         [
-          PREPROCESSOR,
+          ...PREPROCESSORS,
           {
             begin: hljs.IDENT_RE + '::',
             keywords: KEYWORDS
@@ -2946,7 +3030,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
 })();
 
     hljs.registerLanguage('c', hljsGrammar);
-  })();/*! `cpp` grammar compiled for Highlight.js 11.11.1 */
+  })();/*! `cpp` grammar compiled for Highlight.js 11.12.0 */
   (function(){
     var hljsGrammar = (function () {
   'use strict';
@@ -2995,9 +3079,13 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
           end: '\'',
           illegal: '.'
         },
+        // https://en.cppreference.com/w/cpp/language/string_literal
+        // a d-char-sequence never contains parentheses, backslashes or whitespace;
+        // quotes are excluded as well so the closing delimiter cannot swallow the
+        // quote that actually terminates the literal
         hljs.END_SAME_AS_BEGIN({
-          begin: /(?:u8?|U|L)?R"([^()\\ ]{0,16})\(/,
-          end: /\)([^()\\ ]{0,16})"/
+          begin: /(?:u8?|U|L)?R"([^()\\\s"]{0,16})\(/,
+          end: /\)([^()\\\s"]{0,16})"/
         })
       ]
     };
@@ -3010,12 +3098,12 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
           "[+-]?(?:" // Leading sign.
             // Decimal.
             + "(?:"
-              +"[0-9](?:'?[0-9])*\\.(?:[0-9](?:'?[0-9])*)?"
+              + "\\b[0-9](?:'?[0-9])*\\.(?:[0-9](?:'?[0-9])*)?"
               + "|\\.[0-9](?:'?[0-9])*"
             + ")(?:[Ee][+-]?[0-9](?:'?[0-9])*)?"
-            + "|[0-9](?:'?[0-9])*[Ee][+-]?[0-9](?:'?[0-9])*"
+            + "|\\b[0-9](?:'?[0-9])*[Ee][+-]?[0-9](?:'?[0-9])*"
             // Hexadecimal.
-            + "|0[Xx](?:"
+            + "|\\b0[Xx](?:"
               +"[0-9A-Fa-f](?:'?[0-9A-Fa-f])*(?:\\.(?:[0-9A-Fa-f](?:'?[0-9A-Fa-f])*)?)?"
               + "|\\.[0-9A-Fa-f](?:'?[0-9A-Fa-f])*"
             + ")[Pp][+-]?[0-9](?:'?[0-9])*"
@@ -3047,6 +3135,32 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
       relevance: 0
     };
 
+    // `#include` is the only preprocessor directive that takes an angle-bracket
+    // quoted header (`#include <header>`). Scoping that rule to `#include` keeps
+    // the greedy `<...>` match from eating a `>` that belongs to the body of
+    // another directive (e.g. `#define what do { cout << ">"; } while (0)`),
+    // which would otherwise leave an unbalanced `"` and break highlighting for
+    // the rest of the file. See issue #3505.
+    const PREPROCESSOR_INCLUDE = {
+      scope: 'meta',
+      begin: /#\s*include\b/,
+      end: /$/,
+      keywords: { keyword: 'include' },
+      contains: [
+        {
+          // the `\` at the end of a line signaling continuation
+          begin: /\\\n/,
+        },
+        STRINGS,
+        {
+          scope: 'string',
+          begin: /<.*?>/
+        },
+        C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE
+      ]
+    };
+
     const PREPROCESSOR = {
       className: 'meta',
       begin: /#\s*[a-z]+\b/,
@@ -3060,14 +3174,15 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
           relevance: 0
         },
         hljs.inherit(STRINGS, { className: 'string' }),
-        {
-          className: 'string',
-          begin: /<.*?>/
-        },
         C_LINE_COMMENT_MODE,
         hljs.C_BLOCK_COMMENT_MODE
       ]
     };
+
+    const PREPROCESSORS = [
+      PREPROCESSOR_INCLUDE,
+      PREPROCESSOR
+    ];
 
     const TITLE_MODE = {
       className: 'title',
@@ -3076,6 +3191,11 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
     };
 
     const FUNCTION_TITLE = regex.optional(NAMESPACE_RE) + hljs.IDENT_RE + '\\s*\\(';
+    // Bounded on purpose: an unbounded quantifier here consumes an arbitrarily
+    // long run of words, and when no function title follows it the engine retries
+    // the title at every token boundary of that run - quadratic in the size of
+    // the document.  See #4362.
+    const MAX_FUNCTION_TYPE_TOKENS = 12;
 
     // https://en.cppreference.com/w/cpp/keyword
     const RESERVED_KEYWORDS = [
@@ -3378,18 +3498,14 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
         _hint: FUNCTION_HINTS },
       begin: regex.concat(
         /\b/,
-        /(?!decltype)/,
-        /(?!if)/,
-        /(?!for)/,
-        /(?!switch)/,
-        /(?!while)/,
+        `(?!${RESERVED_KEYWORDS.join('|')})`,
         hljs.IDENT_RE,
         regex.lookahead(/(<[^<>]+>|)\s*\(/))
     };
 
     const EXPRESSION_CONTAINS = [
       FUNCTION_DISPATCH,
-      PREPROCESSOR,
+      ...PREPROCESSORS,
       CPP_PRIMITIVE_TYPES,
       C_LINE_COMMENT_MODE,
       hljs.C_BLOCK_COMMENT_MODE,
@@ -3430,7 +3546,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
 
     const FUNCTION_DECLARATION = {
       className: 'function',
-      begin: '(' + FUNCTION_TYPE_RE + '[\\*&\\s]+)+' + FUNCTION_TITLE,
+      begin: '(' + FUNCTION_TYPE_RE + '[\\*&\\s]+){1,' + MAX_FUNCTION_TYPE_TOKENS + '}' + FUNCTION_TITLE,
       returnBegin: true,
       end: /[{;=]/,
       excludeEnd: true,
@@ -3501,7 +3617,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
         CPP_PRIMITIVE_TYPES,
         C_LINE_COMMENT_MODE,
         hljs.C_BLOCK_COMMENT_MODE,
-        PREPROCESSOR
+        ...PREPROCESSORS
       ]
     };
 
@@ -3525,7 +3641,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
         FUNCTION_DISPATCH,
         EXPRESSION_CONTAINS,
         [
-          PREPROCESSOR,
+          ...PREPROCESSORS,
           { // containers: ie, `vector <int> rooms (9);`
             begin: '\\b(deque|list|queue|priority_queue|pair|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array|tuple|optional|variant|function|flat_map|flat_set)\\s*<(?!<)',
             end: '>',
@@ -3560,23 +3676,31 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
 })();
 
     hljs.registerLanguage('cpp', hljsGrammar);
-  })();/*! `json` grammar compiled for Highlight.js 11.11.1 */
+  })();/*! `json` grammar compiled for Highlight.js 11.12.0 */
   (function(){
     var hljsGrammar = (function () {
   'use strict';
 
+  const EXTENDED_NUMBER_RE = '([-+]?)(\\b0[xX][a-fA-F0-9]+|(\\b\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)|NaN|[-+]?Infinity'; // 0x..., 0..., decimal, float
+
+  const EXTENDED_NUMBER_MODE = {
+    scope: 'number',
+    match: EXTENDED_NUMBER_RE,
+    relevance: 0
+  };
+
   /*
   Language: JSON
   Description: JSON (JavaScript Object Notation) is a lightweight data-interchange format.
-  Author: Ivan Sagalaev <maniac@softwaremaniacs.org>
-  Website: http://www.json.org
+  Websites: http://www.json.org, https://www.json5.org
   Category: common, protocols, web
   */
+
 
   function json(hljs) {
     const ATTRIBUTE = {
       className: 'attr',
-      begin: /"(\\.|[^\\"\r\n])*"(?=\s*:)/,
+      begin: /(("(\\.|[^\\"\r\n])*")|('(\\.|[^\\'\r\n])*'))(?=\s*:)/,
       relevance: 1.01
     };
     const PUNCTUATION = {
@@ -3601,16 +3725,17 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
 
     return {
       name: 'JSON',
-      aliases: ['jsonc'],
+      aliases: ['jsonc', 'json5'],
       keywords:{
         literal: LITERALS,
       },
       contains: [
         ATTRIBUTE,
         PUNCTUATION,
+        hljs.APOS_STRING_MODE,
         hljs.QUOTE_STRING_MODE,
         LITERALS_MODE,
-        hljs.C_NUMBER_MODE,
+        EXTENDED_NUMBER_MODE,
         hljs.C_LINE_COMMENT_MODE,
         hljs.C_BLOCK_COMMENT_MODE
       ],
@@ -3623,4 +3748,454 @@ if (typeof exports === 'object' && typeof module !== 'undefined') { module.expor
 })();
 
     hljs.registerLanguage('json', hljsGrammar);
+  })();/*! `python` grammar compiled for Highlight.js 11.12.0 */
+  (function(){
+    var hljsGrammar = (function () {
+  'use strict';
+
+  /*
+  Language: Python
+  Description: Python is an interpreted, object-oriented, high-level programming language with dynamic semantics.
+  Website: https://www.python.org
+  Category: common
+  */
+
+  function python(hljs) {
+    const regex = hljs.regex;
+    const IDENT_RE = /[\p{XID_Start}_]\p{XID_Continue}*/u;
+    const RESERVED_WORDS = [
+      'and',
+      'as',
+      'assert',
+      'async',
+      'await',
+      'break',
+      'case',
+      'class',
+      'continue',
+      'def',
+      'del',
+      'elif',
+      'else',
+      'except',
+      'finally',
+      'for',
+      'from',
+      'global',
+      'if',
+      'import',
+      'in',
+      'is',
+      'lambda',
+      'lazy',
+      'match',
+      'nonlocal|10',
+      'not',
+      'or',
+      'pass',
+      'raise',
+      'return',
+      'try',
+      'while',
+      'with',
+      'yield'
+    ];
+
+    const BUILT_INS = [
+      '__import__',
+      'abs',
+      'aiter',
+      'all',
+      'anext',
+      'any',
+      'ascii',
+      'bin',
+      'bool',
+      'breakpoint',
+      'bytearray',
+      'bytes',
+      'callable',
+      'chr',
+      'classmethod',
+      'compile',
+      'complex',
+      'delattr',
+      'dict',
+      'dir',
+      'divmod',
+      'enumerate',
+      'eval',
+      'exec',
+      'filter',
+      'float',
+      'format',
+      'frozendict',
+      'frozenset',
+      'getattr',
+      'globals',
+      'hasattr',
+      'hash',
+      'help',
+      'hex',
+      'id',
+      'input',
+      'int',
+      'isinstance',
+      'issubclass',
+      'iter',
+      'len',
+      'list',
+      'locals',
+      'map',
+      'max',
+      'memoryview',
+      'min',
+      'next',
+      'object',
+      'oct',
+      'open',
+      'ord',
+      'pow',
+      'print',
+      'property',
+      'range',
+      'repr',
+      'reversed',
+      'round',
+      'sentinel',
+      'set',
+      'setattr',
+      'slice',
+      'sorted',
+      'staticmethod',
+      'str',
+      'sum',
+      'super',
+      'tuple',
+      'type',
+      'vars',
+      'zip'
+    ];
+
+    const LITERALS = [
+      '__debug__',
+      'Ellipsis',
+      'False',
+      'None',
+      'NotImplemented',
+      'True'
+    ];
+
+    // https://docs.python.org/3/library/typing.html
+    // TODO: Could these be supplemented by a CamelCase matcher in certain
+    // contexts, leaving these remaining only for relevance hinting?
+    const TYPES = [
+      "Any",
+      "Callable",
+      "Coroutine",
+      "Dict",
+      "List",
+      "Literal",
+      "Generic",
+      "Optional",
+      "Sequence",
+      "Set",
+      "Tuple",
+      "Type",
+      "Union"
+    ];
+
+    const KEYWORDS = {
+      $pattern: /[A-Za-z]\w+|__\w+__/,
+      keyword: RESERVED_WORDS,
+      built_in: BUILT_INS,
+      literal: LITERALS,
+      type: TYPES
+    };
+
+    const PROMPT = {
+      className: 'meta',
+      begin: /^(>>>|\.\.\.) /
+    };
+
+    const SUBST = {
+      className: 'subst',
+      begin: /\{/,
+      end: /\}/,
+      keywords: KEYWORDS,
+      illegal: /#/
+    };
+
+    const LITERAL_BRACKET = {
+      begin: /\{\{/,
+      relevance: 0
+    };
+
+    const STRING = {
+      className: 'string',
+      contains: [ hljs.BACKSLASH_ESCAPE ],
+      variants: [
+        {
+          begin: /([uU]|[bB]|[rR]|[bB][rR]|[rR][bB])?'''/,
+          end: /'''/,
+          contains: [
+            hljs.BACKSLASH_ESCAPE,
+            PROMPT
+          ],
+          relevance: 10
+        },
+        {
+          begin: /([uU]|[bB]|[rR]|[bB][rR]|[rR][bB])?"""/,
+          end: /"""/,
+          contains: [
+            hljs.BACKSLASH_ESCAPE,
+            PROMPT
+          ],
+          relevance: 10
+        },
+        {
+          begin: /([fFtT][rR]|[rR][fFtT]|[fFtT])'''/,
+          end: /'''/,
+          contains: [
+            hljs.BACKSLASH_ESCAPE,
+            PROMPT,
+            LITERAL_BRACKET,
+            SUBST
+          ]
+        },
+        {
+          begin: /([fFtT][rR]|[rR][fFtT]|[fFtT])"""/,
+          end: /"""/,
+          contains: [
+            hljs.BACKSLASH_ESCAPE,
+            PROMPT,
+            LITERAL_BRACKET,
+            SUBST
+          ]
+        },
+        {
+          begin: /([uU]|[rR])'/,
+          end: /'/,
+          relevance: 10
+        },
+        {
+          begin: /([uU]|[rR])"/,
+          end: /"/,
+          relevance: 10
+        },
+        {
+          begin: /([bB]|[bB][rR]|[rR][bB])'/,
+          end: /'/
+        },
+        {
+          begin: /([bB]|[bB][rR]|[rR][bB])"/,
+          end: /"/
+        },
+        {
+          begin: /([fFtT][rR]|[rR][fFtT]|[fFtT])'/,
+          end: /'/,
+          contains: [
+            hljs.BACKSLASH_ESCAPE,
+            LITERAL_BRACKET,
+            SUBST
+          ]
+        },
+        {
+          begin: /([fFtT][rR]|[rR][fFtT]|[fFtT])"/,
+          end: /"/,
+          contains: [
+            hljs.BACKSLASH_ESCAPE,
+            LITERAL_BRACKET,
+            SUBST
+          ]
+        },
+        hljs.APOS_STRING_MODE,
+        hljs.QUOTE_STRING_MODE
+      ]
+    };
+
+    // https://docs.python.org/3.9/reference/lexical_analysis.html#numeric-literals
+    const digitpart = '[0-9](_?[0-9])*';
+    const pointfloat = `(\\b(${digitpart}))?\\.(${digitpart})|\\b(${digitpart})\\.`;
+    // Whitespace after a number (or any lexical token) is needed only if its absence
+    // would change the tokenization
+    // https://docs.python.org/3.9/reference/lexical_analysis.html#whitespace-between-tokens
+    // We deviate slightly, requiring a word boundary or a keyword
+    // to avoid accidentally recognizing *prefixes* (e.g., `0` in `0x41` or `08` or `0__1`)
+    const lookahead = `\\b|${RESERVED_WORDS.join('|')}`;
+    const NUMBER = {
+      className: 'number',
+      relevance: 0,
+      variants: [
+        // exponentfloat, pointfloat
+        // https://docs.python.org/3.9/reference/lexical_analysis.html#floating-point-literals
+        // optionally imaginary
+        // https://docs.python.org/3.9/reference/lexical_analysis.html#imaginary-literals
+        // Note: no leading \b because floats can start with a decimal point
+        // and we don't want to mishandle e.g. `fn(.5)`,
+        // no trailing \b for pointfloat because it can end with a decimal point
+        // and we don't want to mishandle e.g. `0..hex()`; this should be safe
+        // because both MUST contain a decimal point and so cannot be confused with
+        // the interior part of an identifier
+        {
+          begin: `(\\b(${digitpart})|(${pointfloat}))[eE][+-]?(${digitpart})[jJ]?(?=${lookahead})`
+        },
+        {
+          begin: `(${pointfloat})[jJ]?`
+        },
+
+        // decinteger, bininteger, octinteger, hexinteger
+        // https://docs.python.org/3.9/reference/lexical_analysis.html#integer-literals
+        // optionally "long" in Python 2
+        // https://docs.python.org/2.7/reference/lexical_analysis.html#integer-and-long-integer-literals
+        // decinteger is optionally imaginary
+        // https://docs.python.org/3.9/reference/lexical_analysis.html#imaginary-literals
+        {
+          begin: `\\b([1-9](_?[0-9])*|0+(_?0)*)[lLjJ]?(?=${lookahead})`
+        },
+        {
+          begin: `\\b0[bB](_?[01])+[lL]?(?=${lookahead})`
+        },
+        {
+          begin: `\\b0[oO](_?[0-7])+[lL]?(?=${lookahead})`
+        },
+        {
+          begin: `\\b0[xX](_?[0-9a-fA-F])+[lL]?(?=${lookahead})`
+        },
+
+        // imagnumber (digitpart-based)
+        // https://docs.python.org/3.9/reference/lexical_analysis.html#imaginary-literals
+        {
+          begin: `\\b(${digitpart})[jJ](?=${lookahead})`
+        }
+      ]
+    };
+    const COMMENT_TYPE = {
+      className: "comment",
+      begin: regex.lookahead(/# type:/),
+      end: /$/,
+      keywords: KEYWORDS,
+      contains: [
+        { // prevent keywords from coloring `type`
+          begin: /# type:/
+        },
+        // comment within a datatype comment includes no keywords
+        {
+          begin: /#/,
+          end: /\b\B/,
+          endsWithParent: true
+        }
+      ]
+    };
+    const PARAMS = {
+      className: 'params',
+      variants: [
+        // Exclude params in functions without params
+        {
+          className: "",
+          begin: /\(\s*\)/,
+          skip: true
+        },
+        {
+          begin: /\(/,
+          end: /\)/,
+          excludeBegin: true,
+          excludeEnd: true,
+          keywords: KEYWORDS,
+          contains: [
+            'self',
+            PROMPT,
+            NUMBER,
+            STRING,
+            hljs.HASH_COMMENT_MODE
+          ]
+        }
+      ]
+    };
+    SUBST.contains = [
+      STRING,
+      NUMBER,
+      PROMPT
+    ];
+
+    return {
+      name: 'Python',
+      aliases: [
+        'py',
+        'gyp',
+        'ipython'
+      ],
+      unicodeRegex: true,
+      keywords: KEYWORDS,
+      illegal: /(<\/|\?)|=>/,
+      contains: [
+        PROMPT,
+        NUMBER,
+        {
+          // very common convention
+          scope: 'variable.language',
+          match: /\bself\b/
+        },
+        {
+          // eat "if" prior to string so that it won't accidentally be
+          // labeled as an f-string
+          beginKeywords: "if",
+          relevance: 0
+        },
+        { match: /\bor\b/, scope: "keyword" },
+        STRING,
+        COMMENT_TYPE,
+        hljs.HASH_COMMENT_MODE,
+        {
+          match: [
+            /\bdef/, /\s+/,
+            IDENT_RE,
+          ],
+          scope: {
+            1: "keyword",
+            3: "title.function"
+          },
+          contains: [ PARAMS ]
+        },
+        {
+          variants: [
+            {
+              match: [
+                /\bclass/, /\s+/,
+                IDENT_RE, /\s*/,
+                /\(\s*/, IDENT_RE,/\s*\)/
+              ],
+            },
+            {
+              match: [
+                /\bclass/, /\s+/,
+                IDENT_RE
+              ],
+            }
+          ],
+          scope: {
+            1: "keyword",
+            3: "title.class",
+            6: "title.class.inherited",
+          }
+        },
+        {
+          className: 'meta',
+          begin: /^[\t ]*@/,
+          end: /(?=#)|$/,
+          contains: [
+            NUMBER,
+            PARAMS,
+            STRING
+          ]
+        }
+      ]
+    };
+  }
+
+  return python;
+
+})();
+
+    hljs.registerLanguage('python', hljsGrammar);
   })();

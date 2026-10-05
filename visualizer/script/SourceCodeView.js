@@ -317,6 +317,12 @@ export class SourceCodeView {
       var pre  = document.createElement('pre');
       var code = document.createElement('code');
       code.textContent = cppFiles[filename];
+      // (Python sources, from SkePY programs: highlighted when the Python grammar is there,
+      // static/highlight/languages/python.min.js; otherwise no highlighting rather than a
+      // wrong guess at the language)
+      if (/\.py$/i.test(filename))
+        code.className = (typeof hljs !== 'undefined' && hljs.getLanguage && hljs.getLanguage('python'))
+          ? 'language-python' : 'language-plaintext';
       pre.appendChild(code);
       pane.appendChild(pre);
       tabPanes.appendChild(pane);

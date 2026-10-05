@@ -174,7 +174,6 @@ namespace skepu
 		template<size_t GetCount>
 		Random<GetCount> asRandom(size_t size)
 		{
-			std::cout << "In random.hpp asRandom\n";
 			size_t uses = size * GetCount;
 			Random<GetCount> retval(this->m_state, uses);
 			this->forward(uses);

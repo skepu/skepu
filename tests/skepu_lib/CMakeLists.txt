@@ -1,3 +1,5 @@
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 # ------------------------------------------------
 #   BLAS library
 # ------------------------------------------------
@@ -85,3 +87,38 @@ endif()
 # are missing from examples/data are skipped; see dnn_regression/README.md.
 add_test(NAME dnn_regression
 	COMMAND ${CMAKE_CURRENT_LIST_DIR}/dnn_regression/run.sh --cxx ${CMAKE_CXX_COMPILER} --tol 1e-2)
+
+# ------------------------------------------------
+#   BLAS library, checked float routines
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(blas_float)
+skepu_add_test_case_cpu(blas_float)
+skepu_add_test_case_openmp(blas_float)
+skepu_add_test_case_opencl(blas_float)
+
+# ------------------------------------------------
+#   BLAS library, checked level 1 routines
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(blas_level1)
+skepu_add_test_case_cpu(blas_level1)
+skepu_add_test_case_openmp(blas_level1)
+skepu_add_test_case_opencl(blas_level1)
+
+# ------------------------------------------------
+#   BLAS library, checked level 2 and 3 routines
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(blas_level23)
+skepu_add_test_case_cpu(blas_level23)
+skepu_add_test_case_openmp(blas_level23)
+skepu_add_test_case_opencl(blas_level23)
+
+# ------------------------------------------------
+#   BLAS library, checked complex routines (OpenCL: complex numbers are not tested there)
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(blas_complex)
+skepu_add_test_case_cpu(blas_complex)
+skepu_add_test_case_openmp(blas_complex)
