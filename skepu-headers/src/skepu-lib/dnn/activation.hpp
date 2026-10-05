@@ -9,12 +9,6 @@ float sigmoid_uf(float x)
 	return 1 / (1 + exp(-x)); // or tanh
 }
 
-float sigmoid_prime_uf(float x)
-{
-	float sigma_x = sigmoid_uf(x);
-	return sigma_x * (1 - sigma_x);
-}
-
 // Backward pass: x is the pre-activation input, g the incoming gradient
 float sigmoid_backward_uf(float x, float g)
 {
@@ -57,12 +51,6 @@ float elu_prime_uf(float x, float alpha)
 
 float tanh_uf(float x) { return tanh(x); }
 
-float tanh_prime_uf(float x)
-{
-	float t = tanh(x);
-	return 1 - t * t;
-}
-
 // Backward pass: x is the pre-activation input, g the incoming gradient
 float tanh_backward_uf(float x, float g)
 {
@@ -72,26 +60,7 @@ float tanh_backward_uf(float x, float g)
 
 
 // SoftMax, non-batched
-float softmax_uf_1_map(float x) { return exp(x); }
-
-float softmax_uf_1_reduce(float lhs, float rhs) { return lhs + rhs; }
-
-float softmax_uf_2(float x, float sum) { return exp(x) / sum; }
-
 // SoftMax, batched
-float softmax_batched_uf_1(skepu::Pool4D<float> DNN_CONST pool)
-{
-	float sum = 0;
-	for (size_t l = 0; l < pool.sl; l++)
-		sum += exp(pool(0, 0, 0, l));
-	return sum;
-}
-
-float softmax_batched_uf_2(skepu::Index4D index, float x, skepu::Ten4<float> sums)
-{
-	return exp(x) / sums(index.i, index.j, index.k, 0);
-}
-
 
 /** new softmax without MapPool */
 float new_softmax_uf_1(skepu::Index4D index, skepu::Ten4<float> input)
@@ -148,11 +117,7 @@ float softmax_jacobian_uf(skepu::Index3D index , skepu::Ten4<float> s ){
 
 auto skel_act_sigmoid = skepu::Map(sigmoid_uf);
 auto skel_act_relu = skepu::Map(relu_uf);
-//	auto skel_act_softmax_1 = skepu::MapReduce(softmax_uf_1_map, softmax_uf_1_reduce);
-auto skel_act_softmax_2 = skepu::Map<1>(softmax_uf_2);
 
-auto skel_softmax_batched_1 = skepu::MapPool(softmax_batched_uf_1);
-auto skel_softmax_batched_2 = skepu::Map(softmax_batched_uf_2);
 
 auto new_softmax_skel_1 = skepu::Map<0>(new_softmax_uf_1);
 auto new_softmax_skel_2 = skepu::Map<0>(new_softmax_uf_2);
@@ -188,7 +153,6 @@ namespace skepu::dnn::impl
 
 		this->m_output_size = input_size;
 
-		//	if (!this->m_in_place) ...
 
 		if (this->m_act == Act::SoftMax)
 		{
@@ -213,8 +177,6 @@ namespace skepu::dnn::impl
 
 	Tensor4<T> *forward(Tensor4<T> *inputs, bool is_training=false) override
 	{
-		//	dnn_debug << "Act input: " << string_tensor_size(*inputs) << "\n";
-		//	dnn_debug << "Act vals: " << string_tensor_size(this->m_vals) << "\n";
 
 		Tensor4<T> *target = (this->m_in_place) ? inputs : &this->m_vals;
 
@@ -238,12 +200,6 @@ namespace skepu::dnn::impl
 			new_softmax_skel_2(this->m_temp_vals, *inputs, m_temp_value_max_reduce);
 			new_softmax_skel_3(*target, *inputs, this->m_temp_vals, m_temp_value_max_reduce);
 
-			// skel_softmax_batched_1.setPoolSize(1, 1, 1, inputs->size_l());
-			// skel_softmax_batched_1.setStride(1, 1, 1, inputs->size_l());
-			// skel_softmax_batched_1.setLabel(this->label() + " Softmax A");
-			// skel_softmax_batched_2.setLabel(this->label() + " Softmax B");
-			// skel_softmax_batched_1(this->m_temp_vals, *inputs);
-			// skel_softmax_batched_2(*target, *inputs, this->m_temp_vals);
 		}
 		else if (this->m_act == Act::TanH)
 		{
@@ -256,10 +212,7 @@ namespace skepu::dnn::impl
 	Tensor4<T> *backward(Tensor4<T> *inputs, Tensor4<T> *gradient, Tensor4<T> *y) override
 	{
 		dnn_debug << "Activation function backprop\n";
-		//	dnn_debug << "Act input: " << string_tensor_size(*inputs) << "\n";
-		//	dnn_debug << "Act vals: " << string_tensor_size(this->m_vals) << "\n";
 
-		//	Tensor4<T> *target = (this->m_in_place) ? inputs : &this->m_vals;
 		Tensor4<T> *target = gradient;
 
 		if (this->m_act == Act::ReLU)

@@ -4,8 +4,6 @@
 static skepu::PrecompilerMarker startOf_DNN_Support_HPP;
 
 
-float cross_entropy_uf(float y, float s) { return y * log(s); }
-
 float cross_entropy_batched_uf(
 		skepu::Index1D index,
 		skepu::Ten4<float> y,
@@ -59,12 +57,6 @@ int accuracy_batched_uf(
 }
 
 
-float mse_prime_uf(float a, float y) { return (y - a) * (y - a) * 0.5; }
-
-float mse_uf(float a, float y) { return y - a; }
-
-float delta_uf(float pred, float gold) { return pred - gold; }
-
 // Gradient of categorical cross-entropy w.r.t. the softmax output (dL/ds).
 // The softmax layer's backward pass then applies the softmax Jacobian.
 float cce_grad_uf(float pred, float gold) { return -gold / (pred + 1e-9f); }
@@ -100,24 +92,6 @@ adam_update_uf(float w, float g, float m, float v,
 
 template <typename T> T sum_uf(T a, T b) { return a + b; }
 
-float product_uf(float a, float b) { return a * b; }
-
-
-size_t argmax_uf(skepu::Index1D index, skepu::MatRow<float> DNN_CONST y)
-{
-	float max_v = -999999.f;
-	size_t max_i = 0;
-	for (size_t i = 0; i < y.cols; ++i)
-	{
-		if (y(i) > max_v) {
-			max_v = y(i);
-			max_i = i;
-		}
-	}
-	return max_i;
-}
-
-size_t eval_uf(size_t a, size_t b) { return (a == b) ? 1 : 0; }
 
 
 // Initialization
@@ -151,8 +125,6 @@ skepu::Mat<float> weights)
 float binary_cross_entropy(skepu::Index1D index, skepu::Ten4<float> y, skepu::Ten4<float> y_pred) //s
 {
 	size_t item = index.i;
-	// std::cout<< item << "\n";
-	// std::cout<< y << "\n";
 
 	float epsilon = 1e-9;
 	float res = 0;
@@ -164,7 +136,6 @@ float binary_cross_entropy(skepu::Index1D index, skepu::Ten4<float> y, skepu::Te
 	if(val < epsilon){
 		val = epsilon;
 	}
-	// res += y(item) * log(y_pred(item,0,0,0)) - (1 - y(item)) * log(1 - y_pred(item,0,0,0));
 	res += y(item,0,0,0) * log(val) + (1 - y(item,0,0,0)) * log(1 - val);
 
 
@@ -182,7 +153,6 @@ float BCE_grad_uf(skepu::Index4D index, skepu::Ten4<float> y_pred, skepu::Ten4<f
 	if(val < epsilon){
 		val = epsilon; }
 
-	// return y_pred(item, 0,0,0) - y(item) ;
 	float numerator = val - y(item,0,0,0) ;
 	float denominator = val * (1 - val);
 	return numerator / denominator ;
@@ -199,11 +169,9 @@ auto skel_flatmap = skepu::Map(flatmap_uf);
 int copy_int_uf(int a) { return a; }
 auto skel_copy_int = skepu::Map(copy_int_uf);
 
-// Keep these!
-//auto skel_cross_entropy_batched_loss = skepu::MapReduce<0>(cross_entropy_batched_uf, sum_uf<float>);
-//auto skel_accuracy_batched = skepu::MapReduce<0>(accuracy_batched_uf, sum_uf<int>);
-
-// Map+Reduce variants
+// The loss and the accuracy of a batch are a Map (per-sample values) followed by a Reduce. They could also be one
+// MapReduce<0> each, e.g. skepu::MapReduce<0>(cross_entropy_batched_uf, sum_uf<float>), which avoids the temporary
+// vector; the per-sample values are kept because evaluate() needs them to leave out the overlap of a remainder batch.
 auto skel_cross_entropy_batched_loss_map = skepu::Map<0>(cross_entropy_batched_uf);
 auto skel_accuracy_batched_map = skepu::Map<0>(accuracy_batched_uf);
 auto skel_cross_entropy_batched_loss_reduce = skepu::Reduce(sum_uf<float>);
@@ -214,17 +182,13 @@ auto skel_init_zero = skepu::Map<0>(init_zero_uf);
 auto skel_init_random_uniform = skepu::Map<0>(init_random_uniform_uf<float>);
 
 // Backprop
-auto skel_delta = skepu::Map(delta_uf);
 auto skel_delta_cce = skepu::Map(cce_grad_uf);
-auto skel_cost_prime = skepu::Map(mse_prime_uf);
 
 auto skel_update_params = skepu::Map<2>(update_params_uf);
 
 // Outputs: parameter, m, v. Elementwise inputs: parameter, gradient, m, v
 auto skel_adam_update = skepu::Map<4>(adam_update_uf);
 
-auto skel_hadamard = skepu::Map(product_uf);
-auto skel_argmax = skepu::Map(argmax_uf);
 
 auto skel_propagate_loss_gradient         = skepu::Map(propagate_loss_gradient_uf);
 
@@ -232,7 +196,6 @@ auto skel_propagate_loss_gradient         = skepu::Map(propagate_loss_gradient_u
 // bce forward and back ward skel
 // forward
 auto skel_binary_cross_entropy_loss_map = skepu::Map<0>(binary_cross_entropy);
-// auto skel_cross_entropy_batched_loss_reduce = skepu::Reduce(sum_uf<float>);
 // back
 auto skel_delta_bce = skepu::Map(BCE_grad_uf);
 

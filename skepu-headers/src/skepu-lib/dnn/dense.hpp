@@ -241,12 +241,8 @@ namespace skepu::dnn::impl
 
 	Tensor4<T> *forward(Tensor4<T> *inputs, bool is_training=false) override
 	{
-		//	dnn_debug << "Dense input: " << string_tensor_size(*inputs) << "\n";
-		//	dnn_debug << "Dense vals: " << string_tensor_size(this->m_vals) << "\n";
 		skel_dense.setLabel(this->label() + " Dense forward");
 		skel_dense(this->m_vals, this->m_biases, this->m_weights, *inputs);
-		//	dnn_debug << "Dense inputs: " << *inputs << "\n";
-		//	dnn_debug << "Dense vals: " << this->m_vals << "\n";
 
 		return &this->m_vals;
 	}
@@ -257,9 +253,6 @@ namespace skepu::dnn::impl
 		dnn_debug << "Dense backprop\n";
 		dnn_debug << "Dense vals: " << string_tensor_size(this->m_vals) << "\n";
 		dnn_debug << "Dense input: " << string_tensor_size(*inputs) << "\n";
-	//	dnn_debug << "Dense gradient: " << string_tensor_size(*gradient) << "\n";
-	//	dnn_debug << "Dense temp: " << string_tensor_size(this->m_temp) << "\n";
-	//	dnn_debug << "Dense weights: " << this->m_weights.total_rows() << " x " << this->m_weights.total_cols() << "\n";
 
 		skel_propagate_loss_gradient.setLabel(this->label() + " Dense backprop-grad");
 		skel_propagate_dense_weight_gradient.setLabel(this->label() + " Dense backprop weights");

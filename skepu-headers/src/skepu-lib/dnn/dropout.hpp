@@ -3,18 +3,9 @@
 #ifndef SKEPU_PRECOMPILED
 static skepu::PrecompilerMarker startOf_Dropout_HPP;
 
-template <typename T> T dropout_uf(skepu::Random<1> &rand, T el, float rate)
-{
-	float p = rand.getNormalized();
-	return (p > rate) ? (el / (1.0 - rate)) : 0;
-}
-
 template <typename T> skepu::multiple<T, char> dropout_masked_uf(skepu::Random<1> &rand, T el, float rate)
 {
 	float p = rand.getNormalized();
-	// char enabled = (p > rate);
-	// T res = enabled ? (el / (1.0 - rate)) : 0;
-	// return skepu::ret(res, enabled);
 	if (p < rate){
 		char mask = 0;
 		return skepu::ret(0, mask);
@@ -32,7 +23,6 @@ template <typename T> T dropout_masked_backprop_uf(T gradient, char enabled, flo
 }
 
 
-auto skel_dropout = skepu::Map<1>(dropout_uf<float>);
 auto skel_dropout_masked = skepu::Map<1>(dropout_masked_uf<float>);
 auto skel_dropout_backprop_masked = skepu::Map<2>(dropout_masked_backprop_uf<float>);
 
@@ -64,7 +54,6 @@ namespace skepu::dnn::impl
 		size_t in = std::get<0>(input_size);
 
 		this->m_output_size = input_size;
-		//	if (!this->m_in_place) ...
 		Layer<T>::setup(input_size);
 
 		this->m_mask.init(

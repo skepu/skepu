@@ -24,25 +24,6 @@ float convolutional_2d_uf(
 	return res;
 }
 
-float convolutional_2d_connections_uf(
-	skepu::Index4D index,
-	skepu::Region4D<float> DNN_CONST in,
-	skepu::Ten4<float> DNN_CONST weights,
-	skepu::Vec<float> DNN_CONST bias,
-	skepu::Mat<int> DNN_CONST connection_map
-)
-{
-	float res = 0;
-	for (size_t i = -in.oi; i <= in.oi; ++i)
-		for (size_t j = -in.oj; j <= in.oj; ++j)
-			if (connection_map(index.i, index.j) == 1)
-			{
-				for (size_t k = 0; k < weights.size_k; ++k)
-					res += weights(0, i + in.oi, j + in.oi, k) * in(0, i, j, k - index.k);
-			}
-	return res; // bias
-}
-
 float conv_2d_backward_uf(
 	skepu::Index4D index,
 	skepu::Region4D<float> gradient,
@@ -69,8 +50,7 @@ float propagate_conv_2d_weight_gradient_uf(
 	for (size_t b = 0; b < num_batches; ++b)
 		for (size_t j = 0; j < gradient.size_j; ++j)
 			for (size_t k = 0; k < gradient.size_k; ++k)
-				// sum += inputs(b, j + index.i, k + index.j, index.k) * gradient(b, gradient.size_j - 1 - j, gradient.size_k - 1 - k, index.l); // indexing!!!
-		sum += inputs(b, j + index.i, k + index.j, index.k) * gradient(b,  j, k , index.l);
+				sum += inputs(b, j + index.i, k + index.j, index.k) * gradient(b, j, k, index.l);
 	return sum / num_batches;
 }
 
@@ -232,7 +212,6 @@ namespace skepu::dnn::impl
 			skel_init_random_uniform.setPRNG(*this->m_prng);
 			skel_init_random_uniform.setLabel(this->label() + " Random-init Conv2D weights");
 			skel_init_random_uniform(this->m_weights, -limit, limit);
-			// std::cout << "CL weights: " <<this->m_weights << '\n';
 		}
 		else if (this->m_init_weights == Init::Xavier_normal){
 			int fan_in = this->m_weights.size_k() * std::get<0>(this->m_kernel) * std::get<1>(this->m_kernel);
@@ -245,7 +224,6 @@ namespace skepu::dnn::impl
 		}
 		else if (this->m_init_weights == Init::He_uniform){
 			int fan_in = this->m_weights.size_k() * std::get<0>(this->m_kernel) * std::get<1>(this->m_kernel);
-			// int fan_out = this->m_no_features * std::get<0>(this->m_kernel) * std::get<1>(this->m_kernel);
 			double limit = std::sqrt(6.0 / (fan_in));
 
 			skel_init_random_uniform.setPRNG(*this->m_prng);
@@ -254,7 +232,6 @@ namespace skepu::dnn::impl
 		}
 		else if (this->m_init_weights == Init::He_normal){
 			int fan_in = this->m_weights.size_k() * std::get<0>(this->m_kernel) * std::get<1>(this->m_kernel);
-			// int fan_out = this->m_no_features * std::get<0>(this->m_kernel) * std::get<1>(this->m_kernel);
 			double limit = std::sqrt(6.0 / (fan_in)); // uniform with the variance of He-normal
 
 			skel_init_random_uniform.setPRNG(*this->m_prng);
@@ -364,8 +341,6 @@ namespace skepu::dnn::impl
 
 		dnn_debug << "Conv2D inputs: " << *inputs << "\n";
 		dnn_debug << "Conv2D vals: " << this->m_vals << "\n";
-		// std::cout << "Conv2D inputs: " << *inputs << "\n";
-		// std::cout << "Conv2D vals: " << this->m_vals << "\n";
 
 		return &this->m_vals;
 	}
@@ -377,8 +352,6 @@ namespace skepu::dnn::impl
 		dnn_debug << "Conv2D input size: " << string_tensor_size(*inputs) << "\n";
 		dnn_debug << "Conv2D gradient size: " << string_tensor_size(*gradient) << "\n";
 		dnn_debug << "Conv2D temp size: " << string_tensor_size(this->m_temp) << "\n";
-	//	dnn_debug << "Conv2D inputs: " << *inputs << "\n";
-	//	dnn_debug << "Conv2D gradient: " << *gradient << "\n";
 
 		if (this->m_layer_level != Level::Input)
 		{
@@ -388,15 +361,12 @@ namespace skepu::dnn::impl
 			skel_conv_2d_backward.setPad(0);
 			skel_conv_2d_backward.setLabel(this->label() + " Conv2D backprop grad");
 			skel_conv_2d_backward(this->m_temp, *gradient, this->m_weights);
-		//	dnn_debug << "Conv2D temp: " << this->m_temp << "\n";
 		}
 
 		skel_propagate_conv_2d_weight_gradient.setLabel(this->label() + " Conv2D backprop weights");
 		skel_propagate_conv_2d_bias_gradient.setLabel(this->label() + " Conv2D backprop biases");
 		skel_propagate_conv_2d_weight_gradient(this->m_dW, *inputs, *gradient);
 		skel_propagate_conv_2d_bias_gradient(this->m_db, *gradient);
-	//	dnn_debug << "Conv2D dW: " << this->m_dW << "\n";
-	//	dnn_debug << "Conv2D db: " << this->m_db << "\n";
 
 		return (this->m_layer_level != Level::Input) ? &this->m_temp : nullptr;
 	}

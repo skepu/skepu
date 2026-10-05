@@ -24,7 +24,6 @@ std::vector<T> deserialize_csv_helper(std::string fname)
 		std::cout << "Error: invalid file\n";
 	}
 
-	//  std::cout << "Loaded CSV file into std::vector. Total " << result.size() << " elements\n";
 	return result;
 }
 
@@ -36,7 +35,6 @@ typename std::vector<T>::iterator load_from_vector(skepu::Vector<T> &output, std
 	{
 		output(i) = *it++;
 	}
-	//  std::cout << "Loaded std::vector into Vector. Total " << output.size() << " elements\n";
 	return it;
 }
 
@@ -51,7 +49,6 @@ typename std::vector<T>::iterator load_from_vector(skepu::Matrix<T> &output, std
 			output(i, j) = *it++;
 		}
 	}
-	//  std::cout << "Loaded std::vector into Matrix. Total " << output.size() << " elements\n";
 	return it;
 }
 
@@ -69,7 +66,6 @@ typename std::vector<T>::iterator load_from_vector(skepu::Tensor3<T> &output, st
 			}
 		}
 	}
-	//  std::cout << "Loaded std::vector into Tensor3. Total " << output.size() << " elements\n";
 	return it;
 }
 
@@ -89,7 +85,6 @@ typename std::vector<T>::iterator load_from_vector(skepu::Tensor4<T> &output, st
 			}
 		}
 	}
-	//  std::cout << "Loaded std::vector into Tensor4. Total " << output.size() << " elements\n";
 	return it;
 }
 

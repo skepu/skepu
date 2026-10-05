@@ -5,7 +5,6 @@
 static skepu::PrecompilerMarker startOf_ML_HPP;
 
 #define SKEPU_DNN_NO_PRETRAINED_PARAMS "NO PRETRAINED PARAMS"
-#define SKEPU_DNN_USE_MASKED_POOL 1
 #define DNN_CONST /*const&*/
 
 #include <skepu>
