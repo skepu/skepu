@@ -173,8 +173,25 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 		R.ReplaceText(ref.first->getCallee()->getSourceRange(), nameFunc(*ref.second));
 	}
 
-	for (auto &ref : UF.UTReferences)
-		R.ReplaceText(ref.first->getTypeLoc().getSourceRange(), "struct " + ref.second->name);
+	// The names of user types in the body (not in the signature, which is not part of the code that is copied)
+	if (const Stmt *body = f->getBody())
+	{
+		const SourceManager &SM = GlobalRewriter.getSourceMgr();
+		for (auto &ref : UF.UTReferences)
+		{
+			const SourceRange range = ref.first;
+			if (SM.isBeforeInTranslationUnit(range.getBegin(), body->getBeginLoc()) || SM.isBeforeInTranslationUnit(body->getEndLoc(), range.getEnd()))
+				continue;
+
+			std::string name = ref.second->typeNameOpenCL; // escaped qualified name, defined in the kernel code
+			if (backend != Backend::OpenCL)
+			{
+				name = ref.second->type->getCanonicalTypeInternal().getAsString();
+				replaceTextInString(name, "struct ", "");
+			}
+			R.ReplaceText(range, name);
+		}
+	}
 
 	for (auto subscript : UF.containerSubscripts)
 		R.InsertText(subscript->getCallee()->getBeginLoc(), ".data");
@@ -192,7 +209,8 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 
 			std::string templateName = templateType->getTemplateName().getAsTemplateDecl()->getNameAsString();
 			std::string varname = container->getNameInfo().getAsString();
-			std::string typeName = templateType->template_arguments()[0].getAsType().getAsString();
+			// canonical, as the name of the proxy type that is defined for the container parameter
+			std::string typeName = templateType->template_arguments()[0].getAsType().getCanonicalType().getAsString();
 			replaceTextInString(typeName, "struct ", "");
 
 			int numArgs;
@@ -303,14 +321,15 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 		for (const UserFunction::TemplateArgument &arg : UF.templateArguments)
 		{
 			// If the template argument type is a nested namespace type, bring the namespace into scope
-			if (arg.rawTypeName != arg.resolvedTypeName && (std::find(usingDecls.begin(), usingDecls.end(), arg.rawTypeName) == usingDecls.end()))
+			if (arg.valueType.empty() && arg.rawTypeName != arg.resolvedTypeName && (std::find(usingDecls.begin(), usingDecls.end(), arg.rawTypeName) == usingDecls.end()))
 			{
 				SSSkepuFunctorStruct << "using " << arg.rawTypeName << " = " << arg.resolvedTypeName << ";\n";
 				usingDecls.insert(arg.rawTypeName);
 			}
 
 			// Resolve the template parameter type occurences by a type alias to the argument type
-			SSSkepuFunctorStruct << "using " << arg.paramName << " = " << arg.rawTypeName << ";\n";
+			// (a constant for the value of a non-type parameter)
+			SSSkepuFunctorStruct << arg.alias(true);
 		}
 
 	size_t outArity = std::max<size_t>(1, UF.multipleReturnTypes.size());
@@ -470,36 +489,166 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 
 static int skeletonCounter = 0;
 
-bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, VarDecl *d)
+// A skeleton instance in a function template is visited once per instantiation of the template, but its
+// declaration exists once, in the template. Each instantiation can have other user functions (and so other
+// kernels), so the declaration names the kernels through a selector class template that has the template
+// parameters of the function template. For each instantiation, a specialization of the selector is
+// emitted before the function template; it gives the names of that instantiation's user function structs,
+// kernel classes and kernel functions as members, which the declaration refers to:
+//
+//   template<typename T> struct skepu_selector_0;                             // primary, declared once
+//   template<> struct skepu_selector_0<float> { using uf0 = ...; using cl = ...; };
+//   ...
+//   skepu::backend::Map<1, typename skepu_selector_0<T>::uf0, bool, typename skepu_selector_0<T>::cl> skel("skel", false);
+//
+// Skeleton instances in other places than function templates at namespace scope are rewritten as they are.
+namespace
 {
-	// A skeleton instance in a function template is visited once per instantiation, but
-	// it is rewritten once, in the template itself. Another instantiation with the same
-	// user functions needs nothing more; one with other user functions cannot be supported.
-	static std::map<unsigned, std::string> transformedInstances;
+	struct TemplateSite
 	{
-		std::string signature;
-		for (UserFunction *UF : FuncArgs)
-			signature += UF->uniqueName + ";";
-		auto seen = transformedInstances.find(d->getSourceRange().getBegin().getRawEncoding());
-		if (seen != transformedInstances.end())
-		{
-			if (seen->second != signature)
-				SkePUAbort("Skeleton instance " + InstanceName + " in a function template is instantiated with different user functions (" + seen->second + " and " + signature + "); not supported");
-			SkePULog() << "Skeleton instance " << InstanceName << " in a template was already transformed\n";
-			return true;
-		}
-		transformedInstances[d->getSourceRange().getBegin().getRawEncoding()] = signature;
+		std::string selector;            // name of the selector class template
+		std::string header;              // its template parameter list
+		std::string uses;                // the parameters as arguments: the selector's arguments in the declaration
+		bool primaryEmitted = false;
+		bool declarationRewritten = false;
+		std::set<std::string> instantiations;                  // the template arguments handled so far
+		std::map<std::string, std::string> membersBySignature; // user functions -> selector members, to share kernels
+	};
+
+	std::map<unsigned, TemplateSite> TemplateSites;
+
+	// The function template instantiation that contains the declaration, if it is one that is handled this way
+	const FunctionDecl *enclosingTemplateInstantiation(const VarDecl *d)
+	{
+		const FunctionDecl *f = dyn_cast<FunctionDecl>(d->getDeclContext());
+		if (!f || f->getTemplatedKind() != FunctionDecl::TK_FunctionTemplateSpecialization)
+			return nullptr;
+
+		// An explicit specialization has a source text of its own
+		if (f->getTemplateSpecializationKind() == TSK_ExplicitSpecialization)
+			return nullptr;
+
+		// Only templates at namespace scope: the generated code is placed before the template
+		if (!f->getPrimaryTemplate()->getDeclContext()->getRedeclContext()->isFileContext())
+			return nullptr;
+
+		return f;
 	}
 
-	generatedStructs = {};
-	std::stringstream ss;
-	ss << "skepu_skel_" << skeletonCounter++;
-	std::string skeletonID = ss.str();
+	// The template parameter list as a declaration (without defaults) and as a list of arguments
+	bool describeTemplateParameters(const FunctionTemplateDecl *T, const PrintingPolicy &policy, std::string &header, std::string &uses)
+	{
+		header.clear();
+		uses.clear();
+		for (const NamedDecl *param : *T->getTemplateParameters())
+		{
+			if (param->getNameAsString().empty())
+				return false;
 
-	SkePULog() << "Name of skeleton: " << skeleton.name << ", Unique ID: " << skeletonID << "\n";
+			std::string decl, name = param->getNameAsString(), pack;
+			if (auto *type = dyn_cast<TemplateTypeParmDecl>(param))
+			{
+				pack = type->isParameterPack() ? "..." : "";
+				decl = "typename" + pack + " " + name;
+			}
+			else if (auto *value = dyn_cast<NonTypeTemplateParmDecl>(param))
+			{
+				pack = value->isParameterPack() ? "..." : "";
+				decl = value->getType().getAsString(policy) + pack + " " + name;
+			}
+			else
+				return false; // template template parameters
 
-	if (GlobalRewriter.RemoveText(d->getSourceRange()))
-		SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
+			header += (header.empty() ? "" : ", ") + decl;
+			uses += (uses.empty() ? "" : ", ") + name + pack;
+		}
+		return true;
+	}
+
+	// The template arguments of an instantiation, as the arguments of a specialization
+	std::string printTemplateArguments(const FunctionDecl *f, const PrintingPolicy &policy)
+	{
+		std::string result;
+		std::function<void(const TemplateArgument &)> add = [&](const TemplateArgument &arg)
+		{
+			if (arg.getKind() == TemplateArgument::Pack)
+			{
+				for (const TemplateArgument &element : arg.pack_elements())
+					add(element);
+				return;
+			}
+			std::string text;
+			llvm::raw_string_ostream os(text);
+			arg.print(policy, os, true);
+			result += (result.empty() ? "" : ", ") + os.str();
+		};
+		for (const TemplateArgument &arg : f->getTemplateSpecializationArgs()->asArray())
+			add(arg);
+		return result;
+	}
+}
+
+bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, VarDecl *d)
+{
+	std::string signature;
+	for (UserFunction *UF : FuncArgs)
+		signature += UF->uniqueName + ";";
+
+	// The declaration in the pattern of a function template itself (not dependent on the template parameters, so
+	// the visitor sees it as a skeleton instance): it is visited after the instantiations, which have rewritten it.
+	// A template that is never instantiated is rewritten as it is.
+	if (const FunctionDecl *pattern = dyn_cast<FunctionDecl>(d->getDeclContext()))
+		if (pattern->getDescribedFunctionTemplate() && TemplateSites.count(d->getSourceRange().getBegin().getRawEncoding()))
+		{
+			SkePULog() << "Skeleton instance " << InstanceName << " in a function template was rewritten for its instantiations\n";
+			return true;
+		}
+
+	// Skeleton instance in a function template (see above): the instantiation
+	TemplateSite *site = nullptr;
+	std::string instantiationArgs, selectorUse;
+	if (const FunctionDecl *instantiation = enclosingTemplateInstantiation(d))
+	{
+		PrintingPolicy policy(instantiation->getASTContext().getLangOpts());
+		policy.FullyQualifiedName = true;
+		policy.SuppressScope = false;
+
+		unsigned key = d->getSourceRange().getBegin().getRawEncoding();
+		site = &TemplateSites[key];
+		if (site->selector.empty())
+		{
+			if (!describeTemplateParameters(instantiation->getPrimaryTemplate(), policy, site->header, site->uses))
+				SkePUAbort("Skeleton instance " + InstanceName + " is in a function template with unnamed or template template parameters; not supported");
+			site->selector = "skepu_selector_" + std::to_string(TemplateSites.size() - 1);
+		}
+
+		instantiationArgs = printTemplateArguments(instantiation, policy);
+		selectorUse = site->selector + "<" + site->uses + ">";
+		if (!site->instantiations.insert(instantiationArgs).second)
+			return true;
+		SkePULog() << "Skeleton instance " << InstanceName << " in a function template, instantiation <" << instantiationArgs << ">\n";
+	}
+	else if (const FunctionDecl *f = dyn_cast<FunctionDecl>(d->getDeclContext()))
+	{
+		// A member function template (or other template that is not at namespace scope): the declaration is
+		// rewritten once, so its instantiations can only differ in things that do not change the kernels
+		if (f->getDescribedFunctionTemplate() || (f->getTemplatedKind() == FunctionDecl::TK_FunctionTemplateSpecialization
+			&& f->getTemplateSpecializationKind() != TSK_ExplicitSpecialization))
+		{
+			static std::map<unsigned, std::string> transformedInstances;
+			unsigned key = d->getSourceRange().getBegin().getRawEncoding();
+			auto seen = transformedInstances.find(key);
+			if (seen != transformedInstances.end())
+			{
+				if (seen->second != signature)
+					SkePUAbort("Skeleton instance " + InstanceName + " in a function template that is not at namespace scope is instantiated with different user functions ("
+						+ seen->second + " and " + signature + "); only function templates at namespace scope can be instantiated with several user functions");
+				SkePULog() << "Skeleton instance " << InstanceName << " in a template was already transformed\n";
+				return true;
+			}
+			transformedInstances[key] = signature;
+		}
+	}
 
 	// Find location to insert transformed user function code
 	const DeclContext *DeclCtx = d->getDeclContext();
@@ -512,11 +661,53 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			// If it is a template, we need to place the code before the template begins
 			loc = f->getPrimaryTemplate()->getBeginLoc();
 		}
+		else if (const FunctionTemplateDecl *pattern = f->getDescribedFunctionTemplate())
+		{
+			loc = pattern->getBeginLoc();
+		}
 		else
 		{
 			loc = f->getSourceRange().getBegin();
 		}
 	}
+
+	// The selector specialization of an instantiation, placed after the code it refers to
+	auto emitSelectorSpecialization = [&](const std::string &members)
+	{
+		std::stringstream SSSelector;
+		if (!site->primaryEmitted)
+		{
+			SSSelector << "template<" << site->header << "> struct " << site->selector << ";\n";
+			site->primaryEmitted = true;
+		}
+		SSSelector << "template<> struct " << site->selector << "<" << instantiationArgs << ">\n{\n" << members << "};\n"
+			<< lineDirectiveForSourceLoc(loc) << "\n";
+		if (GlobalRewriter.InsertText(loc, SSSelector.str()))
+			SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
+	};
+
+	// Same user functions as an earlier instantiation: its kernels are shared
+	if (site)
+	{
+		auto shared = site->membersBySignature.find(signature);
+		if (shared != site->membersBySignature.end())
+		{
+			emitSelectorSpecialization(shared->second);
+			return true;
+		}
+	}
+
+	generatedStructs = {};
+	std::stringstream ss;
+	ss << "skepu_skel_" << skeletonCounter++;
+	std::string skeletonID = ss.str();
+
+	SkePULog() << "Name of skeleton: " << skeleton.name << ", Unique ID: " << skeletonID << "\n";
+
+	bool rewriteDeclaration = !site || !site->declarationRewritten;
+	if (rewriteDeclaration)
+		if (GlobalRewriter.RemoveText(d->getSourceRange()))
+			SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
 
 	for (UserFunction* UF : FuncArgs)
 	{
@@ -525,6 +716,9 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 
 
 	std::stringstream SSTemplateArgs, SSCallArgs, SSNewDecl;
+
+	// The members of this instantiation's selector specialization; the declaration refers to them
+	std::stringstream SSSelectorMembers;
 
 	bool first = true;
 	if (skeleton.type == Skeleton::Type::Map || skeleton.type == Skeleton::Type::MapReduce)
@@ -538,11 +732,20 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		first = false;
 	}
 
+	size_t ufIndex = 0;
 	for (UserFunction *func : FuncArgs)
 	{
 		if (!first)
 			SSTemplateArgs << ", ";
-		SSTemplateArgs << SkePU_UF_Prefix << skeletonID << InstanceName << "_" << func->uniqueName;
+		std::string ufStruct = SkePU_UF_Prefix + skeletonID + InstanceName + "_" + func->uniqueName;
+		if (site)
+		{
+			SSSelectorMembers << "using uf" << ufIndex << " = " << ufStruct << ";\n";
+			SSTemplateArgs << "typename " << selectorUse << "::uf" << ufIndex;
+		}
+		else
+			SSTemplateArgs << ufStruct;
+		++ufIndex;
 		first = false;
 	}
 
@@ -551,85 +754,86 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 	if (GenCUDA)
 	{
 		std::string KernelName_CU;
+		std::vector<std::string> cuKernels; // the kernel functions that the skeleton is given, in order
 		switch (skeleton.type)
 		{
 		case Skeleton::Type::MapReduce:
 			KernelName_CU = createMapReduceKernelProgram_CU(skeletonID, *FuncArgs[0], *FuncArgs[1], arity[0], ResultDir);
-			SSTemplateArgs << ", decltype(&" << KernelName_CU << "), decltype(&" << KernelName_CU << "_ReduceOnly)";
-			SSCallArgs << KernelName_CU << ", " << KernelName_CU << "_ReduceOnly";
+			cuKernels = {KernelName_CU, KernelName_CU + "_ReduceOnly"};
 			break;
 
 		case Skeleton::Type::Map:
 			KernelName_CU = createMapKernelProgram_CU(skeletonID, *FuncArgs[0], arity[0], ResultDir);
-			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
-			SSCallArgs << KernelName_CU;
+			cuKernels = {KernelName_CU};
 			break;
 
 		case Skeleton::Type::MapPairs:
 			KernelName_CU = createMapPairsKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
-			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
-			SSCallArgs << KernelName_CU;
+			cuKernels = {KernelName_CU};
 			break;
 
 		case Skeleton::Type::MapPairsReduce:
 			KernelName_CU = createMapPairsReduceKernelProgram_CU(skeletonID, *FuncArgs[0], *FuncArgs[1], ResultDir);
-			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
-			SSCallArgs << KernelName_CU;
+			cuKernels = {KernelName_CU};
 			break;
 
 		case Skeleton::Type::Reduce1D:
 			KernelName_CU = createReduce1DKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
-			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
-			SSCallArgs << KernelName_CU;
+			cuKernels = {KernelName_CU};
 			break;
 
 		case Skeleton::Type::Reduce2D:
 			KernelName_CU = createReduce2DKernelProgram_CU(skeletonID, *FuncArgs[0], *FuncArgs[1], ResultDir);
-			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_RowWise), decltype(&" << KernelName_CU << "_ColWise)";
-			SSCallArgs << KernelName_CU << "_RowWise, " << KernelName_CU << "_ColWise";
+			cuKernels = {KernelName_CU + "_RowWise", KernelName_CU + "_ColWise"};
 			break;
 
 		case Skeleton::Type::Scan:
 			KernelName_CU = createScanKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
-			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_ScanKernel), decltype(&" << KernelName_CU << "_ScanUpdate), decltype(&" << KernelName_CU << "_ScanAdd)";
-			SSCallArgs << KernelName_CU << "_ScanKernel, " << KernelName_CU << "_ScanUpdate, " << KernelName_CU << "_ScanAdd";
+			cuKernels = {KernelName_CU + "_ScanKernel", KernelName_CU + "_ScanUpdate", KernelName_CU + "_ScanAdd"};
 			break;
 
 		case Skeleton::Type::MapOverlap1D:
 		case Skeleton::Type::MapPool1D:
 			KernelName_CU = createMapOverlap1DKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
-			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_MapOverlapKernel_CU), decltype(&" << KernelName_CU << "_MapOverlapKernel_CU_Matrix_Row), decltype(&"
-				<< KernelName_CU << "_MapOverlapKernel_CU_Matrix_Col), decltype(&" << KernelName_CU << "_MapOverlapKernel_CU_Matrix_ColMulti)";
-			SSCallArgs << KernelName_CU << "_MapOverlapKernel_CU, " << KernelName_CU << "_MapOverlapKernel_CU_Matrix_Row, "
-				<< KernelName_CU << "_MapOverlapKernel_CU_Matrix_Col, " << KernelName_CU << "_MapOverlapKernel_CU_Matrix_ColMulti";
+			cuKernels = {KernelName_CU + "_MapOverlapKernel_CU", KernelName_CU + "_MapOverlapKernel_CU_Matrix_Row",
+				KernelName_CU + "_MapOverlapKernel_CU_Matrix_Col", KernelName_CU + "_MapOverlapKernel_CU_Matrix_ColMulti"};
 			break;
 
 		case Skeleton::Type::MapOverlap2D:
 		case Skeleton::Type::MapPool2D:
 			KernelName_CU = createMapOverlap2DKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
-			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_conv_cuda_2D_kernel)";
-			SSCallArgs << KernelName_CU << "_conv_cuda_2D_kernel";
+			cuKernels = {KernelName_CU + "_conv_cuda_2D_kernel"};
 			break;
 
 		case Skeleton::Type::MapOverlap3D:
 		case Skeleton::Type::MapPool3D:
 			KernelName_CU = createMapOverlap3DKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
-			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_conv_cuda_3D_kernel)";
-			SSCallArgs << KernelName_CU << "_conv_cuda_3D_kernel";
+			cuKernels = {KernelName_CU + "_conv_cuda_3D_kernel"};
 			break;
 
 		case Skeleton::Type::MapOverlap4D:
 		case Skeleton::Type::MapPool4D:
 			KernelName_CU = createMapOverlap4DKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
-			SSTemplateArgs << ", decltype(&" << KernelName_CU << "_conv_cuda_4D_kernel)";
-			SSCallArgs << KernelName_CU << "_conv_cuda_4D_kernel";
+			cuKernels = {KernelName_CU + "_conv_cuda_4D_kernel"};
 			break;
 
 		case Skeleton::Type::Call:
 			KernelName_CU = createCallKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
-			SSTemplateArgs << ", decltype(&" << KernelName_CU << ")";
-			SSCallArgs << KernelName_CU;
+			cuKernels = {KernelName_CU};
 			break;
+		}
+
+		for (size_t k = 0; k < cuKernels.size(); ++k)
+		{
+			std::string kernelType = "decltype(&" + cuKernels[k] + ")", kernelValue = cuKernels[k];
+			if (site)
+			{
+				SSSelectorMembers << "static constexpr auto cu" << k << " = &" << cuKernels[k] << ";\n";
+				kernelValue = selectorUse + "::cu" + std::to_string(k);
+				kernelType = "decltype(" + kernelValue + ")";
+			}
+			SSTemplateArgs << ", " << kernelType;
+			SSCallArgs << (k > 0 ? ", " : "") << kernelValue;
 		}
 
 		// Insert the code at the proper place
@@ -716,12 +920,29 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		if (GlobalRewriter.InsertText(loc, "#include \"" + KernelName_CL + "_cl_source.inl\"\n" + lineDirectiveForSourceLoc(loc) + "\n"))
 			SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
 
-		SSTemplateArgs << ", CLWrapperClass_" << KernelName_CL;
+		if (site)
+		{
+			SSSelectorMembers << "using cl = CLWrapperClass_" << KernelName_CL << ";\n";
+			SSTemplateArgs << ", typename " << selectorUse << "::cl";
+		}
+		else
+			SSTemplateArgs << ", CLWrapperClass_" << KernelName_CL;
 	}
 	else
 	{
 		SSTemplateArgs << ", void";
 	}
+
+	if (site)
+	{
+		site->membersBySignature[signature] = SSSelectorMembers.str();
+		emitSelectorSpecialization(SSSelectorMembers.str());
+	}
+
+	if (!rewriteDeclaration)
+		return true;
+	if (site)
+		site->declarationRewritten = true;
 
 	SourceLocation declStart = d->getSourceRange().getBegin();
 	SourceLocation declEnd = d->getSourceRange().getEnd();

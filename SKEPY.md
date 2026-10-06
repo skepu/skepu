@@ -247,8 +247,14 @@ All programs pass on all four backends (180 runs, OpenCL on an Apple GPU).
 * `src/skepu-tool/code_gen.cpp`, `visitor.cpp`: a skeleton instance in a function template
   was rewritten once per instantiation, over the same source text, which commented out
   the skeleton's setup and call (the skeleton then did nothing on the CPU/OpenMP
-  backends). It is rewritten once; instantiations with different user functions are
-  rejected with an error (test: `tests/codegen/template_instances.cpp`).
+  backends). It is now rewritten once, in the template, and names its kernels through a
+  selector class template with the template parameters; each instantiation gets a
+  specialization of the selector (instantiations with the same user functions share
+  their kernels), so instantiations with different types and user functions work. Non-type
+  template arguments of user function templates are substituted in the user function code.
+  Only function templates at namespace scope can have several instantiations with different
+  user functions; in a member function template that is an error (tests:
+  `tests/codegen/template_instances*.cpp`, `tests/skepu_lib/blas_mixed_precision.cpp`).
 * `skepu-headers/src/skepu3/impl/tracing.h`, `tracing.hpp`: a program with several source
   files, some precompiled and some not (the runtime sources of a SkePU based language), aborted
   at exit when built with `SKEPU_TRACING`: the header switches tracing off in files that are

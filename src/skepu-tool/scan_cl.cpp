@@ -8,7 +8,7 @@ using namespace clang;
 // ------------------------------
 
 const std::string ScanKernel_CL = R"~~~(
-__kernel void {{KERNEL_NAME}}_Scan(__global {{SCAN_TYPE}}* skepu_input, __global {{SCAN_TYPE}}* skepu_output, __global {{SCAN_TYPE}}* blockSums, size_t skepu_n, size_t skepu_numElements, __local {{SCAN_TYPE}}* skepu_sdata)
+__kernel void {{KERNEL_NAME}}_Scan(__global {{SCAN_TYPE_OPENCL}}* skepu_input, __global {{SCAN_TYPE_OPENCL}}* skepu_output, __global {{SCAN_TYPE_OPENCL}}* blockSums, size_t skepu_n, size_t skepu_numElements, __local {{SCAN_TYPE_OPENCL}}* skepu_sdata)
 {
 	const size_t threadIdx = get_local_id(0);
 	const size_t blockDim = get_local_size(0);
@@ -50,10 +50,10 @@ __kernel void {{KERNEL_NAME}}_Scan(__global {{SCAN_TYPE}}* skepu_input, __global
 
 const std::string ScanUpdate_CL = R"~~~(
 #define NULL 0
-__kernel void {{KERNEL_NAME}}_ScanUpdate(__global {{SCAN_TYPE}}* data, __global {{SCAN_TYPE}}* sums, int isInclusive, {{SCAN_TYPE}} init, size_t skepu_n, __global {{SCAN_TYPE}}* ret, __local {{SCAN_TYPE}}* skepu_sdata)
+__kernel void {{KERNEL_NAME}}_ScanUpdate(__global {{SCAN_TYPE_OPENCL}}* data, __global {{SCAN_TYPE_OPENCL}}* sums, int isInclusive, {{SCAN_TYPE_OPENCL}} init, size_t skepu_n, __global {{SCAN_TYPE_OPENCL}}* ret, __local {{SCAN_TYPE_OPENCL}}* skepu_sdata)
 {
-	__local {{SCAN_TYPE}} skepu_offset;
-	__local {{SCAN_TYPE}} inc_offset;
+	__local {{SCAN_TYPE_OPENCL}} skepu_offset;
+	__local {{SCAN_TYPE_OPENCL}} inc_offset;
 	const size_t threadIdx = get_local_id(0);
 	const size_t blockDim = get_local_size(0);
 	const size_t blockIdx = get_group_id(0);
@@ -116,7 +116,7 @@ __kernel void {{KERNEL_NAME}}_ScanUpdate(__global {{SCAN_TYPE}}* data, __global 
 
 
 const std::string ScanAdd_CL = R"~~~(
-__kernel void {{KERNEL_NAME}}_ScanAdd(__global {{SCAN_TYPE}}* data, {{SCAN_TYPE}} skepu_sum, size_t skepu_n)
+__kernel void {{KERNEL_NAME}}_ScanAdd(__global {{SCAN_TYPE_OPENCL}}* data, {{SCAN_TYPE_OPENCL}} skepu_sum, size_t skepu_n)
 {
 	size_t i = get_global_id(0);
 	size_t gridSize = get_local_size(0) * get_num_groups(0);
@@ -258,6 +258,7 @@ std::string createScanKernelProgram_CL(SkeletonInstance &instance, UserFunction 
 		{"{{OPENCL_KERNEL}}", sourceStream.str()},
 		{"{{KERNEL_CLASS}}",  "CLWrapperClass_" + kernelName},
 		{"{{SCAN_TYPE}}",           scanFunc.resolvedReturnTypeName},
+		{"{{SCAN_TYPE_OPENCL}}",    scanFunc.returnTypeNameOpenCL()},
 		{"{{KERNEL_NAME}}",         kernelName},
 		{"{{FUNCTION_NAME_SCAN}}",  scanFunc.uniqueName}
 	});

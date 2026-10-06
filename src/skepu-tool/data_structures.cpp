@@ -120,6 +120,31 @@ public:
 		return true;
 	}
 
+	bool VisitTypeLoc(TypeLoc tl)
+	{
+		// The name of a class or struct as written, with its qualifier and keyword, if there are any
+		auto rtl = tl.getAs<RecordTypeLoc>();
+		if (!rtl || tl.getBeginLoc().isMacroID() || tl.getEndLoc().isMacroID())
+			return true;
+
+		const CXXRecordDecl *decl = dyn_cast<CXXRecordDecl>(rtl.getDecl());
+		if (!decl || isa<ClassTemplateSpecializationDecl>(decl))
+			return true;
+
+		if (auto *userType = HandleUserType(decl))
+		{
+			// (the visitor may visit a node more than once)
+			const SourceRange range = tl.getSourceRange();
+			for (auto &ref : this->UTReferences)
+				if (ref.first == range)
+					return true;
+
+			ReferencedUTs.insert(userType);
+			UTReferences.emplace_back(range, userType);
+		}
+		return true;
+	}
+
 	bool VisitVarDecl(VarDecl *d)
 	{
 		if (auto *userType = HandleUserType(d->getType().getTypePtr()->getAsCXXRecordDecl()))
@@ -135,7 +160,10 @@ public:
 	std::set<const CallExpr*> ReferencedRets{};
 	std::set<CXXMemberCallExpr*> ReferencedGets{};
 
-	std::vector<std::pair<const TypeSourceInfo*, UserType*>> UTReferences{};
+	// Where the function names a user type: the spelling is replaced in the code of the backends, because
+	// the code is copied to another scope (a qualifier like detail:: or a name from the enclosing namespace
+	// does not resolve there; in OpenCL C, a qualified name is not an identifier at all).
+	std::vector<std::pair<SourceRange, UserType*>> UTReferences{};
 	std::set<UserType*> ReferencedUTs{};
 
 	std::vector<CXXOperatorCallExpr*> containerSubscripts{}, containerCalls{};
@@ -221,16 +249,24 @@ UserType::UserType(const CXXRecordDecl *t)
 	}
 	#ifndef SKEPU_LSP
 		static const std::string RunTimeTypeNameFunc = R"~~~(
-		namespace skepu { template<> std::string getDataTypeCL<{{TYPE_NAME}}>() { return "struct {{TYPE_NAME}}"; } }
-		namespace skepu { template<> std::string getDataTypeDefCL<{{TYPE_NAME}}>() { return {{TYPE_DEF}}; } }
+		namespace skepu { template<> std::string getDataTypeCL<{{QUALIFIED_NAME}}>() { return "struct {{ESCAPED_NAME}}"; } }
+		namespace skepu { template<> std::string getDataTypeDefCL<{{QUALIFIED_NAME}}>() { return {{TYPE_DEF}}; } }
 		)~~~";
 
 		if (GenCL)
 		{
 			std::string typeNameFunc = RunTimeTypeNameFunc;
-			replaceTextInString(typeNameFunc, "{{TYPE_NAME}}", this->name);
+			replaceTextInString(typeNameFunc, "{{QUALIFIED_NAME}}", resolvedTypeName);
+			replaceTextInString(typeNameFunc, "{{ESCAPED_NAME}}", this->typeNameOpenCL);
 			replaceTextInString(typeNameFunc, "{{TYPE_DEF}}", "R\"~~~(" + generateUserTypeCode_CL(*this) + ")~~~\"");
-			GlobalRewriter.InsertText(t->getEndLoc().getLocWithOffset(2), typeNameFunc);
+
+			// The specializations are in namespace skepu, so a type in a namespace gets them after the
+			// outermost enclosing namespace (and they name the type with its qualifier)
+			SourceLocation insertLoc = t->getEndLoc().getLocWithOffset(2);
+			for (const DeclContext *dc = t->getDeclContext(); dc; dc = dc->getParent())
+				if (const NamespaceDecl *ns = dyn_cast<NamespaceDecl>(dc))
+					insertLoc = ns->getRBraceLoc().getLocWithOffset(1);
+			GlobalRewriter.InsertText(insertLoc, typeNameFunc);
 		}
 	#endif
 }
@@ -565,6 +601,11 @@ std::string UserFunction::Param::typeNameOpenCL() const
 		return "skepu_complex_float"; // todo fix templated type
 	}
 	
+	// A user type is defined in the kernel under its escaped qualified name (see generateUserTypeCode_CL);
+	// the qualified C++ name (skepu::filter::RGBPixel) is not an identifier in OpenCL C.
+	if (this->type && this->type->getAs<clang::RecordType>())
+		return this->escapedTypeName;
+	
 	return this->resolvedTypeName;
 }
 
@@ -629,9 +670,16 @@ size_t UserFunction::RandomAccessParam::numKernelArgsCL() const
 
 
 
-UserFunction::TemplateArgument::TemplateArgument(std::string name, std::string rawType, std::string resolvedType)
-: paramName(name), rawTypeName(rawType), resolvedTypeName(resolvedType)
+UserFunction::TemplateArgument::TemplateArgument(std::string name, std::string rawType, std::string resolvedType, std::string valueType)
+: paramName(name), rawTypeName(rawType), resolvedTypeName(resolvedType), valueType(valueType)
 {}
+
+std::string UserFunction::TemplateArgument::alias(bool constexprValue) const
+{
+	if (this->valueType.empty())
+		return "using " + this->paramName + " = " + this->rawTypeName + ";\n";
+	return std::string(constexprValue ? "constexpr static " : "const ") + this->valueType + " " + this->paramName + " = " + this->rawTypeName + ";\n";
+}
 
 
 UserFunction::UserFunction(CXXMethodDecl *f, VarDecl *d)
@@ -688,6 +736,35 @@ UserFunction::UserFunction(clang::FunctionDecl *f)
 
 		for (unsigned i = 0; i < TPList->size(); ++i)
 		{
+			if (TAList->get(i).getKind() == clang::TemplateArgument::ArgKind::Integral)
+			{
+				// A non-type template parameter of integral type: its value replaces the name in the code
+				const clang::TemplateArgument &arg = TAList->get(i);
+				const auto *valueParam = dyn_cast<clang::NonTypeTemplateParmDecl>(TPList->getParam(i));
+				if (valueParam)
+				{
+					llvm::APSInt integral = arg.getAsIntegral();
+					std::string valueType = arg.getIntegralType().getAsString();
+					std::string value;
+					if (arg.getIntegralType()->isBooleanType())
+						value = integral.getBoolValue() ? "true" : "false";
+					else
+						value = std::to_string(integral.isSigned() ? integral.getExtValue() : (long long)integral.getZExtValue());
+					if (value[0] == '-')
+						value = "(" + value + ")";
+
+					// (an unnamed parameter, e.g. a SFINAE condition, has nothing to replace in the code)
+					if (!valueParam->getNameAsString().empty())
+						this->templateArguments.emplace_back(valueParam->getNameAsString(), value, value, valueType);
+					std::string nameValue = value;
+					for (char &c : nameValue)
+						if (!isalnum((unsigned char)c)) c = '_';
+					SSUniqueName << "_" << nameValue;
+					SkePULog() << "Template value parameter: " << valueParam->getNameAsString() << " = " << value << " (" << valueType << ")\n";
+					continue;
+				}
+			}
+
 			if (TAList->get(i).getKind() != clang::TemplateArgument::ArgKind::Type)
 			{
 				SkePULog() << "Note: Ignored non-type template parameter\n";
@@ -699,7 +776,17 @@ UserFunction::UserFunction(clang::FunctionDecl *f)
 			std::string rawArgName = TAList->get(i).getAsType().getAsString();
 			std::string resolvedArgName = rawArgName;
 			if (auto *userType = TAList->get(i).getAsType().getTypePtr()->getAs<clang::RecordType>())
-				rawArgName = userType->getDecl()->getNameAsString();
+			{
+				if (isa<ClassTemplateSpecializationDecl>(userType->getDecl()))
+					rawArgName = userType->getDecl()->getNameAsString();
+				else
+				{
+					// a user type: named by its qualified name in C++ code and by its escaped qualified name in the kernels
+					resolvedArgName = TAList->get(i).getAsType().getCanonicalType().getAsString();
+					replaceTextInString(resolvedArgName, "struct ", "");
+					rawArgName = transformToCXXIdentifier(resolvedArgName);
+				}
+			}
 			
 			// Remove 'struct'
 			replaceTextInString(resolvedArgName, "struct ", "");
@@ -736,7 +823,8 @@ UserFunction::UserFunction(clang::FunctionDecl *f)
 		const auto *templateType = f->getReturnType().getTypePtr()->getAs<clang::TemplateSpecializationType>();
 		for (const clang::TemplateArgument &arg : templateType->template_arguments())
 		{
-			std::string argType = arg.getAsType().getAsString();
+			// canonical: the types are used outside the scope of the function (in its functor struct and in the kernels)
+			std::string argType = arg.getAsType().getCanonicalType().getAsString();
 			SkePULog() << "    [UF " << this->uniqueName << "] Multi-return type: " << argType << "\n";
 			this->multipleReturnTypes.push_back(argType);
 		}
@@ -831,6 +919,19 @@ std::string UserFunction::returnTypeNameOpenCL()
 		return "skepu_complex_float"; // todo fix templated type
 	}
 	
+	// A user type is defined in the kernel under its escaped qualified name (see generateUserTypeCode_CL)
+	if (this->multipleReturnTypes.empty())
+	{
+		const QualType returnType = this->astDeclNode->getReturnType();
+		if (const auto *record = returnType->getAs<clang::RecordType>())
+			if (!isa<ClassTemplateSpecializationDecl>(record->getDecl()))
+			{
+				std::string name = returnType.getCanonicalType().getAsString();
+				replaceTextInString(name, "struct ", "");
+				return transformToCXXIdentifier(name);
+			}
+	}
+
 	return this->rawReturnTypeName;
 }
 

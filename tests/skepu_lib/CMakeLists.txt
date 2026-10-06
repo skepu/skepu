@@ -122,3 +122,22 @@ skepu_add_test_case_opencl(blas_level23)
 skepu_add_test_case_sequential(blas_complex)
 skepu_add_test_case_cpu(blas_complex)
 skepu_add_test_case_openmp(blas_complex)
+
+# ------------------------------------------------
+#   BLAS library, float, double and mixed operands in one program (OpenCL: double precision)
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(blas_mixed_precision)
+skepu_add_test_case_cpu(blas_mixed_precision)
+skepu_add_test_case_openmp(blas_mixed_precision)
+
+# ------------------------------------------------
+#   Image filter library (skepu-lib/filter): user types in a namespace
+# ------------------------------------------------
+
+skepu_add_test_case_cpu(filter)
+skepu_add_test_case_openmp(filter)
+skepu_add_test_case_opencl(filter)
+skepu_add_test_case_cuda(filter)
+skepu_add_test_case_hybrid_opencl(filter)
+skepu_add_test_case_hybrid_cuda(filter)

@@ -1,42 +1,13 @@
 # TODO
 
-## skepu-tool: skeletons in function templates with several instantiations
+## skepu-tool: remaining limits of skeletons in templates
 
-**Status:** postponed until after the upcoming merge, which changes `src/skepu-tool/visitor.cpp` heavily.
-
-**Problem.** A skeleton instance inside a function template (for example in `skepu::blas::scal<TX, TS>`) can only be
-instantiated with one set of user functions per program. skepu-tool rewrites the declaration's source text once per
-source location, and the rewrite contains a concrete kernel name and concrete types. clang visits the skeleton once per
-instantiation. Current behaviour (`transformSkeletonInvocation` in `src/skepu-tool/code_gen.cpp`, `rewrittenCalls` in
-`src/skepu-tool/visitor.cpp`): the first instantiation is rewritten, later ones with the same user functions are skipped,
-and ones with different user functions abort with "instantiated with different user functions; not supported".
-Test: `tests/codegen/template_instances.cpp`.
-
-**Plan.** Make the rewritten text depend on the enclosing template's parameters, so one text serves every instantiation:
-
-1. At the declaration, rewrite the skeleton to name its kernel through the enclosing `FunctionTemplateDecl`'s
-   parameters, e.g. `skepu_skel_3_Kernel<TX, TS>` (class templates: include their parameters as well).
-2. Before the template, emit a primary `template<typename... Ts> struct skepu_skel_3_Kernel;` and, for each
-   instantiation clang reports, a specialization holding that instantiation's generated kernel source, struct
-   definitions and constants such as `inPlaceSupported`. Resolve the user functions per instantiation (the visitor
-   already does; today the result of the later ones is discarded).
-3. Drop the "different user functions" abort.
-
-Works the same for OpenCL and CUDA (class template specialization only).
-
-**Things to watch.**
-- All instantiations must be known before anything is emitted, so emission moves to the end of the translation unit.
-- `generatedStructs` is global state and has to become per instantiation.
-- Print non-type template arguments and `decltype`-based types correctly in the specialization arguments.
-- Nested templates: key on the enclosing function's full argument list.
-- CUDA output cannot be run here; compare the generated source by eye.
-
-**Tests to add.** The same skeleton in a template instantiated with two different user functions or types (float and
-double), on seq, cpu, openmp and opencl; a mixed `float`/`double` `skepu::blas` program; then the full ctest (232
-tests; 8 failures are known and also fail on the baseline).
-
-**Alternatives rejected.** Runtime type substitution with `-D` in OpenCL (not possible for CUDA, breaks with structs);
-fixed instantiations in the library (only covers the types the library lists).
+The selector based rewrite (see `SKEPY.md`) covers function templates at namespace scope. Not covered:
+member function templates and members of class templates (the code is placed inside the class; several
+instantiations with different user functions are rejected with an error), template template parameters and
+unnamed template parameters in the enclosing function template (error), and template arguments that name a
+type declared after the template. The CUDA output of the selector (`static constexpr auto cuN = &kernel;`)
+could not be run here and was only checked by reading the generated source.
 
 ## SkePY extension modules: constant-time boundary crossing (direction B)
 

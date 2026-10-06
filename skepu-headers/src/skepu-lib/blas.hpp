@@ -204,8 +204,7 @@ void scal(
 	stride_type                      incx
 )
 {
-	// (the user function is the same for a plain and a Scalar<> alpha: a skeleton in a
-	// function template can only have one user function per instantiation of the user function)
+	// (the user function is the same for a plain and a Scalar<> alpha, so those instantiations share a kernel)
 	auto skel = Map<1>(scal_uf<TX, scalar_type<TX, unwrap_scalar_t<TS>>>);
 	skel.setStride(incx, incx);
 	skel.setLabel("SCAL");

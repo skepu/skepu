@@ -162,7 +162,7 @@ std::string createMapPairsReduceKernelProgram_CL(SkeletonInstance &instance, Use
 	for (UserFunction::Param& param : mapPairsFunc.elwiseParams)
 	{
 		if (!first) { SSMapPairsFuncArgs << ", "; }
-		SSKernelParamList << "__global " << param.resolvedTypeName << " *" << param.name << ", ";
+		SSKernelParamList << "__global " << param.typeNameOpenCL() << " *" << param.name << ", ";
 		SSHostKernelParamList << "skepu::backend::DeviceMemPointer_CL<" << param.resolvedTypeName << "> *" << param.name << ", ";
 		SSKernelArgs << param.name << "->getDeviceDataPointer(), ";
 		if (ctr++ < mapPairsFunc.Varity) // vertical containers
@@ -210,8 +210,8 @@ std::string createMapPairsReduceKernelProgram_CL(SkeletonInstance &instance, Use
 		{"{{USE_MULTIRETURN}}",         (mapPairsFunc.multipleReturnTypes.size() > 0) ? "1" : "0"},
 		{"{{OUTPUT_ASSIGN}}",           multiOutputAssign},
 		
-		{"{{MAPPAIRS_RESULT_TYPE}}",    mapPairsFunc.rawReturnTypeName},
-		{"{{REDUCE_RESULT_TYPE}}",      reduceFunc.rawReturnTypeName},
+		{"{{MAPPAIRS_RESULT_TYPE}}",    mapPairsFunc.returnTypeNameOpenCL()},
+		{"{{REDUCE_RESULT_TYPE}}",      reduceFunc.returnTypeNameOpenCL()},
 		{"{{REDUCE_RESULT_CPU}}",       reduceFunc.resolvedReturnTypeName},
 		{"{{FUNCTION_NAME_REDUCE}}",    reduceFunc.uniqueName},
 	});

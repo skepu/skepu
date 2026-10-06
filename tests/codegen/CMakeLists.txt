@@ -150,3 +150,32 @@ skepu_add_test_case_opencl(usertype_return)
 skepu_add_test_case_cpu(template_instances)
 skepu_add_test_case_openmp(template_instances)
 skepu_add_test_case_opencl(template_instances)
+
+# Instantiated with different types (user functions, kernels), non-type parameters, Scan and MapOverlap
+skepu_add_test_case_sequential(template_instances_types)
+skepu_add_test_case_cpu(template_instances_types)
+skepu_add_test_case_openmp(template_instances_types)
+skepu_add_test_case_opencl(template_instances_types)
+
+# The same with double precision (OpenCL devices do not all have it)
+skepu_add_test_case_sequential(template_instances_double)
+skepu_add_test_case_cpu(template_instances_double)
+skepu_add_test_case_openmp(template_instances_double)
+
+# ------------------------------------------------
+#   User types in namespaces (OpenCL type names)
+# ------------------------------------------------
+
+skepu_add_test_case_cpu(namespaced_types)
+skepu_add_test_case_openmp(namespaced_types)
+skepu_add_test_case_opencl(namespaced_types)
+skepu_add_test_case_cuda(namespaced_types)
+skepu_add_test_case_hybrid_opencl(namespaced_types)
+skepu_add_test_case_hybrid_cuda(namespaced_types)
+
+skepu_add_test_case_cpu(namespaced_types_same_name)
+skepu_add_test_case_openmp(namespaced_types_same_name)
+skepu_add_test_case_opencl(namespaced_types_same_name)
+skepu_add_test_case_cuda(namespaced_types_same_name)
+skepu_add_test_case_hybrid_opencl(namespaced_types_same_name)
+skepu_add_test_case_hybrid_cuda(namespaced_types_same_name)

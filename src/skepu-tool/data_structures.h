@@ -124,8 +124,13 @@ public:
 		const std::string paramName;
 		const std::string rawTypeName;
 		const std::string resolvedTypeName;
+		// For a non-type template argument: the type of the parameter; the (raw and resolved) name is its value
+		const std::string valueType;
 
-		TemplateArgument(std::string name, std::string rawType, std::string resolvedType);
+		TemplateArgument(std::string name, std::string rawType, std::string resolvedType, std::string valueType = "");
+
+		// Declaration that gives the parameter name its meaning in the code of the user function
+		std::string alias(bool constexprValue) const;
 	};
 
 	struct Param
@@ -236,7 +241,8 @@ public:
 	std::set<const clang::CallExpr*> ReferencedRets{};
 	std::set<clang::CXXMemberCallExpr*> ReferencedGets{};
 
-	std::vector<std::pair<const clang::TypeSourceInfo*, UserType*>> UTReferences{};
+	// the places in the body where a user type is named (by a name that needs a qualifier or an alias, see UserFunctionVisitor)
+	std::vector<std::pair<clang::SourceRange, UserType*>> UTReferences{};
 	std::set<UserType*> ReferencedUTs{};
 
 

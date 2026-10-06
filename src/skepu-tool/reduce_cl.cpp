@@ -123,7 +123,7 @@ std::string createReduce1DKernelProgram_CL(SkeletonInstance &instance, UserFunct
 	{
 		{"{{OPENCL_KERNEL}}",        sourceStream.str()},
 		{"{{KERNEL_CLASS}}",         "CLWrapperClass_" + kernelName},
-		{"{{REDUCE_RESULT_TYPE}}",   reduceFunc.resolvedReturnTypeName},
+		{"{{REDUCE_RESULT_TYPE}}",   reduceFunc.returnTypeNameOpenCL()},
 		{"{{KERNEL_NAME}}",          kernelName},
 		{"{{FUNCTION_NAME_REDUCE}}", reduceFunc.uniqueName}
 	});
@@ -243,13 +243,13 @@ std::string createReduce2DKernelProgram_CL(SkeletonInstance &instance, UserFunct
 
 	sourceStream << templateString(ReduceKernelTemplate_CL,
 	{
-		{"{{REDUCE_RESULT_TYPE}}",   rowWiseFunc.resolvedReturnTypeName},
+		{"{{REDUCE_RESULT_TYPE}}",   rowWiseFunc.returnTypeNameOpenCL()},
 		{"{{KERNEL_NAME}}",          kernelName + "_RowWise"},
 		{"{{FUNCTION_NAME_REDUCE}}", rowWiseFunc.uniqueName}
 	});
 	sourceStream << templateString(ReduceKernelTemplate_CL,
 	{
-		{"{{REDUCE_RESULT_TYPE}}",   colWiseFunc.resolvedReturnTypeName},
+		{"{{REDUCE_RESULT_TYPE}}",   colWiseFunc.returnTypeNameOpenCL()},
 		{"{{KERNEL_NAME}}",          kernelName + "_ColWise"},
 		{"{{FUNCTION_NAME_REDUCE}}", colWiseFunc.uniqueName}
 	});

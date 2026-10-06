@@ -1,3 +1,4 @@
+#include <regex>
 #include "code_gen_cl.h"
 #include "code_gen.h"
 
@@ -775,7 +776,7 @@ std::string handleOutputs_CL(UserFunction &func, std::stringstream &SSHostKernel
 {
 	if (func.multipleReturnTypes.size() == 0)
 	{
-		SSKernelParamList << " __global " << func.rawReturnTypeName << "* skepu_output, ";
+		SSKernelParamList << " __global " << func.returnTypeNameOpenCL() << "* skepu_output, ";
 		SSHostKernelParamList << " skepu::backend::DeviceMemPointer_CL<" << func.resolvedReturnTypeName << "> *skepu_output, ";
 		SSKernelArgs << " skepu_output->getDeviceDataPointer(), ";
 		return "";
@@ -805,7 +806,7 @@ std::string handleOutputs_reduceOnly_CL(UserFunction &func, std::stringstream &S
 {
 	if (func.multipleReturnTypes.size() == 0)
 	{
-		SSKernelParamList << " __global " << func.rawReturnTypeName << "* skepu_output, ";
+		SSKernelParamList << " __global " << func.returnTypeNameOpenCL() << "* skepu_output, ";
 		SSHostKernelParamList << " skepu::backend::DeviceMemPointer_CL<" << func.resolvedReturnTypeName << "> *skepu_output, ";
 		SSKernelArgs << " skepu_output->getDeviceDataPointer(), ";
 		return "";
@@ -834,13 +835,13 @@ std::string handleOutputs_reduceOnly_CL(UserFunction &func, std::stringstream &S
 
 std::string generateUserTypeCode_CL(UserType &type)
 {
+	// The type is defined under its escaped qualified name, also as the tag of the struct: two types with
+	// the same name in different namespaces must not collide. (The code of the user functions names the types
+	// by these names, see replaceReferencesToOtherUFs.)
 	std::string def = getSourceAsString(type.astDeclNode->getSourceRange());
-	std::string res = "typedef " + def + " " + type.typeNameOpenCL + ";";
-	
-	if (type.name != type.typeNameOpenCL)
-		res += "typedef struct " + type.name + " " + type.name + ";\n";
-	
-	return res;
+	const std::regex tag("\\b(struct|class)\\s+" + type.name + "\\b");
+	def = std::regex_replace(def, tag, "struct " + type.typeNameOpenCL, std::regex_constants::format_first_only);
+	return "typedef " + def + " " + type.typeNameOpenCL + ";\n";
 	
 	// TODO handle complex numbers
 }
@@ -931,7 +932,7 @@ std::string generateUserFunctionCode_CL(UserFunction &Func, std::set<UserFunctio
 		if (!first) { SSFuncParamList << ", "; }
 //	if (param.astDeclNode->getOriginalType()->isPointerType())
 //		SSFuncParamList << "__global ";
-		SSFuncParamList << param.rawTypeName << " " << param.name;
+		SSFuncParamList << param.typeNameOpenCL() << " " << param.name;
 		first = false;
 	}
 
@@ -950,7 +951,7 @@ std::string generateUserFunctionCode_CL(UserFunction &Func, std::set<UserFunctio
 		SSFuncSource << Func.returnTypeNameOpenCL();
 	SSFuncSource << " " << Func.uniqueName << "(" << SSFuncParamList.str() << ")\n{";
 	for (UserFunction::TemplateArgument &arg : Func.templateArguments)
-		SSFuncSource << "typedef " << arg.rawTypeName << " " << arg.paramName << ";\n";
+		SSFuncSource << (arg.valueType.empty() ? "typedef " + arg.rawTypeName + " " + arg.paramName + ";\n" : arg.alias(false));
 
 	SSFuncSource << transformedSource << "\n}\n\n";
     if (UserFunction::RegionParam *param = Func.regionParam)
@@ -993,7 +994,7 @@ std::string generateUserFunctionCode_CL(UserFunction &Func, std::set<UserFunctio
 
             SSGlobalFuncSource << " " << Func.uniqueName << "_global(" << param_list << ")\n{";
             for (UserFunction::TemplateArgument &arg : Func.templateArguments)
-                SSGlobalFuncSource << "typedef " << arg.rawTypeName << " " << arg.paramName << ";\n";
+                SSGlobalFuncSource << (arg.valueType.empty() ? "typedef " + arg.rawTypeName + " " + arg.paramName + ";\n" : arg.alias(false));
             
             original = "skepu_pool_access_" + dim + "d_" + transformToCXXIdentifier(param->resolvedTypeName);
             replacement = original + "_global";
