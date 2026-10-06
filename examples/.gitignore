@@ -1,6 +1,8 @@
 parallel
 sequential
-cluster
 run
 data
 Makefile.in
+trace
+snapshots
+snapshots_*.zip

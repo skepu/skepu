@@ -18,3 +18,9 @@ node_modules
 # cloned into this directory by hand; it is not a submodule.
 shedskin/
 visualizer/venv
+
+# Trace files (SkeVU input) written by programs
+skepu_trace*.json
+examples/CMakeCache.txt
+examples/cmake_install.cmake
+examples/CMakeFiles/

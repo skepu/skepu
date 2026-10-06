@@ -75,6 +75,12 @@ ExternalProject_Add(skepu-tool-llvm
 # has been installed, but we need to set it for the build as well.
 set(SKEPU_EXECUTABLE ${CMAKE_BINARY_DIR}/llvm/bin/skepu-tool)
 
+# The precompilation of a SkePU source is redone when the precompiler or any of the SkePU headers
+# changes (see skepu_precompile). Not set in an installation; the precompiler is then a program
+# that is not rebuilt by the project.
+file(GLOB_RECURSE SKEPU_HEADER_FILES CONFIGURE_DEPENDS
+	${CMAKE_CURRENT_LIST_DIR}/skepu-headers/src/*)
+
 add_executable(skepu-tool IMPORTED GLOBAL)
 add_dependencies(skepu-tool skepu-tool-llvm)
 add_executable(SkePU::skepu-tool IMPORTED GLOBAL)

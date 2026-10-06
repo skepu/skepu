@@ -211,7 +211,7 @@ macro(skepu_precompile)
 					${SKEPU_TOOL_SYSTEM_INCLUDE_FLAGS}
 					${_precompile_options}
 					"${_include_generators}"
-			DEPENDS ${_file_abs}
+			DEPENDS ${_file_abs} ${SKEPU_EXECUTABLE} ${SKEPU_HEADER_FILES}
 			BYPRODUCTS ${_output_dir}/${_target_byprod}
 			COMMAND_EXPAND_LISTS
 			)

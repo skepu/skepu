@@ -25,7 +25,7 @@ LLVM_BUILD_REL_PATH = /build/
 # Override in Makefile.in
 BACKENDS = -openmp -opencl -cuda
 
-# Default backend set for SkePU precompiler
+# Default debug level of the SkePU backends (-DSKEPU_DEBUG)
 # Override in Makefile.in
 SKEPU_DEBUG_LEVEL = 0
 
@@ -33,7 +33,7 @@ SKEPU_DEBUG_LEVEL = 0
 # Override in Makefile.in
 SKEPU_OPTIONS = -std=c++17 -O3 -g
 
-# Default values for SkePU backend compiler options
+# Default options for the SkePU precompiler
 # Override in Makefile.in
 PRECOMPILER_OPTIONS = #--no-preserve-lines #--verbose
 
@@ -45,7 +45,7 @@ BACKEND_FLAGS = -DSKEPU_TRACING #-DSKEPU_SIMULATE_MULTI_GPU # -DSKEPU_SET_DEFAUL
 # Override in Makefile.in
 OPENCL_FLAGS = -I /usr/local/cuda/include -L /usr/local/cuda/lib64/ -lOpenCL -Wno-deprecated-declarations
 
-# Default compilers 
+# Default compilers
 # Override in Makefile.in
 CXX = clang++
 SEQ_CXX = clang++
@@ -66,12 +66,6 @@ endif
 
 # Uncomment for launching SkePU precompiler in debugger
 # DBGR = lldb --
-
-CLUSTER_CXX      = mpic++
-CLUSTER_BACKENDS = -openmp
-CLUSTER_CXXFLAGS = -std=c++11 -fopenmp $$(pkg-config --cflags starpu-1.3 starpumpi-1.3) -I ./  -DSKEPU_DEBUG=3  -g -O3
-CLUSTER_LIBS     = $$(pkg-config --libs starpu-1.3 starpumpi-1.3)
-
 
 
 # ------------------------------------------------------------------- #
@@ -101,6 +95,13 @@ LLVM_BUILD_PATH = $(SKEPU_SRC_PATH)/$(LLVM_BUILD_REL_PATH)
 # Location of SkePU precompiler binary
 SKEPU_TOOL_PATH = $(LLVM_BUILD_PATH)/llvm/bin/skepu-tool
 
+# What every program depends on besides its own source: the SkePU headers, the precompiler binary and
+# the build configuration. Deliberately coarse (no per-program dependency tracking): a change to any
+# of them rebuilds all programs, which is always correct and, for the examples, cheap enough.
+SKEPU_HEADERS = $(shell find $(SKEPU_INCLUDE_PATH) -type f ! -name '.*')
+SEQ_DEPS      = $(SKEPU_HEADERS) $(MAKEFILE_LIST)
+PAR_DEPS      = $(SEQ_DEPS) $(SKEPU_TOOL_PATH)
+
 # Add SkePU-specific debug level to options set
 SKEPU_OPTIONS += -DSKEPU_DEBUG=$(SKEPU_DEBUG_LEVEL)
 
@@ -110,11 +111,11 @@ SKEPU_OPTIONS += -DSKEPU_DEBUG=$(SKEPU_DEBUG_LEVEL)
 
 PAR_DIR     = parallel
 SEQ_DIR     = sequential
-CLUSTER_DIR = cluster
 RUN_DIR     = run
 SNAPSHOT_DIR ?= snapshots
+TRACE_DIR    ?= trace
 
-# All SkePU example programs (used for 'make all-[parallel|sequential|cluster]' and 'make clean').
+# All SkePU example programs (used for 'make all-[parallel|sequential]' and 'make clean').
 
 PROGS=
 PROGS += cellular_automaton
@@ -122,7 +123,7 @@ PROGS += cma
 #PROGS += conjugate_gradient # Error related to repeated instantiations of different types in SkePU BLAS
 PROGS += coulombic
 PROGS += dotproduct
-#PROGS += edgedetect
+PROGS += edgedetect
 PROGS += heat_diffusion # no red-black update mode in CUDA
 PROGS += horner
 PROGS += image_manip
@@ -149,6 +150,7 @@ lookup.cma                 := $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.conjugate_gradient  := 256 $(RUN_BACKEND)
 lookup.coulombic           := $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.dotproduct          := $(SIZE_BACKEND) $(RUN_BACKEND)
+lookup.edgedetect          := edge data/goose.png run/result_edgedetect 2 $(RUN_BACKEND)
 lookup.heat_diffusion      := 2 64 10 $(RUN_BACKEND)
 lookup.horner              := 3 1 2 3 4 $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.image_manip         := $(RUN_BACKEND)
@@ -171,7 +173,6 @@ lookup.taylor              := 0.1 $(SIZE_BACKEND) $(RUN_BACKEND)
 
 TESTS          = $(addprefix $(SEQ_DIR)/,      $(PROGS))
 PTESTS         = $(addprefix $(PAR_DIR)/,      $(PROGS))
-CLUSTER_TESTS  = $(addprefix $(CLUSTER_DIR)/,  $(CLUSTER_PROGS))
 RUN_TESTS      = $(addprefix $(RUN_DIR)/,      $(PROGS))
 
 # ---------------------------------------------------------------------------- #
@@ -212,19 +213,19 @@ SEQ_FLAGS    = $(SKEPU_OPTIONS) -I $(SKEPU_INCLUDE_PATH) -Wno-attributes # -fno-
 
 
 # ---------------------------------------------------------------------------- #
-# Make recipies begin here.
+# Make recipes begin here.
 
-# Builds all test programs, sequential implementation, witout using the precompiler.
+# Builds all test programs, sequential implementation, without using the precompiler.
 all-sequential: $(TESTS)
 
 # Builds all test programs, parallel implementations, using the precompiler.
 all-parallel: $(PTESTS)
 
-all-cluster: $(CLUSTER_TESTS)
-
 all-run: $(RUN_TESTS)
 
-all: Makefile.in all-sequential all-parallel all-cluster
+all: Makefile.in all-sequential all-parallel
+
+.PHONY: all all-sequential all-parallel all-run pack-snapshots clean
 
 $(PAR_DIR):
 	@mkdir -p $(PAR_DIR)
@@ -232,51 +233,37 @@ $(PAR_DIR):
 $(SEQ_DIR):
 	@mkdir -p $(SEQ_DIR)
 
-$(CLUSTER_DIR):
-	@mkdir -p $(CLUSTER_DIR)
-
 $(RUN_DIR):
 	@mkdir -p $(RUN_DIR)
 
 $(SNAPSHOT_DIR):
-	@mkdir -p $(SNAPSHOT_DIR)	
+	@mkdir -p $(SNAPSHOT_DIR)
+
+# The trace files of the programs (SkeVU input); created when first needed.
+$(TRACE_DIR):
+	@mkdir -p $(TRACE_DIR)
 
 # Builds a single sequential test program.
-$(SEQ_DIR)/% : %.cpp $(SEQ_DIR)
+$(SEQ_DIR)/% : %.cpp $(SEQ_DEPS) | $(SEQ_DIR)
 	$(DBGR) $(SEQ_CXX) $(SEQ_FLAGS) lodepng.cpp $< -o $@
 
 # Precompiles and builds a single parallel test program.
-$(PAR_DIR)/%: %.cpp $(PAR_DIR)
+$(PAR_DIR)/%: %.cpp $(PAR_DEPS) | $(PAR_DIR) $(TRACE_DIR)
 	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name $*_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS) -DSKEPU_TRACE_FILE="trace_$*.json" -DSKEPU_TRACE_SNAPSHOT_DIR="$(SNAPSHOT_DIR)" -o $@
+	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS) -DSKEPU_TRACE_FILE="$(TRACE_DIR)/trace_$*.json" -DSKEPU_TRACE_SNAPSHOT_DIR="$(SNAPSHOT_DIR)" -o $@
 
-# Precompiles and builds a single parallel test program.
-$(PAR_DIR)/multifile: multifile_1.cpp multifile_2.cpp $(PAR_DIR)
+# Precompiles and builds the two-file test program.
+$(PAR_DIR)/multifile: multifile_1.cpp multifile_2.cpp $(PAR_DEPS) | $(PAR_DIR)
 	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name multifile_1_precompiled multifile_1.cpp  -dir $(PAR_DIR) $(SKEPU_FLAGS)
 	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name multifile_2_precompiled multifile_2.cpp  -dir $(PAR_DIR) $(SKEPU_FLAGS)
 	$(DBGR) $(CXX) -fopenmp $(PAR_DIR)/multifile_1_precompiled.$(FILETYPE) $(PAR_DIR)/multifile_2_precompiled.$(FILETYPE)  $(TARGET_FLAGS)  -o $@
 
-$(CLUSTER_DIR)/%.o: %.cpp $(CLUSTER_DIR)
-	@echo "Precompiling $<"
-	$(DBGR) $(SKEPU_TOOL_PATH) $(CLUSTER_BACKENDS) -dir=$(CLUSTER_DIR) -name $*_precompiled $< $(SKEPU_FLAGS)
-	@echo "Compiling $<"
-	$(CLUSTER_CXX) -o $@ $(CLUSTER_DIR)/$*_precompiled.cpp $(CLUSTER_CXXFLAGS) -c -I$(SKEPU_INCLUDE_PATH) -DSKEPU_STARPU_MPI
-	# NOTE: -O0 generates undefined referece to proxy_tags
-
-$(CLUSTER_DIR)/%: $(CLUSTER_DIR)/%.o
-	@echo "Linking $*"
-	@$(CLUSTER_CXX) -std=c++11 -fopenmp -o $@ $< $(CLUSTER_LIBS)
-
-lodeppng.o:
-	@$(CLUSTER_CXX) -std=c++11 -fopenmp -o $@ lodepng.cpp $(CLUSTER_LIBS)
-
 # Run an example program while collecting log file
-$(RUN_DIR)/% : $(PAR_DIR)/% $(RUN_DIR) $(SNAPSHOT_DIR)
-	$< ${lookup.$*} > $@.log 2>&1
+$(RUN_DIR)/% : $(PAR_DIR)/% | $(RUN_DIR) $(SNAPSHOT_DIR) $(TRACE_DIR)
+	$< $(lookup.$*) > $@.log 2>&1
 	$(MAKE) pack-snapshots ARCHIVE_TITLE=snapshots_$*
 
-
-ARCHIVE_TITLE ?= 
+ARCHIVE_TITLE ?= snapshots
 pack-snapshots:
 	@cd $(SNAPSHOT_DIR) && \
 		if ls *.txt 1>/dev/null 2>&1; then \
@@ -287,9 +274,11 @@ pack-snapshots:
 		  echo "No snapshot files in $(SNAPSHOT_DIR)."; \
 		fi
 
-# Deletes all temporary files (including all precompiled sources) and binaries.
+# Deletes all temporary files (including all precompiled sources), binaries and the
+# products of running them (logs, traces, snapshots); all of it can be regenerated.
 clean:
 	$(RM) -R $(SEQ_DIR)
 	$(RM) -R $(PAR_DIR)
-	$(RM) -R $(CLUSTER_DIR)
 	$(RM) -R $(RUN_DIR)
+	$(RM) -R $(TRACE_DIR) $(SNAPSHOT_DIR)
+	$(RM) snapshots_*.zip
