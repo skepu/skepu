@@ -7,6 +7,14 @@
 #include <skepu-lib/blas.hpp>
 
 
+// A := (R + R^T) / 2 + n * I: symmetric and strongly diagonally dominant, which makes it
+// positive definite (conjugate gradient needs that)
+template<typename T>
+T symmetrize(skepu::Index2D index, const skepu::Mat<T> R, T n)
+{
+	return (R(index.row, index.col) + R(index.col, index.row)) / 2 + (index.row == index.col ? n : 0);
+}
+
 /*
  * Solves A x = b for a symmetric positive definite matrix A with the conjugate gradient
  * method, using skepu::blas. x holds the initial guess and, afterwards, the solution.
@@ -74,23 +82,14 @@ int main(int argc, char *argv[])
 	const size_t N = n;
 
 	skepu::Vector<T> b(N, "b");
-	skepu::Matrix<T> A(N, N, "A");
+	skepu::Matrix<T> R(N, N, "R"), A(N, N, "A");
 	skepu::Vector<T> x(N, "x", 0);
 
 	b.randomize(0, 10); // PRNG
-	A.randomizeReal(); // PRNG
+	R.randomizeReal(); // PRNG
 
-	// Make A symmetric and strongly diagonally dominant, which makes it positive definite
-	// (conjugate gradient needs that): A := (R + R^T) / 2 + N * I
-	skepu::external(skepu::read(A), [&]
-	{
-		for (size_t i = 0; i < N; ++i)
-		{
-			for (size_t j = i + 1; j < N; ++j)
-				A(i, j) = A(j, i) = (A(i, j) + A(j, i)) / 2;
-			A(i, i) += N;
-		}
-	}, skepu::write(A));
+	auto make_spd = skepu::Map<0>(symmetrize<T>);
+	make_spd(A, R, static_cast<T>(N));
 
 	size_t iterations = conjugate_gradient(A, b, x, 1e-4f);
 

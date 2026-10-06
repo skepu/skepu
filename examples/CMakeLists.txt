@@ -4,7 +4,7 @@ project(skepu-examples LANGUAGES CXX)
 set(_skepu_examples
 	cellular_automaton
 	cma
-	#conjugate_gradient # Error related to repeated instantiations of different types in SkePU BLAS
+	conjugate_gradient
 	coulombic
 	dotproduct
 	edgedetect
