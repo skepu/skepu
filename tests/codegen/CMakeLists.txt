@@ -162,6 +162,47 @@ skepu_add_test_case_sequential(template_instances_double)
 skepu_add_test_case_cpu(template_instances_double)
 skepu_add_test_case_openmp(template_instances_double)
 
+# Regions of several threads that overlap in time: events belong to the region of their own thread.
+skepu_add_executable(tracing_regions_threads_test SKEPUSRC tracing_regions_threads.cpp)
+target_compile_definitions(tracing_regions_threads_test PRIVATE SKEPU_TRACING)
+target_link_libraries(tracing_regions_threads_test PRIVATE Threads::Threads)
+add_test(NAME tracing_regions_threads COMMAND tracing_regions_threads_test)
+set_tests_properties(tracing_regions_threads PROPERTIES
+	ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_regions_threads.json"
+	FIXTURES_SETUP tracing_regions_threads_run)
+add_test(NAME tracing_regions_threads_trace COMMAND ${CMAKE_COMMAND}
+	-DTRACE=${CMAKE_CURRENT_BINARY_DIR}/tracing_regions_threads.json -DREGIONS=4 -DEVENTS=200
+	-P ${CMAKE_CURRENT_LIST_DIR}/check_trace_regions.cmake)
+set_tests_properties(tracing_regions_threads_trace PROPERTIES FIXTURES_REQUIRED tracing_regions_threads_run)
+
+# The trace file name of a module (SKEPU_TRACE_MODULE), %m in SKEPU_TRACE_FILE, and flushing the trace.
+foreach(_variant default_module env_module env_main)
+	skepu_add_executable(tracing_file_names_${_variant}_test SKEPUSRC tracing_file_names.cpp)
+	target_compile_definitions(tracing_file_names_${_variant}_test PRIVATE SKEPU_TRACING)
+	if(NOT _variant STREQUAL env_main)
+		target_compile_definitions(tracing_file_names_${_variant}_test PRIVATE SKEPU_TRACE_MODULE=mymod)
+	endif()
+	add_test(NAME tracing_file_names_${_variant} COMMAND tracing_file_names_${_variant}_test
+		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+	if(_variant STREQUAL default_module)
+		set(_expected skepu_trace_mymod.json)
+		set_tests_properties(tracing_file_names_${_variant} PROPERTIES ENVIRONMENT_MODIFICATION "SKEPU_TRACE_FILE=unset:")
+	elseif(_variant STREQUAL env_module)
+		set(_expected tracing_names_mymod.json)
+		set_tests_properties(tracing_file_names_${_variant} PROPERTIES
+			ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_names_%m.json")
+	else()
+		set(_expected tracing_names_main.json)
+		set_tests_properties(tracing_file_names_${_variant} PROPERTIES
+			ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_names_%m.json")
+	endif()
+	set_tests_properties(tracing_file_names_${_variant} PROPERTIES FIXTURES_SETUP tracing_file_names_${_variant}_run)
+	add_test(NAME tracing_file_names_${_variant}_trace COMMAND ${CMAKE_COMMAND}
+		-DTRACE=${CMAKE_CURRENT_BINARY_DIR}/${_expected} -DTYPE=allocation -DCALLS=2 -DEXACT=ON
+		-P ${CMAKE_CURRENT_LIST_DIR}/check_trace.cmake)
+	set_tests_properties(tracing_file_names_${_variant}_trace PROPERTIES FIXTURES_REQUIRED tracing_file_names_${_variant}_run)
+endforeach()
+
 # ------------------------------------------------
 #   User types in namespaces (OpenCL type names)
 # ------------------------------------------------

@@ -6,6 +6,8 @@
 #include <iostream>
 #include <stack>
 #include <mutex>
+#include <thread>
+#include <map>
 #include <atomic>
 
 #ifndef SKEPU_PRECOMPILED
@@ -97,6 +99,7 @@ namespace skepu
 #define SKEPU_TRACE_SCALAR_IO(...) skepu::tracing::tracer().scalar_io(__VA_ARGS__)
 #define SKEPU_TRACE_SNAPSHOT(...) skepu::tracing::tracer().data_snapshot(__VA_ARGS__)
 #define SKEPU_TRACE_VIRTUAL_DATASET(...) skepu::tracing::tracer().virtual_dataset(__VA_ARGS__)
+#define SKEPU_TRACE_FLUSH() skepu::tracing::tracer().flush()
 #else
 #define SKEPU_TRACE_START_EVENT(handle_symbol)
 #define SKEPU_TRACE_CALL(...)
@@ -112,6 +115,7 @@ namespace skepu
 #define SKEPU_TRACE_SCALAR_IO(...)
 #define SKEPU_TRACE_SNAPSHOT(...)
 #define SKEPU_TRACE_VIRTUAL_DATASET(...)
+#define SKEPU_TRACE_FLUSH()
 #endif
 
 		struct EventHandle
@@ -198,6 +202,11 @@ namespace skepu
 			    std::string const& file, int line
 			);
 
+			// Writes the events recorded so far to the trace file (the trace is also written when the
+			// tracer is destroyed, at the end of the program; call this to have it earlier, for
+			// example from a program that does not end normally or is an extension module of another)
+			void flush();
+
 			void beginRegion(std::string const& label SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM);
 			// (with an explicit place, for programs that are not C++: SkePY says where in its source)
 			void beginRegion(std::string const& label, std::string const& file, int line);
@@ -211,8 +220,14 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			std::mutex m_mutex; // guards m_captures
 			nlohmann::json m_trace_json;
-			std::stack<std::string> m_region_stack;
-			std::vector<std::function<void()>> m_captures;
+			// The events are recorded as closures that run in the order they were recorded when the
+			// trace is written (see the destructor). Regions nest per thread: a closure sees the region
+			// stack of the thread that recorded it.
+			struct Capture { std::thread::id thread; std::function<void()> work; };
+			std::vector<Capture> m_captures;
+			std::map<std::thread::id, std::stack<std::string>> m_region_stacks;
+			std::thread::id m_replaying_thread;
+			std::stack<std::string> &m_regions() { return this->m_region_stacks[this->m_replaying_thread]; }
 #endif
 			std::string m_file_name;
 		};

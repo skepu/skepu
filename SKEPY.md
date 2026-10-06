@@ -118,11 +118,15 @@ SKEPU_TRACE_FILE=trace.json build/cellular_automaton 2 12 4 0.4 openmp
 
 * every skeleton call, `with skepu.external(...)` block and the calls below tell the trace
   where they are in the Python source (file and line), so SkeVU can show the source: load
-  the trace and the `.py` file (Files > Load Trace; Python sources are shown without
-  highlighting, as no Python grammar is bundled);
+  the trace and the `.py` file (Files > Load Trace);
 * skeletons are named after the variable they are called through (`update(...)`: "update";
   one that is not called through a variable is "Map(function)") and containers after the
-  variable they are assigned to (`domain_a = skepu.Vector(...)`: "domain_a");
+  variable they are assigned to (`domain_a = skepu.Vector(...)`: "domain_a"), the elements of
+  a tuple assignment after their variables, the elements of a list "pair[0]", a returned
+  container after the function ("make()"), and any other one after its line
+  ("Vector (line 15)"); `skepu.external(..., label="Read input")` names an external block;
+* a call of a BLAS routine (`blas.axpy(...)`) is a region "blas.axpy" at the call in the
+  Python source, with the skeletons that the routine runs inside it;
 * the program can add to the trace, as in the C++ API (`SKEPU_TRACE_*`); all of these do nothing
   in a build without `--trace`:
 
@@ -134,15 +138,30 @@ SKEPU_TRACE_FILE=trace.json build/cellular_automaton 2 12 4 0.4 openmp
 | `with skepu.external(read=..., write=...): ...` | `SKEPU_TRACE_EXTERNAL`: made automatically, with the containers read and written |
 | `print(container)` | `skepu::io::cout << container`: an "I/O" external event that reads the container, at the line of the `print` (made automatically; `print` with `sep=`/`end=` is not traced) |
 
-Containers also get a deallocation event, but not when Python would free them: the garbage
-collector runs no destructors, so SkePY runs the containers' destructors from finalizers, when
-the collector finds a container unused, and at exit for what is unused then (containers that
-module variables still refer to get none). `visualizer/examples/cellular_automaton_skepy/` is an
-example (`examples/skepu/cellular_automaton.py`, which has the same trace calls as the C++
-example). The calls that `skepu.blas` makes are attributed to `blas.hpp`. Tests:
-`tests/skepu/test_trace.py` (calls marked in the source must be in the trace, with their lines)
-and `test_trace_events.py` (names, regions, snapshots, external blocks, virtual data sets,
-deallocations).
+Containers also get a deallocation event. A local variable that is assigned a new container
+once, at the top level of a function, and is used only in ways that cannot let the container
+outlive the function (indexing, a few methods, an argument of a skeleton or BLAS call, `print`,
+`len`) is freed when the function ends, as Python does, and the event is made then. Other
+containers (returned, referred to by another variable, in a list, assigned in a loop or branch,
+module variables) are freed by the garbage collector, which runs no destructors itself, so SkePY
+runs the containers' destructors from finalizers: when the collector finds a container unused,
+and at exit for what is unused then (containers that module variables still refer to get none).
+The finalizers are registered in every build, not only with `--trace`: without them the memory
+of the containers would never be freed. The collector cannot see the containers' data (SkePU
+allocates it), so the host memory taken since the last collection is counted and a collection is
+made after 256 MiB.
+
+An extension module built with `--trace` has a tracer of its own: its trace is written to
+`skepu_trace_<module>.json`, or to `SKEPU_TRACE_FILE` with `%m` replaced by the name of the module
+(a program with several modules should use it), and `skepu.trace_flush()` writes the trace so far.
+
+`visualizer/examples/cellular_automaton_skepy/` is an example (`examples/skepu/cellular_automaton.py`,
+which has the same trace calls as the C++ example). Tests: `tests/skepu/test_trace.py` (calls marked
+in the source must be in the trace, with their lines), `test_trace_events.py` (names, regions,
+snapshots, external blocks, virtual data sets, deallocations), `test_trace_names.py` (the other
+names, external labels, BLAS regions), `test_release.py` (which containers are freed when),
+`test_gc_pressure.py` (containers in a loop are freed during the loop) and `test_ext_trace.py` (a
+traced extension module).
 
 ## Status
 
@@ -266,6 +285,15 @@ All programs pass on all four backends (180 runs, OpenCL on an Apple GPU).
 * `skepu-headers/src/skepu3/impl/tracing.hpp`: the tracer takes events from several threads
   (it had no lock: concurrent `push_back`s crashed it; test: `tests/codegen/tracing_threads.cpp`),
   and no longer prints "Tracer destructor ..." to stdout when the program exits.
+* `skepu-headers/src/skepu3/impl/tracing.h`, `tracing.hpp`: regions nest per thread (the events
+  are replayed in recording order and the region stack was one for the program, so regions of
+  threads that overlap in time nested into each other; test: `tests/codegen/tracing_regions_threads.cpp`);
+  `Tracer::flush()` / `SKEPU_TRACE_FLUSH()` write the trace so far; a module built with
+  `SKEPU_TRACE_MODULE=name` writes `skepu_trace_<name>.json` by default, and `%m` in
+  `SKEPU_TRACE_FILE` is the name of the module (test: `tests/codegen/tracing_file_names.cpp`).
+* `visualizer/tests/`: the unit tests imported `backend-js/` (now `script/backend/`) and read
+  fixtures that had never been committed; the paths are fixed, the four fixtures are recreated, and
+  `GraphSettings` has a default `mode` (without one `toCytoscape()` emitted no edges).
 * `skepu-headers/src/skepu3/impl/tracing.h`, `tracing.hpp`: `beginRegion`, `data_snapshot` and
   `virtual_dataset` can take the file and line as arguments (for programs that are not C++:
   SkePY gives the place in the Python source); the snapshot code no longer prints to stdout.

@@ -81,31 +81,21 @@ recording mode feeding SkePU's fusion support) is speculative follow-on work.
 ## SkePY and SkeVU
 
 **Status.** `shedskin build --trace` gives traces for SkeVU with Python file and line, the names of skeletons and
-containers, scopes, snapshots, virtual data sets, external blocks and deallocations (see `SKEPY.md`, "Traces for
-SkeVU"). Still open:
+containers, scopes, snapshots, virtual data sets, external blocks, BLAS regions and deallocations (see `SKEPY.md`,
+"Traces for SkeVU"). Still open:
 
-- **More names.** Containers are named after the variable of an assignment; containers made in other ways (returned
-  from functions, in lists) and tensors are not named. `skepu.external` has the label "[external]" (a `label=`
-  argument needs a numbered default in `skepu.hpp` like the other optional arguments).
-- **Library calls.** The skeletons that `skepu.blas` runs are attributed to `blas.hpp`; attributing them to the
-  Python call (or a region named after the BLAS function) would help.
-- **Deallocation timing.** The events come from finalizers (when the garbage collector finds a container unused, and
-  at exit), not from the end of the Python lifetime; `del` is not supported by Shed Skin. Escape analysis could give
-  exact events for local containers that do not escape.
-- **Memory.** The finalizers are only registered with `--trace`. Without them the container destructors never run,
-  so the host memory (and device buffers) of every container that SkePY creates is never freed, and the collector
-  does not see that memory (it has no idea how much each container holds), so collections are rare: a long running
-  program or extension module that creates containers in a loop leaks. Consider registering the finalizers in every
-  build and telling the collector the size (`GC_malloc` accounting, or an explicit `GC_gcollect` heuristic).
-- **Extension modules.** Each module has its own tracer and writes the file when the interpreter exits, so two
-  modules overwrite each other; needs a flush call and per-module file names.
-- **Regions are global.** The tracer's region stack is shared by all threads; events from several threads are safe
-  (locked) but their regions interleave.
+- **Deallocation timing.** Only a local container that is assigned once at the top of a function and does not escape
+  is freed (and its event made) when the function ends. Containers made in loops or branches, returned ones and
+  module variables are freed when the collector finds them unused (`del` is not supported by Shed Skin). A loop
+  body could free its containers at the end of each iteration with the same analysis.
+- **Names.** Containers that are created in other places than an assignment, a list, a tuple or a return are named
+  by their line; `print` with `sep=` or `end=` is not traced; the label of a skeleton that is not called through a
+  variable is "Map(function)".
+- **Modules.** The modules of a program that has several traced extension modules write one file each; SkeVU loads one
+  trace, so they cannot be shown together.
 
 ## SkeVU tests
 
-The JavaScript tests in `visualizer/tests/` are stale: `tests/helpers.js` and the older unit tests import
-`../backend-js/...`, which is now `script/backend/`, so they fail at import. `vitest` also does not start on the
-development machine (the native `rollup` module for this platform is missing from `node_modules`; `npm install`
-fixes that). `tests/unit/test_virtual_snapshots.js` uses the current paths, but has only been run with a small
-stand-in for vitest.
+The JavaScript tests in `visualizer/tests/` pass (172 tests) but `vitest` does not start on the development machine:
+the `rollup` module in `node_modules` is the one for x64, not arm64 (`npm install` fixes that; it needs the network).
+They were run with a small stand-in for `vitest`.

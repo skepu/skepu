@@ -138,17 +138,44 @@ namespace skepu
 
 		inline Tracer::Tracer(std::string filename): m_file_name{filename}
 		{
-		    if (this->m_file_name == defaultTraceFilename && std::getenv("SKEPU_TRACE_FILE"))
+			const bool defaultName = (this->m_file_name == defaultTraceFilename);
+		    if (defaultName && std::getenv("SKEPU_TRACE_FILE"))
 			{
 				this->m_file_name = std::getenv("SKEPU_TRACE_FILE");
 			}
+
+			// Each module of a program that has several (SkePY extension modules, which are built with
+			// SKEPU_TRACE_MODULE=name) has a tracer of its own: they write to files of their own, or
+			// to the file given by SKEPU_TRACE_FILE with %m replaced by the name of the module
+#ifdef SKEPU_TRACE_MODULE
+			const std::string module = SKEPU_STRINGIFY_NESTED(SKEPU_TRACE_MODULE);
+			if (defaultName && !std::getenv("SKEPU_TRACE_FILE"))
+				this->m_file_name = "skepu_trace_" + module + ".json";
+#else
+			const std::string module = "main";
+#endif
+			for (size_t at = this->m_file_name.find("%m"); at != std::string::npos; at = this->m_file_name.find("%m", at + module.size()))
+				this->m_file_name.replace(at, 2, module);
         }
 
 		inline Tracer::~Tracer()
 		{
+			this->flush();
+		}
+
+		inline void Tracer::flush()
+		{
 #ifdef SKEPU_TRACING
-			for (auto& capture : this->m_captures)
-				capture();
+			std::vector<Capture> captures;
+			{
+				std::lock_guard<std::mutex> lock(this->m_mutex);
+				captures.swap(this->m_captures);
+			}
+			for (auto& capture : captures)
+			{
+				this->m_replaying_thread = capture.thread;
+				capture.work();
+			}
 
 			std::ofstream ofs;
 			ofs.open(this->m_file_name, std::ofstream::out | std::ofstream::trunc);
@@ -172,8 +199,8 @@ namespace skepu
 			entry[Schema::Keys::LABEL] = label;
 			entry[Schema::Keys::TIME]  = now;
 			entry[Schema::Keys::LINE]  = line;
-			if (!this->m_region_stack.empty())
-				entry[Schema::Keys::REGION] = this->m_region_stack.top();
+			if (!this->m_regions().empty())
+				entry[Schema::Keys::REGION] = this->m_regions().top();
 
 			this->m_trace_json.push_back(entry);
 			}; this->push_capture(std::move(capture));
@@ -192,8 +219,8 @@ namespace skepu
 			entry[Schema::Keys::LABEL] = label;
 			entry[Schema::Keys::TIME]  = now;
 			entry[Schema::Keys::LINE]  = line;
-			if (!this->m_region_stack.empty())
-				entry[Schema::Keys::REGION] = this->m_region_stack.top();
+			if (!this->m_regions().empty())
+				entry[Schema::Keys::REGION] = this->m_regions().top();
 
 			this->m_trace_json.push_back(entry);
 			}; this->push_capture(std::move(capture));
@@ -214,8 +241,8 @@ namespace skepu
 			entry[Schema::Keys::LABEL] = label;
 			entry[Schema::Keys::TIME]  = now;
 			entry[Schema::Keys::LINE]  = line;
-			if (!this->m_region_stack.empty())
-				entry[Schema::Keys::REGION] = this->m_region_stack.top();
+			if (!this->m_regions().empty())
+				entry[Schema::Keys::REGION] = this->m_regions().top();
 
 			this->m_trace_json.push_back(entry);
 			}; this->push_capture(std::move(capture));
@@ -246,8 +273,8 @@ namespace skepu
 			entry[Schema::Keys::END]     = now;
 			entry[Schema::Keys::TIME]  = now;
 			entry[Schema::Keys::LINE]  = line;
-			if (!this->m_region_stack.empty())
-				entry[Schema::Keys::REGION] = this->m_region_stack.top();
+			if (!this->m_regions().empty())
+				entry[Schema::Keys::REGION] = this->m_regions().top();
 
 			this->m_trace_json.push_back(entry);
 			}; this->push_capture(std::move(capture));
@@ -259,7 +286,7 @@ namespace skepu
 		{
 #ifdef SKEPU_TRACING
 			std::lock_guard<std::mutex> lock(this->m_mutex);
-			this->m_captures.push_back(std::move(capture));
+			this->m_captures.push_back(Capture{std::this_thread::get_id(), std::move(capture)});
 #endif
 		}
 
@@ -304,8 +331,8 @@ namespace skepu
 			entry[Schema::Keys::OUTPUTS]       = elwise_outputs;
 			if (prng != UniqueIdentifier::null())
 				entry[Schema::Keys::PRNG]      		 = prng;
-			if (!this->m_region_stack.empty())
-				entry[Schema::Keys::REGION] = this->m_region_stack.top();
+			if (!this->m_regions().empty())
+				entry[Schema::Keys::REGION] = this->m_regions().top();
 			if (backend)
 			{
 				std::stringstream ss;
@@ -360,8 +387,8 @@ namespace skepu
 			entry[Schema::Keys::OUTPUTS]       = outputs;
 			entry[Schema::Keys::FILE]          = file;
 			entry[Schema::Keys::LINE]          = line;
-			if (!this->m_region_stack.empty())
-				entry[Schema::Keys::REGION] = this->m_region_stack.top();
+			if (!this->m_regions().empty())
+				entry[Schema::Keys::REGION] = this->m_regions().top();
 
 			this->m_trace_json.push_back(entry);
 			}; this->push_capture(std::move(capture));
@@ -385,8 +412,8 @@ namespace skepu
 			entry[Schema::Keys::OUTPUTS]       = std::vector<TraceID>{};
 			entry[Schema::Keys::FILE]          = "";
 			entry[Schema::Keys::LINE]          = line;
-			if (!this->m_region_stack.empty())
-				entry[Schema::Keys::REGION] = this->m_region_stack.top();
+			if (!this->m_regions().empty())
+				entry[Schema::Keys::REGION] = this->m_regions().top();
 
 			this->m_trace_json.push_back(entry);
 			}; this->push_capture(std::move(capture));
@@ -468,8 +495,8 @@ namespace skepu
 			entry[Schema::Keys::DATA_FILE] = fname;
 			entry[Schema::Keys::FILE]      = file;
 			entry[Schema::Keys::LINE]      = line;
-			if (!this->m_region_stack.empty())
-				entry[Schema::Keys::REGION] = this->m_region_stack.top();
+			if (!this->m_regions().empty())
+				entry[Schema::Keys::REGION] = this->m_regions().top();
       
 			this->m_trace_json.push_back(entry);
 			}; this->push_capture(std::move(capture));
@@ -511,8 +538,8 @@ namespace skepu
             entry[Schema::Keys::END]        = time;
             entry[Schema::Keys::FILE]       = file;
             entry[Schema::Keys::LINE]       = line;
-            if (!this->m_region_stack.empty())
-            entry[Schema::Keys::REGION] = this->m_region_stack.top();
+            if (!this->m_regions().empty())
+            entry[Schema::Keys::REGION] = this->m_regions().top();
                 
             this->m_trace_json.push_back(entry);
             }; this->push_capture(std::move(capture));
@@ -536,12 +563,12 @@ namespace skepu
 			entry[Schema::Keys::TIME]  = now;
 			entry[Schema::Keys::FILE]  = file;
 			entry[Schema::Keys::LINE]  = line;
-			entry[Schema::Keys::DEPTH] = this->m_region_stack.size() + 1;
-			if (!this->m_region_stack.empty())
-				entry[Schema::Keys::REGION] = this->m_region_stack.top();
+			entry[Schema::Keys::DEPTH] = this->m_regions().size() + 1;
+			if (!this->m_regions().empty())
+				entry[Schema::Keys::REGION] = this->m_regions().top();
 
 			this->m_trace_json.push_back(entry);
-			this->m_region_stack.push(label);
+			this->m_regions().push(label);
 			}; this->push_capture(std::move(capture));
 #endif
 		}
@@ -550,7 +577,7 @@ namespace skepu
 		{
 #ifdef SKEPU_TRACING
 			auto capture = [=, this]{
-			this->m_region_stack.pop();
+			this->m_regions().pop();
 			}; this->push_capture(std::move(capture));
 #endif
 		}
