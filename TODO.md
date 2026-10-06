@@ -93,9 +93,3 @@ containers, scopes, snapshots, virtual data sets, external blocks, BLAS regions 
   variable is "Map(function)".
 - **Modules.** The modules of a program that has several traced extension modules write one file each; SkeVU loads one
   trace, so they cannot be shown together.
-
-## SkeVU tests
-
-The JavaScript tests in `visualizer/tests/` pass (172 tests) but `vitest` does not start on the development machine:
-the `rollup` module in `node_modules` is the one for x64, not arm64 (`npm install` fixes that; it needs the network).
-They were run with a small stand-in for `vitest`.

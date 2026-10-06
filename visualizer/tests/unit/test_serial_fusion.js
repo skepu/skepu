@@ -1,7 +1,7 @@
 // test_serial_fusion.js — Port of tests/unit/test_serial_fusion.py
 import { describe, it, expect } from 'vitest';
 
-import { CallNode, UpdateNode, FusedNode, ScalarNode } from '../../backend-js/node.js';
+import { CallNode, UpdateNode, FusedNode, ScalarNode } from '../../script/backend/node.js';
 import { mapChainGraph, fanoutGraph, mapReduceGraph } from '../helpers.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

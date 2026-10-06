@@ -4,14 +4,14 @@ import { describe, it, expect } from 'vitest';
 import {
     AllocationNode, CallNode, DeallocationNode, ExternalNode,
     FusedNode, RegionNode, ScalarNode, TransferNode, UpdateNode,
-} from '../../backend-js/node.js';
+} from '../../script/backend/node.js';
 import {
     AntiDepEdge, ElwiseEdge, ProxyEdge, PrngEdge, ScalarEdge, VirtualAliasEdge,
-} from '../../backend-js/edge.js';
+} from '../../script/backend/edge.js';
 import {
     simpleGraph, externalGraph, transferGraph, regionGraph,
     antidepGraph, prngGraph, virtualAliasGraph, fusedChainGraph,
-    mapReduceGraph,
+    mapReduceGraph, allEdges, testSettings,
 } from '../helpers.js';
 
 // ── Expected key sets ─────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ function first(graph, Type) {
 }
 
 function firstEdge(graph, Type) {
-    return graph._edges.find(e => e instanceof Type);
+    return allEdges(graph).find(e => e instanceof Type);
 }
 
 function assertKeys(data, required) {

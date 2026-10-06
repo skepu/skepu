@@ -1,13 +1,13 @@
 // test_construction.js — Port of tests/unit/test_construction.py
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { DirectedGraph, GraphSettings } from '../../backend-js/graph.js';
+import { DirectedGraph, GraphSettings } from '../../script/backend/graph.js';
 import {
-    AllocationNode, CallNode, DeallocationNode, UpdateNode,
-} from '../../backend-js/node.js';
-import { ElwiseEdge } from '../../backend-js/edge.js';
+    AllocationNode, CallNode, DeallocationNode, RegionNode, UpdateNode,
+} from '../../script/backend/node.js';
+import { ElwiseEdge } from '../../script/backend/edge.js';
 import {
-    loadFixture, graphFromFile, simpleGraph, collectExampleTraces,
+    loadFixture, graphFromFile, simpleGraph, collectExampleTraces, allEdges, testSettings,
 } from '../helpers.js';
 
 // ── simple fixture ────────────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ describe('TestSimpleConstruction', () => {
 
     it('edges are wired bidirectionally', () => {
         const g = simpleGraph();
-        for (const edge of g._edges) {
+        for (const edge of allEdges(g)) {
             expect(edge.source.getOutgoingEdges()).toContain(edge);
             expect(edge.target.getIncomingEdges()).toContain(edge);
         }
@@ -89,39 +89,57 @@ describe('TestSimpleConstruction', () => {
     });
 });
 
+// ── Root region ──────────────────────────────────────────
+
+describe('TestRootRegion', () => {
+    it('default settings synthesize one [global] region around the events', () => {
+        const g = DirectedGraph.fromEvents(loadFixture('simple.json'));
+        const regions = g.getAllNodes().filter(n => n instanceof RegionNode);
+        expect(regions.length).toBe(1);
+        expect(regions[0].label).toBe('[global]');
+        expect(g.getAllNodes().length).toBe(7);
+    });
+
+    it('default settings give edges in the Cytoscape output', () => {
+        const g = DirectedGraph.fromEvents(loadFixture('simple.json'));
+        const [, edges] = g.toCytoscape(null, true);
+        expect(edges.length).toBeGreaterThan(0);
+    });
+});
+
 // ── Settings flags ────────────────────────────────────────────────────────────
 
 describe('TestSettingsFlags', () => {
     const simpleEvents = () => loadFixture('simple.json');
 
     it('updates=false removes UpdateNodes', () => {
-        const s = new GraphSettings(); s.updates = false;
+        const s = testSettings(); s.updates = false;
         const g = DirectedGraph.fromEvents(simpleEvents(), s);
         expect(g.getAllNodes().filter(n => n instanceof UpdateNode).length).toBe(0);
     });
 
     it('updates=false produces fewer nodes', () => {
-        const s = new GraphSettings(); s.updates = false;
+        const s = testSettings(); s.updates = false;
         const g = DirectedGraph.fromEvents(simpleEvents(), s);
         expect(g.getAllNodes().length).toBe(5);
     });
 
     it('allocations=false removes AllocationNodes', () => {
-        const s = new GraphSettings(); s.allocations = false;
+        const s = testSettings(); s.allocations = false;
         const g = DirectedGraph.fromEvents(simpleEvents(), s);
         expect(g.getAllNodes().filter(n => n instanceof AllocationNode).length).toBe(0);
     });
 
     it('deallocations=false removes DeallocationNodes', () => {
-        const s = new GraphSettings(); s.deallocations = false;
+        const s = testSettings(); s.deallocations = false;
         const g = DirectedGraph.fromEvents(simpleEvents(), s);
         expect(g.getAllNodes().filter(n => n instanceof DeallocationNode).length).toBe(0);
     });
 
     it('edges still bidirectional with updates=false', () => {
-        const s = new GraphSettings(); s.updates = false;
+        const s = testSettings(); s.updates = false;
         const g = DirectedGraph.fromEvents(simpleEvents(), s);
-        for (const edge of g._edges) {
+        for (const edge of allEdges(g)) {
             expect(edge.source.getOutgoingEdges()).toContain(edge);
             expect(edge.target.getIncomingEdges()).toContain(edge);
         }
@@ -153,7 +171,7 @@ describe('TestAnalysisPipeline', () => {
         const g = simpleGraph();
         g.computeDepths();
         g.findCriticalPath();
-        const critical = g._edges.filter(e => e.isCriticalPath);
+        const critical = allEdges(g).filter(e => e.isCriticalPath);
         expect(critical.length).toBeGreaterThanOrEqual(1);
     });
 
@@ -205,7 +223,7 @@ describe('TestExampleTraces', () => {
 
     it.each(examplePaths)('%s edges wired bidirectionally', (path) => {
         const g = graphFromFile(path);
-        for (const edge of g._edges) {
+        for (const edge of allEdges(g)) {
             expect(edge.source.getOutgoingEdges()).toContain(edge);
             expect(edge.target.getIncomingEdges()).toContain(edge);
         }

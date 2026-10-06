@@ -37,6 +37,7 @@ export class GraphSettings {
         this.regions       = true;
         this.scalars       = true;
         this.synthesizeRootRegion = true;
+        this.mode          = 'dependence-dag';   // or 'program-tree'; without one toCytoscape() emits no edges
     }
 }
 

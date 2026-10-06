@@ -1,0 +1,96 @@
+[
+ {
+  "type": "allocation",
+  "label": "A",
+  "object_id": 1001,
+  "time": 0,
+  "line": 1
+ },
+ {
+  "type": "allocation",
+  "label": "B",
+  "object_id": 1002,
+  "time": 1,
+  "line": 2
+ },
+ {
+  "type": "allocation",
+  "label": "C",
+  "object_id": 1003,
+  "time": 2,
+  "line": 3
+ },
+ {
+  "type": "allocation",
+  "label": "D",
+  "object_id": 1004,
+  "time": 3,
+  "line": 4
+ },
+ {
+  "type": "skeleton_call",
+  "label": "map1",
+  "pattern": "Map",
+  "elements": [
+   1024
+  ],
+  "elwise_inputs": [
+   1001
+  ],
+  "proxy_inputs": [],
+  "scalar_inputs": [],
+  "outputs": [
+   1002
+  ],
+  "backend": "OpenMP",
+  "threads": 4,
+  "start": 100,
+  "end": 200,
+  "file": "example.cpp",
+  "line": 10
+ },
+ {
+  "type": "skeleton_call",
+  "label": "map2",
+  "pattern": "Map",
+  "elements": [
+   1024
+  ],
+  "elwise_inputs": [
+   1002
+  ],
+  "proxy_inputs": [],
+  "scalar_inputs": [],
+  "outputs": [
+   1003
+  ],
+  "backend": "OpenMP",
+  "threads": 4,
+  "start": 200,
+  "end": 300,
+  "file": "example.cpp",
+  "line": 11
+ },
+ {
+  "type": "skeleton_call",
+  "label": "map3",
+  "pattern": "Map",
+  "elements": [
+   1024
+  ],
+  "elwise_inputs": [
+   1003
+  ],
+  "proxy_inputs": [],
+  "scalar_inputs": [],
+  "outputs": [
+   1004
+  ],
+  "backend": "OpenMP",
+  "threads": 4,
+  "start": 300,
+  "end": 400,
+  "file": "example.cpp",
+  "line": 12
+ }
+]

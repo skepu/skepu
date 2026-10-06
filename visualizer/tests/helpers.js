@@ -5,11 +5,24 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { DirectedGraph, GraphSettings } from '../backend-js/graph.js';
+import { DirectedGraph, GraphSettings } from '../script/backend/graph.js';
 
 const __dirname   = dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = join(__dirname, '../tests/fixtures');
 const EXAMPLES_DIR = join(__dirname, '../examples');
+
+// Settings for the fixtures: no synthesized [global] region, so a graph has exactly the nodes of its events
+// (the root region is tested on its own)
+export function testSettings() {
+    const s = new GraphSettings();
+    s.synthesizeRootRegion = false;
+    return s;
+}
+
+// All dependence edges of a graph
+export function allEdges(g) {
+    return [...g._dependenceEdges];
+}
 
 // ── File helpers ──────────────────────────────────────────────────────────────
 
@@ -17,12 +30,12 @@ export function loadFixture(name) {
     return JSON.parse(readFileSync(join(FIXTURES_DIR, name), 'utf-8'));
 }
 
-export function graphFromFile(path, settings = null) {
+export function graphFromFile(path, settings = testSettings()) {
     const events = JSON.parse(readFileSync(path, 'utf-8'));
     return DirectedGraph.fromEvents(events, settings);
 }
 
-export function graphFromFixture(name, settings = null) {
+export function graphFromFixture(name, settings = testSettings()) {
     return DirectedGraph.fromEvents(loadFixture(name), settings);
 }
 
@@ -96,16 +109,16 @@ export const VIRTUAL_ALIAS_EVENTS = [
       backend: 'OpenMP', start: 100, end: 200, file: 'ex.cpp', line: 2 },
 ];
 
-export function externalGraph()      { return DirectedGraph.fromEvents(EXTERNAL_EVENTS); }
-export function transferGraph()      { return DirectedGraph.fromEvents(TRANSFER_EVENTS); }
-export function regionGraph()        { return DirectedGraph.fromEvents(REGION_EVENTS); }
+export function externalGraph()      { return DirectedGraph.fromEvents(EXTERNAL_EVENTS, testSettings()); }
+export function transferGraph()      { return DirectedGraph.fromEvents(TRANSFER_EVENTS, testSettings()); }
+export function regionGraph()        { return DirectedGraph.fromEvents(REGION_EVENTS, testSettings()); }
 export function antidepGraph() {
-    const s = new GraphSettings(); s.antideps = true;
+    const s = testSettings(); s.antideps = true;
     return DirectedGraph.fromEvents(ANTIDEP_EVENTS, s);
 }
-export function prngGraph()          { return DirectedGraph.fromEvents(PRNG_EVENTS); }
+export function prngGraph()          { return DirectedGraph.fromEvents(PRNG_EVENTS, testSettings()); }
 export function virtualAliasGraph()  {
-    const g = DirectedGraph.fromEvents(VIRTUAL_ALIAS_EVENTS);
+    const g = DirectedGraph.fromEvents(VIRTUAL_ALIAS_EVENTS, testSettings());
     g.createVirtualAliasEdges(true);
     return g;
 }

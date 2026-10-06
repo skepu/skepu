@@ -293,7 +293,8 @@ All programs pass on all four backends (180 runs, OpenCL on an Apple GPU).
   `SKEPU_TRACE_FILE` is the name of the module (test: `tests/codegen/tracing_file_names.cpp`).
 * `visualizer/tests/`: the unit tests imported `backend-js/` (now `script/backend/`) and read
   fixtures that had never been committed; the paths are fixed, the four fixtures are recreated, and
-  `GraphSettings` has a default `mode` (without one `toCytoscape()` emitted no edges).
+  `GraphSettings` has a default `mode` (without one `toCytoscape()` emitted no edges); `npm test` in
+  `visualizer/` runs them (172).
 * `skepu-headers/src/skepu3/impl/tracing.h`, `tracing.hpp`: `beginRegion`, `data_snapshot` and
   `virtual_dataset` can take the file and line as arguments (for programs that are not C++:
   SkePY gives the place in the Python source); the snapshot code no longer prints to stdout.

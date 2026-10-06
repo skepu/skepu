@@ -1,0 +1,60 @@
+[
+ {
+  "type": "allocation",
+  "label": "A",
+  "object_id": 1001,
+  "time": 0,
+  "line": 1
+ },
+ {
+  "type": "allocation",
+  "label": "B",
+  "object_id": 1002,
+  "time": 1,
+  "line": 2
+ },
+ {
+  "type": "skeleton_call",
+  "label": "map1",
+  "pattern": "Map",
+  "elements": [
+   1024
+  ],
+  "elwise_inputs": [
+   1001
+  ],
+  "proxy_inputs": [],
+  "scalar_inputs": [],
+  "outputs": [
+   1002
+  ],
+  "backend": "OpenMP",
+  "threads": 4,
+  "start": 100,
+  "end": 200,
+  "file": "example.cpp",
+  "line": 10
+ },
+ {
+  "type": "skeleton_call",
+  "label": "reduce1",
+  "pattern": "Reduce",
+  "elements": [
+   1024
+  ],
+  "elwise_inputs": [
+   1002
+  ],
+  "proxy_inputs": [],
+  "scalar_inputs": [],
+  "outputs": [
+   1003
+  ],
+  "backend": "OpenMP",
+  "threads": 4,
+  "start": 200,
+  "end": 300,
+  "file": "example.cpp",
+  "line": 11
+ }
+]
