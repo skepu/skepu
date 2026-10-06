@@ -1,0 +1,659 @@
+# SkeVU User Manual {#sec-skevu}
+
+SkeVU [@Ernstsson2025SkeVU] is an interactive browser-based visualization tool for SkePU trace files.
+It renders the task graph of a SkePU program execution as a directed acyclic graph
+(DAG), a timeline (Gantt chart), and an annotated source code view — all
+synchronized so that navigating in one view updates the others.
+
+SkeVU comes with SkePU, in the `visualizer/` directory. It is a static web app, so there is
+nothing to install or build: it runs directly from the source files.
+
+{{< trace-embed
+    example="3"
+    backend="openmp"
+    views="graph,source,timeline"
+    height="360"
+    label="A trace in SkeVU: Dot Product, OpenMP backend"
+    controls="direction,node-color"
+>}}
+
+## Running SkeVU {#sec-setup}
+
+Serve the `visualizer/` directory over HTTP and open it in a browser. Any static file server
+works, for instance:
+
+```bash
+cd visualizer
+python3 -m http.server 5001     # then open http://localhost:5001
+```
+
+HTTP is needed because SkeVU does its graph processing and layout in Web Workers, which
+browsers do not allow from `file://` URLs. Everything runs in the browser; no trace or source
+file leaves your machine.
+
+Optionally, `make skepu-lib` in `visualizer/` copies the SkePU library headers (`skepu-lib/`)
+next to the app, so that the source panel can show the library code that a trace refers to,
+for instance the SkePU-DNN layers.
+
+## Generating Execution Traces {#sec-tracing}
+
+Tracing is enabled by compiling the program, for the precompiler and the C++ compiler, with
+`-DSKEPU_TRACING`. When the program exits, it writes a JSON trace of the skeleton calls,
+container operations and data transfers it performed. The file is named `skepu_trace.json` in
+the current directory unless another name is given with `-DSKEPU_TRACE_FILE="name.json"` when
+compiling (the value is stringified by the preprocessor, so `-DSKEPU_TRACE_FILE=trace/horner.json`
+works), or in the `SKEPU_TRACE_FILE` environment variable when running.
+
+A program can also take *snapshots* of the contents of containers, with
+`SKEPU_TRACE_SNAPSHOT(container)`, which SkeVU can show as heat maps. The snapshot files are
+written to the directory given by `-DSKEPU_TRACE_SNAPSHOT_DIR=dir`; archive its files as a `.zip`
+to load them.
+
+The example programs of SkePU can be built with tracing as follows; their traces are written
+to a `trace/` directory:
+
+- with `make` in `examples/`: the programs are built with tracing (`BACKEND_FLAGS` in
+  `examples/Makefile`);
+- with CMake: configure with `-DSKEPU_EXAMPLES_TRACING=ON`.
+
+Traces carry the file name and line of each call. For the source panel, load the source files
+of the program together with the trace.
+
+## Loading a Trace {#sec-loading}
+
+Open the **Files** menu in the menu bar.
+
+| Field | Description |
+|---|---|
+| **Trace File** | A SkePU JSON trace file (`.json`). Required. |
+| **Source File(s)** | One or more `.cpp` / `.hpp` source files. Optional; enables source-line highlighting and gutter badges. |
+| **Snapshots (zip)** | A zip archive of container snapshot data files. Optional; enables heatmap visualization in the info pane. |
+
+Click **Load Trace** to load the files. The graph is rendered immediately with the current
+settings.
+
+### Example traces
+
+The **Examples** submenu at the top of the Files menu lists the traces shipped in
+`visualizer/examples/`, with their source files; selecting one loads it. The entries (a trace per
+backend, source files and an optional snapshot archive) are listed in
+`visualizer/examples/examples.json`.
+
+---
+
+## Interface Layout {#sec-layout}
+
+The interface is divided into four main areas:
+
+```
+┌───────── Menu  ─────────────────────────────────────────────────────┐
+│                                                                     │
+│  ┌──────────────────────────────────┐  ┌─────────────────────────┐  │
+│  │          Graph view (DAG)        │  │    Source / Trace panel │  │
+│  │                                  │  │                         │  │
+│  ├──────────────────────────────────┤  ├─────────────────────────┤  │
+│  │              Legend              │  │       Info pane         │  │
+│  └──────────────────────────────────┘  └─────────────────────────┘  │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │                  Timeline (Gantt chart)                       │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+- The **vertical divider** between the graph and the source panel can be dragged
+  left or right to resize those two areas.
+- The **info pane** sits at the bottom of the source panel and can be resized by
+  dragging its top edge.
+- The **timeline** runs along the bottom of the window.
+- A **legend** strip appears below the graph.
+
+The source panel and timeline can each be hidden independently (see
+[View menu](#sec-view-menu)).
+
+---
+
+## The Graph View {#sec-graph}
+
+The graph view shows the data-flow DAG of the SkePU execution. Nodes represent
+events; directed edges represent data dependencies between them.
+
+### Node types
+
+| Type | Description |
+|---|---|
+| **Skeleton Call** | Execution of a SkePU skeleton (Map, Reduce, MapReduce, MapOverlap, …). Shown as a rounded rectangle coloured by the selected metric. |
+| **External** | An external (non-SkePU) access to a container. |
+| **Container Update** | A write to a SkePU container after a skeleton call. |
+| **Allocation** | Container allocation event. |
+| **Deallocation** | Container deallocation event. |
+| **Transfer** | A device↔host data transfer. |
+| **Region** | An instrumented code region (e.g. a loop body or function). Acts as a compound container for the nodes inside it; can be collapsed and expanded (see [Regions](#sec-regions)). |
+| **Fusion** | A suggested skeleton fusion group, shown as a compound container. |
+
+### Edge types
+
+| Type | Description |
+|---|---|
+| **Element-wise** | An element-wise data dependence between a producer and a consumer. |
+| **Proxy** | A proxy (read-only) dependence. |
+| **Scalar** | A scalar data flow. |
+| **Anti-dependence** | A write-after-read dependence (shown in red). Visible only when **Edges › Anti-Dependences** is enabled. |
+| **PRNG** | A sequential dependency through a shared random-number generator state. Shown as a zigzag. |
+| **Virtual Alias** | A decorative link between container-update nodes that belong to the same virtual container group. Visible only when **Edges › Virtual Datasets** is enabled. |
+
+Pairs of edges running in opposite directions between the same two nodes are merged
+into a single bidirectional edge (arrows on both ends) to reduce visual clutter.
+Similarly, multiple parallel edges with the same type are grouped into one labelled
+`×N`.
+
+### Navigating the graph
+
+| Action | Effect |
+|---|---|
+| **Scroll wheel** | Pan horizontally and vertically. |
+| **Two-finger pinch** (trackpad) | Zoom in / out around the pinch centre. |
+| **Click empty canvas** | Deselect all; close the info pane. |
+| **Space** | Re-apply current settings and re-render the graph. |
+
+**View › Reset View** (or re-applying settings) re-runs the automatic layout and
+fits the graph to the window.
+
+**View › Save Image** exports the current graph as a PNG file.
+
+### Selecting a node
+
+**Clicking** a node:
+
+- Highlights the node with a coloured border in the graph.
+- Highlights all directly connected edges.
+- Scrolls the **timeline** to centre the corresponding bar.
+- Highlights the corresponding **source line** in the source panel (or the
+  corresponding entry in the trace JSON tab) and switches to the correct file tab.
+- Opens the **info pane** with metadata about the node.
+
+### Regions {#sec-regions}
+
+Region nodes act as collapsible groups. All nodes created inside an instrumented
+code region are nested inside the corresponding region node.
+
+| Action | Effect |
+|---|---|
+| **Double-click** a region node | Toggle collapsed / expanded. |
+| **Actions › Selected Node › Collapse Recursive** (`c`) | Collapse the selected region and all nested regions. |
+| **Actions › Selected Node › Expand Recursive** (`e`) | Expand the selected region and all nested regions. |
+| **Actions › Selected Node › Collapse Once** (`-`) | Collapse the selected region without affecting nested ones. |
+| **Actions › Selected Node › Expand Once** (`+`) | Expand the selected region one level. |
+| **Actions › All Regions › Collapse** | Collapse all regions at once. |
+| **Actions › All Regions › Expand** | Expand all regions at once. |
+
+When a region is collapsed, its child nodes are hidden from the graph.
+Edges that cross the region boundary are *promoted*: they appear as edges
+connecting directly to the collapsed region node rather than the hidden internal
+node.
+
+Collapse state is preserved across re-renders. The timeline and source badges
+always show all nodes regardless of collapse state; nodes inside collapsed regions
+are rendered at reduced opacity to distinguish them from currently visible ones.
+
+Traces with **fewer than 200 events** have all regions pre-expanded on first
+load, since the full structure fits comfortably on screen. Larger traces start
+with all regions collapsed so the initial view is not overwhelming.
+
+When the **Regions** toggle is turned off (see [Nodes menu](#sec-nodes-menu)),
+region containers are hidden from the graph but still used internally by the
+layout engine to keep related nodes together. As a result, the graph structure
+will look similar whether regions are displayed or not.
+
+### Hover tooltips
+
+Hovering over a node or edge shows a tooltip with a brief summary (label, type,
+duration, backend, etc.).
+
+---
+
+## Menu Bar {#sec-menus}
+
+### Files {#sec-files-menu}
+
+See [Loading a Trace](#sec-loading).
+
+### View {#sec-view-menu}
+
+| Item | Description |
+|---|---|
+| **Apply Settings** (`Space`) | Re-fetch the graph from the trace worker with the current settings and re-run layout. |
+| **Restore Defaults** | Reset all settings to their factory defaults and re-render. |
+| **Reset View** | Re-run layout and fit the graph to the window without changing settings. |
+| **Save Image** | Export the graph as a PNG. |
+| **Legend** | Show or hide the colour legend below the graph. |
+| **Timeline** (`g`) | Show or hide the Gantt chart at the bottom of the window. |
+| **Source Panel** (`s`) | Show or hide the source code / info area on the right. |
+| **Timeline Scale** | A slider (1× – 20×) that stretches the Gantt chart horizontally. Useful for inspecting dense regions. |
+| **Source Code Theme** | Choose a syntax-highlighting colour theme for the source panel. |
+| **Dark mode** (`m`) | Toggle between light and dark mode. |
+
+### Nodes {#sec-nodes-menu}
+
+Controls which node types are included in the graph.
+
+| Toggle | Key | Description |
+|---|---|---|
+| **Updates** | `u` | Container write nodes (shown after skeleton calls when data-flow edges are disabled). |
+| **Allocations** | `a` | Container allocation events. |
+| **Deallocations** | `d` | Container deallocation events. |
+| **Transfers** | `t` | Device↔host data transfers. |
+| **Element Accesses** | — | Scalar element-access nodes. |
+| **Regions** | `r` | Show instrumented region nodes as compound containers. |
+
+#### Color
+
+Controls the metric mapped to skeleton-call and external-access node colour.
+The colour scale is set globally by the [Colors menu](#sec-colors-menu).
+
+| Mode | Description |
+|---|---|
+| **Total Time** *(default)* | Total accumulated execution time across all iterations. |
+| **Elements** | Number of elements processed (product of all dimensions). |
+| **Time/element** | Execution time per element. |
+| **Iterations** | Number of times this node was executed (relevant with [Aggregate Iteration](#sec-advanced) on). |
+| **DAG depth** | Longest-path depth in the dependency graph. |
+| **Program Sequence** | Execution order (total_order) in the trace. |
+| **Pattern** | SkePU skeleton pattern (Map, Reduce, …); each pattern gets a fixed colour. |
+| **Backend** | Execution backend (CPU, OpenMP, CUDA, OpenCL); each backend gets a fixed colour. |
+
+#### Size
+
+Controls the metric mapped to node size.
+
+| Mode | Description |
+|---|---|
+| **Fixed** *(default)* | All nodes the same size. |
+| **Total Time** | Larger nodes ran longer. |
+| **Elements** | Larger nodes processed more elements. |
+| **Time/element** | Larger nodes had higher per-element cost. |
+| **Iterations** | Larger nodes were executed more times. |
+
+### Edges {#sec-edges-menu}
+
+| Item | Description |
+|---|---|
+| **Anti-Dependences** (`n`) | Show write-after-read hazard edges (red). |
+| **Virtual Datasets** | Show decorative links between container updates in the same virtual-alias group. |
+| **Labels** (`l`) | Show container names on edges. |
+| **Direction** | **Vertical** (top-to-bottom, default) or **Horizontal** (left-to-right) layout. |
+| **Width** | Metric mapped to edge width (see table below). |
+| **Opacity** | Metric mapped to edge opacity (see table below). |
+
+Both **Width** and **Opacity** support the same set of modes:
+
+| Mode | Description |
+|---|---|
+| **Fixed** *(default)* | All edges the same width / opacity. |
+| **Elements** | Scaled by the number of elements exchanged across the edge. |
+| **Iterations** | Scaled by the number of times the edge was traversed. |
+| **Program Order Span** | Scaled by the gap in program-order sequence number between the source and target nodes. Wider / more opaque edges connect events that are far apart in execution order, helping reveal long-range dependencies. |
+| **Critical Path** | Edges on the critical path are drawn thick / fully opaque; all others are thin / faded. Useful for visually tracing the bottleneck chain through the graph. |
+| **Cross-Backend** | Edges that cross a backend boundary (e.g. CPU → OpenCL) are highlighted in orange; same-backend edges are drawn in grey. Quickly reveals inter-backend communication overhead. |
+
+### Actions {#sec-actions-menu}
+
+#### Simulate
+
+Plays back the trace event by event in execution order, highlighting each node
+across all views. See [Simulation Mode](#sec-simulation) for details.
+
+#### Zoom to Measured Interval (`z`)
+
+Adjusts the timeline scale and scroll position so that the interval between the
+locked cursor line and the hover cursor line fills the visible timeline area. The
+locked and hover cursors are set by interacting with the timeline; see
+[Timeline](#sec-timeline).
+
+#### Next Source Tab (`Tab`)
+
+Cycles forward through the tabs in the source panel. `Shift+Tab` cycles backward.
+
+#### Selected Node
+
+Collapse/expand the currently selected region node. See [Regions](#sec-regions).
+
+#### All Regions / All Fusions
+
+Collapse or expand every region (or fusion group) in the graph at once.
+
+### Colors {#sec-colors-menu}
+
+Selects the colour spectrum used for node (and Gantt bar) colouring.
+
+| Spectrum | Character |
+|---|---|
+| **Red–Green** *(default)* | Low = green, high = red. |
+| **Viridis** | Perceptually uniform; good for colour-blind users. |
+| **Plasma** | High-contrast sequential. |
+| **Inferno** | Dark-background sequential. |
+| **Cividis** | Colour-blind-safe sequential. |
+| **Cool–Warm** | Diverging blue–red. |
+| **Grayscale** | Monochrome. |
+
+### Advanced {#sec-advanced}
+
+| Item | Key | Description |
+|---|---|---|
+| **Aggregate iteration** | `i` | Merge all iterations of the same skeleton call into a single node. The merged node shows accumulated timing statistics. Useful for programs with many iterations of the same loop body. |
+| **Fusion analysis** | `f` | Analyse the task graph for skeleton calls that could be fused into a single kernel pass. Detected groups are highlighted as compound Fusion nodes in the graph. See [Fusion Analysis](#sec-fusion) for details. |
+
+### ⓘ Info button
+
+Displays trace statistics for the currently loaded graph:
+
+- Number of trace events, graph nodes, edges, timeline bars, and snapshot files.
+- Server-side analysis time, client-side rendering time, and total response time.
+
+---
+
+## Fusion Analysis {#sec-fusion}
+
+Fusion analysis (enabled via **Advanced › Fusion Analysis** or `f`) identifies
+skeleton calls whose intermediate data could be eliminated by merging them into a
+single kernel pass — a common compiler optimization for data-parallel programs.
+The analysis runs in the trace worker whenever the graph is rendered with the option
+enabled and its results are overlaid on the graph without altering the underlying
+trace data.
+
+Detected groups are shown as **Fusion** compound nodes (blue rounded containers)
+enclosing their member skeleton calls. The same groups also appear in the **Actions
+› All Fusions** collapse/expand menu item.
+
+### Kinds of fusion
+
+**Parallel fusion** — two or more Map skeleton calls that operate on the same
+domain and have no ordering constraint between them.  Because they access data
+independently they can be merged into a single pass over the data.  The info pane
+for a parallel fusion node shows the element sizes of the participating Maps and
+whether they all share the same domain (Uniform elements: yes / no).  Non-uniform
+sizes can still be fused but may require size specialisation in the generated code.
+
+**Serial fusion** — a chain of skeleton calls where each call's output is consumed
+element-wise by the next with no other consumers.  The chain can be fused into a
+single kernel that avoids writing and re-reading the intermediate containers.
+Supported chain patterns:
+
+| Pattern | Description |
+|---|---|
+| **Map → Map → …** | Arbitrary-length chain of Maps. |
+| **Map → Reduce** | One or more Maps feeding a Reduce; fused into a MapReduce-style kernel. |
+| **Map → MapReduce** | Maps feeding a combined map-reduce stage. |
+| **Map → MapOverlap** | Maps feeding a stencil stage. |
+
+The **Fusion pattern** shown in the info pane for a serial fusion node is the
+pattern of the *sink* (final) skeleton in the chain and indicates what type of
+fused kernel would be generated.
+
+### Fan-out prevention
+
+A skeleton whose output is consumed by **more than one** downstream skeleton cannot
+be included in a fusion chain — the intermediate result must be materialised so
+both consumers can read it.  The analysis detects this automatically and excludes
+the shared producer from any fusion group.
+
+### Interpretation
+
+Fusion groups are *suggestions*, not guarantees.  Whether a given fusion is
+profitable in practice depends on arithmetic intensity, cache effects, and compiler
+support.  The visualization is intended to help identify candidates that are worth
+investigating; the actual optimization would be applied separately at the SkePU
+compiler level.
+
+---
+
+## The Timeline {#sec-timeline}
+
+The Gantt chart at the bottom of the window shows the real-time execution of the
+trace on a shared time axis. It is always rendered from all trace nodes regardless
+of collapse state in the graph; nodes inside collapsed regions are shown at reduced
+opacity.
+
+### Rows
+
+| Row | Content |
+|---|---|
+| **Regions** *(top row)* | One bar per instrumented region per iteration. Coloured by nesting depth. |
+| **CPU / OpenMP / CUDA / …** | One row per backend. Each row contains bars for skeleton calls and external accesses executed on that backend. |
+| **Transfers** | Bars for device↔host data transfers. |
+| **Events** | Star markers for allocation (white star) and deallocation (black star) events. |
+
+### Interacting with the timeline
+
+**Click a bar or marker** — selects the corresponding node in the graph, highlights
+the source line, and opens the info pane.
+
+**Click empty timeline area** — sets the *locked cursor line* at that time
+position. A labelled vertical line marks the time offset from the start of the
+trace. Click again to move it.
+
+**Hover** — a second *hover cursor line* tracks the mouse. When the locked cursor
+is set, a double-headed arrow and a Δt label appear between the two lines,
+measuring the elapsed time between them.
+
+**Zoom to Measured Interval** (`z` or **Actions › Zoom to Measured Interval**) —
+fits the locked–hover interval to 90% of the visible timeline width. Useful for
+zooming into a region of interest.
+
+**Timeline Scale slider** (**View › Timeline Scale**, range 1× – 20×) — stretches
+the entire timeline horizontally. The chart is horizontally scrollable.
+
+---
+
+## The Source Panel {#sec-source}
+
+The source panel on the right side of the window shows the loaded source files
+and the trace JSON, each in its own tab. Source code is syntax-highlighted.
+
+### Tabs
+
+- One tab per loaded source file (`.cpp` / `.hpp`).
+- A final tab showing the raw SkePU trace JSON (`trace_filename`).
+
+Switch tabs with the tab buttons, or with the `Tab` / `Shift+Tab` keyboard
+shortcuts (or **Actions › Next Source Tab**).
+
+### Line highlighting
+
+When a node is selected (by clicking in the graph, timeline, or via a badge),
+the source panel automatically:
+
+1. Switches to the tab corresponding to the node's source file.
+2. Scrolls to and highlights the source line where the skeleton call or region
+   was declared.
+
+If the **trace JSON tab** is currently active, the selection instead highlights
+the lines of the JSON entry that produced the selected node.
+
+### Source badges {#sec-badges}
+
+After the graph is rendered, numbered badge pills appear in the line-number gutter
+of each source file next to lines that correspond to one or more trace events.
+
+- The number on the badge is the **total count** of trace events (including all
+  iterations when aggregation is off) originating from that line.
+- **Clicking** a badge selects the corresponding node in the graph, scrolls the
+  timeline, and opens the info pane. If multiple nodes or iterations share the
+  same source line, successive clicks **cycle** through them.
+- Badges for nodes that are currently **hidden** (inside collapsed regions) are
+  rendered at reduced opacity. If some events at a line are visible and some are
+  hidden, the visible count appears at full opacity and the hidden count appears
+  dimmed (e.g. `3` `+2`).
+- Equivalent badges appear in the gutter of the **trace JSON tab**, positioned at
+  the first line of the relevant trace entry.
+
+---
+
+## The Info Pane {#sec-info}
+
+The info pane opens at the bottom of the source panel when a node is selected.
+It shows metadata computed by the trace worker for that node. The pane can be resized
+by dragging its top edge, and closed with `x` or `Escape`.
+
+### Node information
+
+Displayed fields depend on node type and may include:
+
+| Field | Description |
+|---|---|
+| **Label** | Container or skeleton name. |
+| **Duration** | Total execution time (formatted as µs / ms / s). |
+| **Backend** | Execution backend (CPU, OpenMP, CUDA, OpenCL). |
+| **Pattern** | SkePU skeleton pattern (Map, Reduce, MapOverlap, …). |
+| **Elements** | Data dimensions processed. |
+| **File / Line** | Source location. |
+| **Repeat count** | Number of iterations (when aggregation is on). |
+| **Region / Nesting Level** | Enclosing region and its depth (for nested nodes). |
+| **Version** | Write version for container-update nodes. |
+| **Direction** | Transfer direction (device-to-host / host-to-device). |
+| **Fusion pattern** | The skeleton pattern of the sink stage in a fusion group (Map, Reduce, MapReduce, or MapOverlap). Shown on Fusion nodes when **Fusion analysis** is enabled. |
+
+### Duration plot
+
+For skeleton-call and external nodes executed more than once (aggregated
+iteration mode), the info pane shows a horizontal bar chart of per-iteration
+durations. Summary statistics (min, max, mean, median, standard deviation) are
+displayed above the chart.
+
+Bars are coloured using the current colour spectrum on the same global duration
+scale as the graph nodes. **Clicking a bar** scrolls the timeline to the
+corresponding iteration interval.
+
+### Container snapshot heatmap {#sec-heatmap}
+
+If snapshot data files were loaded, selecting a **Container Update** node that has
+an associated snapshot displays a 2D heatmap of the container contents at that
+point in the execution.
+
+- For multi-dimensional containers, navigation controls above the heatmap select
+  which slice to display.
+- For nodes with multiple snapshots (multiple iterations), an **iteration bar**
+  at the bottom selects which snapshot to view.
+- `←` / `→` navigate between slices or snapshots while the heatmap is active.
+
+---
+
+## Simulation Mode {#sec-simulation}
+
+Simulation mode replays the trace in execution order, visiting each event one
+step per second and synchronizing all views.
+
+### Controls
+
+| Action | Effect |
+|---|---|
+| **Actions › Simulate › Play** (`p`) | Start playback from the beginning, or resume after a pause. |
+| **Actions › Simulate › Pause** (`p` again) | Pause playback at the current position. |
+| **Actions › Simulate › Stop** | Stop playback and reset to the beginning. |
+| `←` / `→` | Step backward / forward one event while paused. |
+
+### Progress bar
+
+A progress bar appears at the bottom of the graph view when the simulation is
+active. The bar shows the current position as a fraction of the total event
+sequence.
+
+- **Click** anywhere on the bar to jump to that point in the sequence.
+- **Drag** along the bar to scrub through events continuously. Animations are
+  suppressed while dragging to keep the UI responsive.
+- **Clicking a Gantt bar** while the simulation is active jumps to the
+  corresponding event and pauses playback.
+
+Region and fusion nodes are skipped; only events with a direct trace-event
+counterpart are visited.
+
+---
+
+## Keyboard Shortcuts {#sec-keyboard}
+
+Shortcuts are active when the focus is not on a text input field. Modifier keys
+(Alt, Ctrl, Cmd) are not used.
+
+### Settings
+
+| Key | Action |
+|---|---|
+| `Space` | Apply Settings |
+| `a` | Toggle Allocations |
+| `d` | Toggle Deallocations |
+| `n` | Toggle Anti-Dependences |
+| `t` | Toggle Transfers |
+| `r` | Toggle Regions |
+| `u` | Toggle Updates |
+| `l` | Toggle Edge Labels |
+| `i` | Toggle Aggregate Iteration |
+| `f` | Toggle Fusion Analysis |
+
+### Views
+
+| Key | Action |
+|---|---|
+| `g` | Toggle Timeline |
+| `s` | Toggle Source Panel |
+| `m` | Toggle Dark Mode |
+| `Tab` | Next Source Tab |
+| `Shift+Tab` | Previous Source Tab |
+
+### Graph navigation
+
+| Key | Action |
+|---|---|
+| `e` | Expand selected region (recursive) |
+| `c` | Collapse selected region (recursive) |
+| `+` | Expand selected region (one level) |
+| `-` | Collapse selected region (one level) |
+
+### Timeline
+
+| Key | Action |
+|---|---|
+| `z` | Zoom Timeline to Measured Interval |
+
+### Simulation
+
+| Key | Action |
+|---|---|
+| `p` | Play / Pause |
+| `←` | Step backward (while paused) |
+| `→` | Step forward (while paused) |
+
+### Info pane
+
+| Key | Action |
+|---|---|
+| `←` / `→` | Navigate heatmap slices or snapshot iterations |
+| `x` or `Escape` | Close info pane |
+
+---
+
+## Settings Persistence {#sec-settings}
+
+All settings (node/edge visibility, colour mode, direction, aggregation flags,
+panel visibility, dark mode, source code theme, pane sizes, colour spectrum, and
+Gantt scale) are automatically saved to the browser's `localStorage` and restored
+on the next page load. Settings are stored per browser and are not shared between
+machines.
+
+**View › Restore Defaults** resets all settings to their factory values and
+immediately re-renders.
+
+### Auto-render threshold
+
+For graphs with **200 nodes or fewer**, every setting change triggers an immediate
+re-render. For larger graphs, changing a setting shows a warning banner asking you
+to apply settings manually with `Space` or **View › Apply Settings**. This
+prevents slow re-renders during rapid checkbox toggling.
+
+---
+
+## Rendering Indicator
+
+While the trace worker is processing a request or the layout engine is running, a
+**Rendering…** spinner appears in the menu bar. Opening the indicator dropdown
+reveals a **Stop rendering** button, which cancels the in-flight request and
+layout computation. The same button is also accessible as an overlay on the graph
+canvas during layout.

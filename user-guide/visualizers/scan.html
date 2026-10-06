@@ -1,0 +1,34 @@
+
+<div class="viz-wrap">
+  <div class="controls">
+    <label><span>Rows</span><input type="number" id="vscan-rows" value="3" min="1" max="6"></label>
+    <label><span>Cols</span><input type="number" id="vscan-cols" value="5" min="1" max="8"></label>
+    <label><span>Mode</span>
+      <select id="vscan-mode">
+        <option value="inclusive">Inclusive</option>
+        <option value="exclusive">Exclusive</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="viz-section">
+    <button class="viz-section-bar">
+      <span class="viz-section-title">Scan</span>
+      <span class="viz-chevron">▾</span>
+    </button>
+    <div class="viz-section-body">
+      <p class="desc" id="vscan-desc"></p>
+      <div id="vscan-area"></div>
+      <div class="legend" id="vscan-legend"></div>
+    </div>
+  </div>
+
+  <div class="viz-section">
+    <button class="viz-section-bar">
+      <span class="viz-section-title">Source</span>
+      <span class="viz-chevron viz-chevron-collapsed">▾</span>
+    </button>
+    <div class="viz-section-body" id="vscan-code" style="display:none"></div>
+  </div>
+</div>
+<script>VizUtils.mountStandaloneViz("scan", "vscan");</script>

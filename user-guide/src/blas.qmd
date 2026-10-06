@@ -1,0 +1,344 @@
+# SkePU-BLAS API {#sec-skepublas}
+
+This appendix chapter documents the SkePU-BLAS coverage and API
+interface as in [@Ernstsson2022PhD]. Currently, the SkePU-BLAS coverage
+is limited to level-1 BLAS and dense operations from level 2 and 3.
+Unsupported level-2 and level-3 BLAS functions are omitted below for
+brevity.
+
+SkePU-BLAS replaces the character arguments in CBLAS with C++-style
+type-safe `enum`s:
+
+    enum class Op : char { NoTrans = 'N', Trans = 'T', ConjTrans = 'C' }; 
+
+The following subsections contain the complete API specification for
+SkePU-BLAS, showing equivalence to one or several CBLAS functions in
+each case.
+
+All SkePU-BLAS functions below are namespaced under `skepu::blas`, and
+signatures are defined in header `skepu-lib/blas`.
+
+An example of using SkePU-BLAS, Conjugate Gradient computing, is given
+in @sec-CG.
+
+## Level 0 BLAS Functions
+
+### Setup Givens rotation: `rotg`
+
+CBLAS functions: SROTG, DROTG, CROTG, ZROTG
+
+SkePU-BLAS signature:
+
+```cpp
+template<typename T>
+void rotg (T *a, T *b, T *c, T *s)
+```
+
+### Apply Givens rotation: `rot`
+
+CBLAS functions: SROT, DROT, CSROT, ZDROT
+
+```cpp
+template<typename TX, typename TY,
+         typename TS = scalar_type<TX, TY>>
+void rot (
+ size_type n,
+ Vector<TX> & x,
+ stride_type incx,
+ Vector<TY> & y,
+ stride_type incy,
+ TS c,
+ TS s
+)
+```
+
+The BLAS functionality \"Setup modified Givens rotation\" (CBLAS
+functions SROTMG, DROTMG) and \"Apply modified Givens rotation\" (CBLAS
+functions SROTM, DROTM) is currently not supported yet in SkePU-BLAS.
+
+### Swap x and y: `swap`
+
+CBLAS functions: SSWAP, DSWAP, CSWAP, ZSWAP
+
+```cpp
+template<typename TX, typename TY>
+void swap (
+ size_type n,
+ Vector<TX> & x,
+ stride_type incx,
+ Vector<TY> & y,
+ stride_type incy
+)
+```
+
+## Level 1 BLAS Functions
+
+### Vector scaling: `scal`
+
+$x := a * x$
+
+CBLAS functions: SSCAL, DSCAL, CSSCAL, CSCAL
+
+```cpp
+template<typename TX, typename TS>
+void scal (
+ size_type n,
+ TS alpha,
+ Vector<TX> & x,
+ stride_type incx
+)
+```
+
+### Vector copy: `copy`
+
+$y := x$
+
+CBLAS functions: SCOPY, DCOPY, CCOPY, ZCOPY
+
+```cpp
+template<typename TX, typename TY>
+ void copy (
+ size_type n,
+ Vector<TX> BLAS_CONST& x,
+ stride_type incx,
+ Vector<TY> & y,
+ stride_type incy
+)
+```
+
+### AXPY: `axpy`
+
+$y := a * x + y$
+
+CBLAS functions: SAXPY, CAXPY, DAXPY, ZAXPY
+
+```cpp
+template<typename TX, typename TY,
+         typename TS = scalar_type<TX, TY>>
+void axpy (
+ size_type n,
+ TS alpha,
+ Vector<TX> BLAS_CONST& x,
+ stride_type incx,
+ Vector<TY> & y,
+ stride_type incy
+)
+```
+
+### Dot product: `dot`
+
+CBLAS functions: SDOT, DDOT, CDOTC, ZDOTC
+
+```cpp
+template<typename TX, typename TY>
+scalar_type<TX, TY> dot (
+ size_type n,
+ Vector<TX> BLAS_CONST& x,
+ stride_type incx,
+ Vector<TY> BLAS_CONST& y,
+ stride_type incy
+)
+```
+
+The BLAS functionality \"Dot product with extended precision
+accumulation\" (CBLAS functions: DSDOT, SDSDOT) is currently not yet
+supported in SkePU-BLAS.
+
+### Dot product: `dotu`
+
+CBLAS functions: CDOTU, ZDOTU
+
+```cpp
+template<typename TX, typename TY>
+scalar_type<TX, TY> dotu (
+ size_type n,
+ Vector<TX> BLAS_CONST& x,
+ stride_type incx,
+ Vector<TY> BLAS_CONST& y,
+ stride_type incy
+)
+```
+
+### Euclidian norm: `nrm2`
+
+CBLAS functions: SNRM2, DNRM2, SCNRM2, DZNRM2
+
+```cpp
+template<typename T>
+real_type<T> nrm2 (
+ size_type n,
+ Vector<T> BLAS_CONST& x,
+ stride_type incx
+)
+```
+
+### Sum of absolute values: `asum`
+
+CBLAS functions: SASUM, DASUM, SCASUM, DZASUM
+
+```cpp
+template<typename T>
+T asum (
+ size_type n,
+ Vector<T> BLAS_CONST& x,
+ stride_type incx
+)
+```
+
+### Index of maximum absolute value: `iamax`
+
+CBLAS functions: ISAMAX, IDAMAX, ICAMAX, IZAMAX
+
+```cpp
+template<typename T>
+size_type iamax (
+ size_type n,
+ Vector<T> BLAS_CONST& x,
+ stride_type incx
+)
+```
+
+## Level 2 BLAS Functions
+
+### Matrix-vector multiply: `gemv`
+
+CBLAS functions: SGEMV, DGEMV, CGEMV, ZGEMV
+
+```cpp
+template<typename TA, typename TX, typename TY,
+         typename TS = scalar_type<TA, TX, TY>>
+void gemv(
+ blas::Op
+ size_type m,
+ size_type n,
+ TS alpha,
+ Matrix<TA> BLAS_CONST& A,
+ size_type lda,
+ Vector<TX> BLAS_CONST& x,
+ stride_type incx,
+ TS beta,
+ Vector<TY> & y,
+ stride_type incy
+)
+```
+
+### Rank-1 update: `ger`
+
+CBLAS functions: SGER, DGER, CGERC, ZGERC
+
+```cpp
+template<typename TX, typename TY, typename TA,
+         typename TS = scalar_type<TA, TX, TY>>
+void ger (
+ size_type m,
+ size_type n,
+ TS alpha,
+ Vector<TX> BLAS_CONST& x,
+ stride_type incx,
+ Vector<TY> BLAS_CONST& y,
+ stride_type incy,
+ Matrix<TA> & A,
+ stride_type lda
+)
+```
+
+### Rank-1 update: `geru`
+
+CBLAS functions: GCERU, ZGERU
+
+```cpp
+template<typename TX, typename TY, typename TA,
+         typename TS = scalar_type<TA, TX, TY>>
+void geru (
+ size_type m,
+ size_type n,
+ TS alpha,
+ Vector<TX> BLAS_CONST& x,
+ stride_type incx,
+ Vector<TY> BLAS_CONST& y,
+ stride_type incy,
+ Matrix<TA> & A,
+ stride_type lda
+)
+```
+
+## Level 3 BLAS Functions
+
+### Matrix-matrix multiply: `gemm`
+
+CBLAS functions: SGEMM, DGEMM, CGEMM, ZGEMM
+
+```cpp
+template<typename TA, typename TB, typename TC>
+void gemm (
+ blas::Op transA,
+ blas::Op transB,
+ size_type m,
+ size_type n,
+ size_type k,
+ scalar_type<TA, TB, TC> alpha,
+ Matrix<TA> BLAS_CONST& A,
+ size_type lda,
+ Matrix<TB> BLAS_CONST& B,
+ size_type ldb,
+ scalar_type<TA, TB, TC> beta,
+ Matrix<TC>& C,
+ size_type ldc
+)
+```
+
+## Example: Conjugate-Gradient Solver {#sec-CG}
+
+The following example code using SkePU-BLAS functions is adapted from
+[@Ernstsson2022PhD].
+
+```cpp
+#include <skepu>
+#include <skepu-lib/io.hpp>
+#include <skepu-lib/blas.hpp>
+
+template<typename T>
+void conjugate_gradient(
+ skepu::Matrix<T> BLAS_CONST& A,
+ skepu::Vector<T> BLAS_CONST& b,
+ skepu::Vector<T> &x)
+{
+ size_t N = b.size();
+ assert(A.size_i() == N && A.size_j() == N && x.size() == N);
+ skepu::Vector<T> p(N), r(N), Ap(N);
+ // Set up initial r and p:
+ skepu::blas::copy( N, b, 1, r, 1 );
+ skepu::blas::gemv( skepu::blas::Op::NoTrans,
+                    N, N, -1.f, A, N, x, 1, 1.f, r, 1 );
+ skepu::blas::copy( N, r, 1, p, 1 );  // p := r
+ float rTr = skepu::blas::dot( N, r, 1, r, 1 );  // rTr = r * r
+
+ for (size_t k = 0; k < N; ++k) {
+
+   // Compute alpha:
+   skepu::blas::gemv( skepu::blas::Op::NoTrans,
+                      N, N, 1.f, A, N, p, 1, 0.f, Ap, 1 );  // Ap := A * p
+   float tmp = skepu::blas::dot( N, p, 1, Ap, 1 );  // tmp := p * Ap
+   float alpha = rTr / tmp;
+
+   // Update x:
+   skepu::blas::axpy(N, alpha, p, 1, x, 1);  // x := x + alpha * p
+
+   // Update r:
+   skepu::blas::axpy( N, -alpha, Ap, 1, r, 1 );  // r := r - alpha * Ap
+
+   // Compute beta:
+   float rTr_new = skepu::blas::dot( N, r, 1, r, 1 );  // rTr_new  := r*r
+   float beta = rTr_new / rTr;
+
+   // Early exit condition:
+   if (sqrt(rTr_new) < 1e-10f)
+   return;
+
+   // Update p:
+   skepu::blas::scal( N, beta, p, 1 );  // p := beta * p
+   skepu::blas::axpy( N, 1.f, r, 1, p, 1 );  // p := r + p
+   rTr = rTr_new;
+ }
+}
+```

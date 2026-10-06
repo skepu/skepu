@@ -1,0 +1,205 @@
+# SkePU History {#sec-history}
+
+## SkePU development history and bibliographical remarks
+
+For further information about SkePU we refer to our publications.
+
+SkePU 1 was introduced in 2010 and is presented in Enmyren and Kessler
+[@enmyren2010skepu].
+
+The integration of SkePU and StarPU to provide data-driven dynamic
+scheduling of asynchronous skeleton calls was presented by Dastgeer et
+al. [@dastgeer2011starpu].
+
+The second generation of a back-end selection tuning framework for SkePU
+was developed by Dastgeer et al. [@dastgeer2013adaptive]. Dastgeer also
+further developed the smart data-containers (Vector, Matrix) in
+[@dastgeer2016smart]. Selection tuning and smart data-containers are
+still contained in today's SkePU implementation.
+
+SkePU 1 supports sequential and multithreaded CPU execution as well as
+single- and multi-GPU execution in OpenMP and CUDA backends. These
+backends are, in modified form, still part of today's SkePU
+implementation. Experimental back-ends for SkePU 1 had also been
+developed for plain MPI [@majeed2013cluster] and Movidius Myriad 2
+[@thorarensen2016myriad], but were not mature enough to be included in
+the public distribution and were finally abandoned at the transition to
+SkePU-2.
+
+Case studies on SkePU 1 include the porting of the EDGE flow simulation
+code [@sjostrom2015edge], which revealed a number of weaknesses in the
+SkePU 1 API and finally led to the design of SkePU 2.
+
+SkePU 2 was introduced in 2016. It involved the complete redesign of the
+SkePU programming interface based on C++11, and is described in
+Ernstsson et al. [@ernstsson2017skepu2].
+
+The generalization of smart containers for lazy execution of skeletons
+to provide global run-time optimizations such as tiling and kernel
+fusion across data-flow graphs of containers and skeletons was presented
+by Ernstsson and Kessler [@ernstsson2018extending].
+
+A new hybrid CPU-GPU back-end for SkePU 2 was proposed by Öhberg et
+al. [@ohberg2018hybrid] and is included in today's implementation.
+
+The concept of multi-variant user functions and their implementation
+(included in SkePU-3) is presented in Ernstsson and Kessler
+[@ernstsson2019parco].
+
+Panagiotou et al. [@sotiris2020] present a case study of using SkePU in
+a brain modeling application, including first scaling results for the
+new SkePU 3 cluster backend based on StarPU-MPI [@StarPU-MPI], which is
+included in the distribution.
+
+A SkePU tutorial, including most of the new SkePU 3 features, can be
+found on the SkePU web page [@skepu-web].
+
+The article [@ernstsson2021ijpp] presents SkePU 3 (released 2020/2021)
+in its entirety. More details can be found in Ernstsson's PhD thesis
+[@Ernstsson2022PhD].
+
+The portable parallel pseudorandom number generator (SkePU-PRNG) with
+new syntax and standard library functionality added in SkePU 3.1 is
+described in [@Ernstsson2022PRNG].
+
+A study of the performance portability of SkePU 3 has been presented by
+Ernstsson et al. [@Ernstsson2023PerformancePortability].
+
+An experimental FPGA backend for a SkePU subset (realized as a custom
+variant of the OpenCL backend) is described by Birath et
+al. [@Birath2024FPGA].
+
+Strided skeleton computations and the SkePU-DNN library for CNN/DNN
+training and inference atop SkePU has been presented by Qummar et
+al. [@SkePU-DNN2025].
+
+The *SkeVU* interactive trace visualization tool for SkePU is described
+by Ernstsson et al. [@Ernstsson2025SkeVU].
+
+## Changes from SkePU 2 to SkePU 3 {#sec-changelog}
+
+This section summarizes the syntactical and behavioral changes
+from SkePU 2 to SkePU 3.
+
+### Changes in skeleton set and data-container set
+
+The skeleton set has changed in SkePU 3, with the addition of the
+all-new `MapPairs` and `MapPairsReduce` skeletons, important extensions
+to the capabilities of the standard `Map` skeleton, and an interface
+change to improve usability of the `MapOverlap` skeleton. `MapPool` has
+been added for SkePU 3.3 in 2025.
+
+The smart data-container set has also seen an extension in SkePU 3, by
+adding higher-dimensionality *tensors* in `Tensor3` and `Tensor4`. The
+coherency model of smart data-containers has been revised.
+
+### Namespace Change {#sec-namespace}
+
+The namespace for SkePU is changed in SkePU 3. Historically, the
+`skepu::` namespace was used by the initial SkePU release (\"SkePU 1\"),
+and since SkePU 2 was a major source-breaking change from SkePU 1, the
+decision was made to switch over the namespace as a way to communicate
+the source incompatibilities.
+
+Today, there is to our knowledge little or no application code in active
+use which depends on SkePU 1. The decision was therefore made to switch
+back to the version-agnostic `skepu::` namespace for new releases of
+SkePU, starting with SkePU 3. This has the additional benefit of
+communicating that SkePU 3 also is a source-breaking transition from
+SkePU 2, although this time the scope of the changes is much smaller and
+transitioning between SkePU 2 to 3 is expected to be much simpler.
+
+The intention is to keep this namespace for future versions of SkePU,
+and future source-breaking changes will be communicated in other ways.
+
+The above namespace applies to skeletons and smart containers alike, as
+well as supporting constructs such as enums, backend specifications,
+container proxy objects, and index structs. In short, every C++ symbol
+in the library is affected. The exception is C++11 attributes, whose
+names are forced to be namespaced but these namespaces are distinct from
+the standard C++ namespace definitions. This was introduced to SkePU in
+version 2 and have always been `skepu::`, (e.g. `[[skepu::out]]`) and
+will remain as such.
+
+In addition to the namespace change the default include header (the main
+entry point to the SkePU header library) has been changed.
+`#include <skepu2.hpp>` is replaced by `#include <skepu>` which aside
+from dropping the version now also mirrors the standard library with the
+absence of a file extension. (Note that the include directive may be
+different depending on the directory setup.)
+
+### Other Changes
+
+The following major changes, described in more detail above, have been
+applied in the transition from SkePU-2 to SkePU-3 (as of May 2020):
+
+- New skeletons `MapPairs`, `MapPairsReduce`;
+
+- Revised interface for `MapOverlap` (e.g., `Region`$X$`D` proxy
+  data-container object) and Reduce;
+
+- New container types Tensor3, Tensor4 and new container proxy types
+  MatRow, Ten3, Ten4;
+
+- New backend selection mechanism, in both API and implementation, with
+  settable global defaults and more options. Especially the OpenMP
+  backend configuration options are expanded with new scheduling
+  mechanisms.
+
+- Deprecation of any STL-inherited dynamic features of the SkePU
+  data-containers as a clarification that they are to be used as static
+  objects;
+
+- The SkePU 2 flush interface of smart data-containers was revised after
+  feedback from EXA2PRO project partners: flush with options.
+
+- Multi-valued return from skeletons and user functions;
+
+- Multi-variant user functions;
+
+- Dynamic scheduling option for all skeletons except Scan;
+
+- New memory consistency model for smart containers: weak consistency;
+
+- New `skepu::external` construct to frame external I/O operations
+  to/from data-containers or similar operations with side-effects that
+  are not under the control of SkePU, providing sequential consistency
+  for given data-container objects at the construct's boundaries;
+
+- New StarPU-MPI backend (available for some skeletons at this time).
+
+Several of these design changes are the result of feedback from
+application partners in the running H2020 FETHPC project EXA2PRO.
+
+After the initial release of SkePU 3 in 2020/2021, new features have
+been added:
+
+- `MapPool` skeleton and `Pool`$X$`D` data-container proxy object;
+
+- Strided access in map-based skeletons;
+
+- Extensions of the standard library, e.g., SkePU-DNN for deep learning
+  training and inference with a PyTorch-like API implemented on top of
+  SkePU skeletons;
+
+- The SkeVU interactive visualization tool for SkePU program execution
+  traces.
+
+- SkePU-Streaming[@SkePU-Streaming], a two-layer programming model for
+  specifying complex stream-processing pipeline workflows for native
+  execution in distributed heterogeneous parallel systems, with native
+  stream operators implemented as SkePU programs. The `skepu::io`
+  standard library has been extended to provide access to ingoing and
+  outgoing stream ports and for container serialization/deserialization.
+  SkePU-Streaming is available at
+  <https://github.com/skepu/skepu-streaming/releases/tag/IJPP-experiments>;
+  it requires SkePU as a subpackage.
+
+### Repository and License Changes
+
+With the release of SkePU 3 in 2020/2021, the public distribution of
+SkePU has moved to <https://github.com/skepu/skepu> and the SkePU web
+page has moved from Linköping University to <https://skepu.github.io>.
+
+The SkePU license has been changed from GPLv3 for SkePU-2 to a less
+restrictive *modified 4-clause BSD license* for SkePU-3.

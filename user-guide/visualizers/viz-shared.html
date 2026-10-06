@@ -1,0 +1,226 @@
+<script>
+/* -------------------------------------------------------------------------
+ * VizUtils — shared primitives used by every skeleton visualiser.
+ * Included in the header of the chapters that use the visualisers (front matter).
+ * ------------------------------------------------------------------------- */
+window.VizUtils = (function () {
+
+  /* Build a rows×cols grid of .cell elements inside `el`.
+   * Returns a 2-D array cells[r][c].
+   * labelFn(r,c) overrides the default smart label:
+   *   rows==1 → column index only
+   *   cols==1 → row index only
+   *   otherwise → "r,c"
+   */
+  function buildMatrix(el, rows, cols, labelFn, onEnter, onLeave) {
+    el.style.gridTemplateColumns = `repeat(${cols}, 34px)`;
+    el.innerHTML = "";
+    const cells = [];
+    for (let r = 0; r < rows; r++) {
+      const row = [];
+      for (let c = 0; c < cols; c++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.textContent = labelFn ? labelFn(r, c)
+          : rows === 1 ? String(c) : cols === 1 ? String(r) : `${r},${c}`;
+        if (onEnter) cell.addEventListener("mouseenter", () => onEnter(r, c));
+        if (onLeave) cell.addEventListener("mouseleave", onLeave);
+        el.appendChild(cell);
+        row.push(cell);
+      }
+      cells.push(row);
+    }
+    return cells;
+  }
+
+  /* Create a labelled matrix group: { group, mat }
+   * wrapperClass is optional — used by MapPairs/MapPairsReduce for viz-vec-group. */
+  function makeMatrixGroup(labelText, wrapperClass) {
+    const group = document.createElement("div");
+    if (wrapperClass) group.className = wrapperClass;
+    const lbl = document.createElement("div");
+    lbl.className = "matrix-label";
+    lbl.textContent = labelText;
+    const mat = document.createElement("div");
+    mat.className = "matrix";
+    group.appendChild(lbl);
+    group.appendChild(mat);
+    return { group, mat };
+  }
+
+  /* Populate a legend container from an entries array.
+   * entries: [{ bg, border, label }, …]  el: the .legend DOM node */
+  function buildLegend(entries, el) {
+    el.innerHTML = "";
+    (entries || []).forEach(({ bg, border, label }) => {
+      const item   = document.createElement("div");
+      item.className = "legend-item";
+      const swatch = document.createElement("div");
+      swatch.className = "legend-swatch";
+      swatch.style.background  = bg;
+      swatch.style.borderColor = border;
+      item.appendChild(swatch);
+      item.appendChild(document.createTextNode(label));
+      el.appendChild(item);
+    });
+  }
+
+  /* Write code text into a .viz-section-body code element safely.
+   * Uses textContent so <T> template arguments are never HTML-parsed. */
+  function setCode(el, text) {
+    if (!el) return;
+    el.innerHTML = "";
+    const pre  = document.createElement("pre");
+    pre.className = "viz-code";
+    const code = document.createElement("code");
+    code.textContent = text;
+    pre.appendChild(code);
+    el.appendChild(pre);
+  }
+
+  /* Read a number input, clamp to its own min/max attributes, fall back to
+   * defaultVal if empty or NaN. */
+  function clampedInt(el, defaultVal) {
+    const val = parseInt(el.value);
+    const min = parseInt(el.min) ?? 0;
+    const max = parseInt(el.max) ?? Infinity;
+    return Math.max(min, Math.min(max, isNaN(val) ? defaultVal : val));
+  }
+
+  /* Wire up a standalone skeleton visualiser.
+   *
+   * key      — key into SkePUSkeletons
+   * idPrefix — all DOM ids are "${idPrefix}-{rows,cols,desc,area,legend}"
+   *            plus "${idPrefix}-${ctrl.id}" for each extraControl.
+   *
+   * Toggle-type extraControls expect a <select id="${idPrefix}-${ctrl.id}">
+   * whose option values match the ctrl.options values.
+   */
+  function mountStandaloneViz(key, idPrefix) {
+    const sk       = SkePUSkeletons[key];
+    const areaEl   = document.getElementById(`${idPrefix}-area`);
+    const descEl   = document.getElementById(`${idPrefix}-desc`);
+    const legendEl = document.getElementById(`${idPrefix}-legend`);
+    const rowsEl   = document.getElementById(`${idPrefix}-rows`);
+    const colsEl   = document.getElementById(`${idPrefix}-cols`);
+
+    function getParams() {
+      const params = {
+        rows: clampedInt(rowsEl, sk.defaults.rows),
+        cols: clampedInt(colsEl, sk.defaults.cols),
+      };
+      (sk.extraControls || []).forEach(ctrl => {
+        if (ctrl.type === "number") {
+          const el = document.getElementById(`${idPrefix}-${ctrl.id}`);
+          params[ctrl.id] = clampedInt(el, ctrl.default);
+        } else if (ctrl.type === "toggle") {
+          const el = document.getElementById(`${idPrefix}-${ctrl.id}`);
+          // Accept either a <select> or the legacy dataset-based button group.
+          params[ctrl.id] = el
+            ? (el.tagName === "SELECT" ? el.value : el.dataset.value) ?? ctrl.default
+            : ctrl.default;
+        }
+      });
+      return params;
+    }
+
+    const codeEl = document.getElementById(`${idPrefix}-code`);
+
+    function render() {
+      const params = getParams();
+      descEl.innerHTML = typeof sk.desc === "function" ? sk.desc(params) : sk.desc;
+      sk.render(areaEl, params);
+      buildLegend(sk.legend, legendEl);
+      if (sk.codeGen) setCode(codeEl, sk.codeGen(params));
+    }
+
+    /* Wire rows/cols */
+    rowsEl?.addEventListener("change", render);
+    colsEl?.addEventListener("change", render);
+
+    /* Wire extra controls */
+    (sk.extraControls || []).forEach(ctrl => {
+      if (ctrl.type === "number") {
+        const el = document.getElementById(`${idPrefix}-${ctrl.id}`);
+        el?.addEventListener("change", () => { el.value = clampedInt(el, ctrl.default); render(); });
+      } else if (ctrl.type === "toggle") {
+        const el = document.getElementById(`${idPrefix}-${ctrl.id}`);
+        if (el && el.tagName === "SELECT") {
+          el.addEventListener("change", render);
+        } else if (el) {
+          // Legacy button-group path (kept for backward compat).
+          el.querySelectorAll(".sk-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+              el.querySelectorAll(".sk-btn").forEach(b => b.classList.remove("active"));
+              btn.classList.add("active");
+              el.dataset.value = btn.dataset.value;
+              render();
+            });
+          });
+        }
+      }
+    });
+
+    render();
+  }
+
+  /* Wire up a multi-variant skeleton (e.g. Reduce) where each variant is a
+   * separate SkePUSkeletons key.  Reads a <select id="${idPrefix}-mode"> whose
+   * option values are skeleton keys, plus shared rows/cols inputs.
+   *
+   * HTML requirements:
+   *   ${idPrefix}-mode    <select>  option values = SkePUSkeletons keys
+   *   ${idPrefix}-rows    <input type="number">
+   *   ${idPrefix}-cols    <input type="number">
+   *   ${idPrefix}-area    container for the visualisation
+   *   ${idPrefix}-desc    <p> for the description
+   *   ${idPrefix}-legend  container for the legend
+   *   ${idPrefix}-code    container for generated source (optional)
+   *   ${idPrefix}-section-title  element whose textContent is updated (optional)
+   */
+  function mountGroupViz(idPrefix) {
+    const areaEl   = document.getElementById(`${idPrefix}-area`);
+    const descEl   = document.getElementById(`${idPrefix}-desc`);
+    const legendEl = document.getElementById(`${idPrefix}-legend`);
+    const rowsEl   = document.getElementById(`${idPrefix}-rows`);
+    const colsEl   = document.getElementById(`${idPrefix}-cols`);
+    const modeEl   = document.getElementById(`${idPrefix}-mode`);
+    const codeEl   = document.getElementById(`${idPrefix}-code`);
+    const titleEl  = document.getElementById(`${idPrefix}-section-title`);
+
+    function render() {
+      const key = modeEl?.value ?? "";
+      const sk  = SkePUSkeletons[key];
+      if (!sk) return;
+      const params = {
+        rows: clampedInt(rowsEl, sk.defaults.rows),
+        cols: clampedInt(colsEl, sk.defaults.cols),
+      };
+      if (titleEl) titleEl.textContent = sk.name;
+      if (descEl)  descEl.innerHTML = typeof sk.desc === "function" ? sk.desc(params) : sk.desc;
+      sk.render(areaEl, params);
+      buildLegend(sk.legend, legendEl);
+      if (sk.codeGen && codeEl) setCode(codeEl, sk.codeGen(params));
+    }
+
+    modeEl?.addEventListener("change", render);
+    rowsEl?.addEventListener("change", render);
+    colsEl?.addEventListener("change", render);
+    render();
+  }
+
+  /* ---- Delegated collapse handler for all .viz-section-bar elements ---- */
+  document.addEventListener("click", e => {
+    const bar = e.target.closest(".viz-section-bar");
+    if (!bar) return;
+    const body = bar.nextElementSibling;
+    if (!body) return;
+    const hidden = body.style.display === "none";
+    body.style.display = hidden ? "" : "none";
+    const chevron = bar.querySelector(".viz-chevron");
+    if (chevron) chevron.classList.toggle("viz-chevron-collapsed", !hidden);
+  });
+
+  return { buildMatrix, makeMatrixGroup, buildLegend, setCode, mountStandaloneViz, mountGroupViz };
+}());
+</script>

@@ -1,0 +1,8 @@
+# Quarto build outputs
+_book/
+_pdf/
+/.quarto/
+**/*.quarto_ipynb
+
+# macOS
+.DS_Store

@@ -1,0 +1,318 @@
+/* More breathing room inside the main content column */
+main.content {
+  padding-inline: 2.5rem;
+}
+
+/* Left-align the page: replace the centering left 5fr gutter with a fixed
+   small margin so all surplus space goes to the right instead.
+   The pixel values mirror what Quarto emits for our sidebar/body/margin
+   widths; only the leading 5fr is removed.
+   Scoped to ≥992px so Quarto's responsive collapse to a top-bar still
+   works on narrow windows. */
+@media (min-width: 992px) {
+  .page-columns {
+    grid-template-columns:
+      [screen-start] 1.5em
+      [screen-start-inset page-start page-start-inset] 7em
+      [body-start-outset] 7em
+      [body-start] 1.5em
+      [body-content-start] minmax(500px, calc(930px - 3em))
+      [body-content-end] 1.5em
+      [body-end] 29.4px
+      [body-end-outset] minmax(63px, 121.8px)
+      [page-end-inset] 29.4px
+      [page-end] 5fr
+      [screen-end-inset] 1.5em
+      [screen-end] !important;
+  }
+
+  /* Extend the left sidebar background flush to the left viewport edge */
+  #quarto-sidebar {
+    grid-column: screen-start / body-start;
+  }
+}
+
+/* Extend the right-hand TOC panel to the viewport edge */
+#quarto-margin-sidebar {
+  grid-column: body-end / screen-end;
+  padding-right: 1.5rem;
+}
+
+/* Expand all TOC levels by default instead of collapsing on scroll */
+#quarto-sidebar .collapse {
+  display: block;
+}
+
+/* Skeleton Feature Matrix — constrain width and reduce font size */
+.feature-matrix {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.feature-matrix table {
+  font-size: 0.78em;
+  width: 100%;
+}
+
+.listing-caption p {
+  font-style: italic;
+  font-size: 0.875em;
+  color: #555;
+  margin-bottom: 0.25rem;
+}
+
+
+/* ---- Interactive visualizers — shared styles --------------------------- */
+
+.viz-wrap {
+  margin: 1.5rem 0;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: #f8f9fa;
+  font-family: var(--font-sans);
+}
+
+/* Controls bar */
+.controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.controls label              { font-size: 13px; color: var(--color-text-secondary); }
+.controls label > span       { margin-right: 4px; }
+.controls select,
+.controls input              { font-size: 13px; }
+.controls input[type=number] { width: 52px; }
+.controls select {
+  height: 26px;
+  padding: 0 4px;
+  border-radius: 4px;
+  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+/* Vertical separator inside a controls bar */
+.controls-divider { width: 1px; background: #dee2e6; align-self: stretch; margin: 0 4px; }
+
+/* Matrix / grid */
+.matrix-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+}
+
+/* Square-bracket framing via pseudo-elements.
+   padding-inline reserves space for the brackets;
+   padding-block adds vertical breathing room inside them. */
+.matrix {
+  display: inline-grid;
+  gap: 2px;
+  padding: 5px 10px;
+  position: relative;
+  align-self: flex-start; /* don't stretch when inside a flex column */
+}
+.matrix::before,
+.matrix::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 6px;
+  border-top: 1.5px solid #555;
+  border-bottom: 1.5px solid #555;
+}
+.matrix::before { left:  0; border-left:  1.5px solid #555; }
+.matrix::after  { right: 0; border-right: 1.5px solid #555; }
+
+/* Cell — base: no border, no background; the bracket does the framing */
+.cell {
+  width: 34px;
+  height: 34px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: default;
+  transition: background 0.1s;
+  user-select: none;
+}
+
+/* Cell — highlight states
+   All colour aliases map to the same three palette entries so tweaking
+   one value here changes every visualiser consistently. */
+
+/* Dark blue — hovered output cell */
+.cell.output-hover {
+  background: #378ADD; color: #fff;
+}
+/* Light blue — primary read / vertical input / pool window */
+.cell.highlight-primary,
+.cell.highlight-vert,
+.cell.highlight-pool,
+.cell.hl-vert {
+  background: #B5D4F4; color: #0C447C;
+}
+/* Green — halo / horizontal input / secondary read */
+.cell.highlight-halo,
+.cell.highlight-horiz,
+.cell.highlight-secondary,
+.cell.hl-horiz {
+  background: #C0DD97; color: #3B6D11;
+}
+/* Amber — intermediate result (MapPairsReduce) */
+.cell.hl-inter {
+  background: #FAEBC4; color: #6B4F00;
+}
+
+/* Layout helpers */
+.viz-stack    { display: flex; flex-direction: column; gap: 1.5rem; }
+.viz-row      { display: flex; flex-direction: row;    gap: 1.5rem; align-items: flex-start; }
+.viz-vec-group { display: flex; flex-direction: column; }
+
+/* MapPairs 2×2 grid layout */
+.mp-grid       { display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto;
+                 column-gap: 12px; row-gap: 12px; align-items: start; justify-content: start; }
+.mp-horiz-area { display: flex; flex-direction: column; gap: 8px; }
+.mp-vert-area  { display: flex; flex-direction: row;    gap: 8px; align-items: flex-start; }
+
+/* MapPairsReduce grid layout */
+.mpr-grid        { display: grid; column-gap: 12px; row-gap: 12px; align-items: start; justify-content: start; }
+.mpr-horiz-area  { display: flex; flex-direction: column; gap: 8px; }
+.mpr-vert-area   { display: flex; flex-direction: row;    gap: 8px; align-items: flex-start; }
+/* MapPool */
+.cell.out-of-pool { opacity: 0.35; }
+
+/* Skeleton selector tab bar */
+.skeleton-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-bottom: 2px solid #dee2e6;
+  margin-bottom: 0;  /* panel sits flush below */
+}
+/* Override the generic .sk-btn appearance inside the tab bar */
+.skeleton-select .sk-btn {
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  margin-bottom: -2px;        /* overlap the bar's bottom border */
+  padding: 6px 14px;
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+.skeleton-select .sk-btn:hover:not(.active) {
+  background: rgba(55, 138, 221, 0.06);
+  color: var(--color-text-primary);
+}
+.skeleton-select .sk-btn.active {
+  background: transparent;
+  border-bottom-color: #378ADD;
+  color: #185FA5;
+  font-weight: 600;
+}
+
+/* Controls panel — encloses the sub-row + dimension inputs */
+.viz-controls-panel {
+  border: 1px solid #dee2e6;
+  border-top: none;             /* tab bar provides the top edge */
+  border-radius: 0 0 4px 4px;
+  background: #fff;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+}
+.viz-controls-panel .controls   { margin-bottom: 0; }
+
+/* Sub-tab bar (Reduce variants, MapPairsReduce modes, Scan modes) */
+.sk-subrow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 5px 10px;
+  background: #f4f8fd;
+  border-left: 3px solid #378ADD;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Legend */
+.legend      { display: flex; gap: 16px; margin-top: 1rem; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-secondary); }
+.legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 0.5px solid; flex-shrink: 0; }
+
+/* Source code block inside a viz section */
+.viz-code {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 12px;
+  background: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 4px;
+  padding: 0.65rem 1rem;
+  overflow-x: auto;
+  margin: 0;
+  color: #24292e;
+  line-height: 1.6;
+}
+
+/* Collapsible sections (pattern view + source code view) */
+.viz-section { margin-top: 1rem; }
+
+.viz-section-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  background: #eef1f6;
+  border: 1px solid #dde2ea;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+.viz-section-bar:hover { background: #e4e9f2; }
+
+.viz-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #4a6080;
+}
+
+.viz-chevron {
+  font-size: 9px;
+  color: #7a92aa;
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+.viz-chevron-collapsed { transform: rotate(-90deg); }
+
+.viz-section-body { padding-top: 0.75rem; }
+
+/* Description paragraph */
+.desc { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 1rem; }
+
+/* Skeleton / mode toggle buttons */
+.sk-btn {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+.sk-btn:hover:not(.active) { background: rgba(55, 138, 221, 0.08); }
+.sk-btn.active { background: #378ADD; color: #fff; border-color: #185FA5; }
+

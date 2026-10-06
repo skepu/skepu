@@ -1,0 +1,17 @@
+# SkePU-Streaming
+
+\... coming soon. For now, check the recent open-access paper
+[@SkePU-Streaming].
+
+*SkePU-Streaming* is a two-layer high-level programming model for
+specifying complex stream-processing pipeline workflows for native
+execution in distributed heterogeneous parallel systems, with native
+stream operators implemented as SkePU programs. It consists of a parser
+for annotated (mapped) pipeline workflows, a runtime system, and a
+deployment framework, and uses SkePU as a subcomponent. The `skepu::io`
+standard library has been extended to provide access to ingoing and
+outgoing stream communication ports and for container
+serialization/deserialization.
+
+The source code of SkePU-Streaming can be found at
+<https://github.com/skepu/skepu-streaming/releases/tag/IJPP-experiments>.

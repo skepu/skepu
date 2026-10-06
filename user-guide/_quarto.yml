@@ -1,0 +1,38 @@
+project:
+  type: book
+  post-render:
+    - scripts/install_viz.py
+
+book:
+  title: "SkePU User Guide"
+  author:
+    - "August Ernstsson"
+    - "Johan Ahlqvist"
+    - "Christoph Kessler"
+  chapters:
+    - index.qmd
+    - src/installation.qmd
+    - src/programming.qmd
+    - src/stdlib.qmd
+    - src/skevu.qmd
+    - src/streaming.qmd
+    - src/blas.qmd
+    - src/changelog.qmd
+    - src/acknowledgements.qmd
+
+bibliography: bibliography.bib
+csl: ieee-access.csl
+
+format:
+  html:
+    theme: [cosmo, theme.scss]
+    toc: true
+    toc-depth: 4
+    code-line-numbers: true
+    css: custom.css
+    resources:
+      - "demos/"
+    grid:
+      sidebar-width: 230px
+      body-width: 880px
+      margin-width: 210px

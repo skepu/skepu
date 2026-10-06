@@ -1,0 +1,322 @@
+# Getting Started {#sec-installation}
+
+This chapter gives installation and usage guidelines for SkePU.
+
+## License {#sec-license}
+
+SkePU is distributed as open source and licensed under a modified BSD
+4-clause license.
+
+The copyright belongs to the individual contributors.
+
+## Authors and Maintainers {#sec-authors}
+
+The original SkePU (v1) was created in 2010 by Johan Enmyren and
+Christoph Kessler [@enmyren2010skepu]. Over the years, a number of
+people have contributed to SkePU 1, including Usman Dastgeer
+[@Dastgeer2014phd]. The major revision SkePU 2 was designed by August
+Ernstsson, Lu Li and Christoph Kessler [@ernstsson2016skepu2]. The major
+revision towards SkePU 3 was designed by August Ernstsson, Christoph
+Kessler, Johan Ahlqvist, and Suejb Memeti with input from partners in
+the EXA2PRO project [@ernstsson2021ijpp; @Ernstsson2022PhD].
+Contributors to the new SkeVU trace visualizer in SkePU 3.3
+[@Ernstsson2025SkeVU] include August Ernstsson and Elin Frankell. David
+Berntsson helped with recent bugfixes and revision of the SkePU gitlab
+repository.
+
+August Ernstsson[^1] is the current maintainer of SkePU.
+
+## Dependencies and Requirements {#sec-requirements}
+
+SkePU is fundamentally structured around C++11 features and thus
+requires a mature C++11 compiler. It has been tested with relatively
+recent versions of Clang and GCC, and NVCC version 9.
+
+It also uses the STL, including C++11 additions. It has been tested with
+`libstdc++` and `libc++`. SkePU does not depend on other libraries.
+
+SkePU requires the LLVM and Clang source when building the
+source-to-source translator. The translator produces valid C++11, OpenCL
+and/or CUDA source code and can thus be used on a separate system than
+the target if necessary (\"cross-precompilation\").
+
+The StarPU MPI backend requires a recent GCC compiler, an OpenMP
+library, an MPI library (tested with OpenMPI version 2.1), and StarPU
+built from the master branch.
+
+## Installation {#sec-install}
+
+This section explains how to build and install the clang-based version
+of the SkePU pre-compiler, SkePU-tool.
+
+[]{#sec-clanginst label="subsec:clanginst"}
+
+There are three steps to do when building skepu-tool from source:
+
+- Getting the source
+
+- Build skepu-tool
+
+- Install skepu-tool
+
+#### Getting the source {#getting-the-source .unnumbered}
+
+The public SkePU source code repository is available on GitHub:
+<https://github.com/skepu/skepu.git>. Clone the main repository to your
+local system with `git clone`.
+
+The main SkePU repository has one Git submodule, and one directory to know about.
+
+- `llvm`: This is an external dependency to the LLVM project. It is used
+  only for building the SkePU precompiler tool. This submodule
+  repository is patched as part of the initialization process of SkePU,
+  and should not be touched by a SkePU user, or even a SkePU contributor
+  who does not need to make in-depth modifications to the precompiler.
+
+- `skepu-headers/`: This directory of the repository holds the SkePU
+  run-time system, i.e. the template header library (`skepu-headers/src`
+  is the include path of SkePU programs). Most SkePU contributors would
+  make changes here.
+
+Enter the cloned main repository and fetch the submodule by running
+`git submodule update --init`. This process can take a while, as the
+LLVM repository is large.
+
+#### Building skepu-tool {#building-skepu-tool .unnumbered}
+
+SkePU-tool uses a CMake-based build procedure. The CMake scripts
+requires CMake version 3.13 or later. Best practice is to create an out
+of source build folder. In the following code snippet, we will use
+$<$src$>$/build. The following commands will build skepu-tool:
+
+    	mkdir build && cd build
+    	cmake -DCMAKE_BUILD_TYPE=Release ..
+    	make
+
+The available backends (CUDA, OpenCL, OpenMP, and StarPU-MPI with MPI) are detected by CMake.
+Some notable build options:
+
+| Option name | Default value | Description |
+|---|---|---|
+| `SKEPU_ENABLE_TESTING` | `OFF` (Release), `ON` (Debug) | Enables the test suite. |
+| `SKEPU_BUILD_EXAMPLES` | `OFF` | Enables building the SkePU examples. |
+| `SKEPU_EXAMPLES_SEQ` | `ON` | With examples: build the sequential examples. |
+| `SKEPU_EXAMPLES_PAR` | `ON` if CUDA, OpenCL or OpenMP is found | With examples: build the parallel examples. |
+| `SKEPU_EXAMPLES_MPI` | `ON` if StarPU-MPI is found | With examples: build the MPI examples. |
+| `SKEPU_EXAMPLES_TRACING` | `OFF` | With examples: build the parallel examples with tracing (see @sec-tracing). |
+
+For more build options, run `cmake -LAH`.
+
+## Usage
+
+The source-to-source translator tool `skepu-tool` accepts as arguments:
+
+- input file path: `-name <filename>`,
+
+- output directory: `-dir <directory>`,
+
+- output file name: `<filename>` (without file extension),
+
+- any combination of backends to be generated: `-cuda -opencl -openmp`.
+
+A complete list of supported flags, and further instructions, can be
+found by running `skepu-tool -help` on the clang based skepu-tool.
+
+Note that code for the sequential backend is always generated.
+
+SkePU programs (source files) are written as if a sequential
+implementation---without source translation---was targeted. In fact,
+such an implementation exists and is automatically selected if
+non-transformed source files are compiled directly. Make sure to
+`#include` header `skepu`, which contains all of the SkePU library[^2].
+
+We recommend to take a look at the included example SkePU programs and
+`Makefile`s to get an idea of how everything works in practice.
+
+#### Include directories
+
+The Clang based `skepu-tool` uses Clang libraries and will perform an
+actual parse to be able to properly analyze and transform the source
+code; still, it is not a fully-featured compiler as you would get with a
+pre-configured package of, e.g., Clang or GCC. This has consequences
+when it comes to locating platform and system-specific include
+directories, as these have to be specified explicitly.
+
+By adding the `--` token to the arguments list, you signal that any
+remaining arguments should be passed directly to the underlying Clang
+engine. These arguments are formatted as standard Clang arguments. The
+required arguments are as follows:
+
+- the language standard used for the program, e.g. `-std=c++17` as in
+  the examples;
+
+- include path to Clang's compiler-specific C++ headers,
+  `-I <path_to_skepu>/llvm/clang/lib/Headers/`;
+
+- include path to the SkePU header library:
+  `-I <path_to_skepu>/skepu-headers/src/`;
+
+- include path(s) to the C++ standard library and the system headers,
+  platform-specific;
+
+- additional flags as necessary for the particular application, as if it
+  was being compiled.
+
+The `Makefile` of the examples and the CMake function below set these up;
+on macOS they derive the system include paths from the installed Xcode
+or Command Line Tools (`xcrun`), on other systems they can be given
+explicitly (`SKEPU_TOOL_USER_FLAGS` in `Makefile.in` for the examples).
+
+#### Debugging
+
+Standard debuggers can be used with SkePU. Per default, SkePU does not
+use or require exceptions, and reports internal fatal errors to `stderr`
+and terminates. For facilitating debugging, defining the
+`SKEPU_ENABLE_EXCEPTIONS` macro will instead cause SkePU to report these
+errors by throwing exceptions. This should *not* be used for error
+recovery in release builds, as the internal state of SkePU is not
+consistent after an error. (The types of errors reported this way are
+mostly related to GPU management.)
+
+### StarPU MPI
+
+To use the StarPU MPI backend, precompile the source with the flags
+`-openmp -starpu-mpi`. If only the Map skeleton is used in a program,
+one can also enable the cuda backend. Do not forget to add the link
+flags and include flags that is needed to compile StarPU codes.
+
+When using the SkePU StarPU MPI backend, do not forget to make sure the
+code is safe to execute on multiple ranks at the same time. The
+`skepu::external` function can be used to make a region of code safe.
+Writing to file is one example where multiple nodes cannot execute the
+same region at the same time.
+
+### Clang skepu-tool and CMake
+
+The clang skepu-tool offers a CMake function to automatically configure
+the precompilation step. The syntax is as follows:
+
+    skepu_add_executable(<name> [EXCLUDE_FROM_ALL]
+      [[[CUDA] [OpenCL] [OpenMP]] | [MPI]]
+      SKEPUSRC ssrc1 [ssrc2 ...]
+      [SRC src1 [src2 ...])
+
+The function is a wrapper around `add_executable` that will generate
+precompilation targets for the SkePU sources listed as argument. Any
+include directories added via `target_include_directory` or
+`target_link_library` will propagate to the precompilation targets as
+well. The MPI backend option to `skepu_add_executable` implies OpenMP.
+
+To be able to use the function, add `find_package(SkePU)` to the
+CMakeLists.txt file. If SkePU is not installed in a path that CMake is
+aware of, one adds the argument `HINTS <skepu_prefix>` to find_package.
+
+## Limitations {#sec-limits}
+
+### SkePU general
+
+C++ purists, please do not use `const` with SkePU. SkePU is not
+`const`-correct, due to technical issues.
+
+Known limitations:
+
+- The OpenCL code generation of `MapPool` does not support global
+  random-access use of a `Pool1D` container.
+
+- Only `float` has been tried in the SkePU-DNN library.
+
+Reported for earlier releases and not re-checked for this one:
+
+- MapOverlap (3D, 4D) code generation is disabled for CUDA (@sec-mapoverlap).
+
+- MapPairsReduce code generation is disabled for CUDA and OpenCL
+  (@sec-mappairsreduce).
+
+- Multi-valued return (@sec-multireturn) is not implemented for MapOverlap.
+
+- Scan is missing OpenMP backend selection parameters (thread count,
+  scheduling mode).
+
+### StarPU-MPI skeleton backends
+
+The StarPU MPI backend is not very well tested yet. The following list
+are known issues:
+
+- The data-containers are not fully compatible with the normal version
+  of SkePU.
+
+- The skeleton `MapPool` is missing.
+
+- Only the Map, MapPairs, and Reduce skeletons have support for CUDA and
+  applications that use other skeletons cannot have CUDA and StarPU-MPI
+  enabled at the same time.
+
+### Clang SkePU tool
+
+In addition, not all combinations of skeleton features are
+implemented/tested for this release.
+
+## Example programs included in the SkePU repository {#sec-examplecollection}
+
+The SkePU distribution comes with a selection of example programs:
+
+- **Cellular automaton** (`cellular_automaton`)
+
+- **Cumulative moving average** (`cma`)
+
+- **Conjugate gradient solver** (`conjugate_gradient`)
+
+- **Coulombic potential** (`coulombic`)
+
+- **Dot product** (`dotproduct`)
+
+- **Heat diffusion** (`heat_diffusion`)
+
+- **Horner** (`horner`)
+
+- **Image processing** (`image_manip`)
+
+- **Mandelbrot fractal generator** (`mandelbrot`)
+
+- **Maximum-minimum** (`maxmin`)
+
+- **Miller-Rabin primality test** (`miller_rabin`)
+
+- **Matrix-matrix multiplication** (`mmmult`, and variant `mmmult_row_col`)
+
+- **Monte-Carlo pi calculation** (`montecarlo`)
+
+- **Matrix-vector multiplication, variant A** (`mvmult`)
+
+- **Matrix-vector multiplication, variant B** (`mvmult_row`)
+
+- **N-body simulation, variant A** (`nbody`)
+
+- **N-body simulation, variant B** (`nbody_mappairs`)
+
+- **Pearson product-movement coefficient** (`ppmcc`)
+
+- **Peak signal-to-noise ratio** (`psnr`)
+
+- **Riemann sum** (`riemann_sum`)
+
+- **Taylor series** (`taylor`)
+
+- **Dot product with the BLAS module** (`dotproduct_blas`)
+
+- **Image processing with PNG files** (`edgedetect`, `median`)
+
+- **MapPool** (`mappool`)
+
+- **A program of several source files** (`multifile_1`, `multifile_2`)
+
+- **SkePU-DNN** (`dnn`, `dnn_mnist10`, `dnn_cifar10`, `dnn_signals1d`, `dnn_artificial`,
+  `dnn_model_file`), see @sec-stdlib
+
+The directory has further programs (e.g., `fusion` and `sde`) and the data sets that the
+DNN examples read.
+
+[^1]: august.ernstsson@liu.se
+
+[^2]: Almost everything in SkePU is templates, so there is no penalty
+    from including skeletons etc., which are not used.

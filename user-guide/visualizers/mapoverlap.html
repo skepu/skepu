@@ -1,0 +1,30 @@
+
+<div class="viz-wrap">
+  <div class="controls">
+    <label><span>Rows</span><input type="number" id="vmo-rows"      value="4" min="1" max="12"></label>
+    <label><span>Cols</span><input type="number" id="vmo-cols"      value="6" min="1" max="12"></label>
+    <label><span>Row overlap</span><input type="number" id="vmo-rowRadius" value="1" min="0" max="3"></label>
+    <label><span>Col overlap</span><input type="number" id="vmo-colRadius" value="1" min="0" max="3"></label>
+  </div>
+
+  <div class="viz-section">
+    <button class="viz-section-bar">
+      <span class="viz-section-title">MapOverlap</span>
+      <span class="viz-chevron">▾</span>
+    </button>
+    <div class="viz-section-body">
+      <p class="desc" id="vmo-desc"></p>
+      <div id="vmo-area"></div>
+      <div class="legend" id="vmo-legend"></div>
+    </div>
+  </div>
+
+  <div class="viz-section">
+    <button class="viz-section-bar">
+      <span class="viz-section-title">Source</span>
+      <span class="viz-chevron viz-chevron-collapsed">▾</span>
+    </button>
+    <div class="viz-section-body" id="vmo-code" style="display:none"></div>
+  </div>
+</div>
+<script>VizUtils.mountStandaloneViz("mapoverlap", "vmo");</script>

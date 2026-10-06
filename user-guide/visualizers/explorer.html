@@ -1,0 +1,236 @@
+
+<div class="viz-wrap">
+  <!-- Skeleton selector (top-level tab bar) -->
+  <div class="skeleton-select" id="vex-sk-buttons"></div>
+  <!-- Controls panel: dimension inputs + extra controls -->
+  <div class="viz-controls-panel">
+    <div class="controls" id="vex-controls">
+      <label><span>Rows</span><input type="number" id="vex-rows" value="4" min="1" max="12"></label>
+      <label><span>Cols</span><input type="number" id="vex-cols" value="6" min="1" max="12"></label>
+      <div class="controls-divider" id="vex-extra-divider" style="display:none"></div>
+      <span id="vex-extra"></span>
+    </div>
+  </div>
+
+  <div class="viz-section">
+    <button class="viz-section-bar">
+      <span class="viz-section-title" id="vex-pattern-title"></span>
+      <span class="viz-chevron">▾</span>
+    </button>
+    <div class="viz-section-body">
+      <p class="desc" id="vex-desc"></p>
+      <div id="vex-area"></div>
+      <div class="legend" id="vex-legend"></div>
+    </div>
+  </div>
+
+  <div class="viz-section">
+    <button class="viz-section-bar">
+      <span class="viz-section-title">Source</span>
+      <span class="viz-chevron viz-chevron-collapsed">▾</span>
+    </button>
+    <div class="viz-section-body" id="vex-code" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+
+  /* Skeleton entries — singles are { key }, groups are { group, name, variants[], default } */
+  const ENTRIES = [
+    { key: "map" },
+    { key: "mapoverlap" },
+    { group: "reduce", name: "Reduce",
+      variants: [
+        { key: "reduce_full", name: "Full" },
+        { key: "reduce_row",  name: "Row-wise" },
+        { key: "reduce_col",  name: "Col-wise" },
+        { key: "reduce_2op",  name: "2-operator" },
+      ],
+      default: "reduce_full",
+    },
+    { key: "mappairs" },
+    { key: "mappairsreduce" },
+    { key: "mappool" },
+    { key: "scan" },
+  ];
+
+  /* Current state */
+  let currentKey  = "map";   // active SkePUSkeletons key
+  let extraState  = {};
+
+  /* ---- DOM refs ---------------------------------------------------------- */
+  const skBtnArea   = document.getElementById("vex-sk-buttons");
+  const rowsInput   = document.getElementById("vex-rows");
+  const colsInput   = document.getElementById("vex-cols");
+  const extraDiv    = document.getElementById("vex-extra");
+  const extraDivider= document.getElementById("vex-extra-divider");
+  const descEl      = document.getElementById("vex-desc");
+  const areaEl      = document.getElementById("vex-area");
+  const legendEl    = document.getElementById("vex-legend");
+  const patternTitleEl = document.getElementById("vex-pattern-title");
+  const codeEl         = document.getElementById("vex-code");
+
+  /* ---- Build top-level selector ----------------------------------------- */
+  ENTRIES.forEach(entry => {
+    const btn = document.createElement("button");
+    btn.className = "sk-btn";
+
+    if (entry.key) {
+      btn.textContent = SkePUSkeletons[entry.key].name;
+      btn.dataset.key = entry.key;
+      btn.addEventListener("click", () => selectSingle(entry.key));
+    } else {
+      btn.textContent   = entry.name;
+      btn.dataset.group = entry.group;
+      btn.addEventListener("click", () => selectGroup(entry));
+    }
+
+    skBtnArea.appendChild(btn);
+  });
+
+  /* ---- Select a single (non-grouped) skeleton --------------------------- */
+  function selectSingle(key) {
+    currentKey = key;
+    markTopActive(key, null);
+    loadSkeleton(key, null);
+  }
+
+  /* ---- Select a group (Reduce: adds a variant <select> to controls) ----- */
+  function selectGroup(entry) {
+    currentKey = entry.default;
+    markTopActive(null, entry.group);
+    loadSkeleton(entry.default, entry);
+  }
+
+  /* ---- Highlight the correct top-level button --------------------------- */
+  function markTopActive(key, group) {
+    skBtnArea.querySelectorAll(".sk-btn").forEach(b => {
+      const match = (key   && b.dataset.key   === key)
+                 || (group && b.dataset.group === group);
+      b.classList.toggle("active", !!match);
+    });
+  }
+
+  /* ---- Load a skeleton (set controls, legend, draw) --------------------- */
+  function loadSkeleton(key, groupEntry) {
+    const sk = SkePUSkeletons[key];
+    patternTitleEl.textContent = sk.name;
+    rowsInput.value = sk.defaults.rows;
+    colsInput.value = sk.defaults.cols;
+    buildExtraControls(sk, groupEntry);
+    VizUtils.buildLegend(sk.legend, legendEl);
+    redraw();
+  }
+
+  /* ---- Extra controls ---------------------------------------------------- */
+  function buildExtraControls(sk, groupEntry) {
+    extraDiv.innerHTML = "";
+    extraState = {};
+
+    const hasGroupSelect = !!groupEntry;
+    const hasExtras = sk.extraControls && sk.extraControls.length > 0;
+
+    if (!hasGroupSelect && !hasExtras) {
+      extraDivider.style.display = "none";
+      return;
+    }
+    extraDivider.style.display = "";
+
+    /* Group variant <select> (e.g. Reduce: Full / Row-wise / …) */
+    if (groupEntry) {
+      const lbl = document.createElement("label");
+      const lblSpan = document.createElement("span");
+      lblSpan.textContent = "Mode";
+      lbl.appendChild(lblSpan);
+      const sel = document.createElement("select");
+      sel.id = "vex-group-mode";
+      groupEntry.variants.forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v.key;
+        opt.textContent = v.name;
+        if (v.key === currentKey) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      sel.addEventListener("change", () => {
+        currentKey = sel.value;
+        const newSk = SkePUSkeletons[currentKey];
+        patternTitleEl.textContent = newSk.name;
+        VizUtils.buildLegend(newSk.legend, legendEl);
+        redraw();
+      });
+      lbl.appendChild(sel);
+      extraDiv.appendChild(lbl);
+    }
+
+    /* Per-skeleton extra controls */
+    sk.extraControls.forEach(ctrl => {
+      extraState[ctrl.id] = sk.defaults[ctrl.id] ?? ctrl.default;
+
+      if (ctrl.type === "number") {
+        const lbl = document.createElement("label");
+        const lblSpan = document.createElement("span");
+        lblSpan.textContent = ctrl.label;
+        lbl.appendChild(lblSpan);
+        const inp = document.createElement("input");
+        inp.type  = "number";
+        inp.id    = `vex-${ctrl.id}`;
+        inp.value = extraState[ctrl.id];
+        inp.min   = ctrl.min;
+        inp.max   = ctrl.max;
+        inp.addEventListener("change", () => {
+          extraState[ctrl.id] = Math.max(ctrl.min,
+            Math.min(ctrl.max, parseInt(inp.value) || ctrl.default));
+          inp.value = extraState[ctrl.id];
+          redraw();
+        });
+        lbl.appendChild(inp);
+        extraDiv.appendChild(lbl);
+
+      } else if (ctrl.type === "toggle") {
+        const lbl = document.createElement("label");
+        const lblSpan = document.createElement("span");
+        lblSpan.textContent = ctrl.label || ctrl.id;
+        lbl.appendChild(lblSpan);
+        const sel = document.createElement("select");
+        sel.id = `vex-${ctrl.id}`;
+        ctrl.options.forEach(opt => {
+          const o = document.createElement("option");
+          o.value = opt.value;
+          o.textContent = opt.label;
+          if (opt.value === extraState[ctrl.id]) o.selected = true;
+          sel.appendChild(o);
+        });
+        sel.addEventListener("change", () => {
+          extraState[ctrl.id] = sel.value;
+          redraw();
+        });
+        lbl.appendChild(sel);
+        extraDiv.appendChild(lbl);
+      }
+    });
+  }
+
+  /* ---- Redraw ------------------------------------------------------------ */
+  function getParams(sk) {
+    const rows = Math.max(1, Math.min(12, parseInt(rowsInput.value) || sk.defaults.rows));
+    const cols = Math.max(1, Math.min(12, parseInt(colsInput.value) || sk.defaults.cols));
+    return { rows, cols, ...extraState };
+  }
+
+  function redraw() {
+    const sk     = SkePUSkeletons[currentKey];
+    const params = getParams(sk);
+    descEl.innerHTML = typeof sk.desc === "function" ? sk.desc(params) : sk.desc;
+    sk.render(areaEl, params);
+    if (sk.codeGen) VizUtils.setCode(codeEl, sk.codeGen(params));
+  }
+
+  /* ---- Shared rows/cols listeners --------------------------------------- */
+  rowsInput.addEventListener("change", redraw);
+  colsInput.addEventListener("change", redraw);
+
+  /* ---- Boot -------------------------------------------------------------- */
+  selectSingle("map");
+}());
+</script>

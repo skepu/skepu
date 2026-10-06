@@ -1,0 +1,17 @@
+# Acknowledgements
+
+Work on SkePU was partly funded by EU H2020 project EXA2PRO, by the EU
+FP7 projects PEPPHER and EXCESS, by SeRC project OpCoReS, by ELLIIT
+project C05 GPAI, by SSF project FUS21-0033 ASTECC, by the Swedish
+national graduate school in computer science (CUGS), and by Linköping
+University.
+
+We also thank the National Supercomputer Centre (NSC) and SNIC/NAISS for
+providing access to HPC resources used for performance testing (SNIC
+2016/5-6, NAISS 2025/22-60, LiU-gpu-2023-05).
+
+## References
+
+::: {#refs}
+:::
+

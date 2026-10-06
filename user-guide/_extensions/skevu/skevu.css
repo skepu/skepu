@@ -1,0 +1,382 @@
+/* Styles of the SkeVU panels and WebAssembly runners embedded by the skevu extension */
+/* ── Reset & box model ──────────────────────────────────────────────────── */
+.te-panel,
+.te-panel *,
+.te-panel *::before,
+.te-panel *::after { box-sizing: border-box; }
+
+/* ── Outer panel ────────────────────────────────────────────────────────── */
+.te-panel {
+  margin: 1.5em 0;
+  border: 1px solid #dde;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  font-size: 14px;
+  font-family: system-ui, sans-serif;
+}
+
+/* ── Optional label bar ─────────────────────────────────────────────────── */
+.te-label {
+  padding: 10px 16px 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+  background: #f8f8fc;
+}
+
+/* ── Main area: graph column + optional source column ───────────────────── */
+.te-main {
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+}
+
+/* When source pane is present split 55/45; otherwise graph fills fully. */
+.te-main-split .te-graph-col { flex: 0 0 55%; min-width: 0; }
+.te-main-split .te-src-col   { flex: 1 1 0;   min-width: 0; border-left: 1px solid #eee; }
+
+.te-graph-col,
+.te-src-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+@media (max-width: 800px) {
+  .te-main-split        { flex-direction: column; }
+  .te-main-split .te-graph-col,
+  .te-main-split .te-src-col { flex: none; width: 100%; border-left: none; border-top: 1px solid #eee; }
+  .te-main-split .te-graph-col { border-top: none; }
+}
+
+/* ── Graph area ─────────────────────────────────────────────────────────── */
+.te-graph-wrap {
+  position: relative;
+  background: #fafafa;
+  flex-shrink: 0;
+}
+
+/* Cytoscape container — fills the wrap absolutely. */
+.te-cy {
+  position: relative;   /* Cytoscape manages its own canvas layering */
+  width: 100%;
+  background: white;
+}
+
+/* Loading spinner overlay */
+.te-loading {
+  position: absolute;
+  top: 8px; right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #aaa;
+  font-size: 0.75rem;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.te-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid #ddd;
+  border-top-color: #888;
+  border-radius: 50%;
+  animation: te-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes te-spin { to { transform: rotate(360deg); } }
+
+/* Error message */
+.te-error {
+  display: none;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  color: #c0392b;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 16px;
+  z-index: 21;
+  pointer-events: none;
+  max-width: 80%;
+}
+
+/* ── Stats bar ──────────────────────────────────────────────────────────── */
+.te-stats-bar {
+  padding: 6px 16px;
+  border-top: 1px solid #eee;
+  font-size: 0.75rem;
+  color: #666;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  min-height: 28px;
+  align-items: center;
+}
+
+.te-stats-bar b { color: #333; }
+
+/* ── Info box ───────────────────────────────────────────────────────────── */
+.te-info-box {
+  padding: 8px 16px 10px;
+  border-top: 1px solid #eee;
+  font-size: 0.78rem;
+  color: #444;
+  min-height: 46px;
+  background: #fafafa;
+}
+
+.te-info-empty {
+  color: #bbb;
+  font-style: italic;
+}
+
+.te-info-box table  { border-collapse: collapse; width: 100%; }
+.te-info-box td     { padding: 1px 6px 1px 0; vertical-align: top; }
+.te-info-key        { color: #999; white-space: nowrap; width: 1%; }
+
+/* ── Controls row ───────────────────────────────────────────────────────── */
+.te-controls-row {
+  padding: 6px 16px;
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.te-controls-row label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #555;
+  user-select: none;
+  margin: 0;
+}
+
+.te-controls-row select {
+  font-size: 0.75rem;
+  padding: 2px 4px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+}
+
+/* ── Source column internals ────────────────────────────────────────────── */
+
+/* Tab bar */
+.te-tab-bar {
+  display: flex;
+  overflow-x: auto;
+  border-bottom: 1px solid #ccc;
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+.te-tab-bar::-webkit-scrollbar { display: none; }
+
+/* Tab panes container */
+.te-tab-panes {
+  position: relative;
+  overflow: hidden;
+  flex: 1 1 auto;
+}
+
+/* ── Tab buttons (.cpp-tab) — names used by SourceCodeView ──────────────── */
+.cpp-tab {
+  background: none;
+  border: none;
+  border-right: 1px solid #ccc;
+  padding: 0.45em 0.9em;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.78em;
+  white-space: nowrap;
+  color: #555;
+  flex-shrink: 0;
+}
+.cpp-tab:hover  { background: #eee; }
+.cpp-tab.active {
+  background: #fff;
+  color: #000;
+  font-weight: 600;
+  border-bottom: 2px solid #fff;
+  border-top: 2px solid #0055cc;
+  margin-bottom: -1px;
+}
+
+/* ── Tab panes (.cpp-tab-pane) — names used by SourceCodeView ───────────── */
+.cpp-tab-pane {
+  display: none;
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  overflow-y: auto;
+}
+.cpp-tab-pane.active { display: block; }
+
+/* Hide pre until hljs finishes; spinner while loading */
+.cpp-tab-pane.hljs-loading pre { visibility: hidden; }
+.cpp-tab-pane.hljs-loading.active::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 2em; height: 2em;
+  margin: -1em 0 0 -1em;
+  border: 3px solid #ddd;
+  border-top-color: #888;
+  border-radius: 50%;
+  animation: te-spin 0.7s linear infinite;
+  pointer-events: none;
+}
+
+/* ── hljs line numbers ──────────────────────────────────────────────────── */
+pre code.hljs  { padding: 0 !important; font-size: 0.8em; }
+
+.hljs-ln-numbers {
+  text-align: right;
+  color: #bbb;
+  border-right: 1px solid #ddd;
+  vertical-align: top;
+  padding-right: 2em !important;
+  padding-left:  0.6em !important;
+  margin-right: 1em;
+}
+.hljs-ln-code   { padding-left: 0.5em !important; }
+.hljs-ln tr:hover { background-color: #ddd; }
+
+/* ── Badge pills (inserted by SourceCodeView) ───────────────────────────── */
+.badge {
+  background-color: #e6820a;
+  color: #fff;
+  font-size: 0.9em;
+  border-radius: 100%;
+  cursor: pointer;
+  display: inline-block;
+  height: 1.5em; width: 1.5em;
+  line-height: 1.5em;
+  position: relative;
+  right: -1.75em;
+  margin-left: -1.5em;
+  text-align: center;
+  transition: 0.3s transform;
+}
+.badge:hover { transform: scale(1.2); }
+
+/* ── Source line highlight ──────────────────────────────────────────────── */
+.line-selected { background-color: rgba(230, 130, 10, 0.2) !important; }
+
+/* ── Timeline row ───────────────────────────────────────────────────────── */
+.te-timeline-wrap {
+  border-top: 1px solid #eee;
+  background: #fafafa;
+  min-height: 40px;
+}
+
+.te-timeline-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  min-height: 40px;
+}
+
+/* Timeline selection highlight (class applied by TimelineView) */
+.gantt-bar.gantt-selected {
+  stroke: #0055cc !important;
+  stroke-width: 2.5 !important;
+}
+
+/* ── Cytoscape hover tooltip (inserted into document.body by GraphView) ─── */
+.gv-tooltip {
+  font-family: system-ui, monospace !important;
+  font-size: 11px !important;
+}
+
+/* ── WASM runner section (inside .te-wasm-panel) ────────────────────────── */
+.te-wasm-section {
+  padding: 10px 16px 12px;
+  border-bottom: 1px solid #eee;
+  background: #f8f8fc;
+}
+
+.te-wasm-run-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.te-wasm-argv {
+  flex: 1 1 0;
+  min-width: 0;
+  font-family: monospace;
+  font-size: 0.82rem;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+}
+.te-wasm-argv:focus { outline: 2px solid #0055cc; outline-offset: 1px; }
+
+.te-wasm-run,
+.te-wasm-clear {
+  font-size: 0.8rem;
+  padding: 4px 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: #f0f0f0;
+}
+.te-wasm-run   { background: #0055cc; color: #fff; border-color: #0044aa; }
+.te-wasm-run:hover   { background: #0044aa; }
+.te-wasm-run:disabled { opacity: 0.55; cursor: default; }
+.te-wasm-clear:hover  { background: #e0e0e0; }
+
+.te-wasm-output {
+  margin: 0;
+  padding: 8px 10px;
+  font-family: monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  background: #111;
+  color: #e8e8e8;
+  border-radius: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.te-wasm-output:empty { display: none; }
+
+/* ── Trace section ──────────────────────────────────────────────────────── */
+.te-trace-section { position: relative; }
+
+.te-trace-placeholder {
+  padding: 24px 16px;
+  color: #aaa;
+  font-size: 0.85rem;
+  font-style: italic;
+  text-align: center;
+}
+
+/* Fade-in when the trace views become visible */
+.te-main,
+.te-timeline-wrap {
+  animation: te-fadein 0.25s ease;
+}
+@keyframes te-fadein { from { opacity: 0; } to { opacity: 1; } }
+
+/* Source listing shown above a runner (code="true") — flush with the panel edges */
+.te-panel > div.sourceCode,
+.te-panel > .code-copy-outer-scaffold {
+  margin: 0 !important;
+  border-radius: 0;
+}
+.te-panel > div.sourceCode pre.sourceCode {
+  margin: 0;
+  border-radius: 0;
+  font-size: 0.8rem;
+}

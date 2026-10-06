@@ -1,0 +1,131 @@
+# SkePU Standard Library {#sec-stdlib}
+
+For commonly used functionality, SkePU provides a set of standard[^13]
+library modules. These span from utilities like SkePU-aware I/O routines
+and time measurement via portable deterministic parallel pseudorandom
+number generation to basic linear algebra and deep learning
+functionality, which interface with SkePU data-containers and may
+internally use SkePU skeletons to portably parallelize their
+computations. Each SkePU standard library module comes with its own
+namespace.
+
+| Module | Header | Namespace |
+|---|---|---|
+| Pseudorandom numbers | `<skepu>` | `skepu` |
+| Utility functions | `<skepu-lib/util.hpp>` | `skepu::util` |
+| Complex numbers | `<skepu-lib/complex.hpp>` | `skepu::complex` |
+| Linear algebra | `<skepu-lib/blas.hpp>` | `skepu::blas` |
+| Image filtering | `<skepu-lib/filter.hpp>` | `skepu::filter` |
+| Time measurement | `<skepu-lib/benchmark.hpp>` | `skepu::benchmark` |
+| Data-container I/O | `<skepu-lib/io.hpp>` | `skepu::io` |
+| Deep neural networks | `<skepu-lib/ml.hpp>` | `skepu::dnn` |
+
+## Deterministic Portable Pseudorandom Number Generation
+
+A `skepu::PRNG` is a stream of pseudorandom numbers that is attached to a skeleton instance
+with `setPRNG`. A user function of `Map` (and the other skeletons that accept it, see
+@tbl-featuretable) receives it as a proxy parameter `skepu::Random<N> &`, where `N` is the
+number of random numbers the call draws at most, and draws from it with `get()` (an integer)
+or `getNormalized()` (a floating-point number in the unit interval):
+
+```cpp
+float random_class(skepu::Random<1> &rand, int classes)
+{
+    return (int)(rand.getNormalized() * classes);
+}
+
+auto generate = skepu::Map<0>(random_class);
+skepu::PRNG prng(0);          // the seed
+generate.setPRNG(prng);
+generate(labels, 10);
+```
+
+The random numbers are a function of the seed and the position of the element, not of how
+the work is divided, so the CPU, OpenMP and OpenCL backends produce the same numbers
+(`examples/dnn_artificial.cpp` generates its whole data set this way, and `examples/coulombic.cpp`
+its atoms).
+
+## Utility Functions
+
+`skepu::util` has ready-made user functions for the usual arithmetic and comparisons, to use
+instead of writing them for each skeleton: `identity`, `add`, `sub`, `mul`, `div`, `reciprocal`,
+`negate`, `increment`, `decrement`, `square`, `min` and `max`; for example
+`skepu::Map(skepu::util::square<float>)`. The binary functions also come in a form with
+operands of different types.
+
+## Complex Numbers
+
+`skepu::complex::complex<T>` is a complex number type that is usable in user functions on all
+backends, with the aliases `FComplex` (single precision) and `DComplex` (double precision) and the
+arithmetic as functions (`add`, `sub`, `mul`, `real_div`, `conj`, ...) that can be used as
+operators of skeletons.
+
+## Linear Algebra
+
+The `skepu::blas` module for basic linear algebra subroutines is described in
+@sec-skepublas.
+
+## Image Filtering and Parsing/Serialization
+
+`skepu::filter` has pixel types (`GrayscalePixel`, `RGBPixel`, `RGBAPixel`, `HSVPixel`, ...) and
+the user functions to work with them: conversions between RGB(A) and HSV(A), gamma expansion
+and compression, extraction and composition of color channels and the intensity of a pixel. They
+are meant as user functions for `Map` and `MapOverlap` over a `skepu::Matrix` of pixels. The
+examples `edgedetect`, `image_manip` and `median` in `examples/` use them.
+
+## Time Measurement Utilities
+
+`skepu::benchmark` measures the execution time of skeleton calls on one or all backends.
+`measureExecTime` times one call of a function and `basicBenchmark` returns the median of
+several repetitions (as a `std::chrono::microseconds` duration); `fullBenchmark` runs a function over a range of problem sizes
+for every available backend of a tuple of skeleton instances and returns a `BenchmarkResult`
+with the times for each backend and size.
+
+## Consistent Data-Container Input/Output
+
+`skepu::io::cout` and `skepu::io::cin` are stream wrappers that print and read SkePU
+containers (`Vector`, `Matrix`, tensors) and scalars consistently: the container is made
+up to date on the host first (as with `skepu::external`, see @sec-external), and the access is
+recorded in the trace when tracing is enabled, so that SkeVU shows it as an event. Other values
+are forwarded to the underlying `std::ostream`/`std::istream`.
+
+```cpp
+skepu::io::cout << result << "\n";
+```
+
+## Convolutional and Deep Neural Network Learning and Inference
+
+`<skepu-lib/ml.hpp>` is *SkePU-DNN*, a library for neural networks in which every layer, activation,
+loss and optimizer step is computed by SkePU skeletons, so that a model trains and predicts
+on every backend, including the GPUs. A model is a `skepu::dnn::SequentialModel`, built from its input dimensions (batch, and the
+extents of one sample) and a chain of layers, then configured with a loss function and an
+optimizer and trained on host tensors:
+
+```cpp
+using namespace skepu::dnn;
+
+auto model = SequentialModel(Dimensions{batch_size, 28, 28, 1})
+    << Conv2D(8).kernel(3, 3).weights(Init::He_uniform).biases(Init::Zero).activation(Act::ReLU)
+    << MaxPooling2D().kernel(2, 2)
+    << Flatten()
+    << Dense(10).weights(Init::Xavier_uniform).biases(Init::Zero).activation(Act::SoftMax);
+
+model.init();
+model.configure(Loss::CategoricalCrossEntropy, Opt::Adam);
+model.fit(train_x, train_y, epochs, learning_rate);        // skepu::Tensor4<float> data
+auto score = model.evaluate(test_x, test_y);               // (loss, accuracy)
+```
+
+The layers are `Dense`, `Conv2D`, `Conv1D`, `MaxPooling2D`, `AvgPooling2D`, `MaxPooling1D`,
+`AvgPooling1D`, `Flatten` and `Dropout`; the activations `ReLU`, `LeakyReLU`, `ELU`, `Sigmoid`,
+`TanH` and `SoftMax`; the losses categorical and binary cross-entropy; the optimizers SGD and Adam.
+The convolution and pooling layers support unit stride (pooling: stride equal to the pool size)
+and "valid" mode; other settings are rejected with an error. `evaluate` gives the loss and accuracy of a data set (optionally with a confusion matrix),
+`predict` the predictions, and `save` and `load_model` write and read a model, with its
+weights, as a plain-text file (`examples/models/`). Examples, using the MNIST and CIFAR-10 data
+sets and synthetic data, are `examples/dnn_mnist10.cpp`, `dnn_cifar10.cpp`, `dnn_signals1d.cpp`,
+`dnn_artificial.cpp` and `dnn_model_file.cpp`.
+
+[^13]: This is not a formal standard as decided by a standardization
+    organization, but just the SkePU equivalent of the standard library
+    in other programming languages.
