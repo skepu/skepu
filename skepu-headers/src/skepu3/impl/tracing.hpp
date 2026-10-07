@@ -74,7 +74,8 @@ namespace skepu
 			return std::vector<TraceID>{};
 		}
 
-		static unsigned long timestamp_now()
+		// (inline: one origin of time for all translation units of a program)
+		inline unsigned long timestamp_now()
 		{
 			static unsigned long start_time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 			return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count() - start_time;
@@ -106,6 +107,8 @@ namespace skepu
 				static const std::string PATTERN{"pattern"};
 				static const std::string BACKEND{"backend"};
 				static const std::string THREADS{"threads"};
+				static const std::string DEVICES{"devices"};
+				static const std::string PARAMETERS{"parameters"};
 				static const std::string DIRECTION{"direction"};
 				static const std::string PRNG{"prng"};
 				static const std::string SOURCE{"source"};
@@ -121,6 +124,7 @@ namespace skepu
 					static const std::string ALLOCATION{"allocation"};
 					static const std::string DEALLOCATION{"deallocation"};
 					static const std::string ELEM_ACCESS{"element_access"};
+					static const std::string COPY{"copy"};
 					static const std::string TRANSFER{"transfer"};
 					static const std::string REGION{"region"};
 					static const std::string EXTERNAL{"external"};
@@ -240,7 +244,30 @@ namespace skepu
 			entry[Schema::Keys::INDEX]  = index;
 			entry[Schema::Keys::LABEL] = label;
 			entry[Schema::Keys::TIME]  = now;
+			entry[Schema::Keys::FILE]  = file;
 			entry[Schema::Keys::LINE]  = line;
+			if (!this->m_regions().empty())
+				entry[Schema::Keys::REGION] = this->m_regions().top();
+
+			this->m_trace_json.push_back(entry);
+			}; this->push_capture(std::move(capture));
+#endif
+		}
+
+		inline void Tracer::copy(EventHandle &h, TraceID source_id, TraceID destination_id, std::string const& label, size_t elements)
+		{
+#ifdef SKEPU_TRACING
+			unsigned long now = timestamp_now();
+
+			auto capture = [=, this]{
+			nlohmann::json entry;
+			entry[Schema::Keys::TYPE]      = Schema::Values::Types::COPY;
+			entry[Schema::Keys::SOURCE]    = source_id;
+			entry[Schema::Keys::OBJECT_ID] = destination_id;
+			entry[Schema::Keys::LABEL]     = label;
+			entry[Schema::Keys::ELEMENTS]  = elements;
+			entry[Schema::Keys::START]     = h.m_time;
+			entry[Schema::Keys::END]       = now;
 			if (!this->m_regions().empty())
 				entry[Schema::Keys::REGION] = this->m_regions().top();
 
@@ -312,7 +339,14 @@ namespace skepu
 			const BackendSpec *backend = skel_instance->m_selected_spec;
 			UniqueIdentifier::ID id = skel_instance->getObjectID();
 			std::string label = skel_instance->getLabel();
-			size_t threads = backend->CPUThreads();
+			// (the backend that the call used: the type of an automatic choice is the default)
+			const Backend::Type type = backend ? backend->type() : Backend::Type::Auto;
+			const size_t threads = backend ? backend->CPUThreads() : 0, devices = skel_instance->traceDevices();
+			Parameters parameters;
+			skel_instance->traceParameters(parameters);
+			// a MapPool is a MapOverlap that pools: say so in the name
+			if (parameters.values.value("pool", false) && pattern.compare(0, 10, "MapOverlap") == 0)
+				pattern.replace(0, 10, "MapPool");
 
 			auto capture = [=, this]{
 			nlohmann::json entry;
@@ -333,12 +367,20 @@ namespace skepu
 				entry[Schema::Keys::PRNG]      		 = prng;
 			if (!this->m_regions().empty())
 				entry[Schema::Keys::REGION] = this->m_regions().top();
+			if (!parameters.values.empty())
+				entry[Schema::Keys::PARAMETERS] = parameters.values;
 			if (backend)
 			{
 				std::stringstream ss;
-				ss << backend->getType();
+				ss << type;
 				entry[Schema::Keys::BACKEND]       = ss.str();
-				entry[Schema::Keys::THREADS]       = threads;
+				// the threads of the host, and the devices that a call used: what runs a call
+				if (type == Backend::Type::CPU)
+					entry[Schema::Keys::THREADS]   = 1;
+				else if (type == Backend::Type::OpenMP || type == Backend::Type::Hybrid)
+					entry[Schema::Keys::THREADS]   = threads;
+				if (type == Backend::Type::OpenCL || type == Backend::Type::CUDA || type == Backend::Type::Hybrid)
+					entry[Schema::Keys::DEVICES]   = devices;
 			}
 
 			this->m_trace_json.push_back(entry);
@@ -360,7 +402,7 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			auto h = this->startEvent();
 			work_func();
-			this->call(h, pattern, skel_instance, std::move(elements), std::move(elwise_outputs), std::move(elwise_inputs), std::move(proxy_inputs), std::move(scalar_inputs));
+			this->call(h, pattern, skel_instance, std::move(elements), std::move(elwise_outputs), std::move(elwise_inputs), std::move(proxy_inputs), std::move(scalar_inputs), prng);
 #endif
 		}
 
@@ -410,7 +452,7 @@ namespace skepu
 			entry[Schema::Keys::PROXY_INPUTS]  = std::vector<TraceID>{};
 			entry[Schema::Keys::SCALAR_INPUTS] = ids;
 			entry[Schema::Keys::OUTPUTS]       = std::vector<TraceID>{};
-			entry[Schema::Keys::FILE]          = "";
+			entry[Schema::Keys::FILE]          = file;
 			entry[Schema::Keys::LINE]          = line;
 			if (!this->m_regions().empty())
 				entry[Schema::Keys::REGION] = this->m_regions().top();
@@ -585,8 +627,8 @@ namespace skepu
 		inline void Tracer::region(std::string const& label, std::function<void(void)> &&work_func SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER)
 		{
 			this->beginRegion(label SKEPU_EXTERNAL_SOURCE_LOCATION_FORWARD_ARG);
+			struct End { Tracer &tracer; ~End() { tracer.endRegion(); } } end{*this};   // (also if work_func throws)
 			work_func();
-			this->endRegion();
 		}
 
 		// One default tracer for the whole program (an inline function's local static is shared by

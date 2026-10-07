@@ -38,7 +38,7 @@ namespace skepu
 					parsum = ReduceFunc::OMP(parsum, data[base + col]);
 				res(row) = parsum;
 			}
-			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Partial", this, {rows, cols}, {res.getParent().getObjectID()}, {arg.getParent().getObjectID()}, {}, {});
+			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Partial", this, {rows, cols}, {res.getParent().getObjectID()}, {arg.getParent().getTraceObjectID()}, {}, {});
 		}
 		
 		

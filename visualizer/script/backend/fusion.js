@@ -53,6 +53,9 @@ const baseOf = pattern => (pattern ?? '').split(' ')[0];
  *   pool     as overlap if the windows overlap, none if they do not (the trace does not have the windows)
  */
 function recomputeOf(A, B) {
+    const prm = B.parameters ?? {};
+    // each element is read by as many outputs as there are windows (of the pool, or of the overlap) over it
+    const readers = (size, stride) => size.reduce((n, s, d) => n * Math.ceil(s / Math.max(1, stride?.[d] ?? 1)), 1);
     switch (baseOf(B.pattern)) {
         case 'MapPairs':
         case 'MapPairsReduce': {
@@ -61,10 +64,16 @@ function recomputeOf(A, B) {
             const factor = n === h && n !== v ? v : n === v && n !== h ? h : n;
             return { kind: 'pairs', factor, note: `each element is computed ${factor} times (once per element of the other vector)` };
         }
-        case 'MapOverlap':
-            return { kind: 'overlap', factor: null, note: 'each element is computed once for each output whose neighbourhood contains it' };
-        case 'MapPool':
-            return { kind: 'pool', factor: null, note: 'none if the pool windows do not overlap, else each element is computed once per window that contains it' };
+        case 'MapOverlap': {
+            if (!prm.overlap) return { kind: 'overlap', factor: null, note: 'each element is computed once for each output whose neighbourhood contains it' };
+            const factor = readers(prm.overlap.map(o => 2 * o + 1), prm.stride);
+            return { kind: 'overlap', factor, note: `each element is computed ${factor} times (once for each output whose neighbourhood of ${prm.overlap.map(o => 2 * o + 1).join(' x ')} contains it)` };
+        }
+        case 'MapPool': {
+            if (!prm.pool_size) return { kind: 'pool', factor: null, note: 'none if the pool windows do not overlap, else each element is computed once per window that contains it' };
+            const factor = readers(prm.pool_size, prm.stride);
+            return factor === 1 ? null : { kind: 'pool', factor, note: `each element is computed ${factor} times (the pool windows ${prm.pool_size.join(' x ')} with stride ${prm.stride.join(' x ')} overlap)` };
+        }
     }
     return null;
 }
@@ -80,9 +89,11 @@ function sizeFits(A, B) {
         case 'MapOverlap':
         case 'MapPool': return true;       // the output has other extents than the input (valid convolution, pooling)
     }
-    // A MapPairs is traced as (Hsize, Vsize), and a Map over a matrix as (rows, columns).
-    if (baseOf(A.pattern) === 'MapPairs' && A.elements?.length === 2 && B.elements?.length === 2)
-        return sameElements(A, B) || (A.elements[0] === B.elements[1] && A.elements[1] === B.elements[0]);
+    // A MapPairs is traced as (Hsize, Vsize), and a Map over a matrix as its element count.
+    if (baseOf(A.pattern) === 'MapPairs' && A.elements?.length === 2) {
+        if (B.elements?.length === 2) return sameElements(A, B) || (A.elements[0] === B.elements[1] && A.elements[1] === B.elements[0]);
+        if (B.elements?.length === 1) return A.elements[0] * A.elements[1] === B.elements[0];     // (a Map over a matrix)
+    }
     return sameElements(A, B);
 }
 // ── What an event reads and writes ───────────────────────────────────────────
@@ -98,6 +109,7 @@ function accessOf(e) {
             for (const id of e.outputs       ?? []) writes.add(id);
             if (e.prng != null) { reads.add(e.prng); writes.add(e.prng); }   // the state of the stream
             break;
+        case 'copy':           reads.add(e.source); writes.add(e.object_id); break;
         case 'transfer':
         case 'snapshot':       reads.add(e.object_id); break;
         case 'element_access': reads.add(e.source);    break;
@@ -209,6 +221,8 @@ function serialPairs(ix, rules, blocked) {
             if (!bAcc.elwise.has(C) || bAcc.proxy.has(C)) { block('proxy-access', A, B, C); continue; }
 
             const reasons = [];
+            // a Map or MapReduce with a stride reads and writes every other, or every third, element: not one to one
+            if ([A, B].some(c => (c.parameters?.strides ?? []).some(s => s !== 1))) { block('strided', A, B, C); continue; }
             const free = rules.serialConsumers.includes(baseOf(B.pattern));
             const costly = rules.serialConsumersRecompute.includes(baseOf(B.pattern));
             if (!rules.serialProducers.includes(baseOf(A.pattern)) || !(free || costly)) reasons.push('pattern');
@@ -321,7 +335,7 @@ function patternText([a, b] = []) {
 
 const REASON_TEXT = {
     'multiple-readers':  c => `"${c}" is read by other calls too`,
-    'host-access':       c => `"${c}" is accessed by the host (element access, snapshot, transfer or external) before it changes`,
+    'host-access':       c => `"${c}" is accessed by the host (element access, snapshot, transfer, copy or external) before it changes`,
     'proxy-access':      c => `"${c}" is read through a proxy (random access), not element by element`,
     'pattern':           (c, patterns) => patternText(patterns),
     'recompute':         () => 'fusing would compute the Map once per use of each element, and recomputation is turned off',
@@ -330,6 +344,7 @@ const REASON_TEXT = {
     'shared-prng':       () => 'both draw from the same PRNG stream',
     'scalar-output':     c => `"${c}" is a scalar result of a reduction`,
     'hazard':            () => 'an event between the calls conflicts with moving either of them',
+    'strided':           () => 'a call has a stride: it does not read and write the elements one to one',
 };
 
 /** A sentence for the reason a pair was not fused, from an entry of `blocked` and the label of the container. */

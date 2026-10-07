@@ -144,12 +144,14 @@ namespace skepu
 					
 				}
 			}
+			SKEPU_TRACING_FINISH_CL();
 			SKEPU_TRACE_CALL(trace_handle, "MapPairsReduce", this, {Hsize, Vsize},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<VEI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...,
 					get<HEI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
-				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...)
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapPairsFunc::randomCount>()
 			);
 		}
 		

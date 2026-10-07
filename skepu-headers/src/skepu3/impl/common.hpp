@@ -77,6 +77,13 @@ namespace skepu
 			this->objectNames[object] = name;
 		}
 
+		// (the name that a program registered for an object, or the fallback)
+		std::string getObjectName(const void *object, std::string const& fallback)
+		{
+			auto it = this->objectNames.find(object);
+			return (it == this->objectNames.end()) ? fallback : (*it).second;
+		}
+
 		std::string getObjectName(const void *object)
 		{
 			auto it = this->objectNames.find(object);
@@ -215,12 +222,29 @@ namespace skepu
 		Normal, RedBlack, Red, Black
 	};
 
+	inline std::string to_string(UpdateMode m)
+	{
+		switch (m)
+		{
+			case UpdateMode::Normal:   return "Normal";
+			case UpdateMode::RedBlack: return "RedBlack";
+			case UpdateMode::Red:      return "Red";
+			case UpdateMode::Black:    return "Black";
+		}
+		return "";
+	}
+
 	// ReduceMode
 
 	enum class ReduceMode
 	{
 		RowWise, ColWise
 	};
+
+	inline std::string to_string(ReduceMode m)
+	{
+		return m == ReduceMode::RowWise ? "RowWise" : "ColWise";
+	}
 
 	inline std::ostream &operator<<(std::ostream &o, ReduceMode m)
 	{
@@ -242,6 +266,11 @@ namespace skepu
 	{
 		Inclusive, Exclusive
 	};
+
+	inline std::string to_string(ScanMode m)
+	{
+		return m == ScanMode::Inclusive ? "Inclusive" : "Exclusive";
+	}
 
 	enum class AccessMode
 	{

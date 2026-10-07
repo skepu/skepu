@@ -88,11 +88,13 @@ namespace skepu
 			// Make sure the data is marked as changed by the device
 			pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
+			SKEPU_TRACING_FINISH_CL();
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 1D", this, {numElem},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
-				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...)
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapOverlapFunc::randomCount>()
 			);
 		}
 
@@ -187,11 +189,13 @@ namespace skepu
 				pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 				pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
 			}
+			SKEPU_TRACING_FINISH_CL();
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 1D", this, {size},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
-				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...)
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapOverlapFunc::randomCount>()
 			);
 		}
 		
@@ -383,11 +387,13 @@ namespace skepu
 			// Make sure the data is marked as changed by the device
 			pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
+			SKEPU_TRACING_FINISH_CL();
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap RowWise", this, {colWidth, rowWidth},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
-				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...)
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapOverlapFunc::randomCount>()
 			);
 		}
 		
@@ -529,11 +535,13 @@ namespace skepu
 			// to properly de-allocate the memory
 			for (size_t i = 0; i < numDevices; ++i)
 				pack_expand((delete std::get<OI>(outMemP[i]), 0)...);
+			SKEPU_TRACING_FINISH_CL();
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap RowWise", this, {colWidth, rowWidth},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
-				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...)
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapOverlapFunc::randomCount>()
 			);
 		}
 		
@@ -659,11 +667,13 @@ namespace skepu
 			// Make sure the data is marked as changed by the device
 			pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
+			SKEPU_TRACING_FINISH_CL();
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap ColWise", this, {colWidth, numcols},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
-				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...)
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapOverlapFunc::randomCount>()
 			);
 		}
 		
@@ -836,11 +846,13 @@ namespace skepu
 				delete wrapStartDev_mem_p[i];
 				delete wrapEndDev_mem_p[i];
 			}
+			SKEPU_TRACING_FINISH_CL();
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap ColWise", this, {colWidth, numCols},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
-				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...)
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapOverlapFunc::randomCount>()
 			);
 		}
 		

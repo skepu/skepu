@@ -105,11 +105,13 @@ namespace skepu
 			// Make sure the data is marked as changed by the device
 			pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
-			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 2D", this, {in_size_i, in_size_j},
+			SKEPU_TRACING_FINISH_CL();
+			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 2D", this, {out_size_i, out_size_j},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
-				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...)
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapOverlapFunc::randomCount>()
 			);
 		}
 		
@@ -197,11 +199,13 @@ namespace skepu
 				// Make sure the data is marked as changed by the device
 				pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 				pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
-				SKEPU_TRACE_CALL(trace_handle, "MapOverlap 2D", this, {in_size_i, in_size_j},
+				SKEPU_TRACING_FINISH_CL();
+				SKEPU_TRACE_CALL(trace_handle, "MapOverlap 2D", this, {out_size_i, out_size_j},
 					{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 					{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 					{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
-					tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...)
+					tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+					this->template randomID<MapOverlapFunc::randomCount>()
 				);
 			}
 		}

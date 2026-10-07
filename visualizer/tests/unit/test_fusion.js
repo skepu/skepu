@@ -46,7 +46,7 @@ describe('serial fusion', () => {
     });
 
     it('does not fuse when the host looks at the intermediate (element access, snapshot, transfer, external)', () => {
-        for (const observe of [b => b.access(9, 2), b => b.snapshot(2), b => b.transfer(2), b => b.external('print', { scalars: [2] })]) {
+        for (const observe of [b => b.access(9, 2), b => b.snapshot(2), b => b.transfer(2), b => b.external('print', { scalars: [2] }), b => b.copy(2, 4)]) {
             const r = chain(b => [b.call('A', { ins: [1], outs: [2] }), observe(b), b.call('B', { ins: [2], outs: [3] })]);
             expect(reasonOf(r)[0]).toBe('host-access');
             expect(r.serial_groups).toBe(0);
@@ -272,6 +272,42 @@ describe('a Map into the skeletons that read with a neighbourhood or in pairs', 
     });
 });
 
+describe('fusion with the parameters that the tracer records', () => {
+    const into = (pattern, params, opts = {}) => {
+        const b = builder();
+        const events = [b.alloc(1, 'X'), b.alloc(2, 'C'), b.alloc(3, 'Y'), b.call('A', { ins: [1], outs: [2] }), b.call('B', { pattern, ins: [2], outs: [3], params, ...opts })];
+        return fusionCandidates(trace(events));
+    };
+
+    it('fuses into a pool without recomputation if the windows do not overlap', () => {
+        const r = into('MapPool 2D', { pool: true, pool_size: [2, 2], stride: [2, 2] }, { elements: [8, 8] });
+        expect(r.serial_groups).toBe(1);
+        expect(r.groups[0].recompute).toBeUndefined();
+    });
+
+    it('says how many times an element is computed in a pool whose windows overlap, and in an overlap', () => {
+        expect(into('MapPool 2D', { pool: true, pool_size: [3, 3], stride: [1, 2] }, { elements: [8, 8] }).groups[0].recompute[0])
+            .toMatchObject({ kind: 'pool', factor: 3 * 2 });
+        expect(into('MapOverlap 2D', { overlap: [1, 2] }, { elements: [8, 8] }).groups[0].recompute[0])
+            .toMatchObject({ kind: 'overlap', factor: 3 * 5 });
+        expect(into('MapOverlap 1D', { overlap: [2], stride: [2] }).groups[0].recompute[0]).toMatchObject({ factor: 3 });
+    });
+
+    it('does not fuse a call that has a stride', () => {
+        const r = into('Map', { strides: [2, 1] });
+        expect(r.serial_groups).toBe(0);
+        expect(r.blocked[0].reason).toBe('strided');
+        expect(into('Map', undefined).serial_groups).toBe(1);
+    });
+
+    it('fuses a MapPairs into a Map over a matrix, which has the element count of the matrix', () => {
+        const b = builder();
+        const events = [b.alloc(1, 'U'), b.alloc(2, 'D'), b.alloc(3, 'R'),
+            b.call('P', { pattern: 'MapPairs', elements: [64, 32], ins: [1], outs: [2] }), b.call('M', { elements: [2048], ins: [2], outs: [3] })];
+        expect(fusionCandidates(trace(events)).serial_groups).toBe(1);
+    });
+});
+
 // examples/fusion_patterns: one region for each case, made by examples/synthetic_traces.py.
 describe('the fusion_patterns example', () => {
     const { events } = parseTrace(readFileSync(join(ROOT, 'examples/fusion_patterns/trace_fusion_patterns_synthetic.json'), 'utf8'));
@@ -288,7 +324,7 @@ describe('the fusion_patterns example', () => {
 
     it('says which fusions recompute', () => {
         const cost = Object.fromEntries(r.groups.filter(g => g.recompute).map(g => [g.calls[1].label, g.recompute[0].kind + ':' + g.recompute[0].factor]));
-        expect(cost).toEqual({ laplace: 'overlap:null', distance: 'pairs:160', max_pool: 'pool:null' });
+        expect(cost).toEqual({ laplace: 'overlap:9', distance: 'pairs:160' });      // (the pool has windows that do not overlap: no cost)
     });
 
     it('gives the reason of each call that is almost fusible', () => {
@@ -296,7 +332,12 @@ describe('the fusion_patterns example', () => {
         expect(why).toMatchObject({
             'double_x>prefix_sum': 'pattern', 'blur>threshold': 'pattern', 'plus_one>times_two': 'multiple-readers',
             'omp_add>T': 'host-access', 'add_one>T': 'host-access', 'bump>lookup': 'proxy-access', 'shift_vec>scale_mat': 'size-mismatch',
-            'jitter>noise': 'shared-prng', 'increment>combine': 'hazard', 'total_of>normalize_by': 'scalar-output',
+            'jitter>noise': 'shared-prng', 'increment>combine': 'hazard', 'total_of>normalize_by': 'scalar-output', 'step_f>step_g': 'strided',
         });
+    });
+
+    it('does not fuse across a copy of the intermediate, and says that the copy reads it', () => {
+        const withCopy = r.blocked.filter(b => b.with?.includes('copy'));
+        expect(withCopy.map(b => `${b.reason} ${b.producer.label}`)).toEqual(['host-access add_c']);
     });
 });

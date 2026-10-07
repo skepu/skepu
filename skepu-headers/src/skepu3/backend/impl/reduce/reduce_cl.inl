@@ -91,7 +91,7 @@ namespace skepu
 			}
 			
 			cl_helpers::freeDeviceMemory<T>(deviceMemPointer);
-			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Partial", this, {rows, cols}, {res.getParent().getObjectID()}, {arg.getParent().getObjectID()}, {}, {});
+			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Partial", this, {rows, cols}, {res.getParent().getObjectID()}, {arg.getParent().getTraceObjectID()}, {}, {});
 		}
 		
 		
@@ -171,7 +171,7 @@ namespace skepu
 			for (size_t i = 0; i < numDevices; ++i)
 				cl_helpers::freeDeviceMemory<T>(deviceMemPointers[i]);
 			
-			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Partial", this, {rows, cols}, {res.getParent().getObjectID()}, {arg.getParent().getObjectID()}, {}, {});
+			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Partial", this, {rows, cols}, {res.getParent().getObjectID()}, {arg.getParent().getTraceObjectID()}, {}, {});
 		}
 		
 		
@@ -236,7 +236,7 @@ namespace skepu
 			
 			res = ReduceFunc::CPU(res, partialRes);
 			auto scalar_res = Scalar<T>(res);
-			SKEPU_TRACE_CALL(trace_handle, "Reduce", this, {size}, tracing::scalar_labels(scalar_res), {arg.getParent().getObjectID()}, {}, {});
+			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Full", this, {size}, tracing::scalar_labels(scalar_res), {arg.getParent().getObjectID()}, {}, {});
 			return scalar_res;
 		}
 		
@@ -294,7 +294,7 @@ namespace skepu
 			}
 
 			auto scalar_res = Scalar<typename ReduceFunc::Ret>(res);
-			SKEPU_TRACE_CALL(trace_handle, "Reduce", this, {size}, tracing::scalar_labels(scalar_res), {arg.getParent().getObjectID()}, {}, {});
+			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Full", this, {size}, tracing::scalar_labels(scalar_res), {arg.getParent().getObjectID()}, {}, {});
 			return scalar_res;
 		}
 		

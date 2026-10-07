@@ -83,6 +83,12 @@ namespace skepu
 #else
     #define SKEPU_TRACING_WAIT_CL(event)
 #endif
+// (for the calls that do not have an event to wait for)
+#if defined(SKEPU_TRACING) && defined(SKEPU_OPENCL)
+	#define SKEPU_TRACING_FINISH_CL() skepu::backend::finishDevicesCL();
+#else
+	#define SKEPU_TRACING_FINISH_CL()
+#endif
 
 #ifdef SKEPU_TRACING
 #define SKEPU_TRACE_START_EVENT(handle_symbol) auto handle_symbol = skepu::tracing::tracer().startEvent();
@@ -96,6 +102,7 @@ namespace skepu
 #define SKEPU_TRACE_DEALLOCATION(...) skepu::tracing::tracer().deallocation(__VA_ARGS__)
 #define SKEPU_TRACE_TRANSFER(...) skepu::tracing::tracer().transfer(__VA_ARGS__)
 #define SKEPU_TRACE_ELEMENT_ACCESS(...) skepu::tracing::tracer().element_access(__VA_ARGS__)
+#define SKEPU_TRACE_COPY(...) skepu::tracing::tracer().copy(__VA_ARGS__)
 #define SKEPU_TRACE_SCALAR_IO(...) skepu::tracing::tracer().scalar_io(__VA_ARGS__)
 #define SKEPU_TRACE_SNAPSHOT(...) skepu::tracing::tracer().data_snapshot(__VA_ARGS__)
 #define SKEPU_TRACE_VIRTUAL_DATASET(...) skepu::tracing::tracer().virtual_dataset(__VA_ARGS__)
@@ -112,11 +119,46 @@ namespace skepu
 #define SKEPU_TRACE_DEALLOCATION(...)
 #define SKEPU_TRACE_TRANSFER(...)
 #define SKEPU_TRACE_ELEMENT_ACCESS(...)
+#define SKEPU_TRACE_COPY(...)
 #define SKEPU_TRACE_SCALAR_IO(...)
 #define SKEPU_TRACE_SNAPSHOT(...)
 #define SKEPU_TRACE_VIRTUAL_DATASET(...)
 #define SKEPU_TRACE_FLUSH()
 #endif
+
+		// The parameters of a skeleton that change what its calls do (the overlap and strides of a MapOverlap,
+		// the mode of a Scan, ...). A skeleton describes them in SkeletonBase::traceParameters(), and the
+		// tracer records them with every call, as they are when the call is made. Without tracing it is empty.
+		struct Parameters
+		{
+#ifdef SKEPU_TRACING
+			nlohmann::json values = nlohmann::json::object();
+
+			// a number, a boolean or a text
+			template<typename T>
+			void add(std::string const& name, T const& value) { this->values[name] = value; }
+
+			// one value for each dimension
+			template<typename T>
+			void add(std::string const& name, T const *first, size_t count) { this->values[name] = std::vector<T>(first, first + count); }
+
+			// a value of a type that is a number, if it is and it is not zero (the start value of a
+			// reduction can be a struct, and zero is what it is unless it is set)
+			template<typename T>
+			void addNumber(std::string const& name, T const& value)
+			{
+				if constexpr (std::is_arithmetic<T>::value)
+					if (value != T{})
+						this->values[name] = value;
+			}
+#else
+			template<typename... Args>
+			void add(Args&&...) {}
+
+			template<typename... Args>
+			void addNumber(Args&&...) {}
+#endif
+		};
 
 		struct EventHandle
 		{
@@ -147,6 +189,9 @@ namespace skepu
 			void deallocation(TraceID id, std::string const& label, int line);
 			void transfer(EventHandle &h, TraceID id, std::string const& label, int line, size_t elements, std::string direction, std::string backend);
 			void element_access(TraceID id, TraceID source_id, size_t index, std::string const& label, std::string const& file, int line);
+			// The elements of one container were copied to another (copy constructor and assignment of a container): a
+			// data dependence that is not a skeleton call. (A move moves the id with the data and has no event.)
+			void copy(EventHandle &h, TraceID source_id, TraceID destination_id, std::string const& label, size_t elements);
 			void scalar_io(std::vector<TraceID> const& ids, std::string const& label, std::string const& file, int line);
 
 			void call(

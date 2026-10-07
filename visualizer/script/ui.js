@@ -1,6 +1,6 @@
 // ui.js — Source pane, alerts, setting-changed debounce, legend, and page init.
 // Entry-point module: imports from all other modules and wires up window exports.
-import { descendantsOf } from './nesting.js';
+import { descendantsOf, drawnCollapsed } from './nesting.js';
 import { State, SETTING_CHANGED_DEBOUNCE_MS, GANTT_RESIZE_DEBOUNCE_MS,
          INFO_PANE_MIN_H, AUTO_RENDER_THRESHOLD,
          HLJS_THEME_DEFAULT_LIGHT, HLJS_THEME_DEFAULT_DARK } from './state.js';
@@ -360,6 +360,14 @@ function _setAllRegions(collapsed) {
   fetchViewDataAndRender();
 }
 
+// Expand the regions that are drawn collapsed, and leave the ones inside them as they are: one level.
+function _expandAllRegionsOnce() {
+  if (!_regionsAreShown()) return;
+  var pids = State._allRegionPids || Object.keys(State._collapsedNodes);
+  drawnCollapsed(State._regionParents, State._collapsedNodes, pids).forEach(function(pid) { State._collapsedNodes[pid] = false; });
+  fetchViewDataAndRender();
+}
+
 function _setAllFusions(collapsed) {
   var pids = State._allFusionPids || [];
   if (!pids.length) {
@@ -376,6 +384,7 @@ export function collapseSelected()            { _setSelectedRegions(true,  false
 export function expandSelected()              { _setSelectedRegions(false, false); }
 export function collapseAllRegions()          { _setAllRegions(true); }
 export function expandAllRegions()            { _setAllRegions(false); }
+export function expandAllRegionsOnce()        { _expandAllRegionsOnce(); }
 export function collapseAllFusions()          { _setAllFusions(true); }
 export function expandAllFusions()            { _setAllFusions(false); }
 
@@ -398,5 +407,6 @@ window.collapseSelected            = collapseSelected;
 window.expandSelected              = expandSelected;
 window.collapseAllRegions          = collapseAllRegions;
 window.expandAllRegions            = expandAllRegions;
+window.expandAllRegionsOnce        = expandAllRegionsOnce;
 window.collapseAllFusions          = collapseAllFusions;
 window.expandAllFusions            = expandAllFusions;

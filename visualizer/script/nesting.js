@@ -14,3 +14,18 @@ export function descendantsOf(parents, id) {
   }
   return out;
 }
+
+/**
+ * Of `ids`, the ones that are collapsed and drawn: no region or fusion node around them is collapsed (what is inside a
+ * collapsed node is not drawn). Expanding these, and no others, opens one level.
+ * @param {Object} parents    id -> id of the node around it, or null
+ * @param {Object} collapsed  id -> true if collapsed
+ */
+export function drawnCollapsed(parents, collapsed, ids) {
+  return ids.filter(function(id) {
+    if (collapsed[id] !== true) return false;
+    for (var p = (parents || {})[id]; p; p = parents[p])
+      if (collapsed[p] === true) return false;
+    return true;
+  });
+}

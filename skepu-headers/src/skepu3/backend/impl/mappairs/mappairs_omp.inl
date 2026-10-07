@@ -47,7 +47,8 @@ namespace skepu
 				{get<VEI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...,
 					get<HEI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
-				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...)
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapPairsFunc::randomCount>()
 			);
 		}
 	}

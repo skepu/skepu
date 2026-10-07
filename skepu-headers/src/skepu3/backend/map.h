@@ -63,6 +63,17 @@ namespace skepu
 #endif
 			}
 
+			void traceParameters(tracing::Parameters &parameters) const override
+			{
+				// one stride for each container argument, the outputs first; only if one is not 1 (it skips elements)
+				int strides[outArity + arity];
+				bool strided = false;
+				for (size_t i = 0; i < outArity + arity; ++i)
+					strided |= (strides[i] = this->m_strides[i]) != 1;
+				if (strided)
+					parameters.add("strides", strides, outArity + arity);
+			}
+
 			template<typename... Args>
 			void tune(Args&&... args)
 			{

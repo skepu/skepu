@@ -24,7 +24,10 @@ namespace skepu
 		updateHost();
 		
 		if (!this->m_transpose_matrix) // if not created alreay, create transpose matrix
-			this->m_transpose_matrix = new Matrix<T>(this->m_cols, this->m_rows);
+		{
+			this->m_transpose_matrix = new Matrix<T>(this->m_cols, this->m_rows, std::string("Internal (transpose)"));
+			this->m_transpose_matrix->m_trace_source = this->m_object_id;
+		}
 		else
 			this->m_transpose_matrix->invalidateDeviceData(); // invalidate any device copies
 		
@@ -50,7 +53,10 @@ namespace skepu
 		updateHost();
 		
 		if (!this->m_transpose_matrix) // if not created alreay, create transpose matrix
-			this->m_transpose_matrix = new Matrix<T>(this->m_cols, this->m_rows);
+		{
+			this->m_transpose_matrix = new Matrix<T>(this->m_cols, this->m_rows, std::string("Internal (transpose)"));
+			this->m_transpose_matrix->m_trace_source = this->m_object_id;
+		}
 		else
 			this->m_transpose_matrix->invalidateDeviceData(); // invalidate any device copies
 		
@@ -144,7 +150,10 @@ namespace skepu
 			return;
 		
 		if (!this->m_transpose_matrix) // if not created alreay, create transpose matrix
-			this->m_transpose_matrix = new Matrix<T>(this->m_cols, this->m_rows);
+		{
+			this->m_transpose_matrix = new Matrix<T>(this->m_cols, this->m_rows, std::string("Internal (transpose)"));
+			this->m_transpose_matrix->m_trace_source = this->m_object_id;
+		}
 		else
 			this->m_transpose_matrix->invalidateDeviceData(); // invalidate any device copies, could optimize it for CUDA as ask for validating copies except this one.
 		
@@ -183,7 +192,10 @@ namespace skepu
 			return;
 		
 		if (!this->m_transpose_matrix) // if not created alreay, create transpose matrix
-			this->m_transpose_matrix = new Matrix<T>(this->m_cols, this->m_rows);
+		{
+			this->m_transpose_matrix = new Matrix<T>(this->m_cols, this->m_rows, std::string("Internal (transpose)"));
+			this->m_transpose_matrix->m_trace_source = this->m_object_id;
+		}
 		else
 			this->m_transpose_matrix->invalidateDeviceData(); // invalidate any device copies, could optimize it for CUDA as ask for validating copies except this one.
 		

@@ -25,22 +25,26 @@ template<typename T>
 void Matrix<T>::randomize(int min, int max)
 {
    invalidateDeviceData();
+   SKEPU_TRACE_START_EVENT(trace_handle);
 
    for(typename Matrix<T>::size_type i = 0; i < this->size(); i++)
    {
       this->m_data[i] = (T)( rand() % (int)(max-min+1) + min);
    }
+   SKEPU_TRACE_EXTERNAL(trace_handle, "randomize", "", 0, {this->m_object_id}, {});
 }
 
 template<typename T>
 void Matrix<T>::randomizeReal(double min, double max)
 {
    invalidateDeviceData();
+   SKEPU_TRACE_START_EVENT(trace_handle);
 
    for(typename Matrix<T>::size_type i = 0; i < this->size(); i++)
    {
       this->m_data[i] = min + (T)( (rand() % RAND_MAX) / (double)RAND_MAX) * (max - min);
    }
+   SKEPU_TRACE_EXTERNAL(trace_handle, "randomizeReal", "", 0, {this->m_object_id}, {});
 }
 
 /*!
@@ -214,6 +218,7 @@ inline Matrix<T>::Matrix(T * const ptr, typename Matrix<T>::size_type _rows, typ
   }
   
   this->m_data = ptr;
+  SKEPU_TRACE_ALLOCATION(this->m_object_id, this->getLabel(), __LINE__);
 }
 
 
@@ -233,9 +238,11 @@ Matrix<T>::Matrix(const Matrix<T>& copy)
 	m_object_id(UniqueIdentifier::generate())
 {
   DEBUG_TEXT_LEVEL1("Matrix: Copy constructor with " << this->m_rows << " x " << this->m_cols << " (total " << this->size() << ") elements");
-   copy.updateHost();
    this->init(copy.m_rows, copy.m_cols);
+   SKEPU_TRACE_START_EVENT(trace_handle);
+   copy.updateHost();
    std::copy(copy.m_data, copy.m_data + copy.size(), this->m_data);
+   SKEPU_TRACE_COPY(trace_handle, copy.m_object_id, this->m_object_id, this->getLabel(), copy.size());
    
 #ifdef SKEPU_OPENCL
    this->m_transposeKernels_CL = copy.m_transposeKernels_CL;
@@ -317,6 +324,9 @@ Matrix<T>::~Matrix()
   }
   else
   {
+    // (memory that the matrix does not own: its life ends)
+    if (this->m_data)
+      SKEPU_TRACE_DEALLOCATION(this->getObjectID(), this->getLabel(), __LINE__);
     DEBUG_TEXT_LEVEL1("Matrix: Note, did not deallocate data.");
   }
 
@@ -332,12 +342,27 @@ Matrix<T>& Matrix<T>::operator=(const Matrix<T>& other)
    if(*this == other)
       return *this;
    
+   updateHostAndReleaseDeviceAllocations();
+   SKEPU_TRACE_START_EVENT(trace_handle);
    other.updateHost();
    invalidateDeviceData();
 
-   m_data = other.m_data;
+   // (the memory is copied, as for a vector; it was the pointer that was copied, so that two matrices had one memory)
+   if (!m_data || m_rows * m_cols != other.m_rows * other.m_cols)
+   {
+      const bool first = !m_data;
+      if (m_data && m_deallocEnabled)
+         backend::deallocateHostMemory<T>(m_data);
+      
+      backend::allocateHostMemory<T>(m_data, other.m_rows * other.m_cols);
+      m_deallocEnabled = true;
+      if (first)
+         SKEPU_TRACE_ALLOCATION(this->m_object_id, this->getLabel(), __LINE__);
+   }
    m_rows = other.m_rows;
    m_cols = other.m_cols;
+   std::copy(other.m_data, other.m_data + other.size(), m_data);
+   SKEPU_TRACE_COPY(trace_handle, other.m_object_id, this->m_object_id, this->getLabel(), other.size());
    return *this;
 }
 
@@ -549,10 +574,13 @@ T& Matrix<T>::at(size_type row, size_type col)
 template <typename T>
 Matrix<T>& Matrix<T>::operator=(const T& elem)
 {
+   invalidateDeviceData();   // (the elements on a device are not the elements any more)
+   SKEPU_TRACE_START_EVENT(trace_handle);
    for (size_type i = 0; i < size(); i++)
    {
       this->m_data[i] = elem;
    }
+   SKEPU_TRACE_EXTERNAL(trace_handle, "fill", "", 0, {this->m_object_id}, {});
    return *this;
 }
 

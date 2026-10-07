@@ -208,6 +208,18 @@ void EnvironmentDestroyer<T>::SetEnvironment (Environment<T>* s)
 }
 
 
+#ifdef SKEPU_OPENCL
+namespace skepu { namespace backend {
+// Waits for everything that was enqueued on the OpenCL devices (the kernels are asynchronous, and a
+// traced call is to include its kernel: SKEPU_TRACING_FINISH_CL)
+inline void finishDevicesCL()
+{
+	for (Device_CL *device : Environment<int>::getInstance()->m_devices_CL)
+		clFinish(device->getQueue());
+}
+}}
+#endif // SKEPU_OPENCL
+
 #ifdef SKEPU_PRECOMPILED
 #include "impl/environment.inl"
 #endif // SKEPU_PRECOMPILED

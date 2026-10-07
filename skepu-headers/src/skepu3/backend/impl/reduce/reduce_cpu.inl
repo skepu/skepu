@@ -30,7 +30,7 @@ namespace skepu
 				for (size_t c = 1; c < cols; c++)
 					res(r) = ReduceFunc::CPU(res(r), data[c]);
 			}
-			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Partial", this, {rows, cols}, {res.getParent().getObjectID()}, {arg.getParent().getObjectID()}, {}, {});
+			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Partial", this, {rows, cols}, {res.getParent().getObjectID()}, {arg.getParent().getTraceObjectID()}, {}, {});
 		}
 		
 		
@@ -54,7 +54,7 @@ namespace skepu
 				res = ReduceFunc::CPU(res, arg(i));
 
 			auto result = Scalar<T>(res);
-			SKEPU_TRACE_CALL(trace_handle, "Reduce", this, {size}, tracing::scalar_labels(result), {arg.getParent().getObjectID()}, {}, {});
+			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Full", this, {size}, tracing::scalar_labels(result), {arg.getParent().getObjectID()}, {}, {});
 			return result;
 		}
 		

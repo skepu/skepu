@@ -13,11 +13,13 @@ namespace skepu
 	void Vector<T>::randomize(int min, int max)
 	{
 		invalidateDeviceData();
+		SKEPU_TRACE_START_EVENT(trace_handle);
 		
 		for (size_type i = 0; i < size(); i++)
 		{
 			m_data[i] = (T)( rand() % max + min );
 		}
+		SKEPU_TRACE_EXTERNAL(trace_handle, "randomize", "", 0, {this->m_object_id}, {});
 	}
 	
 	
@@ -136,8 +138,10 @@ namespace skepu
 		DEBUG_TEXT_LEVEL1("Vector: Copy constructor with " << this->m_size << " elements");
 		
 		this->init(this->m_size);
+		SKEPU_TRACE_START_EVENT(trace_handle);
 		c.updateHost();
 		std::copy(c.m_data, c.m_data + this->m_size, this->m_data);
+		SKEPU_TRACE_COPY(trace_handle, c.m_object_id, this->m_object_id, this->getLabel(), this->m_size);
 	}
 	
 	
@@ -196,6 +200,7 @@ namespace skepu
 		}
 		
 		this->m_data = ptr;
+		SKEPU_TRACE_ALLOCATION(this->m_object_id, this->getLabel(), __LINE__);
 	}
 	
 	
@@ -279,6 +284,9 @@ namespace skepu
 		}
 		else
 	  {
+	    // (memory that the vector does not own: its life ends)
+	    if (this->m_data)
+	      SKEPU_TRACE_DEALLOCATION(this->getObjectID(), this->getLabel(), __LINE__);
 	    DEBUG_TEXT_LEVEL1("Vector: Note, did not deallocate data.");
 	  }
 
@@ -441,16 +449,22 @@ namespace skepu
 			return *this;
 		 
 		updateHostAndReleaseDeviceAllocations();
+		SKEPU_TRACE_START_EVENT(trace_handle);
 		other.updateHost();
 		
 		if (m_size < other.m_size)
 		{
-			if (m_data)
+			// (a vector that is empty, or was moved from, gets its memory here: its life starts)
+			const bool first = !m_data;
+			if (m_data && m_deallocEnabled)
 				backend::deallocateHostMemory<T>(m_data);
 			
-			m_size = m_size = other.m_size;
+			m_size = other.m_size;
 			
 			backend::allocateHostMemory<T>(m_data, m_size);
+			m_deallocEnabled = true;
+			if (first)
+				SKEPU_TRACE_ALLOCATION(this->m_object_id, this->getLabel(), __LINE__);
 		}
 		else
 		{
@@ -458,6 +472,7 @@ namespace skepu
 		}
 		
 		std::copy(other.m_data, other.m_data + m_size, m_data);
+		SKEPU_TRACE_COPY(trace_handle, other.m_object_id, this->m_object_id, this->getLabel(), m_size);
 		
 		return *this;
 	}

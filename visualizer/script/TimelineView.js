@@ -513,12 +513,10 @@ export class TimelineView {
       var mode = provider.settings['node-color-call'];
       if (d.type === 'skeleton_call') {
         if (mode === 'backend') {
-          var bc = { CPU: 'yellow', OpenMP: 'red', OpenCL: 'blue', CUDA: 'green' };
-          return bc[d.backend] || '#778';
+          return provider.backendColor(d.backend) || '#778';
         }
         if (mode === 'pattern') {
-          var pc = { Map: 'yellow', Reduce: 'red', MapReduce: 'orange', MapOverlap: 'green' };
-          return pc[d.pattern] || '#778';
+          return provider.patternColor(d.pattern) || '#778';
         }
       }
       return provider.spectrumColor(provider.normFromData('node-color-call', d));

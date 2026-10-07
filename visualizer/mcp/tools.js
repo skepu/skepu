@@ -67,7 +67,7 @@ export const TOOLS = [
             properties: {
                 handle,
                 group_by: { type: 'string', enum: ['pattern', 'label', 'backend', 'region', 'file', 'file_line'] },
-                type: { type: 'string', enum: ['skeleton_call', 'transfer', 'external'], description: 'Event type (default skeleton_call).' },
+                type: { type: 'string', enum: ['skeleton_call', 'transfer', 'external', 'copy'], description: 'Event type (default skeleton_call).' },
                 top: limit,
             },
         },

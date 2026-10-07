@@ -185,14 +185,18 @@ namespace skepu
 			if (this->m_label != "")
 				return this->m_label;
 
-			std::stringstream ss;
-			ss << skepu::debug.getObjectName(this->getAddress());
-			return ss.str();
+			return skepu::debug.getObjectName(this->getAddress(), "Matrix #" + std::to_string(this->m_object_id));
 		}
 
 		UniqueIdentifier::ID getObjectID() const
 		{
 			return this->m_object_id;
+		}
+
+		// The matrix that a trace says a call read when it read this: the same unless this is a transpose that SkePU made
+		UniqueIdentifier::ID getTraceObjectID() const
+		{
+			return (this->m_trace_source != UniqueIdentifier::null()) ? this->m_trace_source : this->m_object_id;
 		}
 
 		void setValidFlag(bool val);
@@ -235,9 +239,12 @@ namespace skepu
 			if (l.size() != this->size())
 				SKEPU_ERROR("Matrix: Invalid initializer list size");
 
+			this->invalidateDeviceData();   // (the elements on a device are not the elements any more)
+			SKEPU_TRACE_START_EVENT(trace_handle);
 			size_t i = 0;
 			for (const T& elem : l)
 				this->m_data[i++] = elem;
+			SKEPU_TRACE_EXTERNAL(trace_handle, "assign", "", 0, {this->m_object_id}, {});
 		}
 
 		void init(size_type _rows, size_type _cols);
@@ -416,6 +423,9 @@ namespace skepu
 		bool m_deallocEnabled = true;
 		std::string m_label = "";
 		UniqueIdentifier::ID m_object_id;
+		// (the matrix that this one is the transpose of, made for a reduction of columns: in a trace, the
+		// call reads that matrix)
+		UniqueIdentifier::ID m_trace_source = UniqueIdentifier::null();
 
 #ifdef USE_PINNED_MEMORY
 		mutable std::vector<T, malloc_allocator<T> > m_data;

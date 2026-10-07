@@ -81,6 +81,15 @@ export const COLOR_SPECTRUMS = {
   'grayscale': { stops: [[240,240,240],[20,20,20]] },
 };
 
+// The categories that a node can be coloured by (View > Nodes > Color: Backend, Pattern). Each has a fixed place on
+// the colour spectrum that is chosen in the Colors menu, so that a backend or a pattern keeps its colour whatever
+// else is in the trace.
+export const BACKEND_ORDER = ['CPU', 'OpenMP', 'OpenCL', 'CUDA', 'Hybrid'];
+export const PATTERN_ORDER = ['Map', 'MapReduce', 'Reduce', 'Scan', 'MapOverlap', 'MapPool', 'MapPairs', 'MapPairsReduce'];
+
+/** The skeleton of a pattern name: 'MapOverlap 2D' -> 'MapOverlap', 'Reduce 1D-Full' -> 'Reduce'. */
+export function basePattern(pattern) { return (pattern || '').split(' ')[0]; }
+
 /** Linear interpolation between RGB colour stops at normalised position t ∈ [0,1]. */
 export function lerpColor(stops, t) {
   var n = stops.length - 1;
@@ -384,6 +393,23 @@ export class TraceDataProvider {
     var c = lerpColor(stops, Math.max(0, Math.min(1, t)));
     return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
   }
+
+  /**
+   * The colour of a category (a backend, a pattern) on the active spectrum, or null if it is not one of `order`.
+   * `dark` is the darkened colour that the borders have.
+   */
+  categoryColor(order, key, dark) {
+    var i = order.indexOf(key);
+    if (i < 0) return null;
+    var t = order.length > 1 ? i / (order.length - 1) : 0;
+    return dark ? this.spectrumColorDark(t) : this.spectrumColor(t);
+  }
+
+  /** The colour of a backend ('CPU', 'OpenCL', ...) on the active spectrum; null for another name. */
+  backendColor(backend, dark) { return this.categoryColor(BACKEND_ORDER, backend, dark); }
+
+  /** The colour of a skeleton pattern ('Map', 'MapOverlap 2D', ...) on the active spectrum; null for another name. */
+  patternColor(pattern, dark) { return this.categoryColor(PATTERN_ORDER, basePattern(pattern), dark); }
 
   /**
    * Like spectrumColor but darkened by `factor` (default 0.72) — used for

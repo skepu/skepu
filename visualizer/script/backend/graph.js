@@ -600,26 +600,20 @@ export class DirectedGraph {
     }
 
     toSubscript(val) {
-      var strval = '' + val;
-      strval = strval.replace("0", "₀");
-      strval = strval.replace("1", "₁");
-      strval = strval.replace("2", "₂");
-      strval = strval.replace("3", "₃");
-      strval = strval.replace("4", "₄");
-      strval = strval.replace("5", "₅");
-      strval = strval.replace("6", "₆");
-      strval = strval.replace("7", "₇");
-      strval = strval.replace("8", "₈");
-      strval = strval.replace("9", "₉");
-      return strval;
+      return ('' + val).replace(/[0-9]/g, d => '₀₁₂₃₄₅₆₇₈₉'[d]);
     }
 
+    // The instances of a region (the iterations of a loop have the same label) are numbered; a region that
+    // has only one instance has no number.
     numberRegionLabels() {
-        const counts = {};
+        const total = {}, counts = {};
+        for (const node of this._nodes)
+            if (node instanceof RegionNode) total[node.keypath] = (total[node.keypath] ?? 0) + 1;
         for (const node of this._nodes) {
             if (!(node instanceof RegionNode)) continue;
-            if (!counts[node.keypath]) counts[node.keypath] = 1;
-            node.label = node.label + '' + this.toSubscript(counts[node.keypath]++);
+            counts[node.keypath] = (counts[node.keypath] ?? 0) + 1;
+            if (total[node.keypath] > 1)
+                node.label = node.label + this.toSubscript(counts[node.keypath]);
         }
     }
 
@@ -645,6 +639,9 @@ export class DirectedGraph {
             else if (t === 'allocation')        new AllocationNode(g, ev, order);
             else if (t === 'deallocation')      new DeallocationNode(g, ev, order);
             else if (t === 'element_access')    ScalarNode.fromEventData(g, ev, order);
+            // a copy of a container (copy constructor, assignment): host code that reads one container and writes another
+            else if (t === 'copy')              new ExternalNode(g, { ...ev, type: 'external', label: `copy of ${g.labelForID(ev.source)}`,
+                                                    elwise_inputs: [ev.source], proxy_inputs: [], scalar_inputs: [], outputs: [ev.object_id], file: '', line: 0 }, order);
             else if (t === 'transfer')          new TransferNode(g, ev, order);
             else if (t === 'region')            new RegionNode(g, ev, order);
             else if (t === 'snapshot')          g.attachSnapshot(ev.object_id, ev.data_file, order);

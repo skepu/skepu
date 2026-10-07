@@ -54,9 +54,7 @@ namespace skepu
 				if (this->m_label != "")
 					return this->m_label;
 #endif
-				std::stringstream ss;
-				ss << skepu::debug.getObjectName(this);
-				return ss.str();
+				return skepu::debug.getObjectName(this, "Skeleton #" + std::to_string(this->m_object_id));
 			}
 
 #ifdef SKEPU_TRACING
@@ -65,6 +63,22 @@ namespace skepu
 				return this->m_object_id;
 			}
 #endif
+
+			// The parameters that change what a call does (overlap, strides, modes, ...): a skeleton with
+			// such parameters says what they are now, and the tracer records them with each call
+			virtual void traceParameters(tracing::Parameters &) const {}
+
+			// How many devices a call on a GPU backend uses: the devices that the backend specification asks for, if there are that many
+			size_t traceDevices() const
+			{
+				size_t available = 0;
+#ifdef SKEPU_OPENCL
+				available = this->m_environment->m_devices_CL.size();
+#elif defined(SKEPU_CUDA)
+				available = this->m_environment->m_devices_CU.size();
+#endif
+				return this->m_selected_spec ? std::min(this->m_selected_spec->devices(), available) : available;
+			}
 
 			void setSourceLoc(std::string&& file_name, int line_nr)
 			{

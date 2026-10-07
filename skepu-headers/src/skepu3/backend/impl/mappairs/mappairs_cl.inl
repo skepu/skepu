@@ -27,7 +27,7 @@ namespace skepu
 				const size_t baseIndex = /*startIdx + */i * numElemPerSlice;
 				
 				pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + baseIndex + startIdx, numElem, device, this->m_in_place), 0)...);
-				pack_expand((get<VEI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<VEI>(std::forward<CallArgs>(args)...).getAddress() + baseIndex, numElem, device, false), 0)...);
+				pack_expand((get<VEI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<VEI>(std::forward<CallArgs>(args)...).getAddress(), Vsize, device, false), 0)...);
 				pack_expand((get<HEI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<HEI>(std::forward<CallArgs>(args)...).getAddress(), Hsize, device, false), 0)...);
 				pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(), get<AI>(std::forward<CallArgs>(args)...).size(), device, false), 0)...);
 			}
@@ -46,7 +46,7 @@ namespace skepu
 				
 				// Copies the elements to the device
 				auto outMemP     = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + baseIndex + startIdx, numElem, device, this->m_in_place)...);
-				auto VelwiseMemP = std::make_tuple(get<VEI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<VEI>(std::forward<CallArgs>(args)...).getAddress() + baseIndex, numElem, device, true)...);
+				auto VelwiseMemP = std::make_tuple(get<VEI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<VEI>(std::forward<CallArgs>(args)...).getAddress(), Vsize, device, true)...);
 				auto HelwiseMemP = std::make_tuple(get<HEI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<HEI>(std::forward<CallArgs>(args)...).getAddress(), Hsize, device, true)...);
 				auto anyMemP = std::make_tuple(cl_helpers::randomAccessArg(get<AI>(std::forward<CallArgs>(args)...).getParent(), device, hasReadAccess(MapPairsFunc::anyAccessMode[AI-Varity-Harity]))...);
 			
@@ -72,12 +72,14 @@ namespace skepu
 				pack_expand((std::get<1>(std::get<AI-Varity-Harity-outArity>(anyMemP))->changeDeviceData(hasWriteAccess(MapPairsFunc::anyAccessMode[AI-Varity-Harity-outArity])), 0)...);
 				pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
 			}
+			SKEPU_TRACING_FINISH_CL();
 			SKEPU_TRACE_CALL(trace_handle, "MapPairs", this, {Hsize, Vsize},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<VEI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...,
 					get<HEI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
-				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...)
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapPairsFunc::randomCount>()
 			);
 		}
 		

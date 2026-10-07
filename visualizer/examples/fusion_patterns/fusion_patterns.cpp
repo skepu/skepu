@@ -91,7 +91,8 @@ int main()
 			skepu::Tensor4<float> relu_out(8, 44, 44, 8, "Activations");
 			skepu::Tensor4<float> pooled(8, 22, 22, 8, "Pooled");
 			auto relu = skepu::Map([](float a) { return fmaxf(a, 0.0f); });
-			auto max_pool = skepu::MapOverlap(max_pooling_uf);   // a pool: stride = window
+			auto max_pool = skepu::MapPool(max_pooling_uf);   // pool size and stride set below
+			max_pool.setPoolSizeAndStride(1, 2, 2, 1);
 			relu(relu_out, x);
 			max_pool(pooled, relu_out);
 		}
@@ -104,7 +105,8 @@ int main()
 			skepu::Matrix<float> bright(228, 228, "Brightened");
 			skepu::Matrix<float> edges(228, 228, "Edges");
 			auto brighten = skepu::Map([](float a) { return 1.2f * a + 0.1f; });
-			auto laplace = skepu::MapOverlap(laplace_uf);   // 3x3 stencil
+			auto laplace = skepu::MapOverlap(laplace_uf);
+			laplace.setOverlap(1, 1);   // 3x3 stencil
 			brighten(bright, image);
 			laplace(edges, bright);
 		}
@@ -181,10 +183,23 @@ int main()
 			scale_two(y, t);
 		}
 
+		// The first call writes T, which is copied before it is read: the copy reads T, so T has to exist.
+		{ SKEPU_TRACE_SCOPE("A copy in between");
+			size_t n = 118784;
+			skepu::Vector<float> x(n, "X");
+			skepu::Vector<float> t(n, "T");
+			skepu::Vector<float> y(n, "Y");
+			auto add_c = skepu::Map([](float a) { return a + 1.0f; });
+			auto double_c = skepu::Map([](float a) { return 2.0f * a; });
+			add_c(t, x);
+			skepu::Vector<float> t_copy(t);
+			double_c(y, t_copy);
+		}
+
 		// The second call reads T at any index (a proxy, skepu::Vec), not element by element:
 		// it needs all of T finished before it starts.
 		{ SKEPU_TRACE_SCOPE("Random access");
-			size_t n = 118784;
+			size_t n = 122880;
 			skepu::Vector<float> x(n, "X");
 			skepu::Vector<float> w(n, "Indices");
 			skepu::Vector<float> t(n, "T");
@@ -198,19 +213,32 @@ int main()
 		// The same data, read as a vector by the first call and as a matrix by the second:
 		// the calls do not run over the same elements.
 		{ SKEPU_TRACE_SCOPE("Other shapes");
-			size_t n = 122880;
+			size_t n = 126976;
 			skepu::Vector<float> x(n, "X");
 			skepu::Vector<float> t(n, "T");
 			skepu::Vector<float> y(n, "Y");
 			auto shift_vec = skepu::Map([](float a) { return a + 1.0f; });
 			auto scale_mat = skepu::Map([](float a) { return 2.0f * a; });
 			shift_vec(t, x);
-			scale_mat(y_matrix, t_matrix);   // the same memory, as a 256 x 480 matrix
+			scale_mat(y_matrix, t_matrix);   // the same memory, as a 256 x 496 matrix
+		}
+
+		// The second Map has a stride: it reads every other element, not one to one.
+		{ SKEPU_TRACE_SCOPE("A stride");
+			size_t n = 131072;
+			skepu::Vector<float> x(n, "X");
+			skepu::Vector<float> t(n, "T");
+			skepu::Vector<float> y(n, "Y");
+			auto step_f = skepu::Map([](float a) { return a + 1.0f; });
+			auto step_g = skepu::Map([](float a) { return 2.0f * a; });
+			step_g.setStride(2, 2);
+			step_f(t, x);
+			step_g(y, t);
 		}
 
 		// The first call runs on OpenMP, the second on OpenCL: T has to go to the device in between.
 		{ SKEPU_TRACE_SCOPE("Different backends");
-			size_t n = 126976;
+			size_t n = 135168;
 			skepu::Vector<float> x(n, "X");
 			skepu::Vector<float> t(n, "T");
 			skepu::Vector<float> y(n, "Y");
@@ -224,7 +252,7 @@ int main()
 
 		// Both calls draw from the same random stream. In one call, the numbers would come in another order.
 		{ SKEPU_TRACE_SCOPE("One random stream");
-			size_t n = 131072;
+			size_t n = 139264;
 			skepu::Vector<float> x(n, "X");
 			skepu::Vector<float> t(n, "T");
 			skepu::Vector<float> y(n, "Y");
@@ -238,7 +266,7 @@ int main()
 		// Between f and combine, prefix overwrites x, which f reads, and produces what combine reads.
 		// f cannot move down past prefix, combine cannot move up past it.
 		{ SKEPU_TRACE_SCOPE("A call in between");
-			size_t n = 135168;
+			size_t n = 143360;
 			skepu::Vector<float> x(n, "X");
 			skepu::Vector<float> q(n, "Q");
 			skepu::Vector<float> t(n, "T");
@@ -254,11 +282,12 @@ int main()
 		// Only a Map can be fused into the call that reads its output; the stencil's result is not a stream
 		// of independent elements (and would have to be computed with its halo).
 		{ SKEPU_TRACE_SCOPE("MapOverlap into Map");
-			size_t n = 139264;
-			skepu::Matrix<float> image(272, 272, "Image");
-			skepu::Matrix<float> blurred(272, 272, "Blurred");
-			skepu::Matrix<float> mask(272, 272, "Mask");
-			auto blur = skepu::MapOverlap(blur_uf);   // 3x3 stencil
+			size_t n = 147456;
+			skepu::Matrix<float> image(280, 280, "Image");
+			skepu::Matrix<float> blurred(280, 280, "Blurred");
+			skepu::Matrix<float> mask(280, 280, "Mask");
+			auto blur = skepu::MapOverlap(blur_uf);
+			blur.setOverlap(1, 1);   // 3x3 stencil
 			auto threshold = skepu::Map([](float a) { return a > 0.5f ? 1.0f : 0.0f; });
 			blur(blurred, image);
 			threshold(mask, blurred);
@@ -266,7 +295,7 @@ int main()
 
 		// The Map needs the whole sum before its first element: a Reduce is a barrier.
 		{ SKEPU_TRACE_SCOPE("A Reduce before a Map");
-			size_t n = 143360;
+			size_t n = 151552;
 			skepu::Vector<float> x(n, "X");
 			skepu::Vector<float> y(n, "Normalized");
 			skepu::Scalar<float> sum("Sum");
@@ -278,12 +307,12 @@ int main()
 
 		// Three independent Maps; only the two over the same number of elements can share a launch.
 		{ SKEPU_TRACE_SCOPE("Maps of different sizes");
-			size_t n = 147456;
+			size_t n = 155648;
 			skepu::Vector<float> x(n, "X");
-			skepu::Vector<float> w(n / 2, "W");
+			skepu::Vector<float> w(n / 2 + 7, "W");
 			skepu::Vector<float> a(n, "A");
 			skepu::Vector<float> b(n, "B");
-			skepu::Vector<float> c(n / 2, "C");
+			skepu::Vector<float> c(n / 2 + 7, "C");
 			auto inc = skepu::Map([](float a) { return a + 1.0f; });
 			auto dec = skepu::Map([](float a) { return a - 1.0f; });
 			auto twice = skepu::Map([](float a) { return 2.0f * a; });

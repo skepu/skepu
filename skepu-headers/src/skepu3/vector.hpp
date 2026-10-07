@@ -152,9 +152,8 @@ namespace skepu
 			if (this->m_label)
 				return *this->m_label;
 
-			std::stringstream ss;
-			ss << skepu::debug.getObjectName(this->getAddress());
-			return ss.str();
+			// (a name that the same program gets again: not the address of the data)
+			return skepu::debug.getObjectName(this->getAddress(), "Vector #" + std::to_string(this->m_object_id));
 		}
 
 		UniqueIdentifier::ID getObjectID() const

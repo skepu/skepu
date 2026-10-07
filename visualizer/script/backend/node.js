@@ -298,11 +298,12 @@ export class CallNode extends ComputationNode {
               jsonData.pattern  ?? null);
         this.type = 'skeleton_call';
         // this.elements and this.pattern already set by ComputationNode
+        this.parameters = jsonData.parameters ?? null;   // what is not the default: overlap, strides, modes (see TRACE_FORMAT.md)
     }
 
     hasScalarOutput() {
-        // Todo: Reduce2D special case
-        return this.pattern === 'Reduce' || this.pattern === 'MapReduce';
+        // (a reduction of rows or columns, 'Reduce 1D-Partial', has a vector)
+        return ['Reduce', 'Reduce 1D-Full', 'Reduce 2D', 'MapReduce'].includes(this.pattern);
     }
 
     toCytoscape() {
@@ -315,6 +316,8 @@ export class CallNode extends ComputationNode {
 
     infoData() {
         const info = { ...super.infoData(), Pattern: this.pattern, Elements: this.elements };
+        if (this.parameters)
+            info['Parameters'] = Object.entries(this.parameters).map(([k, v]) => `${k.replace(/_/g, ' ')}: ${Array.isArray(v) ? v.join(' x ') : v}`).join('; ');
         // Set by the fusion analysis: the pairs with a consumer of this call's output that could not be fused.
         if (this.fusionNotes?.length) {
             const lines = [...new Set(this.fusionNotes.map(n => `with "${n.consumer}": ${n.text}`))];
@@ -605,6 +608,7 @@ export class UpdateNode extends DataNode {
         super(graph, label, totalOrder, region);
         this.type              = 'container_update';
         this.version           = graph.newVersionNumberForID(id);
+        this._versionsOfGraph  = graph.update_versions;    // (how many versions the container has, when the graph is complete)
         this.backend           = backend;
         this.elements          = elements;
         this.isLive            = [];
@@ -615,7 +619,7 @@ export class UpdateNode extends DataNode {
     }
 
     toCytoscape() {
-        const d = { ...super.toCytoscape(), version: this.version };
+        const d = { ...super.toCytoscape(), version: this.version, version_count: this._versionsOfGraph[this.objectId] };
         if (this.elements != null) d.elements = this.elements;
         return d;
     }

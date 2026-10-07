@@ -61,6 +61,13 @@ namespace skepu
 				this->m_initial = initial;
 			}
 			
+			void traceParameters(tracing::Parameters &parameters) const override
+			{
+				if (this->m_mode == ScanMode::Exclusive)     // (inclusive is the default)
+					parameters.add("mode", to_string(this->m_mode));
+				parameters.addNumber("start_value", this->m_initial);
+			}
+
 			template<typename... Args>
 			void tune(Args&&... args)
 			{

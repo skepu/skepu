@@ -22,6 +22,33 @@ namespace skepu
 			using RegionType = typename parameter_type<(MapOverlapFunc::indexed ? 1 : 0) + (MapOverlapFunc::usesPRNG ? 1 : 0), decltype(&MapOverlapFunc::CPU)>::type;
             using T = typename region_type<RegionType>::type;
             using F = ConditionalIndexForwarder<MapOverlapFunc::indexed, MapOverlapFunc::usesPRNG, decltype(&MapOverlapFunc::CPU)>;
+            // The parameters of the overlap, for the trace: the overlap, strides and edge, or the window and stride of a pool
+            void describeOverlap(tracing::Parameters &parameters, size_t dimensions) const
+            {
+                int overlap[4], strides[4];
+                for (size_t d = 0; d < dimensions; ++d)
+                {
+                    overlap[d] = this->m_overlap[d];
+                    strides[d] = this->m_strides[d];
+                }
+                if (isPool)
+                {
+                    parameters.add("pool", true);
+                    parameters.add("pool_size", overlap, dimensions);
+                    parameters.add("stride", strides, dimensions);
+                    return;
+                }
+                parameters.add("overlap", overlap, dimensions);
+                if (std::any_of(strides, strides + dimensions, [](int s) { return s != 1; }))
+                    parameters.add("stride", strides, dimensions);
+                if (this->m_edge != Edge::Duplicate)     // (the default)
+                    parameters.add("edge", to_string(this->m_edge));
+                if (this->m_edge == Edge::Pad)
+                    parameters.addNumber("pad", this->m_pad);
+                if (this->m_updateMode != UpdateMode::Normal)
+                    parameters.add("update_mode", to_string(this->m_updateMode));
+            }
+
             size_t expectedInputSize(size_t size, size_t dim) const
 			{
 				if (isPool) return this->m_overlap[dim] + this->m_strides[dim] * (size - 1);

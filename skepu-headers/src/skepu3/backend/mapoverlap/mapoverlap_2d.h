@@ -64,6 +64,11 @@ namespace skepu
 				return std::make_tuple(this->m_strides[0], this->m_strides[1]);
 			}
 
+			void traceParameters(tracing::Parameters &parameters) const override
+			{
+				this->describeOverlap(parameters, 2);
+			}
+
 			template<typename... Args>
 			void tune(Args&&... args)
 			{

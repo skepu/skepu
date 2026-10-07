@@ -91,6 +91,7 @@ namespace skepu
 			for (size_t i = 0; i < blockSums.size(); ++i)
 				delete blockSums[i];
 			
+			SKEPU_TRACING_FINISH_CL();
 			SKEPU_TRACE_CALL(trace_handle, "Scan", this, {size}, {res.getParent().getObjectID()}, {arg.getParent().getObjectID()}, {}, {});
 		}
 
@@ -168,6 +169,7 @@ namespace skepu
 				for (size_t j = 0; j < blockSums[i].size(); ++j)
 					delete blockSums[i][j];
 			
+			SKEPU_TRACING_FINISH_CL();
 			SKEPU_TRACE_CALL(trace_handle, "Scan", this, {size}, {res.getParent().getObjectID()}, {arg.getParent().getObjectID()}, {}, {});
 		}
 		

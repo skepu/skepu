@@ -80,6 +80,14 @@ int main()
 		offset(result, result);       // the whole vector goes out again
 	}
 
+	{ SKEPU_TRACE_SCOPE("Copy of a container");
+		skepu::Vector<float> field(N, "Field");
+		generate(field);
+		skepu::Vector<float> backup(field);   // the copy is made on the host: field comes back, and backup is on the host
+		offset(field, field);
+		scale(backup, backup);   // and goes to the device when it is used there
+	}
+
 	// The backend chosen by the size: sequential for small data, OpenMP for medium, OpenCL for large.
 	auto choose = [](size_t n) { return n < (1 << 12) ? Backend::Type::CPU : n < (1 << 18) ? Backend::Type::OpenMP : Backend::Type::OpenCL; };
 	{ SKEPU_TRACE_SCOPE("Backend by size");

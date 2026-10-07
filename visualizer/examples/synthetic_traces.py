@@ -133,7 +133,7 @@ class Prog:
         w = {'Map': 1, 'Reduce': 1, 'MapReduce': 1.2, 'Scan': 3, 'MapOverlap': 4, 'MapPool': 2.5, 'MapPairs': 1.5, 'MapPairsReduce': 2}.get(base, 1)
         return int((k[1] + n * k[0] * w / 1000) * self.rng.uniform(0.93, 1.08))
 
-    def call(self, sk, text, *, backend, n=None, elements=None, ins=(), proxy=(), scalars=(), outs=(), prng=None, size=None):
+    def call(self, sk, text, *, backend, n=None, elements=None, ins=(), proxy=(), scalars=(), outs=(), prng=None, size=None, params=None):
         """A call of skeleton `sk` (a line of source `text` makes it) on `backend`.
         Transfers happen before it if a container is on the wrong side."""
         self.src(text)
@@ -161,6 +161,7 @@ class Prog:
              'elements': elements, 'elwise_inputs': list(ins), 'proxy_inputs': list(proxy), 'scalar_inputs': list(scalars),
              'outputs': list(outs), 'threads': 1 if backend == 'CPU' else 8}
         if prng is not None: e['prng'] = prng
+        if params: e['parameters'] = params     # (only what is not the default, as the tracer does)
         self.emit(e)
 
     # -- the host ----------------------------------------------------------
@@ -175,6 +176,24 @@ class Prog:
             self.state[c]['host'], self.state[c]['dev'] = True, False
         self.emit({'type': 'external', 'label': label, 'file': self.file, 'line': line, 'start': a, 'end': self.t,
                    'elwise_inputs': list(reads), 'proxy_inputs': [], 'scalar_inputs': [], 'outputs': list(writes)})
+
+    def copy(self, source, text):
+        """skepu::Vector<float> copy(source): a new container with the elements of the source (it has no label yet,
+        and no source location: the copy constructor has no place for one)."""
+        self.src(text)
+        s = self.state[source]
+        cid = self.id()
+        self.gap(1, 6)
+        label = f'Vector #{cid}'
+        self.emit({'type': 'allocation', 'label': label, 'object_id': cid, 'line': 246, 'time': self.t})
+        self.state[cid] = dict(label=label, n=s['n'], host=True, dev=False)
+        start = self.t
+        self._to_host(source)
+        self.gap(1, 3)
+        self.t += int(2 + s['n'] * 0.0005)
+        self.events.append(dict({'type': 'copy', 'source': source, 'object_id': cid, 'label': label, 'elements': s['n'],
+                                 'start': start, 'end': self.t}, **({'region': self.regions[-1]} if self.regions else {})))
+        return cid
 
     def element(self, cid, index, text, write=False):
         """container[index]: the host gets the container; a write also makes the copy on the device stale."""
@@ -302,7 +321,18 @@ int main()
         p.src('\t}')
     p.blank()
 
-    # 7. The backend chosen by the size of the data.
+    # 7. A copy of a container that is on the device: it is made on the host.
+    with p.region('Copy of a container', '\t{ SKEPU_TRACE_SCOPE("Copy of a container");'):
+        res2 = p.vec('Field', 1 << 20, '\t\tskepu::Vector<float> field(N, "Field");')
+        p.call(sk['generate'], '\t\tgenerate(field);', backend=CL, n=1 << 20, outs=[res2])
+        backup = p.copy(res2, '\t\tskepu::Vector<float> backup(field);   // the copy is made on the host: field comes back, and backup is on the host')
+        p.call(sk['offset'], '\t\toffset(field, field);', backend=CL, n=1 << 20, ins=[res2], outs=[res2])
+        p.call(sk['scale'], '\t\tscale(backup, backup);   // and goes to the device when it is used there', backend=CL, n=1 << 20, ins=[backup], outs=[backup])
+        p.free(backup, res2)
+        p.src('\t}')
+    p.blank()
+
+    # 8. The backend chosen by the size of the data.
     p.src('''
 	// The backend chosen by the size: sequential for small data, OpenMP for medium, OpenCL for large.
 	auto choose = [](size_t n) { return n < (1 << 12) ? Backend::Type::CPU : n < (1 << 18) ? Backend::Type::OpenMP : Backend::Type::OpenCL; };''')
@@ -433,9 +463,10 @@ int main()
         r = p.vec('Activations', 8 * h * h * 8, f'\t\tskepu::Tensor4<float> relu_out(8, {h}, {h}, 8, "Activations");')
         o = p.vec('Pooled', 8 * (h // 2) ** 2 * 8, f'\t\tskepu::Tensor4<float> pooled(8, {h // 2}, {h // 2}, 8, "Pooled");')
         a = two('relu', 'Map', '[](float a) { return fmaxf(a, 0.0f); }')
-        b = p.skel('max_pool', 'MapPool 4D', '\t\tauto max_pool = skepu::MapOverlap(max_pooling_uf);   // a pool: stride = window')
+        b = p.skel('max_pool', 'MapPool 4D', '\t\tauto max_pool = skepu::MapPool(max_pooling_uf);   // pool size and stride set below\n\t\tmax_pool.setPoolSizeAndStride(1, 2, 2, 1);')
         p.call(a, '\t\trelu(relu_out, x);', backend=OMP, elements=[8, h, h, 8], ins=[x], outs=[r])
-        p.call(b, '\t\tmax_pool(pooled, relu_out);', backend=OMP, elements=[8, h // 2, h // 2, 8], ins=[r], outs=[o])
+        p.call(b, '\t\tmax_pool(pooled, relu_out);', backend=OMP, elements=[8, h // 2, h // 2, 8], ins=[r], outs=[o],
+               params={'pool': True, 'pool_size': [1, 2, 2, 1], 'stride': [1, 2, 2, 1]})
         end(o, r, x)
 
     n = size()
@@ -447,9 +478,9 @@ int main()
         br = p.vec('Brightened', m, f'\t\tskepu::Matrix<float> bright({side}, {side}, "Brightened");')
         out = p.vec('Edges', m, f'\t\tskepu::Matrix<float> edges({side}, {side}, "Edges");')
         a = two('brighten', 'Map', '[](float a) { return 1.2f * a + 0.1f; }')
-        b = p.skel('laplace', 'MapOverlap 2D', '\t\tauto laplace = skepu::MapOverlap(laplace_uf);   // 3x3 stencil')
+        b = p.skel('laplace', 'MapOverlap 2D', '\t\tauto laplace = skepu::MapOverlap(laplace_uf);\n\t\tlaplace.setOverlap(1, 1);   // 3x3 stencil')
         p.call(a, '\t\tbrighten(bright, image);', backend=OMP, elements=[side, side], ins=[img], outs=[br])
-        p.call(b, '\t\tlaplace(edges, bright);', backend=OMP, elements=[side, side], ins=[br], outs=[out])
+        p.call(b, '\t\tlaplace(edges, bright);', backend=OMP, elements=[side, side], ins=[br], outs=[out], params={'overlap': [1, 1]})
         end(out, br, img)
 
     n = size()
@@ -515,6 +546,16 @@ int main()
         end(y, t, x)
 
     n = size()
+    with block('A copy in between', '\t// The first call writes T, which is copied before it is read: the copy reads T, so T has to exist.', n):
+        x, t, y = vec('x', 'X', n), vec('t', 'T', n), vec('y', 'Y', n)
+        a = two('add_c', 'Map', '[](float a) { return a + 1.0f; }')
+        b = two('double_c', 'Map', '[](float a) { return 2.0f * a; }')
+        p.call(a, '\t\tadd_c(t, x);', backend=OMP, n=n, ins=[x], outs=[t])
+        t2 = p.copy(t, '\t\tskepu::Vector<float> t_copy(t);')
+        p.call(b, '\t\tdouble_c(y, t_copy);', backend=OMP, n=n, ins=[t2], outs=[y])
+        end(y, t2, t, x)
+
+    n = size()
     with block('Random access', '\t// The second call reads T at any index (a proxy, skepu::Vec), not element by element:\n'
                '\t// it needs all of T finished before it starts.', n):
         x, w, t, y = vec('x', 'X', n), vec('w', 'Indices', n), vec('t', 'T', n), vec('y', 'Y', n)
@@ -533,6 +574,16 @@ int main()
         b = two('scale_mat', 'Map', '[](float a) { return 2.0f * a; }')
         p.call(a, '\t\tshift_vec(t, x);', backend=OMP, n=n, ins=[x], outs=[t])
         p.call(b, f'\t\tscale_mat(y_matrix, t_matrix);   // the same memory, as a {side} x {n // side} matrix', backend=OMP, elements=[side, n // side], ins=[t], outs=[y])
+        end(y, t, x)
+
+    n = size()
+    with block('A stride', '\t// The second Map has a stride: it reads every other element, not one to one.', n):
+        x, t, y = vec('x', 'X', n), vec('t', 'T', n), vec('y', 'Y', n // 2)
+        a = two('step_f', 'Map', '[](float a) { return a + 1.0f; }')
+        b = two('step_g', 'Map', '[](float a) { return 2.0f * a; }')
+        p.src('\t\tstep_g.setStride(2, 2);')
+        p.call(a, '\t\tstep_f(t, x);', backend=OMP, n=n, ins=[x], outs=[t])
+        p.call(b, '\t\tstep_g(y, t);', backend=OMP, n=n // 2, ins=[t], outs=[y], params={'strides': [2, 2]})
         end(y, t, x)
 
     n = size()
@@ -573,9 +624,9 @@ int main()
                '\t// of independent elements (and would have to be computed with its halo).', n):
         m = side * side
         img, t, y = (p.vec(nm, m, f'\t\tskepu::Matrix<float> {v}({side}, {side}, "{nm}");') for v, nm in [('image', 'Image'), ('blurred', 'Blurred'), ('mask', 'Mask')])
-        a = p.skel('blur', 'MapOverlap 2D', '\t\tauto blur = skepu::MapOverlap(blur_uf);   // 3x3 stencil')
+        a = p.skel('blur', 'MapOverlap 2D', '\t\tauto blur = skepu::MapOverlap(blur_uf);\n\t\tblur.setOverlap(1, 1);   // 3x3 stencil')
         b = two('threshold', 'Map', '[](float a) { return a > 0.5f ? 1.0f : 0.0f; }')
-        p.call(a, '\t\tblur(blurred, image);', backend=OMP, elements=[side, side], ins=[img], outs=[t])
+        p.call(a, '\t\tblur(blurred, image);', backend=OMP, elements=[side, side], ins=[img], outs=[t], params={'overlap': [1, 1]})
         p.call(b, '\t\tthreshold(mask, blurred);', backend=OMP, elements=[side, side], ins=[t], outs=[y])
         end(y, t, img)
 
@@ -591,14 +642,14 @@ int main()
 
     n = size()
     with block('Maps of different sizes', '\t// Three independent Maps; only the two over the same number of elements can share a launch.', n):
-        x, w = vec('x', 'X', n), p.vec('W', n // 2, f'\t\tskepu::Vector<float> w(n / 2, "W");')
-        a_, b_, c_ = vec('a', 'A', n), vec('b', 'B', n), p.vec('C', n // 2, f'\t\tskepu::Vector<float> c(n / 2, "C");')
+        x, w = vec('x', 'X', n), p.vec('W', n // 2 + 7, f'\t\tskepu::Vector<float> w(n / 2 + 7, "W");')
+        a_, b_, c_ = vec('a', 'A', n), vec('b', 'B', n), p.vec('C', n // 2 + 7, f'\t\tskepu::Vector<float> c(n / 2 + 7, "C");')
         f1 = two('inc', 'Map', '[](float a) { return a + 1.0f; }')
         f2 = two('dec', 'Map', '[](float a) { return a - 1.0f; }')
         f3 = two('twice', 'Map', '[](float a) { return 2.0f * a; }')
         p.call(f1, '\t\tinc(a, x);', backend=OMP, n=n, ins=[x], outs=[a_])
         p.call(f2, '\t\tdec(b, x);', backend=OMP, n=n, ins=[x], outs=[b_])
-        p.call(f3, '\t\ttwice(c, w);', backend=OMP, n=n // 2, ins=[w], outs=[c_])
+        p.call(f3, '\t\ttwice(c, w);', backend=OMP, n=n // 2 + 7, ins=[w], outs=[c_])
         end(c_, b_, a_, w, x)
 
     close_group()

@@ -100,18 +100,7 @@ function _getElk(workerUrl) {
 
 
 function toSubscript(val) {
-  var strval = '' + val;
-  strval = strval.replace("0", "₀");
-  strval = strval.replace("1", "₁");
-  strval = strval.replace("2", "₂");
-  strval = strval.replace("3", "₃");
-  strval = strval.replace("4", "₄");
-  strval = strval.replace("5", "₅");
-  strval = strval.replace("6", "₆");
-  strval = strval.replace("7", "₇");
-  strval = strval.replace("8", "₈");
-  strval = strval.replace("9", "₉");
-  return strval;
+  return ('' + val).replace(/[0-9]/g, function (d) { return '₀₁₂₃₄₅₆₇₈₉'[d]; });
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -747,7 +736,7 @@ export class GraphView {
             if (!node_labels) return '';
             return ele.data('iteration_count') > 1
               ? ele.data('label') + ' x' + ele.data('iteration_count')
-              : ele.data('label') + '' + toSubscript(ele.data('version'));
+              : ele.data('label') + (ele.data('version_count') > 1 ? toSubscript(ele.data('version')) : '');   // (no subscript for the only version)
           },
           'text-valign':      'center',
           'shape':            'rectangle',
@@ -787,10 +776,10 @@ export class GraphView {
           'background-color': function(ele) {
             var mode = self.settings['node-color-call'];
             if (mode === 'backend') {
-              return ({ CPU:'yellow', OpenMP:'red', OpenCL:'blue', CUDA:'green' })[ele.data('backend')] || sc(norm('node-color-call', ele));
+              return self._provider.backendColor(ele.data('backend')) || sc(norm('node-color-call', ele));
             }
             if (mode === 'pattern') {
-              return ({ Map:'yellow', Reduce:'red', MapReduce:'orange', MapOverlap:'green' })[ele.data('pattern')] || sc(norm('node-color-call', ele));
+              return self._provider.patternColor(ele.data('pattern')) || sc(norm('node-color-call', ele));
             }
             return sc(norm('node-color-call', ele));
           },
@@ -798,10 +787,10 @@ export class GraphView {
           'border-color': function(ele) {
             var mode = self.settings['node-color-call'];
             if (mode === 'backend') {
-              return ({ CPU:'#b3b300', OpenMP:'#b30000', OpenCL:'#0000b3', CUDA:'#007a00' })[ele.data('backend')] || '#555';
+              return self._provider.backendColor(ele.data('backend'), true) || '#555';
             }
             if (mode === 'pattern') {
-              return ({ Map:'#b3b300', Reduce:'#b30000', MapReduce:'#b37a00', MapOverlap:'#007a00' })[ele.data('pattern')] || '#555';
+              return self._provider.patternColor(ele.data('pattern'), true) || '#555';
             }
             return scd(norm('node-color-call', ele));
           },

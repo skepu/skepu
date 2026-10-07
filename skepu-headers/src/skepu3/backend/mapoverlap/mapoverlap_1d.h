@@ -69,6 +69,11 @@ namespace skepu
 				this->m_strides[0] = si;
 			}
 
+			void traceParameters(tracing::Parameters &parameters) const override
+			{
+				this->describeOverlap(parameters, 1);
+			}
+
 			template<typename... Args>
 			void tune(Args&&... args)
 			{

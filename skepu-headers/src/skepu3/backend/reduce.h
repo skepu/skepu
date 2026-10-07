@@ -54,6 +54,13 @@ namespace skepu
 				this->m_start = val;
 			}
 
+			void traceParameters(tracing::Parameters &parameters) const override
+			{
+				if (this->m_mode == ReduceMode::ColWise)     // (the reduction of rows is the default)
+					parameters.add("mode", to_string(this->m_mode));
+				parameters.addNumber("start_value", this->m_start);
+			}
+
 			template<typename... Args>
 			void tune(Args&&... args)
 			{

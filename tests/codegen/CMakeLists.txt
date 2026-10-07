@@ -203,6 +203,28 @@ foreach(_variant default_module env_module env_main)
 	set_tests_properties(tracing_file_names_${_variant}_trace PROPERTIES FIXTURES_REQUIRED tracing_file_names_${_variant}_run)
 endforeach()
 
+# What the trace says about each skeleton, on each backend (the elements, parameters and names are the same on all)
+foreach(_backend cpu openmp opencl)
+	if(_backend STREQUAL openmp AND NOT SKEPU_OPENMP)
+		continue()
+	endif()
+	if(_backend STREQUAL opencl AND NOT SKEPU_OPENCL)
+		continue()
+	endif()
+	set(_flags)
+	if(_backend STREQUAL openmp)
+		set(_flags OpenMP)
+	elseif(_backend STREQUAL opencl)
+		set(_flags OpenCL)
+	endif()
+	skepu_add_executable(tracing_skeletons_${_backend}_test ${_flags} SKEPUSRC tracing_skeletons.cpp)
+	target_link_libraries(tracing_skeletons_${_backend}_test PRIVATE catch2_main)
+	target_compile_definitions(tracing_skeletons_${_backend}_test PRIVATE SKEPU_TRACING)
+	add_test(NAME tracing_skeletons_${_backend} COMMAND tracing_skeletons_${_backend}_test)
+	set_tests_properties(tracing_skeletons_${_backend} PROPERTIES
+		ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_skeletons_${_backend}.json")
+endforeach()
+
 # ------------------------------------------------
 #   User types in namespaces (OpenCL type names)
 # ------------------------------------------------
