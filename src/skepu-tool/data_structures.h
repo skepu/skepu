@@ -327,8 +327,7 @@ struct Skeleton
 		MapPool1D,
 		MapPool2D,
 		MapPool3D,
-		MapPool4D,
-		Call
+		MapPool4D
 	};
 
 	std::string name;
@@ -405,8 +404,6 @@ struct Skeleton
 				return "MapPool3D";
 			case Skeleton::Type::MapPool4D:
 				return "MapPool4D";
-			case Skeleton::Type::Call:
-				return "Call";
 			default:
 				return "Unknown"; // or throw an exception
 		}

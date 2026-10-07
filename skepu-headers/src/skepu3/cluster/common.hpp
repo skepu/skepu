@@ -185,7 +185,6 @@ operator<<(std::ostream &o, Index4D idx)
 		MapOverlap2D,
 		MapOverlap3D,
 		MapOverlap4D,
-		Call,
 	};
 
 /* To be able to use getParent on containers. Those are private in MPI. */

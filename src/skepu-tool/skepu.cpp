@@ -127,7 +127,6 @@ const std::unordered_map<std::string, Skeleton> SkeletonsLookup =
 	{"MapPool4D",            {"MapPool4D",          Skeleton::Type::MapPool4D,          1, 1}},
 	{"MapPairsImpl",         {"MapPairs",           Skeleton::Type::MapPairs,           1, 1}},
 	{"MapPairsReduceImpl",   {"MapPairsReduce",     Skeleton::Type::MapPairsReduce,     2, 1}},
-	{"CallImpl",             {"Call",               Skeleton::Type::Call,               1, 1}},
 };
 
 std::unordered_map<Skeleton::Type, std::string> SkeletonDescriptions =
@@ -162,8 +161,6 @@ std::unordered_map<Skeleton::Type, std::string> SkeletonDescriptions =
   "Cartesian product-style computation."},
 	{Skeleton::Type::MapPairsReduce, 
   "Efficient chaining of MapPairs and Reduce."},
-	{Skeleton::Type::Call, 
-  "Generic multi-variant component."},
 };
 
 

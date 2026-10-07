@@ -24,7 +24,6 @@ std::string createMapOverlap1DKernelProgram_CU(SkeletonInstance&, UserFunction &
 std::string createMapOverlap2DKernelProgram_CU(SkeletonInstance&, UserFunction &mapOverlapFunc, std::string dir);
 std::string createMapOverlap3DKernelProgram_CU(SkeletonInstance&, UserFunction &mapOverlapFunc, std::string dir);
 std::string createMapOverlap4DKernelProgram_CU(SkeletonInstance&, UserFunction &mapOverlapFunc, std::string dir);
-std::string createCallKernelProgram_CU(SkeletonInstance&, UserFunction &callFunc, std::string dir);
 
 
 // OpenCL generators
@@ -39,4 +38,3 @@ std::string createMapOverlap1DKernelProgram_CL(SkeletonInstance&, UserFunction &
 std::string createMapOverlap2DKernelProgram_CL(SkeletonInstance&, UserFunction &mapOverlapFunc, std::string dir);
 std::string createMapOverlap3DKernelProgram_CL(SkeletonInstance&, UserFunction &mapOverlapFunc, std::string dir);
 std::string createMapOverlap4DKernelProgram_CL(SkeletonInstance&, UserFunction &mapOverlapFunc, std::string dir);
-std::string createCallKernelProgram_CL(SkeletonInstance&, UserFunction &callFunc, std::string dir);

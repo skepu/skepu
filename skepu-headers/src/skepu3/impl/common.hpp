@@ -305,7 +305,6 @@ namespace skepu
 		MapOverlap2D,
 		MapOverlap3D,
 		MapOverlap4D,
-		Call,
 	};
 
 	// For multiple return Map variants

@@ -33,8 +33,6 @@ auto conv2d = skepu::MapOverlap([](skepu::Region2D<float> m, const skepu::Mat<fl
   return res;
 });
 
-//auto caller = skepu::Call([](skepu::Vec<float> r, float a, float b) { r[0] = a * b; });
-
 
 TEST_CASE("Test skeleton instances using lambda expressions")
 {

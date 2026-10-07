@@ -833,10 +833,6 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			cuKernels = {KernelName_CU + "_conv_cuda_4D_kernel"};
 			break;
 
-		case Skeleton::Type::Call:
-			KernelName_CU = createCallKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
-			cuKernels = {KernelName_CU};
-			break;
 		}
 
 		for (size_t k = 0; k < cuKernels.size(); ++k)
@@ -928,9 +924,6 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			KernelName_CL = createMapOverlap4DKernelProgram_CL(skeletonID, *FuncArgs[0], ResultDir);
 			break;
 
-		case Skeleton::Type::Call:
-			KernelName_CL = createCallKernelProgram_CL(skeletonID, *FuncArgs[0], ResultDir);
-			break;
 		}
 
 		if (GlobalRewriter.InsertText(loc, "#include \"" + KernelName_CL + "_cl_source.inl\"\n" + lineDirectiveForSourceLoc(loc) + "\n"))
