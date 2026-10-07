@@ -55,7 +55,7 @@ export function criticalPath(events) {
         total_us: total, hops: chain.length, work_us: work,
         parallelism: total ? +(work / total).toFixed(2) : null,
         path: timed.map(n => ({
-            id: 'e' + n.traceIndex, type: n.type, label: n.label, pattern: n.pattern ?? undefined,
+            id: n.key, type: n.type, label: n.label, pattern: n.pattern ?? undefined,
             duration_us: n.duration, share: total ? +(n.duration / total).toFixed(4) : 0,
             file: n.file || undefined, line: n.line ?? undefined,
         })),

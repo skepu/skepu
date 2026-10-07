@@ -1,0 +1,19 @@
+{
+  "counts": {
+    "nodes": 12,
+    "edges": 11,
+    "timeline": 11,
+    "badges": 11,
+    "fusion_hints": 0,
+    "events": 11,
+    "snapshots": 0
+  },
+  "hashes": {
+    "nodes": "dd0142f902fa2d10",
+    "edges": "7c8eba0421aad736",
+    "timeline_nodes": "011b1f938199aaaa",
+    "badge_nodes": "72d55c4ddac1d6c7",
+    "fusion_hints": "4f53cda18c2baa0c",
+    "all_region_pids": "4f53cda18c2baa0c"
+  }
+}

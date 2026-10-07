@@ -26,6 +26,7 @@ function _durationCV(durations) {
 export class Node {
     constructor(graph, label, totalOrder, region = null) {
         this.id          = crypto.randomUUID();
+        this.key         = graph.newNodeKey();   // stable, unlike id: see DirectedGraph.newNodeKey()
         this.label       = label;
         this.graph       = graph;
         this.totalOrder  = totalOrder;
@@ -322,9 +323,6 @@ export class ExternalNode extends ComputationNode {
 // ── RegionNode ────────────────────────────────────────────────────────────────
 
 export class RegionNode extends Node {
-    // Class-level counter for stable persistent IDs — reset by DirectedGraph.fromEvents.
-    static regionCounter = 0;
-
     constructor(graph, jsonData, totalOrder) {
         super(graph, jsonData.label, totalOrder, null);   // always null region for now
 
@@ -357,8 +355,7 @@ export class RegionNode extends Node {
         this.file = jsonData.file ?? null;
         this.line = jsonData.line ?? null;
 
-        RegionNode.regionCounter += 1;
-        this.persistentRegionId = 'region_' + RegionNode.regionCounter;
+        this.persistentRegionId = 'region_' + graph.nextRegionNumber();
     }
 
     addNestedNode(node)   { this.nestedNodes.push(node); }

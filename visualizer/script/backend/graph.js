@@ -81,6 +81,11 @@ export class DirectedGraph {
         this._trace_index = 0;
 
         this._rootRegionNode = null;
+
+        // Per graph, so that the identifiers of two graphs do not depend on each other.
+        this._regionCounter = 0;      // persistentRegionId of the regions: region_1, region_2, ...
+        this._keyCounts     = new Map();   // trace index -> number of nodes made for that event
+        this._rootPhase     = false;  // true while the synthesized root region is made
     }
 
     // ── Auto-vivification helpers ─────────────────────────────────────────────
@@ -154,6 +159,22 @@ export class DirectedGraph {
 
     setCurrentTraceIndex(index) { this._trace_index = index; }
     currentTraceIndex()         { return this._trace_index; }
+
+    nextRegionNumber()          { return ++this._regionCounter; }
+
+    /**
+     * A key for the node that is made now, which is the same whenever the graph is made again
+     * from the same events with the same settings (the ids of nodes are random): 'e<n>' for the
+     * first node of event n, 'e<n>.<k>' for the k-th further one (a call makes nodes for its
+     * outputs too), 'root' for the synthesized root region.
+     */
+    newNodeKey() {
+        if (this._rootPhase) return 'root';
+        const t = this._trace_index;
+        const k = this._keyCounts.get(t) ?? 0;
+        this._keyCounts.set(t, k + 1);
+        return k === 0 ? 'e' + t : `e${t}.${k}`;
+    }
     
     getAllNodes()          { return this._nodes; }
     getRootNodes()         { return this._nodes.filter(n => n.getIncomingEdges().length === 0); }
@@ -592,9 +613,11 @@ export class DirectedGraph {
         const g = new DirectedGraph();
         if (settings !== null) g.settings = settings;
 
-        RegionNode.regionCounter = 0;
-        if (g.settings.synthesizeRootRegion)
-          g.setRootRegion(new RegionNode(g, { label: "[global]" }, 0));
+        if (g.settings.synthesizeRootRegion) {
+            g._rootPhase = true;
+            g.setRootRegion(new RegionNode(g, { label: "[global]" }, 0));
+            g._rootPhase = false;
+        }
 
         for (let i = 0; i < events.length; i++) {
             const ev = events[i];
