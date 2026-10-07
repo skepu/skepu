@@ -39,7 +39,7 @@ describe('the MCP server', () => {
         s.notify('notifications/initialized');
         const { result } = await s.request('tools/list');
         const names = result.tools.map(t => t.name);
-        expect(names).toEqual(expect.arrayContaining(['load_trace', 'summarize', 'time_by', 'transfers', 'find_events', 'containers', 'critical_path', 'source_context']));
+        expect(names).toEqual(expect.arrayContaining(['load_trace', 'summarize', 'time_by', 'transfers', 'find_events', 'containers', 'critical_path', 'fusion_candidates', 'source_context']));
         for (const t of result.tools) expect(t.inputSchema.type).toBe('object');
     });
 
@@ -58,6 +58,10 @@ describe('the MCP server', () => {
 
         const cp = (await s.tool('critical_path', { handle })).structuredContent;
         expect(cp.work_us).toBe(245525);
+
+        const fu = (await s.tool('fusion_candidates', { handle })).structuredContent;
+        expect(fu.serial_groups).toBeGreaterThan(50);
+        expect(fu.groups[0]).toHaveProperty('occurrences');
     });
 
     it('reports a failing tool as a tool error, not a protocol error', async () => {

@@ -1,5 +1,6 @@
 // ui.js — Source pane, alerts, setting-changed debounce, legend, and page init.
 // Entry-point module: imports from all other modules and wires up window exports.
+import { descendantsOf } from './nesting.js';
 import { State, SETTING_CHANGED_DEBOUNCE_MS, GANTT_RESIZE_DEBOUNCE_MS,
          INFO_PANE_MIN_H, AUTO_RENDER_THRESHOLD,
          HLJS_THEME_DEFAULT_LIGHT, HLJS_THEME_DEFAULT_DARK } from './state.js';
@@ -322,35 +323,61 @@ export function load()
 // → true/false).  Every change triggers a full re-fetch so the server returns
 // the correctly filtered node set; no client-side show/hide needed.
 
-function _setSelectedRegions(collapsed) {
+// Regions and fusion nodes are collapsed the same way: by the id that the backend gives them.
+function _collapsibleId(d) {
+  return d.type === 'region' ? d.persistent_region_id
+       : d.type === 'fusion' ? d.persistent_fusion_id
+       : null;
+}
+
+// With View > Regions off every region is drawn expanded, whatever is set here: say so, instead of doing nothing.
+function _regionsAreShown() {
+  if (State.settings['show_regions']) return true;
+  showAlert('Regions are not shown: turn on View > Regions (R) and apply the settings first.');
+  return false;
+}
+
+// Collapse or expand the selected regions and fusion nodes; with `recursive` everything inside them too (Once
+// leaves the state of what is inside as it is).
+function _setSelectedRegions(collapsed, recursive) {
   if (!State.graphView) return;
   var changed = false;
-  State.graphView.selectedNodes()
-    .filter(function(d) { return d.type === 'region'; })
-    .forEach(function(d) {
-      if (d.persistent_region_id) {
-        State._collapsedNodes[d.persistent_region_id] = collapsed;
-        changed = true;
-      }
-    });
+  State.graphView.selectedNodes().forEach(function(d) {
+    var id = _collapsibleId(d);
+    if (id && (d.type !== 'region' || _regionsAreShown())) {
+      State._collapsedNodes[id] = collapsed;
+      if (recursive) descendantsOf(State._regionParents, id).forEach(function(c) { State._collapsedNodes[c] = collapsed; });
+      changed = true;
+    }
+  });
   if (changed) fetchViewDataAndRender();
 }
 
 function _setAllRegions(collapsed) {
+  if (!_regionsAreShown()) return;
   var pids = State._allRegionPids || Object.keys(State._collapsedNodes);
   pids.forEach(function(pid) { State._collapsedNodes[pid] = collapsed; });
   fetchViewDataAndRender();
 }
 
-export function collapseSelectedRecursively() { _setSelectedRegions(true); }
-export function expandSelectedRecursively()   { _setSelectedRegions(false); }
-export function collapseSelected()            { _setSelectedRegions(true); }
-export function expandSelected()              { _setSelectedRegions(false); }
+function _setAllFusions(collapsed) {
+  var pids = State._allFusionPids || [];
+  if (!pids.length) {
+    showAlert('There are no fusion nodes: turn on View > Fusion analysis and apply the settings.');
+    return;
+  }
+  pids.forEach(function(pid) { State._collapsedNodes[pid] = collapsed; });
+  fetchViewDataAndRender();
+}
+
+export function collapseSelectedRecursively() { _setSelectedRegions(true,  true); }
+export function expandSelectedRecursively()   { _setSelectedRegions(false, true); }
+export function collapseSelected()            { _setSelectedRegions(true,  false); }
+export function expandSelected()              { _setSelectedRegions(false, false); }
 export function collapseAllRegions()          { _setAllRegions(true); }
 export function expandAllRegions()            { _setAllRegions(false); }
-// Fusion collapse is not implemented in the server-side approach.
-export function collapseAllFusions()          { }
-export function expandAllFusions()            { }
+export function collapseAllFusions()          { _setAllFusions(true); }
+export function expandAllFusions()            { _setAllFusions(false); }
 
 // ── Global exposure ───────────────────────────────────────────────────────────
 // Functions called from HTML body onload, onclick attributes, and inline scripts.

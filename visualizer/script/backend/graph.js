@@ -344,9 +344,16 @@ export class DirectedGraph {
         }
     }
 
-    computeKeyPaths() {
+    /**
+     * The key path of a node names it among the nodes of the program: the regions around it, its type and its label
+     * (and for an external access its line). Nodes with the same key path are the iterations of one operation when
+     * iterations are aggregated. With byLocation the file and line of a node are part of it too, so that the same
+     * name called from different places stays apart.
+     */
+    computeKeyPaths(byLocation = false) {
         const helper = (node, keypath) => {
-            node.keypath = keypath + '->' + node.type + '_' + node.label + '_' +  node.keypathDiscriminator;
+            const where = (byLocation && 'file' in node) ? '@' + node.file + ':' + node.line : '';
+            node.keypath = keypath + '->' + node.type + '_' + node.label + '_' +  node.keypathDiscriminator + where;
             if (node instanceof RegionNode) {
                 for (const nested of node.nestedNodes)
                     helper(nested, node.keypath);
@@ -388,6 +395,9 @@ export class DirectedGraph {
         }
     }
 
+    // Superseded by fusion.js (the views call applyFusion() in pipeline.js): this heuristic ignores
+    // write-after-read hazards, element counts, backends, PRNG streams and the fusable patterns, and
+    // its parallel part is never run. Kept with its tests until it is removed; see mcp/FUSION.md.
     findFusions() {
         this.findParallelFusions();
         return this.findSerialFusions();
@@ -512,8 +522,8 @@ export class DirectedGraph {
         return fusions;
     }
 
-    coalesceIterations() {
-        this.computeKeyPaths();
+    coalesceIterations(byLocation = false) {
+        this.computeKeyPaths(byLocation);
 
         // Group nodes by keypath.
         const groups = new Map();
@@ -537,6 +547,12 @@ export class DirectedGraph {
                 can.iterationCount += 1;
                 can.totalOrders.push(node.totalOrder);
                 can.traceIndices.push(node.traceIndex);
+                // Where each iteration ran in the source (index as totalOrders): the nodes of one key path
+                // can come from different lines, e.g. a skeleton instance called from several places.
+                if ('file' in node) {
+                    can.locations ??= [{ file: can.file, line: can.line }];
+                    can.locations.push({ file: node.file, line: node.line });
+                }
                 if (node.treeParents.length > 0)
                   can.treeParents.push(canonical.get(node.treeParents[0].keypath));
                 if (node.durations) can.durations.push(...node.durations);
@@ -640,23 +656,40 @@ export class DirectedGraph {
 
     // ── Serialization ─────────────────────────────────────────────────────────
 
-    toTimelineAndBadges(expandedPids = null, expandAll = false) {
+    /**
+     * What is collapsed: the regions that are not expanded (all are expanded with expandAll) and the
+     * fusion nodes named in collapsedFusionPids (fusion nodes start expanded). A node is hidden if
+     * any region or fusion node around it is collapsed.
+     */
+    _collapseState(expandedPids, expandAll, collapsedFusionPids) {
         const pidSet = new Set(expandedPids ?? []);
-        const allPids = this._nodes.filter(n => n instanceof RegionNode)
-                                   .map(n => n.persistentRegionId);
-        const collapsedPids = expandAll
-            ? new Set()
-            : new Set(allPids.filter(p => !pidSet.has(p)));
+        const allPids = this._nodes.filter(n => n instanceof RegionNode).map(n => n.persistentRegionId);
+        const allFusionPids = this._nodes.filter(n => n instanceof FusedNode && n.persistentFusionId).map(n => n.persistentFusionId);
+        const collapsedPids = expandAll ? new Set() : new Set(allPids.filter(p => !pidSet.has(p)));
+        const collapsedFusions = new Set(collapsedFusionPids ?? []);
 
-        const ancestorCollapsed = (node) => {
-            let r = node.region;
-            while (r) {
-                if (r instanceof RegionNode && collapsedPids.has(r.persistentRegionId)) return true;
-                r = r.region;
-            }
+        const collapsedNode = r =>
+            (r instanceof RegionNode && collapsedPids.has(r.persistentRegionId)) ||
+            (r instanceof FusedNode && collapsedFusions.has(r.persistentFusionId));
+        const ancestorCollapsed = node => {
+            for (let r = node.region; r; r = r.region) if (collapsedNode(r)) return true;
             return false;
         };
+        // The nesting of what can be collapsed: id -> id of the region or fusion node around it, or null.
+        const idOf = n => n instanceof RegionNode ? n.persistentRegionId : (n instanceof FusedNode ? n.persistentFusionId : null);
+        const parents = {};
+        for (const n of this._nodes) {
+            const id = idOf(n);
+            if (!id) continue;
+            let p = n.region;
+            while (p && !idOf(p)) p = p.region;
+            parents[id] = p ? idOf(p) : null;
+        }
+        return { allPids, allFusionPids, parents, collapsedNode, ancestorCollapsed };
+    }
 
+    toTimelineAndBadges(expandedPids = null, expandAll = false, collapsedFusionPids = null) {
+        const { ancestorCollapsed } = this._collapseState(expandedPids, expandAll, collapsedFusionPids);
         const visibleIds = new Set(this._nodes.filter(n => !ancestorCollapsed(n)).map(n => n.id));
 
         const tl = [], sb = [];
@@ -670,22 +703,10 @@ export class DirectedGraph {
         return [tl, sb];
     }
 
-    toCytoscape(expandedPids = null, expandAll = false) {
-        const pidSet = new Set(expandedPids ?? []);
-        const allPids = this._nodes.filter(n => n instanceof RegionNode)
-                                   .map(n => n.persistentRegionId);
-        const collapsedPids = expandAll
-            ? new Set()
-            : new Set(allPids.filter(p => !pidSet.has(p)));
-
-        const ancestorCollapsed = (node) => {
-            let r = node.region;
-            while (r) {
-                if (r instanceof RegionNode && collapsedPids.has(r.persistentRegionId)) return true;
-                r = r.region;
-            }
-            return false;
-        };
+    /** Returns [nodes, edges, ids of the regions, ids of the fusion nodes, nesting of both] in the form of Cytoscape. */
+    toCytoscape(expandedPids = null, expandAll = false, collapsedFusionPids = null) {
+        const { allPids, allFusionPids, parents, collapsedNode, ancestorCollapsed } =
+            this._collapseState(expandedPids, expandAll, collapsedFusionPids);
 
         const visibleIds = new Set(this._nodes.filter(n => !ancestorCollapsed(n)).map(n => n.id));
 
@@ -723,8 +744,7 @@ export class DirectedGraph {
         for (const node of this._nodes) {
             if (!visibleIds.has(node.id)) continue;
             const d = node.toCytoscape();
-            if (node instanceof RegionNode && collapsedPids.has(node.persistentRegionId))
-                d.collapsed = true;
+            if (collapsedNode(node)) d.collapsed = true;
             cyNodes.push({ data: d });
         }
 
@@ -761,7 +781,7 @@ export class DirectedGraph {
           }
         }
 
-        return [cyNodes, cyEdges, allPids];
+        return [cyNodes, cyEdges, allPids, allFusionPids, parents];
     }
 
     summary() {

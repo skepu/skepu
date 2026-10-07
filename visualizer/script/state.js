@@ -28,6 +28,7 @@ export const State = {
     'direction':       'vertical',
     'edge-width':      'fixed',
     'edge-opacity':    'fixed',
+    'aggregate_by':    'name',
   },
 
   // Node / edge state
@@ -36,8 +37,10 @@ export const State = {
   isZooming:        false,
 
   // Render lifecycle
-  _collapsedNodes:    {},   // persistent_region_id → true/false (collapsed/expanded)
+  _collapsedNodes:    {},   // persistent_region_id → true/false (collapsed/expanded); replaced by the provider's object (graph.js)
   _allRegionPids:     [],   // full list of region pids from last /graph response
+  _allFusionPids:     [],   // full list of fusion node ids from last /graph response
+  _regionParents:     {},   // nesting of regions and fusion nodes (id -> id around it) from last /graph response
   _renderSeq:         0,    // bumped on every new render; stale callbacks self-discard
   _renderAbort:       null, // AbortController for the active /graph fetch
   _currentLayout:     null, // handle returned by _startLayoutWorker (supports .stop())

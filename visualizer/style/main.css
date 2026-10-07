@@ -1420,18 +1420,31 @@ html.dark-mode .logo.logo-dark { display: block; }
   margin-top: 0.4em;
 }
 
-.welcome-example-btn {
+.welcome-example-pill {
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: 1em;
+  overflow: hidden;
+  font-family: monospace;
+  font-size: 0.83em;
+  white-space: nowrap;
+  background: #1a6abf;
+  color: #fff;
+}
+.welcome-example-name {
+  padding: 0.35em 0.75em;
+  background: #0f4a8a;
+}
+.welcome-example-seg {
   background: #1a6abf;
   color: #fff;
   border: none;
-  border-radius: 0.4em;
+  border-left: 1px solid rgba(255,255,255,0.35);
   padding: 0.35em 0.75em;
-  font-family: monospace;
-  font-size: 0.83em;
+  font: inherit;
   cursor: pointer;
-  white-space: nowrap;
 }
-.welcome-example-btn:hover { background: #134e8c; }
+.welcome-example-seg:hover { background: #134e8c; }
 
 /* Dark mode */
 html.dark-mode #welcome-panel { background: #1a1a24; }

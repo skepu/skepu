@@ -1,0 +1,2502 @@
+[
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Fusible",
+  "line": 10,
+  "region_depth": 1,
+  "time": 110,
+  "type": "region"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Map, Map, Map",
+  "line": 13,
+  "region": "Fusible",
+  "region_depth": 2,
+  "time": 121,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1000,
+  "region": "Map, Map, Map",
+  "time": 125,
+  "type": "allocation"
+ },
+ {
+  "label": "T1",
+  "line": 246,
+  "object_id": 1001,
+  "region": "Map, Map, Map",
+  "time": 129,
+  "type": "allocation"
+ },
+ {
+  "label": "T2",
+  "line": 246,
+  "object_id": 1002,
+  "region": "Map, Map, Map",
+  "time": 134,
+  "type": "allocation"
+ },
+ {
+  "label": "Y",
+  "line": 246,
+  "object_id": 1003,
+  "region": "Map, Map, Map",
+  "time": 139,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   69632
+  ],
+  "elwise_inputs": [
+   1000
+  ],
+  "end": 225,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "scale",
+  "line": 19,
+  "object_id": 1004,
+  "outputs": [
+   1001
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Map, Map, Map",
+  "scalar_inputs": [],
+  "start": 142,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   69632
+  ],
+  "elwise_inputs": [
+   1001
+  ],
+  "end": 318,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "shift",
+  "line": 20,
+  "object_id": 1005,
+  "outputs": [
+   1002
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Map, Map, Map",
+  "scalar_inputs": [],
+  "start": 231,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   69632
+  ],
+  "elwise_inputs": [
+   1002
+  ],
+  "end": 415,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "clamp",
+  "line": 21,
+  "object_id": 1006,
+  "outputs": [
+   1003
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Map, Map, Map",
+  "scalar_inputs": [],
+  "start": 324,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "T2",
+  "line": 270,
+  "object_id": 1002,
+  "region": "Map, Map, Map",
+  "time": 416,
+  "type": "deallocation"
+ },
+ {
+  "label": "T1",
+  "line": 270,
+  "object_id": 1001,
+  "region": "Map, Map, Map",
+  "time": 420,
+  "type": "deallocation"
+ },
+ {
+  "label": "Y",
+  "line": 270,
+  "object_id": 1003,
+  "region": "Map, Map, Map",
+  "time": 423,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1000,
+  "region": "Map, Map, Map",
+  "time": 425,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Map into Reduce",
+  "line": 29,
+  "region": "Fusible",
+  "region_depth": 2,
+  "time": 429,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1007,
+  "region": "Map into Reduce",
+  "time": 434,
+  "type": "allocation"
+ },
+ {
+  "label": "Squares",
+  "line": 246,
+  "object_id": 1008,
+  "region": "Map into Reduce",
+  "time": 440,
+  "type": "allocation"
+ },
+ {
+  "label": "Sum",
+  "line": 246,
+  "object_id": 1009,
+  "region": "Map into Reduce",
+  "time": 446,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   73728
+  ],
+  "elwise_inputs": [
+   1007
+  ],
+  "end": 541,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "square_sum",
+  "line": 34,
+  "object_id": 1010,
+  "outputs": [
+   1008
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Map into Reduce",
+  "scalar_inputs": [],
+  "start": 448,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   73728
+  ],
+  "elwise_inputs": [
+   1008
+  ],
+  "end": 644,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "add_all",
+  "line": 35,
+  "object_id": 1011,
+  "outputs": [
+   1009
+  ],
+  "pattern": "Reduce",
+  "proxy_inputs": [],
+  "region": "Map into Reduce",
+  "scalar_inputs": [],
+  "start": 546,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Squares",
+  "line": 270,
+  "object_id": 1008,
+  "region": "Map into Reduce",
+  "time": 646,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1007,
+  "region": "Map into Reduce",
+  "time": 647,
+  "type": "deallocation"
+ },
+ {
+  "label": "Sum",
+  "line": 270,
+  "object_id": 1009,
+  "region": "Map into Reduce",
+  "time": 648,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Map, Map, Map side by side",
+  "line": 42,
+  "region": "Fusible",
+  "region_depth": 2,
+  "time": 651,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1012,
+  "region": "Map, Map, Map side by side",
+  "time": 652,
+  "type": "allocation"
+ },
+ {
+  "label": "Squares",
+  "line": 246,
+  "object_id": 1013,
+  "region": "Map, Map, Map side by side",
+  "time": 654,
+  "type": "allocation"
+ },
+ {
+  "label": "Negated",
+  "line": 246,
+  "object_id": 1014,
+  "region": "Map, Map, Map side by side",
+  "time": 656,
+  "type": "allocation"
+ },
+ {
+  "label": "Halves",
+  "line": 246,
+  "object_id": 1015,
+  "region": "Map, Map, Map side by side",
+  "time": 661,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   77824
+  ],
+  "elwise_inputs": [
+   1012
+  ],
+  "end": 762,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "sq",
+  "line": 48,
+  "object_id": 1016,
+  "outputs": [
+   1013
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Map, Map, Map side by side",
+  "scalar_inputs": [],
+  "start": 663,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   77824
+  ],
+  "elwise_inputs": [
+   1012
+  ],
+  "end": 860,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "neg",
+  "line": 49,
+  "object_id": 1017,
+  "outputs": [
+   1014
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Map, Map, Map side by side",
+  "scalar_inputs": [],
+  "start": 766,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   77824
+  ],
+  "elwise_inputs": [
+   1012
+  ],
+  "end": 959,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "halve",
+  "line": 50,
+  "object_id": 1018,
+  "outputs": [
+   1015
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Map, Map, Map side by side",
+  "scalar_inputs": [],
+  "start": 868,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Halves",
+  "line": 270,
+  "object_id": 1015,
+  "region": "Map, Map, Map side by side",
+  "time": 961,
+  "type": "deallocation"
+ },
+ {
+  "label": "Negated",
+  "line": 270,
+  "object_id": 1014,
+  "region": "Map, Map, Map side by side",
+  "time": 964,
+  "type": "deallocation"
+ },
+ {
+  "label": "Squares",
+  "line": 270,
+  "object_id": 1013,
+  "region": "Map, Map, Map side by side",
+  "time": 968,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1012,
+  "region": "Map, Map, Map side by side",
+  "time": 969,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Two Maps into one",
+  "line": 58,
+  "region": "Fusible",
+  "region_depth": 2,
+  "time": 973,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1019,
+  "region": "Two Maps into one",
+  "time": 977,
+  "type": "allocation"
+ },
+ {
+  "label": "Z",
+  "line": 246,
+  "object_id": 1020,
+  "region": "Two Maps into one",
+  "time": 983,
+  "type": "allocation"
+ },
+ {
+  "label": "U",
+  "line": 246,
+  "object_id": 1021,
+  "region": "Two Maps into one",
+  "time": 986,
+  "type": "allocation"
+ },
+ {
+  "label": "V",
+  "line": 246,
+  "object_id": 1022,
+  "region": "Two Maps into one",
+  "time": 990,
+  "type": "allocation"
+ },
+ {
+  "label": "W",
+  "line": 246,
+  "object_id": 1023,
+  "region": "Two Maps into one",
+  "time": 995,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   81920
+  ],
+  "elwise_inputs": [
+   1019
+  ],
+  "end": 1096,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "square_u",
+  "line": 65,
+  "object_id": 1024,
+  "outputs": [
+   1021
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Two Maps into one",
+  "scalar_inputs": [],
+  "start": 1003,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   81920
+  ],
+  "elwise_inputs": [
+   1020
+  ],
+  "end": 1196,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "negate_v",
+  "line": 66,
+  "object_id": 1025,
+  "outputs": [
+   1022
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Two Maps into one",
+  "scalar_inputs": [],
+  "start": 1100,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   81920
+  ],
+  "elwise_inputs": [
+   1021,
+   1022
+  ],
+  "end": 1298,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "add_uv",
+  "line": 67,
+  "object_id": 1026,
+  "outputs": [
+   1023
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Two Maps into one",
+  "scalar_inputs": [],
+  "start": 1199,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "W",
+  "line": 270,
+  "object_id": 1023,
+  "region": "Two Maps into one",
+  "time": 1299,
+  "type": "deallocation"
+ },
+ {
+  "label": "V",
+  "line": 270,
+  "object_id": 1022,
+  "region": "Two Maps into one",
+  "time": 1300,
+  "type": "deallocation"
+ },
+ {
+  "label": "U",
+  "line": 270,
+  "object_id": 1021,
+  "region": "Two Maps into one",
+  "time": 1301,
+  "type": "deallocation"
+ },
+ {
+  "label": "Z",
+  "line": 270,
+  "object_id": 1020,
+  "region": "Two Maps into one",
+  "time": 1305,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1019,
+  "region": "Two Maps into one",
+  "time": 1306,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Reduce and Reduce",
+  "line": 75,
+  "region": "Fusible",
+  "region_depth": 2,
+  "time": 1313,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1027,
+  "region": "Reduce and Reduce",
+  "time": 1317,
+  "type": "allocation"
+ },
+ {
+  "label": "Max",
+  "line": 246,
+  "object_id": 1028,
+  "region": "Reduce and Reduce",
+  "time": 1318,
+  "type": "allocation"
+ },
+ {
+  "label": "Min",
+  "line": 246,
+  "object_id": 1029,
+  "region": "Reduce and Reduce",
+  "time": 1319,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   86016
+  ],
+  "elwise_inputs": [
+   1027
+  ],
+  "end": 1432,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "max_of",
+  "line": 80,
+  "object_id": 1030,
+  "outputs": [
+   1028
+  ],
+  "pattern": "Reduce",
+  "proxy_inputs": [],
+  "region": "Reduce and Reduce",
+  "scalar_inputs": [],
+  "start": 1327,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   86016
+  ],
+  "elwise_inputs": [
+   1027
+  ],
+  "end": 1533,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "min_of",
+  "line": 81,
+  "object_id": 1031,
+  "outputs": [
+   1029
+  ],
+  "pattern": "Reduce",
+  "proxy_inputs": [],
+  "region": "Reduce and Reduce",
+  "scalar_inputs": [],
+  "start": 1435,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Min",
+  "line": 270,
+  "object_id": 1029,
+  "region": "Reduce and Reduce",
+  "time": 1534,
+  "type": "deallocation"
+ },
+ {
+  "label": "Max",
+  "line": 270,
+  "object_id": 1028,
+  "region": "Reduce and Reduce",
+  "time": 1538,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1027,
+  "region": "Reduce and Reduce",
+  "time": 1542,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Map into MapPool",
+  "line": 88,
+  "region": "Fusible",
+  "region_depth": 2,
+  "time": 1551,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1032,
+  "region": "Map into MapPool",
+  "time": 1555,
+  "type": "allocation"
+ },
+ {
+  "label": "Activations",
+  "line": 246,
+  "object_id": 1033,
+  "region": "Map into MapPool",
+  "time": 1556,
+  "type": "allocation"
+ },
+ {
+  "label": "Pooled",
+  "line": 246,
+  "object_id": 1034,
+  "region": "Map into MapPool",
+  "time": 1561,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   8,
+   44,
+   44,
+   8
+  ],
+  "elwise_inputs": [
+   1032
+  ],
+  "end": 1699,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "relu",
+  "line": 93,
+  "object_id": 1035,
+  "outputs": [
+   1033
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Map into MapPool",
+  "scalar_inputs": [],
+  "start": 1568,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   8,
+   22,
+   22,
+   8
+  ],
+  "elwise_inputs": [
+   1033
+  ],
+  "end": 1797,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "max_pool",
+  "line": 94,
+  "object_id": 1036,
+  "outputs": [
+   1034
+  ],
+  "pattern": "MapPool 4D",
+  "proxy_inputs": [],
+  "region": "Map into MapPool",
+  "scalar_inputs": [],
+  "start": 1706,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Pooled",
+  "line": 270,
+  "object_id": 1034,
+  "region": "Map into MapPool",
+  "time": 1798,
+  "type": "deallocation"
+ },
+ {
+  "label": "Activations",
+  "line": 270,
+  "object_id": 1033,
+  "region": "Map into MapPool",
+  "time": 1801,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1032,
+  "region": "Map into MapPool",
+  "time": 1804,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Map into MapOverlap (recomputes)",
+  "line": 101,
+  "region": "Fusible",
+  "region_depth": 2,
+  "time": 1807,
+  "type": "region"
+ },
+ {
+  "label": "Image",
+  "line": 246,
+  "object_id": 1037,
+  "region": "Map into MapOverlap (recomputes)",
+  "time": 1811,
+  "type": "allocation"
+ },
+ {
+  "label": "Brightened",
+  "line": 246,
+  "object_id": 1038,
+  "region": "Map into MapOverlap (recomputes)",
+  "time": 1812,
+  "type": "allocation"
+ },
+ {
+  "label": "Edges",
+  "line": 246,
+  "object_id": 1039,
+  "region": "Map into MapOverlap (recomputes)",
+  "time": 1814,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   228,
+   228
+  ],
+  "elwise_inputs": [
+   1037
+  ],
+  "end": 1891,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "brighten",
+  "line": 106,
+  "object_id": 1040,
+  "outputs": [
+   1038
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Map into MapOverlap (recomputes)",
+  "scalar_inputs": [],
+  "start": 1817,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   228,
+   228
+  ],
+  "elwise_inputs": [
+   1038
+  ],
+  "end": 2092,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "laplace",
+  "line": 107,
+  "object_id": 1041,
+  "outputs": [
+   1039
+  ],
+  "pattern": "MapOverlap 2D",
+  "proxy_inputs": [],
+  "region": "Map into MapOverlap (recomputes)",
+  "scalar_inputs": [],
+  "start": 1893,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Edges",
+  "line": 270,
+  "object_id": 1039,
+  "region": "Map into MapOverlap (recomputes)",
+  "time": 2096,
+  "type": "deallocation"
+ },
+ {
+  "label": "Brightened",
+  "line": 270,
+  "object_id": 1038,
+  "region": "Map into MapOverlap (recomputes)",
+  "time": 2098,
+  "type": "deallocation"
+ },
+ {
+  "label": "Image",
+  "line": 270,
+  "object_id": 1037,
+  "region": "Map into MapOverlap (recomputes)",
+  "time": 2100,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Map into MapPairs (recomputes)",
+  "line": 114,
+  "region": "Fusible",
+  "region_depth": 2,
+  "time": 2110,
+  "type": "region"
+ },
+ {
+  "label": "Raw A",
+  "line": 246,
+  "object_id": 1042,
+  "region": "Map into MapPairs (recomputes)",
+  "time": 2115,
+  "type": "allocation"
+ },
+ {
+  "label": "A",
+  "line": 246,
+  "object_id": 1043,
+  "region": "Map into MapPairs (recomputes)",
+  "time": 2117,
+  "type": "allocation"
+ },
+ {
+  "label": "B",
+  "line": 246,
+  "object_id": 1044,
+  "region": "Map into MapPairs (recomputes)",
+  "time": 2123,
+  "type": "allocation"
+ },
+ {
+  "label": "Distances",
+  "line": 246,
+  "object_id": 1045,
+  "region": "Map into MapPairs (recomputes)",
+  "time": 2125,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   512
+  ],
+  "elwise_inputs": [
+   1042
+  ],
+  "end": 2156,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "normalize",
+  "line": 120,
+  "object_id": 1046,
+  "outputs": [
+   1043
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Map into MapPairs (recomputes)",
+  "scalar_inputs": [],
+  "start": 2130,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   512,
+   160
+  ],
+  "elwise_inputs": [
+   1043,
+   1044
+  ],
+  "end": 2292,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "distance",
+  "line": 121,
+  "object_id": 1047,
+  "outputs": [
+   1045
+  ],
+  "pattern": "MapPairs",
+  "proxy_inputs": [],
+  "region": "Map into MapPairs (recomputes)",
+  "scalar_inputs": [],
+  "start": 2158,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Distances",
+  "line": 270,
+  "object_id": 1045,
+  "region": "Map into MapPairs (recomputes)",
+  "time": 2294,
+  "type": "deallocation"
+ },
+ {
+  "label": "B",
+  "line": 270,
+  "object_id": 1044,
+  "region": "Map into MapPairs (recomputes)",
+  "time": 2295,
+  "type": "deallocation"
+ },
+ {
+  "label": "A",
+  "line": 270,
+  "object_id": 1043,
+  "region": "Map into MapPairs (recomputes)",
+  "time": 2298,
+  "type": "deallocation"
+ },
+ {
+  "label": "Raw A",
+  "line": 270,
+  "object_id": 1042,
+  "region": "Map into MapPairs (recomputes)",
+  "time": 2301,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "MapPairs into Map",
+  "line": 128,
+  "region": "Fusible",
+  "region_depth": 2,
+  "time": 2304,
+  "type": "region"
+ },
+ {
+  "label": "U",
+  "line": 246,
+  "object_id": 1048,
+  "region": "MapPairs into Map",
+  "time": 2306,
+  "type": "allocation"
+ },
+ {
+  "label": "V",
+  "line": 246,
+  "object_id": 1049,
+  "region": "MapPairs into Map",
+  "time": 2308,
+  "type": "allocation"
+ },
+ {
+  "label": "Sums",
+  "line": 246,
+  "object_id": 1050,
+  "region": "MapPairs into Map",
+  "time": 2312,
+  "type": "allocation"
+ },
+ {
+  "label": "Reciprocals",
+  "line": 246,
+  "object_id": 1051,
+  "region": "MapPairs into Map",
+  "time": 2317,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   512,
+   132
+  ],
+  "elwise_inputs": [
+   1048,
+   1049
+  ],
+  "end": 2442,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "pair_sum",
+  "line": 134,
+  "object_id": 1052,
+  "outputs": [
+   1050
+  ],
+  "pattern": "MapPairs",
+  "proxy_inputs": [],
+  "region": "MapPairs into Map",
+  "scalar_inputs": [],
+  "start": 2324,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   132,
+   512
+  ],
+  "elwise_inputs": [
+   1050
+  ],
+  "end": 2536,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "reciprocal",
+  "line": 135,
+  "object_id": 1053,
+  "outputs": [
+   1051
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "MapPairs into Map",
+  "scalar_inputs": [],
+  "start": 2444,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Reciprocals",
+  "line": 270,
+  "object_id": 1051,
+  "region": "MapPairs into Map",
+  "time": 2538,
+  "type": "deallocation"
+ },
+ {
+  "label": "Sums",
+  "line": 270,
+  "object_id": 1050,
+  "region": "MapPairs into Map",
+  "time": 2542,
+  "type": "deallocation"
+ },
+ {
+  "label": "V",
+  "line": 270,
+  "object_id": 1049,
+  "region": "MapPairs into Map",
+  "time": 2545,
+  "type": "deallocation"
+ },
+ {
+  "label": "U",
+  "line": 270,
+  "object_id": 1048,
+  "region": "MapPairs into Map",
+  "time": 2546,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Not fusible",
+  "line": 142,
+  "region_depth": 1,
+  "time": 2558,
+  "type": "region"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Map into Scan",
+  "line": 144,
+  "region": "Not fusible",
+  "region_depth": 2,
+  "time": 2566,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1054,
+  "region": "Map into Scan",
+  "time": 2569,
+  "type": "allocation"
+ },
+ {
+  "label": "T",
+  "line": 246,
+  "object_id": 1055,
+  "region": "Map into Scan",
+  "time": 2573,
+  "type": "allocation"
+ },
+ {
+  "label": "Prefix sums",
+  "line": 246,
+  "object_id": 1056,
+  "region": "Map into Scan",
+  "time": 2574,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   106496
+  ],
+  "elwise_inputs": [
+   1054
+  ],
+  "end": 2690,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "double_x",
+  "line": 149,
+  "object_id": 1057,
+  "outputs": [
+   1055
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Map into Scan",
+  "scalar_inputs": [],
+  "start": 2576,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   106496
+  ],
+  "elwise_inputs": [
+   1055
+  ],
+  "end": 3016,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "prefix_sum",
+  "line": 150,
+  "object_id": 1058,
+  "outputs": [
+   1056
+  ],
+  "pattern": "Scan",
+  "proxy_inputs": [],
+  "region": "Map into Scan",
+  "scalar_inputs": [],
+  "start": 2696,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Prefix sums",
+  "line": 270,
+  "object_id": 1056,
+  "region": "Map into Scan",
+  "time": 3017,
+  "type": "deallocation"
+ },
+ {
+  "label": "T",
+  "line": 270,
+  "object_id": 1055,
+  "region": "Map into Scan",
+  "time": 3020,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1054,
+  "region": "Map into Scan",
+  "time": 3023,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Two readers",
+  "line": 157,
+  "region": "Not fusible",
+  "region_depth": 2,
+  "time": 3035,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1059,
+  "region": "Two readers",
+  "time": 3039,
+  "type": "allocation"
+ },
+ {
+  "label": "T",
+  "line": 246,
+  "object_id": 1060,
+  "region": "Two readers",
+  "time": 3041,
+  "type": "allocation"
+ },
+ {
+  "label": "Ya",
+  "line": 246,
+  "object_id": 1061,
+  "region": "Two readers",
+  "time": 3046,
+  "type": "allocation"
+ },
+ {
+  "label": "Yb",
+  "line": 246,
+  "object_id": 1062,
+  "region": "Two readers",
+  "time": 3050,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   110592
+  ],
+  "elwise_inputs": [
+   1059
+  ],
+  "end": 3184,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "plus_one",
+  "line": 163,
+  "object_id": 1063,
+  "outputs": [
+   1060
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Two readers",
+  "scalar_inputs": [],
+  "start": 3058,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   110592
+  ],
+  "elwise_inputs": [
+   1060
+  ],
+  "end": 3315,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "times_two",
+  "line": 164,
+  "object_id": 1064,
+  "outputs": [
+   1061
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Two readers",
+  "scalar_inputs": [],
+  "start": 3192,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   110592
+  ],
+  "elwise_inputs": [
+   1060
+  ],
+  "end": 3440,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "negate_it",
+  "line": 165,
+  "object_id": 1065,
+  "outputs": [
+   1062
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Two readers",
+  "scalar_inputs": [],
+  "start": 3322,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Yb",
+  "line": 270,
+  "object_id": 1062,
+  "region": "Two readers",
+  "time": 3442,
+  "type": "deallocation"
+ },
+ {
+  "label": "Ya",
+  "line": 270,
+  "object_id": 1061,
+  "region": "Two readers",
+  "time": 3444,
+  "type": "deallocation"
+ },
+ {
+  "label": "T",
+  "line": 270,
+  "object_id": 1060,
+  "region": "Two readers",
+  "time": 3446,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1059,
+  "region": "Two readers",
+  "time": 3448,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "The host looks in between",
+  "line": 172,
+  "region": "Not fusible",
+  "region_depth": 2,
+  "time": 3459,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1066,
+  "region": "The host looks in between",
+  "time": 3461,
+  "type": "allocation"
+ },
+ {
+  "label": "T",
+  "line": 246,
+  "object_id": 1067,
+  "region": "The host looks in between",
+  "time": 3467,
+  "type": "allocation"
+ },
+ {
+  "label": "Y",
+  "line": 246,
+  "object_id": 1068,
+  "region": "The host looks in between",
+  "time": 3471,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   114688
+  ],
+  "elwise_inputs": [
+   1066
+  ],
+  "end": 3606,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "add_one",
+  "line": 177,
+  "object_id": 1069,
+  "outputs": [
+   1067
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "The host looks in between",
+  "scalar_inputs": [],
+  "start": 3476,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "index": 0,
+  "label": "T",
+  "line": 180,
+  "object_id": 1071,
+  "region": "The host looks in between",
+  "source": 1067,
+  "time": 3610,
+  "type": "element_access"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   114688
+  ],
+  "elwise_inputs": [
+   1067
+  ],
+  "end": 3733,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "scale_two",
+  "line": 178,
+  "object_id": 1070,
+  "outputs": [
+   1068
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "The host looks in between",
+  "scalar_inputs": [],
+  "start": 3612,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Y",
+  "line": 270,
+  "object_id": 1068,
+  "region": "The host looks in between",
+  "time": 3734,
+  "type": "deallocation"
+ },
+ {
+  "label": "T",
+  "line": 270,
+  "object_id": 1067,
+  "region": "The host looks in between",
+  "time": 3737,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1066,
+  "region": "The host looks in between",
+  "time": 3739,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Random access",
+  "line": 186,
+  "region": "Not fusible",
+  "region_depth": 2,
+  "time": 3748,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1072,
+  "region": "Random access",
+  "time": 3751,
+  "type": "allocation"
+ },
+ {
+  "label": "Indices",
+  "line": 246,
+  "object_id": 1073,
+  "region": "Random access",
+  "time": 3755,
+  "type": "allocation"
+ },
+ {
+  "label": "T",
+  "line": 246,
+  "object_id": 1074,
+  "region": "Random access",
+  "time": 3760,
+  "type": "allocation"
+ },
+ {
+  "label": "Y",
+  "line": 246,
+  "object_id": 1075,
+  "region": "Random access",
+  "time": 3764,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   118784
+  ],
+  "elwise_inputs": [
+   1072
+  ],
+  "end": 3900,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "bump",
+  "line": 192,
+  "object_id": 1076,
+  "outputs": [
+   1074
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Random access",
+  "scalar_inputs": [],
+  "start": 3768,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   118784
+  ],
+  "elwise_inputs": [
+   1073
+  ],
+  "end": 4049,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "lookup",
+  "line": 193,
+  "object_id": 1077,
+  "outputs": [
+   1075
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [
+   1074
+  ],
+  "region": "Random access",
+  "scalar_inputs": [],
+  "start": 3907,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Y",
+  "line": 270,
+  "object_id": 1075,
+  "region": "Random access",
+  "time": 4051,
+  "type": "deallocation"
+ },
+ {
+  "label": "T",
+  "line": 270,
+  "object_id": 1074,
+  "region": "Random access",
+  "time": 4053,
+  "type": "deallocation"
+ },
+ {
+  "label": "Indices",
+  "line": 270,
+  "object_id": 1073,
+  "region": "Random access",
+  "time": 4057,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1072,
+  "region": "Random access",
+  "time": 4058,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Other shapes",
+  "line": 200,
+  "region": "Not fusible",
+  "region_depth": 2,
+  "time": 4065,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1078,
+  "region": "Other shapes",
+  "time": 4067,
+  "type": "allocation"
+ },
+ {
+  "label": "T",
+  "line": 246,
+  "object_id": 1079,
+  "region": "Other shapes",
+  "time": 4069,
+  "type": "allocation"
+ },
+ {
+  "label": "Y",
+  "line": 246,
+  "object_id": 1080,
+  "region": "Other shapes",
+  "time": 4075,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   122880
+  ],
+  "elwise_inputs": [
+   1078
+  ],
+  "end": 4204,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "shift_vec",
+  "line": 205,
+  "object_id": 1081,
+  "outputs": [
+   1079
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Other shapes",
+  "scalar_inputs": [],
+  "start": 4077,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   256,
+   480
+  ],
+  "elwise_inputs": [
+   1079
+  ],
+  "end": 4344,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "scale_mat",
+  "line": 206,
+  "object_id": 1082,
+  "outputs": [
+   1080
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Other shapes",
+  "scalar_inputs": [],
+  "start": 4209,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Y",
+  "line": 270,
+  "object_id": 1080,
+  "region": "Other shapes",
+  "time": 4345,
+  "type": "deallocation"
+ },
+ {
+  "label": "T",
+  "line": 270,
+  "object_id": 1079,
+  "region": "Other shapes",
+  "time": 4346,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1078,
+  "region": "Other shapes",
+  "time": 4348,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Different backends",
+  "line": 212,
+  "region": "Not fusible",
+  "region_depth": 2,
+  "time": 4355,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1083,
+  "region": "Different backends",
+  "time": 4358,
+  "type": "allocation"
+ },
+ {
+  "label": "T",
+  "line": 246,
+  "object_id": 1084,
+  "region": "Different backends",
+  "time": 4363,
+  "type": "allocation"
+ },
+ {
+  "label": "Y",
+  "line": 246,
+  "object_id": 1085,
+  "region": "Different backends",
+  "time": 4368,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   126976
+  ],
+  "elwise_inputs": [
+   1083
+  ],
+  "end": 4502,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "omp_add",
+  "line": 217,
+  "object_id": 1086,
+  "outputs": [
+   1084
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Different backends",
+  "scalar_inputs": [],
+  "start": 4371,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenCL",
+  "direction": "host-to-device",
+  "elements": 126976,
+  "end": 4607,
+  "label": "T",
+  "line": 258,
+  "object_id": 1084,
+  "region": "Different backends",
+  "start": 4506,
+  "time": 4607,
+  "type": "transfer"
+ },
+ {
+  "backend": "OpenCL",
+  "elements": [
+   126976
+  ],
+  "elwise_inputs": [
+   1084
+  ],
+  "end": 4715,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "ocl_scale",
+  "line": 218,
+  "object_id": 1087,
+  "outputs": [
+   1085
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Different backends",
+  "scalar_inputs": [],
+  "start": 4611,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Y",
+  "line": 270,
+  "object_id": 1085,
+  "region": "Different backends",
+  "time": 4717,
+  "type": "deallocation"
+ },
+ {
+  "label": "T",
+  "line": 270,
+  "object_id": 1084,
+  "region": "Different backends",
+  "time": 4718,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1083,
+  "region": "Different backends",
+  "time": 4719,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "One random stream",
+  "line": 226,
+  "region": "Not fusible",
+  "region_depth": 2,
+  "time": 4729,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1088,
+  "region": "One random stream",
+  "time": 4732,
+  "type": "allocation"
+ },
+ {
+  "label": "T",
+  "line": 246,
+  "object_id": 1089,
+  "region": "One random stream",
+  "time": 4738,
+  "type": "allocation"
+ },
+ {
+  "label": "Y",
+  "line": 246,
+  "object_id": 1090,
+  "region": "One random stream",
+  "time": 4741,
+  "type": "allocation"
+ },
+ {
+  "label": "PRNG stream",
+  "line": 246,
+  "object_id": 1091,
+  "region": "One random stream",
+  "time": 4742,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   131072
+  ],
+  "elwise_inputs": [
+   1088
+  ],
+  "end": 4889,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "jitter",
+  "line": 232,
+  "object_id": 1092,
+  "outputs": [
+   1089
+  ],
+  "pattern": "Map",
+  "prng": 1091,
+  "proxy_inputs": [],
+  "region": "One random stream",
+  "scalar_inputs": [],
+  "start": 4744,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   131072
+  ],
+  "elwise_inputs": [
+   1089
+  ],
+  "end": 5034,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "noise",
+  "line": 233,
+  "object_id": 1093,
+  "outputs": [
+   1090
+  ],
+  "pattern": "Map",
+  "prng": 1091,
+  "proxy_inputs": [],
+  "region": "One random stream",
+  "scalar_inputs": [],
+  "start": 4891,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Y",
+  "line": 270,
+  "object_id": 1090,
+  "region": "One random stream",
+  "time": 5037,
+  "type": "deallocation"
+ },
+ {
+  "label": "T",
+  "line": 270,
+  "object_id": 1089,
+  "region": "One random stream",
+  "time": 5040,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1088,
+  "region": "One random stream",
+  "time": 5042,
+  "type": "deallocation"
+ },
+ {
+  "label": "PRNG stream",
+  "line": 270,
+  "object_id": 1091,
+  "region": "One random stream",
+  "time": 5043,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "A call in between",
+  "line": 240,
+  "region": "Not fusible",
+  "region_depth": 2,
+  "time": 5047,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1094,
+  "region": "A call in between",
+  "time": 5051,
+  "type": "allocation"
+ },
+ {
+  "label": "Q",
+  "line": 246,
+  "object_id": 1095,
+  "region": "A call in between",
+  "time": 5056,
+  "type": "allocation"
+ },
+ {
+  "label": "T",
+  "line": 246,
+  "object_id": 1096,
+  "region": "A call in between",
+  "time": 5059,
+  "type": "allocation"
+ },
+ {
+  "label": "Y",
+  "line": 246,
+  "object_id": 1097,
+  "region": "A call in between",
+  "time": 5065,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   135168
+  ],
+  "elwise_inputs": [
+   1094
+  ],
+  "end": 5223,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "increment",
+  "line": 246,
+  "object_id": 1098,
+  "outputs": [
+   1096
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "A call in between",
+  "scalar_inputs": [],
+  "start": 5067,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   135168
+  ],
+  "elwise_inputs": [
+   1095
+  ],
+  "end": 5635,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "prefix",
+  "line": 247,
+  "object_id": 1099,
+  "outputs": [
+   1094
+  ],
+  "pattern": "Scan",
+  "proxy_inputs": [],
+  "region": "A call in between",
+  "scalar_inputs": [],
+  "start": 5230,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   135168
+  ],
+  "elwise_inputs": [
+   1096,
+   1094
+  ],
+  "end": 5791,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "combine",
+  "line": 248,
+  "object_id": 1100,
+  "outputs": [
+   1097
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "A call in between",
+  "scalar_inputs": [],
+  "start": 5638,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Y",
+  "line": 270,
+  "object_id": 1097,
+  "region": "A call in between",
+  "time": 5794,
+  "type": "deallocation"
+ },
+ {
+  "label": "T",
+  "line": 270,
+  "object_id": 1096,
+  "region": "A call in between",
+  "time": 5797,
+  "type": "deallocation"
+ },
+ {
+  "label": "Q",
+  "line": 270,
+  "object_id": 1095,
+  "region": "A call in between",
+  "time": 5798,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1094,
+  "region": "A call in between",
+  "time": 5802,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "MapOverlap into Map",
+  "line": 256,
+  "region": "Not fusible",
+  "region_depth": 2,
+  "time": 5806,
+  "type": "region"
+ },
+ {
+  "label": "Image",
+  "line": 246,
+  "object_id": 1101,
+  "region": "MapOverlap into Map",
+  "time": 5810,
+  "type": "allocation"
+ },
+ {
+  "label": "Blurred",
+  "line": 246,
+  "object_id": 1102,
+  "region": "MapOverlap into Map",
+  "time": 5811,
+  "type": "allocation"
+ },
+ {
+  "label": "Mask",
+  "line": 246,
+  "object_id": 1103,
+  "region": "MapOverlap into Map",
+  "time": 5815,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   272,
+   272
+  ],
+  "elwise_inputs": [
+   1101
+  ],
+  "end": 6092,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "blur",
+  "line": 261,
+  "object_id": 1104,
+  "outputs": [
+   1102
+  ],
+  "pattern": "MapOverlap 2D",
+  "proxy_inputs": [],
+  "region": "MapOverlap into Map",
+  "scalar_inputs": [],
+  "start": 5821,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   272,
+   272
+  ],
+  "elwise_inputs": [
+   1102
+  ],
+  "end": 6189,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "threshold",
+  "line": 262,
+  "object_id": 1105,
+  "outputs": [
+   1103
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "MapOverlap into Map",
+  "scalar_inputs": [],
+  "start": 6099,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Mask",
+  "line": 270,
+  "object_id": 1103,
+  "region": "MapOverlap into Map",
+  "time": 6190,
+  "type": "deallocation"
+ },
+ {
+  "label": "Blurred",
+  "line": 270,
+  "object_id": 1102,
+  "region": "MapOverlap into Map",
+  "time": 6191,
+  "type": "deallocation"
+ },
+ {
+  "label": "Image",
+  "line": 270,
+  "object_id": 1101,
+  "region": "MapOverlap into Map",
+  "time": 6192,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "A Reduce before a Map",
+  "line": 268,
+  "region": "Not fusible",
+  "region_depth": 2,
+  "time": 6196,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1106,
+  "region": "A Reduce before a Map",
+  "time": 6202,
+  "type": "allocation"
+ },
+ {
+  "label": "Normalized",
+  "line": 246,
+  "object_id": 1107,
+  "region": "A Reduce before a Map",
+  "time": 6203,
+  "type": "allocation"
+ },
+ {
+  "label": "Sum",
+  "line": 246,
+  "object_id": 1108,
+  "region": "A Reduce before a Map",
+  "time": 6206,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   143360
+  ],
+  "elwise_inputs": [
+   1106
+  ],
+  "end": 6371,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "total_of",
+  "line": 273,
+  "object_id": 1109,
+  "outputs": [
+   1108
+  ],
+  "pattern": "Reduce",
+  "proxy_inputs": [],
+  "region": "A Reduce before a Map",
+  "scalar_inputs": [],
+  "start": 6211,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   143360
+  ],
+  "elwise_inputs": [
+   1106
+  ],
+  "end": 6540,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "normalize_by",
+  "line": 274,
+  "object_id": 1110,
+  "outputs": [
+   1107
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "A Reduce before a Map",
+  "scalar_inputs": [
+   1108
+  ],
+  "start": 6376,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "Normalized",
+  "line": 270,
+  "object_id": 1107,
+  "region": "A Reduce before a Map",
+  "time": 6544,
+  "type": "deallocation"
+ },
+ {
+  "label": "Sum",
+  "line": 270,
+  "object_id": 1108,
+  "region": "A Reduce before a Map",
+  "time": 6548,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1106,
+  "region": "A Reduce before a Map",
+  "time": 6552,
+  "type": "deallocation"
+ },
+ {
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "Maps of different sizes",
+  "line": 280,
+  "region": "Not fusible",
+  "region_depth": 2,
+  "time": 6563,
+  "type": "region"
+ },
+ {
+  "label": "X",
+  "line": 246,
+  "object_id": 1111,
+  "region": "Maps of different sizes",
+  "time": 6564,
+  "type": "allocation"
+ },
+ {
+  "label": "W",
+  "line": 246,
+  "object_id": 1112,
+  "region": "Maps of different sizes",
+  "time": 6569,
+  "type": "allocation"
+ },
+ {
+  "label": "A",
+  "line": 246,
+  "object_id": 1113,
+  "region": "Maps of different sizes",
+  "time": 6574,
+  "type": "allocation"
+ },
+ {
+  "label": "B",
+  "line": 246,
+  "object_id": 1114,
+  "region": "Maps of different sizes",
+  "time": 6575,
+  "type": "allocation"
+ },
+ {
+  "label": "C",
+  "line": 246,
+  "object_id": 1115,
+  "region": "Maps of different sizes",
+  "time": 6578,
+  "type": "allocation"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   147456
+  ],
+  "elwise_inputs": [
+   1111
+  ],
+  "end": 6732,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "inc",
+  "line": 287,
+  "object_id": 1116,
+  "outputs": [
+   1113
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Maps of different sizes",
+  "scalar_inputs": [],
+  "start": 6584,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   147456
+  ],
+  "elwise_inputs": [
+   1111
+  ],
+  "end": 6886,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "dec",
+  "line": 288,
+  "object_id": 1117,
+  "outputs": [
+   1114
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Maps of different sizes",
+  "scalar_inputs": [],
+  "start": 6734,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "backend": "OpenMP",
+  "elements": [
+   73728
+  ],
+  "elwise_inputs": [
+   1112
+  ],
+  "end": 6979,
+  "file": "/Users/august/Developer/skepu-alpha/examples/fusion_patterns.cpp",
+  "label": "twice",
+  "line": 289,
+  "object_id": 1118,
+  "outputs": [
+   1115
+  ],
+  "pattern": "Map",
+  "proxy_inputs": [],
+  "region": "Maps of different sizes",
+  "scalar_inputs": [],
+  "start": 6893,
+  "threads": 8,
+  "type": "skeleton_call"
+ },
+ {
+  "label": "C",
+  "line": 270,
+  "object_id": 1115,
+  "region": "Maps of different sizes",
+  "time": 6983,
+  "type": "deallocation"
+ },
+ {
+  "label": "B",
+  "line": 270,
+  "object_id": 1114,
+  "region": "Maps of different sizes",
+  "time": 6986,
+  "type": "deallocation"
+ },
+ {
+  "label": "A",
+  "line": 270,
+  "object_id": 1113,
+  "region": "Maps of different sizes",
+  "time": 6987,
+  "type": "deallocation"
+ },
+ {
+  "label": "W",
+  "line": 270,
+  "object_id": 1112,
+  "region": "Maps of different sizes",
+  "time": 6990,
+  "type": "deallocation"
+ },
+ {
+  "label": "X",
+  "line": 270,
+  "object_id": 1111,
+  "region": "Maps of different sizes",
+  "time": 6993,
+  "type": "deallocation"
+ }
+]

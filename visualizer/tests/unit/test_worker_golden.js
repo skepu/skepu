@@ -32,6 +32,7 @@ const SETTINGS = {
     defaults: {},
     full:     ALL,
     fusion:   { fusion_analysis: true, show_regions: true, expand_all_regions: true },
+    fusion_collapse: { fusion_analysis: true, collapse_iteration: true, show_regions: true, expand_all_regions: true },
     collapse: { collapse_iteration: true, show_regions: true, show_virtual_alias: true },
     tree:     { mode: 'program-tree', show_regions: true },
     edges:    { data_as_edges: true, container_transfers: true },

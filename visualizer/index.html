@@ -289,6 +289,13 @@
             <button class="menu-title" onclick="menuToggle(event,this)">Advanced</button>
             <div class="dropdown">
               <button class="menu-check" data-ctrl="collapse_iteration" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Aggregate iteration<span class="menu-key">I</span></button>
+              <div class="submenu">
+                <div class="submenu-title">Aggregate by<span class="menu-arrow">▸</span></div>
+                <div class="dropdown">
+                  <button class="menu-radio" data-ctrl="aggregate_by" data-value="name"          title="Operations of one region with the same name are one, wherever in the source they are called" onclick="menuSelectRadio(this)"><span class="menu-icon">✓</span>Name</button>
+                  <button class="menu-radio" data-ctrl="aggregate_by" data-value="name-location" title="Operations with the same name are one only if they are called from the same line" onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Name and Location</button>
+                </div>
+              </div>
               <button class="menu-check" data-ctrl="fusion_analysis"    onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Fusion analysis<span class="menu-key">F</span></button>
             </div>
           </div>

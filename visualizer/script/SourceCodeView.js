@@ -23,6 +23,8 @@
 //   src.clearBadges();
 //   src.placeBadges(badgeNodes);
 
+import { collectBadges } from './badges.js';
+
 'use strict';
 
 // ── Highlight.js dark-theme set ───────────────────────────────────────────────
@@ -71,7 +73,7 @@ export class SourceCodeView {
     this._codePaths       = options.codePaths !== undefined ? options.codePaths : true;
     this._traceLineRanges = [];
     this._badgeCycleIndex = {};
-    this._badgeNodeMap    = new Map();  // nodeId → gutter element; rebuilt by _placeBadgesInDOM
+    this._badgeNodeMap    = new Map();  // nodeId → its gutter elements (one per place it has a badge); rebuilt by _placeBadgesInDOM
 
     // Provider attachment (set by attachProvider).
     this._attachedProvider = null;
@@ -536,19 +538,23 @@ export class SourceCodeView {
   highlightBadgeNode(nodeId) {
     this.clearBadgeHighlight();
     if (!this._badgeNodeMap) return;
-    var gutterEl = this._badgeNodeMap.get(nodeId);
-    if (!gutterEl) return;
-    gutterEl.querySelectorAll('.badge').forEach(function(b) {
-      b.classList.add('badge-node-hover');
+    var gutterEls = this._badgeNodeMap.get(nodeId);
+    if (!gutterEls) return;
+    var self = this;
+    // A node (its iterations) can have badges at several places.
+    gutterEls.forEach(function(gutterEl) {
+      gutterEl.querySelectorAll('.badge').forEach(function(b) {
+        b.classList.add('badge-node-hover');
+      });
+      // If the badge lives in an inactive tab, highlight that tab's title button.
+      var pane = gutterEl.closest('.cpp-tab-pane');
+      if (pane && !pane.classList.contains('active')) {
+        var panes = Array.from(self._tabPanesEl.querySelectorAll('.cpp-tab-pane'));
+        var tabs  = Array.from(self._tabBarEl.querySelectorAll('.cpp-tab'));
+        var idx   = panes.indexOf(pane);
+        if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('badge-tab-hover');
+      }
     });
-    // If the badge lives in an inactive tab, highlight that tab's title button.
-    var pane = gutterEl.closest('.cpp-tab-pane');
-    if (pane && !pane.classList.contains('active')) {
-      var panes = Array.from(this._tabPanesEl.querySelectorAll('.cpp-tab-pane'));
-      var tabs  = Array.from(this._tabBarEl.querySelectorAll('.cpp-tab'));
-      var idx   = panes.indexOf(pane);
-      if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('badge-tab-hover');
-    }
   }
 
   /** Remove the hover-highlight class from all badges and tab titles. */
@@ -615,49 +621,8 @@ export class SourceCodeView {
    * @param {Array} badgeNodes  [{data:{type, file, line, id, ...}}] from /graph.
    */
   placeBadges(badgeNodes) {
-    var badges      = {};   // "file:line" → {count, hiddenCount, entries, file, line}
-    var traceBadges = {};   // traceKey    → {count, hiddenCount, entries, range}
-    var tlr         = this._traceLineRanges;
-
-    // Map node id → minimum total_order (for arrow sequencing).
-    var orderMap = {};
-    badgeNodes.forEach(function(node) {
-      var orders = node.data.total_orders || [node.data.total_order];
-      var min = Infinity;
-      orders.forEach(function(o) { if (o != null && o < min) min = o; });
-      if (isFinite(min)) orderMap[node.data.id] = min;
-    });
-
-    badgeNodes.forEach(function(node) {
-      var iters    = node.data.total_orders ? node.data.total_orders.length : 1;
-      var isHidden = !!node.data.hidden;
-
-      // ── Source-file badges ────────────────────────────────────────────────
-      if ((node.data.type === 'skeleton_call' ||
-           node.data.type === 'external'      ||
-           node.data.type === 'region')
-          && node.data.file && node.data.line !== -1) {
-        var srcKey = node.data.file + ':' + node.data.line;
-        if (!badges[srcKey])
-          badges[srcKey] = { count: 0, hiddenCount: 0, entries: [],
-                             file: node.data.file, line: node.data.line };
-        badges[srcKey].count += iters;
-        if (isHidden) badges[srcKey].hiddenCount += iters;
-        for (var i = 0; i < iters; i++)
-          badges[srcKey].entries.push({ id: node.data.id, iterIdx: i });
-      }
-
-      // ── Trace-file badges ─────────────────────────────────────────────────
-      var traceIdxList = node.data.trace_indices || [node.data.trace_index];
-      traceIdxList.forEach(function(traceKey, i) {
-        var range = tlr[traceKey];
-        if (!traceBadges[traceKey])
-          traceBadges[traceKey] = { count: 0, hiddenCount: 0, entries: [], range: range };
-        traceBadges[traceKey].count += 1;
-        if (isHidden) traceBadges[traceKey].hiddenCount += 1;
-        traceBadges[traceKey].entries.push({ id: node.data.id, iterIdx: i });
-      });
-    });
+    var c = collectBadges(badgeNodes, this._traceLineRanges);
+    var badges = c.badges, traceBadges = c.traceBadges, orderMap = c.orders;
 
     var self = this;
     setTimeout(function() {
@@ -769,13 +734,16 @@ export class SourceCodeView {
       var seen = {};
       b.entries.forEach(function(entry) {
         if (!seen[entry.id]) { seen[entry.id] = true; nodeIds.push(entry.id); }
-        self._badgeNodeMap.set(entry.id, el);
+        var els = self._badgeNodeMap.get(entry.id);
+        if (!els) self._badgeNodeMap.set(entry.id, els = []);
+        if (els.indexOf(el) < 0) els.push(el);
       });
 
-      // Determine minimum total_order for this badge position.
+      // Determine minimum total_order for this badge position: of the iterations that are here.
       var minOrder = Infinity;
       b.entries.forEach(function(entry) {
-        var o = orderMap[entry.id];
+        var list = orderMap[entry.id];
+        var o = list ? list[entry.iterIdx] : null;
         if (o != null && o < minOrder) minOrder = o;
       });
       if (isFinite(minOrder)) {

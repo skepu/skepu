@@ -147,6 +147,7 @@ const DEFAULT_SETTINGS = {
   'direction':       'vertical',
   'edge-width':      'fixed',
   'edge-opacity':    'fixed',
+  'aggregate_by':    'name',
 };
 
 // ── GraphView class ───────────────────────────────────────────────────────────
@@ -1082,6 +1083,16 @@ export class GraphView {
       if (!pid) return;
       var collapsed = self._provider.collapsedNodes;
       collapsed[pid] = (collapsed[pid] === false);
+      self.render();
+    });
+
+    // ── Fusion double-click: the same for a fusion node ──────────────────────
+    cy.on('dblclick', 'node[type="fusion"]', function(event) {
+      event.stopPropagation();
+      var pid = event.target.data('persistent_fusion_id');
+      if (!pid) return;
+      var collapsed = self._provider.collapsedNodes;
+      collapsed[pid] = !collapsed[pid];
       self.render();
     });
 

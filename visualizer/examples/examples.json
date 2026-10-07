@@ -57,5 +57,19 @@
     },
     "snapshot_archive": "cellular_automaton_skepy/snapshots_cellular_automaton.zip",
     "cpp_files": ["cellular_automaton_skepy/cellular_automaton.py"]
+  },
+  {
+    "title": "Backend switching",
+    "trace": {
+      "mixed": "backend_switching/trace_backend_switching_mixed.json"
+    },
+    "cpp_files": ["backend_switching/backend_switching.cpp"]
+  },
+  {
+    "title": "Fusion patterns",
+    "trace": {
+      "synthetic": "fusion_patterns/trace_fusion_patterns_synthetic.json"
+    },
+    "cpp_files": ["fusion_patterns/fusion_patterns.cpp"]
   }
 ]

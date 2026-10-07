@@ -1,0 +1,25 @@
+// event_builders.js — small traces written by hand: allocations, skeleton calls, and the events that
+// observe or free a container. Each builder returns an event; trace() numbers them as parseTrace() does.
+import { parseTrace } from '../script/backend/trace.js';
+
+export function builder() {
+    let t = 0;
+    const span = d => { const start = t; t += d; return { start, end: t }; };
+    return {
+        alloc:   (id, label) => ({ type: 'allocation', label, object_id: id, time: t }),
+        dealloc: (id, label) => ({ type: 'deallocation', label, object_id: id, time: t }),
+        call: (label, { pattern = 'Map', n = 100, elements, ins = [], proxy = [], scalars = [], outs = [], backend = 'OpenMP', prng, dur = 100 } = {}) => ({
+            type: 'skeleton_call', label, pattern, elements: elements ?? [n], elwise_inputs: ins, proxy_inputs: proxy, scalar_inputs: scalars,
+            outputs: outs, backend, ...(prng != null ? { prng } : {}), ...span(dur), file: 'x.cpp', line: 1,
+        }),
+        external: (label, { scalars = [], ins = [] } = {}) => ({
+            type: 'external', label, elwise_inputs: ins, proxy_inputs: [], scalar_inputs: scalars, outputs: [], ...span(1), file: '', line: 2,
+        }),
+        access:   (id, source) => ({ type: 'element_access', label: 'x', object_id: id, source, index: 0, time: t }),
+        snapshot: id => ({ type: 'snapshot', object_id: id, data_file: 's.txt', time: t }),
+        transfer: (id, label = 'T', direction = 'device-to-host', backend = 'OpenCL') => ({ type: 'transfer', label, object_id: id, direction, backend, elements: 100, ...span(5) }),
+    };
+}
+
+/** Events in the order given; the builder `b` must be the one that made them (its clock is shared). */
+export const trace = events => parseTrace(JSON.stringify(events)).events;

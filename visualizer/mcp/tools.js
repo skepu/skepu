@@ -7,6 +7,7 @@ import { basename, resolve, sep } from 'node:path';
 import { parseTrace } from '../script/backend/trace.js';
 import * as A from '../script/backend/analysis.js';
 import { criticalPath } from '../script/backend/graph_analysis.js';
+import { fusionCandidates } from '../script/backend/fusion.js';
 
 export class Session {
     constructor({ roots = null } = {}) {
@@ -108,6 +109,29 @@ export const TOOLS = [
         description: 'The longest path in time through the dependences between skeleton calls and data: its length, the work (sum of skeleton call times), the parallelism (work / path), and the timed nodes on the path with their share. The library\'s internal transfers are not part of the dependence graph.',
         inputSchema: { type: 'object', required: ['handle'], properties: { handle } },
         run(session, { handle }) { return criticalPath(session.trace(handle).events); },
+    },
+    {
+        name: 'fusion_candidates',
+        description: 'Skeleton calls that could be fused into one call, and why others could not. Serial fusion: a call and the only consumer of its output (read element by element, same backend and elements, no host access in between), as chains or trees; the intermediate containers need not be written and read in memory. Parallel fusion: independent calls over the same elements that could share one launch. Both are checked for conflicting events between the calls. Equal groups (the iterations of a loop) are one entry with a count. "blocked" says why pairs were not fusable: multiple-readers, host-access, proxy-access, pattern, backend-mismatch, size-mismatch, shared-prng, hazard, recompute, scalar-output. A Map fused into a MapOverlap, MapPool, MapPairs or MapPairsReduce recomputes its elements: the group has a "recompute" entry with the factor when it is known. Which patterns can be fused is an assumption, returned as "rules" and settable.',
+        inputSchema: {
+            type: 'object', required: ['handle'],
+            properties: {
+                handle,
+                blocked_limit: { type: 'integer', minimum: 0, maximum: 200, description: 'Number of blocked pairs to list (default 30).' },
+                include_overlap: { type: 'boolean', description: 'Let a call be in a serial and in a parallel group (default false).' },
+                aggregate: { type: 'boolean', description: 'One entry for equal groups (default true).' },
+                rules: {
+                    type: 'object', description: 'Pattern names (Map, Reduce, MapReduce, MapOverlap, Scan, ...) that may be fused.',
+                    properties: {
+                        serialProducers: { type: 'array', items: { type: 'string' } }, serialConsumers: { type: 'array', items: { type: 'string' } },
+                        serialConsumersRecompute: { type: 'array', items: { type: 'string' }, description: 'Consumers a Map can be fused into at the price of computing it more than once per element.' },
+                        allowRecompute: { type: 'boolean', description: 'Report fusions that recompute (default true).' },
+                        parallel: { type: 'array', items: { type: 'string' } },
+                    },
+                },
+            },
+        },
+        run(session, { handle, ...options }) { return fusionCandidates(session.trace(handle).events, options); },
     },
     {
         name: 'source_context',

@@ -181,6 +181,8 @@ export class TraceDataProvider {
     // Region collapse state — shared with GraphView via object identity.
     this._collapsedNodes = {};
     this._allRegionPids  = [];
+    this._allFusionPids  = [];     // fusion nodes share the dict: true = collapsed; they start expanded
+    this._regionParents  = {};     // id of a region or fusion node -> id of the one around it (or null)
 
     // Cached last response — available immediately after 'data' fires.
     this._lastMinmax        = null;
@@ -232,7 +234,15 @@ export class TraceDataProvider {
    * freshly loaded (enables auto-expand of small traces, etc.).
    * Call once after each new trace file is loaded into the backend.
    */
-  resetFirstLoad() { this._firstLoad = true; }
+  resetFirstLoad() {
+    this._firstLoad = true;
+    // The collapse state is that of the previous trace: the regions of the new one are numbered from
+    // region_1 again, so they would inherit it. Cleared in place: other modules hold this object.
+    for (var pid of Object.keys(this._collapsedNodes)) delete this._collapsedNodes[pid];
+    this._allRegionPids = [];
+    this._allFusionPids = [];
+    this._regionParents = {};
+  }
 
   /**
    * Cancel any in-flight fetch without starting a new one.
@@ -260,8 +270,11 @@ export class TraceDataProvider {
 
     this._emit('fetchstart');
 
+    var isFusion = function(k) { return k.indexOf('fusion_') === 0; };
     var expandedPids = Object.keys(this._collapsedNodes)
-      .filter(function(k) { return this._collapsedNodes[k] === false; }, this);
+      .filter(function(k) { return !isFusion(k) && this._collapsedNodes[k] === false; }, this);
+    var collapsedFusions = Object.keys(this._collapsedNodes)
+      .filter(function(k) { return isFusion(k) && this._collapsedNodes[k] === true; }, this);
 
     var self = this;
     return this._fetchGraph({
@@ -276,9 +289,11 @@ export class TraceDataProvider {
       expand_all_regions:      !this.settings['show_regions'],
       first_load:              this._firstLoad,
       collapse_iteration:      this.settings['collapse_iteration'],
+      aggregate_by:            this.settings['aggregate_by'],
       fusion_analysis:         this.settings['fusion_analysis'],
       show_virtual_alias:      this.settings['virtual-alias-edges'],
       expanded_regions:        expandedPids.join(','),
+      collapsed_fusions:       collapsedFusions.join(','),
     }, this._fetchAbort.signal)
     .then(function(rawData) {
       if (mySeq !== self._fetchSeq) return;   // superseded by a newer fetch
@@ -290,6 +305,12 @@ export class TraceDataProvider {
       var defaultCollapsed = !rawData.auto_expand_regions;
       allRegionPids.forEach(function(pid) {
         if (!(pid in self._collapsedNodes)) self._collapsedNodes[pid] = defaultCollapsed;
+      });
+      self._regionParents = rawData.region_parents || {};
+      var allFusionPids = rawData.all_fusion_pids || [];
+      self._allFusionPids = allFusionPids;
+      allFusionPids.forEach(function(pid) {
+        if (!(pid in self._collapsedNodes)) self._collapsedNodes[pid] = false;
       });
       self._firstLoad = false;
 
@@ -322,6 +343,10 @@ export class TraceDataProvider {
   get lastMinmax()        { return this._lastMinmax;        }
   /** All persistent region IDs from the last fetch (for collapse-all UI). */
   get allRegionPids()     { return this._allRegionPids;     }
+  /** All persistent fusion ids from the last fetch (for collapse-all UI). */
+  get allFusionPids()     { return this._allFusionPids;     }
+  /** Nesting of the regions and fusion nodes of the last fetch: id -> id around it, or null. */
+  get regionParents()     { return this._regionParents;     }
   /**
    * Mutable dict: persistent_region_id → true (collapsed) / false (expanded).
    * Shared by reference with GraphView so double-click expand/collapse writes

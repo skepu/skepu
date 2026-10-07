@@ -34,6 +34,7 @@ window._vizWorker = _worker;
 
 const BACKEND_NAMES = {
     cpu: 'CPU', openmp: 'OpenMP', opencl: 'OpenCL', cuda: 'CUDA',
+    mixed: 'CPU, OpenMP, OpenCL', synthetic: 'Synthetic',
 };
 
 async function _buildExamplesUI() {
@@ -100,17 +101,25 @@ function _buildWelcomeExamples(examples) {
 
     examples.forEach(function(ex, idx) {
         var backends = Object.keys(ex.trace || {});
+        if (!backends.length) return;
+
+        // One multi-segment pill per example: [title | backend | backend ...]
+        var pill = document.createElement('div');
+        pill.className = 'welcome-example-pill';
+
+        var name = document.createElement('span');
+        name.className   = 'welcome-example-name';
+        name.textContent = ex.title;
+        pill.appendChild(name);
+
         backends.forEach(function(b) {
-            var bName = BACKEND_NAMES[b] || b;
-            var label = backends.length === 1
-                ? _esc(ex.title)
-                : _esc(ex.title) + ' (' + _esc(bName) + ')';
-            var btn = document.createElement('button');
-            btn.className   = 'welcome-example-btn';
-            btn.innerHTML   = label;
-            btn.onclick     = function() { window.loadExample(idx, b); };
-            list.appendChild(btn);
+            var seg = document.createElement('button');
+            seg.className   = 'welcome-example-seg';
+            seg.textContent = BACKEND_NAMES[b] || b;
+            seg.onclick     = function() { window.loadExample(idx, b); };
+            pill.appendChild(seg);
         });
+        list.appendChild(pill);
     });
 
     section.style.display = '';

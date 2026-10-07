@@ -23,6 +23,13 @@ function _durationCV(durations) {
 
 // ── Base node ─────────────────────────────────────────────────────────────────
 
+/** The source locations of the iterations of a node as [file, line] pairs, if they are not all its own. */
+function badgeLocations(node) {
+    const locs = node.locations;
+    if (!locs || locs.every(l => l.file === node.file && l.line === node.line)) return null;
+    return locs.map(l => [l.file, l.line]);
+}
+
 export class Node {
     constructor(graph, label, totalOrder, region = null) {
         this.id          = crypto.randomUUID();
@@ -262,6 +269,8 @@ export class ComputationNode extends Node {
             data.file = this.file;
             data.line = this.line;
         }
+        const locations = badgeLocations(this);
+        if (locations) data.locations = locations;
         return data;
     }
 
@@ -305,7 +314,13 @@ export class CallNode extends ComputationNode {
     }
 
     infoData() {
-        return { ...super.infoData(), Pattern: this.pattern, Elements: this.elements };
+        const info = { ...super.infoData(), Pattern: this.pattern, Elements: this.elements };
+        // Set by the fusion analysis: the pairs with a consumer of this call's output that could not be fused.
+        if (this.fusionNotes?.length) {
+            const lines = [...new Set(this.fusionNotes.map(n => `with "${n.consumer}": ${n.text}`))];
+            info['Not fused'] = lines.slice(0, 5).join('; ') + (lines.length > 5 ? `; and ${lines.length - 5} more` : '');
+        }
+        return info;
     }
 }
 
@@ -425,6 +440,8 @@ export class RegionNode extends Node {
             data.file = this.file;
             data.line = this.line;
         }
+        const locations = badgeLocations(this);
+        if (locations) data.locations = locations;
         return data;
     }
 
@@ -449,6 +466,7 @@ export class FusedNode extends Node {
 
     toCytoscape() {
         const d = { ...super.toCytoscape() };
+        if (this.persistentFusionId) d.persistent_fusion_id = this.persistentFusionId;
         if (this.fusionPattern) {
             d.fusion_pattern = this.fusionPattern;
         }
@@ -462,6 +480,15 @@ export class FusedNode extends Node {
     infoData() {
         const info = { ...super.infoData() };
         if (this.fusionPattern) info['Fusion pattern'] = this.fusionPattern;
+        // Set by the fusion analysis: see fusion.js
+        const f = this.fusionInfo;
+        if (f) {
+            info['Fusion kind'] = f.kind + (f.placement ? ` (the fused call goes to the place of the ${f.placement === 'sink' ? 'last' : 'first'} call)` : '');
+            info['Calls'] = f.calls;
+            if (f.intermediates.length) info['Not written or read'] = f.intermediates.join(', ');
+            info['Launches saved'] = f.launchesSaved;
+            if (f.recompute?.length) info['Recomputation'] = f.recompute.join('; ');
+        }
         return info;
     }
 }

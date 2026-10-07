@@ -66,6 +66,8 @@ _provider.on('data', function(rawData, minmax) {
   State._lastNodeCount  = rawData.nodes.length;
   // allRegionPids is replaced (not mutated) by the provider each fetch.
   State._allRegionPids     = _provider.allRegionPids;
+  State._allFusionPids     = _provider.allFusionPids;
+  State._regionParents     = _provider.regionParents;
 });
 
 // ── GraphView singleton ───────────────────────────────────────────────────────
@@ -146,6 +148,11 @@ _view.settings = State.settings;
 // a circular import through graph.js.
 State.graphView = _view;
 State.provider  = _provider;
+
+// The collapse state is the provider's: the Actions menu (ui.js) writes it through State, the
+// double click on a region (GraphView) and the next fetch read it through the provider. They must be
+// one object; a second one in State was written by the menu and read by nobody.
+State._collapsedNodes = _provider.collapsedNodes;
 
 // ── LegendView singleton ──────────────────────────────────────────────────────
 

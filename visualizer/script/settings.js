@@ -11,6 +11,7 @@ var SETTING_CHECKBOXES = [
 ];
 var SETTING_SELECTS = [
   'graph-mode', 'node-color-call', 'node-size-call', 'direction', 'edge-width', 'edge-opacity',
+  'aggregate_by',
 ];
 
 var DEFAULTS = {
@@ -23,7 +24,7 @@ var DEFAULTS = {
   },
   selects: {
     'graph-mode': 'dependence-dag', 'node-color-call': 'duration-total', 'node-size-call': 'fixed',
-    'direction': 'vertical', 'edge-width': 'fixed', 'edge-opacity': 'fixed',
+    'direction': 'vertical', 'edge-width': 'fixed', 'edge-opacity': 'fixed', 'aggregate_by': 'name',
   },
   layout: {
     'right-pane-width': 500, 'source-open': true, 'info-pane-ratio': 0,

@@ -222,6 +222,8 @@ function _handleLoadSnapshots({ snapshotFiles = {} }) {
 //   show_regions, expand_all_regions, first_load,
 //   collapse_iteration, fusion_analysis, show_virtual_alias,
 //   expanded_regions      — comma-separated persistent_region_id list
+//   collapsed_fusions     — comma-separated persistent_fusion_id list (fusion nodes start expanded)
+//   aggregate_by          — 'name' | 'name-location': what iterations are aggregated by (collapse_iteration)
 // }
 // All boolean params are actual JS booleans (not "true"/"false" strings).
 //
@@ -244,6 +246,8 @@ function _handleGraph({
     fusion_analysis         = false,
     show_virtual_alias      = false,
     expanded_regions        = '',
+    collapsed_fusions       = '',
+    aggregate_by            = 'name',
 } = {}) {
     if (!_eventData) {
         // No trace loaded yet.  Return a minimal empty-graph response so the
@@ -254,7 +258,7 @@ function _handleGraph({
         return {
             nodes: [], edges: [],
             event_count: 0, snapshot_count: 0,
-            fusion_hints: [], all_region_pids: [],
+            fusion_hints: [], all_region_pids: [], all_fusion_pids: [], region_parents: {},
             auto_expand_regions: false,
             timeline_nodes: [], badge_nodes: [],
             request_time: t, response_time: t,
@@ -268,7 +272,7 @@ function _handleGraph({
     ({ graph: _graph, fusionHints } = buildDisplayGraph(_eventData, {
         mode, container_allocations, container_deallocations, container_transfers,
         show_scalars, anti_deps, data_as_edges, show_regions,
-        collapse_iteration, fusion_analysis, show_virtual_alias,
+        collapse_iteration, fusion_analysis, show_virtual_alias, aggregate_by,
     }));
 
     const snapshotEvents = _eventData.filter(e => e.type === 'snapshot');
@@ -283,8 +287,10 @@ function _handleGraph({
         ? new Set(expanded_regions.split(',').filter(Boolean))
         : new Set();
 
-    const [nodes, edges, allRegionPids]   = _graph.toCytoscape([...expandedPids], expandAll);
-    const [timelineNodes, badgeNodes]     = _graph.toTimelineAndBadges([...expandedPids], expandAll);
+    const collapsedFusions = collapsed_fusions ? collapsed_fusions.split(',').filter(Boolean) : [];
+
+    const [nodes, edges, allRegionPids, allFusionPids, nesting] = _graph.toCytoscape([...expandedPids], expandAll, collapsedFusions);
+    const [timelineNodes, badgeNodes]                  = _graph.toTimelineAndBadges([...expandedPids], expandAll, collapsedFusions);
 
     const t1 = Date.now() / 1000;   // seconds since epoch
 
@@ -295,6 +301,8 @@ function _handleGraph({
         snapshot_count:      snapshotEvents.length,
         fusion_hints:        fusionHints,
         all_region_pids:     allRegionPids,
+        all_fusion_pids:     allFusionPids,
+        region_parents:      nesting,
         auto_expand_regions: autoExpandRegions,
         timeline_nodes:      timelineNodes,
         badge_nodes:         badgeNodes,
