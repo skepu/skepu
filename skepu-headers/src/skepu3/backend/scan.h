@@ -34,6 +34,7 @@ namespace skepu
 		{
 			
 		public:
+			SKEPU_CHAIN_SKELETON_SETTERS(SkeletonBase)
 			using T = typename ScanFunc::Ret;
 			
 			static constexpr auto skeletonType = SkeletonType::Scan;
@@ -51,14 +52,16 @@ namespace skepu
 #endif
 			}
 			
-			void setScanMode(ScanMode mode)
+			auto &setScanMode(ScanMode mode)
 			{
 				this->m_mode = mode;
+				return *this;
 			}
 			
-			void setStartValue(T initial)
+			auto &setStartValue(T initial)
 			{
 				this->m_initial = initial;
+				return *this;
 			}
 			
 			void traceParameters(tracing::Parameters &parameters) const override

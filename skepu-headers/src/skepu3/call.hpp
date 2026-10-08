@@ -46,6 +46,7 @@ namespace skepu
 		}
 		
 	public:
+		SKEPU_CHAIN_SKELETON_SETTERS(SeqSkeletonBase)
 		
 		template<typename... CallArgs>
 		Ret operator()(CallArgs&&... args)

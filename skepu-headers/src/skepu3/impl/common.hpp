@@ -17,6 +17,8 @@
 #define SKEPU_STRINGIFY_NESTED(x) SKEPU_STRINGIFY(x)
 
 #include <vector>
+#include <utility>
+#include "skepu3/impl/chain.hpp"
 #include <array>
 #include <iostream>
 #include <utility>

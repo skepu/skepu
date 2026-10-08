@@ -44,14 +44,18 @@ namespace skepu
 #endif
 			}
 
-			void setReduceMode(ReduceMode mode)
+			SKEPU_CHAIN_SKELETON_SETTERS(SkeletonBase)
+
+			auto &setReduceMode(ReduceMode mode)
 			{
 				this->m_mode = mode;
+				return *this;
 			}
 
-			void setStartValue(T val)
+			auto &setStartValue(T val)
 			{
 				this->m_start = val;
+				return *this;
 			}
 
 			void traceParameters(tracing::Parameters &parameters) const override
@@ -253,6 +257,10 @@ namespace skepu
 			using T = typename ReduceFuncRowWise::Ret;
 
 		public:
+			using SkepuChainBase = Reduce1D<ReduceFuncRowWise, CUDARowWise, CLKernel>;
+			SKEPU_CHAIN_SKELETON_SETTERS(SkepuChainBase)
+			SKEPU_CHAIN(setReduceMode, SkepuChainBase)
+			SKEPU_CHAIN(setStartValue, SkepuChainBase)
 
 			static constexpr auto skeletonType = SkeletonType::Reduce2D;
 			static constexpr bool prefers_matrix = true;

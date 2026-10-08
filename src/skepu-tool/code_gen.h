@@ -8,7 +8,7 @@ using SkeletonInstance = std::string;
 
 void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clang::SourceLocation loc);
 
-bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, clang::VarDecl *d);
+bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, clang::VarDecl *d, const InlineInstance *inlineInstance = nullptr);
 
 std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::function<std::string(UserFunction&)> nameFunc);
 

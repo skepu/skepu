@@ -41,6 +41,21 @@ extern std::string inputFileName;
 // User functions, name maps to AST entry and indexed indicator
 extern std::unordered_map<const clang::FunctionDecl*, UserFunction*> UserFunctions;
 
+// An anonymous skeleton instance: a skeleton that is created by a factory call and invoked in the same expression,
+// perhaps with settings in between:  skepu::MapOverlap(f).setOverlap(1)(out, in)
+// It is handled as if the factory call were a static instance, declared before the enclosing function,
+// that the call expression refers to (the settings are then made at every call, as written).
+struct InlineInstance
+{
+	clang::CallExpr *factoryCall;
+	const clang::FunctionDecl *enclosing;
+	std::string name;       // the identifier of the generated instance
+	std::string label;      // its name at run time and in traces, from the call site
+	std::string callFile;
+	unsigned callLine;
+};
+extern std::vector<InlineInstance> InlineInstances;
+
 // User functions, name maps to AST entry and indexed indicator
 extern std::unordered_map<const clang::TypeDecl*, UserType*> UserTypes;
 

@@ -85,16 +85,19 @@ namespace skepu
 		
 		
 	public:
+		SKEPU_CHAIN_SKELETON_SETTERS(SeqSkeletonBase)
 		
-		void setDefaultSize(size_t x, size_t y)
+		auto &setDefaultSize(size_t x, size_t y)
 		{
 			this->default_size_x = x;
 			this->default_size_y = y;
+			return *this;
 		}
 		
-		void setInPlace(bool inPlace)
+		auto &setInPlace(bool inPlace)
 		{
 			this->m_in_place = inPlace;
+			return *this;
 		}
 		
 		template<typename... CallArgs>

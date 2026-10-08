@@ -70,15 +70,18 @@ namespace skepu
 			friend impl::ScanImpl<T> skepu::ScanWrapper<T>(ScanFunc);
 			
 		public:
+			SKEPU_CHAIN_SKELETON_SETTERS(SeqSkeletonBase)
 			
-			void setScanMode(ScanMode mode)
+			auto &setScanMode(ScanMode mode)
 			{
 				this->m_mode = mode;
+				return *this;
 			}
 			
-			void setStartValue(T initial)
+			auto &setStartValue(T initial)
 			{
 				this->m_initial = initial;
+				return *this;
 			}
 			
 			template<typename OutIterator, typename In>

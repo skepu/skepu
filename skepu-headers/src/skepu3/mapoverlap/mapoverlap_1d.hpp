@@ -42,10 +42,15 @@ namespace skepu
 			using typename Base::T;
 			Overlap m_overlapPolicy = skepu::Overlap::RowWise;
 		public:
+			SKEPU_CHAIN_SKELETON_SETTERS(SeqSkeletonBase)
+			SKEPU_CHAIN(setEdgeMode, Base)
+			SKEPU_CHAIN(setPad, Base)
+			SKEPU_CHAIN(setUpdateMode, Base)
 
-			void setOverlapMode(Overlap mode)
+			auto &setOverlapMode(Overlap mode)
 			{
 				this->m_overlapPolicy = mode;
+				return *this;
 			}
 
 			Overlap getOverlapMode() const
@@ -53,11 +58,12 @@ namespace skepu
 				return this->m_overlapPolicy;
 			}
 
-			void setOverlap(int o)
+			auto &setOverlap(int o)
 			{
                 if (o < 0)
                     SKEPU_ERROR("Overlap cannot be less than 0");
 				this->m_overlap[0] = o;
+				return *this;
 			}
 
 			int getOverlap() const
@@ -65,11 +71,12 @@ namespace skepu
 				return this->m_overlap[0];
 			}
 
-			void setStride(int si)
+			auto &setStride(int si)
 			{
                 if (si < 0)
                     SKEPU_ERROR("Stride cannot be less than 0");
 				this->m_strides[0] = si;
+				return *this;
 			}
 
 			std::string generateCallMetadata()
@@ -578,13 +585,16 @@ namespace skepu
 			using MapFunc = std::function<Ret(Args...)>;
 
 		public:
+			using SkepuChainBase = MapOverlap1D<Ret, Args...>;
+			SKEPU_CHAIN_SKELETON_SETTERS(SkepuChainBase)
+			SKEPU_CHAIN(setStride, SkepuChainBase)
 			void setOverlap(size_t) = delete;
 			void setEdgeMode(Edge) = delete;
 			void setUpdateMode(UpdateMode) = delete;
 
-			void setPoolSize(size_t p)
+			auto &setPoolSize(size_t p)
 			{
-
+				return *this;
 			}
 
 			MapPool1D(MapFunc map): MapOverlap1D<Ret, Args...>(map) {}

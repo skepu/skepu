@@ -21,6 +21,7 @@ namespace skepu
 		class MapPairsReduce : public SkeletonBase
 		{
 		public:
+			SKEPU_CHAIN_SKELETON_SETTERS(SkeletonBase)
 			MapPairsReduce(std::string label, CUDAKernel kernel): SkeletonBase(label), m_cuda_kernel(kernel)
 			{
 #ifdef SKEPU_OPENCL
@@ -62,20 +63,23 @@ namespace skepu
 
 
 		public:
-			void setStartValue(Ret val)
+			auto &setStartValue(Ret val)
 			{
 				this->m_start = val;
+				return *this;
 			}
 
-			void setDefaultSize(size_t i, size_t j = 0)
+			auto &setDefaultSize(size_t i, size_t j = 0)
 			{
 				this->default_size_i = i;
 				this->default_size_j = j;
+				return *this;
 			}
 
-			void setReduceMode(ReduceMode mode)
+			auto &setReduceMode(ReduceMode mode)
 			{
 				this->m_mode = mode;
+				return *this;
 			}
 
 			template<typename... Args>

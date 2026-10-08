@@ -286,6 +286,9 @@ public:
 			for (clang::VarDecl *d : this->SkeletonInstances)
 				HandleSkeletonInstance(d);
 
+			for (const InlineInstance &instance : InlineInstances)
+				HandleInlineInstance(instance);
+
 			namespace lm = library_markers;
 			libraryFileHandlerHelper(lm::foundBlas, lm::blasBegin, lm::blasEnd, lm::blasBegin, "BLAS");
 

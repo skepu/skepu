@@ -28,17 +28,23 @@ namespace skepu
 #endif
 			}
 
-			void setOverlap(int oi, int oj)
+			SKEPU_CHAIN_SKELETON_SETTERS(SkeletonBase)
+			SKEPU_CHAIN(setEdgeMode, Base)
+			SKEPU_CHAIN(setPad, Base)
+			SKEPU_CHAIN(setUpdateMode, Base)
+
+			auto &setOverlap(int oi, int oj)
 			{
 				if (oi < 0 || oj < 0)
 					SKEPU_ERROR("Overlap cannot be less than 0");
 				this->m_overlap[0] = oi;
 				this->m_overlap[1] = oj;
+				return *this;
 			}
 
-			void setOverlap(int o)
+			auto &setOverlap(int o)
 			{
-				this->setOverlap(o, o);
+				return this->setOverlap(o, o);
 			}
 
 			std::tuple<int, int> getOverlap() const
@@ -46,17 +52,19 @@ namespace skepu
 				return std::make_tuple(this->m_overlap[0], this->m_overlap[1]);
 			}
 
-			void setStride(int si, int sj)
+			auto &setStride(int si, int sj)
 			{
 				if (si < 0 || sj < 0)
 					SKEPU_ERROR("Stride cannot be less than 0");
 				this->m_strides[0] = si;
 				this->m_strides[1] = sj;
+				return *this;
 			}
 
-			void setStride(int s)
+			auto &setStride(int s)
 			{
 				this->setStride(s, s);
+				return *this;
 			}
 
 			std::tuple<int, int> getStride() const
@@ -272,6 +280,9 @@ namespace skepu
 		using typename MapOverlap2D<MapOverlapFunc, CUDAKernel, CLKernel>::T;
 
 		public:
+			using SkepuChainBase = MapOverlap2D<MapOverlapFunc, CUDAKernel, CLKernel>;
+			SKEPU_CHAIN_SKELETON_SETTERS(SkepuChainBase)
+			SKEPU_CHAIN(setStride, SkepuChainBase)
 			void setOverlap(int, int) = delete;
 			void setOverlap(int) = delete;
 			std::tuple<int, int> getOverlap() const = delete;
@@ -285,17 +296,19 @@ namespace skepu
 			void setUpdateMode(UpdateMode) = delete;
 			UpdateMode getUpdateMode() const = delete;
 
-			void setPoolSize(int pi, int pj)
+			auto &setPoolSize(int pi, int pj)
 			{
 				if (pi < 0 || pj < 0)
                     SKEPU_ERROR("Pool size cannot be less than 0");
 				this->m_overlap[0] = pi;
 				this->m_overlap[1] = pj;
+				return *this;
 			}
 
-			void setPoolSize(int p)
+			auto &setPoolSize(int p)
 			{
 				this->setPoolSize(p, p);
+				return *this;
 			}
 
 			std::tuple<int, int> getPoolSize() const
@@ -303,16 +316,18 @@ namespace skepu
 				return std::make_tuple(this->m_overlap[0], this->m_overlap[1]);
 			}
 
-			void setPoolSizeAndStride(int pi, int pj)
+			auto &setPoolSizeAndStride(int pi, int pj)
 			{
 				this->setPoolSize(pi, pj);
 				this->setStride(pi, pj);
+				return *this;
 			}
 
-			void setPoolSizeAndStride(int p)
+			auto &setPoolSizeAndStride(int p)
 			{
 				this->setPoolSize(p);
 				this->setStride(p);
+				return *this;
 			}
 
 			MapPool2D(std::string label, CUDAKernel kernel): MapOverlap2D<MapOverlapFunc, CUDAKernel, CLKernel>(label, kernel) {}

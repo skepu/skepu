@@ -7,6 +7,7 @@
 
 
 std::unordered_set<std::string> SkeletonInstancesString;
+std::vector<InlineInstance> InlineInstances;
 
 [[noreturn]] void SkePUAbort(std::string msg)
 {
@@ -54,7 +55,15 @@ UserFunction *HandleFunctionPointerArg(clang::Expr *ArgExpr)
 	return HandleUserFunction(UserFunc);
 }
 
-UserFunction *HandleLambdaArg(clang::Expr *ArgExpr, clang::VarDecl *d)
+// The place for the code of a lambda user function in a skeleton instance: before the function that has the instance
+static clang::SourceLocation lambdaCodeLocation(clang::VarDecl *d)
+{
+	if (const clang::FunctionDecl *DeclCtx = clang::dyn_cast<clang::FunctionDecl>(d->getDeclContext()))
+		return DeclCtx->getSourceRange().getBegin();
+	return d->getSourceRange().getBegin();
+}
+
+UserFunction *HandleLambdaArg(clang::Expr *ArgExpr, clang::SourceLocation codeLocation)
 {
 	clang::Expr *Arg = ArgExpr;
 
@@ -70,7 +79,7 @@ UserFunction *HandleLambdaArg(clang::Expr *ArgExpr, clang::VarDecl *d)
 
 	clang::CXXMethodDecl *CallOperator = Lambda->getCallOperator();
 
-	UserFunction *UF = new UserFunction(CallOperator, d);
+	UserFunction *UF = new UserFunction(CallOperator, codeLocation);
 	UserFunctions[CallOperator] = UF;
 
 	return UF;
@@ -108,7 +117,12 @@ const Skeleton::Type* DeclIsValidSkeleton(clang::VarDecl *d)
 	if (auto *BindTempExpr = clang::dyn_cast<clang::CXXBindTemporaryExpr>(TempExpr))
 		TempExpr = BindTempExpr->getSubExpr();
 
-	clang::CallExpr *CExpr = clang::dyn_cast<clang::CallExpr>(TempExpr);
+	return FactoryCallSkeleton(clang::dyn_cast<clang::CallExpr>(TempExpr));
+}
+
+// The skeleton type of a call of a skeleton factory function (skepu::Map<1>(f)), nullptr for other calls
+const Skeleton::Type* FactoryCallSkeleton(clang::CallExpr *CExpr)
+{
 	if (!CExpr)
 		return nullptr;
 
@@ -139,6 +153,76 @@ const Skeleton::Type* DeclIsValidSkeleton(clang::VarDecl *d)
 	SkePULog() << "Accepted " << SkeletonsLookup.at(TypeName).name << "!\n";
 
 	return &SkeletonsLookup.at(TypeName).type;
+}
+
+// The arity and the user functions of a call of a skeleton factory function (skepu::Map<1>(f))
+static void HandleFactoryCall(clang::CallExpr *CExpr, clang::ASTContext &Context, clang::SourceLocation lambdaLocation,
+	std::string &TypeName, std::vector<size_t> &arity, std::vector<UserFunction*> &FuncArgs)
+{
+	const clang::FunctionDecl *Callee = CExpr->getDirectCallee();
+	const clang::Type *RetType = Callee->getReturnType().getTypePtr();
+
+	if (clang::isa<clang::DecltypeType>(RetType))
+		RetType = clang::dyn_cast<clang::DecltypeType>(RetType)->getUnderlyingType().getTypePtr();
+
+	const clang::TemplateSpecializationType *Template = RetType->getAs<clang::TemplateSpecializationType>();
+	TypeName = Template->getTemplateName().getAsTemplateDecl()->getNameAsString();
+	Skeleton::Type skeletonType = SkeletonsLookup.at(TypeName).type;
+
+	arity = { 0, 2 };
+	switch (skeletonType)
+	{
+	case Skeleton::Type::Map:
+	case Skeleton::Type::MapReduce:
+		assert(Template->getNumArgs() > 0);
+		arity[0] = Template->template_arguments()[0].getAsExpr()->EvaluateKnownConstInt(Context).getExtValue();
+		break;
+	case Skeleton::Type::MapPairs:
+	case Skeleton::Type::MapPairsReduce:
+		assert(Template->getNumArgs() > 1);
+		arity[0] = Template->template_arguments()[0].getAsExpr()->EvaluateKnownConstInt(Context).getExtValue();
+		arity[1] = Template->template_arguments()[1].getAsExpr()->EvaluateKnownConstInt(Context).getExtValue();
+		break;
+	case Skeleton::Type::MapOverlap1D:
+	case Skeleton::Type::MapPool1D:
+		arity[0] = 1; break;
+	case Skeleton::Type::MapOverlap2D:
+	case Skeleton::Type::MapPool2D:
+		arity[0] = 1; break;
+	case Skeleton::Type::MapOverlap3D:
+	case Skeleton::Type::MapPool3D:
+		arity[0] = 1; break;
+	case Skeleton::Type::MapOverlap4D:
+	case Skeleton::Type::MapPool4D:
+		arity[0] = 1; break;
+	default:
+		break;
+	}
+
+	size_t i = 0;
+	for (clang::Expr *expr : CExpr->arguments())
+	{
+		UserFunction *UF;
+
+		// The argument may be an implcit cast, get the underlying expression
+		if (clang::ImplicitCastExpr *ImplExpr = clang::dyn_cast<clang::ImplicitCastExpr>(expr))
+			UF = HandleFunctionPointerArg(ImplExpr->IgnoreImpCasts());
+
+		// It can also be an explicit cast, get the underlying expression
+		else if (clang::UnaryOperator *UnaryCastExpr = clang::dyn_cast<clang::UnaryOperator>(expr))
+			UF = HandleFunctionPointerArg(UnaryCastExpr->getSubExpr());
+
+		// The user function is probably defined as a lambda
+		else
+			UF = HandleLambdaArg(expr, lambdaLocation);
+
+		FuncArgs.push_back(UF);
+
+		if (skeletonType == Skeleton::Type::MapPairs || skeletonType == Skeleton::Type::MapPairsReduce)
+			UF->updateArgLists(arity[0], arity[1]);
+		else
+			UF->updateArgLists(arity[i++]);
+	}
 }
 
 #ifdef SKEPU_LSP
@@ -177,76 +261,15 @@ HandleSkeletonInstance(clang::VarDecl *d)
 	if (!CExpr)
 		SkePUAbort("Not a call expression");
 
-
 	const clang::FunctionDecl *Callee = CExpr->getDirectCallee();
-	const clang::Type *RetType = Callee->getReturnType().getTypePtr();
 
-	if (clang::isa<clang::DecltypeType>(RetType))
-		RetType = clang::dyn_cast<clang::DecltypeType>(RetType)->getUnderlyingType().getTypePtr();
-
-	const clang::TemplateSpecializationType *Template = RetType->getAs<clang::TemplateSpecializationType>();
-	std::string TypeName = Template->getTemplateName().getAsTemplateDecl()->getNameAsString();
-	Skeleton::Type skeletonType = SkeletonsLookup.at(TypeName).type;
-	
 	std::string InstanceName = d->getNameAsString();
 	SkeletonInstancesString.insert(InstanceName);
 
-	std::vector<size_t> arity = { 0, 2 };
-	switch (skeletonType)
-	{
-	case Skeleton::Type::Map:
-	case Skeleton::Type::MapReduce:
-		assert(Template->getNumArgs() > 0);
-		arity[0] = Template->template_arguments()[0].getAsExpr()->EvaluateKnownConstInt(d->getASTContext()).getExtValue();
-		break;
-	case Skeleton::Type::MapPairs:
-	case Skeleton::Type::MapPairsReduce:
-		assert(Template->getNumArgs() > 1);
-		arity[0] = Template->template_arguments()[0].getAsExpr()->EvaluateKnownConstInt(d->getASTContext()).getExtValue();
-		arity[1] = Template->template_arguments()[1].getAsExpr()->EvaluateKnownConstInt(d->getASTContext()).getExtValue();
-		break;
-	case Skeleton::Type::MapOverlap1D:
-	case Skeleton::Type::MapPool1D:
-		arity[0] = 1; break;
-	case Skeleton::Type::MapOverlap2D:
-	case Skeleton::Type::MapPool2D:
-		arity[0] = 1; break;
-	case Skeleton::Type::MapOverlap3D:
-	case Skeleton::Type::MapPool3D:
-		arity[0] = 1; break;
-	case Skeleton::Type::MapOverlap4D:
-	case Skeleton::Type::MapPool4D:
-		arity[0] = 1; break;
-	default:
-		break;
-	}
-
+	std::string TypeName;
+	std::vector<size_t> arity;
 	std::vector<UserFunction*> FuncArgs;
-	size_t i = 0;
-	for (clang::Expr *expr : CExpr->arguments())
-	{
-		UserFunction *UF;
-
-		// The argument may be an implcit cast, get the underlying expression
-		if (clang::ImplicitCastExpr *ImplExpr = clang::dyn_cast<clang::ImplicitCastExpr>(expr))
-			UF = HandleFunctionPointerArg(ImplExpr->IgnoreImpCasts());
-
-		// It can also be an explicit cast, get the underlying expression
-		else if (clang::UnaryOperator *UnaryCastExpr = clang::dyn_cast<clang::UnaryOperator>(expr))
-			UF = HandleFunctionPointerArg(UnaryCastExpr->getSubExpr());
-
-		// The user function is probably defined as a lambda
-		else
-			UF = HandleLambdaArg(expr, d);
-
-		FuncArgs.push_back(UF);
-
-		if (skeletonType == Skeleton::Type::MapPairs || skeletonType == Skeleton::Type::MapPairsReduce)
-			UF->updateArgLists(arity[0], arity[1]);
-		else
-			UF->updateArgLists(arity[i++]);
-	}
-
+	HandleFactoryCall(CExpr, d->getASTContext(), lambdaCodeLocation(d), TypeName, arity, FuncArgs);
 
 	#ifdef SKEPU_LSP
 		Skeleton *skeleton = new Skeleton{};
@@ -284,6 +307,21 @@ HandleSkeletonInstance(clang::VarDecl *d)
 		return transformSkeletonInvocation(SkeletonsLookup.at(TypeName), InstanceName, FuncArgs, arity, d);
 	#endif
 }
+
+#ifndef SKEPU_LSP
+bool HandleInlineInstance(const InlineInstance &instance)
+{
+	std::string TypeName;
+	std::vector<size_t> arity;
+	std::vector<UserFunction*> FuncArgs;
+	SkeletonInstancesString.insert(instance.name);
+
+	HandleFactoryCall(instance.factoryCall, instance.enclosing->getASTContext(), instance.enclosing->getSourceRange().getBegin(),
+		TypeName, arity, FuncArgs);
+
+	return transformSkeletonInvocation(SkeletonsLookup.at(TypeName), instance.name, FuncArgs, arity, nullptr, &instance);
+}
+#endif
 
 // Returns nullptr if the user type can be ignored
 UserType *HandleUserType(const clang::CXXRecordDecl *t)
@@ -368,11 +406,78 @@ bool SkePUASTVisitor::VisitVarDecl(clang::VarDecl *d)
 	return RecursiveASTVisitor<SkePUASTVisitor>::VisitVarDecl(d);
 }
 
+// The factory call of an anonymous skeleton instance, if the object of a call is one: the factory call itself or
+// a chain of settings (member calls that return the skeleton) on it. Otherwise nullptr.
+static clang::CallExpr *findInlineFactory(clang::Expr *e)
+{
+	for (;;)
+	{
+		e = e->IgnoreImplicit()->IgnoreParens();
+		if (auto *member = clang::dyn_cast<clang::CXXMemberCallExpr>(e))
+		{
+			e = member->getImplicitObjectArgument();
+			if (!e)
+				return nullptr;
+			continue;
+		}
+		auto *call = clang::dyn_cast<clang::CallExpr>(e);
+		return (call && FactoryCallSkeleton(call)) ? call : nullptr;
+	}
+}
+
+bool SkePUASTVisitor::TraverseDecl(clang::Decl *d)
+{
+	auto *f = clang::dyn_cast_or_null<clang::FunctionDecl>(d);
+	if (f)
+		FunctionStack.push_back(f);
+	bool result = RecursiveASTVisitor<SkePUASTVisitor>::TraverseDecl(d);
+	if (f)
+		FunctionStack.pop_back();
+	return result;
+}
+
+bool SkePUASTVisitor::TraverseLambdaExpr(clang::LambdaExpr *l)
+{
+	++LambdaDepth;
+	bool result = RecursiveASTVisitor<SkePUASTVisitor>::TraverseLambdaExpr(l);
+	--LambdaDepth;
+	return result;
+}
+
 bool SkePUASTVisitor::VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr *c)
 {
 	#ifndef SKEPU_LSP
 		if (c->getOperator() == clang::OO_Call)
 		{
+			// An anonymous skeleton instance: skepu::Map<1>(f)(out, in), or with settings before the call
+			if (clang::CallExpr *factory = findInlineFactory(c->getArg(0)))
+			{
+				clang::SourceManager &SM = this->Context->getSourceManager();
+				clang::SourceLocation callLoc = c->getBeginLoc();
+				if (callLoc.isMacroID())
+					SkePUAbort("A skeleton instance that is created in a macro expansion is not supported (anonymous skeleton instance)");
+
+				const clang::FunctionDecl *f = FunctionStack.empty() ? nullptr : FunctionStack.back();
+				if (!f || LambdaDepth > 0 || f->isTemplated() || f->getTemplatedKind() != clang::FunctionDecl::TK_NonTemplate
+					|| clang::isa<clang::CXXMethodDecl>(f) || !f->getDeclContext()->getRedeclContext()->isFileContext())
+					SkePUAbort("An anonymous skeleton instance is supported in a function (not a template, a member function or a lambda) "
+						"at namespace scope; declare the skeleton as a variable otherwise: " + callLoc.printToString(SM));
+
+				std::string file = SM.getFilename(SM.getSpellingLoc(callLoc)).str();
+				unsigned line = SM.getSpellingLineNumber(callLoc);
+
+				InlineInstance instance;
+				instance.factoryCall = factory;
+				instance.enclosing = f;
+				instance.name = "skepu_inline_" + std::to_string(InlineInstances.size());
+				instance.callFile = file;
+				instance.callLine = line;
+				InlineInstances.push_back(instance);
+				SkePULog() << "Found anonymous instance " << instance.name << " at " << file << ":" << line << "\n";
+
+				return RecursiveASTVisitor<SkePUASTVisitor>::VisitCallExpr(c);
+			}
+
 			clang::Expr *arg =	c->getArg(0);
 			std::string type = arg->getType().getDesugaredType(*this->Context).getAsString();
 

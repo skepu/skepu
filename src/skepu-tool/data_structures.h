@@ -259,7 +259,7 @@ public:
 
 
 	UserFunction(clang::FunctionDecl *f);
-	UserFunction(clang::CXXMethodDecl *f, clang::VarDecl *d);
+	UserFunction(clang::CXXMethodDecl *f, clang::SourceLocation codeLocation);
 };
 
 #ifdef SKEPU_LSP

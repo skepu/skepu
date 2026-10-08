@@ -34,6 +34,7 @@ namespace skepu
 			CUDAKernel m_cuda_kernel;
 			
 		public:
+			SKEPU_CHAIN_SKELETON_SETTERS(SkeletonBase)
 			
 			static constexpr auto skeletonType = SkeletonType::Call;
 			using ResultArg = std::tuple<>;

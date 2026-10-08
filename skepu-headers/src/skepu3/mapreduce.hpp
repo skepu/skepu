@@ -120,24 +120,28 @@ namespace skepu
 		}
 
 	public:
+		SKEPU_CHAIN_SKELETON_SETTERS(SeqSkeletonBase)
 
-		void setStartValue(RetType val)
+		auto &setStartValue(RetType val)
 		{
 			this->m_start = val;
+			return *this;
 		}
 
-		void setDefaultSize(size_t i, size_t j = 0, size_t k = 0, size_t l = 0)
+		auto &setDefaultSize(size_t i, size_t j = 0, size_t k = 0, size_t l = 0)
 		{
 			this->default_size_i = i;
 			this->default_size_j = j;
 			this->default_size_k = k;
 			this->default_size_l = l;
+			return *this;
 		}
 
 		template<typename... S>
-		void setStride(S... strides)
+		auto &setStride(S... strides)
 		{
 			this->m_strides = StrideList<InArity>(strides...);
+			return *this;
 		}
 
 		// For first elwise argument as container

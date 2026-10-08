@@ -682,14 +682,11 @@ std::string UserFunction::TemplateArgument::alias(bool constexprValue) const
 }
 
 
-UserFunction::UserFunction(CXXMethodDecl *f, VarDecl *d)
+UserFunction::UserFunction(CXXMethodDecl *f, SourceLocation codeLocation)
 : UserFunction(f)
 {
 	this->rawName = this->uniqueName = "lambda_uf_" + random_string(10);
-
-	this->codeLocation = d->getSourceRange().getBegin();
-	if (const FunctionDecl *DeclCtx = dyn_cast<FunctionDecl>(d->getDeclContext()))
-		this->codeLocation = DeclCtx->getSourceRange().getBegin();
+	this->codeLocation = codeLocation;
 }
 
 UserFunction::UserFunction(clang::FunctionDecl *f)

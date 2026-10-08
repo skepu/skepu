@@ -43,6 +43,7 @@ namespace skepu
 			StrideList<outArity + arity> m_strides{};
 
 		public:
+			SKEPU_CHAIN_SKELETON_SETTERS(SkeletonBase)
 
 			static constexpr auto skeletonType = SkeletonType::Map;
 			using ResultArg = std::tuple<T>;
@@ -81,9 +82,10 @@ namespace skepu
 			}
 
 			template<typename... S>
-			void setStride(S... strides)
+			auto &setStride(S... strides)
 			{
 				this->m_strides = StrideList<outArity + arity>(strides...);
+				return *this;
 			}
 
 			// =======================      Call operators      ==========================

@@ -43,6 +43,7 @@ namespace skepu
 			bool m_in_place = false;
 
 		public:
+			SKEPU_CHAIN_SKELETON_SETTERS(SkeletonBase)
 
 			static constexpr auto skeletonType = SkeletonType::MapPairs;
 			using ResultArg = std::tuple<T>;
@@ -67,15 +68,17 @@ namespace skepu
 
 			// =======================  Persistent parameters   ==========================
 
-			void setDefaultSize(size_t x, size_t y = 0)
+			auto &setDefaultSize(size_t x, size_t y = 0)
 			{
 				this->default_size_x = x;
 				this->default_size_y = y;
+				return *this;
 			}
 
-			void setInPlace(bool inPlace)
+			auto &setInPlace(bool inPlace)
 			{
 				this->m_in_place = inPlace;
+				return *this;
 			}
 
 			template<typename... Args>

@@ -33,6 +33,10 @@ namespace skepu
 			using typename Base::T;
 			using typename Base::F;
 		public:
+			SKEPU_CHAIN_SKELETON_SETTERS(SkeletonBase)
+			SKEPU_CHAIN(setEdgeMode, Base)
+			SKEPU_CHAIN(setPad, Base)
+			SKEPU_CHAIN(setUpdateMode, Base)
 
 			MapOverlap1D(std::string label, CUDAKernel kernel, C2 k2, C3 k3, C4 k4)
 			: SkeletonBase{label}, m_cuda_kernel(kernel), m_cuda_rowwise_kernel(k2), m_cuda_colwise_kernel(k3), m_cuda_colwise_multi_kernel(k4)
@@ -42,9 +46,10 @@ namespace skepu
 #endif
 			}
 
-			void setOverlapMode(Overlap mode)
+			auto &setOverlapMode(Overlap mode)
 			{
 				this->m_overlapPolicy = mode;
+				return *this;
 			}
 
 			Overlap getOverlapMode() const
@@ -52,9 +57,10 @@ namespace skepu
 				return this->m_overlapPolicy;
 			}
 
-			void setOverlap(size_t o)
+			auto &setOverlap(size_t o)
 			{
 				this->m_overlap[0] = o;
+				return *this;
 			}
 
 			int getOverlap() const
@@ -62,11 +68,12 @@ namespace skepu
 				return this->m_overlap[0];
 			}
 
-			void setStride(int si)
+			auto &setStride(int si)
 			{
 				if (si < 0)
 					SKEPU_ERROR("Stride cannot be less than 0");
 				this->m_strides[0] = si;
+				return *this;
 			}
 
 			void traceParameters(tracing::Parameters &parameters) const override

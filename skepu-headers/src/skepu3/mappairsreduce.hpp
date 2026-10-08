@@ -107,21 +107,25 @@ namespace skepu
 		
 		
 	public:
+		SKEPU_CHAIN_SKELETON_SETTERS(SeqSkeletonBase)
 		
-		void setStartValue(RetType val)
+		auto &setStartValue(RetType val)
 		{
 			this->m_start = val;
+			return *this;
 		}
 		
-		void setReduceMode(ReduceMode mode)
+		auto &setReduceMode(ReduceMode mode)
 		{
 			this->m_mode = mode;
+			return *this;
 		}
 		
-		void setDefaultSize(size_t y, size_t x)
+		auto &setDefaultSize(size_t y, size_t x)
 		{
 			this->default_size_x = x;
 			this->default_size_y = y;
+			return *this;
 		}
 		
 		template<typename... CallArgs>

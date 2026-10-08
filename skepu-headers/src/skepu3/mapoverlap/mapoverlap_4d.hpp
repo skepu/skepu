@@ -42,10 +42,12 @@ namespace skepu
 			using typename Base::T;
 
 		public:
-			void setBackend(BackendSpec) {}
-			void resetBackend() {}
+			SKEPU_CHAIN_SKELETON_SETTERS(SeqSkeletonBase)
+			SKEPU_CHAIN(setEdgeMode, Base)
+			SKEPU_CHAIN(setPad, Base)
+			SKEPU_CHAIN(setUpdateMode, Base)
 
-			void setOverlap(int o)
+			auto &setOverlap(int o)
 			{
                 if (o < 0)
                     SKEPU_ERROR("Overlap cannot be less than 0");
@@ -53,9 +55,10 @@ namespace skepu
 				this->m_overlap[1] = o;
 				this->m_overlap[2] = o;
 				this->m_overlap[3] = o;
+				return *this;
 			}
 
-			void setOverlap(int oi, int oj, int ok, int ol)
+			auto &setOverlap(int oi, int oj, int ok, int ol)
 			{
                 if (oi < 0 || oj < 0 || ok < 0 || ol < 0)
                     SKEPU_ERROR("Overlap cannot be less than 0");
@@ -63,6 +66,7 @@ namespace skepu
 				this->m_overlap[1] = oj;
 				this->m_overlap[2] = ok;
 				this->m_overlap[3] = ol;
+				return *this;
 			}
 
 			std::tuple<int, int, int, int> getOverlap() const
@@ -70,7 +74,7 @@ namespace skepu
 				return std::make_tuple(this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_overlap[3]);
 			}
 
-			void setStride(int si, int sj, int sk, int sl)
+			auto &setStride(int si, int sj, int sk, int sl)
 			{
                 if (si < 0 || sj < 0 || sk < 0 || sl < 0)
                     SKEPU_ERROR("Stride cannot be less than 0");
@@ -78,11 +82,13 @@ namespace skepu
                 this->m_strides[1] = sj;
                 this->m_strides[2] = sk;
                 this->m_strides[3] = sl;
+				return *this;
 			}
 
-            void setStride(int s)
+            auto &setStride(int s)
 			{
 				this->setStride(s, s, s, s);
+				return *this;
 			}
 
 			std::tuple<int, int, int, int> getStride() const
@@ -282,6 +288,9 @@ namespace skepu
 			using typename MapOverlap4D<Ret, Args...>::T;
 
 		public:
+			using SkepuChainBase = MapOverlap4D<Ret, Args...>;
+			SKEPU_CHAIN_SKELETON_SETTERS(SkepuChainBase)
+			SKEPU_CHAIN(setStride, SkepuChainBase)
 			void setOverlap(int, int, int, int) = delete;
 			void setOverlap(int) = delete;
 			std::tuple<int, int, int, int> getOverlap() const = delete;
@@ -295,7 +304,7 @@ namespace skepu
 			void setUpdateMode(UpdateMode) = delete;
 			UpdateMode getUpdateMode() const = delete;
 
-			void setPoolSize(int pi, int pj, int pk, int pl)
+			auto &setPoolSize(int pi, int pj, int pk, int pl)
 			{
 				if (pi < 0 || pj < 0 || pk < 0 || pl < 0)
                     SKEPU_ERROR("Pool size cannot be less than 0");
@@ -303,11 +312,13 @@ namespace skepu
 				this->m_overlap[1] = pj;
 				this->m_overlap[2] = pk;
 				this->m_overlap[3] = pl;
+				return *this;
 			}
 
-			void setPoolSize(int p)
+			auto &setPoolSize(int p)
 			{
 				this->setPoolSize(p, p, p, p);
+				return *this;
 			}
 
 			std::tuple<int, int, int, int> getPoolSize() const
@@ -315,16 +326,18 @@ namespace skepu
 				return std::make_tuple(this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_overlap[3]);
 			}
 
-			void setPoolSizeAndStride(int pi, int pj, int pk, int pl)
+			auto &setPoolSizeAndStride(int pi, int pj, int pk, int pl)
 			{
 				this->setPoolSize(pi, pj, pk, pl);
 				this->setStride(pi, pj, pk, pl);
+				return *this;
 			}
 
-			void setPoolSizeAndStride(int p)
+			auto &setPoolSizeAndStride(int p)
 			{
 				this->setPoolSize(p);
 				this->setStride(p);
+				return *this;
 			}
 
 			// For LSP CodeComplete

@@ -6,6 +6,7 @@
 #define SKELETON_BASE_H
 
 #include "skepu3/backend/environment.h"
+#include "skepu3/impl/chain.hpp"
 
 namespace skepu
 {

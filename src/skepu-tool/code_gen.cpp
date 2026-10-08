@@ -588,8 +588,11 @@ namespace
 	}
 }
 
-bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, VarDecl *d)
+bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, VarDecl *d, const InlineInstance *inlineInstance)
 {
+	// d is the declaration of a skeleton instance, or null for an anonymous instance (inlineInstance, a skeleton that is
+	// created in the expression that calls it): it is then declared (static) before the enclosing function, and the factory
+	// call is replaced by the instance
 	std::string signature;
 	for (UserFunction *UF : FuncArgs)
 		signature += UF->uniqueName + ";";
@@ -597,6 +600,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 	// The declaration in the pattern of a function template itself (not dependent on the template parameters, so
 	// the visitor sees it as a skeleton instance): it is visited after the instantiations, which have rewritten it.
 	// A template that is never instantiated is rewritten as it is.
+	if (d)
 	if (const FunctionDecl *pattern = dyn_cast<FunctionDecl>(d->getDeclContext()))
 		if (pattern->getDescribedFunctionTemplate() && TemplateSites.count(d->getSourceRange().getBegin().getRawEncoding()))
 		{
@@ -607,7 +611,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 	// Skeleton instance in a function template (see above): the instantiation
 	TemplateSite *site = nullptr;
 	std::string instantiationArgs, selectorUse;
-	if (const FunctionDecl *instantiation = enclosingTemplateInstantiation(d))
+	if (const FunctionDecl *instantiation = d ? enclosingTemplateInstantiation(d) : nullptr)
 	{
 		PrintingPolicy policy(instantiation->getASTContext().getLangOpts());
 		policy.FullyQualifiedName = true;
@@ -628,7 +632,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			return true;
 		SkePULog() << "Skeleton instance " << InstanceName << " in a function template, instantiation <" << instantiationArgs << ">\n";
 	}
-	else if (const FunctionDecl *f = dyn_cast<FunctionDecl>(d->getDeclContext()))
+	else if (const FunctionDecl *f = d ? dyn_cast<FunctionDecl>(d->getDeclContext()) : nullptr)
 	{
 		// A member function template (or other template that is not at namespace scope): the declaration is
 		// rewritten once, so its instantiations can only differ in things that do not change the kernels
@@ -651,8 +655,8 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 	}
 
 	// Find location to insert transformed user function code
-	const DeclContext *DeclCtx = d->getDeclContext();
-	SourceLocation loc = d->getSourceRange().getBegin();
+	const DeclContext *DeclCtx = d ? d->getDeclContext() : inlineInstance->enclosing;
+	SourceLocation loc = d ? d->getSourceRange().getBegin() : inlineInstance->enclosing->getSourceRange().getBegin();
 	if (isa<FunctionDecl>(DeclCtx))
 	{
 		const FunctionDecl *f = dyn_cast<FunctionDecl>(DeclCtx);
@@ -670,6 +674,10 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			loc = f->getSourceRange().getBegin();
 		}
 	}
+
+	// A function that is defined by a macro (as the test cases of Catch are): the code goes before the macro invocation
+	if (loc.isMacroID())
+		loc = GlobalRewriter.getSourceMgr().getExpansionLoc(loc);
 
 	// The selector specialization of an instantiation, placed after the code it refers to
 	auto emitSelectorSpecialization = [&](const std::string &members)
@@ -705,7 +713,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 	SkePULog() << "Name of skeleton: " << skeleton.name << ", Unique ID: " << skeletonID << "\n";
 
 	bool rewriteDeclaration = !site || !site->declarationRewritten;
-	if (rewriteDeclaration)
+	if (rewriteDeclaration && d)
 		if (GlobalRewriter.RemoveText(d->getSourceRange()))
 			SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
 
@@ -749,7 +757,15 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		first = false;
 	}
 
-	SSCallArgs << "\"" << InstanceName << "\", ";
+	// An anonymous instance is named after its place in the source
+	std::string instanceLabel = InstanceName;
+	if (inlineInstance)
+	{
+		std::string file = inlineInstance->callFile;
+		size_t slash = file.find_last_of("/\\");
+		instanceLabel = skeleton.name + "@" + (slash == std::string::npos ? file : file.substr(slash + 1)) + ":" + std::to_string(inlineInstance->callLine);
+	}
+	SSCallArgs << "\"" << instanceLabel << "\", ";
 
 	if (GenCUDA)
 	{
@@ -944,17 +960,33 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 	if (site)
 		site->declarationRewritten = true;
 
+	if (inlineInstance)
+	{
+		// The instance is declared before the function; the factory call is replaced by a reference to it
+		SSNewDecl << "static skepu::backend::" << skeleton.name << "<" << SSTemplateArgs.str() << "> " << InstanceName
+			<< "(" << SSCallArgs.str() << ");\n" << lineDirectiveForSourceLoc(loc) << "\n";
+		if (GlobalRewriter.InsertText(loc, SSNewDecl.str()))
+			SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
+
+		// The source location of the call, as for the call of a skeleton variable
+		std::stringstream SSUse;
+		SSUse << InstanceName << ".setSourceLoc(\"" << inlineInstance->callFile << "\", " << inlineInstance->callLine << ")";
+		if (GlobalRewriter.ReplaceText(inlineInstance->factoryCall->getSourceRange(), SSUse.str()))
+			SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
+		return true;
+	}
+
 	SourceLocation declStart = d->getSourceRange().getBegin();
-	SourceLocation declEnd = d->getSourceRange().getEnd();
-	
+
+	// The declaration replaces the original one on its line, up to the semicolon (which is not part of the
+	// declaration's range): the rest of the line is kept, and so are the line numbers
 	if(d->getStorageClass() == clang::StorageClass::SC_Static)
 		SSNewDecl << "static ";
 	SSNewDecl
 	    << "skepu::backend::" << skeleton.name
 		<< "<" << SSTemplateArgs.str()
 		<< "> " << InstanceName << "("
-		<< SSCallArgs.str() << ");\n"
-		<< lineDirectiveForSourceLoc(declEnd, 1) + "//";
+		<< SSCallArgs.str() << ")";
 
 	if (GlobalRewriter.InsertText(declStart, SSNewDecl.str()))
 		SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);

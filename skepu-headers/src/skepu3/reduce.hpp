@@ -67,15 +67,18 @@ namespace skepu
 			using RedFunc = std::function<T(T, T)>;
 
 		public:
+			SKEPU_CHAIN_SKELETON_SETTERS(SeqSkeletonBase)
 
-			void setReduceMode(ReduceMode mode)
+			auto &setReduceMode(ReduceMode mode)
 			{
 				this->m_mode = mode;
+				return *this;
 			}
 
-			void setStartValue(T val)
+			auto &setStartValue(T val)
 			{
 				this->m_start = val;
+				return *this;
 			}
 
 
@@ -172,6 +175,10 @@ namespace skepu
 			using RedFunc = std::function<T(T, T)>;
 
 		public:
+			using SkepuChainBase = Reduce1D<T>;
+			SKEPU_CHAIN_SKELETON_SETTERS(SkepuChainBase)
+			SKEPU_CHAIN(setReduceMode, SkepuChainBase)
+			SKEPU_CHAIN(setStartValue, SkepuChainBase)
 
 			T operator()(Vector<T>& arg)
 			{

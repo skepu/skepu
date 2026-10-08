@@ -11,6 +11,8 @@
 // ------------------------------
 
 UserFunction *HandleUserFunction(clang::FunctionDecl *f);
+const Skeleton::Type* FactoryCallSkeleton(clang::CallExpr *CExpr);
+bool HandleInlineInstance(const InlineInstance &instance);
 UserType *HandleUserType(const clang::CXXRecordDecl *t);
 
 #ifdef SKEPU_LSP
@@ -27,6 +29,10 @@ public:
 
 	SkePUASTVisitor(clang::ASTContext *ctx, std::unordered_set<clang::VarDecl *> &instanceSet);
 
+	// The function that is being traversed (for anonymous skeleton instances)
+	bool TraverseDecl(clang::Decl *d);
+	bool TraverseLambdaExpr(clang::LambdaExpr *l);
+
 	bool VisitVarDecl(clang::VarDecl *d);
 	bool VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr *c);
 
@@ -38,6 +44,8 @@ public:
 
 private:
 	clang::ASTContext *Context;
+	std::vector<const clang::FunctionDecl *> FunctionStack;
+	unsigned LambdaDepth = 0;
 };
 
 // Implementation of the ASTConsumer interface for reading an AST produced by the Clang parser.

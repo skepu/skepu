@@ -33,6 +33,10 @@ namespace skepu
 	template<int InArity, int GivenArity, typename Ret, typename... Args>
 	class MapImpl: public SeqSkeletonBase
 	{
+	public:
+		SKEPU_CHAIN_SKELETON_SETTERS(SeqSkeletonBase)
+
+	private:
 		static constexpr bool indexed = is_indexed<Args...>::value;
 		static constexpr bool randomized = has_random<Args...>::value;
 		static constexpr size_t randomCount = get_random_count<Args...>::value;
@@ -107,9 +111,10 @@ namespace skepu
 		}
 
 		template<typename... S>
-		void setStride(S... strides)
+		auto &setStride(S... strides)
 		{
 			this->m_strides = StrideList<OutArity + InArity>(strides...);
+			return *this;
 		}
 
 //	private:

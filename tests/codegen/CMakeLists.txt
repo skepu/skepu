@@ -22,6 +22,35 @@ skepu_add_test_case_hybrid_opencl(fundamental_types)
 skepu_add_test_case_hybrid_cuda(fundamental_types)
 
 # ------------------------------------------------
+#   Code on the line of a skeleton instance declaration
+# ------------------------------------------------
+
+skepu_add_test_case_cpu(same_line)
+skepu_add_test_case_openmp(same_line)
+skepu_add_test_case_opencl(same_line)
+skepu_add_test_case_cuda(same_line)
+skepu_add_test_case_hybrid_opencl(same_line)
+skepu_add_test_case_hybrid_cuda(same_line)
+
+# ------------------------------------------------
+#   Anonymous skeleton instances (created and called in one expression, with chained settings)
+# ------------------------------------------------
+
+skepu_add_test_case_cpu(inline_skeletons)
+skepu_add_test_case_openmp(inline_skeletons)
+skepu_add_test_case_opencl(inline_skeletons)
+skepu_add_test_case_cuda(inline_skeletons)
+skepu_add_test_case_hybrid_opencl(inline_skeletons)
+skepu_add_test_case_hybrid_cuda(inline_skeletons)
+
+skepu_add_test_case_cpu(inline_skeletons_all)
+skepu_add_test_case_openmp(inline_skeletons_all)
+skepu_add_test_case_opencl(inline_skeletons_all)
+skepu_add_test_case_cuda(inline_skeletons_all)
+skepu_add_test_case_hybrid_opencl(inline_skeletons_all)
+skepu_add_test_case_hybrid_cuda(inline_skeletons_all)
+
+# ------------------------------------------------
 #   Linking multiple precompiled files
 # ------------------------------------------------
 
