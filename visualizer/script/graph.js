@@ -12,7 +12,8 @@
 import { State, BADGE_PLACEMENT_DELAY_MS, ANIM_SCROLL_MS } from './state.js';
 import { fetchGraph, fetchGetData }                       from './transport.js';
 import { TraceDataProvider }                            from './TraceDataProvider.js';
-import { GraphView, LegendView }                        from './GraphView.js';
+import { GraphView }                                  from './GraphView.js';
+import { LegendView }                                 from './LegendView.js';
 import { InfoView }                                     from './InfoView.js';
 import { SourceCodeView }                               from './SourceCodeView.js';
 import { TimelineView }                                 from './TimelineView.js';
@@ -43,7 +44,6 @@ function hideMenubarIndicator() {
 
 // ── SourceCodeView timing constants ──────────────────────────────────────────
 SourceCodeView.BADGE_PLACEMENT_DELAY_MS = BADGE_PLACEMENT_DELAY_MS;
-SourceCodeView.ANIM_SCROLL_MS           = ANIM_SCROLL_MS;
 
 // ── TraceDataProvider singleton ───────────────────────────────────────────────
 // Owns the fetch pipeline, colour spectrum, and all cached response data.

@@ -4,23 +4,11 @@
     <meta charset="UTF-8">
     <title>Trace Performance Visualization Tool for SkePU</title>
     <!-- Apply dark mode before first paint to prevent flash -->
-    <script>
-      (function() {
-        try {
-          var s = JSON.parse(localStorage.getItem('skepu-visualizer-settings-v1'));
-          if (s && s.layout && s.layout['dark-mode'])
-            document.documentElement.classList.add('dark-mode');
-        } catch(e) {}
-      })();
-    </script>
+    <script src="./script/early.js"></script>
 
     <!-- App stylesheet (relative to frontend/) -->
     <link rel="stylesheet" href="./style/main.css"/>
-    <link rel="stylesheet" href="./static/cmu-font/fonts/cmuserif_roman/stylesheet.css"/>
 
-    <!-- jQuery -->
-    <script src="./static/jquery/jquery-3.7.1.min.js"></script>
-    <script src="./static/jquery-scrollto/jquery.scrollTo.min.js"></script>
 
     <!-- Cytoscape -->
     <script src="./static/cytoscape/cytoscape.min.js"></script>
@@ -66,7 +54,7 @@
 
           <!-- File menu -->
           <div class="menu">
-            <button class="menu-title" onclick="menuToggle(event,this)">Files</button>
+            <button class="menu-title">Files</button>
             <div class="dropdown">
 
               <!-- Examples submenu — populated dynamically by worker-loader.js -->
@@ -97,7 +85,7 @@
 
           <!-- View menu -->
           <div class="menu">
-            <button class="menu-title" onclick="menuToggle(event,this)">View</button>
+            <button class="menu-title">View</button>
             <div class="dropdown">
                 <div class="submenu">
                     <div class="submenu-title">Graph Mode<span class="menu-arrow">▸</span></div>
@@ -125,19 +113,11 @@
               <div class="menu-sep"></div>
               <div class="submenu">
                 <button class="submenu-title menu-action">Source Code Theme<span class="menu-arrow">▶</span></button>
-                <div class="dropdown">
-                  <button class="hljs-theme-radio" data-theme="default"           onclick="setHljsTheme('default');menuClose()">          <span class="menu-icon">✓</span>Default (light)</button>
-                  <button class="hljs-theme-radio" data-theme="github"            onclick="setHljsTheme('github');menuClose()">           <span class="menu-icon"></span>GitHub (light)</button>
-                  <button class="hljs-theme-radio" data-theme="intellij-light"    onclick="setHljsTheme('intellij-light');menuClose()">   <span class="menu-icon"></span>IntelliJ (light)</button>
-                  <button class="hljs-theme-radio" data-theme="vs"                onclick="setHljsTheme('vs');menuClose()">               <span class="menu-icon"></span>Visual Studio (light)</button>
-                  <div class="menu-sep"></div>
-                  <button class="hljs-theme-radio" data-theme="atom-one-dark"     onclick="setHljsTheme('atom-one-dark');menuClose()">    <span class="menu-icon"></span>Atom One Dark</button>
-                  <button class="hljs-theme-radio" data-theme="github-dark"       onclick="setHljsTheme('github-dark');menuClose()">      <span class="menu-icon"></span>GitHub Dark</button>
-                  <button class="hljs-theme-radio" data-theme="monokai"           onclick="setHljsTheme('monokai');menuClose()">          <span class="menu-icon"></span>Monokai</button>
-                  <button class="hljs-theme-radio" data-theme="nord"              onclick="setHljsTheme('nord');menuClose()">             <span class="menu-icon"></span>Nord</button>
-                  <button class="hljs-theme-radio" data-theme="tokyo-night-dark"  onclick="setHljsTheme('tokyo-night-dark');menuClose()"> <span class="menu-icon"></span>Tokyo Night</button>
-                  <button class="hljs-theme-radio" data-theme="vs2015"            onclick="setHljsTheme('vs2015');menuClose()">           <span class="menu-icon"></span>VS 2015 (dark)</button>
-                </div>
+                <div class="dropdown" id="hljs-theme-menu"></div>
+              </div>
+              <div class="submenu">
+                <button class="submenu-title menu-action">Color Spectrum<span class="menu-arrow">▶</span></button>
+                <div class="dropdown dropdown-spectrum" id="spectrum-menu"></div>
               </div>
               <button id="menu-check-dark" class="menu-check" onclick="toggleDarkMode();menuClose()"><span class="menu-icon"></span>Dark mode<span class="menu-key">M</span></button>
             </div>
@@ -145,7 +125,7 @@
 
           <!-- Nodes menu -->
           <div class="menu">
-            <button class="menu-title" onclick="menuToggle(event,this)">Nodes</button>
+            <button class="menu-title">Nodes</button>
             <div class="dropdown">
               <button class="menu-check" data-ctrl="container-updates"      onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Updates<span class="menu-key">U</span></button>
               <button class="menu-check" data-ctrl="container-allocations"  onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Allocations<span class="menu-key">A</span></button>
@@ -191,7 +171,7 @@
 
           <!-- Edges menu -->
           <div class="menu">
-            <button class="menu-title" onclick="menuToggle(event,this)">Edges</button>
+            <button class="menu-title">Edges</button>
             <div class="dropdown">
               <button class="menu-check" data-ctrl="anti-deps"           onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Anti-Dependences<span class="menu-key">N</span></button>
               <button class="menu-check" data-ctrl="virtual-alias-edges" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Virtual Datasets</button>
@@ -230,64 +210,50 @@
           </div>
 
           <!-- Actions menu -->
-          <div class="menu">
-            <button class="menu-title" onclick="menuToggle(event,this)">Actions</button>
+          <div class="menu" id="menu-actions">
+            <button class="menu-title">Actions</button>
             <div class="dropdown">
               <div class="submenu">
                 <div class="submenu-title">Simulate<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button id="sim-btn-playpause" class="menu-action" onclick="simToggle();menuClose()">Play<span class="menu-key">P</span></button>
-                  <button class="menu-action" onclick="simStop();menuClose()">Stop</button>
+                  <button id="sim-btn-playpause" class="menu-action" data-needs="trace" onclick="simToggle();menuClose()">Play<span class="menu-key">P</span></button>
+                  <button class="menu-action" data-needs="trace" onclick="simStop();menuClose()">Stop</button>
                 </div>
               </div>
               <div class="menu-sep"></div>
-              <button class="menu-action" onclick="zoomGanttToMeasuredInterval();menuClose()">Zoom to Measured Interval<span class="menu-key">Z</span></button>
-              <button class="menu-action" onclick="(function(){var tabs=Array.from(document.querySelectorAll('.cpp-tab'));if(tabs.length>1){var cur=tabs.findIndex(function(t){return t.classList.contains('active');});var next=(cur+1)%tabs.length;switchTab(tabs[next],next);}})();menuClose()">Next Source Tab<span class="menu-key">Tab</span></button>
+              <button class="menu-action" data-needs="trace" onclick="zoomGanttToMeasuredInterval();menuClose()">Zoom to Measured Interval<span class="menu-key">Z</span></button>
+              <button class="menu-action" data-needs="tabs" onclick="(function(){var tabs=Array.from(document.querySelectorAll('.cpp-tab'));if(tabs.length>1){var cur=tabs.findIndex(function(t){return t.classList.contains('active');});var next=(cur+1)%tabs.length;switchTab(tabs[next],next);}})();menuClose()">Next Source Tab<span class="menu-key">Tab</span></button>
               <div class="menu-sep"></div>
               <div class="submenu">
                 <div class="submenu-title">Selected Node<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button class="menu-action" onclick="collapseSelectedRecursively();menuClose()">Collapse Recursive<span class="menu-key">C</span></button>
-                  <button class="menu-action" onclick="expandSelectedRecursively();menuClose()">Expand Recursive<span class="menu-key">E</span></button>
-                  <button class="menu-action" onclick="collapseSelected();menuClose()">Collapse Once<span class="menu-key">-</span></button>
-                  <button class="menu-action" onclick="expandSelected();menuClose()">Expand Once<span class="menu-key">+</span></button>
+                  <button class="menu-action" data-needs="selection" onclick="collapseSelectedRecursively();menuClose()">Collapse Recursive<span class="menu-key">C</span></button>
+                  <button class="menu-action" data-needs="selection" onclick="expandSelectedRecursively();menuClose()">Expand Recursive<span class="menu-key">E</span></button>
+                  <button class="menu-action" data-needs="selection" onclick="collapseSelected();menuClose()">Collapse Once<span class="menu-key">-</span></button>
+                  <button class="menu-action" data-needs="selection" onclick="expandSelected();menuClose()">Expand Once<span class="menu-key">+</span></button>
                 </div>
               </div>
               <div class="submenu">
                 <div class="submenu-title">All Regions<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button class="menu-action" onclick="collapseAllRegions();menuClose()">Collapse</button>
-                  <button class="menu-action" onclick="expandAllRegionsOnce();menuClose()">Expand Once</button>
-                  <button class="menu-action" onclick="expandAllRegions();menuClose()">Expand Recursive</button>
+                  <button class="menu-action" data-needs="regions" onclick="collapseAllRegions();menuClose()">Collapse</button>
+                  <button class="menu-action" data-needs="regions" onclick="expandAllRegionsOnce();menuClose()">Expand Once</button>
+                  <button class="menu-action" data-needs="regions" onclick="expandAllRegions();menuClose()">Expand Recursive</button>
                 </div>
               </div>
               <div class="submenu">
                 <div class="submenu-title">All Fusions<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button class="menu-action" onclick="collapseAllFusions();menuClose()">Collapse</button>
-                  <button class="menu-action" onclick="expandAllFusions();menuClose()">Expand</button>
+                  <button class="menu-action" data-needs="fusions" onclick="collapseAllFusions();menuClose()">Collapse</button>
+                  <button class="menu-action" data-needs="fusions" onclick="expandAllFusions();menuClose()">Expand</button>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Color Spectrum menu -->
-          <div class="menu">
-            <button class="menu-title" onclick="menuToggle(event,this)">Colors</button>
-            <div class="dropdown dropdown-spectrum">
-              <button class="spectrum-radio" data-spectrum="default"   onclick="colorSpectrumChanged('default');menuClose()">  <span class="menu-icon">✓</span>Red–Green <span class="spectrum-swatch" style="background:linear-gradient(to right,#00ff00,#ff0000)"></span></button>
-              <button class="spectrum-radio" data-spectrum="viridis"   onclick="colorSpectrumChanged('viridis');menuClose()">  <span class="menu-icon"></span>Viridis   <span class="spectrum-swatch" style="background:linear-gradient(to right,#440154,#2a788e,#22a884,#fde725)"></span></button>
-              <button class="spectrum-radio" data-spectrum="plasma"    onclick="colorSpectrumChanged('plasma');menuClose()">   <span class="menu-icon"></span>Plasma    <span class="spectrum-swatch" style="background:linear-gradient(to right,#0d0887,#b83289,#f48849,#f0f921)"></span></button>
-              <button class="spectrum-radio" data-spectrum="inferno"   onclick="colorSpectrumChanged('inferno');menuClose()">  <span class="menu-icon"></span>Inferno   <span class="spectrum-swatch" style="background:linear-gradient(to right,#000004,#57106e,#f98c0a,#fcffa4)"></span></button>
-              <button class="spectrum-radio" data-spectrum="cividis"   onclick="colorSpectrumChanged('cividis');menuClose()">  <span class="menu-icon"></span>Cividis   <span class="spectrum-swatch" style="background:linear-gradient(to right,#00224e,#5f5a80,#fde725)"></span></button>
-              <button class="spectrum-radio" data-spectrum="cool-warm" onclick="colorSpectrumChanged('cool-warm');menuClose()"><span class="menu-icon"></span>Cool–Warm <span class="spectrum-swatch" style="background:linear-gradient(to right,#3b4cc0,#ddd,#b40426)"></span></button>
-              <button class="spectrum-radio" data-spectrum="grayscale" onclick="colorSpectrumChanged('grayscale');menuClose()"><span class="menu-icon"></span>Grayscale <span class="spectrum-swatch" style="background:linear-gradient(to right,#f0f0f0,#141414)"></span></button>
-            </div>
-          </div>
-
           <!-- Advanced menu -->
           <div class="menu">
-            <button class="menu-title" onclick="menuToggle(event,this)">Advanced</button>
+            <button class="menu-title">Advanced</button>
             <div class="dropdown">
               <button class="menu-check" data-ctrl="collapse_iteration" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Aggregate iteration<span class="menu-key">I</span></button>
               <div class="submenu">
@@ -303,7 +269,7 @@
 
           <!-- Render indicator -->
           <div id="render-indicator" class="menu">
-            <button class="menu-title" onclick="menuToggle(event,this)"
+            <button class="menu-title"
                     style="display:flex;align-items:center;font-weight:normal;padding-right:0.6em">
               <span class="render-spinner"></span>Rendering…
             </button>
@@ -314,7 +280,7 @@
 
           <!-- Info button -->
           <div class="menu menu-info-btn">
-            <button class="menu-title menu-info-title" onclick="menuToggle(event,this)" title="Trace statistics">ⓘ</button>
+            <button class="menu-title menu-info-title" title="Trace statistics">ⓘ</button>
             <div class="dropdown dropdown-info">
               <p><strong>Trace events:</strong> <span id="event-count">—</span></p>
               <p><strong>Nodes:</strong> <span id="node-count">—</span></p>
@@ -360,29 +326,8 @@
             }
           }
 
-          function menuToggle(event, btn) {
-            event.stopPropagation();
-            var menu   = btn.closest('.menu');
-            var isOpen = menu.classList.contains('open');
-            menuClose();
-            if (!isOpen) menu.classList.add('open');
-          }
-          function menuClose() {
-            document.querySelectorAll('.menu.open').forEach(function(m) { m.classList.remove('open'); });
-          }
-          document.addEventListener('click', menuClose);
-
-          // switchTab / setHljsTheme / _applyHljsTheme / badgeClick are
-          // window globals wired by SourceCodeView in graph.js.
-
-          document.querySelectorAll('.menu-title').forEach(function(btn) {
-            btn.addEventListener('mouseenter', function() {
-              if (document.querySelector('.menu.open')) {
-                menuClose();
-                btn.closest('.menu').classList.add('open');
-              }
-            });
-          });
+          // The menus (opening, closing, the hover from one to the next) are script/menu.js, installed by ui.js.
+          // switchTab / setHljsTheme / _applyHljsTheme / badgeClick are window globals wired by SourceCodeView in graph.js.
 
           // menuRestoreDefaults needs to call into settings.js — that module
           // exports it via window in ui.js, but in worker mode we also need it.
@@ -410,6 +355,11 @@
               <div id="welcome-examples-section" style="display:none">
                 <h3>Load a built-in example</h3>
                 <div id="welcome-examples-list"></div>
+              </div>
+
+              <div id="welcome-designer-section">
+                <h3>Design a program</h3>
+                <p class="welcome-hint">Draw a graph of skeleton calls, data and regions in the <a href="designer.html">SkeVU Designer</a>: it makes the SkePU or SkePY program, and the trace that it could have, to load here.</p>
               </div>
             </div>
           </div>

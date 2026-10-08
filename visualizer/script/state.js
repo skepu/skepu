@@ -94,9 +94,8 @@ export const _groupedEdgeHidden = new Set(); // IDs of duplicate edges hidden by
 export const HIGHLIGHT_COLOR_LIGHT = '#0055cc';
 export const HIGHLIGHT_COLOR_DARK  = '#e8720c';   // pumpkin orange
 
-// Default highlight.js theme to switch to when toggling dark/light mode.
-export const HLJS_THEME_DEFAULT_LIGHT = 'default';
-export const HLJS_THEME_DEFAULT_DARK  = 'tokyo-night-dark';
+// Default highlight.js theme to switch to when toggling dark/light mode (appearance.js has them, with the themes).
+export { HLJS_THEME_DEFAULT_LIGHT, HLJS_THEME_DEFAULT_DARK } from './appearance.js';
 
 /** Returns the active highlight colour based on the current dark-mode state. */
 export function highlightColor() {

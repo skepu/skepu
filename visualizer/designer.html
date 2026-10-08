@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SkeVU Designer</title>
+
+    <!-- Dark mode before the first paint, from what SkeVU remembers (the same settings: script/appearance.js) -->
+    <script src="./script/early.js"></script>
+    <link id="hljs-theme" rel="stylesheet" href="./static/highlight/styles/default.css">
+
+    <!-- The stylesheet of SkeVU, then what the designer adds -->
+    <link rel="stylesheet" href="./style/main.css"/>
+    <link rel="stylesheet" href="./designer/designer.css"/>
+
+    <!-- The libraries of SkeVU -->
+    <script src="./static/cytoscape/cytoscape.min.js"></script>
+    <script src="./static/dagre/dagre.min.js"></script>
+    <script src="./static/cytoscape-dagre/cytoscape-dagre.js"></script>
+    <script src="./static/highlight/highlight.min.js"></script>
+    <script src="./static/highlight/languages/python.min.js"></script>
+    <script src="./static/highlight-line-numbers/highlightjs-line-numbers.min.js"></script>
+
+    <script type="module" src="./designer/editor.js"></script>
+</head>
+<body>
+<div class="outer_container">
+    <div id="left_pane">
+        <nav id="menubar">
+            <div class="menu"><a class="menu-anfang" href="index.html" title="SkeVU, the trace visualizer">
+                <img src="./SkeVU logo.png" alt="SkeVU" class="logo logo-small">
+                <img src="./SkeVU logo-white.png" alt="SkeVU" class="logo logo-small logo-dark">
+            </a></div>
+
+            <div class="menu">
+                <button class="menu-title">Design</button>
+                <div class="dropdown">
+                    <button class="menu-action" id="new">New</button>
+                    <button class="menu-action" id="generate" title="A random design, as the Generate menu says">Generate</button>
+                    <div class="submenu">
+                        <button class="submenu-title">Examples<span class="menu-arrow">▶</span></button>
+                        <div class="dropdown">
+                            <button class="menu-action" id="sample">Smoothing</button>
+                            <button class="menu-action" id="all-skeletons">All skeletons</button>
+                        </div>
+                    </div>
+                    <hr class="menu-sep">
+                    <button class="menu-action" id="load">Open…</button>
+                    <button class="menu-action" id="save">Save as JSON</button>
+                    <hr class="menu-sep">
+                    <button class="menu-action" id="copy-code">Copy Tab</button>
+                    <button class="menu-action" id="download-code">Download Tab</button>
+                </div>
+            </div>
+
+            <div class="menu">
+                <button class="menu-title">View</button>
+                <div class="dropdown">
+                    <button class="menu-action" id="arrange">Arrange</button>
+                    <button class="menu-action" id="fit">Reset View</button>
+                    <hr class="menu-sep">
+                    <button class="menu-radio" data-color="pattern"><span class="menu-icon"></span>Color by Skeleton</button>
+                    <button class="menu-radio" data-color="backend"><span class="menu-icon"></span>Color by Backend</button>
+                    <hr class="menu-sep">
+                    <button class="menu-check" id="menu-legend"><span class="menu-icon"></span>Legend</button>
+                    <button class="menu-check" id="menu-paths"><span class="menu-icon"></span>Code Paths</button>
+                    <hr class="menu-sep">
+                    <div class="submenu">
+                        <button class="submenu-title menu-action">Color Spectrum<span class="menu-arrow">▶</span></button>
+                        <div class="dropdown dropdown-spectrum" id="spectrum-menu"></div>
+                    </div>
+                    <div class="submenu">
+                        <button class="submenu-title menu-action">Source Code Theme<span class="menu-arrow">▶</span></button>
+                        <div class="dropdown" id="hljs-theme-menu"></div>
+                    </div>
+                    <button class="menu-check" id="menu-dark"><span class="menu-icon"></span>Dark Mode</button>
+                </div>
+            </div>
+
+
+            <div class="menu">
+                <button class="menu-title">Add</button>
+                <div class="dropdown" id="add-menu">
+                    <button class="menu-radio" data-add="Vector"><span class="menu-icon"></span>Vector</button>
+                    <button class="menu-radio" data-add="Matrix"><span class="menu-icon"></span>Matrix</button>
+                    <button class="menu-radio" data-add="Tensor3" title="A 3D tensor (skepu::Tensor3)"><span class="menu-icon"></span>Tensor (3D)</button>
+                    <button class="menu-radio" data-add="Tensor4" title="A 4D tensor (skepu::Tensor4)"><span class="menu-icon"></span>Tensor (4D)</button>
+                    <button class="menu-radio" data-add="PRNG"><span class="menu-icon"></span>Random Stream</button>
+                    <hr class="menu-sep">
+                    <!-- one item for each skeleton, then External and Region: made by the script -->
+                </div>
+            </div>
+
+            <div class="menu">
+                <button class="menu-title">Edit</button>
+                <div class="dropdown">
+                    <button class="menu-action" id="undo">Undo<span class="menu-key"></span></button>
+                    <button class="menu-action" id="redo">Redo<span class="menu-key"></span></button>
+                    <hr class="menu-sep">
+                    <button class="menu-check" id="connect"><span class="menu-icon"></span>Connect<span class="menu-key">C</span></button>
+                    <button class="menu-action" id="duplicate">Duplicate<span class="menu-key">D</span></button>
+                    <button class="menu-action" id="group-nodes">Group Nodes<span class="menu-key">G</span></button>
+                    <button class="menu-action" id="group-loop">Loop Around<span class="menu-key">L</span></button>
+                    <button class="menu-action" id="ungroup">Ungroup</button>
+                    <button class="menu-action" id="delete">Delete<span class="menu-key">Del</span></button>
+                </div>
+            </div>
+
+            <div class="menu">
+                <button class="menu-title">Generate</button>
+                <div class="dropdown" id="generate-menu">
+                    <div class="menu-heading">Size</div>
+                    <button class="menu-radio" data-gen="size" data-value="small"><span class="menu-icon"></span>Small</button>
+                    <button class="menu-radio" data-gen="size" data-value="medium"><span class="menu-icon"></span>Medium</button>
+                    <button class="menu-radio" data-gen="size" data-value="large"><span class="menu-icon"></span>Large</button>
+                    <hr class="menu-sep">
+                    <div class="menu-heading">Arity</div>
+                    <button class="menu-radio" data-gen="arity" data-value="small"><span class="menu-icon"></span>Small</button>
+                    <button class="menu-radio" data-gen="arity" data-value="large"><span class="menu-icon"></span>Large</button>
+                    <hr class="menu-sep">
+                    <div class="menu-heading">Shape</div>
+                    <button class="menu-radio" data-gen="shape" data-value="deep"><span class="menu-icon"></span>Deep</button>
+                    <button class="menu-radio" data-gen="shape" data-value="balanced"><span class="menu-icon"></span>Balanced</button>
+                    <button class="menu-radio" data-gen="shape" data-value="wide"><span class="menu-icon"></span>Wide</button>
+                    <hr class="menu-sep">
+                    <label class="menu-field">Seed <input id="gen-seed" type="text" size="10" placeholder="random each time" spellcheck="false" aria-label="Seed"></label>
+                </div>
+            </div>
+
+            <div class="menu">
+                <button class="menu-title">Code</button>
+                <div class="dropdown">
+                    <label class="menu-field">File name <input id="design-name" type="text" size="14" title="The name of the design, and of the program files" aria-label="File name" spellcheck="false"></label>
+                    <hr class="menu-sep">
+                    <div class="menu-heading">User Functions</div>
+                    <button class="menu-radio" data-code="userFunctions" data-value="functions" title="A function for each user function, before main"><span class="menu-icon"></span>Free-standing</button>
+                    <button class="menu-radio" data-code="userFunctions" data-value="lambdas" title="A lambda in the declaration of each skeleton (in Python, for the functions of one line)"><span class="menu-icon"></span>Lambdas</button>
+                    <hr class="menu-sep">
+                    <div class="menu-heading">Container Placement</div>
+                    <button class="menu-radio" data-code="containerPlacement" data-value="grouped" title="All the containers together, before the skeletons"><span class="menu-icon"></span>Grouped</button>
+                    <button class="menu-radio" data-code="containerPlacement" data-value="first-use" title="Each container where the first call that uses it is (not inside a loop)"><span class="menu-icon"></span>Before First Use</button>
+                    <hr class="menu-sep">
+                    <div class="menu-heading">Skeleton Placement</div>
+                    <button class="menu-radio" data-code="skeletonPlacement" data-value="grouped" title="All the skeletons together, before the calls"><span class="menu-icon"></span>Grouped</button>
+                    <button class="menu-radio" data-code="skeletonPlacement" data-value="first-use" title="Each skeleton just before its call (not inside a loop)"><span class="menu-icon"></span>Before First Use</button>
+                    <hr class="menu-sep">
+                    <div class="menu-heading">Whitespace</div>
+                    <button class="menu-radio" data-code="whitespace" data-value="readable" title="A blank line between what comes from different nodes"><span class="menu-icon"></span>Readable</button>
+                    <button class="menu-radio" data-code="whitespace" data-value="balanced"><span class="menu-icon"></span>Balanced</button>
+                    <button class="menu-radio" data-code="whitespace" data-value="compact" title="No comments of its own"><span class="menu-icon"></span>Compact</button>
+                </div>
+            </div>
+
+            <span class="spacer"></span>
+            <span id="message" role="status"></span>
+            <button id="mode-badge" class="mode-explore" type="button" aria-label="Mode: click for the next mode">Explore</button>
+            <div class="menu menu-info-btn">
+                <button class="menu-title menu-info-title" title="Design statistics">ⓘ</button>
+                <div class="dropdown dropdown-info">
+                    <p><strong>Data:</strong> <span id="stat-data">—</span></p>
+                    <p><strong>Random streams:</strong> <span id="stat-streams">—</span></p>
+                    <p><strong>Skeletons:</strong> <span id="stat-skeletons">—</span></p>
+                    <p><strong>Externals:</strong> <span id="stat-externals">—</span></p>
+                    <p><strong>Loops:</strong> <span id="stat-loops">—</span></p>
+                    <p><strong>Regions:</strong> <span id="stat-regions">—</span></p>
+                    <p><strong>Edges:</strong> <span id="stat-edges">—</span></p>
+                    <p><strong>Problems:</strong> <span id="stat-problems">—</span></p>
+                    <p><strong>Warnings:</strong> <span id="stat-warnings">—</span></p>
+                    <p><strong>Trace events:</strong> <span id="stat-events">—</span></p>
+                    <hr class="menu-sep">
+                    <p><a href="https://skepu.github.io" target="_blank">SkePU website</a></p>
+                </div>
+            </div>
+            <input id="load-file" type="file" accept=".json,application/json" hidden>
+        </nav>
+
+        <div id="visualization">
+            <div id="cy"></div>
+        </div>
+        <div id="legend"></div>
+    </div>
+
+    <div id="split-gutter" ></div>
+
+    <div id="right_pane">
+        <div id="cpp_container">
+            <div id="cpp_tab_bar"></div>
+            <details id="problems" hidden><summary></summary><div id="problem-list"></div></details>
+            <div id="cpp_tab_panes"></div>
+        </div>
+        <div id="info_window">
+            <div id="info-resizer"></div>
+            <h3 id="info-heading">Properties</h3>
+            <div id="info-content"><div id="info"></div></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

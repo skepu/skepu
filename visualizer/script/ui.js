@@ -6,6 +6,9 @@ import { State, SETTING_CHANGED_DEBOUNCE_MS, GANTT_RESIZE_DEBOUNCE_MS,
          HLJS_THEME_DEFAULT_LIGHT, HLJS_THEME_DEFAULT_DARK } from './state.js';
 import { saveSettings, loadSettings, applyStoredLayout, toggleSetting } from './settings.js';
 import { navigateHeatmap } from './heatmap.js';
+import { installMenus, enableMenuItem } from './menu.js';
+import { attachResizer } from './resizer.js';
+import { buildThemeMenu, buildSpectrumMenu } from './appearance.js';
 import './graph.js';   // side-effect: creates GraphView, LegendView, SimulationEngine, sets State.*, wires window globals
 
 // ── Colour spectrum helpers ───────────────────────────────────────────────────
@@ -174,39 +177,26 @@ export function toggleLegend()
 
 export function load()
 {
+  // The menus (script/menu.js), and the two that are the same in the designer (script/appearance.js).
+  installMenus();
+  document.getElementById('menu-actions').addEventListener('menuopen', updateActionsMenu);
+  buildThemeMenu(document.getElementById('hljs-theme-menu'), function(theme) { window.setHljsTheme(theme); });
+  buildSpectrumMenu(document.getElementById('spectrum-menu'), function(name) { colorSpectrumChanged(name); });
+
   // Load persisted settings first so all State.* values are set before the
   // DOM is manipulated below.
   loadSettings();
 
-  // ── Custom horizontal resizer (replaces Split.js) ────────────────────────
-  (function() {
-    var gutter  = document.getElementById('split-gutter');
-    var rightEl = document.getElementById('right_pane');
-    if (!gutter || !rightEl) return;
-    var _startX, _startW;
-
-    function onMove(ev) {
-      var dx   = ev.clientX - _startX;
-      var cont = rightEl.parentElement;
-      var minW = 120;
-      var maxW = (cont ? cont.clientWidth : window.innerWidth) - 200;
-      rightEl.style.flex = '0 0 ' + Math.max(minW, Math.min(_startW - dx, maxW)) + 'px';
-    }
-    function onUp() {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup',   onUp);
-      document.body.style.cursor = '';
-      saveSettings();
-    }
-    gutter.addEventListener('mousedown', function(ev) {
-      _startX = ev.clientX;
-      _startW = rightEl.offsetWidth;
-      document.body.style.cursor = 'col-resize';
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup',   onUp);
-      ev.preventDefault();
-    });
-  })();
+  // ── The gutter between the graph and the right pane (script/resizer.js, as in the designer) ─────────
+  var gutter  = document.getElementById('split-gutter');
+  var rightEl = document.getElementById('right_pane');
+  if (gutter && rightEl) attachResizer(gutter, {
+    axis: 'x', min: 120,
+    max:     function() { return (rightEl.parentElement ? rightEl.parentElement.clientWidth : window.innerWidth) - 200; },
+    size:    function() { return rightEl.offsetWidth; },
+    setSize: function(px) { rightEl.style.flex = '0 0 ' + px + 'px'; },
+    onEnd:   saveSettings,
+  });
 
   applyStoredLayout();
   initGanttPinchZoom();
@@ -225,33 +215,20 @@ export function load()
 
 
 
-  var infoWindow  = document.getElementById('info_window');
-  var infoResizer = document.getElementById('info-resizer');
-  var _dragStartY, _dragStartH;
-
-  infoResizer.addEventListener('mousedown', function(e) {
-    _dragStartY = e.clientY;
-    _dragStartH = infoWindow.offsetHeight;
-    infoWindow.classList.add('resizing');
-    document.addEventListener('mousemove', _onInfoDrag);
-    document.addEventListener('mouseup',   _onInfoDragEnd);
-    e.preventDefault();
+  var infoWindow = document.getElementById('info_window');
+  attachResizer(document.getElementById('info-resizer'), {
+    axis: 'y', min: INFO_PANE_MIN_H,
+    size:    function() { return infoWindow.offsetHeight; },
+    setSize: function(px) { infoWindow.style.flex = '0 0 ' + px + 'px'; },
+    onStart: function() { infoWindow.classList.add('resizing'); },
+    onEnd:   function() {
+      infoWindow.classList.remove('resizing');
+      var rightPane = document.getElementById('right_pane');
+      if (rightPane && infoWindow.offsetHeight > INFO_PANE_MIN_H)
+        State._infoPaneRatio = infoWindow.offsetHeight / rightPane.offsetHeight;
+      saveSettings();
+    },
   });
-
-  function _onInfoDrag(e) {
-    var newH = Math.max(INFO_PANE_MIN_H, _dragStartH + (_dragStartY - e.clientY));
-    infoWindow.style.flex = '0 0 ' + newH + 'px';
-  }
-
-  function _onInfoDragEnd() {
-    infoWindow.classList.remove('resizing');
-    document.removeEventListener('mousemove', _onInfoDrag);
-    document.removeEventListener('mouseup',   _onInfoDragEnd);
-    var rightEl = document.getElementById('right_pane');
-    if (rightEl && infoWindow.offsetHeight > INFO_PANE_MIN_H)
-      State._infoPaneRatio = infoWindow.offsetHeight / rightEl.offsetHeight;
-    saveSettings();
-  }
 
 
   document.addEventListener("keydown", function(event) {
@@ -376,6 +353,32 @@ function _setAllFusions(collapsed) {
   }
   pids.forEach(function(pid) { State._collapsedNodes[pid] = collapsed; });
   fetchViewDataAndRender();
+}
+
+// ── Which of the Actions would do something now ──────────────────────────────
+
+// Set when the Actions menu opens (menu.js says 'menuopen'): an item that would do nothing is disabled, and its title says what it needs.
+// (The actions themselves still tell the same, if they are called some other way.)
+var ACTION_NEEDS = {
+  trace:     { has: function() { return State._traceLoaded; },
+               why: 'Load a trace first' },
+  tabs:      { has: function() { return document.querySelectorAll('.cpp-tab').length > 1; },
+               why: 'There is only one source tab' },
+  selection: { has: function() { return State.graphView && State.graphView.selectedNodes().some(function(d) { return _collapsibleId(d) && (d.type !== 'region' || State.settings['show_regions']); }); },
+               why: 'Select a region or a fusion node (regions need View › Regions)' },
+  regions:   { has: function() { return State.settings['show_regions'] && (State._allRegionPids || []).length > 0; },
+               why: 'There are no regions to show: turn on View › Regions and apply the settings' },
+  fusions:   { has: function() { return (State._allFusionPids || []).length > 0; },
+               why: 'There are no fusion nodes: turn on View › Fusion analysis and apply the settings' },
+};
+
+function updateActionsMenu() {
+  document.querySelectorAll('#menu-actions [data-needs]').forEach(function(item) {
+    var need = ACTION_NEEDS[item.dataset.needs];
+    var ok = !!(need && need.has());
+    enableMenuItem(item, ok);
+    item.title = ok ? '' : need.why;
+  });
 }
 
 export function collapseSelectedRecursively() { _setSelectedRegions(true,  true); }

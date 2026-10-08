@@ -213,6 +213,8 @@ export class ComputationNode extends Node {
             const id = jsonData.prng;
             new PrngEdge(graph, graph.labelForID(id), id, this);
             graph.writeToID(id, this, this.backend);
+            const stream = graph._allocationNodes.get(id);
+            if (stream) stream.isPrng = true;              // the allocation of a random stream: it is drawn in its own colour
         }
     }
 
@@ -527,11 +529,13 @@ export class AllocationNode extends DataNode {
 
         this.type      = 'allocation';
         this.timestamp = jsonData.time ?? null;
+        this.isPrng    = false;
         graph.writeToID(jsonData.object_id, this, 'ALL');
+        graph._allocationNodes.set(jsonData.object_id, this);
     }
 
     toCytoscape() {
-        return { ...super.toCytoscape(), timestamp: this.timestamp ?? null };
+        return { ...super.toCytoscape(), timestamp: this.timestamp ?? null, ...(this.isPrng ? { is_prng: true } : {}) };
     }
 
     toTimeline() {

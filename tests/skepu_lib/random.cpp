@@ -482,3 +482,17 @@ TEST_CASE("PRNG API: MapOverlap 3D EdgeMode != None")
   });
 //  skepu::io::cout << "Result: " << out << "\n";
 }*/
+
+TEST_CASE("PRNG constructors: a name and a seed")
+{
+  // (a name is the label that a trace shows; the stream has the seed that PRNG() has when none is given)
+  skepu::PRNG plain, named("named"), seeded(7), both(7, "both"), named_first("first", 7);
+  for (int i = 0; i < 5; ++i)
+  {
+    auto a = plain.get(), b = named.get(), c = seeded.get(), d = both.get(), e = named_first.get();
+    CHECK(a == b);
+    CHECK(c == d);
+    CHECK(c == e);
+    CHECK(a != c);
+  }
+}

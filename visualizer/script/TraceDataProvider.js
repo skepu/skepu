@@ -64,8 +64,18 @@
 'use strict';
 
 // ── Color spectrums ────────────────────────────────────────────────────────────
-// Canonical definition.  LegendView (GraphView.js) uses the provider's
+// Canonical definition.  LegendView (LegendView.js) uses the provider's
 // spectrumColor / spectrumColorDark methods rather than importing these directly.
+
+// A rainbow, the colours of visible light from violet (low) to red (high), at eight hues that are the same distance apart (40°): what a
+// backend or a pattern is coloured by has colours that differ clearly (see categoryColor).
+function hsl(h, s, l) {
+  var k = function(n) { return (n + h / 30) % 12; };
+  var a = s * Math.min(l, 1 - l);
+  var f = function(n) { return Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)))); };
+  return [f(0), f(8), f(4)];
+}
+var RAINBOW = [280, 240, 200, 160, 120, 80, 40, 0].map(function(h) { return hsl(h, 0.72, 0.56); });
 
 export const COLOR_SPECTRUMS = {
   'default':   { stops: [[0,255,0],[255,0,0]] },
@@ -79,6 +89,7 @@ export const COLOR_SPECTRUMS = {
                           [137,152,133],[177,177,94],[215,202,48],[253,231,37]] },
   'cool-warm': { stops: [[59,76,192],[221,221,221],[180,4,38]] },
   'grayscale': { stops: [[240,240,240],[20,20,20]] },
+  'rainbow':   { stops: RAINBOW, categorical: true },
 };
 
 // The categories that a node can be coloured by (View > Nodes > Color: Backend, Pattern). Each has a fixed place on
@@ -402,6 +413,12 @@ export class TraceDataProvider {
     var i = order.indexOf(key);
     if (i < 0) return null;
     var t = order.length > 1 ? i / (order.length - 1) : 0;
+    // a spectrum of distinct hues (the rainbow): the categories are on the hues themselves, as far apart as there are hues, not between two
+    var spectrum = COLOR_SPECTRUMS[this._colorSpectrum] || COLOR_SPECTRUMS['default'];
+    if (spectrum.categorical && order.length > 1 && order.length <= spectrum.stops.length) {
+      var last = spectrum.stops.length - 1;
+      t = Math.round(i * last / (order.length - 1)) / last;
+    }
     return dark ? this.spectrumColorDark(t) : this.spectrumColor(t);
   }
 

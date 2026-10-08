@@ -22,16 +22,10 @@
 
 'use strict';
 
+import { formatDuration } from './format.js';
 import { renderHeatmap } from './heatmap.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function _fmtDur(us) {
-  if (us == null || us < 0) return null;
-  if (us >= 1e6)  return (us / 1e6).toFixed(1)  + ' s';
-  if (us >= 1000) return (us / 1000).toFixed(1) + ' ms';
-  return us.toFixed(0) + ' μs';
-}
 
 function _durationStats(vals) {
   var n = vals.length;
@@ -153,13 +147,11 @@ export class InfoView {
         if (HIDDEN_KEYS.has(key) || /internal/.test(key)) continue;
         var value = data[key];
         if (key === 'file')     value = String(value).split('\\').pop().split('/').pop();
-        if (key === 'Duration') value = _fmtDur(parseInt(value)) || value;
+        if (key === 'Duration') value = formatDuration(parseInt(value)) || value;
         html += '<div class="info-row"><span class="info-key">' + key +
                 '</span><span class="info-value">' + value + '</span></div>';
       }
-      // Use jQuery when available — the existing DOM uses it for .html().
-      if (typeof $ === 'function') { $(bodyEl).html(html); }
-      else                         { bodyEl.innerHTML = html; }
+      bodyEl.innerHTML = html;
     }
 
     // ── Heatmap ───────────────────────────────────────────────────────────────
@@ -229,12 +221,12 @@ export class InfoView {
     }
     var statsHtml =
       '<div class="stat-grid">' +
-      _statCell('Min',     _fmtDur(st.min))    +
-      _statCell('Max',     _fmtDur(st.max))    +
+      _statCell('Min',     formatDuration(st.min))    +
+      _statCell('Max',     formatDuration(st.max))    +
       _statCell('Iters',   n)                  +
-      _statCell('Mean',    _fmtDur(st.mean))   +
-      _statCell('Median',  _fmtDur(st.median)) +
-      _statCell('Std Dev', _fmtDur(st.stddev)) +
+      _statCell('Mean',    formatDuration(st.mean))   +
+      _statCell('Median',  formatDuration(st.median)) +
+      _statCell('Std Dev', formatDuration(st.stddev)) +
       '</div>';
 
     // ── SVG bar chart ─────────────────────────────────────────────────────────
@@ -294,7 +286,7 @@ export class InfoView {
         ' height="' + BAR_H + '" fill="' + fill + '" rx="1"' +
         ' data-node-id="' + nodeId + '" data-iter-idx="' + i + '"' +
         ' style="cursor:pointer">' +
-        '<title>Iteration ' + (i + 1) + ': ' + _fmtDur(vals[i]) + '</title>' +
+        '<title>Iteration ' + (i + 1) + ': ' + formatDuration(vals[i]) + '</title>' +
         '</rect>'
       );
     }
@@ -309,8 +301,8 @@ export class InfoView {
       '<div style="display:flex;justify-content:space-between;' +
       'padding-left:' + LABEL_W + 'px;' +
       'font-family:sans-serif;font-size:0.75em;color:' + textColor + '">' +
-      '<span>' + _fmtDur(st.min) + '</span>' +
-      '<span>' + _fmtDur(st.max) + '</span>' +
+      '<span>' + formatDuration(st.min) + '</span>' +
+      '<span>' + formatDuration(st.max) + '</span>' +
       '</div>';
 
     // Delegated click handler — fires _onSelectIteration callback.

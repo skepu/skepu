@@ -24,23 +24,9 @@
 //   src.placeBadges(badgeNodes);
 
 import { collectBadges } from './badges.js';
+import { isDarkTheme } from './appearance.js';
 
 'use strict';
-
-// ── Highlight.js dark-theme set ───────────────────────────────────────────────
-// Names of themes that look best on dark backgrounds; used to toggle the
-// hljs-theme-dark class on <body> so custom CSS rules can adapt.
-const _HLJS_DARK_THEMES = new Set([
-  'a11y-dark', 'agate', 'an-old-hope', 'androidstudio', 'atom-one-dark',
-  'atom-one-dark-reasonable', 'dark', 'devibeans', 'github-dark',
-  'github-dark-dimmed', 'gradient-dark', 'hybrid', 'ir-black',
-  'isbl-editor-dark', 'kimbie-dark', 'monokai', 'monokai-sublime',
-  'night-owl', 'nnfx-dark', 'nord', 'obsidian', 'panda-syntax-dark',
-  'paraiso-dark', 'qtcreator-dark', 'rose-pine', 'rose-pine-moon',
-  'shades-of-purple', 'srcery', 'stackoverflow-dark', 'sunburst',
-  'tokyo-night-dark', 'tomorrow-night-blue', 'tomorrow-night-bright',
-  'vs2015', 'xt256',
-]);
 
 // ── SourceCodeView ────────────────────────────────────────────────────────────
 
@@ -260,7 +246,7 @@ export class SourceCodeView {
       var base = link.href.replace(/\/[^/]+\.css(\?.*)?$/, '/');
       link.href = base + theme + '.css';
     }
-    this._themeTargetEl.classList.toggle('hljs-theme-dark', _HLJS_DARK_THEMES.has(theme));
+    this._themeTargetEl.classList.toggle('hljs-theme-dark', isDarkTheme(theme));
   }
 
   /** Update the ✓ checkmarks in the Source Code Theme submenu. */
@@ -443,6 +429,35 @@ export class SourceCodeView {
     }
   }
 
+  /**
+   * Mark lines of a pane as selected (`line-selected`), after clearing the marks, and optionally scroll the pane to them: smoothly, with the
+   * line that is scrolled to 5 px below the top.
+   *
+   * @param {number[]} lineNumbers  1-based line numbers.
+   * @param {object}   [options]
+   * @param {HTMLElement} [options.pane]    The pane (default: the active one).
+   * @param {boolean}  [options.scroll]     Scroll to the first of the lines (default false).
+   * @param {number}   [options.target]     The line to scroll to, if it is one of `lineNumbers` (default: the first).
+   * @param {boolean}  [options.animate]    false: jump instead of scrolling smoothly (default true).
+   */
+  highlightLines(lineNumbers, options) {
+    options = options || {};
+    this.clearHighlight();
+    var pane = options.pane || this._tabPanesEl.querySelector('.cpp-tab-pane.active');
+    if (!pane) return;
+    var wanted = new Set(lineNumbers), found = new Map();
+    pane.querySelectorAll('.hljs-ln-line[data-line-number]').forEach(function(el) {
+      var n = +el.dataset.lineNumber;
+      if (!wanted.has(n)) return;
+      el.classList.add('line-selected');
+      if (!found.has(n)) found.set(n, el);
+    });
+    if (!options.scroll || !found.size) return;
+    var first = (options.target != null && found.get(options.target)) || found.get(Math.min.apply(null, Array.from(found.keys())));
+    var top = pane.scrollTop + first.getBoundingClientRect().top - pane.getBoundingClientRect().top - 5;
+    pane.scrollTo({ top: Math.max(0, top), behavior: options.animate === false ? 'auto' : 'smooth' });
+  }
+
   clearHighlight() {
     this._tabPanesEl.querySelectorAll('.hljs-ln-line').forEach(function(el) {
       el.classList.remove('line-selected');
@@ -478,16 +493,7 @@ export class SourceCodeView {
 
     if (!foundFile) return;
 
-    var animMs     = animate === false ? 0 : SourceCodeView.ANIM_SCROLL_MS;
-    var activePane = self._tabPanesEl.querySelector('.cpp-tab-pane.active');
-    var targets    = activePane
-      ? $(activePane).find('.hljs-ln-line[data-line-number="' + lineNr + '"]')
-      : $(self._tabPanesEl).find('.hljs-ln-line[data-line-number="' + lineNr + '"]');
-
-    targets.addClass('line-selected');
-    if (targets[0])
-      $(activePane || self._tabPanesEl).scrollTo(
-        targets[0], animMs, { over: { top: -5 } });
+    this.highlightLines([lineNr], { scroll: true, animate: animate });
   }
 
   /**
@@ -504,18 +510,12 @@ export class SourceCodeView {
     var range = this._traceLineRanges[traceIndex];
     if (!range) return;
 
-    var animMs    = animate === false ? 0 : SourceCodeView.ANIM_SCROLL_MS;
     var tracePane = this._tabPanesEl.querySelector('.cpp-tab-pane[data-trace-pane="true"]');
     if (!tracePane) return;
 
-    var firstTarget = null;
-    for (var ln = range[0]; ln <= range[1]; ln++) {
-      var els = $(tracePane).find('.hljs-ln-line[data-line-number="' + ln + '"]');
-      els.addClass('line-selected');
-      if (!firstTarget && els[0]) firstTarget = els[0];
-    }
-    if (firstTarget)
-      $(tracePane).scrollTo(firstTarget, animMs, { over: { top: -5 } });
+    var lines = [];
+    for (var ln = range[0]; ln <= range[1]; ln++) lines.push(ln);
+    this.highlightLines(lines, { pane: tracePane, scroll: true, animate: animate });
   }
 
   // ── Badge management ─────────────────────────────────────────────────────────
@@ -907,5 +907,4 @@ export class SourceCodeView {
 // canonical values from state.js.  The defaults match those values so the view
 // is functional even when used standalone.
 SourceCodeView.BADGE_PLACEMENT_DELAY_MS = 200;  // ms before badge DOM insertion
-SourceCodeView.ANIM_SCROLL_MS           = 400;  // ms for animated line scrolling
 SourceCodeView._arrowCounter            = 0;    // unique marker-id counter

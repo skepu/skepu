@@ -1,0 +1,740 @@
+[
+    {
+        "label": "ramp",
+        "line": 251,
+        "object_id": 1000,
+        "time": 0,
+        "type": "allocation"
+    },
+    {
+        "label": "noise",
+        "line": 251,
+        "object_id": 1001,
+        "time": 1,
+        "type": "allocation"
+    },
+    {
+        "label": "table",
+        "line": 251,
+        "object_id": 1002,
+        "time": 2,
+        "type": "allocation"
+    },
+    {
+        "label": "values",
+        "line": 251,
+        "object_id": 1003,
+        "time": 2,
+        "type": "allocation"
+    },
+    {
+        "label": "smoothed",
+        "line": 251,
+        "object_id": 1004,
+        "time": 2,
+        "type": "allocation"
+    },
+    {
+        "label": "grid",
+        "line": 292,
+        "object_id": 1005,
+        "time": 4,
+        "type": "allocation"
+    },
+    {
+        "label": "blurred",
+        "line": 292,
+        "object_id": 1006,
+        "time": 39128,
+        "type": "allocation"
+    },
+    {
+        "label": "prefix",
+        "line": 251,
+        "object_id": 1007,
+        "time": 39130,
+        "type": "allocation"
+    },
+    {
+        "label": "rows",
+        "line": 251,
+        "object_id": 1008,
+        "time": 39130,
+        "type": "allocation"
+    },
+    {
+        "label": "columns",
+        "line": 251,
+        "object_id": 1009,
+        "time": 39131,
+        "type": "allocation"
+    },
+    {
+        "label": "pairs",
+        "line": 292,
+        "object_id": 1010,
+        "time": 39131,
+        "type": "allocation"
+    },
+    {
+        "label": "noise_stream",
+        "line": 139,
+        "object_id": 1011,
+        "time": 39131,
+        "type": "allocation"
+    },
+    {
+        "label": "summary",
+        "line": 251,
+        "object_id": 1012,
+        "time": 39131,
+        "type": "allocation"
+    },
+    {
+        "label": "sums",
+        "line": 251,
+        "object_id": 1013,
+        "time": 39131,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [],
+        "end": 42751,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "ramp_up",
+        "line": 141,
+        "object_id": 1014,
+        "outputs": [
+            1000
+        ],
+        "pattern": "Map",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 42535,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 251,
+        "object_id": 1028,
+        "time": 42762,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [],
+        "end": 42862,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "make_noise",
+        "line": 142,
+        "object_id": 1015,
+        "outputs": [
+            1001
+        ],
+        "pattern": "Map",
+        "prng": 1011,
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 42759,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 282,
+        "object_id": 1028,
+        "time": 42865,
+        "type": "deallocation"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [
+            1000,
+            1001
+        ],
+        "end": 42971,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "mix",
+        "line": 143,
+        "object_id": 1016,
+        "outputs": [
+            1003
+        ],
+        "pattern": "Map",
+        "proxy_inputs": [
+            1002
+        ],
+        "scalar_inputs": [],
+        "start": 42868,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "Relax",
+        "line": 146,
+        "region_depth": 1,
+        "time": 42973,
+        "type": "region"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [
+            1003
+        ],
+        "end": 43257,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "smooth",
+        "line": 147,
+        "object_id": 1017,
+        "outputs": [
+            1004
+        ],
+        "parameters": {
+            "edge": "Pad",
+            "overlap": [
+                2
+            ]
+        },
+        "pattern": "MapOverlap 1D",
+        "proxy_inputs": [],
+        "region": "Relax",
+        "scalar_inputs": [],
+        "start": 42976,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [
+            1004
+        ],
+        "end": 43370,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "damp",
+        "line": 148,
+        "object_id": 1018,
+        "outputs": [
+            1003
+        ],
+        "pattern": "Map",
+        "proxy_inputs": [],
+        "region": "Relax",
+        "scalar_inputs": [],
+        "start": 43265,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "Relax",
+        "line": 146,
+        "region_depth": 1,
+        "time": 43371,
+        "type": "region"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [
+            1003
+        ],
+        "end": 43588,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "smooth",
+        "line": 147,
+        "object_id": 1017,
+        "outputs": [
+            1004
+        ],
+        "parameters": {
+            "edge": "Pad",
+            "overlap": [
+                2
+            ]
+        },
+        "pattern": "MapOverlap 1D",
+        "proxy_inputs": [],
+        "region": "Relax",
+        "scalar_inputs": [],
+        "start": 43371,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [
+            1004
+        ],
+        "end": 43679,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "damp",
+        "line": 148,
+        "object_id": 1018,
+        "outputs": [
+            1003
+        ],
+        "pattern": "Map",
+        "proxy_inputs": [],
+        "region": "Relax",
+        "scalar_inputs": [],
+        "start": 43593,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "Relax",
+        "line": 146,
+        "region_depth": 1,
+        "time": 43679,
+        "type": "region"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [
+            1003
+        ],
+        "end": 43876,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "smooth",
+        "line": 147,
+        "object_id": 1017,
+        "outputs": [
+            1004
+        ],
+        "parameters": {
+            "edge": "Pad",
+            "overlap": [
+                2
+            ]
+        },
+        "pattern": "MapOverlap 1D",
+        "proxy_inputs": [],
+        "region": "Relax",
+        "scalar_inputs": [],
+        "start": 43680,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [
+            1004
+        ],
+        "end": 43972,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "damp",
+        "line": 148,
+        "object_id": 1018,
+        "outputs": [
+            1003
+        ],
+        "pattern": "Map",
+        "proxy_inputs": [],
+        "region": "Relax",
+        "scalar_inputs": [],
+        "start": 43879,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "Relax",
+        "line": 146,
+        "region_depth": 1,
+        "time": 43975,
+        "type": "region"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [
+            1003
+        ],
+        "end": 44190,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "smooth",
+        "line": 147,
+        "object_id": 1017,
+        "outputs": [
+            1004
+        ],
+        "parameters": {
+            "edge": "Pad",
+            "overlap": [
+                2
+            ]
+        },
+        "pattern": "MapOverlap 1D",
+        "proxy_inputs": [],
+        "region": "Relax",
+        "scalar_inputs": [],
+        "start": 43976,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [
+            1004
+        ],
+        "end": 44309,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "damp",
+        "line": 148,
+        "object_id": 1018,
+        "outputs": [
+            1003
+        ],
+        "pattern": "Map",
+        "proxy_inputs": [],
+        "region": "Relax",
+        "scalar_inputs": [],
+        "start": 44193,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [],
+        "end": 44405,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "checker",
+        "line": 150,
+        "object_id": 1019,
+        "outputs": [
+            1005
+        ],
+        "pattern": "Map",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 44311,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            32,
+            32
+        ],
+        "elwise_inputs": [
+            1005
+        ],
+        "end": 44502,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "blur",
+        "line": 151,
+        "object_id": 1020,
+        "outputs": [
+            1006
+        ],
+        "parameters": {
+            "overlap": [
+                1,
+                1
+            ]
+        },
+        "pattern": "MapOverlap 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 44409,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [
+            1003
+        ],
+        "end": 44597,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "total",
+        "line": 152,
+        "object_id": 1021,
+        "outputs": [
+            1041
+        ],
+        "pattern": "Reduce 1D-Full",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 44504,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [
+            1003
+        ],
+        "end": 44757,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "running",
+        "line": 153,
+        "object_id": 1022,
+        "outputs": [
+            1007
+        ],
+        "parameters": {
+            "mode": "Exclusive"
+        },
+        "pattern": "Scan",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 44599,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            1024
+        ],
+        "elwise_inputs": [
+            1003,
+            1004
+        ],
+        "end": 44839,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "dot",
+        "line": 154,
+        "object_id": 1023,
+        "outputs": [
+            1044
+        ],
+        "pattern": "MapReduce",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 44760,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            48,
+            32
+        ],
+        "elwise_inputs": [
+            1008,
+            1009
+        ],
+        "end": 44959,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "outer",
+        "line": 156,
+        "object_id": 1024,
+        "outputs": [
+            1010
+        ],
+        "pattern": "MapPairs",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 44859,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 44960,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "inspect",
+        "line": 157,
+        "outputs": [
+            1012
+        ],
+        "proxy_inputs": [
+            1007
+        ],
+        "scalar_inputs": [],
+        "start": 44960,
+        "type": "external"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            48,
+            32
+        ],
+        "elwise_inputs": [
+            1008,
+            1009
+        ],
+        "end": 45065,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "row_sums",
+        "line": 161,
+        "object_id": 1025,
+        "outputs": [
+            1013
+        ],
+        "pattern": "MapPairsReduce",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 44960,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 45070,
+        "file": ".//..//skepu-headers/src/skepu-lib/io.hpp",
+        "label": "I/O",
+        "line": 54,
+        "outputs": [],
+        "proxy_inputs": [
+            1012
+        ],
+        "scalar_inputs": [],
+        "start": 45066,
+        "type": "external"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 45073,
+        "file": ".//..//skepu-headers/src/skepu-lib/io.hpp",
+        "label": "I/O",
+        "line": 54,
+        "outputs": [],
+        "proxy_inputs": [
+            1013
+        ],
+        "scalar_inputs": [],
+        "start": 45070,
+        "type": "external"
+    },
+    {
+        "label": "sums",
+        "line": 282,
+        "object_id": 1013,
+        "time": 45074,
+        "type": "deallocation"
+    },
+    {
+        "label": "summary",
+        "line": 282,
+        "object_id": 1012,
+        "time": 45075,
+        "type": "deallocation"
+    },
+    {
+        "label": "pairs",
+        "line": 322,
+        "object_id": 1010,
+        "time": 45075,
+        "type": "deallocation"
+    },
+    {
+        "label": "columns",
+        "line": 282,
+        "object_id": 1009,
+        "time": 45076,
+        "type": "deallocation"
+    },
+    {
+        "label": "rows",
+        "line": 282,
+        "object_id": 1008,
+        "time": 45076,
+        "type": "deallocation"
+    },
+    {
+        "label": "prefix",
+        "line": 282,
+        "object_id": 1007,
+        "time": 45076,
+        "type": "deallocation"
+    },
+    {
+        "label": "blurred",
+        "line": 322,
+        "object_id": 1006,
+        "time": 45076,
+        "type": "deallocation"
+    },
+    {
+        "label": "grid",
+        "line": 322,
+        "object_id": 1005,
+        "time": 45076,
+        "type": "deallocation"
+    },
+    {
+        "label": "smoothed",
+        "line": 282,
+        "object_id": 1004,
+        "time": 45076,
+        "type": "deallocation"
+    },
+    {
+        "label": "values",
+        "line": 282,
+        "object_id": 1003,
+        "time": 45077,
+        "type": "deallocation"
+    },
+    {
+        "label": "table",
+        "line": 282,
+        "object_id": 1002,
+        "time": 45078,
+        "type": "deallocation"
+    },
+    {
+        "label": "noise",
+        "line": 282,
+        "object_id": 1001,
+        "time": 45078,
+        "type": "deallocation"
+    },
+    {
+        "label": "ramp",
+        "line": 282,
+        "object_id": 1000,
+        "time": 45079,
+        "type": "deallocation"
+    }
+]

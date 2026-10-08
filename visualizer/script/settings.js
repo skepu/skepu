@@ -1,8 +1,9 @@
 // settings.js — Centralised settings persistence and menu sync.
 // Reads/writes State.settings instead of hidden DOM form controls.
+import { knownTheme, SETTINGS_KEY } from './appearance.js';
 import { State } from './state.js';
 
-var STORAGE_KEY = 'skepu-visualizer-settings-v1';
+var STORAGE_KEY = SETTINGS_KEY;
 
 var SETTING_CHECKBOXES = [
   'container-updates', 'container-allocations', 'container-deallocations',
@@ -116,7 +117,7 @@ export function loadSettings() {
       document.documentElement.classList.toggle('dark-mode', State._darkMode);
     }
     if (s.layout['hljs-theme'] != null) {
-      State._hljsTheme = s.layout['hljs-theme'];
+      State._hljsTheme = knownTheme(s.layout['hljs-theme']);
       if (typeof _applyHljsTheme === 'function') _applyHljsTheme(State._hljsTheme);
     }
     if (s.layout['code-paths'] != null) {

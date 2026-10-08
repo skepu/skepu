@@ -36,55 +36,15 @@
 
 'use strict';
 
+import { buildGraphStyle } from './graph_style.js';
+import { PAN_ZOOM_OPTIONS, bindPanZoom, ZOOM_FIT_PAD, roomAround, animateFit } from './panzoom.js';
+import { showTooltip, hideTooltip, positionTooltip, nodeTooltipText, edgeTooltipText } from './tooltip.js';
+import { highlightSelection, bindHover } from './graph_interaction.js';
+import { basePattern } from './TraceDataProvider.js';
+
 // ── Shared page resources ─────────────────────────────────────────────────────
-// One tooltip and one ELK instance per page is correct: only one element can be
-// hovered at a time, and the ELK worker is expensive to spawn.
+// One ELK instance per page is correct: the ELK worker is expensive to spawn. (The tooltip is tooltip.js.)
 
-var _sharedTooltip     = null;
-var _sharedTooltipTimer = null;
-
-function _ensureTooltip() {
-  if (!_sharedTooltip) {
-    _sharedTooltip = document.createElement('div');
-    _sharedTooltip.className = 'gv-tooltip';
-    _sharedTooltip.style.cssText =
-      'position:fixed;display:none;background:rgba(30,30,30,0.92);color:#eee;' +
-      'font:12px/1.4 monospace;padding:6px 9px;border-radius:4px;' +
-      'white-space:pre;pointer-events:none;z-index:9999;max-width:320px;' +
-      'box-shadow:0 2px 8px rgba(0,0,0,0.4);';
-    document.body.appendChild(_sharedTooltip);
-  }
-  return _sharedTooltip;
-}
-
-function _showTooltip(content, x, y) {
-  var tip = _ensureTooltip();
-  clearTimeout(_sharedTooltipTimer);
-  _sharedTooltipTimer = setTimeout(function() {
-    tip.textContent = content;
-    tip.style.display = 'block';
-    _positionTooltip(x, y);
-  }, 500);
-}
-
-function _hideTooltip() {
-  clearTimeout(_sharedTooltipTimer);
-  if (_sharedTooltip) _sharedTooltip.style.display = 'none';
-}
-
-function _positionTooltip(x, y) {
-  var tip = _sharedTooltip;
-  if (!tip) return;
-  var pad = 14;
-  tip.style.left = '-9999px';
-  tip.style.top  = '-9999px';
-  var tw = tip.offsetWidth, th = tip.offsetHeight;
-  var left = x + pad, top = y + pad;
-  if (left + tw > window.innerWidth  - 8) left = x - tw - pad;
-  if (top  + th > window.innerHeight - 8) top  = y - th - pad;
-  tip.style.left = left + 'px';
-  tip.style.top  = top  + 'px';
-}
 
 var _sharedElk       = null;
 var _sharedElkUrl    = null;
@@ -99,21 +59,12 @@ function _getElk(workerUrl) {
 
 
 
-function toSubscript(val) {
-  return ('' + val).replace(/[0-9]/g, function (d) { return '₀₁₂₃₄₅₆₇₈₉'[d]; });
-}
-
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const NODE_SIZE_SCALE    = 100;
-const NODE_SIZE_MIN      = 15;
 const COMPOUND_SEP_SCALE = 0.15;
 const LAYOUT_NODE_SEP    = 15;
 const LAYOUT_RANK_SEP    = 20;
 const LAYOUT_FIT_PAD     = 30;
-const ANIM_ZOOM_MS       = 400;
-const ZOOM_FIT_PAD       = 40;
-const ZOOM_NODE_DIVISOR  = 2.3;
 const HIGHLIGHT_LIGHT    = '#0055cc';
 const HIGHLIGHT_DARK     = '#e8720c';
 
@@ -296,23 +247,16 @@ export class GraphView {
     opts = opts || {};
     var zoom     = (opts.zoom !== false);
     var self     = this;
-    this._cy.nodes().removeClass('selected_gutter');
-    this._cy.edges().removeClass('edge-highlighted');
     var eles = this._cy.collection();
     (nodeIds || []).forEach(function(id) {
       var ele = self._resolveVisible(id);
-      if (ele && ele.length > 0) {
-        ele.addClass('selected_gutter');
-        ele.connectedEdges().addClass('edge-highlighted');
-        eles = eles.union(ele);
-      }
+      if (ele && ele.length > 0) eles = eles.union(ele);
     });
+    highlightSelection(this._cy, eles, this._cy.collection());
     if (zoom && eles.length > 0) {
       var focusEle = opts.focusId ? this._resolveVisible(opts.focusId) : null;
       if (!focusEle || !focusEle.length) focusEle = eles;
-      var pad = this._cy.height() / ZOOM_NODE_DIVISOR;
-      this._cy.animate({ fit: { eles: focusEle, padding: pad } },
-                       { duration: ANIM_ZOOM_MS });
+      animateFit(this._cy, focusEle, roomAround(this._cy));
     }
   }
 
@@ -333,6 +277,11 @@ export class GraphView {
     return !!(this._cy && this._cy.$(selector).length > 0);
   }
 
+  /** The room around an element that the view is fitted to: an open region is fitted, a node has room around it. */
+  _focusPadding(ele) {
+    return (ele.data('type') === 'region' && !ele.data('collapsed')) ? ZOOM_FIT_PAD : roomAround(this._cy);
+  }
+
   /** Animate-fit the viewport to a single node, highlighting it. */
   zoomToFit(nodeId) {
     if (!this._cy) return;
@@ -340,9 +289,7 @@ export class GraphView {
     var item = this._cy.$id(nodeId);
     if (!item.length) return;
     item.addClass('selected_gutter');
-    var pad = (item.data('type') === 'region' && !item.data('collapsed'))
-      ? ZOOM_FIT_PAD : this._cy.height() / ZOOM_NODE_DIVISOR;
-    this._cy.animate({ fit: { eles: item, padding: pad } }, { duration: ANIM_ZOOM_MS });
+    animateFit(this._cy, item, this._focusPadding(item));
   }
 
   /** Animate-fit the viewport to a group of nodes. */
@@ -352,7 +299,7 @@ export class GraphView {
     var sel = nodeIds.map(function(id) { return '#' + id; }).join(',');
     var items = this._cy.$(sel);
     items.addClass('selected_gutter');
-    this._cy.animate({ fit: { eles: items, padding: ZOOM_FIT_PAD } }, { duration: ANIM_ZOOM_MS });
+    animateFit(this._cy, items, ZOOM_FIT_PAD);
   }
 
   /** Download the current graph as a high-resolution PNG. */
@@ -436,17 +383,11 @@ export class GraphView {
     opts = opts || {};
     var zoom = (opts.zoom !== false) && (opts.source !== 'graph');
 
-    this._cy.nodes().removeClass('selected_gutter');
-    this._cy.edges().removeClass('edge-highlighted');
-
     var ele = this._resolveVisible(nodeId);
+    highlightSelection(this._cy, (ele && ele.length > 0) ? ele : this._cy.collection(), this._cy.collection());
     if (ele && ele.length > 0) {
-      ele.addClass('selected_gutter');
-      ele.connectedEdges().addClass('edge-highlighted');
       if (zoom) {
-        var pad = (ele.data('type') === 'region' && !ele.data('collapsed'))
-          ? ZOOM_FIT_PAD : this._cy.height() / ZOOM_NODE_DIVISOR;
-        this._cy.animate({ fit: { eles: ele, padding: pad } }, { duration: ANIM_ZOOM_MS });
+        animateFit(this._cy, ele, this._focusPadding(ele));
       }
     }
   }
@@ -598,9 +539,7 @@ export class GraphView {
       self._cy = cytoscape({
         container: self._cyEl,
         elements:  edges.concat(nodes),
-        wheelSensitivity: 0.0,
-        minZoom: 0.01, maxZoom: 5,
-        userZoomingEnabled: true,
+        ...PAN_ZOOM_OPTIONS,
         style:  self._buildStyle(minmax, rawData),
         layout: { name: 'null' },
       });
@@ -649,386 +588,18 @@ export class GraphView {
   // refer to the correct instance state even after settings change.
 
   _buildStyle(minmax, data) {
-    var self         = this;
-    var node_labels  = this.settings['node-labels'];
-    var edge_labels  = this.settings['edge-labels'];
-    var transfer_map = { 'host-to-device': '↑', 'device-to-host': '↓' };
-
-    function dark()     { return self._darkMode; }
-    function hcol()     { return self._highlightColor(); }
-    function sc(t)      { return self._spectrumColor(t); }
-    function scd(t)     { return self._spectrumColorDark(t); }
-    function norm(k, e) { return self._normProp(k, e, minmax); }
-
-    // Region colours — match the regionColorLight/Dark values used in LegendView.
-    function regionColorLight(d) {
-      return 'rgb(' + Math.max(20, 225 - d*34) + ',' + Math.max(185, 240 - d*9) + ',255)';
-    }
-    function regionColorDark(d) {
-      return 'rgb(' + Math.min(100, 42+d*15) + ',' + Math.min(74, 31+d*10) + ',' + Math.min(42, 16+d*6) + ')';
-    }
-
-    return [
-      {
-        selector: 'node',
-        style: {
-          'color':              function() { return dark() ? 'white' : 'black'; },
-          'text-outline-color': function() { return dark() ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)'; },
-          'text-outline-width': 0.8,
-          'font-size': '0.6em',
-          'min-zoomed-font-size': '0.4em',
-          'opacity': function(ele) {
-            if (self._opaqueNodes.length === 0) return 1;
-            return self._opaqueNodes.includes(ele.data('id')) ? 1 : 0.2;
-          },
-        }
-      },
-      {
-        selector: 'node[type="allocation"]',
-        style: {
-          'content':          function(ele) { return node_labels ? ele.data('label') : ''; },
-          'text-valign':      'center',
-          'shape':            'star',
-          'border-width':     1,
-          'background-color': 'white',
-          'border-color':     '#333',
-        }
-      },
-      {
-        selector: 'node[type="deallocation"]',
-        style: {
-          'content':          function(ele) { return node_labels ? ele.data('label') : ''; },
-          'text-valign':      'center',
-          'shape':            'star',
-          'border-width':     1,
-          'background-color': 'black',
-          'border-color':     '#ddd',
-        }
-      },
-      {
-        selector: 'node[type="external"]',
-        style: {
-          'content':          function(ele) { return node_labels ? ele.data('label') : ''; },
-          'text-valign':      'center',
-          'shape':            'octagon',
-          'background-color': function(ele) { return sc(norm('node-color-call', ele)); },
-          'border-width':     3,
-          'border-color':     function(ele) { return scd(norm('node-color-call', ele)); },
-          'width':  function(ele) { return NODE_SIZE_SCALE * Math.sqrt(norm('node-size-call', ele)) + NODE_SIZE_MIN; },
-          'height': function(ele) { return NODE_SIZE_SCALE * Math.sqrt(norm('node-size-call', ele)) + NODE_SIZE_MIN; },
-        }
-      },
-      {
-        selector: 'node[type="transfer"]',
-        style: {
-          'content':          function(ele) { return node_labels ? ele.data('label') + (transfer_map[ele.data('direction')] || '') : ''; },
-          'text-valign':      'center',
-          'shape':            'diamond',
-          'background-color': 'purple',
-          'border-width':     3,
-          'border-color':     '#6a006a',
-        }
-      },
-      {
-        selector: 'node[type="container_update"], node[type="scalar"]',
-        style: {
-          'content': function(ele) {
-            if (!node_labels) return '';
-            return ele.data('iteration_count') > 1
-              ? ele.data('label') + ' x' + ele.data('iteration_count')
-              : ele.data('label') + (ele.data('version_count') > 1 ? toSubscript(ele.data('version')) : '');   // (no subscript for the only version)
-          },
-          'text-valign':      'center',
-          'shape':            'rectangle',
-          'height':           20, 'width': 45,
-          'background-color': 'lightgray',
-          'border-width':     3,
-          'border-color':     '#979797',
-        }
-      },
-      {
-        selector: 'node[type="container_update"][has_snapshot]',
-        style: {
-          'background-color': function() { return dark() ? '#3a2e00' : '#fff0a0'; },
-          'border-color':     function() { return dark() ? '#c8a000' : '#b8860b'; },
-        }
-      },
-      {
-        selector: 'node[type="scalar"]',
-        style: {
-          'content':       function(ele) { return node_labels ? ele.data('label') : ''; },
-          'text-margin-y': 2,
-          'shape':         'triangle',
-          'height':        20, 'width': 25,
-        }
-      },
-      {
-        selector: 'node[type="skeleton_call"]',
-        style: {
-          'content': function(ele) {
-            if (!node_labels) return '';
-            return ele.data('iteration_count') > 1
-              ? ele.data('label') + ' x' + ele.data('iteration_count')
-              : ele.data('label');
-          },
-          'shape':      'ellipse',
-          'text-valign': 'center',
-          'background-color': function(ele) {
-            var mode = self.settings['node-color-call'];
-            if (mode === 'backend') {
-              return self._provider.backendColor(ele.data('backend')) || sc(norm('node-color-call', ele));
-            }
-            if (mode === 'pattern') {
-              return self._provider.patternColor(ele.data('pattern')) || sc(norm('node-color-call', ele));
-            }
-            return sc(norm('node-color-call', ele));
-          },
-          'border-width': 3,
-          'border-color': function(ele) {
-            var mode = self.settings['node-color-call'];
-            if (mode === 'backend') {
-              return self._provider.backendColor(ele.data('backend'), true) || '#555';
-            }
-            if (mode === 'pattern') {
-              return self._provider.patternColor(ele.data('pattern'), true) || '#555';
-            }
-            return scd(norm('node-color-call', ele));
-          },
-          'width':  function(ele) { return NODE_SIZE_SCALE * Math.sqrt(norm('node-size-call', ele)) + NODE_SIZE_MIN; },
-          'height': function(ele) { return NODE_SIZE_SCALE * Math.sqrt(norm('node-size-call', ele)) + NODE_SIZE_MIN; },
-        }
-      },
-      {
-        selector: 'node[type="region"]',
-        style: {
-          'content': function(ele) {
-            if (!node_labels) return '';
-            return ele.data('iteration_count') > 1
-              ? ele.data('label') + ' x' + ele.data('iteration_count')
-              : ele.data('label');
-          },
-          'border-color':     function() { return dark() ? '#170D00' : '#006770'; },
-          'border-width':     0,
-          'background-color': function(ele) {
-            var d = ele.data('region_depth') || 0;
-            return dark() ? regionColorDark(d) : regionColorLight(d);
-          },
-        }
-      },
-      {
-        selector: 'node[type="fusion"]',
-        style: {
-          'content':          function(ele) { return node_labels ? ele.data('label') : ''; },
-          'background-color': '#88f',
-        }
-      },
-      {
-        selector: 'node[type="fusion"][collapsed]',
-        style: {
-          'content':          function(ele) { return node_labels ? ele.data('label') : ''; },
-          'text-halign':      'center', 'text-valign': 'center',
-          'background-color': '#88f',
-        }
-      },
-      {
-        selector: 'node[type="region"][collapsed], node[type="tree-region"]',
-        style: {
-          'content': function(ele) {
-            if (!node_labels) return '';
-            return ele.data('iteration_count') > 1
-              ? ele.data('label') + ' x' + ele.data('iteration_count')
-              : ele.data('label');
-          },
-          'shape':            'round-rectangle',
-          'text-valign':      'center',
-          'border-width':     3,
-          'height':           40, 'width': 64,
-          'border-color':     function() { return dark() ? '#733103' : '#006770'; },
-          'background-color': function() { return dark() ? '#3B1A02' : 'skyblue'; },
-        }
-      },
-      {
-        selector: 'node.layout-phantom',
-        style: {
-          'background-opacity': 0, 'border-width': 0,
-          'label': '', 'events': 'no', 'padding': 0,
-        }
-      },
-      {
-        selector: '.selected_gutter',
-        style: { 'border-width': 5, 'border-color': function() { return hcol(); } }
-      },
-      {
-        selector: 'edge.grouped-hidden',
-        style: { 'display': 'none' }
-      },
-      {
-        selector: 'edge',
-        style: {
-          'content': function(ele) {
-            if (self._groupedEdgeReps.has(ele.id())) return ele.data('label') || '';
-            return edge_labels ? (ele.data('label') || '') : '';
-          },
-          'text-outline-width': 0.8,
-          'text-outline-color': function() { return dark() ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)'; },
-          'color':  function() { return dark() ? 'white' : 'black'; },
-          'font-size': '0.5em',
-          'width': function(ele) {
-            var m = self.settings['edge-width'];
-            if (m === 'critical-path' || m === 'cross-backend') {
-              return (m === 'critical-path' ? ele.data('is_critical_path') : ele.data('cross_backend')) ? 5 : 1;
-            }
-            if (m === 'iterations') {
-              var mm2 = minmax['iterations'];
-              if (!mm2 || mm2.max === mm2.min) return 1.5;
-              return 1 + Math.max(0, Math.min(1, (ele.data('iteration_count') - mm2.min) / (mm2.max - mm2.min))) * 5;
-            }
-            if (m === 'order-span') {
-              var mm3 = minmax['order-span'];
-              if (!mm3 || mm3.max === mm3.min) return 1.5;
-              return 1 + Math.max(0, Math.min(1, (ele.data('order_span') - mm3.min) / (mm3.max - mm3.min))) * 5;
-            }
-            if (m === 'elements') {
-              var wels = ele.source().data('elements');
-              if (!wels) return 1.5;
-              var mm4 = minmax['elements'];
-              if (!mm4 || mm4.max === mm4.min) return 1.5;
-              return 1 + Math.max(0, Math.min(1, (wels.reduce(function(a,b){return a*b;},1) - mm4.min) / (mm4.max - mm4.min))) * 5;
-            }
-            return 1.5;
-          },
-          'target-arrow-shape': 'triangle',
-          'line-color':         function() { return dark() ? '#ccc' : '#333'; },
-          'target-arrow-color': function() { return dark() ? '#ccc' : '#333'; },
-          'curve-style':  'bezier',
-          'taxi-direction': 'downward',
-          'opacity': function(ele) {
-            // opaqueNodes dimming takes priority over all settings-based modes.
-            if (self._opaqueNodes.length > 0 &&
-                !self._opaqueNodes.includes(ele.data('id'))) return 0.2;
-            var m = self.settings['edge-opacity'];
-            if (m === 'critical-path' || m === 'cross-backend') {
-              return (m === 'critical-path' ? ele.data('is_critical_path') : ele.data('cross_backend')) ? 1 : 0.15;
-            }
-            if (m === 'iterations') {
-              var mm2 = minmax['iterations'];
-              if (!mm2 || mm2.max === mm2.min) return 1;
-              return 0.15 + Math.max(0, Math.min(1, (ele.data('iteration_count') - mm2.min) / (mm2.max - mm2.min))) * 0.85;
-            }
-            if (m === 'order-span') {
-              var mm3 = minmax['order-span'];
-              if (!mm3 || mm3.max === mm3.min) return 1;
-              return 0.15 + Math.max(0, Math.min(1, (ele.data('order_span') - mm3.min) / (mm3.max - mm3.min))) * 0.85;
-            }
-            if (m === 'elements') {
-              var oels = ele.source().data('elements');
-              if (!oels) return 1;
-              var mm4 = minmax['elements'];
-              if (!mm4 || mm4.max === mm4.min) return 1;
-              return 0.15 + Math.max(0, Math.min(1, (oels.reduce(function(a,b){return a*b;},1) - mm4.min) / (mm4.max - mm4.min))) * 0.85;
-            }
-            return 1;
-          },
-        }
-      },
-      {
-        selector: 'edge[type="anti-dep"]',
-        style: { 'line-color': 'red', 'target-arrow-color': 'red' }
-      },
-      {
-        selector: 'edge[access_mode="elwise"]',
-        style: { 'line-style': 'dashed' }
-      },
-      {
-        selector: 'edge[access_mode="scalar"]',
-        style: { 'line-style': 'dotted' }
-      },
-      {
-        selector: 'edge[type="virtual-alias"]',
-        style: {
-          'line-color':         function() { return dark() ? '#bb8fce' : '#8e44ad'; },
-          'line-style':         'dashed',
-          'line-dash-pattern':  [8, 4],
-          'target-arrow-shape': 'none',
-          'source-arrow-shape': 'none',
-          'width':              1.5,
-          'opacity':            0.65,
-        }
-      },
-      {
-        selector: 'edge[type="prng-dep"]',
-        style: {
-          'curve-style':       'segments',
-          'segment-weights':   '0.2 0.4 0.6 0.8',
-          'segment-distances': '3 -3 3 -3',
-          'opacity':           0.65,
-        }
-      },
-      {
-        selector: ':selected, :active',
-        style: { 'overlay-opacity': 0 }
-      },
-      {
-        selector: 'edge.edge-highlighted',
-        style: {
-          'line-color':         function() { return hcol(); },
-          'target-arrow-color': function() { return hcol(); },
-          'width': 3,
-        }
-      },
-      {
-        selector: 'edge.edge-bidir',
-        style: {
-          'source-arrow-shape': 'triangle',
-          'source-arrow-color': function() { return dark() ? '#ccc' : '#333'; },
-        }
-      },
-      {
-        selector: 'edge.edge-bidir[type="anti-dep"]',
-        style: { 'source-arrow-color': 'red' }
-      },
-      {
-        selector: 'edge.edge-highlighted[type="anti-dep"]',
-        style: { 'line-color': 'red', 'target-arrow-color': 'red', 'width': 3 }
-      },
-      {
-        selector: 'node.cy-hovered',
-        style: { 'border-width': 6 }
-      },
-      {
-        selector: 'edge.cy-hovered',
-        style: { 'width': 4 }
-      },
-    ];
+    return buildGraphStyle(this, minmax);
   }
 
-  // ── Legend key helpers ────────────────────────────────────────────────────────
-
-  /** Map a node type string to its data-legend-key value, or null if unmapped. */
-  _typeToLegendKey(type) {
-    return ({
-      'skeleton_call':    'skeleton',
-      'external':         'external',
-      'scalar':           'scalar-node',
-      'transfer':         'transfer',
-      'container_update': 'container_update',
-      'allocation':       'allocation',
-      'deallocation':     'deallocation',
-      'region':           'region',
-      'fusion':           'fusion',
-    })[type] || null;
-  }
-
-  /** Map an edge element to its data-legend-key value, or null if unmapped. */
-  _edgeToLegendKey(ele) {
-    var d = ele.data();
-    if (d.type === 'anti-dep')      return 'anti-dep';
-    if (d.type === 'virtual-alias') return 'virtual-alias';
-    if (d.type === 'prng-dep')      return 'prng-dep';
-    if (d.access_mode === 'elwise') return 'elwise';
-    if (d.access_mode === 'scalar') return 'scalar';
-    if (d.type === 'forward-dep')   return 'proxy';
-    return null;
+  /** The names of the backends or the patterns (`mode`: 'backend' or 'pattern') that the calls in the graph have (LegendView puts them in order). */
+  callCategories(mode) {
+    if (!this._cy) return [];
+    var seen = {};
+    this._cy.nodes('[type="skeleton_call"]').forEach(function(n) {
+      var name = mode === 'backend' ? n.data('backend') : basePattern(n.data('pattern'));
+      if (name) seen[name] = true;
+    });
+    return Object.keys(seen);
   }
 
   // ── Cytoscape event binding ──────────────────────────────────────────────────
@@ -1091,11 +662,7 @@ export class GraphView {
       var ele = event.target;
       var d   = ele.data();
 
-      cy.edges().removeClass('edge-highlighted');
-      cy.nodes().removeClass('selected_gutter');
-      ele.addClass('edge-highlighted');
-      cy.$id(d.source).addClass('selected_gutter');
-      cy.$id(d.target).addClass('selected_gutter');
+      highlightSelection(cy, cy.collection(), ele);
 
       // If this is a grouped representative, also highlight all group members.
       if (self._groupedEdgeReps.has(ele.id())) {
@@ -1112,98 +679,41 @@ export class GraphView {
       if (self._onEdgeClick) self._onEdgeClick(d, cy);
     });
 
-    // ── Scroll / pinch-zoom (trackpad / touch) ───────────────────────────────
-    this._cyEl.addEventListener('wheel', function(event) {
-      event.preventDefault();
-      if (!self._isZooming)
-        cy.panBy({ x: event.deltaX * -1.5, y: event.deltaY * -1.5 });
-    }, { passive: false });
+    // ── Scroll / pinch-zoom (trackpad / touch): shared with the designer ─────
+    if (this._unbindPanZoom) this._unbindPanZoom();            // (the element stays when the graph is made again: its listeners of the old graph go)
+    this._unbindPanZoom = bindPanZoom(cy, this._cyEl);
 
-    this._cyEl.addEventListener('gesturestart', function(e) {
-      self._baseZoom = cy.zoom();
-      self._isZooming = true;
+    // ── Hover tooltip + border highlight + legend highlight (graph_interaction.js, tooltip.js) ────
+    if (this._unbindHover) this._unbindHover();
+    this._unbindHover = bindHover(cy, this._cyEl, {
+      over: function(target, event) {
+        var content = target.isNode() ? nodeTooltipText(target.data()) : edgeTooltipText(target.data());
+        if (content) showTooltip(content, event.originalEvent.clientX, event.originalEvent.clientY);
+        if (self._legendView) self._legendView.highlightFor(target);
+        if (target.isNode()) {
+          if (self._onNodeHover) self._onNodeHover(target.data('id'));
+        } else {
+          if (self._onEdgeHover) self._onEdgeHover(target.data('source'), target.data('target'));
+        }
+      },
+      move: function(event) { positionTooltip(event.originalEvent.clientX, event.originalEvent.clientY); },
+      out: function(target) {
+        hideTooltip();
+        if (self._legendView) self._legendView.clearHighlight();
+        if (target.isNode()) {
+          if (self._onNodeHoverEnd) self._onNodeHoverEnd(target.data('id'));
+        } else {
+          if (self._onEdgeHoverEnd) self._onEdgeHoverEnd(target.data('source'), target.data('target'));
+        }
+      },
+      reset: hideTooltip,
+      leave: function() {
+        hideTooltip();
+        if (self._legendView) self._legendView.clearHighlight();
+        if (self._onNodeHoverEnd)  self._onNodeHoverEnd(null);
+        if (self._onEdgeHoverEnd)  self._onEdgeHoverEnd(null, null);
+      },
     });
-    this._cyEl.addEventListener('gestureend', function() {
-      self._isZooming = false;
-    });
-    this._cyEl.addEventListener('gesturechange', function(e) {
-      var rect = e.target.getBoundingClientRect();
-      cy.zoom({
-        level: Math.pow(e.scale, 1.2) * self._baseZoom,
-        renderedPosition: { x: e.clientX - rect.left, y: e.clientY - rect.top },
-      });
-    });
-
-    // ── Hover tooltip + border highlight + legend highlight ──────────────────
-    cy.on('mouseover', 'node, edge', function(event) {
-      var target = event.target;
-      if (target.hasClass('layout-phantom')) return;
-      target.addClass('cy-hovered');
-      var content = target.isNode()
-        ? self._nodeTooltipContent(target)
-        : self._edgeTooltipContent(target);
-      if (content) _showTooltip(content, event.originalEvent.clientX, event.originalEvent.clientY);
-      if (self._legendView) {
-        var key = target.isNode()
-          ? self._typeToLegendKey(target.data('type'))
-          : self._edgeToLegendKey(target);
-        self._legendView.highlightKey(key);
-      }
-      if (target.isNode()) {
-        if (self._onNodeHover) self._onNodeHover(target.data('id'));
-      } else {
-        if (self._onEdgeHover) self._onEdgeHover(target.data('source'), target.data('target'));
-      }
-    });
-    cy.on('mousemove', 'node, edge', function(event) {
-      _positionTooltip(event.originalEvent.clientX, event.originalEvent.clientY);
-    });
-    cy.on('mouseout mousedown', 'node, edge', function(event) {
-      event.target.removeClass('cy-hovered');
-      _hideTooltip();
-      if (self._legendView) self._legendView.clearHighlight();
-      if (event.target.isNode()) {
-        if (self._onNodeHoverEnd) self._onNodeHoverEnd(event.target.data('id'));
-      } else {
-        if (self._onEdgeHoverEnd) self._onEdgeHoverEnd(event.target.data('source'), event.target.data('target'));
-      }
-    });
-    cy.on('mousedown viewport', _hideTooltip);
-    this._cyEl.addEventListener('mouseleave', function() {
-      cy.elements().removeClass('cy-hovered');
-      _hideTooltip();
-      if (self._legendView) self._legendView.clearHighlight();
-      if (self._onNodeHoverEnd)  self._onNodeHoverEnd(null);
-      if (self._onEdgeHoverEnd)  self._onEdgeHoverEnd(null, null);
-    });
-  }
-
-  // ── Tooltip content helpers ──────────────────────────────────────────────────
-
-  _nodeTooltipContent(ele) {
-    var d = ele.data(), lines = [];
-    if (d.label) lines.push(d.label);
-    var dur = _fmtDur(d.duration);
-    if (dur) lines.push('time     ' + dur);
-    if (d.elements && d.elements.length) lines.push('size     ' + d.elements.join(' \xd7 '));
-    if (d.backend) lines.push('backend  ' + d.backend);
-    if (d.pattern) lines.push('pattern  ' + d.pattern);
-    if (d.file && d.line != null && d.line !== -1)
-      lines.push(d.file.split('/').pop().split('\\').pop() + ':' + d.line);
-    return lines.join('\n');
-  }
-
-  _edgeTooltipContent(ele) {
-    var d = ele.data();
-    var typeLabel = d.type === 'forward-dep'   ? 'Data dependence'
-                  : d.type === 'anti-dep'      ? 'Anti-dependence'
-                  : d.type === 'virtual-alias' ? 'Virtual alias: ' + (d.virtual_label || '')
-                  : d.type === 'prng-dep'      ? 'PRNG dep: '      + (d.prng_label   || '')
-                  : d.type || 'Edge';
-    var lines = [typeLabel];
-    if (d.label)       lines.push(d.label);
-    if (d.access_mode) lines.push('mode  ' + d.access_mode);
-    return lines.join('\n');
   }
 
   // ── Visible-node resolution ──────────────────────────────────────────────────
@@ -1461,13 +971,6 @@ export class GraphView {
 
 // ── Module-level pure utilities ───────────────────────────────────────────────
 
-function _fmtDur(us) {
-  if (us == null || us < 0) return null;
-  if (us >= 1e6)  return (us / 1e6).toFixed(1)  + ' s';
-  if (us >= 1000) return (us / 1000).toFixed(1) + ' ms';
-  return us.toFixed(0) + ' μs';
-}
-
 function _collectElkPositions(nodes, positions, parentAbsX, parentAbsY) {
   if (!nodes) return;
   nodes.forEach(function(n) {
@@ -1476,198 +979,4 @@ function _collectElkPositions(nodes, positions, parentAbsX, parentAbsY) {
     positions[n.id] = { x: absX + (n.width || 0) / 2, y: absY + (n.height || 0) / 2 };
     if (n.children && n.children.length) _collectElkPositions(n.children, positions, absX, absY);
   });
-}
-
-// ── LegendView ────────────────────────────────────────────────────────────────
-//
-// Renders the legend panel for a GraphView.  Defined in GraphView.js because
-// it is tightly coupled: it calls graphView.hasElements() to filter out entry
-// types that are not present in the current graph, and graphView._spectrumColor()
-// / _spectrumColorDark() for the spectrum gradient.
-//
-// Usage (see graph.js):
-//
-//   import { GraphView, LegendView } from './GraphView.js';
-//
-//   const legend = new LegendView(document.getElementById('legend'), graphView);
-//   legend.settings = sharedSettingsObject;   // same reference as graphView.settings
-//   legend.render(darkMode);                  // call after each render / dark-mode change
-//
-export class LegendView {
-  // legendEl  — the #legend container element (safe to pass null; render() is a no-op)
-  // graphView — the associated GraphView instance (used for hasElements + spectrum colors)
-  constructor(legendEl, graphView) {
-    this._legendEl  = legendEl;
-    this._gv        = graphView;
-    this.settings   = {};   // set by graph.js to the shared settings reference
-  }
-
-  // Build or rebuild the full legend panel.
-  render(darkMode) {
-    if (!this._legendEl) return;
-
-    var dark    = !!darkMode;
-    var midClr  = this._gv._spectrumColor(0.15);
-    var midDark = this._gv._spectrumColorDark(0.15);
-
-    // ── Theme-aware colours ────────────────────────────────────────────────
-    var textClr   = dark ? '#c8c0d8' : '#333333';
-    var edgeClr   = dark ? '#aaaaaa' : '#444444';
-    var ctFill    = '#cccccc';   // container_update / scalar
-    var ctStroke  = '#979797';   // darkened version of fill
-    var allocFill = 'white';     // allocation — matches Cytoscape background-color
-    var allocStr  = '#333';      // allocation border
-    var dealFill  = 'black';     // deallocation — matches Cytoscape background-color
-    var dealStr   = '#ddd';      // deallocation border — light against dark fill
-    // region depth-0 colours, matching regionColorLight/Dark in GraphView
-    var regionF   = dark ? 'rgb(42,31,16)'        : 'rgb(225,240,255)';
-    var regionS   = dark ? 'rgba(200,160,80,0.5)' : 'rgba(70,155,220,0.6)';
-    var fusionF   = '#aaaaff';
-    var fusionS   = '#6655cc';
-
-    // ── SVG shape helpers ──────────────────────────────────────────────────
-    var STAR = '10,2 11.8,7.6 17.6,7.5 12.9,10.9 14.7,16.5 10,13 5.3,16.5 7.2,10.9 2.4,7.5 8.2,7.6';
-    // Octagon rotated 22.5° so edges (not vertices) face top and bottom.
-    var OCTA = '17.4,6.9 17.4,13.1 13.1,17.4 6.9,17.4 2.6,13.1 2.6,6.9 6.9,2.6 13.1,2.6';
-
-    function nodeIcon(inner) {
-      return '<svg viewBox="0 0 20 20" width="18" height="18">' + inner + '</svg>';
-    }
-
-    function edgeIcon(dashArray, color) {
-      color = color || edgeClr;
-      var da = dashArray ? ' stroke-dasharray="' + dashArray + '"' : '';
-      return '<svg viewBox="0 0 44 12" width="40" height="12">' +
-        '<line x1="2" y1="6" x2="34" y2="6" stroke="' + color + '" stroke-width="1.5"' + da + '/>' +
-        '<polygon points="44,6 32,2 32,10" fill="' + color + '"/>' +
-        '</svg>';
-    }
-
-    // Returns true if the current graph contains at least one element matching selector.
-    var gv = this._gv;
-    function inGraph(selector) {
-      return gv.hasElements(selector);
-    }
-
-    // ── Node entries ───────────────────────────────────────────────────────
-    var nodeEntries = [];
-    if (inGraph('node[type="skeleton_call"]'))
-      nodeEntries.push([nodeIcon('<circle cx="10" cy="10" r="9" fill="' + midClr + '" stroke="' + midDark + '" stroke-width="1.5"/>'),
-       'Skeleton', 'skeleton']);
-    if (inGraph('node[type="external"]'))
-      nodeEntries.push([nodeIcon('<polygon points="' + OCTA + '" fill="' + midClr + '" stroke="' + midDark + '" stroke-width="1.5"/>'),
-       'External', 'external']);
-    if (inGraph('node[type="scalar"]'))
-      nodeEntries.push([nodeIcon('<polygon points="10,2 18,17 2,17" fill="' + ctFill + '" stroke="' + ctStroke + '" stroke-width="2"/>'),
-       'Scalar', 'scalar-node']);
-    if (inGraph('node[type="transfer"]'))
-      nodeEntries.push([nodeIcon('<polygon points="10,1 19,10 10,19 1,10" fill="purple" stroke="#6a006a" stroke-width="1.5"/>'),
-       'Transfer', 'transfer']);
-    if (inGraph('node[type="container_update"]'))
-      nodeEntries.push([nodeIcon('<rect x="3" y="3" width="14" height="14" fill="' + ctFill + '" stroke="' + ctStroke + '" stroke-width="2"/>'),
-       'Data Update', 'container_update']);
-    if (inGraph('node[type="allocation"]'))
-      nodeEntries.push([nodeIcon('<polygon points="' + STAR + '" fill="' + allocFill + '" stroke="' + allocStr + '" stroke-width="1"/>'),
-       'Allocation', 'allocation']);
-    if (inGraph('node[type="deallocation"]'))
-      nodeEntries.push([nodeIcon('<polygon points="' + STAR + '" fill="' + dealFill + '" stroke="' + dealStr + '" stroke-width="1"/>'),
-       'Deallocation', 'deallocation']);
-    if (this.settings['show_regions'] && inGraph('node[type="region"]'))
-      nodeEntries.push([nodeIcon('<rect x="1" y="3" width="18" height="14" rx="2" fill="' + regionF + '" stroke="' + regionS + '" stroke-width="1.5"/>'),
-       'Instrumented Region', 'region']);
-    if (inGraph('node[type="fusion"]'))
-      nodeEntries.push([nodeIcon('<rect x="1" y="3" width="18" height="14" rx="2" fill="' + fusionF + '" stroke="' + fusionS + '" stroke-width="1.5"/>'),
-       'Fusion Suggestion', 'fusion']);
-
-    // ── Edge entries ───────────────────────────────────────────────────────
-    var aliasClr = dark ? '#bb8fce' : '#8e44ad';
-    var aliasIcon =
-      '<svg viewBox="0 0 44 12" width="40" height="12">' +
-      '<line x1="2" y1="6" x2="42" y2="6" stroke="' + aliasClr + '" stroke-width="1.5" stroke-dasharray="8 4"/>' +
-      '</svg>';
-
-    var edgeEntries = [];
-    if (inGraph('edge[type="forward-dep"][access_mode="proxy"]'))
-      edgeEntries.push([edgeIcon(''),      'Full',            'proxy']);
-    if (inGraph('edge[access_mode="elwise"]'))
-      edgeEntries.push([edgeIcon('5 3'),   'Elwise',          'elwise']);
-    if (inGraph('edge[access_mode="scalar"]'))
-      edgeEntries.push([edgeIcon('1.5 3'), 'Scalar',          'scalar']);
-    if (inGraph('edge[type="anti-dep"]'))
-      edgeEntries.push([edgeIcon('', 'red'), 'Anti',          'anti-dep']);
-    if (inGraph('edge[type="virtual-alias"]'))
-      edgeEntries.push([aliasIcon,           'Virtual Dataset','virtual-alias']);
-    if (inGraph('edge[type="prng-dep"]')) {
-      var prngIcon =
-        '<svg viewBox="0 0 44 12" width="40" height="12">' +
-        '<polyline points="2,6 9,3.6 16,8.4 23,3.6 30,8.4 37,6" stroke="' + edgeClr + '" stroke-width="1.5" fill="none"/>' +
-        '<polygon points="44,6 32,2 32,10" fill="' + edgeClr + '"/>' +
-        '</svg>';
-      edgeEntries.push([prngIcon, 'PRNG', 'prng-dep']);
-    }
-
-    function item(icon, label, key) {
-      var keyAttr = key ? ' data-legend-key="' + key + '"' : '';
-      return '<div class="legend-item"' + keyAttr + '>' + icon +
-             '<span style="color:' + textClr + '">' + label + '</span></div>';
-    }
-
-    function section(title, entries) {
-      return '<div class="legend-section">' +
-        '<div class="legend-section-title">' + title + '</div>' +
-        '<div class="legend-items">' +
-        entries.map(function(e) { return item(e[0], e[1], e[2]); }).join('') +
-        '</div></div>';
-    }
-
-    var specSection =
-      '<div class="legend-section legend-spectrum-section">' +
-      '<div class="legend-section-title">Node color</div>' +
-      '<div class="legend-spectrum-row">' +
-      '<span class="legend-spec-end" style="color:' + textClr + '">min</span>' +
-      '<span id="color-bar"></span>' +
-      '<span class="legend-spec-end" style="color:' + textClr + '">max</span>' +
-      '</div></div>';
-
-    this._legendEl.innerHTML = specSection + section('Nodes', nodeEntries) + section('Dependences', edgeEntries);
-
-    // Populate the freshly-inserted #color-bar gradient.
-    this._updateColorBar();
-  }
-
-  /**
-   * Highlight the legend entry whose data-legend-key equals `key`.
-   * Clears any previously-highlighted entry first.  Pass null to just clear.
-   */
-  highlightKey(key) {
-    if (!this._legendEl) return;
-    this._legendEl.querySelectorAll('.legend-item.legend-item-hovered')
-      .forEach(function(el) { el.classList.remove('legend-item-hovered'); });
-    if (!key) return;
-    var entry = this._legendEl.querySelector('[data-legend-key="' + key + '"]');
-    if (entry) entry.classList.add('legend-item-hovered');
-  }
-
-  /** Remove the legend hover highlight from any currently-highlighted entry. */
-  clearHighlight() {
-    if (!this._legendEl) return;
-    this._legendEl.querySelectorAll('.legend-item.legend-item-hovered')
-      .forEach(function(el) { el.classList.remove('legend-item-hovered'); });
-  }
-
-  // Repaint only the #color-bar gradient swatch (no full legend rebuild).
-  _updateColorBar() {
-    var bar = this._legendEl && this._legendEl.querySelector('#color-bar');
-    if (!bar) return;
-    // Sample the active spectrum at 20 evenly-spaced points to produce a smooth
-    // linear-gradient.  This avoids importing COLOR_SPECTRUMS directly and keeps
-    // the gradient in sync with whatever spectrum the provider currently uses.
-    var N    = 20;
-    var pts  = [];
-    for (var i = 0; i <= N; i++) {
-      var t = i / N;
-      pts.push(this._gv._spectrumColor(t) + ' ' + Math.round(t * 100) + '%');
-    }
-    bar.style.background = 'linear-gradient(to right,' + pts.join(',') + ')';
-  }
 }

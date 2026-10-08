@@ -1,0 +1,73 @@
+/* The designer: what it adds to the stylesheet of SkeVU (style/main.css has the layout, the menus, the code panes, the legend). */
+
+/* the menu bar */
+#menubar .spacer { flex: 1; }
+/* what the editor says (an error, a result): for a few seconds; the statistics are in the ⓘ menu, as in SkeVU */
+#menubar #message { align-self: center; padding: 0 0.6em; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#menubar #message:empty { display: none; }
+html.dark-mode #menubar #message { color: #9890b0; }
+.menu-check, .menu-radio { display: flex; align-items: center; width: 100%; }
+#cy.connecting, #cy.connecting:hover { cursor: crosshair; }
+#cy.adding, #cy.adding:hover { cursor: copy; }
+
+/* inputs, as plain as the rest of SkeVU */
+#menubar input, #info input, #info select, #info textarea, #info button {
+    font: inherit; color: inherit; background: transparent; border: 1px solid #bbb; border-radius: 3px; padding: 0.15em 0.4em;
+}
+#info button { cursor: pointer; }
+#info button:hover:not(:disabled) { border-color: var(--highlight); }
+#info button:disabled { opacity: 0.45; cursor: default; }
+html.dark-mode #menubar input, html.dark-mode #info input, html.dark-mode #info select, html.dark-mode #info textarea, html.dark-mode #info button { border-color: #4a4660; }
+html.dark-mode #info select option { background: #1e1c26; }
+#info input:focus-visible, #info select:focus-visible, #info textarea:focus-visible, #info button:focus-visible, #menubar input:focus-visible {
+    outline: 2px solid var(--highlight); outline-offset: 1px;
+}
+#info input[type="text"], #info input[type="number"], #info select { width: 100%; min-width: 0; box-sizing: border-box; }
+#info input[type="checkbox"] { width: auto; }
+
+/* the properties (the key/value rows are those of the info pane of SkeVU) */
+#info { padding: 0 0 1em; }
+#info .info-row { align-items: center; }
+#info .info-key { min-width: 8em; flex: 0 0 8em; }
+#info .info-value { display: flex; gap: 0.4em; align-items: center; }
+.info-section { margin: 0.9em 0 0.2em; padding: 0 0.8em; font-size: 0.78em; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #999; }
+.info-note { margin: 0.2em 0.8em 0.4em; color: #777; font-size: 0.92em; }
+html.dark-mode .info-note { color: #8a84a0; }
+.info-empty { padding: 1em 0.8em; color: #888; }
+#info .info-text { padding: 0.2em 0.8em; }
+#info textarea.body { width: calc(100% - 1.6em); margin: 0.2em 0.8em; min-height: 6em; font: 12px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: pre; resize: vertical; box-sizing: border-box; }
+#info table.uniforms { border-collapse: collapse; width: calc(100% - 1.6em); margin: 0.2em 0.8em; }
+#info table.uniforms td { padding: 0.1em 0.3em 0.1em 0; }
+#info .info-buttons { padding: 0.2em 0.8em; }
+
+/* the problems, between the tabs and the code */
+#problems { flex: 0 0 auto; font-family: sans-serif; font-size: 0.8em; border-bottom: 1px solid #ccc; background: #fff6e0; }
+html.dark-mode #problems { background: #3a2e14; border-bottom-color: #3a3848; }
+#problems[hidden] { display: none; }
+#problems summary { padding: 0.35em 0.8em; cursor: pointer; font-weight: 600; }
+#problems.has-errors { background: #fde8e4; }
+html.dark-mode #problems.has-errors { background: #43201c; }
+#problem-list { max-height: 9em; overflow-y: auto; }
+.problem { padding: 0.25em 0.8em 0.25em 1.2em; border-left: 3px solid #c98a00; cursor: pointer; }
+.problem.error { border-left-color: #c0392b; }
+.problem:hover { background: rgba(0, 0, 0, 0.06); }
+html.dark-mode .problem:hover { background: rgba(255, 255, 255, 0.08); }
+
+#legend[hidden] { display: none; }
+
+/* the lines of the program that belong to the selected node are the ones of `.line-selected` (main.css); the lines of other nodes can be clicked */
+#cpp_tab_panes .hljs-ln-code { cursor: pointer; }
+
+/* the mode of the editor: a badge in the menu bar */
+#mode-badge { align-self: center; margin: 0 0.4em 0 0.3em; padding: 0.05em 0.7em; border: 0; border-radius: 1em; font: inherit; font-weight: 700; font-size: 0.95em; letter-spacing: 0.04em; color: #fff; cursor: pointer; }
+/* a stable width: as wide as the longest name of a mode (an invisible line of it, with no height) */
+#mode-badge { text-align: center; }
+#mode-badge::after { content: 'Connect'; display: block; height: 0; overflow: hidden; visibility: hidden; }
+#mode-badge:hover { filter: brightness(1.12); }
+#mode-badge:focus-visible { outline: 2px solid var(--highlight); outline-offset: 2px; }
+#mode-badge.mode-explore { background: #8a8a96; }
+#mode-badge.mode-connect { background: #d9730d; }
+#mode-badge.mode-add { background: #2e9d57; }
+html.dark-mode #mode-badge.mode-explore { background: #5e5a70; }
+html.dark-mode #mode-badge.mode-connect { background: #c45f00; }
+html.dark-mode #mode-badge.mode-add { background: #25804a; }

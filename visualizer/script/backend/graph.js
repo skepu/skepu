@@ -56,6 +56,7 @@ export class DirectedGraph {
         this._edgeIdIndex    = {};
 
         // Keyed by object_id; auto-vivified to makeMemSpaceDict() on first access.
+        this._allocationNodes    = new Map();     // object id -> the allocation node that is in the graph (a node that a call draws random numbers from is a stream)
         this._latestProducerOfID = {};
         this._latestConsumerOfID = {};
 

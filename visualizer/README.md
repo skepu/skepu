@@ -50,20 +50,25 @@ main.html               visualizer UI
 
 script/
   ── View layer ──────────────────────────────────────────────────────────────
-  GraphView.js          Cytoscape graph renderer + LegendView companion class
+  GraphView.js          Cytoscape graph renderer
+  LegendView.js         the legend of a graph (node and edge kinds; the spectrum, or the skeletons or backends that the calls are coloured by)
   TimelineView.js       Gantt / timeline canvas chart
   InfoView.js           node info pane
-  SourceCodeView.js     annotated source code browser
+  SourceCodeView.js     annotated source code browser (line highlighting and smooth scrolling, badges, code paths)
+
+  ── Shared by SkeVU and the Designer (designer.html) ────────────────────────
+  graph_style.js        the Cytoscape style of the graph, and its colours (COLORS, regionColor)
+  graph_interaction.js  the selection (what is marked) and the hover of a graph
+  panzoom.js            pan by the wheel, zoom by the pinch, and the smooth pan and zoom to nodes
+  tooltip.js            the tooltip of a node or an edge, and its text
+  menu.js               the menus of the menu bar (open, close, hover; items that would do nothing are disabled)
+  resizer.js            the bars between panes: pointer and keyboard
+  appearance.js         dark mode, code theme and colour spectrum: what is remembered, and their menus
+  early.js              classic script for <head>: the dark mode before the first paint
+  format.js             numbers for people (durations)
 
   ── Application layer ───────────────────────────────────────────────────────
   graph.js              wires GraphView, TimelineView, LegendView, SimulationEngine
-  ui.js                 page init, menus, keyboard shortcuts
-  state.js              shared mutable state and UI constants
-  settings.js           settings persistence (localStorage)
-  simulation.js         SimulationEngine — step-through playback
-  heatmap.js            heatmap navigation helper
-  transport.js          backend abstraction (Worker RPC or HTTP fetch)
-
   ── Backend (Web Worker) ────────────────────────────────────────────────────
   backend/
     visualizer.js       Worker entry point — handles load / graph / getData
@@ -77,7 +82,7 @@ script/
     dagre-worker.js     off-thread Dagre layout
     elk-worker.js       off-thread ELK layout
 
-  static/               vendored third-party libraries (Cytoscape, Highlight.js, …)
+  static/               vendored third-party libraries (Cytoscape, Dagre, ELK, Highlight.js and the themes that the menu offers)
 
 style/                  CSS
 

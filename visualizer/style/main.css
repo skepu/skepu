@@ -141,6 +141,17 @@ code, pre {
   flex-shrink: 0;
 }
 
+/* A menu item that would do nothing now */
+.dropdown button:disabled { opacity: 0.4; cursor: default; }
+.dropdown button:disabled:hover { background: none; }
+html.dark-mode .dropdown button:disabled:hover { background: none; }
+
+/* A heading for a group of items, and a row with a text entry (a click in it does not close the menu) */
+.menu-heading { padding: 0.35em 0.75em 0.1em; font-size: 0.82em; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #999; }
+.menu-field { display: flex; align-items: center; gap: 0.6em; padding: 0.35em 0.75em; white-space: nowrap; }
+.menu-field input { font: inherit; color: inherit; background: transparent; border: 1px solid #bbb; border-radius: 3px; padding: 0.1em 0.4em; min-width: 9em; }
+html.dark-mode .menu-field input { border-color: #4a4660; }
+
 /* Check/radio icon column */
 .menu-icon
 {
@@ -526,6 +537,15 @@ html.dark-mode #sim-progress-handle   { background: #e8720c; }
 
 html.dark-mode .legend-item-hovered {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* The swatch of a skeleton or a backend in the legend (when the calls are coloured by them) */
+.legend-swatch {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid;
+  box-sizing: border-box;
 }
 
 /* Spectrum bar section */
