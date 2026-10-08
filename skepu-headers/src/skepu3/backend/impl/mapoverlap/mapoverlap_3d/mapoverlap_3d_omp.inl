@@ -61,7 +61,7 @@ namespace skepu
 						if (p == Parity::None || index_parity(p, i, j, k))
 						{
 							region.idx = Index3D{(i + offset.i) * this->m_strides[0], (j + offset.j) * this->m_strides[1], (k + offset.k) * this->m_strides[2]};
-							auto res = F::forward(MapOverlapFunc::OMP, Index3D{i,j,k}, random(omp_get_thread_num()), region, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+							auto res = F::forward(MapOverlapFunc::OMP, Index3D{i + get<0>(std::forward<CallArgs>(args)...).indexOrigin(), j, k}, random(omp_get_thread_num()), region, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
 							SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, j, k)..., res);
 						}
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 3D", this, {out_size_i, out_size_j, out_size_k},

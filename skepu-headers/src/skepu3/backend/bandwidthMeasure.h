@@ -13,7 +13,6 @@
  */
 
 
-// StarPU settings...
 #define BW_MEASURE_SIZE_IN_BYTES (32*1024*1024*sizeof(char))
 //#define NITER	128
 

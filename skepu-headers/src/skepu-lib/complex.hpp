@@ -455,10 +455,14 @@ bool operator!=(T lhs, complex<T> rhs)
 
 #ifdef SKEPU_OPENCL
 
+#ifdef SKEPU_MPI
+namespace skepu_node // the type name specializations belong to the node-level library
+#else
 namespace skepu
+#endif
 {
-	template<> inline std::string getDataTypeCL<complex::complex<float>>         () { return "complex_float";          }
-	template<> inline std::string getDataTypeCL<complex::complex<double>>        () { return "complex_double";         }
+	template<> inline std::string getDataTypeCL<skepu::complex::complex<float>>         () { return "complex_float";          }
+	template<> inline std::string getDataTypeCL<skepu::complex::complex<double>>        () { return "complex_double";         }
 }
 
 #endif

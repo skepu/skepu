@@ -111,6 +111,15 @@ namespace skepu
 		size_t i;
 	};
 
+	// The number, in the sequence of the elements of the whole container, of the element that an iterator points at: the
+	// base for the indices that a GPU kernel computes (the part of a distributed container has an index origin)
+	template<typename Iterator>
+	size_t iterator_index_base(const Iterator &it)
+	{
+		auto &parent = it.getParent();
+		return (size_t)(it - parent.begin()) + parent.linearIndexOrigin();
+	}
+
 	struct Index2D
 	{
 		size_t row, col;
@@ -367,6 +376,17 @@ namespace skepu
 
 #include "tracing.h"
 #include "meta_helpers.hpp"
+
+	// The base of the indices that a GPU kernel computes for a MapReduce: that of the first element-wise argument (an
+	// iterator), or 0 if there is none
+	template<size_t NumElwise, typename... CallArgs>
+	size_t index_base_of_first_elwise(CallArgs&&... args)
+	{
+		if constexpr (NumElwise > 0)
+			return iterator_index_base(get<0>(std::forward<CallArgs>(args)...));
+		else
+			return 0;
+	}
 #include "skepu3/scalar.hpp"
 #include "skepu3/vector.hpp"
 #include "skepu3/matrix.hpp"

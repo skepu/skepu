@@ -157,16 +157,20 @@ namespace skepu
 
 				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap2D: size = " << out_size_i << " x " << out_size_j);
 
-				checkMatrixSizes(this->out_indices, std::forward<CallArgs>(args)...);
-
 				auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
+
+				// Mirror mode: the input has the size of the output and there is no edge handling, so only the interior of the output
+				// is computed (the other elements keep their values)
+				const bool mirror = !this->isPool && this->m_edge == Edge::None && out_size_i == arg.size_i() && out_size_j == arg.size_j();
+				if (!mirror)
+					checkMatrixSizes(this->out_indices, std::forward<CallArgs>(args)...);
 
 				RegionType region{arg, this->m_overlap[0], this->m_overlap[1], this->m_edge, this->m_pad};
 
 				auto random = this->template prepareRandom<randomCount>(out_size_i * out_size_j);
 
 				Index2D offset{0, 0};
-                if (!this->isPool)
+                if (!this->isPool && !mirror)
                 {
                     if (this->m_edge == Edge::None)
                     {
@@ -180,8 +184,9 @@ namespace skepu
                     }
                 }
 
-				for (size_t i = 0; i < out_size_i; ++i)
-					for (size_t j = 0; j < out_size_j; ++j)
+				const size_t first_i = mirror ? this->m_overlap[0] : 0, first_j = mirror ? this->m_overlap[1] : 0;
+				for (size_t i = first_i; i + first_i < out_size_i; ++i)
+					for (size_t j = first_j; j + first_j < out_size_j; ++j)
 						if (p == Parity::None || index_parity(p, i, j))
 						{
 							region.idx = Index2D{(i + offset.row) * this->m_strides[0], (j + offset.col) * this->m_strides[1]};

@@ -68,7 +68,9 @@ namespace skepu
 					std::get<AI-arity-outArity>(anyMemP)...,
 					get<CI>(std::forward<CallArgs>(args)...)...,
 					get<0>(std::forward<CallArgs>(args)...).getParent().size_info(),
-					numElem, baseIndex, this->m_strides
+					// (the base of the indices that the kernel computes; the data is at baseIndex, which is not the same
+					// for a part of a container that is distributed over processes)
+					numElem, baseIndex + iterator_index_base(get<0>(std::forward<CallArgs>(args)...)), this->m_strides
 				);
 
 				// Make sure the data is marked as changed by the device

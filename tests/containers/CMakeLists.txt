@@ -32,3 +32,10 @@ skepu_add_test_case_opencl_multi(swap)
 skepu_add_test_case_cuda(swap)
 skepu_add_test_case_hybrid_opencl(swap)
 skepu_add_test_case_hybrid_cuda(swap)
+
+# ------------------------------------------------
+#   skepu::external flushes the containers it reads
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(external)
+skepu_add_test_case_cpu(external)

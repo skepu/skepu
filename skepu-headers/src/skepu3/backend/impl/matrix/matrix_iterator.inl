@@ -10,7 +10,7 @@ namespace skepu
 		size_t index = *this - m_parent->begin();
 		size_t rows = index / m_parent->total_cols();
 		size_t cols = index % m_parent->total_cols();
-		return Index2D{rows, cols};
+		return Index2D{rows + m_parent->indexOrigin(), cols};
 	}
 	
 	

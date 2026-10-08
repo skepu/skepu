@@ -30,6 +30,11 @@ namespace skepu
 			
 			size_t threads = std::min<size_t>(size, omp_get_max_threads());
 			auto random = this->template prepareRandom<MapFunc::randomCount>(size, threads);
+
+			// (an element that is given no index is numbered in the whole container, for a MatRow: a part of a distributed container has an origin)
+			size_t element_origin = 0;
+			if constexpr (sizeof...(EI) > 0)
+				element_origin = get<0>(std::forward<CallArgs>(args)...).getParent().linearIndexOrigin();
 			
 			// Perform Map and partial Reduce with OpenMP
 #pragma omp parallel for schedule(runtime) firstprivate(first)
@@ -40,7 +45,7 @@ namespace skepu
 				if constexpr (MapFunc::indexed && sizeof...(EI) > 0)
 					index = (get<0>(std::forward<CallArgs>(args)...) + i).getIndex();
 				else
-					index = make_index(defaultDim{}, i, this->default_size_j, this->default_size_k, this->default_size_l);
+					index = make_index(defaultDim{}, i + this->m_default_origin + element_origin, this->default_size_j, this->default_size_k, this->default_size_l);
 				
 				Ret tempMap = F::forward(MapFunc::OMP,
 					index, random(omp_get_thread_num()),
@@ -58,8 +63,17 @@ namespace skepu
 			}
 			
 			// Final Reduce sequentially
+			bool seeded = this->m_apply_start;
 			for (Ret const& parsum : parsums)
-				pack_expand((get_or_return<OI>(res) = ReduceFunc::OMP(get_or_return<OI>(res), get_or_return<OI>(parsum)), 0)...);
+			{
+				if (!seeded)
+				{
+					res = parsum;
+					seeded = true;
+				}
+				else
+					pack_expand((get_or_return<OI>(res) = ReduceFunc::OMP(get_or_return<OI>(res), get_or_return<OI>(parsum)), 0)...);
+			}
 
 			auto result = scalar_wrapper_t<typename MapFunc::Ret>(res);
 			SKEPU_TRACE_CALL(trace_handle, "MapReduce", this, {size}, tracing::scalar_output_labels(result),

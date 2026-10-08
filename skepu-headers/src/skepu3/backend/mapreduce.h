@@ -70,11 +70,29 @@ namespace skepu
 			using RedType = typename ReduceFunc::Ret;
 
 			Ret m_start{};
+			bool m_apply_start = true;
+			size_t m_default_origin = 0;
 
 		public:
 			auto &setStartValue(Ret val)
 			{
 				this->m_start = val;
+				return *this;
+			}
+
+			// With false, the result of the skeleton is the reduction of the mapped elements alone: the start value is not
+			// an operand. (A process of a distributed reduction that is not the one that has the start value.)
+			auto &setApplyStartValue(bool apply)
+			{
+				this->m_apply_start = apply;
+				return *this;
+			}
+
+			// The number, in the sequence of the indices of the default size, of the first index (of a part of an index space that
+			// is distributed over processes)
+			auto &setDefaultOrigin(size_t origin)
+			{
+				this->m_default_origin = origin;
 				return *this;
 			}
 

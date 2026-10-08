@@ -113,9 +113,6 @@ if(SKEPU_EXAMPLES_MPI)
 
 		if(SKEPU_EXAMPLE_${ucname} AND SKEPU_EXAMPLE_${ucname}_MPI)
 			list(APPEND ${example}_mpi_backends MPI)
-			if(SKEPU_EXAMPLE_${ucname}_MPI_CUDA)
-				list(APPEND ${example}_mpi_backends CUDA)
-			endif()
 
 			skepu_add_executable(${example}_mpi
 				${${example}_mpi_backends}

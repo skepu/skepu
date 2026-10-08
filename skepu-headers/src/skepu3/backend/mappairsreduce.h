@@ -60,12 +60,30 @@ namespace skepu
 
 			Ret m_start{};
 			ReduceMode m_mode = ReduceMode::RowWise;
+			bool m_apply_start = true;
+			size_t m_row_origin = 0;
 
 
 		public:
 			auto &setStartValue(Ret val)
 			{
 				this->m_start = val;
+				return *this;
+			}
+
+			// With false, each result is the reduction of the mapped elements alone: the start value is not an operand. (A
+			// process of a distributed reduction that is not the one that has the start value.) Not used by the OpenCL
+			// backend, which does not have a start value.
+			auto &setApplyStartValue(bool apply)
+			{
+				this->m_apply_start = apply;
+				return *this;
+			}
+
+			// The number, in the whole of the rows, of the first row (of a part of a distributed set of rows)
+			auto &setRowOrigin(size_t origin)
+			{
+				this->m_row_origin = origin;
 				return *this;
 			}
 

@@ -9,7 +9,7 @@ using namespace clang;
 
 const char *MapPairsReduceKernelTemplate_CL = R"~~~(
 #define skepu_w2 skepu_Hsize
-__kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_majorSize, size_t skepu_minorSize, size_t skepu_base, int skepu_transposed, __local {{REDUCE_RESULT_TYPE}}* skepu_sdata)
+__kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_majorSize, size_t skepu_minorSize, size_t skepu_base, int skepu_transposed, size_t skepu_row_origin, __local {{REDUCE_RESULT_TYPE}}* skepu_sdata)
 {
 	size_t skepu_blockSize = get_local_size(0);
 	size_t skepu_tid = get_local_id(0);
@@ -129,12 +129,12 @@ public:
 	static void mapPairsReduce
 	(
 		size_t skepu_deviceID, size_t skepu_localSize, size_t skepu_globalSize, {{HOST_KERNEL_PARAMS}}
-		size_t skepu_n, size_t skepu_Vsize, size_t skepu_Hsize, size_t skepu_base, int skepu_transposed,
+		size_t skepu_n, size_t skepu_Vsize, size_t skepu_Hsize, size_t skepu_base, int skepu_transposed, size_t skepu_row_origin,
 		size_t skepu_sharedMemSize
 	)
 	{
-		skepu::backend::cl_helpers::setKernelArgs(skepu_kernels(skepu_deviceID), {{KERNEL_ARGS}} skepu_n, skepu_Vsize, skepu_Hsize, skepu_base, skepu_transposed);
-		clSetKernelArg(skepu_kernels(skepu_deviceID), {{KERNEL_ARG_COUNT}} + 5, skepu_sharedMemSize, NULL);
+		skepu::backend::cl_helpers::setKernelArgs(skepu_kernels(skepu_deviceID), {{KERNEL_ARGS}} skepu_n, skepu_Vsize, skepu_Hsize, skepu_base, skepu_transposed, skepu_row_origin);
+		clSetKernelArg(skepu_kernels(skepu_deviceID), {{KERNEL_ARG_COUNT}} + 6, skepu_sharedMemSize, NULL);
 		cl_int skepu_err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(skepu_deviceID)->getQueue(), skepu_kernels(skepu_deviceID), 1, NULL, &skepu_globalSize, &skepu_localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(skepu_err, "Error launching MapPairsReduce kernel");
 	}
@@ -150,7 +150,7 @@ std::string createMapPairsReduceKernelProgram_CL(SkeletonInstance &instance, Use
 	std::string indexInit = "";
 	if (mapPairsFunc.indexed2D)
 	{
-		indexInit = "index2_t skepu_index = { .row = skepu_lookup_V + ((skepu_transposed == 0) ? skepu_base : 0), .col = skepu_lookup_H + ((skepu_transposed == 0) ? 0 : skepu_base) };";
+		indexInit = "index2_t skepu_index = { .row = skepu_lookup_V + skepu_row_origin + ((skepu_transposed == 0) ? skepu_base : 0), .col = skepu_lookup_H + ((skepu_transposed == 0) ? 0 : skepu_base) };";
 		SSMapPairsFuncArgs << "skepu_index";
 	}
 	IndexCodeGen indexInfo = indexInitHelper_CL(mapPairsFunc);

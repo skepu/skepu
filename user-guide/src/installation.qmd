@@ -40,9 +40,9 @@ source-to-source translator. The translator produces valid C++11, OpenCL
 and/or CUDA source code and can thus be used on a separate system than
 the target if necessary (\"cross-precompilation\").
 
-The StarPU MPI backend requires a recent GCC compiler, an OpenMP
-library, an MPI library (tested with OpenMPI version 2.1), and StarPU
-built from the master branch.
+The MPI backend requires an MPI library (MPI-3.1; tested with Open MPI)
+and an MPI compiler wrapper for the C++ compiler that is used for the
+other backends.
 
 ## Installation {#sec-install}
 
@@ -93,7 +93,7 @@ $<$src$>$/build. The following commands will build skepu-tool:
     	cmake -DCMAKE_BUILD_TYPE=Release ..
     	make
 
-The available backends (CUDA, OpenCL, OpenMP, and StarPU-MPI with MPI) are detected by CMake.
+The available backends (CUDA, OpenCL, OpenMP, and MPI) are detected by CMake.
 Some notable build options:
 
 | Option name | Default value | Description |
@@ -102,7 +102,7 @@ Some notable build options:
 | `SKEPU_BUILD_EXAMPLES` | `OFF` | Enables building the SkePU examples. |
 | `SKEPU_EXAMPLES_SEQ` | `ON` | With examples: build the sequential examples. |
 | `SKEPU_EXAMPLES_PAR` | `ON` if CUDA, OpenCL or OpenMP is found | With examples: build the parallel examples. |
-| `SKEPU_EXAMPLES_MPI` | `ON` if StarPU-MPI is found | With examples: build the MPI examples. |
+| `SKEPU_EXAMPLES_MPI` | `ON` if MPI is found | With examples: build the MPI examples. |
 | `SKEPU_EXAMPLES_TRACING` | `OFF` | With examples: build the parallel examples with tracing (see @sec-tracing). |
 
 For more build options, run `cmake -LAH`.
@@ -178,18 +178,20 @@ recovery in release builds, as the internal state of SkePU is not
 consistent after an error. (The types of errors reported this way are
 mostly related to GPU management.)
 
-### StarPU MPI
+### MPI
 
-To use the StarPU MPI backend, precompile the source with the flags
-`-openmp -starpu-mpi`. If only the Map skeleton is used in a program,
-one can also enable the cuda backend. Do not forget to add the link
-flags and include flags that is needed to compile StarPU codes.
+To use the MPI backend, precompile the source with the flag `-mpi`,
+combined with the flags of the backends to use on each node (`-openmp`,
+`-opencl`), compile the result with an MPI compiler, and run it with
+`mpirun`. The source does not change: a program written for one node
+gives the same result on any number of processes. See
+`skepu-headers/src/skepu3/mpi/README.md` for the design.
 
-When using the SkePU StarPU MPI backend, do not forget to make sure the
-code is safe to execute on multiple ranks at the same time. The
-`skepu::external` function can be used to make a region of code safe.
-Writing to file is one example where multiple nodes cannot execute the
-same region at the same time.
+Every process runs `main` and makes the same skeleton calls. The
+`skepu::external` function makes a region of code safe to run in this
+setting: it runs on the first process only, with the containers it lists
+gathered and scattered. Writing to a file is one example of code that
+must not be run by all processes.
 
 ### Clang skepu-tool and CMake
 
@@ -237,19 +239,19 @@ Reported for earlier releases and not re-checked for this one:
 - Scan is missing OpenMP backend selection parameters (thread count,
   scheduling mode).
 
-### StarPU-MPI skeleton backends
+### MPI skeleton backend
 
-The StarPU MPI backend is not very well tested yet. The following list
-are known issues:
+The following are known limitations of the MPI backend:
 
-- The data-containers are not fully compatible with the normal version
-  of SkePU.
+- The CUDA backend cannot be combined with MPI.
 
-- The skeleton `MapPool` is missing.
+- MapOverlap with update modes other than Normal, and strides, are not
+  supported on distributed containers.
 
-- Only the Map, MapPairs, and Reduce skeletons have support for CUDA and
-  applications that use other skeletons cannot have CUDA and StarPU-MPI
-  enabled at the same time.
+- Tracing and calls of skeletons with iterators are not supported.
+
+- Random access arguments other than `MatRow` (`Vec`, `Mat`, `MatCol`, ...)
+  are gathered to every process.
 
 ### Clang SkePU tool
 

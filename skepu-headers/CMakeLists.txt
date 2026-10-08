@@ -43,13 +43,6 @@ install(
 install(FILES ${CMAKE_CURRENT_LIST_DIR}/src/skepu
 	DESTINATION include)
 
-if(SKEPU_HEADERS_ENABLE_TESTING)
-	enable_testing()
-	add_subdirectory(tests)
-else()
-	file(REMOVE ${CMAKE_BINARY_DIR}/CTestTestfile.cmake)
-endif()
-
 install(TARGETS SkePU
 	EXPORT skepu-headersTargets
 	DESTINATION lib)
@@ -69,9 +62,5 @@ install(
 		${CMAKE_CURRENT_BINARY_DIR}/skepu-headersConfig.cmake
 		${CMAKE_CURRENT_BINARY_DIR}/skepu-headersConfigVersion.cmake
 	DESTINATION lib/cmake/SkePU)
-
-if(NOT SKEPU_HEADERS_SUBPROJECT)
-	skepu_headers_print_config()
-endif()
 
 # vi:ts=2 sw=2 noet

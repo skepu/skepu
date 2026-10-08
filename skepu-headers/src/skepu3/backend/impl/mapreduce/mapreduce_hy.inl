@@ -87,7 +87,7 @@ namespace skepu
 					if constexpr (MapFunc::indexed && sizeof...(EI) > 0)
 						index = (get<0>(std::forward<CallArgs>(args)...) + first).getIndex();
 					else
-						index = make_index(defaultDim{}, first, this->default_size_j, this->default_size_k, this->default_size_l);
+						index = make_index(defaultDim{}, first + this->m_default_origin, this->default_size_j, this->default_size_k, this->default_size_l);
 
 					Ret psum = F::forward(MapFunc::OMP,
 						index, random(myId),
@@ -101,7 +101,7 @@ namespace skepu
 						if constexpr (MapFunc::indexed && sizeof...(EI) > 0)
 							index = (get<0>(std::forward<CallArgs>(args)...) + i).getIndex();
 						else
-							index = make_index(defaultDim{}, i, this->default_size_j, this->default_size_k, this->default_size_l);
+							index = make_index(defaultDim{}, i + this->m_default_origin, this->default_size_j, this->default_size_k, this->default_size_l);
 						
 						Ret tempMap = F::forward(MapFunc::OMP,
 							index, random(myId),

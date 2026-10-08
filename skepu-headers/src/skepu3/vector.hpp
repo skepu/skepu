@@ -234,6 +234,13 @@ namespace skepu
 
 		// Capacity
 		size_type size() const       { return this->m_size; }
+
+		// The index (as seen by index-aware user functions) of the first element. Non-zero for a part of a vector that
+		// is distributed over processes: the elements are then numbered as in the whole vector.
+		size_t indexOrigin() const   { return this->m_index_origin; }
+		void setIndexOrigin(size_t origin) { this->m_index_origin = origin; }
+		// The origin as an offset in the sequence of elements (what a kernel adds to the number of an element)
+		size_t linearIndexOrigin() const { return this->m_index_origin; }
 		size_type total_cols() const { return this->m_size; }
 
 		size_type size_i() const { return this->m_size; }
@@ -322,6 +329,7 @@ namespace skepu
 		T *m_data = nullptr;
 		mutable bool m_valid; /*! to keep track of whether the main copy is valid or not */
 		size_type m_size = 0;
+		size_t m_index_origin = 0;
 		bool m_deallocEnabled = true;
 		mutable bool m_noValidDeviceCopy;
 		std::string *m_label = nullptr;
@@ -489,7 +497,8 @@ namespace skepu
 		// the GPU backends give (not its position in the vector)
 		Index1D getIndex() const
 		{
-			return Index1D{VectorIterator<T>::getIndex().i / (size_t)(this->m_stride < 0 ? -this->m_stride : (this->m_stride == 0 ? 1 : this->m_stride))};
+			const size_t origin = this->m_parent.indexOrigin();
+			return Index1D{(VectorIterator<T>::getIndex().i - origin) / (size_t)(this->m_stride < 0 ? -this->m_stride : (this->m_stride == 0 ? 1 : this->m_stride)) + origin};
 		}
 
 		T& operator()(const ssize_t index = 0)

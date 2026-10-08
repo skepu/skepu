@@ -77,6 +77,7 @@ namespace skepu
 					numElem, minorSize,
 					baseIndex + startIdx,
 					(this->m_mode == ReduceMode::ColWise) ? 1 : 0,
+					this->m_row_origin,
 					sizeof(Ret) * numThreads
 				);
 				

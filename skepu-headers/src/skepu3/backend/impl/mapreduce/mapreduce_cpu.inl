@@ -21,13 +21,19 @@ namespace skepu
 			SKEPU_TRACE_START_EVENT(trace_handle);
 			auto random = this->template prepareRandom<MapFunc::randomCount>(size);
 
+			// (an element that is given no index is numbered in the whole container, for a MatRow: a part of a distributed container has an origin)
+			size_t element_origin = 0;
+			if constexpr (sizeof...(EI) > 0)
+				element_origin = get<0>(std::forward<CallArgs>(args)...).getParent().linearIndexOrigin();
+
+			bool seeded = this->m_apply_start; // the first element is the start of the reduction if there is no start value
 			for (size_t i = 0; i < size; i++)
 			{
 				TempIndexType index;
 				if constexpr (MapFunc::indexed && sizeof...(EI) > 0)
 					index = (get<0>(std::forward<CallArgs>(args)...) + i).getIndex();
 				else
-					index = make_index(defaultDim{}, i, this->default_size_j, this->default_size_k, this->default_size_l);
+					index = make_index(defaultDim{}, i + this->m_default_origin + element_origin, this->default_size_j, this->default_size_k, this->default_size_l);
 				
 				Ret temp = F::forward(MapFunc::CPU,
 					index, random,
@@ -35,7 +41,13 @@ namespace skepu
 					get<AI>(std::forward<CallArgs>(args)...).hostProxy(std::get<AI-arity>(typename MapFunc::ProxyTags{}), index)...,
 					get<CI>(std::forward<CallArgs>(args)...)...
 				);
-				pack_expand((get_or_return<OI>(res) = ReduceFunc::CPU(get_or_return<OI>(res), get_or_return<OI>(temp)), 0)...);
+				if (!seeded)
+				{
+					res = temp;
+					seeded = true;
+				}
+				else
+					pack_expand((get_or_return<OI>(res) = ReduceFunc::CPU(get_or_return<OI>(res), get_or_return<OI>(temp)), 0)...);
 			}
 
 			scalar_wrapper_t<typename MapFunc::Ret> result(res);

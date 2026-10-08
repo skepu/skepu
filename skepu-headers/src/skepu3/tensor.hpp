@@ -184,6 +184,9 @@ namespace skepu
 			return Vector<T>::m_size;
 		}
 		
+		// The origin as an offset in the sequence of elements (what a kernel adds to the number of an element)
+		size_t linearIndexOrigin() const { return this->indexOrigin() * this->m_size_j * this->m_size_k; }
+
 		size_type size_i() const
 		{
 			return m_size_i;
@@ -534,6 +537,9 @@ namespace skepu
 			return Vector<T>::m_size;
 		}
 		
+		// The origin as an offset in the sequence of elements (what a kernel adds to the number of an element)
+		size_t linearIndexOrigin() const { return this->indexOrigin() * this->m_size_j * this->m_size_k * this->m_size_l; }
+
 		size_type size_i() const
 		{
 			return m_size_i;

@@ -81,10 +81,19 @@ std::string colorRed(T const& t)
 #define SKEPU_ASSERT(expr) assert(expr)
 #endif // SKEPU_ASSERT
 
+// What an error does, if it does not throw. In an MPI program all processes must stop (the others would wait for the
+// one that has, in a collective operation): the MPI backend defines skepu_mpi_abort.
+#ifdef SKEPU_MPI
+[[noreturn]] void skepu_mpi_abort();
+#define SKEPU_ERROR_EXIT() skepu_mpi_abort()
+#else
+#define SKEPU_ERROR_EXIT() exit(1)
+#endif
+
 #ifdef SKEPU_ENABLE_EXCEPTIONS
 #define SKEPU_ERROR(skepu_macro_text) { std::stringstream skepu_macro_msg; skepu_macro_msg << skepu_macro_text; throw(skepu_macro_msg.str()); }
 #else
-#define SKEPU_ERROR(skepu_macro_text) { std::cerr << "[" << colorRed("SKEPU_ERROR ") << __FILE__ << ":" << __LINE__ << "] " << skepu_macro_text << "\n"; exit(1); }
+#define SKEPU_ERROR(skepu_macro_text) { std::cerr << "[" << colorRed("SKEPU_ERROR ") << __FILE__ << ":" << __LINE__ << "] " << skepu_macro_text << "\n"; SKEPU_ERROR_EXIT(); }
 #endif // SKEPU_ENABLE_EXCEPTIONS
 
 #define SKEPU_WARNING(skepu_macro_text) { std::cerr << "[SKEPU_WARNING " << __FILE__ << ":" << __LINE__ << "] " << skepu_macro_text << "\n"; }

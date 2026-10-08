@@ -288,6 +288,12 @@ namespace skepu
 		}
 
 		size_type size_i() const { return this->m_rows; }
+
+		// The row index (as seen by index-aware user functions) of the first row. Non-zero for a part of a matrix that is
+		// distributed over processes: the rows are then numbered as in the whole matrix.
+		size_t indexOrigin() const   { return this->m_index_origin; }
+		void setIndexOrigin(size_t origin) { this->m_index_origin = origin; }
+		size_t linearIndexOrigin() const { return this->m_index_origin * this->m_cols; }
 		size_type size_j() const { return this->m_cols; }
 		size_type size_k() const { return 0; }
 		size_type size_l() const { return 0; }
@@ -346,10 +352,11 @@ namespace skepu
 
 		// Matrix row
 
+		// (r is the row in the whole container: a part of a distributed container has an index origin, see setIndexOrigin)
 		MatRow<T> hostProxy(ProxyTag::MatRow, size_t r)
 		{
 			MatRow<T> proxy;
-			proxy.data = this->m_data + r * this->m_cols;
+			proxy.data = this->m_data + (r - this->m_index_origin) * this->m_cols;
 			proxy.cols = this->m_cols;
 			return proxy;
 		}
@@ -434,6 +441,8 @@ namespace skepu
 #endif
 
 		mutable bool m_valid; /*! to keep track of whether the main copy is valid or not */
+
+		size_t m_index_origin = 0;
 
 		// for col_iterator,
 		mutable Matrix<T> *m_transpose_matrix = nullptr;

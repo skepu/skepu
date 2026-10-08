@@ -27,7 +27,7 @@ namespace skepu
 			RegionType region{arg, this->m_overlap[0], this->m_overlap[1], this->m_edge, this->m_pad};
 			
 			Index2D offset{0, 0};
-            if (!this->isPool)
+            if (!this->isPool && !this->m_mirror_mode)
             {
                 if (this->m_edge == Edge::None)
                 {
@@ -43,12 +43,16 @@ namespace skepu
 			
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(out_size_i * out_size_j);
 			
-			for (size_t i = 0; i < out_size_i; i++)
-				for (size_t j = 0; j < out_size_j; j++)
+			// (mirror mode: only the interior of the output is computed, see the OpenMP version)
+			const size_t out_i = (this->m_mirror_mode) ? this->m_overlap[0] : 0;
+			const size_t out_j = (this->m_mirror_mode) ? this->m_overlap[1] : 0;
+			
+			for (size_t i = out_i; i < out_size_i - out_i; i++)
+				for (size_t j = out_j; j < out_size_j - out_j; j++)
 					if (p == Parity::None || index_parity(p, i, j))
 					{
 						region.idx = Index2D{(i + offset.row) * this->m_strides[0], (j + offset.col) * this->m_strides[1]};
-						auto res = F::forward(MapOverlapFunc::CPU, Index2D{i,j}, random, region, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+						auto res = F::forward(MapOverlapFunc::CPU, Index2D{i + get<0>(std::forward<CallArgs>(args)...).indexOrigin(), j}, random, region, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
 						SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, j)..., res);
 					}
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 2D", this, {out_size_i, out_size_j},

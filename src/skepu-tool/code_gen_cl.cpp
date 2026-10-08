@@ -607,9 +607,12 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CL(
 				break;
 			
 			case ContainerType::MatRow:
-				SSKernelParamList << "__global " << param.innerTypeNameOpenCL() << " *" << name << ", size_t skepu_cols_" << param.name << ", ";
-				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_cols(), ";
-				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + (skepu_i / skepu_w2) * skepu_cols_" << param.name << "), .cols = skepu_cols_" << param.name << " };\n";
+				// (the row of an element: skepu_base is the number of the first element that this kernel launch has, which
+				// is not 0 for a part of the elements, for example on the second device, or for a distributed container)
+				// (and the matrix may be a part of a distributed one, which has an index origin: the number of its first row)
+				SSKernelParamList << "__global " << param.innerTypeNameOpenCL() << " *" << name << ", size_t skepu_cols_" << param.name << ", size_t skepu_row_origin_" << param.name << ", ";
+				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_cols(), std::get<0>(" << name << ")->indexOrigin(), ";
+				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + (((skepu_base + skepu_i) / skepu_w2) - skepu_row_origin_" << param.name << ") * skepu_cols_" << param.name << "), .cols = skepu_cols_" << param.name << " };\n";
 				break;
 			
 			case ContainerType::MatCol:
@@ -617,7 +620,7 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CL(
 				// output width has to be the same): skepu_w2 is 1 when the output is a vector.
 				SSKernelParamList << "__global " << param.innerTypeNameOpenCL() << " *" << name << ", size_t skepu_rows_" << param.name << ", size_t skepu_cols_" << param.name << ", ";
 				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_rows(), std::get<0>(" << name << ")->total_cols(), ";
-				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + (skepu_i % skepu_cols_" << param.name << ")), .rows = skepu_rows_" << param.name << ", .cols = skepu_cols_" << param.name << " };\n";
+				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + ((skepu_base + skepu_i) % skepu_cols_" << param.name << ")), .rows = skepu_rows_" << param.name << ", .cols = skepu_cols_" << param.name << " };\n";
 				break;
 			
 			case ContainerType::Tensor3:

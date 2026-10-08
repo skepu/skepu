@@ -1146,7 +1146,11 @@ HSVPixel median_kernel_hsv(skepu::Region2D<HSVPixel> image)
 
 #ifdef SKEPU_OPENCL
 
+#ifdef SKEPU_MPI
+namespace skepu_node // the type name specializations belong to the node-level library
+#else
 namespace skepu
+#endif
 {
 	template<> inline std::string getDataTypeCL<skepu::filter::GrayscalePixel> () { return "struct GrayscalePixel"; }
 	template<> inline std::string getDataTypeCL<skepu::filter::GrayscaleExtended> () { return "struct GrayscaleExtended"; }

@@ -32,27 +32,12 @@
 
 #include <memory>
 
-#ifdef SKEPU_STARPU_MPI
-
-#include <skepu3/cluster/cluster.hpp>
-#include <skepu3/cluster/external.hpp>
-#include <skepu3/cluster/containers/matrix/matrix.hpp>
-#include <skepu3/cluster/containers/vector/vector.hpp>
-#include <skepu3/cluster/containers/tensor3/tensor3.hpp>
-#include <skepu3/cluster/containers/tensor4/tensor4.hpp>
-#include <skepu3/impl/random.hpp>
-#include <skepu3/impl/stride_list.hpp>
-#include <skepu3/cluster/skeletons/map/map.hpp>
-#include <skepu3/cluster/skeletons/map/mapoverlap.hpp>
-#include <skepu3/cluster/skeletons/map/mappairs.hpp>
-#include <skepu3/cluster/skeletons/map/mappairsreduce.hpp>
-#include <skepu3/cluster/skeletons/map/mapreduce.hpp>
-#include <skepu3/cluster/skeletons/reduce/reduce.hpp>
-#include <skepu3/cluster/skeletons/scan.hpp>
-
-#else
-
-#include "skepu3/cluster/cluster_fake.hpp"
+// MPI backend (SKEPU_MPI): the node-level library below is compiled under the namespace name skepu_node, and the
+// MPI backend (skepu3/mpi, at the end of this file) is the namespace skepu, which has everything of the node-level
+// library except the distributed containers and the skeleton instances that work on them.
+#ifdef SKEPU_MPI
+# define skepu skepu_node
+#endif
 
 #include "skepu3/impl/backend.hpp"
 #include "skepu3/backend/helper_methods.h"
@@ -90,9 +75,13 @@
 
 
 #endif // SKEPU_PRECOMPILED
-#endif // SKEPU_MPI_STARPU
 
 #include "skepu3/impl/container_helpers.hpp"
+
+#ifdef SKEPU_MPI
+# undef skepu
+# include "skepu3/mpi/mpi.hpp"
+#endif
 //#include "skepu3/impl/fusion.hpp"
 //#include "skepu3/impl/pipe.hpp"
 //#include "skepu3/impl/lineage.hpp"

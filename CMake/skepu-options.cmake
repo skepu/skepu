@@ -40,14 +40,7 @@ endif()
 find_package(MPI)
 set(SKEPU_MPI OFF)
 if(MPI_FOUND)
-	find_package(PkgConfig)
-	if(PkgConfig_FOUND)
-		pkg_check_modules(STARPU IMPORTED_TARGET
-			starpu-1.3 starpumpi-1.3)
-		if(STARPU_FOUND)
-			set(SKEPU_MPI ON)
-		endif()
-	endif()
+	set(SKEPU_MPI ON)
 endif()
 
 find_package(OpenCL)
@@ -114,7 +107,7 @@ macro(skepu_print_config)
     OpenCL         ${SKEPU_OPENCL}
     Hybrid-CUDA    ${SKEPU_HYBRID_CUDA}
     Hybrid-OpenCL  ${SKEPU_HYBRID_OPENCL}
-    StarPU-MPI     ${SKEPU_MPI}")
+    MPI            ${SKEPU_MPI}")
 	endif()
 
 	if(SKEPU_BUILD_EXAMPLES)
@@ -123,7 +116,7 @@ macro(skepu_print_config)
     --------
     Sequential  ${SKEPU_EXAMPLES_SEQ}
     Parallel    ${SKEPU_EXAMPLES_PAR}
-    StarPU-MPI  ${SKEPU_EXAMPLES_MPI}")
+    MPI         ${SKEPU_EXAMPLES_MPI}")
 	endif()
 	message("")
 endmacro(skepu_print_config)

@@ -29,6 +29,7 @@
 extern llvm::cl::opt<bool> GenCUDA;
 extern llvm::cl::opt<bool> GenOMP;
 extern llvm::cl::opt<bool> GenCL;
+extern llvm::cl::opt<bool> GenMPI;
 extern llvm::cl::opt<bool> DoNotGenLineDirectives;
 
 extern llvm::cl::opt<std::string> ResultName;

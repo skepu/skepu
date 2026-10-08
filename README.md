@@ -102,9 +102,10 @@ Contains header files for the SkePU skeleton backends.
 
 Contains implementations of the various SkePU skeleton backends and containers.
 
-##### `<skepu-headers>skepu3/cluster`
+##### `<skepu-headers>/skepu3/mpi`
 
-Containes the implementation of the StarPU MPI backend.
+Contains the implementation of the MPI backend (distributed containers over the
+other backends). See its README.
 
 ### `examples`
 

@@ -62,7 +62,7 @@ namespace skepu
 										(size_t)((long)(l * this->m_strides[3]) + offset[3])
                                 };
 								auto res = F::forward(
-									MapOverlapFunc::CPU, Index4D{i,j,k,l}, random, region,
+									MapOverlapFunc::CPU, Index4D{i + get<0>(std::forward<CallArgs>(args)...).indexOrigin(), j, k, l}, random, region,
 									get<AI>(std::forward<CallArgs>(args)...).hostProxy()...,
 									get<CI>(std::forward<CallArgs>(args)...)...
 								);

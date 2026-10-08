@@ -57,7 +57,8 @@ namespace skepu
 				std::make_tuple(&get<AI>(std::forward<CallArgs>(args)...).getParent(), std::get<AI-arity>(anyMemP))...,
 				get<CI>(std::forward<CallArgs>(args)...)...,
 				size_info(defaultDim{}, this->default_size_i, this->default_size_j, this->default_size_k, this->default_size_l, get<EI>(std::forward<CallArgs>(args)...)...),
-				size, startIdx, this->m_strides,
+				// (the base of the indices that the kernel computes; the data is at startIdx)
+				size, startIdx + index_base_of_first_elwise<sizeof...(EI)>(std::forward<CallArgs>(args)...) + this->m_default_origin, this->m_strides,
 				sizeof(Ret) * numThreads
 			);
 			
@@ -75,7 +76,8 @@ namespace skepu
 			pack_expand((delete std::get<OI>(outMemP), 0)...);
 
 		//	return ReduceFunc::CPU(res, startValue);
-			pack_expand((get_or_return<OI>(res) = ReduceFunc::CPU(get_or_return<OI>(res), get_or_return<OI>(startValue)), 0)...);
+			if (this->m_apply_start)
+				pack_expand((get_or_return<OI>(res) = ReduceFunc::CPU(get_or_return<OI>(res), get_or_return<OI>(startValue)), 0)...);
 			
 			auto result = scalar_wrapper_t<typename MapFunc::Ret>(res);
 			SKEPU_TRACE_CALL(trace_handle, "MapReduce", this, {size}, tracing::scalar_output_labels(result),
@@ -133,7 +135,7 @@ namespace skepu
 					std::make_tuple(&get<AI>(std::forward<CallArgs>(args)...).getParent(), std::get<AI-arity>(anyMemP))...,
 					get<CI>(std::forward<CallArgs>(args)...)...,
 					size_info(defaultDim{}, this->default_size_i, this->default_size_j, this->default_size_k, this->default_size_l, get<EI>(std::forward<CallArgs>(args)...)...),
-					numElem, baseIndex, this->m_strides,
+					numElem, baseIndex + index_base_of_first_elwise<sizeof...(EI)>(std::forward<CallArgs>(args)...) + this->m_default_origin, this->m_strides,
 					sizeof(Ret) * numThreads
 				);
 				
@@ -151,11 +153,18 @@ namespace skepu
 			}
 			
 			// Reduces results from each device on the CPU to yield the total result.
+			bool seeded = this->m_apply_start;
 			for (size_t i = 0; i < numDevices; ++i)
 			{
 				pack_expand((std::get<OI>(outMemP[i]).copyDeviceToHost(1), 0)...);
 			//	res = ReduceFunc::CPU(res, result[i]);
-				pack_expand((get_or_return<OI>(res) = ReduceFunc::CPU(get_or_return<OI>(res), get_or_return<OI>(result[i])), 0)...);
+				if (!seeded)
+				{
+					res = result[i];
+					seeded = true;
+				}
+				else
+					pack_expand((get_or_return<OI>(res) = ReduceFunc::CPU(get_or_return<OI>(res), get_or_return<OI>(result[i])), 0)...);
 			}
 
 			auto result_w = scalar_wrapper_t<typename MapFunc::Ret>(res);

@@ -85,7 +85,7 @@ namespace skepu
 					{
 						for (size_t j = 0; j < Hsize; ++j)
 						{
-							Index2D index{ i, j };
+							Index2D index{ i + get<0>(std::forward<CallArgs>(args)...).indexOrigin(), j }; // (the row of a part of a distributed matrix is numbered in the whole matrix)
 							auto res = F::forward(MapPairsFunc::OMP, index, random(myId),
 								get<VEI>(std::forward<CallArgs>(args)...)(i)...,
 								get<HEI>(std::forward<CallArgs>(args)...)(j)...,

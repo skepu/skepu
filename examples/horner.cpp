@@ -53,13 +53,17 @@ int main(int argc, char *argv[])
 	}
 
 	skepu::Vector<float> coeffs(degree + 1, "Coeffs");
+	// (what changes in an skepu::external block, other than the containers, is not seen by the other processes of an MPI
+	// program: argi is advanced outside)
 	skepu::external("Read coeffs", [&]
 	{
-    	for (int i = degree; i >= 0; --i)
-    	{
-    		coeffs(i) = atof(argv[argi++]);
-    	}
+		size_t arg = argi;
+		for (int i = degree; i >= 0; --i)
+		{
+			coeffs(i) = atof(argv[arg++]);
+		}
 	}, skepu::write(coeffs));
+	argi += degree + 1;
 
 	// Read x value
 	size_t samples = atof(argv[argi++]);

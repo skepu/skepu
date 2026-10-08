@@ -11,7 +11,7 @@ namespace skepu
 		size_t j = index / (m_parent.m_size_k);
 		index = index % (m_parent.m_size_k);
 		
-		return Index3D{ i, j, index };
+		return Index3D{ i + m_parent.indexOrigin(), j, index };
 	}
 	
 	template <typename T>
@@ -232,7 +232,7 @@ namespace skepu
 		size_t k = index / (m_parent.m_size_l);
 		index = index % (m_parent.m_size_l);
 		
-		return Index4D{ i, j, k, index };
+		return Index4D{ i + m_parent.indexOrigin(), j, k, index };
 	}
 	
 	template <typename T>

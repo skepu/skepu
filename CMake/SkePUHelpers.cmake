@@ -80,9 +80,9 @@ macro(skepu_filter_args)
 		endif()
 	endforeach()
 
-	if(_skepu_mpi AND _skepu_opencl)
+	if(_skepu_mpi AND _skepu_cuda)
 		message(FATAL_ERROR
-			"[SkePU] StarPU-MPI backend does not have support for OpenCL")
+			"[SkePU] The MPI backend does not have support for CUDA")
 	endif()
 
 	# Check that there are some SkePU sources in the argument list
@@ -108,23 +108,11 @@ macro(skepu_configure)
 	endif()
 
 	if(_skepu_mpi)
-		if(NOT TARGET PkgConfig::STARPU)
+		if(NOT MPI_CXX_FOUND)
 			find_package(MPI REQUIRED)
-			find_package(PkgConfig REQUIRED)
-			pkg_check_modules(STARPU REQUIRED IMPORTED_TARGET
-				starpumpi-1.3)
 		endif()
-		if((NOT SKEPU_MPI_FIX) AND (CMAKE_VERSION VERSION_LESS 3.18))
-			get_target_property(_mpi_ldflags MPI::MPI_CXX INTERFACE_LINK_LIBRARIES)
-			string(REPLACE "-pthread" "" _mpi_ldflags "${_mpi_ldflags}")
-			string(REPLACE " ;" ";" _mpi_ldflags "${_mpi_ldflags}")
-			set_property(TARGET MPI::MPI_CXX PROPERTY
-				INTERFACE_LINK_LIBRARIES ${_mpi_ldflags})
-			unset(_mpi_ldflags)
-			set(SKEPU_MPI_FIX TRUE PARENT_SCOPE)
-		endif()
-		list(APPEND _skepu_backends "-starpu-mpi")
-		list(APPEND _target_libs MPI::MPI_CXX PkgConfig::STARPU)
+		list(APPEND _skepu_backends "-mpi")
+		list(APPEND _target_libs MPI::MPI_CXX)
 	endif()
 
 	if(_skepu_opencl)

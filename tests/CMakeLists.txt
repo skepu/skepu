@@ -4,6 +4,7 @@ endif()
 
 set(test_helpers_dir ${CMAKE_CURRENT_SOURCE_DIR}/helpers)
 
+add_subdirectory(catch2_main)
 add_subdirectory(backend)
 add_subdirectory(codegen)
 add_subdirectory(containers)

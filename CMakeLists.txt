@@ -129,7 +129,7 @@ install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/llvm/clang/lib/Headers/
 	DESTINATION lib/SkePU/clang-headers/)
 # TODO: We should probably install the clang licence in that directory.
 
-# Enable testing first in case skepu headers tests are enabled.
+# Enable testing first.
 if(SKEPU_ENABLE_TESTING)
 	enable_testing()
 endif()
@@ -137,13 +137,8 @@ endif()
 # We need the SkePU headers.
 add_subdirectory(skepu-headers)
 
-# Now add the skepu-tool tests
+# Now add the tests
 if(SKEPU_ENABLE_TESTING)
-	# If skepu headers tests were not enabled, we add the catch2_main target here.
-	if(NOT TARGET catch2_main)
-		add_subdirectory(${CMAKE_SOURCE_DIR}/skepu-headers/tests/catch2_main)
-	endif()
-
 	add_subdirectory(tests)
 endif()
 
@@ -175,4 +170,3 @@ install(
 	DESTINATION lib/cmake/SkePU)
 
 skepu_print_config()
-skepu_headers_print_config()

@@ -110,33 +110,41 @@ namespace skepu
 					if (this->m_mode == ReduceMode::RowWise)
 						for (size_t i = first; i < last; ++i)
 						{
-							pack_expand((get<OI>(std::forward<CallArgs>(args)...)(i) = get_or_return<OI>(this->m_start), 0)...);
+							if (this->m_apply_start)
+						pack_expand((get<OI>(std::forward<CallArgs>(args)...)(i) = get_or_return<OI>(this->m_start), 0)...);
 							for (size_t j = 0; j < Hsize; ++j)
 							{
-								auto index = Index2D { i, j };
-								auto temp = F::forward(MapPairsFunc::OMP, Index2D{ i, j }, random(omp_get_thread_num()),
+								auto index = Index2D { i + this->m_row_origin, j };
+								auto temp = F::forward(MapPairsFunc::OMP, Index2D{ i + this->m_row_origin, j }, random(omp_get_thread_num()),
 									get<VEI>(std::forward<CallArgs>(args)...)(i)...,
 									get<HEI>(std::forward<CallArgs>(args)...)(j)...,
 									get<AI>(std::forward<CallArgs>(args)...).hostProxy()...,
 									get<CI>(std::forward<CallArgs>(args)...)...
 								);
-								pack_expand((get<OI>(std::forward<CallArgs>(args)...)(i) = ReduceFunc::CPU(get<OI>(std::forward<CallArgs>(args)...)(i), get_or_return<OI>(temp)), 0)...);
+								if (!this->m_apply_start && j == 0)
+							pack_expand((get<OI>(std::forward<CallArgs>(args)...)(i) = get_or_return<OI>(temp), 0)...);
+						else
+							pack_expand((get<OI>(std::forward<CallArgs>(args)...)(i) = ReduceFunc::CPU(get<OI>(std::forward<CallArgs>(args)...)(i), get_or_return<OI>(temp)), 0)...);
 							}
 						}
 					else if (this->m_mode == ReduceMode::ColWise)
 						for (size_t j = first; j < last; ++j) // TODO: optimize?
 						{
-							pack_expand((get<OI>(std::forward<CallArgs>(args)...)(j) = get_or_return<OI>(this->m_start), 0)...);
+							if (this->m_apply_start)
+						pack_expand((get<OI>(std::forward<CallArgs>(args)...)(j) = get_or_return<OI>(this->m_start), 0)...);
 							for (size_t i = 0; i < Vsize; ++i)
 							{
-								auto index = Index2D { i, j };
-								auto temp = F::forward(MapPairsFunc::OMP, Index2D{ i, j }, random(omp_get_thread_num()),
+								auto index = Index2D { i + this->m_row_origin, j };
+								auto temp = F::forward(MapPairsFunc::OMP, Index2D{ i + this->m_row_origin, j }, random(omp_get_thread_num()),
 									get<VEI>(std::forward<CallArgs>(args)...)(i)...,
 									get<HEI>(std::forward<CallArgs>(args)...)(j)...,
 									get<AI>(std::forward<CallArgs>(args)...).hostProxy()...,
 									get<CI>(std::forward<CallArgs>(args)...)...
 								);
-								pack_expand((get<OI>(std::forward<CallArgs>(args)...)(j) = ReduceFunc::CPU(get<OI>(std::forward<CallArgs>(args)...)(j), get_or_return<OI>(temp)), 0)...);
+								if (!this->m_apply_start && i == 0)
+							pack_expand((get<OI>(std::forward<CallArgs>(args)...)(j) = get_or_return<OI>(temp), 0)...);
+						else
+							pack_expand((get<OI>(std::forward<CallArgs>(args)...)(j) = ReduceFunc::CPU(get<OI>(std::forward<CallArgs>(args)...)(j), get_or_return<OI>(temp)), 0)...);
 							}
 						}
 					

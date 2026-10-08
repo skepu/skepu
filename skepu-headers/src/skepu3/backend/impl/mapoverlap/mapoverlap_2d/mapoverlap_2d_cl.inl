@@ -33,7 +33,8 @@ namespace skepu
 			std::vector<T> wrap(1);
 			
 			auto elwiseMemP = std::make_tuple(get<EI>(std::forward<CallArgs>(args)...).updateDevice_CL(get<EI>(std::forward<CallArgs>(args)...).getAddress(), in_size_i,  in_size_j,  device, true)...);
-			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getParent().getAddress(), out_size_i, out_size_j, device, false)...);
+			// (in mirror mode the elements near the edges are not computed: the output keeps its values, so it is copied to the device)
+			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getParent().getAddress(), out_size_i, out_size_j, device, this->m_mirror_mode)...);
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(),
 				get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
 				
@@ -99,6 +100,7 @@ namespace skepu
 				this->m_strides[0], this->m_strides[1],
 				in_size_i, in_size_j, shared_i, shared_j,
 				(int)(this->isPool ? 1 : 0), edge, pad, &wrapMemP,
+				get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first element, in the whole container)
 				shared_mem
 			);
 			
@@ -193,6 +195,7 @@ namespace skepu
 					this->m_strides[0], this->m_strides[1],
 					in_size_i, in_size_j, shared_i, shared_j,
 					(int)(this->isPool ? 1 : 0), edge, pad, &wrapMemP,
+					get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first element, in the whole container)
 					shared_mem
 				);
 				
@@ -221,6 +224,9 @@ namespace skepu
 				<< ", maxBlocks = " << this->m_selected_spec->GPUBlocks() << ", maxThreads = " << this->m_selected_spec->GPUThreads());
 			
 			const size_t numDevices = std::min(this->m_selected_spec->devices(), this->m_environment->m_devices_CL.size());
+			
+			if (numDevices > 1 && this->m_mirror_mode)
+				SKEPU_ERROR("MapOverlap 2D with the edge mode None and an input of the size of the output (mirror mode) does not work on multiple OpenCL devices; use one device");
 			
 #ifndef SKEPU_DEBUG_FORCE_MULTI_GPU_IMPL
 			

@@ -3,7 +3,7 @@ namespace skepu
 	template <typename T>
 	Index1D VectorIterator<T>::getIndex() const
 	{
-		size_t index = *this - m_parent.begin();
+		size_t index = *this - m_parent.begin() + m_parent.indexOrigin();
 		return Index1D{index};
 	}
 	

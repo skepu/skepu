@@ -11,13 +11,8 @@
 #include <skepu3/impl/backend.hpp>
 #include <skepu3/impl/meta_helpers.hpp>
 
-#ifdef SKEPU_STARPU_MPI
-#include <skepu3/cluster/cluster.hpp>
-#endif
-
 namespace skepu
 {
-	#ifndef SKEPU_STARPU_MPI
 	namespace containerutils
 	{
 		inline void updateHostAndInvalidateDevice() {}
@@ -67,7 +62,6 @@ namespace skepu
 			resize(size, std::forward<Args>(args)...);
 		}
 	} // namespace containerutils
-	#endif
 
 	namespace benchmark
 	{
@@ -129,20 +123,8 @@ namespace skepu
 		template<typename BF, typename... Args>
 		inline std::chrono::microseconds measureExecTime(BF f, Args&&... args)
 		{
-			/* If we are using StarPU-MPI, make sure all previous skeletons has
-			 * finished their tasks before starting the benchmark. */
-			#ifdef SKEPU_STARPU_MPI
-			skepu::cluster::barrier();
-			#endif
-
 			auto t1 = std::chrono::steady_clock::now();
 			f(std::forward<Args>(args)...);
-
-			/* Make sure that all skeletons that have submitted tasks to StarPU has
-			 * finished before ending the measurement. */
-			#ifdef SKEPU_STARPU_MPI
-			skepu::cluster::barrier();
-			#endif
 
 			auto t2 = std::chrono::steady_clock::now();
 			return std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
@@ -153,20 +135,8 @@ namespace skepu
 		{
 			f(std::forward<Args>(args)...);
 
-			/* If we are using StarPU-MPI, make sure all previous skeletons has
-			 * finished their tasks before starting the benchmark. */
-			#ifdef SKEPU_STARPU_MPI
-			skepu::cluster::barrier();
-			#endif
-
 			auto t1 = std::chrono::steady_clock::now();
 			f(std::forward<Args>(args)...);
-
-			/* Make sure that all skeletons that have submitted tasks to StarPU has
-			 * finished before ending the measurement. */
-			#ifdef SKEPU_STARPU_MPI
-			skepu::cluster::barrier();
-			#endif
 
 			auto t2 = std::chrono::steady_clock::now();
 			return std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);

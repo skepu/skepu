@@ -166,11 +166,27 @@ namespace skepu
 #ifdef SKEPU_DEBUG_PRNG
 			this->m_state += steps;
 #else
-			for (size_t step = 0; step < steps; ++step)
+			// The same as a step at a time, in a number of operations that is the logarithm of the number of steps: the
+			// steps are the same affine map of the state (modulo 2^48), so any number of them is the map composed
+			// with itself by repeated squaring
+			uint64_t base_a = 1, base_c = 0;
+			for (size_t i = 0; i < RND_EXP; ++i)
 			{
-				for (size_t i = 0; i < RND_EXP; ++i)
-					this->m_state = (this->m_state * RND_BASE + RND_INC) & RND_MOD;
+				base_a = (base_a * RND_BASE) & RND_MOD;
+				base_c = (base_c * RND_BASE + RND_INC) & RND_MOD;
 			}
+			uint64_t total_a = 1, total_c = 0;
+			for (size_t remaining = steps; remaining > 0; remaining >>= 1)
+			{
+				if (remaining & 1)
+				{
+					total_a = (base_a * total_a) & RND_MOD;
+					total_c = (base_a * total_c + base_c) & RND_MOD;
+				}
+				base_c = (base_a * base_c + base_c) & RND_MOD;
+				base_a = (base_a * base_a) & RND_MOD;
+			}
+			this->m_state = (total_a * this->m_state + total_c) & RND_MOD;
 #endif
 		}
 

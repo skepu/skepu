@@ -49,6 +49,30 @@ skepu_add_test_case_cuda(mapoverlap_1d_rowcol)
 #skepu_add_test_case_hybrid_opencl(mapoverlap_1d_rowcol)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_1d_rowcol)
 
+# ------------------------------------------------
+#   MapOverlap 1D on matrices with rows and columns longer than a thread block
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mapoverlap_1d_wide)
+skepu_add_test_case_cpu(mapoverlap_1d_wide)
+skepu_add_test_case_openmp(mapoverlap_1d_wide)
+skepu_add_test_case_opencl(mapoverlap_1d_wide)
+skepu_add_test_case_cuda(mapoverlap_1d_wide)
+#skepu_add_test_case_hybrid_opencl(mapoverlap_1d_wide)
+#skepu_add_test_case_hybrid_cuda(mapoverlap_1d_wide)
+
+# ------------------------------------------------
+#   MapOverlap 2D mirror mode (edge mode None, input of the size of the output)
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mapoverlap_2d_mirror)
+skepu_add_test_case_cpu(mapoverlap_2d_mirror)
+skepu_add_test_case_openmp(mapoverlap_2d_mirror)
+skepu_add_test_case_opencl(mapoverlap_2d_mirror)
+skepu_add_test_case_cuda(mapoverlap_2d_mirror)
+#skepu_add_test_case_hybrid_opencl(mapoverlap_2d_mirror)
+#skepu_add_test_case_hybrid_cuda(mapoverlap_2d_mirror)
+
 
 # ------------------------------------------------
 #   MapOverlap 2D fundamentals

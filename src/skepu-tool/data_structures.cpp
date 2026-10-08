@@ -249,13 +249,15 @@ UserType::UserType(const CXXRecordDecl *t)
 	}
 	#ifndef SKEPU_LSP
 		static const std::string RunTimeTypeNameFunc = R"~~~(
-		namespace skepu { template<> std::string getDataTypeCL<{{QUALIFIED_NAME}}>() { return "struct {{ESCAPED_NAME}}"; } }
-		namespace skepu { template<> std::string getDataTypeDefCL<{{QUALIFIED_NAME}}>() { return {{TYPE_DEF}}; } }
+		namespace {{NAMESPACE}} { template<> std::string getDataTypeCL<{{QUALIFIED_NAME}}>() { return "struct {{ESCAPED_NAME}}"; } }
+		namespace {{NAMESPACE}} { template<> std::string getDataTypeDefCL<{{QUALIFIED_NAME}}>() { return {{TYPE_DEF}}; } }
 		)~~~";
 
 		if (GenCL)
 		{
 			std::string typeNameFunc = RunTimeTypeNameFunc;
+			// (in an MPI program the node-level library is skepu_node: these are functions of it)
+			replaceTextInString(typeNameFunc, "{{NAMESPACE}}", GenMPI ? "skepu_node" : "skepu");
 			replaceTextInString(typeNameFunc, "{{QUALIFIED_NAME}}", resolvedTypeName);
 			replaceTextInString(typeNameFunc, "{{ESCAPED_NAME}}", this->typeNameOpenCL);
 			replaceTextInString(typeNameFunc, "{{TYPE_DEF}}", "R\"~~~(" + generateUserTypeCode_CL(*this) + ")~~~\"");
@@ -624,20 +626,23 @@ std::string UserFunction::RandomAccessParam::innerTypeNameOpenCL() const
 
 std::string UserFunction::RandomAccessParam::TypeNameHost() const
 {
+	// In an MPI program the name skepu is the MPI backend, which has distributed containers: the OpenCL host code works
+	// on the node-level ones
+	const std::string ns = GenMPI ? "skepu_node" : "skepu";
 	switch (this->containerType)
 	{
 		case ContainerType::Vector:
-			return "std::tuple<skepu::Vector<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
+			return "std::tuple<" + ns + "::Vector<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
 		case ContainerType::Matrix:
 		case ContainerType::MatRow:
 		case ContainerType::MatCol:
-			return "std::tuple<skepu::Matrix<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
+			return "std::tuple<" + ns + "::Matrix<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
 		case ContainerType::Tensor3:
-			return "std::tuple<skepu::Tensor3<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
+			return "std::tuple<" + ns + "::Tensor3<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
 		case ContainerType::Tensor4:
-			return "std::tuple<skepu::Tensor4<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
+			return "std::tuple<" + ns + "::Tensor4<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *>";
 		case ContainerType::SparseMatrix:
-			return "std::tuple<skepu::SparseMatrix<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *, "
+			return "std::tuple<" + ns + "::SparseMatrix<" + this->resolvedTypeName + "> *, skepu::backend::DeviceMemPointer_CL<" + this->resolvedTypeName + "> *, "
 				+ "skepu::backend::DeviceMemPointer_CL<size_t> *, skepu::backend::DeviceMemPointer_CL<size_t> *>";
 		default:
 			SkePUAbort("ERROR: TypeNameHost: Invalid switch value");
@@ -650,9 +655,9 @@ size_t UserFunction::RandomAccessParam::numKernelArgsCL() const
 	switch (this->containerType)
 	{
 		case ContainerType::Vector:
-		case ContainerType::MatRow:
-		case ContainerType::MatCol:
 			return 2;
+		case ContainerType::MatRow: // (data, cols, the number of the first row)
+		case ContainerType::MatCol: // (data, rows, cols)
 		case ContainerType::Matrix:
 			return 3;
 		case ContainerType::Tensor3:

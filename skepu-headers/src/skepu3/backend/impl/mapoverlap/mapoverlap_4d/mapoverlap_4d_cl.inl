@@ -124,6 +124,7 @@ namespace skepu
 				sharedI, sharedJ, sharedK, sharedL,
 				numThreads_0a, numBlocks_0a,
 				(int)(this->isPool ? 1 : 0), edge, pad, &wrapMemP,
+				get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first element, in the whole container)
 				sharedMemSize
 			);
 			
@@ -200,6 +201,7 @@ namespace skepu
 					outRows, out_cols,
 					this->m_overlap_y, this->m_overlap_x,
 					in_cols, sharedRows, sharedCols,
+					get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first element, in the whole container)
 					sharedMemSize
 				);
 				

@@ -82,6 +82,7 @@ namespace skepu
 				get<0>(std::forward<CallArgs>(args)...).getParent().size_info(),
 				&wrap_mem_p,
 				n, overlap, out_offset, out_numelements, _poly, _pad,
+				get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first element, in the whole container)
 				sharedMemSize
 			);
 			
@@ -182,6 +183,7 @@ namespace skepu
 					get<0>(std::forward<CallArgs>(args)...).getParent().size_info(),
 					&wrap_mem_p,
 					n, overlap, out_offset, out_numelements, _poly, _pad,
+					get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first element, in the whole container)
 					sharedMemSize
 				);
 				
@@ -661,6 +663,7 @@ namespace skepu
 				&wrapMemP,
 				n, overlap, out_offset, out_numelements, _poly, _pad,
 				blocksPerCol, numcols, colWidth,
+				get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first row, in the whole matrix)
 				sharedMemSize
 			);
 			
@@ -832,6 +835,7 @@ namespace skepu
 					numElems, overlap, in_offset,
 					numElems, _poly, _deviceType[i], _pad,
 					blocksPerCol[i], numCols, numRows,
+					get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first row, in the whole matrix)
 					sharedMemSize
 				);
 				

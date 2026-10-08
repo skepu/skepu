@@ -20,7 +20,7 @@ llvm::cl::opt<std::string> ResultName("name", llvm::cl::desc("File name of main 
 llvm::cl::opt<bool> GenCUDA("cuda",  llvm::cl::desc("Generate CUDA backend"),   llvm::cl::cat(SkePUCategory));
 llvm::cl::opt<bool> GenOMP("openmp", llvm::cl::desc("Generate OpenMP backend"), llvm::cl::cat(SkePUCategory));
 llvm::cl::opt<bool> GenCL("opencl",  llvm::cl::desc("Generate OpenCL backend"), llvm::cl::cat(SkePUCategory));
-llvm::cl::opt<bool> GenStarPUMPI("starpu-mpi",  llvm::cl::desc("Generate StarPU-MPI backend"), llvm::cl::cat(SkePUCategory));
+llvm::cl::opt<bool> GenMPI("mpi", llvm::cl::desc("Generate code for the MPI backend (distributed containers over the other backends)"), llvm::cl::cat(SkePUCategory));
 
 llvm::cl::opt<bool> Verbose("verbose",  llvm::cl::desc("Verbose logging printout"), llvm::cl::cat(SkePUCategory));
 llvm::cl::opt<bool> Silent("silent",  llvm::cl::desc("Disable normal printouts"), llvm::cl::cat(SkePUCategory));
@@ -274,7 +274,7 @@ public:
 			if (GenOMP)  GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENMP 1\n");
 			if (GenCL)   GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENCL 1\n");
 			if (GenCUDA) GlobalRewriter.InsertText(SLStart, "#define SKEPU_CUDA 1\n");
-			if (GenStarPUMPI) GlobalRewriter.InsertText(SLStart, "#define SKEPU_STARPU_MPI 1\n");
+			if (GenMPI)  GlobalRewriter.InsertText(SLStart, "#define SKEPU_MPI 1\n");
 			if (!DoNotGenLineDirectives)
 				GlobalRewriter.InsertText(SLStart, lineDirectiveForSourceLoc(SLStart) + "\n");
 
@@ -450,7 +450,7 @@ int main(int argc, const char **argv)
 		SkePULog() << "   OpenMP gen:       " << (GenOMP ? "ON" : "OFF") << "\n";
 		SkePULog() << "   CUDA gen:         " << (GenCUDA ? "ON" : "OFF") << "\n";
 		SkePULog() << "   OpenCL gen:       " << (GenCL ? "ON" : "OFF") << "\n";
-		SkePULog() << "   StarPU-MPI gen:   " << (GenStarPUMPI ? "ON" : "OFF") << "\n";
+		SkePULog() << "   MPI gen:          " << (GenMPI ? "ON" : "OFF") << "\n";
 		SkePULog() << "   Main output file: " << mainFileName << "\n";
 		SkePULog() << "# ======================================= #\n";
         for (int i = 1; i < argc; ++i)
