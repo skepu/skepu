@@ -293,6 +293,9 @@ namespace skepu
 				template<typename F>
 				void generate_from_rand(F value)
 				{
+					// (a call for the trace, as in a single node, where randomize is an external of the library)
+					mpi::trace::CallScope trace_scope("external");
+					trace_scope.work_begin();
 					const size_t first = this->local_offset(), last = first + this->local_size();
 					T *tile = this->local_size() > 0 ? this->m_tile->getAddress() : nullptr;
 					const size_t total = this->size();
@@ -305,6 +308,8 @@ namespace skepu
 					if (this->local_size() > 0)
 						this->m_tile->invalidateDeviceData();
 					this->tile_written();
+					trace_scope.work_finish();
+					trace_scope.finish_external("randomize", "", 0, {this->m_identity.id}, {});
 				}
 
 				const T *read_access() const

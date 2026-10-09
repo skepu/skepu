@@ -1,0 +1,384 @@
+{
+    "data": [
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 1,
+            "end": 3808,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "seq": 1,
+            "start": 3803,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                6
+            ],
+            "elwise_inputs": [],
+            "end": 3820,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+            "label": "prime_counter",
+            "line": 81,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 5
+                },
+                "local_elements": 2,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 850697691479707070,
+                "work_end": 3802,
+                "work_start": 3712
+            },
+            "object_id": 1000,
+            "outputs": [
+                1006
+            ],
+            "pattern": "MapReduce",
+            "prng": 1001,
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 1,
+            "start": 3711,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 2,
+            "end": 3923,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "seq": 2,
+            "start": 3921,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                96
+            ],
+            "elwise_inputs": [],
+            "end": 3937,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+            "label": "prime_counter",
+            "line": 81,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 2
+                },
+                "local_elements": 24,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 850697691479707070,
+                "work_end": 3920,
+                "work_start": 3886
+            },
+            "object_id": 1007,
+            "outputs": [
+                1013
+            ],
+            "pattern": "MapReduce",
+            "prng": 1008,
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 2,
+            "start": 3885,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 3,
+            "end": 4011,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "seq": 3,
+            "start": 4010,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                996
+            ],
+            "elwise_inputs": [],
+            "end": 4019,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+            "label": "prime_counter",
+            "line": 81,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 1
+                },
+                "local_elements": 249,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 850697691479707070,
+                "work_end": 4010,
+                "work_start": 3950
+            },
+            "object_id": 1014,
+            "outputs": [
+                1020
+            ],
+            "pattern": "MapReduce",
+            "prng": 1015,
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 3,
+            "start": 3950,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 4,
+            "end": 4174,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "seq": 4,
+            "start": 4148,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                9996
+            ],
+            "elwise_inputs": [],
+            "end": 4184,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+            "label": "prime_counter",
+            "line": 81,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 26
+                },
+                "local_elements": 2499,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 850697691479707070,
+                "work_end": 4148,
+                "work_start": 4030
+            },
+            "object_id": 1021,
+            "outputs": [
+                1027
+            ],
+            "pattern": "MapReduce",
+            "prng": 1022,
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 4,
+            "start": 4029,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 5,
+            "end": 5653,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "seq": 5,
+            "start": 5487,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                99996
+            ],
+            "elwise_inputs": [],
+            "end": 5681,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+            "label": "prime_counter",
+            "line": 81,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 166
+                },
+                "local_elements": 24999,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 850697691479707070,
+                "work_end": 5487,
+                "work_start": 4195
+            },
+            "object_id": 1028,
+            "outputs": [
+                1034
+            ],
+            "pattern": "MapReduce",
+            "prng": 1029,
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 5,
+            "start": 4195,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 6,
+            "end": 22326,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "seq": 6,
+            "start": 20402,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                999996
+            ],
+            "elwise_inputs": [],
+            "end": 22336,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+            "label": "prime_counter",
+            "line": 81,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 1924
+                },
+                "local_elements": 249999,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 850697691479707070,
+                "work_end": 20401,
+                "work_start": 5691
+            },
+            "object_id": 1035,
+            "outputs": [
+                1041
+            ],
+            "pattern": "MapReduce",
+            "prng": 1036,
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 6,
+            "start": 5691,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 7,
+            "end": 210901,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "seq": 7,
+            "start": 185770,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                9999996
+            ],
+            "elwise_inputs": [],
+            "end": 210915,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+            "label": "prime_counter",
+            "line": 81,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 25131
+                },
+                "local_elements": 2499999,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 850697691479707070,
+                "work_end": 185770,
+                "work_start": 22350
+            },
+            "object_id": 1042,
+            "outputs": [
+                1048
+            ],
+            "pattern": "MapReduce",
+            "prng": 1043,
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 7,
+            "start": 22349,
+            "threads": 2,
+            "type": "skeleton_call"
+        }
+    ],
+    "header": {
+        "clock": {
+            "end": {
+                "local_us": 210962,
+                "offset_us": 0.0,
+                "uncertainty_us": 0.0
+            },
+            "method": "ping-pong",
+            "start": {
+                "local_us": 3267,
+                "offset_us": 0.0,
+                "uncertainty_us": 0.0
+            }
+        },
+        "mpi": {
+            "detail_rank": 0,
+            "host": "Augusts-Laptop.local",
+            "pid": 37637,
+            "rank": 0,
+            "ranks": 4,
+            "role": "full"
+        }
+    }
+}

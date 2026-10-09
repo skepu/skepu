@@ -19,8 +19,13 @@ const BACKEND_TO_MEMSPACE = {
 
 const ALL_MEMSPACES = [...new Set(Object.values(BACKEND_TO_MEMSPACE))];
 
+// The gathered copy of a container of an MPI program (the host reads it, and a random access argument of a skeleton) is a memory space of
+// its own, next to the tiles that the processes have (the memory spaces of their backends). It is not in ALL_MEMSPACES: a write of a
+// container makes the copy out of date, as it does in the program.
+const REPLICA = 'MPI replica';
+
 function makeMemSpaceDict() {
-    const d = { ANY: null };
+    const d = { ANY: null, [REPLICA]: null };
     for (const ms of ALL_MEMSPACES) d[ms] = null;
     return d;
 }
@@ -193,6 +198,7 @@ export class DirectedGraph {
         this.readFromID(id, node, backend);
         const e = this._producerEntry(id);
         e['ANY'] = node;
+        e[REPLICA] = null;   // (the gathered copy of an MPI program is out of date)
         if (backend === 'ALL') {
             for (const ms of ALL_MEMSPACES) e[ms] = node;
         } else {
@@ -210,6 +216,17 @@ export class DirectedGraph {
             const ms = BACKEND_TO_MEMSPACE[backend];
             if (ms !== undefined) e[ms] = node;
         }
+    }
+
+    /** The node made the gathered copy of the container (a gather, a broadcast): what reads the copy depends on it, what reads the tiles does not. */
+    writeReplica(id, node) {
+        this._producerEntry(id)[REPLICA] = node;
+    }
+
+    /** The node that made the gathered copy of the container, if there is a valid one. */
+    replicaProducerForID(id) {
+        const e = this._latestProducerOfID[id];
+        return e ? e[REPLICA] : null;
     }
 
     transferIDMemspace(objectId, sourceBackend, targetBackend) {

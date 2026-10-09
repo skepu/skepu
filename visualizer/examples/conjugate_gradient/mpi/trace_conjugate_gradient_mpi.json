@@ -1,0 +1,2149 @@
+{
+    "data": [
+        {
+            "label": "b",
+            "line": 0,
+            "object_id": 1000,
+            "time": 3756,
+            "type": "allocation"
+        },
+        {
+            "label": "R",
+            "line": 0,
+            "object_id": 1003,
+            "time": 3770,
+            "type": "allocation"
+        },
+        {
+            "label": "A",
+            "line": 0,
+            "object_id": 1006,
+            "time": 3786,
+            "type": "allocation"
+        },
+        {
+            "label": "x",
+            "line": 0,
+            "object_id": 1009,
+            "time": 3791,
+            "type": "allocation"
+        },
+        {
+            "elwise_inputs": [],
+            "end": 3794,
+            "file": "",
+            "label": "randomize",
+            "line": 0,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 0,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 49753133207228844,
+                "work_end": 3794,
+                "work_start": 3793
+            },
+            "outputs": [
+                1000
+            ],
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 1,
+            "start": 3793,
+            "type": "external"
+        },
+        {
+            "elwise_inputs": [],
+            "end": 4171,
+            "file": "",
+            "label": "randomize",
+            "line": 0,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 0,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 49753133207228844,
+                "work_end": 4171,
+                "work_start": 3807
+            },
+            "outputs": [
+                1003
+            ],
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 2,
+            "start": 3807,
+            "type": "external"
+        },
+        {
+            "bytes_received": 196608,
+            "bytes_sent": 196608,
+            "comm_seq": 1,
+            "end": 9268,
+            "object_ids": [
+                1003
+            ],
+            "operation": "allgather",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "random access argument: the container is gathered",
+            "seq": 3,
+            "start": 4183,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                65536
+            ],
+            "elwise_inputs": [],
+            "end": 9347,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/conjugate_gradient.cpp",
+            "label": "make_spd",
+            "line": 92,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 196608,
+                    "bytes_sent": 196608,
+                    "collectives": 1,
+                    "time_us": 5085
+                },
+                "local_elements": 16384,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 9462874062100644050,
+                "work_end": 9339,
+                "work_start": 9276
+            },
+            "object_id": 1014,
+            "outputs": [
+                1006
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1003
+            ],
+            "scalar_inputs": [],
+            "seq": 3,
+            "start": 4181,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "p",
+            "line": 0,
+            "object_id": 1019,
+            "time": 9352,
+            "type": "allocation"
+        },
+        {
+            "label": "r",
+            "line": 0,
+            "object_id": 1022,
+            "time": 9355,
+            "type": "allocation"
+        },
+        {
+            "label": "Ap",
+            "line": 0,
+            "object_id": 1025,
+            "time": 9356,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1000
+            ],
+            "end": 9402,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "COPY",
+            "line": 237,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 3452042895525156464,
+                "work_end": 9398,
+                "work_start": 9359
+            },
+            "object_id": 1028,
+            "outputs": [
+                1022
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 4,
+            "start": 9359,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1022
+            ],
+            "end": 9439,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "GEMV",
+            "line": 605,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2582579205623260140,
+                "work_end": 9434,
+                "work_start": 9407
+            },
+            "object_id": 1031,
+            "outputs": [
+                1022
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1006,
+                1009
+            ],
+            "scalar_inputs": [],
+            "seq": 5,
+            "start": 9405,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1022
+            ],
+            "end": 9475,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "COPY",
+            "line": 237,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 3452042895525156464,
+                "work_end": 9471,
+                "work_start": 9443
+            },
+            "object_id": 1036,
+            "outputs": [
+                1019
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 6,
+            "start": 9443,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 2,
+            "end": 9546,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "seq": 7,
+            "start": 9513,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1022,
+                1022
+            ],
+            "end": 9554,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "DOT",
+            "line": 296,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 33
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2085082910694666183,
+                "work_end": 9513,
+                "work_start": 9478
+            },
+            "object_id": 1039,
+            "outputs": [
+                1043
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 7,
+            "start": 9478,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/conjugate_gradient.cpp",
+            "label": "Iteration",
+            "line": 42,
+            "region_depth": 1,
+            "time": 9561,
+            "type": "region"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1025
+            ],
+            "end": 9596,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "SCAL",
+            "line": 211,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2736649070977756066,
+                "work_end": 9592,
+                "work_start": 9562
+            },
+            "object_id": 1044,
+            "outputs": [
+                1025
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 8,
+            "start": 9562,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 768,
+            "bytes_sent": 768,
+            "comm_seq": 3,
+            "end": 9622,
+            "object_ids": [
+                1019
+            ],
+            "operation": "allgather",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "random access argument: the container is gathered",
+            "region": "Iteration",
+            "seq": 9,
+            "start": 9600,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1025
+            ],
+            "end": 9669,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "GEMV",
+            "line": 605,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 768,
+                    "bytes_sent": 768,
+                    "collectives": 1,
+                    "time_us": 22
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2582579205623260140,
+                "work_end": 9666,
+                "work_start": 9627
+            },
+            "object_id": 1047,
+            "outputs": [
+                1025
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1006,
+                1019
+            ],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 9,
+            "start": 9599,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 4,
+            "end": 9732,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "region": "Iteration",
+            "seq": 10,
+            "start": 9728,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1019,
+                1025
+            ],
+            "end": 9740,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "DOT",
+            "line": 296,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 4
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2085082910694666183,
+                "work_end": 9728,
+                "work_start": 9672
+            },
+            "object_id": 1052,
+            "outputs": [
+                1056
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 10,
+            "start": 9672,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1019,
+                1009
+            ],
+            "end": 9778,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "AXPY",
+            "line": 264,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 4008178793429682347,
+                "work_end": 9774,
+                "work_start": 9742
+            },
+            "object_id": 1057,
+            "outputs": [
+                1009
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 11,
+            "start": 9742,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1025,
+                1022
+            ],
+            "end": 9828,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "AXPY",
+            "line": 264,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 4008178793429682347,
+                "work_end": 9823,
+                "work_start": 9781
+            },
+            "object_id": 1060,
+            "outputs": [
+                1022
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 12,
+            "start": 9781,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 5,
+            "end": 9887,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "region": "Iteration",
+            "seq": 13,
+            "start": 9858,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1022,
+                1022
+            ],
+            "end": 9895,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "DOT",
+            "line": 296,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 29
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2085082910694666183,
+                "work_end": 9858,
+                "work_start": 9831
+            },
+            "object_id": 1063,
+            "outputs": [
+                1067
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 13,
+            "start": 9831,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1019
+            ],
+            "end": 9943,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "SCAL",
+            "line": 211,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2736649070977756066,
+                "work_end": 9940,
+                "work_start": 9897
+            },
+            "object_id": 1068,
+            "outputs": [
+                1019
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 14,
+            "start": 9897,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1022,
+                1019
+            ],
+            "end": 9976,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "AXPY",
+            "line": 264,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 4008178793429682347,
+                "work_end": 9973,
+                "work_start": 9946
+            },
+            "object_id": 1071,
+            "outputs": [
+                1019
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 15,
+            "start": 9946,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/conjugate_gradient.cpp",
+            "label": "Iteration",
+            "line": 42,
+            "region_depth": 1,
+            "time": 9979,
+            "type": "region"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1025
+            ],
+            "end": 10008,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "SCAL",
+            "line": 211,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2736649070977756066,
+                "work_end": 10005,
+                "work_start": 9979
+            },
+            "object_id": 1074,
+            "outputs": [
+                1025
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 16,
+            "start": 9979,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 768,
+            "bytes_sent": 768,
+            "comm_seq": 6,
+            "end": 10047,
+            "object_ids": [
+                1019
+            ],
+            "operation": "allgather",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "random access argument: the container is gathered",
+            "region": "Iteration",
+            "seq": 17,
+            "start": 10011,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1025
+            ],
+            "end": 10112,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "GEMV",
+            "line": 605,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 768,
+                    "bytes_sent": 768,
+                    "collectives": 1,
+                    "time_us": 36
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2582579205623260140,
+                "work_end": 10109,
+                "work_start": 10052
+            },
+            "object_id": 1077,
+            "outputs": [
+                1025
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1006,
+                1019
+            ],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 17,
+            "start": 10010,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 7,
+            "end": 10158,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "region": "Iteration",
+            "seq": 18,
+            "start": 10157,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1019,
+                1025
+            ],
+            "end": 10165,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "DOT",
+            "line": 296,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 1
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2085082910694666183,
+                "work_end": 10157,
+                "work_start": 10116
+            },
+            "object_id": 1082,
+            "outputs": [
+                1086
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 18,
+            "start": 10116,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1019,
+                1009
+            ],
+            "end": 10210,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "AXPY",
+            "line": 264,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 4008178793429682347,
+                "work_end": 10206,
+                "work_start": 10167
+            },
+            "object_id": 1087,
+            "outputs": [
+                1009
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 19,
+            "start": 10167,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1025,
+                1022
+            ],
+            "end": 10269,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "AXPY",
+            "line": 264,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 4008178793429682347,
+                "work_end": 10266,
+                "work_start": 10212
+            },
+            "object_id": 1090,
+            "outputs": [
+                1022
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 20,
+            "start": 10212,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 8,
+            "end": 10331,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "region": "Iteration",
+            "seq": 21,
+            "start": 10302,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1022,
+                1022
+            ],
+            "end": 10338,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "DOT",
+            "line": 296,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 29
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2085082910694666183,
+                "work_end": 10302,
+                "work_start": 10272
+            },
+            "object_id": 1093,
+            "outputs": [
+                1097
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 21,
+            "start": 10272,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1019
+            ],
+            "end": 10373,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "SCAL",
+            "line": 211,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2736649070977756066,
+                "work_end": 10369,
+                "work_start": 10341
+            },
+            "object_id": 1098,
+            "outputs": [
+                1019
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 22,
+            "start": 10341,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1022,
+                1019
+            ],
+            "end": 10444,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "AXPY",
+            "line": 264,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 4008178793429682347,
+                "work_end": 10440,
+                "work_start": 10375
+            },
+            "object_id": 1101,
+            "outputs": [
+                1019
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 23,
+            "start": 10375,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/conjugate_gradient.cpp",
+            "label": "Iteration",
+            "line": 42,
+            "region_depth": 1,
+            "time": 10446,
+            "type": "region"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1025
+            ],
+            "end": 10476,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "SCAL",
+            "line": 211,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2736649070977756066,
+                "work_end": 10474,
+                "work_start": 10447
+            },
+            "object_id": 1104,
+            "outputs": [
+                1025
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 24,
+            "start": 10447,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 768,
+            "bytes_sent": 768,
+            "comm_seq": 9,
+            "end": 10498,
+            "object_ids": [
+                1019
+            ],
+            "operation": "allgather",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "random access argument: the container is gathered",
+            "region": "Iteration",
+            "seq": 25,
+            "start": 10479,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1025
+            ],
+            "end": 10538,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "GEMV",
+            "line": 605,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 768,
+                    "bytes_sent": 768,
+                    "collectives": 1,
+                    "time_us": 19
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2582579205623260140,
+                "work_end": 10535,
+                "work_start": 10502
+            },
+            "object_id": 1107,
+            "outputs": [
+                1025
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1006,
+                1019
+            ],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 25,
+            "start": 10478,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 10,
+            "end": 10613,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "region": "Iteration",
+            "seq": 26,
+            "start": 10583,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1019,
+                1025
+            ],
+            "end": 10620,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "DOT",
+            "line": 296,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 30
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2085082910694666183,
+                "work_end": 10583,
+                "work_start": 10540
+            },
+            "object_id": 1112,
+            "outputs": [
+                1116
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 26,
+            "start": 10540,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1019,
+                1009
+            ],
+            "end": 10661,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "AXPY",
+            "line": 264,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 4008178793429682347,
+                "work_end": 10657,
+                "work_start": 10622
+            },
+            "object_id": 1117,
+            "outputs": [
+                1009
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 27,
+            "start": 10622,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1025,
+                1022
+            ],
+            "end": 10719,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "AXPY",
+            "line": 264,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 4008178793429682347,
+                "work_end": 10716,
+                "work_start": 10663
+            },
+            "object_id": 1120,
+            "outputs": [
+                1022
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 28,
+            "start": 10663,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 11,
+            "end": 10752,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "region": "Iteration",
+            "seq": 29,
+            "start": 10750,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1022,
+                1022
+            ],
+            "end": 10759,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "DOT",
+            "line": 296,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 2
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2085082910694666183,
+                "work_end": 10750,
+                "work_start": 10721
+            },
+            "object_id": 1123,
+            "outputs": [
+                1127
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 29,
+            "start": 10721,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1019
+            ],
+            "end": 10794,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "SCAL",
+            "line": 211,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2736649070977756066,
+                "work_end": 10791,
+                "work_start": 10763
+            },
+            "object_id": 1128,
+            "outputs": [
+                1019
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 30,
+            "start": 10763,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1022,
+                1019
+            ],
+            "end": 10835,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "AXPY",
+            "line": 264,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 4008178793429682347,
+                "work_end": 10832,
+                "work_start": 10796
+            },
+            "object_id": 1131,
+            "outputs": [
+                1019
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 31,
+            "start": 10796,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/conjugate_gradient.cpp",
+            "label": "Iteration",
+            "line": 42,
+            "region_depth": 1,
+            "time": 10837,
+            "type": "region"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1025
+            ],
+            "end": 10882,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "SCAL",
+            "line": 211,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2736649070977756066,
+                "work_end": 10878,
+                "work_start": 10838
+            },
+            "object_id": 1134,
+            "outputs": [
+                1025
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 32,
+            "start": 10838,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 768,
+            "bytes_sent": 768,
+            "comm_seq": 12,
+            "end": 10912,
+            "object_ids": [
+                1019
+            ],
+            "operation": "allgather",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "random access argument: the container is gathered",
+            "region": "Iteration",
+            "seq": 33,
+            "start": 10887,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1025
+            ],
+            "end": 10953,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "GEMV",
+            "line": 605,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 768,
+                    "bytes_sent": 768,
+                    "collectives": 1,
+                    "time_us": 25
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2582579205623260140,
+                "work_end": 10950,
+                "work_start": 10916
+            },
+            "object_id": 1137,
+            "outputs": [
+                1025
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1006,
+                1019
+            ],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 33,
+            "start": 10884,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 13,
+            "end": 11004,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "region": "Iteration",
+            "seq": 34,
+            "start": 10992,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1019,
+                1025
+            ],
+            "end": 11011,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "DOT",
+            "line": 296,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 12
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2085082910694666183,
+                "work_end": 10992,
+                "work_start": 10955
+            },
+            "object_id": 1142,
+            "outputs": [
+                1146
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 34,
+            "start": 10955,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1019,
+                1009
+            ],
+            "end": 11055,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "AXPY",
+            "line": 264,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 4008178793429682347,
+                "work_end": 11053,
+                "work_start": 11013
+            },
+            "object_id": 1147,
+            "outputs": [
+                1009
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 35,
+            "start": 11013,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1025,
+                1022
+            ],
+            "end": 11118,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "AXPY",
+            "line": 264,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 4008178793429682347,
+                "work_end": 11112,
+                "work_start": 11057
+            },
+            "object_id": 1150,
+            "outputs": [
+                1022
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 36,
+            "start": 11057,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 14,
+            "end": 11185,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "region": "Iteration",
+            "seq": 37,
+            "start": 11170,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1022,
+                1022
+            ],
+            "end": 11196,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "DOT",
+            "line": 296,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 15
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2085082910694666183,
+                "work_end": 11169,
+                "work_start": 11136
+            },
+            "object_id": 1153,
+            "outputs": [
+                1157
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 37,
+            "start": 11136,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1019
+            ],
+            "end": 11236,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "SCAL",
+            "line": 211,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2736649070977756066,
+                "work_end": 11232,
+                "work_start": 11205
+            },
+            "object_id": 1158,
+            "outputs": [
+                1019
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 38,
+            "start": 11205,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1022,
+                1019
+            ],
+            "end": 11302,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "AXPY",
+            "line": 264,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 4008178793429682347,
+                "work_end": 11289,
+                "work_start": 11249
+            },
+            "object_id": 1161,
+            "outputs": [
+                1019
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Iteration",
+            "scalar_inputs": [],
+            "seq": 39,
+            "start": 11249,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "Ap",
+            "line": 0,
+            "object_id": 1025,
+            "time": 11307,
+            "type": "deallocation"
+        },
+        {
+            "label": "r",
+            "line": 0,
+            "object_id": 1022,
+            "time": 11309,
+            "type": "deallocation"
+        },
+        {
+            "label": "p",
+            "line": 0,
+            "object_id": 1019,
+            "time": 11311,
+            "type": "deallocation"
+        },
+        {
+            "label": "r",
+            "line": 0,
+            "object_id": 1164,
+            "time": 11312,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1000
+            ],
+            "end": 11354,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "COPY",
+            "line": 237,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 3452042895525156464,
+                "work_end": 11350,
+                "work_start": 11330
+            },
+            "object_id": 1167,
+            "outputs": [
+                1164
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 40,
+            "start": 11330,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 768,
+            "bytes_sent": 768,
+            "comm_seq": 15,
+            "end": 11371,
+            "object_ids": [
+                1009
+            ],
+            "operation": "allgather",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "random access argument: the container is gathered",
+            "seq": 41,
+            "start": 11358,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1164
+            ],
+            "end": 11458,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "GEMV",
+            "line": 605,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 768,
+                    "bytes_sent": 768,
+                    "collectives": 1,
+                    "time_us": 13
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 2582579205623260140,
+                "work_end": 11454,
+                "work_start": 11375
+            },
+            "object_id": 1170,
+            "outputs": [
+                1164
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1006,
+                1009
+            ],
+            "scalar_inputs": [],
+            "seq": 41,
+            "start": 11356,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 16,
+            "end": 11503,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "seq": 42,
+            "start": 11502,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1164
+            ],
+            "end": 11509,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "NRM2",
+            "line": 354,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 1
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 14109229228329515139,
+                "work_end": 11502,
+                "work_start": 11460
+            },
+            "object_id": 1175,
+            "outputs": [
+                1179
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 42,
+            "start": 11460,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "elwise_inputs": [],
+            "end": 11637,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/io.hpp",
+            "label": "I/O",
+            "line": 54,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
+                },
+                "local_elements": 0,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 7346190368624812788,
+                "work_end": 11637,
+                "work_start": 11580
+            },
+            "outputs": [],
+            "proxy_inputs": [
+                1009
+            ],
+            "scalar_inputs": [],
+            "seq": 43,
+            "start": 11580,
+            "type": "external"
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 17,
+            "end": 11712,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "seq": 44,
+            "start": 11711,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1000
+            ],
+            "end": 11719,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "label": "NRM2",
+            "line": 354,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 1
+                },
+                "local_elements": 64,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 14109229228329515139,
+                "work_end": 11711,
+                "work_start": 11686
+            },
+            "object_id": 1181,
+            "outputs": [
+                1185
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 44,
+            "start": 11686,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "r",
+            "line": 0,
+            "object_id": 1164,
+            "time": 11726,
+            "type": "deallocation"
+        },
+        {
+            "label": "x",
+            "line": 0,
+            "object_id": 1009,
+            "time": 11728,
+            "type": "deallocation"
+        },
+        {
+            "label": "A",
+            "line": 0,
+            "object_id": 1006,
+            "time": 11729,
+            "type": "deallocation"
+        },
+        {
+            "label": "R",
+            "line": 0,
+            "object_id": 1003,
+            "time": 11731,
+            "type": "deallocation"
+        },
+        {
+            "label": "b",
+            "line": 0,
+            "object_id": 1000,
+            "time": 11733,
+            "type": "deallocation"
+        }
+    ],
+    "header": {
+        "clock": {
+            "end": {
+                "local_us": 11761,
+                "offset_us": 0.0,
+                "uncertainty_us": 0.0
+            },
+            "method": "ping-pong",
+            "start": {
+                "local_us": 3242,
+                "offset_us": 0.0,
+                "uncertainty_us": 0.0
+            }
+        },
+        "mpi": {
+            "detail_rank": 0,
+            "host": "Augusts-Laptop.local",
+            "pid": 37578,
+            "rank": 0,
+            "ranks": 4,
+            "role": "full"
+        }
+    }
+}

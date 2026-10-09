@@ -5,12 +5,13 @@
 // ── Base ──────────────────────────────────────────────────────────────────────
 
 export class Edge {
-    constructor(graph, sourceId, target) {
+    // 'replicaFirst': what is read is the gathered copy of a container of an MPI program (if there is a valid one: see DirectedGraph.replicaProducerForID)
+    constructor(graph, sourceId, target, replicaFirst = false) {
         this.id             = crypto.randomUUID();
         this.label          = '';
         this.target         = target;
         this.source         = (typeof sourceId === 'number')
-                                ? graph.producerForID(sourceId, target.backend)
+                                ? ((replicaFirst && graph.replicaProducerForID(sourceId)) || graph.producerForID(sourceId, target.backend))
                                 : sourceId;   // already a Node
         this.isCriticalPath = false;
         this.iterationCount = 1;
@@ -72,8 +73,8 @@ export class TreeEdge {
 // ── Concrete edge types ───────────────────────────────────────────────────────
 
 export class ElwiseEdge extends Edge {
-    constructor(graph, label, sourceId, target) {
-        super(graph, sourceId, target);
+    constructor(graph, label, sourceId, target, replicaFirst = false) {
+        super(graph, sourceId, target, replicaFirst);
         this.label = label;
     }
 
@@ -83,8 +84,8 @@ export class ElwiseEdge extends Edge {
 }
 
 export class ProxyEdge extends Edge {
-    constructor(graph, label, sourceId, target) {
-        super(graph, sourceId, target);
+    constructor(graph, label, sourceId, target, replicaFirst = false) {
+        super(graph, sourceId, target, replicaFirst);
         this.label = label;
     }
 
@@ -94,8 +95,8 @@ export class ProxyEdge extends Edge {
 }
 
 export class ScalarEdge extends Edge {
-    constructor(graph, label, sourceId, target) {
-        super(graph, sourceId, target);
+    constructor(graph, label, sourceId, target, replicaFirst = false) {
+        super(graph, sourceId, target, replicaFirst);
         this.label = label;
     }
 

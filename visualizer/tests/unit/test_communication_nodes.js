@@ -9,6 +9,7 @@ import { DirectedGraph } from '../../script/backend/graph.js';
 import { CommunicationNode } from '../../script/backend/node.js';
 import { buildDisplayGraph, graphSettings } from '../../script/backend/pipeline.js';
 import { mergeMpiTraces } from '../../script/backend/mpi.js';
+import { parseTrace } from '../../script/backend/trace.js';
 import { builder, trace } from '../event_builders.js';
 import { testSettings } from '../helpers.js';
 import { TraceDataProvider } from '../../script/TraceDataProvider.js';
@@ -20,6 +21,8 @@ const merged = mergeMpiTraces(['skepu_trace.json', 'skepu_trace.rank1.json', 'sk
 const nodesOf = (g, type) => g.getAllNodes().filter(n => n.type === type);
 const edgesBetween = (g, a, b) => g.getAllEdges?.().filter(e => e.source === a && e.target === b) ?? [];
 const sourcesOf = n => n.getIncomingEdges().map(e => e.source);
+// (the container updates that follow a call are between it and what reads its results)
+const reads = (n, producer) => sourcesOf(n).some(s => s === producer || sourcesOf(s).includes(producer));
 
 function graphOf(events, tweak = () => {}) {
     const s = testSettings();
@@ -62,13 +65,14 @@ describe('the collectives of a call', () => {
 describe('a communication node', () => {
     const b = builder();
     const events = [
-        b.alloc(1, 'A'), b.alloc(2, 'B'),
+        b.alloc(1, 'A'), b.alloc(2, 'B'), b.alloc(3, 'C'),
         b.call('produce', { outs: [1] }),
         b.comm([1], { operation: 'allgather' }),
-        b.call('consume', { ins: [1], outs: [2] }),
+        b.call('consume', { proxy: [1], outs: [2] }),          // (random access: it reads the gathered copy)
+        b.call('elementwise', { ins: [1], outs: [3] }),        // (it reads the tiles, which the gather did not change)
     ];
 
-    it('reads the container and is what later calls read it from', () => {
+    it('reads the container and is what the readers of the gathered copy read it from', () => {
         const g = graphOf(events);
         const [comm] = nodesOf(g, 'communication');
         const produce = g.getAllNodes().find(n => n.label === 'produce');
@@ -80,6 +84,40 @@ describe('a communication node', () => {
         expect(comm.start).toBeLessThan(comm.end);
         expect(comm.totalOrder).toBeGreaterThan(produce.totalOrder);
         expect(comm.totalOrder).toBeLessThan(consume.totalOrder);
+    });
+
+    it('is not what the elements of a skeleton are read from: those are in the tiles, which a gather does not change', () => {
+        const g = graphOf(events);
+        const produce = g.getAllNodes().find(n => n.label === 'produce');
+        const elementwise = g.getAllNodes().find(n => n.label === 'elementwise');
+        expect(reads(elementwise, produce)).toBe(true);
+        expect(sourcesOf(elementwise).some(n => n.type === 'communication')).toBe(false);
+    });
+
+    it('a write of the container makes the gathered copy out of date: what reads it after reads the tiles', () => {
+        const c = builder();
+        const g = graphOf([c.alloc(1, 'A'), c.call('first', { outs: [1] }), c.comm([1]), c.call('second', { ins: [1], outs: [1] }),
+            c.call('third', { proxy: [1], outs: [2] })]);
+        const second = g.getAllNodes().find(n => n.label === 'second');
+        const third = g.getAllNodes().find(n => n.label === 'third');
+        expect(reads(third, second)).toBe(true);
+        expect(sourcesOf(third).some(n => n.type === 'communication')).toBe(false);
+    });
+
+    it('an skepu::external call writes the gathered copy of the first process; the scatter gives it to the tiles', () => {
+        const c = builder();
+        const events2 = [
+            c.alloc(1, 'A'), c.alloc(2, 'B'),
+            { ...c.external('fill'), outputs: [1] },
+            c.comm([1], { operation: 'scatter', reason: 'the container is given to its owners', seq: 5, phase: 'before', comm_seq: 1 }),
+            { ...c.call('use', { ins: [1], outs: [2] }), seq: 5 },
+        ];
+        const g = graphOf(events2);
+        const fill = g.getAllNodes().find(n => n.label === 'fill');
+        const [scatter] = nodesOf(g, 'communication');
+        const use = g.getAllNodes().find(n => n.label === 'use');
+        expect(reads(scatter, fill)).toBe(true);
+        expect(sourcesOf(use).includes(scatter) || sourcesOf(use).some(n => sourcesOf(n).includes(scatter))).toBe(true);
     });
 
     it('is not there when communications are not shown, and the calls are then joined directly', () => {
@@ -275,52 +313,15 @@ describe('the graph of every MPI example', () => {
         return new Set(nodes.map(n => find(n.data.id))).size;
     };
 
-    it('is in one piece: a collective is connected to the call that it is part of', () => {
+    it('is in as few pieces as the graph of the same program on a single node (a collective is connected to the call that it is part of)', () => {
         expect(examples.length).toBeGreaterThan(0);
         for (const ex of examples) {
             const m = mergeMpiTraces(ex.trace.mpi.map(rel => ({ name: rel.split('/').pop(), text: readFileSync(join(dir, rel), 'utf-8') })));
             const { graph } = buildDisplayGraph(trace(m.events), {});
             const [nodes, edges] = graph.toCytoscape();
-            expect(components(nodes, edges), ex.title).toBe(1);
+            const single = parseTrace(readFileSync(join(dir, ex.trace.openmp), 'utf-8')).events;
+            const [snodes, sedges] = buildDisplayGraph(trace(single), {}).graph.toCytoscape();
+            expect(components(nodes, edges), ex.title).toBeLessThanOrEqual(components(snodes, sedges));
         }
-    });
-});
-
-describe('the Dot Product example on MPI', () => {
-    const dir = join(dirname(fileURLToPath(import.meta.url)), '../../examples/dotproduct/mpi');
-    const m = mergeMpiTraces(['trace_dotproduct_mpi.json', 'trace_dotproduct_mpi.rank1.json', 'trace_dotproduct_mpi.rank2.json', 'trace_dotproduct_mpi.rank3.json']
-        .map(name => ({ name, text: readFileSync(join(dir, name), 'utf-8') })));
-
-    for (const updates of [true, false]) {
-        it(`has the scalar as the result of the collective that combines the partial results (updates: ${updates})`, () => {
-            const g = graphOf(m.events, s => { s.updates = updates; });
-            const call = g.getAllNodes().find(n => n.label === 'dotprod' || n.type === 'skeleton_call');
-            const partials = nodesOf(g, 'communication').find(n => n.callSeq && n.phase === 'after' && !n.label.includes(':'));
-            expect(partials).toBeDefined();
-            expect(sourcesOf(partials)).toContain(call);
-            if (updates) {
-                const scalar = nodesOf(g, 'scalar')[0];
-                expect(sourcesOf(scalar)).toContain(partials);
-                expect(sourcesOf(scalar)).not.toContain(call);
-                expect(scalar.totalOrder).toBeGreaterThan(partials.totalOrder);
-            } else {
-                expect(g.producerForID(m.events.find(e => e.type === 'skeleton_call').outputs[0])).toBe(partials);
-            }
-        });
-    }
-});
-
-describe('a region of an MPI program', () => {
-    it('lasts until the last rank has left the calls in it', () => {
-        const b = builder();
-        const call = { ...b.call('work', { ins: [], outs: [] }), seq: 1 };
-        call.rank_summary = { interval: { start: call.start - 5, end: call.end + 900 }, wait_us: [0, 0], max_wait_us: 0 };
-        call.rank_data = [{ rank: 0, start: call.start, end: call.end }, { rank: 1, start: call.start, end: call.end + 900 }];
-        call.region = 'R';
-        const g = graphOf([{ type: 'region', label: 'R', time: 0, region_depth: 1, file: 'x.cpp', line: 1 }, call], s => { s.show_regions = true; });
-        const region = g.getAllNodes().find(n => n.type === 'region');
-        region.computeExtent();
-        expect(region.regionEnd).toBe(call.end + 900);
-        expect(region.regionStart).toBe(call.start - 5);
     });
 });

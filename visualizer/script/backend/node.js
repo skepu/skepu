@@ -195,12 +195,17 @@ export class ComputationNode extends Node {
         const scalarInputs = jsonData.scalar_inputs  ?? [];
         const outputs      = jsonData.outputs        ?? [];
 
+        // Of an MPI program: host code (an skepu::external call) reads the gathered copy of a container, and so does a random access
+        // argument; the elements of a skeleton are in the tiles of the processes (the memory space of its backend). A trace of a single
+        // node has no gathered copy, so this reads the same as before.
+        const host = jsonData.host === true;
+        const replicaProxies = jsonData.replica_inputs ?? true;
         for (const id of elwiseInputs) {
-            new ElwiseEdge(graph, graph.labelForID(id), id, this);
+            new ElwiseEdge(graph, graph.labelForID(id), id, this, host);
             graph.readFromID(id, this, this.backend);
         }
         for (const id of proxyInputs) {
-            new ProxyEdge(graph, graph.labelForID(id), id, this);
+            new ProxyEdge(graph, graph.labelForID(id), id, this, replicaProxies);
             graph.readFromID(id, this, this.backend);
         }
         for (const id of scalarInputs) {
@@ -224,6 +229,8 @@ export class ComputationNode extends Node {
             } else {
                 graph.writeToID(id, this, this.hasScalarOutput() ? 'ALL' : this.backend);
             }
+            // (what host code writes is in the gathered copy of the first process, until it is given to the owners)
+            if (host) graph.writeReplica(id, graph.producerForID(id));
         }
 
         if (jsonData.prng != null) {
@@ -371,7 +378,7 @@ export class CallNode extends ComputationNode {
 
 export class ExternalNode extends ComputationNode {
     constructor(graph, jsonData, totalOrder) {
-        super(graph, jsonData, totalOrder);
+        super(graph, { ...jsonData, host: true }, totalOrder);
         this.type = 'external';
         this.keypathDiscriminator = this.line;
     }
@@ -381,9 +388,12 @@ export class ExternalNode extends ComputationNode {
 // ── CommunicationNode ─────────────────────────────────────────────────────────
 // A collective operation of the MPI backend that moves a container (or its rows) between processes: the gather
 // of a container that the host or a random access argument needs, the exchange of the rows that a call needs
-// (a MatRow, a halo, the layout of a call), what a skepu::external gives back to the owners. The data are the
-// same after it, so it reads each container and makes itself the latest producer of it: what uses the container
-// afterwards depends on the move. (A trace of a single node has none.)
+// (a MatRow, a halo, the layout of a call), what a skepu::external gives back to the owners. A container of an MPI
+// program is in two memory spaces: the tiles of the processes (the memory space of the backend) and the gathered
+// copy (REPLICA in graph.js). A gather or a broadcast makes the copy and leaves the tiles as they were, so what
+// reads the tiles (the elements of a skeleton) does not depend on it, and what reads the copy (the host, a random
+// access argument) does. A scatter, and the exchange after a call, make the tiles. A write makes the copy out of date.
+// (A trace of a single node has none.)
 
 export class CommunicationNode extends ComputationNode {
     constructor(graph, jsonData, totalOrder) {
@@ -396,6 +406,8 @@ export class CommunicationNode extends ComputationNode {
             end:          jsonData.end,
             backend:      'ANY',                      // (reads what is there, in whichever memory space)
             proxy_inputs: ids,
+            // (a gather reads the tiles; a broadcast and what gives the data of the first process to the owners read the gathered copy)
+            replica_inputs: jsonData.operation === 'bcast' || jsonData.operation === 'scatter',
             rank_data:    jsonData.rank_data,         // (what each rank did in it, for the timeline)
         }, totalOrder);
 
@@ -417,7 +429,15 @@ export class CommunicationNode extends ComputationNode {
 
         // (it is on the side of the host that made it, for the edges)
         this.backend = this._incoming[0]?.source.backend ?? 'CPU';
-        for (const id of ids) graph.writeToID(id, this, 'ALL');
+        // What the container is after it: a gather or a broadcast makes a gathered copy, and the tiles are as they were. What gives the data to
+        // the owners (the scatter, and the exchange after a call that puts its results in their places) makes the tiles. The exchange before
+        // a call (a halo, the rows of a MatRow) only reads. Anything else is taken to have made the container, as before.
+        const op = this.operation;
+        for (const id of ids) {
+            if (op === 'allgather' || op === 'gather' || op === 'bcast') graph.writeReplica(id, this);
+            else if (op === 'alltoallv' && this.phase !== 'after') continue;
+            else graph.writeToID(id, this, 'ALL');
+        }
     }
 
     toCytoscape() {
@@ -778,13 +798,13 @@ export class ScalarNode extends DataNode {
         const label = jsonData.label + '[' + jsonData.index + ']';
         if (graph.settings.scalars) {
             const node = new ScalarNode(graph, label, totalOrder, region);
-            new ScalarEdge(graph, label, jsonData.source, node);
+            new ScalarEdge(graph, label, jsonData.source, node, true);   // (the host reads the gathered copy)
             graph.readFromID(jsonData.source, node, 'ALL');
             graph.writeToID(jsonData.object_id, node, 'ALL');
         } else {
             graph.setLabelForID(label, jsonData.object_id);
             graph.writeToID(jsonData.object_id,
-                            graph.producerForID(jsonData.source), 'ALL');
+                            graph.replicaProducerForID(jsonData.source) ?? graph.producerForID(jsonData.source), 'ALL');
         }
     }
 

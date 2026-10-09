@@ -127,6 +127,11 @@ program, so that a clock that runs fast or slow is followed):
   a collective: `interval`, `wait_us` (what each rank waited for the last one to arrive), `max_wait_us`, `last_arrival_rank`,
   `end_spread_us` (how far apart the ranks leave it: what is left of the misalignment of the clocks, for the collectives that no rank leaves before all have arrived (`allgather`); an `alltoallv` lets a rank leave early if it gets nothing from a late one, so the merge does not take its spread as a sign of misaligned clocks), and the bytes in total.
 
+In the graph, a container of an MPI program is in two memory spaces: the tiles of the processes, which the elements of a skeleton are read
+from, and the gathered copy, which the host (`external`, `element_access`) and a random access argument read. A `gather`, `allgather` or `bcast`
+makes the copy and leaves the tiles as they were; a `scatter`, and an `alltoallv` after a call, make the tiles; a write of the container makes the
+copy out of date. An exchange before a call (a halo, the rows of a MatRow) only reads.
+
 The merge also says what is wrong with the files: a missing rank, a rank that makes another call or collective than rank 0
 (`divergence`: the program does not do the same on all processes), more calls on a rank than on rank 0, and clocks that are not aligned well
 (the collectives end far apart).

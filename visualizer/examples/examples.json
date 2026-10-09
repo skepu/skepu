@@ -108,6 +108,38 @@
     ]
   },
   {
+    "title": "Conjugate Gradient",
+    "trace": {
+      "openmp": "conjugate_gradient/trace_conjugate_gradient_openmp.json",
+      "opencl": "conjugate_gradient/trace_conjugate_gradient_opencl.json",
+      "mpi": [
+        "conjugate_gradient/mpi/trace_conjugate_gradient_mpi.json",
+        "conjugate_gradient/mpi/trace_conjugate_gradient_mpi.rank1.json",
+        "conjugate_gradient/mpi/trace_conjugate_gradient_mpi.rank2.json",
+        "conjugate_gradient/mpi/trace_conjugate_gradient_mpi.rank3.json"
+      ]
+    },
+    "cpp_files": [
+      "conjugate_gradient/conjugate_gradient.cpp"
+    ]
+  },
+  {
+    "title": "Miller-Rabin",
+    "trace": {
+      "openmp": "miller_rabin/trace_miller_rabin_openmp.json",
+      "opencl": "miller_rabin/trace_miller_rabin_opencl.json",
+      "mpi": [
+        "miller_rabin/mpi/trace_miller_rabin_mpi.json",
+        "miller_rabin/mpi/trace_miller_rabin_mpi.rank1.json",
+        "miller_rabin/mpi/trace_miller_rabin_mpi.rank2.json",
+        "miller_rabin/mpi/trace_miller_rabin_mpi.rank3.json"
+      ]
+    },
+    "cpp_files": [
+      "miller_rabin/miller_rabin.cpp"
+    ]
+  },
+  {
     "title": "DNN CIFAR-10 (small CNN)",
     "trace": {
       "openmp": "dnn_cifar10/trace_dnn_cifar10_openmp.json",

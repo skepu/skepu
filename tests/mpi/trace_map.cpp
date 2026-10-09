@@ -99,6 +99,11 @@ int main()
 	prefix(scanned, a);
 	SKEPU_TRACE_SNAPSHOT(scanned); // (a snapshot of a distributed container: gathered, and written by the first process)
 	SKEPU_TRACE_SNAPSHOT(m);
+	// randomize is an external call of the library, as in a single node
+	skepu::Vector<int> rnd(30, "rnd");
+	rnd.randomize(0, 9);
+	std::cout << "random: " << rnd[0] << " " << rnd[29] << "\n";
+
 	// containers that have only their initial value are not gathered to be read: every process knows what is in them
 	skepu::Vector<int> fresh(40, "fresh", 7), cold(30, "cold");
 	skepu::Matrix<int> fresh_matrix(4, 5, "fresh_matrix", 3);

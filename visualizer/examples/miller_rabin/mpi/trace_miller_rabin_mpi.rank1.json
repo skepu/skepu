@@ -1,0 +1,251 @@
+{
+    "data": [
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 1,
+            "end": 3844,
+            "operation": "allgather",
+            "phase": "after",
+            "rank": 1,
+            "reason": "the partial results of the processes are combined",
+            "seq": 1,
+            "start": 3799,
+            "type": "rank_communication"
+        },
+        {
+            "comm": {
+                "bytes_received": 15,
+                "bytes_sent": 15,
+                "collectives": 1,
+                "time_us": 45
+            },
+            "end": 3851,
+            "local_elements": 2,
+            "pattern": "MapReduce",
+            "rank": 1,
+            "ranks": 4,
+            "seq": 1,
+            "signature": 850697691479707070,
+            "start": 3745,
+            "type": "rank_call",
+            "work_end": 3799,
+            "work_start": 3746
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 2,
+            "end": 3959,
+            "operation": "allgather",
+            "phase": "after",
+            "rank": 1,
+            "reason": "the partial results of the processes are combined",
+            "seq": 2,
+            "start": 3913,
+            "type": "rank_communication"
+        },
+        {
+            "comm": {
+                "bytes_received": 15,
+                "bytes_sent": 15,
+                "collectives": 1,
+                "time_us": 46
+            },
+            "end": 3964,
+            "local_elements": 24,
+            "pattern": "MapReduce",
+            "rank": 1,
+            "ranks": 4,
+            "seq": 2,
+            "signature": 850697691479707070,
+            "start": 3894,
+            "type": "rank_call",
+            "work_end": 3913,
+            "work_start": 3895
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 3,
+            "end": 4048,
+            "operation": "allgather",
+            "phase": "after",
+            "rank": 1,
+            "reason": "the partial results of the processes are combined",
+            "seq": 3,
+            "start": 4040,
+            "type": "rank_communication"
+        },
+        {
+            "comm": {
+                "bytes_received": 15,
+                "bytes_sent": 15,
+                "collectives": 1,
+                "time_us": 8
+            },
+            "end": 4055,
+            "local_elements": 249,
+            "pattern": "MapReduce",
+            "rank": 1,
+            "ranks": 4,
+            "seq": 3,
+            "signature": 850697691479707070,
+            "start": 3971,
+            "type": "rank_call",
+            "work_end": 4040,
+            "work_start": 3972
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 4,
+            "end": 4211,
+            "operation": "allgather",
+            "phase": "after",
+            "rank": 1,
+            "reason": "the partial results of the processes are combined",
+            "seq": 4,
+            "start": 4210,
+            "type": "rank_communication"
+        },
+        {
+            "comm": {
+                "bytes_received": 15,
+                "bytes_sent": 15,
+                "collectives": 1,
+                "time_us": 1
+            },
+            "end": 4216,
+            "local_elements": 2499,
+            "pattern": "MapReduce",
+            "rank": 1,
+            "ranks": 4,
+            "seq": 4,
+            "signature": 850697691479707070,
+            "start": 4065,
+            "type": "rank_call",
+            "work_end": 4210,
+            "work_start": 4065
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 5,
+            "end": 5690,
+            "operation": "allgather",
+            "phase": "after",
+            "rank": 1,
+            "reason": "the partial results of the processes are combined",
+            "seq": 5,
+            "start": 5593,
+            "type": "rank_communication"
+        },
+        {
+            "comm": {
+                "bytes_received": 15,
+                "bytes_sent": 15,
+                "collectives": 1,
+                "time_us": 97
+            },
+            "end": 5703,
+            "local_elements": 24999,
+            "pattern": "MapReduce",
+            "rank": 1,
+            "ranks": 4,
+            "seq": 5,
+            "signature": 850697691479707070,
+            "start": 4226,
+            "type": "rank_call",
+            "work_end": 5592,
+            "work_start": 4227
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 6,
+            "end": 22362,
+            "operation": "allgather",
+            "phase": "after",
+            "rank": 1,
+            "reason": "the partial results of the processes are combined",
+            "seq": 6,
+            "start": 21383,
+            "type": "rank_communication"
+        },
+        {
+            "comm": {
+                "bytes_received": 15,
+                "bytes_sent": 15,
+                "collectives": 1,
+                "time_us": 979
+            },
+            "end": 22369,
+            "local_elements": 249999,
+            "pattern": "MapReduce",
+            "rank": 1,
+            "ranks": 4,
+            "seq": 6,
+            "signature": 850697691479707070,
+            "start": 5713,
+            "type": "rank_call",
+            "work_end": 21383,
+            "work_start": 5714
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 7,
+            "end": 210939,
+            "operation": "allgather",
+            "phase": "after",
+            "rank": 1,
+            "reason": "the partial results of the processes are combined",
+            "seq": 7,
+            "start": 198279,
+            "type": "rank_communication"
+        },
+        {
+            "comm": {
+                "bytes_received": 15,
+                "bytes_sent": 15,
+                "collectives": 1,
+                "time_us": 12660
+            },
+            "end": 210946,
+            "local_elements": 2499999,
+            "pattern": "MapReduce",
+            "rank": 1,
+            "ranks": 4,
+            "seq": 7,
+            "signature": 850697691479707070,
+            "start": 22378,
+            "type": "rank_call",
+            "work_end": 198279,
+            "work_start": 22379
+        }
+    ],
+    "header": {
+        "clock": {
+            "end": {
+                "local_us": 210990,
+                "offset_us": -37.0,
+                "uncertainty_us": 0.0
+            },
+            "method": "ping-pong",
+            "start": {
+                "local_us": 3215,
+                "offset_us": -37.0,
+                "uncertainty_us": 0.0
+            }
+        },
+        "mpi": {
+            "detail_rank": 0,
+            "host": "Augusts-Laptop.local",
+            "pid": 37638,
+            "rank": 1,
+            "ranks": 4,
+            "role": "lean"
+        }
+    }
+}

@@ -1,0 +1,303 @@
+[
+    {
+        "label": "PRNG stream",
+        "line": 139,
+        "object_id": 1001,
+        "time": 0,
+        "type": "allocation"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 251,
+        "object_id": 1003,
+        "time": 17,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            6
+        ],
+        "elwise_inputs": [],
+        "end": 115,
+        "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+        "label": "prime_counter",
+        "line": 81,
+        "object_id": 1000,
+        "outputs": [
+            1004
+        ],
+        "pattern": "MapReduce",
+        "prng": 1001,
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 2,
+        "threads": 4,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 282,
+        "object_id": 1003,
+        "time": 117,
+        "type": "deallocation"
+    },
+    {
+        "label": "PRNG stream",
+        "line": 139,
+        "object_id": 1006,
+        "time": 147,
+        "type": "allocation"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 251,
+        "object_id": 1008,
+        "time": 150,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            96
+        ],
+        "elwise_inputs": [],
+        "end": 190,
+        "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+        "label": "prime_counter",
+        "line": 81,
+        "object_id": 1005,
+        "outputs": [
+            1009
+        ],
+        "pattern": "MapReduce",
+        "prng": 1006,
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 149,
+        "threads": 4,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 282,
+        "object_id": 1008,
+        "time": 192,
+        "type": "deallocation"
+    },
+    {
+        "label": "PRNG stream",
+        "line": 139,
+        "object_id": 1011,
+        "time": 194,
+        "type": "allocation"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 251,
+        "object_id": 1013,
+        "time": 195,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            996
+        ],
+        "elwise_inputs": [],
+        "end": 260,
+        "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+        "label": "prime_counter",
+        "line": 81,
+        "object_id": 1010,
+        "outputs": [
+            1014
+        ],
+        "pattern": "MapReduce",
+        "prng": 1011,
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 195,
+        "threads": 4,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 282,
+        "object_id": 1013,
+        "time": 265,
+        "type": "deallocation"
+    },
+    {
+        "label": "PRNG stream",
+        "line": 139,
+        "object_id": 1016,
+        "time": 266,
+        "type": "allocation"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 251,
+        "object_id": 1018,
+        "time": 266,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            9996
+        ],
+        "elwise_inputs": [],
+        "end": 686,
+        "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+        "label": "prime_counter",
+        "line": 81,
+        "object_id": 1015,
+        "outputs": [
+            1019
+        ],
+        "pattern": "MapReduce",
+        "prng": 1016,
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 266,
+        "threads": 4,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 282,
+        "object_id": 1018,
+        "time": 687,
+        "type": "deallocation"
+    },
+    {
+        "label": "PRNG stream",
+        "line": 139,
+        "object_id": 1021,
+        "time": 689,
+        "type": "allocation"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 251,
+        "object_id": 1023,
+        "time": 690,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            99996
+        ],
+        "elwise_inputs": [],
+        "end": 4916,
+        "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+        "label": "prime_counter",
+        "line": 81,
+        "object_id": 1020,
+        "outputs": [
+            1024
+        ],
+        "pattern": "MapReduce",
+        "prng": 1021,
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 689,
+        "threads": 4,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 282,
+        "object_id": 1023,
+        "time": 4918,
+        "type": "deallocation"
+    },
+    {
+        "label": "PRNG stream",
+        "line": 139,
+        "object_id": 1026,
+        "time": 4920,
+        "type": "allocation"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 251,
+        "object_id": 1028,
+        "time": 4921,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            999996
+        ],
+        "elwise_inputs": [],
+        "end": 43691,
+        "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+        "label": "prime_counter",
+        "line": 81,
+        "object_id": 1025,
+        "outputs": [
+            1029
+        ],
+        "pattern": "MapReduce",
+        "prng": 1026,
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 4920,
+        "threads": 4,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 282,
+        "object_id": 1028,
+        "time": 43693,
+        "type": "deallocation"
+    },
+    {
+        "label": "PRNG stream",
+        "line": 139,
+        "object_id": 1031,
+        "time": 43695,
+        "type": "allocation"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 251,
+        "object_id": 1033,
+        "time": 43696,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            9999996
+        ],
+        "elwise_inputs": [],
+        "end": 392137,
+        "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+        "label": "prime_counter",
+        "line": 81,
+        "object_id": 1030,
+        "outputs": [
+            1034
+        ],
+        "pattern": "MapReduce",
+        "prng": 1031,
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 43695,
+        "threads": 4,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "[Internal PRNG]",
+        "line": 282,
+        "object_id": 1033,
+        "time": 392140,
+        "type": "deallocation"
+    }
+]
