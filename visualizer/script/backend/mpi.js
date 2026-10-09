@@ -74,7 +74,8 @@ function callEntry(rank, clock, e, local) {
 function callSummary(entries) {
     const present = entries.filter(Boolean);
     const at = f => entries.map(x => x ? f(x) : null);
-    const work = stats(at(x => x.work_start != null ? x.work_end - x.work_start : null));
+    // (a rank that did no work counts as zero: the mean is over all ranks, so that a call that one rank does alone is as unbalanced as it is)
+    const work = stats(at(x => x.work_start != null ? x.work_end - x.work_start : 0));
     return {
         interval: { start: Math.min(...present.map(x => x.start)), end: Math.max(...present.map(x => x.end)) },
         arrival_spread_us: Math.max(...present.map(x => x.start)) - Math.min(...present.map(x => x.start)),
@@ -83,7 +84,7 @@ function callSummary(entries) {
         comm_time: stats(at(x => x.comm.time_us)),
         comm_bytes: stats(at(x => x.comm.bytes_sent + x.comm.bytes_received)),
         local_elements: stats(at(x => x.local_elements)),
-        // The slowest rank is the one that worked the longest; the balance is how much longer than the mean
+        // The slowest rank is the one that worked the longest; the imbalance is how much longer than the mean over all ranks (1: balanced, the number of ranks: one rank does it all)
         slowest_rank: work ? work.argmax : null,
         imbalance: ratio(work),
     };

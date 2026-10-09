@@ -146,6 +146,8 @@ export function buildMinmax(nodes, edges) {
     _mm(minmax, 'fan-in',        node.data.fan_in          || 0);
     _mm(minmax, 'fan-out',       node.data.fan_out         || 0);
     _mm(minmax, 'duration-cv',   node.data.duration_cv     || 0);
+    if (node.data.imbalance != null) _mm(minmax, 'imbalance', node.data.imbalance);
+    if (node.data.comm_bytes != null) _mm(minmax, 'comm-bytes', node.data.comm_bytes);
     if (node.data.type === 'skeleton_call' && node.data.elements) {
       var el = node.data.elements.reduce(function(a, b) { return a * b; });
       _mm(minmax, 'elements', el);
@@ -487,6 +489,8 @@ export class TraceDataProvider {
     else if (mode === 'fan-in')              value = d.fan_in  || 0;
     else if (mode === 'fan-out')             value = d.fan_out || 0;
     else if (mode === 'duration-cv')         value = d.duration_cv || 0;
+    else if (mode === 'imbalance')           value = d.imbalance;      // (null for a call that is not of an MPI program: the default colour)
+    else if (mode === 'comm-bytes')          value = d.comm_bytes;
     else if (mode === 'elements') {
       value = (d.elements || [1]).reduce(function(a, b) { return a * b; }, 1);
     } else if (mode === 'duration-per-element') {
@@ -519,6 +523,8 @@ export class TraceDataProvider {
     else if (mode === 'fan-in')              value = ele.data('fan_in')          || 0;
     else if (mode === 'fan-out')             value = ele.data('fan_out')         || 0;
     else if (mode === 'duration-cv')         value = ele.data('duration_cv')     || 0;
+    else if (mode === 'imbalance')           value = ele.data('imbalance');
+    else if (mode === 'comm-bytes')          value = ele.data('comm_bytes');
     else if (mode === 'elements') {
       var els = ele.data('elements');
       if (!els) return NORM_DEGENERATE;

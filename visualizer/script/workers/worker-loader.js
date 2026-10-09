@@ -275,7 +275,9 @@ function _applyLoadResult(result) {
             result.cppFiles    || {},
             result.traceJsonRaw  || null,
             result.traceFilename || 'trace.json',
-            result.traceLineRanges || []
+            result.traceLineRanges || [],
+            result.rankTraces || [],
+            result.mpi ? result.mpi.detail_rank : null
         );
     else
         // Fallback: keep the global in sync even when sourceView isn't ready yet.

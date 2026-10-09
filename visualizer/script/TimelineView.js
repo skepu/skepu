@@ -29,6 +29,8 @@
 
 'use strict';
 
+import { rankCount, layoutRows, rankSegments, segmentExtent, collectiveParts, commSegments } from './timeline_layout.js';
+
 // ── Module-local layout constants ────────────────────────────────────────────
 // These are implementation details of the timeline chart; callers have no reason
 // to inspect or override them.  animScrollMs is the exception — it is passed
@@ -39,6 +41,7 @@ const _LW               = 72;    // label column width (px)
 const _PAD_RIGHT        = 90;    // right-side padding (room for "end of trace" label)
 const _AXIS_H           = 36;    // bottom axis strip height; also the regions row height
 const _ROW_H            = 28;    // height of each backend / transfer / event row
+const _HEADER_H         = 18;    // height of the header of a rank (the timeline of an MPI program)
 const _ROW_PAD          = 3;     // top/bottom padding inside each row bar
 const _MIN_LABEL_W      = 24;    // minimum bar width before drawing an inline label
 const _TICK_PX          = 90;    // target pixel spacing between time-axis ticks
@@ -465,6 +468,15 @@ export class TimelineView {
         ? n.data.region_intervals : [[n.data.region_start, n.data.region_end]];
       ivs.forEach(function(iv) { minT = Math.min(minT, iv[0]); maxT = Math.max(maxT, iv[1]); });
     });
+    // (what the other ranks did can be outside the interval of rank 0)
+    var extent = segmentExtent(timedBars);
+    if (extent) { minT = Math.min(minT, extent[0]); maxT = Math.max(maxT, extent[1]); }
+    timedComms.forEach(function(n) {
+      (n.data.rank_summaries || []).forEach(function(s) {
+        if (s && s.interval) { minT = Math.min(minT, s.interval.start); maxT = Math.max(maxT, s.interval.end); }
+      });
+    });
+    var ranks = rankCount(timedBars);   // (0: a trace that is not from an MPI program: the rows are those of one process)
     var range = Math.max(maxT - minT, 1);
     this._timeRange = { minT: minT, maxT: maxT, range: range };
 
@@ -482,7 +494,11 @@ export class TimelineView {
     var COMM_RH     = timedComms.length     > 0 ? RH : 0;
     var EVENT_RH    = timedMarkers.length   > 0 ? RH : 0;
     var SVG_W = Math.max(container.clientWidth || 400, 200) * this._scale;
-    var H     = REGION_RH + backends.length * RH + TRANSFER_RH + COMM_RH + EVENT_RH + AH;
+    // (the collectives can be opened up: every rank then has a row for what it did in them: click on "Comm.")
+    var rankComm = ranks > 0 && COMM_RH > 0 && !!this._commExpanded;
+    var L = layoutRows({ ranks: ranks, backends: backends, regionH: REGION_RH, rowH: RH, headerH: _HEADER_H,
+      transferH: TRANSFER_RH, commH: COMM_RH, eventH: EVENT_RH, axisH: AH, rankComm: rankComm });
+    var H     = L.height;
     var BW    = Math.max(1, SVG_W - LW - PAD_RIGHT);
 
     // Dark-mode palette
@@ -490,6 +506,7 @@ export class TimelineView {
     var _rowBgA    = dark ? '#1e1c2e' : '#f0f7ff';
     var _rowBgEven = dark ? '#1a1824' : '#fff';
     var _rowBgOdd  = dark ? '#201e2c' : '#f8f8f8';
+    var _rowBgRank = dark ? '#26233a' : '#e4eefb';
     var _rowBgTr   = dark ? '#221e2e' : '#f8f4ff';
     var _rowBgCm   = dark ? '#182529' : '#f0fafb';
     var _rowBgEv   = dark ? '#1e1c28' : '#fff8f5';
@@ -541,23 +558,35 @@ export class TimelineView {
       body.push('<rect x="0" y="0" width="' + SVG_W + '" height="' + REGION_RH + '" fill="' + _rowBgA + '"/>');
       body.push('<text x="' + (LW - 6) + '" y="' + (REGION_RH / 2 + 4) + '" text-anchor="end" fill="' + _labelFill + '">Regions</text>');
     }
-    backends.forEach(function(b, i) {
-      var y = REGION_RH + i * RH;
-      body.push('<rect x="0" y="' + y + '" width="' + SVG_W + '" height="' + RH + '" fill="' + (i % 2 ? _rowBgOdd : _rowBgEven) + '"/>');
-      body.push('<text x="' + (LW - 6) + '" y="' + (y + RH / 2 + 4) + '" text-anchor="end" fill="' + _labelFill + '">' + escTxt(b) + '</text>');
+    // The ranks of an MPI program are the top level (a header, and a row for each backend); a trace of a single node has the rows of one process
+    L.groups.forEach(function(g) {
+      if (g.headerH > 0) {
+        body.push('<rect x="0" y="' + g.headerY + '" width="' + SVG_W + '" height="' + g.headerH + '" fill="' + _rowBgRank + '"/>');
+        body.push('<text x="6" y="' + (g.headerY + g.headerH / 2 + 4) + '" fill="' + _labelFill + '" font-weight="bold">Rank ' + g.rank + '</text>');
+      }
+      backends.forEach(function(b, i) {
+        var y = g.rowY[b];
+        body.push('<rect x="0" y="' + y + '" width="' + SVG_W + '" height="' + RH + '" fill="' + (i % 2 ? _rowBgOdd : _rowBgEven) + '"/>');
+        body.push('<text x="' + (LW - 6) + '" y="' + (y + RH / 2 + 4) + '" text-anchor="end" fill="' + _labelFill + '">' + escTxt(b) + '</text>');
+      });
+      if (g.commY != null) {
+        body.push('<rect x="0" y="' + g.commY + '" width="' + SVG_W + '" height="' + RH + '" fill="' + _rowBgCm + '"/>');
+        body.push('<text x="' + (LW - 6) + '" y="' + (g.commY + RH / 2 + 4) + '" text-anchor="end" fill="' + _labelFill + '">MPI</text>');
+      }
     });
     if (TRANSFER_RH > 0) {
-      var trRowY = REGION_RH + backends.length * RH;
+      var trRowY = L.transferY;
       body.push('<rect x="0" y="' + trRowY + '" width="' + SVG_W + '" height="' + TRANSFER_RH + '" fill="' + _rowBgTr + '"/>');
       body.push('<text x="' + (LW - 6) + '" y="' + (trRowY + TRANSFER_RH / 2 + 4) + '" text-anchor="end" fill="' + _labelFill + '">Transfers</text>');
     }
     if (COMM_RH > 0) {
-      var cmRowY = REGION_RH + backends.length * RH + TRANSFER_RH;
+      var cmRowY = L.commY;
       body.push('<rect x="0" y="' + cmRowY + '" width="' + SVG_W + '" height="' + COMM_RH + '" fill="' + _rowBgCm + '"/>');
-      body.push('<text x="' + (LW - 6) + '" y="' + (cmRowY + COMM_RH / 2 + 4) + '" text-anchor="end" fill="' + _labelFill + '">Communication</text>');
+      body.push('<text x="' + (LW - 6) + '" y="' + (cmRowY + COMM_RH / 2 + 4) + '" text-anchor="end" fill="' + _labelFill + '"'
+        + (ranks > 0 ? ' data-comm-toggle="1" style="cursor:pointer"><title>Show what every rank did in the collectives</title>' + (rankComm ? '▾ ' : '▸ ') : '>') + 'Comm.</text>');
     }
     if (EVENT_RH > 0) {
-      var evRowY = REGION_RH + backends.length * RH + TRANSFER_RH + COMM_RH;
+      var evRowY = L.eventY;
       body.push('<rect x="0" y="' + evRowY + '" width="' + SVG_W + '" height="' + EVENT_RH + '" fill="' + _rowBgEv + '"/>');
       body.push('<text x="' + (LW - 6) + '" y="' + (evRowY + EVENT_RH / 2 + 4) + '" text-anchor="end" fill="' + _labelFill + '">Events</text>');
     }
@@ -622,12 +651,13 @@ export class TimelineView {
     }
 
     // ── Backend bars ──────────────────────────────────────────────────────────
+    // A call of an MPI program has a bar on every rank (what that rank did: the part in which it worked is solid, the rest of its
+    // interval, communication and waiting, is light); a call of a single node has one bar.
     var barIdx = 0;
+    var LIGHT = 0.38;
     timedBars.forEach(function(n) {
       var d       = n.data;
       var backend = d.backend || 'CPU';
-      var ri      = bRow[backend];
-      var y       = REGION_RH + ri * RH + RP;
       var bh      = RH - RP * 2;
       var fill    = _callColor(d);
       var ivs     = d.intervals || [[d.start, d.end]];
@@ -635,33 +665,64 @@ export class TimelineView {
       var opacityAttr = d.hidden ? ' opacity="0.3"' : '';
 
       ivs.forEach(function(iv, iidx) {
-        var x1 = tx(iv[0]), x2 = tx(iv[1]);
-        var bw = Math.max(2, x2 - x1);
-        var centerX = x1 + bw / 2;
-        var clipId  = 'gantt-c-' + (barIdx++);
-        var selCls  = d.id === selectedId ? ' gantt-selected' : '';
+        var segs = ranks > 0 ? rankSegments((d.rank_datas || [])[iidx]) : [];
+        var bars = segs.length ? segs : [{ rank: 0, start: iv[0], end: iv[1], workStart: null, workEnd: null, plain: true }];
         var iterLabel = total > 1 ? ' [' + (iidx + 1) + '/' + total + ']' : '';
-        var tip = escTxt(d.label + (d.pattern ? ' [' + d.pattern + ']' : '') + iterLabel
-          + '\n' + (d.backend || '') + '\n' + fmtDt(iv[1] - iv[0]));
-        defs.push('<clipPath id="' + clipId + '"><rect x="' + (x1 + 2) + '" y="' + y
-          + '" width="' + Math.max(0, bw - 4) + '" height="' + bh + '"/></clipPath>');
-        body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr
-          + ' data-node-id="' + escAttr(d.id) + '" data-center-x="' + centerX + '" data-interval-idx="' + iidx + '"'
-          + ' x="' + x1 + '" y="' + y + '" width="' + bw + '" height="' + bh + '" rx="2"'
-          + ' fill="' + fill + '" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer">'
-          + '<title>' + tip + '</title></rect>');
-        if (bw > _MIN_LABEL_W) {
-          var iterSuffix = total > 1 ? ' ' + (iidx + 1) : '';
-          body.push('<text x="' + (x1 + 4) + '" y="' + (y + bh / 2 + 4) + '"' + opacityAttr
-            + ' fill="rgba(255,255,255,0.9)" clip-path="url(#' + clipId + ')" style="pointer-events:none">'
-            + escTxt(d.label + iterSuffix) + '</text>');
-        }
+        var selCls  = d.id === selectedId ? ' gantt-selected' : '';
+        bars.forEach(function(s) {
+          var y  = L.groups[ranks > 0 ? s.rank : 0].rowY[backend] + RP;
+          var x1 = tx(s.start), x2 = tx(s.end);
+          var bw = Math.max(2, x2 - x1);
+          var centerX = x1 + bw / 2;
+          var clipId  = 'gantt-c-' + (barIdx++);
+          var tip = d.label + (d.pattern ? ' [' + d.pattern + ']' : '') + iterLabel + '\n' + (d.backend || '');
+          if (ranks > 0) {
+            tip += '\nRank ' + s.rank + ': ' + fmtDt(s.end - s.start);
+            if (s.workStart != null) tip += ', worked ' + fmtDt(s.workEnd - s.workStart);
+            else if (!s.plain) tip += ', no work';
+            if (!s.plain) tip += '\n' + s.localElements + ' elements';
+            if (s.comm && s.comm.collectives) tip += '\ncommunication: ' + s.comm.collectives + ' collective' + (s.comm.collectives > 1 ? 's' : '')
+              + ', ' + (s.comm.bytes_sent + s.comm.bytes_received) + ' bytes, ' + fmtDt(s.comm.time_us);
+          } else {
+            tip += '\n' + fmtDt(iv[1] - iv[0]);
+          }
+          tip = escTxt(tip);
+          var common = ' data-node-id="' + escAttr(d.id) + '" data-center-x="' + centerX + '" data-interval-idx="' + iidx + '"' + (s.rank != null ? ' data-rank="' + s.rank + '"' : '');
+          defs.push('<clipPath id="' + clipId + '"><rect x="' + (x1 + 2) + '" y="' + y
+            + '" width="' + Math.max(0, bw - 4) + '" height="' + bh + '"/></clipPath>');
+          if (s.plain || (ranks === 0)) {
+            body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr + common
+              + ' x="' + x1 + '" y="' + y + '" width="' + bw + '" height="' + bh + '" rx="2"'
+              + ' fill="' + fill + '" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer">'
+              + '<title>' + tip + '</title></rect>');
+          } else {
+            // the interval of the rank, light; and the work of the rank on it
+            body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr + common
+              + ' x="' + x1 + '" y="' + y + '" width="' + bw + '" height="' + bh + '" rx="2"'
+              + ' fill="' + fill + '" fill-opacity="' + LIGHT + '" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer">'
+              + '<title>' + tip + '</title></rect>');
+            if (s.workStart != null) {
+              var w1 = tx(s.workStart), w2 = tx(s.workEnd);
+              body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr + common
+                + ' x="' + w1 + '" y="' + y + '" width="' + Math.max(2, w2 - w1) + '" height="' + bh + '" rx="2"'
+                + ' fill="' + fill + '" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer">'
+                + '<title>' + tip + '</title></rect>');
+            }
+          }
+          if (bw > _MIN_LABEL_W) {
+            var iterSuffix = total > 1 ? ' ' + (iidx + 1) : '';
+            body.push('<text x="' + (x1 + 4) + '" y="' + (y + bh / 2 + 4) + '"' + opacityAttr
+              + ' fill="' + (ranks > 0 && !s.plain ? (dark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.75)') : 'rgba(255,255,255,0.9)')
+              + '" clip-path="url(#' + clipId + ')" style="pointer-events:none">'
+              + escTxt(d.label + iterSuffix) + '</text>');
+          }
+        });
       });
     });
 
     // ── Transfer bars ─────────────────────────────────────────────────────────
     if (TRANSFER_RH > 0) {
-      var trBarY   = REGION_RH + backends.length * RH + RP;
+      var trBarY   = L.transferY + RP;
       var trBarH   = TRANSFER_RH - RP * 2;
       var trBarIdx = 0;
       timedTransfers.forEach(function(n) {
@@ -696,7 +757,7 @@ export class TimelineView {
 
     // ── Communication bars (the collective operations of an MPI program) ─────
     if (COMM_RH > 0) {
-      var cmBarY   = REGION_RH + backends.length * RH + TRANSFER_RH + RP;
+      var cmBarY   = L.commY + RP;
       var cmBarH   = COMM_RH - RP * 2;
       var cmBarIdx = 0;
       timedComms.forEach(function(n) {
@@ -711,14 +772,36 @@ export class TimelineView {
           var clipId  = 'gantt-cm-' + (cmBarIdx++);
           var selCls  = d.id === selectedId ? ' gantt-selected' : '';
           var iterLabel = total > 1 ? ' [' + (iidx + 1) + '/' + total + ']' : '';
-          var tip = escTxt(d.label + iterLabel + '\n' + (d.operation || 'communication') + '\n' + fmtDt(iv[1] - iv[0]));
+          // In an MPI program the collective is the interval of all ranks: they arrive (the light part is the wait for the last), then exchange
+          var parts = collectiveParts((d.rank_summaries || [])[iidx]);
+          var summary = (d.rank_summaries || [])[iidx];
+          var tipText = d.label + iterLabel + '\n' + (d.operation || 'communication') + '\n' + fmtDt(iv[1] - iv[0]);
+          if (parts) {
+            x1 = tx(summary.interval.start); x2 = tx(summary.interval.end); bw = Math.max(2, x2 - x1); centerX = x1 + bw / 2;
+            tipText = d.label + iterLabel + '\n' + (d.operation || 'communication') + '\nall ranks: ' + fmtDt(summary.interval.end - summary.interval.start)
+              + '\nwaiting for the last to arrive: ' + fmtDt(summary.max_wait_us) + ' (rank ' + summary.last_arrival_rank + ')'
+              + '\n' + (summary.bytes_sent) + ' bytes moved';
+          }
+          var tip = escTxt(tipText);
+          var common = ' data-node-id="' + escAttr(d.id) + '" data-center-x="' + centerX + '" data-interval-idx="' + iidx + '"';
           defs.push('<clipPath id="' + clipId + '"><rect x="' + (x1 + 2) + '" y="' + cmBarY
             + '" width="' + Math.max(0, bw - 4) + '" height="' + cmBarH + '"/></clipPath>');
-          body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr
-            + ' data-node-id="' + escAttr(d.id) + '" data-center-x="' + centerX + '" data-interval-idx="' + iidx + '"'
-            + ' x="' + x1 + '" y="' + cmBarY + '" width="' + bw + '" height="' + cmBarH + '" rx="2"'
-            + ' fill="#17a2b8" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer">'
-            + '<title>' + tip + '</title></rect>');
+          if (parts) {
+            var wx1 = tx(parts.waitStart), wx2 = tx(parts.waitEnd), ex1 = tx(parts.exchangeStart), ex2 = tx(parts.end);
+            body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr + common
+              + ' x="' + wx1 + '" y="' + cmBarY + '" width="' + Math.max(2, ex2 - wx1) + '" height="' + cmBarH + '" rx="2"'
+              + ' fill="#17a2b8" fill-opacity="0.35" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer">'
+              + '<title>' + tip + '</title></rect>');
+            body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr + common
+              + ' x="' + ex1 + '" y="' + cmBarY + '" width="' + Math.max(2, ex2 - ex1) + '" height="' + cmBarH + '" rx="2"'
+              + ' fill="#17a2b8" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer">'
+              + '<title>' + tip + '</title></rect>');
+          } else {
+            body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr + common
+              + ' x="' + x1 + '" y="' + cmBarY + '" width="' + bw + '" height="' + cmBarH + '" rx="2"'
+              + ' fill="#17a2b8" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer">'
+              + '<title>' + tip + '</title></rect>');
+          }
           if (bw > _MIN_LABEL_W) {
             var iterSuffix = total > 1 ? ' ' + (iidx + 1) : '';
             body.push('<text x="' + (x1 + 4) + '" y="' + (cmBarY + cmBarH / 2 + 4) + '"' + opacityAttr
@@ -729,9 +812,37 @@ export class TimelineView {
       });
     }
 
+    // ── What every rank did in the collectives (opened up) ────────────────────
+    if (rankComm) {
+      var rcIdx = 0;
+      timedComms.forEach(function(n) {
+        var d = n.data;
+        var opacityAttr = d.hidden ? ' opacity="0.3"' : '';
+        var selCls = d.id === selectedId ? ' gantt-selected' : '';
+        (d.intervals || [[d.start, d.end]]).forEach(function(iv, iidx) {
+          var summary = (d.rank_summaries || [])[iidx];
+          commSegments((d.rank_datas || [])[iidx], summary).forEach(function(s) {
+            var g = L.groups[s.rank];
+            if (!g || g.commY == null) return;
+            var y = g.commY + RP, bh = RH - RP * 2;
+            var x1 = tx(s.start), x2 = tx(s.end), xe = tx(s.exchangeStart);
+            var tip = escTxt(d.label + '\nRank ' + s.rank + ': ' + fmtDt(s.end - s.start) + ' in it\nwaited for the last to arrive: ' + fmtDt(s.exchangeStart - s.start)
+              + '\nsent ' + s.bytesSent + ' bytes, received ' + s.bytesReceived);
+            var common = ' data-node-id="' + escAttr(d.id) + '" data-center-x="' + ((x1 + x2) / 2) + '" data-interval-idx="' + iidx + '"' + ' data-rank="' + s.rank + '"';
+            rcIdx++;
+            if (xe > x1)
+              body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr + common + ' x="' + x1 + '" y="' + y + '" width="' + Math.max(1, xe - x1)
+                + '" height="' + bh + '" rx="2" fill="#17a2b8" fill-opacity="0.35" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer"><title>' + tip + '</title></rect>');
+            body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr + common + ' x="' + xe + '" y="' + y + '" width="' + Math.max(2, x2 - xe)
+              + '" height="' + bh + '" rx="2" fill="#17a2b8" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer"><title>' + tip + '</title></rect>');
+          });
+        });
+      });
+    }
+
     // ── Event markers (allocation / deallocation) ─────────────────────────────
     if (EVENT_RH > 0) {
-      var evRowY2 = REGION_RH + backends.length * RH + TRANSFER_RH + COMM_RH;
+      var evRowY2 = L.eventY;
       var evCY    = evRowY2 + EVENT_RH / 2;
       var HS = 7;
 
@@ -901,13 +1012,19 @@ export class TimelineView {
 
     // Delegated click: bar → emit 'select'; empty area → set / update locked cursor.
     svg.addEventListener('click', function(ev) {
+      if (ev.target.closest && ev.target.closest('[data-comm-toggle]')) {
+        self._commExpanded = !self._commExpanded;
+        self._render(self._lastTimelineNodes);
+        return;
+      }
       var barEl = ev.target.closest ? ev.target.closest('[data-node-id]') : null;
       if (barEl && barEl.dataset.nodeId) {
         var nodeId  = barEl.dataset.nodeId;
         var iterIdx = parseInt(barEl.dataset.intervalIdx || 0);
         var handled = typeof onSimBarClick === 'function' && onSimBarClick(nodeId, iterIdx);
         if (handled) return;
-        if (providerRef) providerRef._emit('select', { nodeId: nodeId, source: 'gantt', iterIdx: iterIdx });
+        if (providerRef) providerRef._emit('select', { nodeId: nodeId, source: 'gantt', iterIdx: iterIdx,
+          rank: barEl.dataset.rank != null ? +barEl.dataset.rank : null });
       } else {
         var x = svgXFromEvent(ev);
         if (x < LW || x > LW + BW) return;
@@ -950,7 +1067,8 @@ export class TimelineView {
     }
 
     // ── Size the pane ─────────────────────────────────────────────────────────
-    if (this._paneEl) this._paneEl.style.flex = '0 0 ' + H + 'px';
+    // (many ranks make a tall timeline: the pane is not taller than 45% of the window, and scrolls)
+    if (this._paneEl) this._paneEl.style.flex = '0 0 ' + Math.min(H, Math.max(160, Math.round(window.innerHeight * 0.45))) + 'px';
 
     // ── Update gantt bar count display ────────────────────────────────────────
     if (this._countEl) {

@@ -126,7 +126,8 @@ function _installTraces(files) {
         primary = parsed.find(f => f.header?.mpi?.role === 'full') ?? parsed[0];
         _eventData   = merged.events;
         _traceHeader = merged.header;
-        _mpi = { mpi: merged.mpi, warnings: merged.warnings, divergence: merged.divergence };
+        _mpi = { mpi: merged.mpi, warnings: merged.warnings, divergence: merged.divergence,
+                 rankTraces: _rankTraces(parsed, primary, merged.events) };
     } else {
         if (parsed.length > 1) throw new Error('Several trace files, but they are not the files of an MPI program');
         _eventData   = primary.events;
@@ -139,9 +140,29 @@ function _installTraces(files) {
     _preprocessFilePaths(_eventData);
 }
 
+// The other trace files of an MPI program, for the trace pane: [{ rank, name, text, ranges }], where ranges[i] is the
+// range of lines in the file of the i-th event of the primary trace (null if the file has nothing for it).
+function _rankTraces(parsed, primary, events) {
+    const out = [];
+    for (const f of parsed) {
+        if (f === primary) continue;
+        const lines = _computeTraceLineRanges(f.text);
+        const calls = new Map(), comms = new Map();
+        f.events.forEach((e, i) => {
+            if (e.type === 'rank_call') calls.set(e.seq, lines[i]);
+            else if (e.type === 'rank_communication') comms.set(e.comm_seq, lines[i]);
+        });
+        const ranges = events.map(e =>
+            e.type === 'communication' ? comms.get(e.comm_seq) ?? null
+            : (e.type === 'skeleton_call' || e.type === 'external') && e.seq != null ? calls.get(e.seq) ?? null : null);
+        out.push({ rank: f.header.mpi.rank, name: f.name, text: f.text, ranges });
+    }
+    return out;
+}
+
 // What a reply says about the merge of the files of an MPI program (nothing for other traces)
 function _mpiReply() {
-    return _mpi ? { mpi: _mpi.mpi, warnings: _mpi.warnings, divergence: _mpi.divergence } : {};
+    return _mpi ? { mpi: _mpi.mpi, warnings: _mpi.warnings, divergence: _mpi.divergence, rankTraces: _mpi.rankTraces } : {};
 }
 
 // ── Handler: load ─────────────────────────────────────────────────────────────

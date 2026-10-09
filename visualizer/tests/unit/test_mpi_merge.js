@@ -89,7 +89,11 @@ describe('merging the fixture', () => {
         expect(c.rank_data.map(r => r.local_elements)).toEqual([4, 1, 0]);
         expect(c.rank_data[2].work_start).toBeNull();            // (the third process did nothing)
         expect(c.rank_summary.local_elements.argmax).toBe(0);
-        expect(c.rank_summary.work.min).toBeGreaterThanOrEqual(0);
+        expect(c.rank_summary.work.min).toBe(0);                  // (a rank that did no work counts as zero)
+        // 4 elements on rank 0 and 1 on rank 1: how much longer than the mean over the three ranks the busiest worked
+        const w = c.rank_data.map(r => r.work_start != null ? r.work_end - r.work_start : 0);
+        expect(c.rank_summary.imbalance).toBeCloseTo(Math.max(...w) / (w.reduce((a, b) => a + b, 0) / 3), 6);
+        expect(c.rank_summary.slowest_rank).toBe(w.indexOf(Math.max(...w)));
         expect(c.rank_summary.comm_bytes.max).toBeGreaterThan(0); // (and the rows and results moved)
     });
 
@@ -189,6 +193,9 @@ describe('an skepu::external call in the merged trace', () => {
             expect(e.rank_data[2].work_start).toBeNull();
             expect(e.rank_summary.slowest_rank).toBe(0);
             expect(e.rank_summary.local_elements.max).toBe(0);
+            // (the code runs on one of the three ranks: as unbalanced as it can be; the work is measured in microseconds, and an external of less than one has none)
+            if (e.rank_data[0].work_end - e.rank_data[0].work_start > 0) expect(e.rank_summary.imbalance).toBeCloseTo(3, 6);
+            else expect(e.rank_summary.imbalance).toBeNull();
         }
         expect(merged.warnings).toEqual([]);
     });

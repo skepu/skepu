@@ -11,6 +11,7 @@ import { buildDisplayGraph, graphSettings } from '../../script/backend/pipeline.
 import { mergeMpiTraces } from '../../script/backend/mpi.js';
 import { builder, trace } from '../event_builders.js';
 import { testSettings } from '../helpers.js';
+import { TraceDataProvider } from '../../script/TraceDataProvider.js';
 
 const DIR = join(dirname(fileURLToPath(import.meta.url)), '../fixtures/mpi/trace_map_3');
 const merged = mergeMpiTraces(['skepu_trace.json', 'skepu_trace.rank1.json', 'skepu_trace.rank2.json']
@@ -177,5 +178,52 @@ describe('the example of the splash page (Coulombic on 4 MPI processes)', () => 
         const comm = sourcesOf(call).find(n => n.type === 'communication');
         expect(comm.reason).toMatch(/random access/);
         expect(comm.phase).toBe('before');
+    });
+});
+
+describe('the imbalance of the calls of an MPI program', () => {
+    const g = DirectedGraph.fromEvents(merged.events, testSettings());
+    const calls = g.getAllNodes().filter(n => n.type === 'skeleton_call');
+    const externals = g.getAllNodes().filter(n => n.type === 'external');
+
+    it('is on the nodes the views get, with the slowest rank and the communication', () => {
+        for (const n of [...calls, ...externals]) {
+            const d = n.toCytoscape();
+            if (d.imbalance !== null) expect(d.imbalance).toBeGreaterThanOrEqual(1);       // (null: no work was measured: it took less than a microsecond)
+            expect(d.slowest_rank).toBeGreaterThanOrEqual(0);
+            expect(d).toHaveProperty('comm_bytes');
+        }
+        const last = calls.at(-1).toCytoscape();                    // (the MatRow call: 4, 1 and 0 elements)
+        expect(last.imbalance).toBeGreaterThan(1.2);
+        expect(externals[0].toCytoscape().imbalance).toBeCloseTo(3, 6);               // (the code of an external runs on one rank)
+    });
+
+    it('is in the info panel with the work of every rank', () => {
+        const info = calls.at(-1).infoData();
+        expect(info['Imbalance (longest work / mean over ranks)']).toBeGreaterThan(1.2);
+        expect(info['Slowest rank']).toBeGreaterThanOrEqual(0);
+        expect(info['Work per rank']).toMatch(/^0: .*; 1: .*; 2: none$/);
+        expect(info['Elements per rank']).toBe('0: 4; 1: 1; 2: 0');
+    });
+
+    it('is not on a call of a single node', () => {
+        const b = builder();
+        const single = DirectedGraph.fromEvents(trace([b.alloc(1, 'A'), b.call('produce', { outs: [1] })]), testSettings());
+        const call = single.getAllNodes().find(n => n.label === 'produce');
+        expect(call.toCytoscape()).not.toHaveProperty('imbalance');
+        expect(call.infoData()).not.toHaveProperty('Slowest rank');
+    });
+
+    it('colours the nodes: the mode is a measure of the nodes that have it, and the default colour for the others', () => {
+        const data = [...calls, ...externals].map(n => n.toCytoscape());
+        const provider = new TraceDataProvider({ fetchGraph: () => Promise.reject(new Error('none')), settings: { 'node-color-call': 'imbalance' } });
+        const mm = { imbalance: { min: 1, max: 3 }, 'comm-bytes': { min: 0, max: 100 } };
+        expect(provider.normFromData('node-color-call', { imbalance: 3 }, mm)).toBe(1);
+        expect(provider.normFromData('node-color-call', { imbalance: 2 }, mm)).toBeCloseTo(0.5, 6);
+        const degenerate = provider.normFromData('node-color-call', {}, mm);
+        expect(degenerate).not.toBe(1);
+        provider.settings['node-color-call'] = 'comm-bytes';
+        expect(provider.normFromData('node-color-call', { comm_bytes: 50 }, mm)).toBeCloseTo(0.5, 6);
+        expect(data.some(d => d.imbalance != null)).toBe(true);
     });
 });

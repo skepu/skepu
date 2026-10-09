@@ -123,7 +123,7 @@ program, so that a clock that runs fast or slow is followed):
 * `rank_data`: one entry for each rank (`null` if its file is missing). For a call: `rank`, `start`, `end`, `work_start` and `work_end` (`null`
   for a rank that did no work), `local_elements`, `comm`. For a collective: `rank`, `start`, `end`, `bytes_sent`, `bytes_received`.
 * `rank_summary`. For a call: `interval` (from the first start to the last end), `arrival_spread_us`, and `duration`, `work`, `comm_time`,
-  `comm_bytes`, `local_elements` as `{ min, mean, max, argmax }`, `slowest_rank` and `imbalance` (the longest work divided by the mean). For
+  `comm_bytes`, `local_elements` as `{ min, mean, max, argmax }`, `slowest_rank` and `imbalance` (the longest work divided by the mean over all ranks, where a rank that did no work counts as zero: 1 is balanced, and the number of ranks means that one rank does it all, as it does in an `external` call). For
   a collective: `interval`, `wait_us` (what each rank waited for the last one to arrive), `max_wait_us`, `last_arrival_rank`,
   `end_spread_us` (how far apart the ranks leave it: what is left of the misalignment of the clocks), and the bytes in total.
 

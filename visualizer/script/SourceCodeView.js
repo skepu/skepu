@@ -58,6 +58,11 @@ export class SourceCodeView {
 
     this._codePaths       = options.codePaths !== undefined ? options.codePaths : true;
     this._traceLineRanges = [];
+    this._rankTraces      = [];     // the other trace files of an MPI program: [{ rank, name, text, ranges }]
+    this._detailRank      = null;   // the rank whose trace file is the main trace (the others are in _rankTraces)
+    this._viewRank        = null;   // the rank whose trace file the trace pane shows
+    this._tracePanes      = {};     // rank → the pane of its trace file (the one that is not shown is out of the DOM)
+    this._lastBadgeNodes  = null;
     this._badgeCycleIndex = {};
     this._badgeNodeMap    = new Map();  // nodeId → its gutter elements (one per place it has a badge); rebuilt by _placeBadgesInDOM
 
@@ -111,6 +116,7 @@ export class SourceCodeView {
     };
     this._boundRenderEnd = function(stats) {
       self.clearBadges();
+      self._lastBadgeNodes = stats.badgeNodes;
       self.placeBadges(stats.badgeNodes);
     };
     // Incoming selection from another view — highlight the node in the source pane.
@@ -121,7 +127,7 @@ export class SourceCodeView {
       var nodes  = provider.lastGraphNodes;
       for (var i = 0; i < nodes.length; i++) {
         if (nodes[i].data.id === nodeId) {
-          self.highlightNode(nodes[i].data, true);
+          self.highlightNode(nodes[i].data, true, ev.rank);
           break;
         }
       }
@@ -269,8 +275,13 @@ export class SourceCodeView {
    * @param {string}      traceFilename    Display name for the trace tab
    * @param {Array}       traceLineRanges  Per-trace-event [startLine, endLine] pairs
    */
-  rebuild(cppFiles, traceJson, traceFilename, traceLineRanges) {
+  rebuild(cppFiles, traceJson, traceFilename, traceLineRanges, rankTraces, detailRank) {
     this._traceLineRanges    = traceLineRanges || [];
+    this._rankTraces         = rankTraces || [];
+    this._detailRank         = detailRank != null ? detailRank : null;
+    this._viewRank           = this._detailRank;
+    this._tracePanes         = {};
+    this._lastBadgeNodes     = null;
     // Keep the window global in sync for any legacy code that reads it directly.
     window.TRACE_LINE_RANGES = this._traceLineRanges;
 
@@ -343,9 +354,80 @@ export class SourceCodeView {
       tPre.appendChild(tCode);
       tracePane.appendChild(tPre);
       tabPanes.appendChild(tracePane);
+      this._tracePanes[this._detailRank] = tracePane;
+
+      // The other trace files of an MPI program: a menu to show them instead of the main one
+      if (this._rankTraces.length) {
+        var sel = document.createElement('select');
+        sel.className = 'cpp-trace-rank';
+        sel.title     = 'The trace file of which process to show';
+        var ranks = this._rankTraces.map(function(t) { return t.rank; }).concat([this._detailRank])
+          .sort(function(a, b) { return a - b; });
+        ranks.forEach(function(r) {
+          var o = document.createElement('option');
+          o.value = r;
+          o.textContent = 'rank ' + r + (r === self._detailRank ? ' (all events)' : '');
+          if (r === self._detailRank) o.selected = true;
+          sel.appendChild(o);
+        });
+        sel.onchange = function() { self.showTraceRank(parseInt(sel.value)); };
+        tabBar.appendChild(sel);
+        this._traceRankSelect = sel;
+      }
     }
 
     this._highlightAllBlocks(tabPanes);
+  }
+
+  /** The line ranges (by event of the main trace) in the trace file that the trace pane shows. */
+  _viewRanges() {
+    if (this._viewRank === this._detailRank) return this._traceLineRanges;
+    var t = this._rankTraces.find(function(x) { return x.rank === this._viewRank; }, this);
+    return t ? t.ranges : [];
+  }
+
+  /** Does the trace file of the rank have the lines of the event with this index in the main trace? */
+  _rankHasEntry(rank, traceIndex) {
+    if (rank === this._detailRank) return true;
+    var t = this._rankTraces.find(function(x) { return x.rank === rank; });
+    return !!(t && t.ranges[traceIndex]);
+  }
+
+  /**
+   * Show the trace file of a rank (of an MPI program) in the trace pane.  The pane of a file is built when
+   * it is first shown and kept.
+   */
+  showTraceRank(rank) {
+    if (rank == null || rank === this._viewRank) return;
+    var shown = this._tabPanesEl.querySelector('.cpp-tab-pane[data-trace-pane="true"]');
+    if (!shown) return;
+    var pane = this._tracePanes[rank];
+    var name = null;
+    if (!pane) {
+      var t = this._rankTraces.find(function(x) { return x.rank === rank; });
+      if (!t) return;
+      pane = document.createElement('div');
+      pane.className         = 'cpp-tab-pane hljs-loading';
+      pane.dataset.filename  = t.name;
+      pane.dataset.tracePane = 'true';
+      var pre = document.createElement('pre'), code = document.createElement('code');
+      code.className   = 'language-json';
+      code.textContent = t.text;
+      pre.appendChild(code);
+      pane.appendChild(pre);
+      this._tracePanes[rank] = pane;
+    }
+    this.clearHighlight();
+    pane.classList.toggle('active', shown.classList.contains('active'));
+    shown.replaceWith(pane);
+    this._viewRank = rank;
+    if (this._traceRankSelect) this._traceRankSelect.value = String(rank);
+    var traceBtn = Array.from(this._tabBarEl.querySelectorAll('.cpp-tab'))
+      .find(function(b) { return b.textContent === shown.dataset.filename; });
+    if (traceBtn) traceBtn.textContent = pane.dataset.filename;
+    this.highlightAllBlocks(this._tabPanesEl);
+    // (the badges are those of the file that is shown)
+    if (this._lastBadgeNodes) { this.clearBadges(); this.placeBadges(this._lastBadgeNodes); }
   }
 
   // ── Syntax highlighting ──────────────────────────────────────────────────────
@@ -407,10 +489,17 @@ export class SourceCodeView {
    *                           Relevant fields: trace_index, trace_indices, file, line.
    * @param {boolean} [animate=true]  Passed through to the underlying highlight method.
    */
-  highlightNode(data, animate) {
+  highlightNode(data, animate, rank) {
     if (!data) return;
     var tracePane = this._tabPanesEl.querySelector('.cpp-tab-pane.active[data-trace-pane="true"]');
     if (tracePane) {
+      // (of an MPI program: the trace file of the rank that was clicked; or else the file that is shown, if it has
+      // the event, and the main trace file if not)
+      if (this._rankTraces.length) {
+        var want = (data.trace_indices && data.trace_indices.length) ? data.trace_indices[0] : data.trace_index;
+        if (rank == null) rank = (want != null && this._rankHasEntry(this._viewRank, want)) ? this._viewRank : this._detailRank;
+        this.showTraceRank(rank);
+      }
       // Trace tab is open — highlight there and do not switch tabs.
       var idx = (data.trace_indices && data.trace_indices.length)
         ? data.trace_indices[0]
@@ -507,7 +596,7 @@ export class SourceCodeView {
     this.clearHighlight();
 
     if (traceIndex == null) return;
-    var range = this._traceLineRanges[traceIndex];
+    var range = this._viewRanges()[traceIndex];
     if (!range) return;
 
     var tracePane = this._tabPanesEl.querySelector('.cpp-tab-pane[data-trace-pane="true"]');
@@ -621,7 +710,7 @@ export class SourceCodeView {
    * @param {Array} badgeNodes  [{data:{type, file, line, id, ...}}] from /graph.
    */
   placeBadges(badgeNodes) {
-    var c = collectBadges(badgeNodes, this._traceLineRanges);
+    var c = collectBadges(badgeNodes, this._viewRanges());
     var badges = c.badges, traceBadges = c.traceBadges, orderMap = c.orders;
 
     var self = this;

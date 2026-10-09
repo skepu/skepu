@@ -23,6 +23,20 @@ function _durationCV(durations) {
 
 // ── Base node ─────────────────────────────────────────────────────────────────
 
+/** What the ranks did in the iterations of a call (mpi.js): the mean imbalance, the slowest rank of the worst iteration, the bytes that a rank moved. Null if there is nothing. */
+function rankStats(summaries) {
+    const present = summaries.filter(s => s && s.work);
+    if (!present.length) return null;
+    const imbalances = present.map(s => s.imbalance).filter(v => v != null);
+    const worst = present.reduce((a, s) => ((s.imbalance ?? 0) > (a.imbalance ?? 0) ? s : a));
+    const bytes = present.map(s => s.comm_bytes?.max ?? 0);
+    return {
+        imbalance:    imbalances.length ? imbalances.reduce((a, b) => a + b, 0) / imbalances.length : null,
+        slowest_rank: worst.slowest_rank,
+        comm_bytes:   bytes.reduce((a, b) => a + b, 0) / bytes.length,
+    };
+}
+
 /** The source locations of the iterations of a node as [file, line] pairs, if they are not all its own. */
 function badgeLocations(node) {
     const locs = node.locations;
@@ -168,6 +182,9 @@ export class ComputationNode extends Node {
         this.duration = this.end - this.start;
         this.durations = [this.duration];
         this.intervals = [[this.start, this.end]];
+        // What every rank did in each iteration, for the trace of an MPI program (mpi.js); null for a trace of a single node
+        this.rankDatas = [jsonData.rank_data ?? null];
+        this.rankSummaries = [jsonData.rank_summary ?? null];
 
         this.backend = jsonData.backend ?? 'CPU';
         this.file    = jsonData.file ?? null;
@@ -232,8 +249,11 @@ export class ComputationNode extends Node {
             line:        this.line,
             backend:     this.backend,
             duration_cv: _durationCV(this.durations),
+            ...(this._rankStats() ?? {}),        // (imbalance, slowest_rank, comm_bytes: a call of an MPI program)
         };
     }
+
+    _rankStats() { return rankStats(this.rankSummaries ?? []); }
 
     toTimeline() {
         return {
@@ -246,6 +266,7 @@ export class ComputationNode extends Node {
             durations:       this.durations,
             duration_cv:     _durationCV(this.durations),
             intervals:       this.intervals,
+            ...(this.rankDatas.some(Boolean) ? { rank_datas: this.rankDatas } : {}),
             backend:         this.backend,
             dag_depth:       this.depth,
             total_order:     this.totalOrder,
@@ -284,6 +305,23 @@ export class ComputationNode extends Node {
             Line:      this.line,
             Backend:   this.backend,
             durations: this.durations.map((d, i) => ({ x: i, y: d })),
+            ...this._rankInfo(),
+        };
+    }
+
+    // What every rank did in a call of an MPI program: the imbalance, and the work of each rank (in the first iteration)
+    _rankInfo() {
+        const s = this._rankStats();
+        const data = this.rankDatas?.find(Boolean);
+        if (!s || !data) return {};
+        const fmt = us => us >= 1e3 ? (us / 1e3).toFixed(1) + ' ms' : us.toFixed(0) + ' us';
+        const first = this.rankDatas.filter(Boolean).length > 1 ? ' (first iteration)' : '';
+        return {
+            'Imbalance (longest work / mean over ranks)': +s.imbalance?.toFixed(2),
+            'Slowest rank': s.slowest_rank,
+            ['Work per rank' + first]: data.map(e => e ? `${e.rank}: ${e.work_start != null ? fmt(e.work_end - e.work_start) : 'none'}` : null).filter(Boolean).join('; '),
+            ['Elements per rank' + first]: data.map(e => e ? `${e.rank}: ${e.local_elements}` : null).filter(Boolean).join('; '),
+            'Communication per rank (bytes, mean of the busiest)': Math.round(s.comm_bytes),
         };
     }
 }
@@ -358,6 +396,7 @@ export class CommunicationNode extends ComputationNode {
             end:          jsonData.end,
             backend:      'ANY',                      // (reads what is there, in whichever memory space)
             proxy_inputs: ids,
+            rank_data:    jsonData.rank_data,         // (what each rank did in it, for the timeline)
         }, totalOrder);
 
         this.type        = 'communication';
@@ -371,6 +410,7 @@ export class CommunicationNode extends ComputationNode {
         this.ranks       = jsonData.ranks ?? jsonData.rank_data?.length ?? null;
         // What every process did, if the trace files of all of them were merged (mpi.js)
         this.rankSummary = jsonData.rank_summary ?? null;
+        this.rankSummaries = [this.rankSummary];
         this.keypathDiscriminator = `${this.operation}:${this.reason}`;
         this.file = null;
         this.line = null;
@@ -397,7 +437,8 @@ export class CommunicationNode extends ComputationNode {
     }
 
     toTimeline() {
-        return { ...super.toTimeline(), operation: this.operation };
+        // (the collective that the processes make: when they arrived and when they left, in rank_summary, for each iteration)
+        return { ...super.toTimeline(), operation: this.operation, ...(this.rankSummary ? { rank_summaries: this.rankSummaries } : {}) };
     }
 
     infoData() {

@@ -559,6 +559,8 @@ export class DirectedGraph {
                   can.treeParents.push(canonical.get(node.treeParents[0].keypath));
                 if (node.durations) can.durations.push(...node.durations);
                 if (node.intervals) can.intervals.push(...node.intervals);
+                if (node.rankDatas) can.rankDatas.push(...node.rankDatas);
+                if (node.rankSummaries) can.rankSummaries.push(...node.rankSummaries);
                 if (node.snapshotDataFiles) can.snapshotDataFiles.push(...node.snapshotDataFiles);
                 if (node instanceof RegionNode) {
                     can.regionIntervals.push(...node.regionIntervals);

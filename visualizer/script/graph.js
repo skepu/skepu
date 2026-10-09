@@ -208,7 +208,7 @@ var _infoView = new InfoView({
   },
 
   onHighlightNode: function(data) {
-    if (State.sourceView) State.sourceView.highlightNode(data);
+    if (State.sourceView) State.sourceView.highlightNode(data, undefined, State._selectedRank);
   },
 
   onSelectIteration: function(nodeId, iterIdx) {
@@ -261,10 +261,12 @@ _timelineView.attachProvider(_provider);
 // outside the individual view classes: the InfoView and State tracking.
 _provider.on('select', function(ev) {
   State._ganttSelectedNodeId = ev.nodeId;
+  State._selectedRank = ev.rank != null ? ev.rank : null;   // (the rank whose bar was clicked, for the trace pane)
   // traceIdx is the raw trace-file index used by InfoView for line highlighting.
   // It is distinct from iterIdx (0-based iteration) and is only present in
-  // events emitted by simulation.js.  Fall back to iterIdx for all other sources.
-  var infoIdx = ev.traceIdx != null ? ev.traceIdx : ev.iterIdx;
+  // events emitted by simulation.js.  (The iteration is not a trace index: with it as one, a click on a bar
+  // would show the trace entry with the number of the iteration, the first, instead of the entry of the node.)
+  var infoIdx = ev.traceIdx;
   if (State.infoView) State.infoView.open(ev.nodeId, ev.source, infoIdx);
 });
 

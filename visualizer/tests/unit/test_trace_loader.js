@@ -91,6 +91,26 @@ describe('the worker loads { header, data }', () => {
         expect(graph.nodes.length).toBeGreaterThan(0);
     });
 
+    it('the files of the other ranks are there for the trace pane, with the lines of what the main trace has', async () => {
+        const names = ['skepu_trace.json', 'skepu_trace.rank1.json', 'skepu_trace.rank2.json'];
+        const loaded = await call('load', { traceFiles: names.map(name => ({ name, text: fixture(name) })) });
+        expect(loaded.rankTraces.map(t => t.rank)).toEqual([1, 2]);
+        const main = JSON.parse(fixture(names[0])).data;
+        for (const t of loaded.rankTraces) {
+            const lines = t.text.split('\n');
+            expect(t.ranges).toHaveLength(main.length);
+            main.forEach((e, i) => {
+                const hasRange = t.ranges[i] != null;
+                expect(hasRange, `${e.type} #${i}`).toBe(e.type === 'communication' || ((e.type === 'skeleton_call' || e.type === 'external') && e.seq != null));
+                if (hasRange) {
+                    const body = lines.slice(t.ranges[i][0] - 1, t.ranges[i][1]).join('\n');
+                    expect(body).toContain(e.type === 'communication' ? '"rank_communication"' : '"rank_call"');
+                    expect(body).toContain(e.type === 'communication' ? `"comm_seq": ${e.comm_seq}` : `"seq": ${e.seq}`);
+                }
+            });
+        }
+    });
+
     it('an array trace as before', async () => {
         const text = JSON.stringify(events);
         const loaded = await call('load', { traceJson: text });

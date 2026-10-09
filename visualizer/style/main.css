@@ -599,7 +599,7 @@ html.dark-mode .legend-item-hovered {
 {
   flex: 1 1 auto;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
   min-height: 0;
 }
 
@@ -1486,3 +1486,11 @@ html.dark-mode .welcome-card .welcome-hint strong { color: #b0a8c0; }
    takes over automatically without any extra JS. */
 body.welcome-mode #right_pane,
 body.welcome-mode #split-gutter { display: none !important; }
+
+/* The menu of the trace pane for the trace file of a process (MPI programs) */
+.cpp-trace-rank {
+  font-size: 11px;
+  margin: 2px 0 2px 4px;
+  padding: 0 2px;
+  align-self: center;
+}
