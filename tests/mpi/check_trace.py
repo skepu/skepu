@@ -72,13 +72,18 @@ for c in calls0:
         total += l["local_elements"]
         if not (l["start"] <= l["work_start"] <= l["work_end"] <= l["end"] or l["work_start"] == 0):
             fail("rank %d call %d: the work is not inside the call" % (k, seq))
-    if c["type"] == "skeleton_call" and total != c["elements"][0]:
-        fail("call %d: local elements add up to %d, not %d" % (seq, total, c["elements"][0]))
+    expected = 1
+    for dimension in c.get("elements", [0]):
+        expected *= dimension
+    if c["type"] == "skeleton_call" and total != expected:
+        fail("call %d (%s): local elements add up to %d, not %d" % (seq, c["pattern"], total, expected))
     if c["type"] == "external" and (m["work_start"] == 0 or total != 0):
         fail("external %d: the code runs on rank 0 and has no elements" % seq)
     if c["start"] > c["end"]:
         fail("call %d: start after end" % seq)
     for key in ("outputs", "elwise_inputs", "proxy_inputs"):
+        if key == "outputs" and c.get("pattern") in ("Reduce 1D-Full", "MapReduce"):
+            continue   # (the outputs are the ids of scalars, which are not allocated)
         for i in c[key]:
             if i not in allocs:
                 fail("call %d: %s has the id %d, which was not allocated" % (seq, key, i))

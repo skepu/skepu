@@ -50,6 +50,44 @@ namespace skepu
 					return std::forward<Arg>(arg);
 			}
 
+			// The event of a call (see trace.hpp): the containers that it wrote and read, by their ids. The arguments of a call are as
+			// above; 'results' are the ids of what the call gives besides the containers among its arguments (a scalar).
+			template<size_t outArity, size_t arity, size_t anyArity, size_t... I, typename Skeleton, typename... CallArgs>
+			void trace_call(mpi::trace::CallScope &scope, Skeleton *skeleton, std::vector<size_t> &&elements, size_t local_elements,
+				std::vector<int> &&results, int prng, pack_indices<I...>, CallArgs&&... args)
+			{
+#ifdef SKEPU_TRACING
+				std::vector<int> outputs = std::move(results), elwise, proxies;
+				auto classify = [&](auto index, auto &&arg)
+				{
+					constexpr size_t K = decltype(index)::value;
+					if constexpr (is_distributed_container<std::decay_t<decltype(arg)>>::value)
+					{
+						if constexpr (K < outArity)
+							outputs.push_back(arg.getObjectID());
+						else if constexpr (K < outArity + arity)
+							elwise.push_back(arg.getObjectID());
+						else if constexpr (K < outArity + arity + anyArity)
+							proxies.push_back(arg.getObjectID());
+					}
+				};
+				// (only the uniform arguments can be scalars: the others are given as an int that is not one)
+				auto uniform = [&](auto index, auto &&arg) -> decltype(auto)
+				{
+					constexpr size_t K = decltype(index)::value;
+					if constexpr (K >= outArity + arity + anyArity)
+						return std::forward<decltype(arg)>(arg);
+					else
+						return 0;
+				};
+				(classify(std::integral_constant<size_t, I>{}, get<I>(std::forward<CallArgs>(args)...)), ...);
+				std::vector<int> scalars = mpi::trace::scalar_ids(uniform(std::integral_constant<size_t, I>{}, get<I>(std::forward<CallArgs>(args)...))...);
+				scope.finish(skeleton, std::move(elements), local_elements, std::move(outputs), std::move(elwise), std::move(proxies), std::move(scalars), prng);
+#else
+				(void)scope; (void)skeleton; (void)elements; (void)local_elements; (void)results; (void)prng;
+#endif
+			}
+
 			// On a single node, the random numbers of a skeleton call are taken from the stream of the program in the order of
 			// the elements, N numbers for each. A process does its elements with the numbers of the stream that a single node
 			// would use for them: its skeleton gets a copy of the stream that is advanced to the first element of the process,
@@ -97,6 +135,8 @@ namespace skepu
 				}
 
 				std::vector<char> all(mine.size() * (size_t)mpi::size());
+				mpi::trace::CommScope comm("allgather", "the partial results of the processes are combined");
+				comm.bytes((unsigned long long)mine.size() * (unsigned long long)(mpi::size() - 1), (unsigned long long)mine.size() * (unsigned long long)(mpi::size() - 1));
 				MPI_Allgather(mine.data(), (int)mine.size(), MPI_BYTE, all.data(), (int)mine.size(), MPI_BYTE, mpi::comm());
 
 				std::vector<T> partials;
@@ -135,6 +175,17 @@ namespace skepu
 				}
 
 				std::vector<Ret> received(total > 0 ? total : 1);
+				mpi::trace::CommScope comm("alltoallv", "the partial results of the columns are combined by the owners of the columns");
+				{
+					unsigned long long sent = 0, got = 0;
+					for (int q = 0; q < p; ++q)
+					{
+						if (q == me) continue;
+						sent += (unsigned long long)send_counts[q] * sizeof(Ret);
+						got += (unsigned long long)receive_counts[q] * sizeof(Ret);
+					}
+					comm.bytes(sent, got);
+				}
 				MPI_Alltoallv(local_rows > 0 ? partials : nullptr, send_counts.data(), send_displs.data(), mpi::datatype<Ret>(),
 					received.data(), receive_counts.data(), receive_displs.data(), mpi::datatype<Ret>(), mpi::comm());
 
@@ -299,46 +350,22 @@ namespace skepu
 				return first;
 			}
 
-			// The event of the call (see trace.hpp): the containers that it wrote and read by their ids
-			template<size_t... I, typename... CallArgs>
-			void trace_call(mpi::trace::CallScope &scope, size_t global_elements, size_t local_elements, pack_indices<I...>, CallArgs&&... args)
+			// (the id of the random numbers that the call uses, for its event)
+			int random_id()
 			{
 #ifdef SKEPU_TRACING
-				std::vector<int> outputs, elwise, proxies;
-				(this->collect_id<I>(outputs, elwise, proxies, get<I>(std::forward<CallArgs>(args)...)), ...);
-				std::vector<int> scalars = mpi::trace::scalar_ids(this->uniform_or_skip<I>(get<I>(std::forward<CallArgs>(args)...))...);
-				scope.finish(this, global_elements, local_elements, std::move(outputs), std::move(elwise), std::move(proxies), std::move(scalars),
-					this->template randomID<MapFunc::randomCount>());
+				return this->template randomID<MapFunc::randomCount>();
 #else
-				(void)scope; (void)global_elements; (void)local_elements;
+				return 0;
 #endif
 			}
 
-#ifdef SKEPU_TRACING
-			template<size_t I, typename Arg>
-			void collect_id(std::vector<int> &outputs, std::vector<int> &elwise, std::vector<int> &proxies, Arg &&arg)
+			template<size_t... I, typename... CallArgs>
+			void trace_call(mpi::trace::CallScope &scope, size_t global_elements, size_t local_elements, pack_indices<I...> indices, CallArgs&&... args)
 			{
-				if constexpr (is_distributed_container<Arg>::value)
-				{
-					if constexpr (I < outArity)
-						outputs.push_back(arg.getObjectID());
-					else if constexpr (I < outArity + arity)
-						elwise.push_back(arg.getObjectID());
-					else if constexpr (I < outArity + arity + anyArity)
-						proxies.push_back(arg.getObjectID());
-				}
+				mpi_detail::trace_call<outArity, arity, anyArity>(scope, this, {global_elements}, local_elements, {},
+					this->random_id(), indices, std::forward<CallArgs>(args)...);
 			}
-
-			// (only the uniform arguments can be scalars: the others are given as an int that is not one)
-			template<size_t I, typename Arg>
-			decltype(auto) uniform_or_skip(Arg &&arg)
-			{
-				if constexpr (I >= outArity + arity + anyArity)
-					return std::forward<Arg>(arg);
-				else
-					return 0;
-			}
-#endif
 
 			template<size_t I, typename Arg>
 			static bool size_mismatch(Arg &&arg, size_t n, size_t first_dimension)
@@ -394,9 +421,15 @@ namespace skepu
 			template<typename V, typename M, typename = std::enable_if_t<is_distributed_container<V>::value && is_distributed_container<M>::value>>
 			V &operator()(V &res, M &arg)
 			{
+				mpi::trace::CallScope trace_scope("Reduce 1D-Partial");
 				const size_t rows = arg.total_rows(), cols = arg.total_cols();
 				const mpi::BlockDistribution distribution{rows, mpi::size()};
 				const size_t local_rows = distribution.count(mpi::rank());
+				auto traced = [&]
+				{
+					trace_scope.work_finished();
+					mpi_detail::trace_call<1, 1, 0>(trace_scope, this, {rows, cols}, local_rows * cols, {}, 0, make_pack_indices<2, 0>::type{}, res, arg);
+				};
 
 				if (this->m_mode == ReduceMode::RowWise)
 				{
@@ -404,8 +437,13 @@ namespace skepu
 					if (res.size() != rows)
 						SKEPU_ERROR("Non-matching container sizes");
 					if (local_rows > 0)
+					{
+						trace_scope.work_begin();
 						Base::operator()(res.tile_for_write(), arg.tile_for_read());
+						trace_scope.work_finish();
+					}
 					res.tile_written();
+					traced();
 					return res;
 				}
 
@@ -416,10 +454,13 @@ namespace skepu
 				::skepu_node::Vector<T> partial;
 				if (local_rows > 0)
 				{
+					trace_scope.work_begin();
 					partial.init(cols);
 					Base::operator()(partial, arg.tile_for_read());
 					partial.flush();
+					trace_scope.work_finish();
 				}
+				trace_scope.work_finished();
 				const mpi::BlockDistribution columns{cols, mpi::size()};
 				T *result = columns.count(mpi::rank()) > 0 ? res.tile_for_write().getAddress() : nullptr;
 				mpi_detail::combine_columns(local_rows > 0 ? partial.getAddress() : nullptr, cols, distribution, result,
@@ -427,6 +468,7 @@ namespace skepu
 				if (result)
 					res.tile_for_write().invalidateDeviceData();
 				res.tile_written();
+				traced();
 				return res;
 			}
 
@@ -437,6 +479,7 @@ namespace skepu
 			template<typename Container>
 			Scalar<T> distributed(Container &arg)
 			{
+				mpi::trace::CallScope trace_scope("Reduce 1D-Full");
 				auto &tile = arg.tile_for_read();
 				const size_t local = arg.local_size();
 				const T start = this->m_start;
@@ -444,6 +487,7 @@ namespace skepu
 				T partial{};
 				if (local > 0)
 				{
+					trace_scope.work_begin();
 					tile.flush();
 					T *data = tile.getAddress();
 					partial = data[0];
@@ -455,12 +499,16 @@ namespace skepu
 						partial = Base::operator()(rest);
 						this->m_start = start;
 					}
+					trace_scope.work_finish();
 				}
+				trace_scope.work_finished();
 
 				T result = start;
 				for (const T &p : mpi_detail::gather_partials(local > 0, partial))
 					result = ReduceFunc::CPU(result, p);
-				return Scalar<T>(result);
+				Scalar<T> scalar(result);
+				mpi_detail::trace_call<0, 1, 0>(trace_scope, this, {arg.size()}, local, mpi::trace::scalar_ids(scalar), 0, make_pack_indices<1, 0>::type{}, arg);
+				return scalar;
 			}
 		};
 
@@ -558,6 +606,7 @@ namespace skepu
 				if (disjunction(size_mismatch<I>(get<I>(std::forward<CallArgs>(args)...), n, first.first_dimension())...))
 					SKEPU_ERROR("Non-matching container sizes");
 
+				mpi::trace::CallScope trace_scope("MapReduce");
 				const size_t elements = first.first_dimension();
 				std::vector<mpi_detail::PartInfo> parts;
 				(mpi_detail::add_part(parts, role<I>(), get<I>(std::forward<CallArgs>(args)...)), ...);
@@ -576,9 +625,11 @@ namespace skepu
 				{
 					if (has_elements)
 					{
+						trace_scope.work_begin();
 						Base::setApplyStartValue(mpi::rank() == 0);
 						partial = std::apply([this](auto &... a) -> Ret { return Base::operator()(a...); }, local);
 						Base::setApplyStartValue(true);
+						trace_scope.work_finish();
 					}
 				};
 				if constexpr (MapFunc::usesPRNG)
@@ -588,7 +639,10 @@ namespace skepu
 				}
 				else
 					run();
-				return this->combine(has_elements, partial);
+				trace_scope.work_finished();
+				auto result = this->combine(has_elements, partial);
+				this->trace_call(trace_scope, first.size(), layout.my_count() * first.distribution().unit, result, pack_indices<I...>{}, std::forward<CallArgs>(args)...);
+				return result;
 			}
 
 			template<size_t... I, typename... CallArgs>
@@ -610,6 +664,7 @@ namespace skepu
 				if (this->m_strided)
 					SKEPU_ERROR("A MapReduce with strides does not work on distributed containers");
 
+				mpi::trace::CallScope trace_scope("MapReduce");
 				auto &first = get<0>(std::forward<CallArgs>(args)...);
 				const size_t n = first.size();
 				if (disjunction(size_mismatch<I>(get<I>(std::forward<CallArgs>(args)...), n, first.first_dimension())...))
@@ -624,9 +679,11 @@ namespace skepu
 				{
 					if (has_elements)
 					{
+						trace_scope.work_begin();
 						Base::setApplyStartValue(mpi::rank() == 0);
 						partial = std::apply([this](auto &... a) -> Ret { return Base::operator()(a...); }, local);
 						Base::setApplyStartValue(true);
+						trace_scope.work_finish();
 					}
 				};
 				if constexpr (MapFunc::usesPRNG)
@@ -636,7 +693,10 @@ namespace skepu
 				}
 				else
 					run();
-				return this->combine(has_elements, partial);
+				trace_scope.work_finished();
+				auto result = this->combine(has_elements, partial);
+				this->trace_call(trace_scope, first.size(), first.local_size(), result, pack_indices<I...>{}, std::forward<CallArgs>(args)...);
+				return result;
 			}
 
 			// The indices of the default size: the first dimension is distributed
@@ -645,6 +705,7 @@ namespace skepu
 			{
 				static_assert(MapFunc::outArity == 1, "A MapReduce with several results does not work on distributed containers yet");
 
+				mpi::trace::CallScope trace_scope("MapReduce");
 				const mpi::BlockDistribution rows{this->m_default_size[0], mpi::size()};
 				if (rows.n == 0)
 					SKEPU_ERROR("MapReduce<0> default size not set or set to 0.");
@@ -674,6 +735,7 @@ namespace skepu
 				{
 					if (local_rows > 0)
 					{
+						trace_scope.work_begin();
 						Base::setDefaultSize(local_rows, this->m_default_size[1], this->m_default_size[2], this->m_default_size[3]);
 						Base::setDefaultOrigin(first_row * unit);
 						Base::setApplyStartValue(mpi::rank() == 0);
@@ -681,6 +743,7 @@ namespace skepu
 						Base::setApplyStartValue(true);
 						Base::setDefaultOrigin(0);
 						Base::setDefaultSize(this->m_default_size[0], this->m_default_size[1], this->m_default_size[2], this->m_default_size[3]);
+						trace_scope.work_finish();
 					}
 				};
 				if constexpr (MapFunc::usesPRNG)
@@ -690,7 +753,27 @@ namespace skepu
 				}
 				else
 					run();
-				return this->combine(local_rows > 0, partial);
+				trace_scope.work_finished();
+				auto result = this->combine(local_rows > 0, partial);
+				this->trace_call(trace_scope, rows.n * unit, local_rows * unit, result, pack_indices<I...>{}, std::forward<CallArgs>(args)...);
+				return result;
+			}
+
+			// (the id of the random numbers that the call uses, for its event)
+			int random_id()
+			{
+#ifdef SKEPU_TRACING
+				return this->template randomID<MapFunc::randomCount>();
+#else
+				return 0;
+#endif
+			}
+
+			template<size_t... I, typename... CallArgs>
+			void trace_call(mpi::trace::CallScope &scope, size_t global_elements, size_t local_elements, const scalar_wrapper_t<Ret> &result, pack_indices<I...> indices, CallArgs&&... args)
+			{
+				mpi_detail::trace_call<0, arity, anyArity>(scope, this, {global_elements}, local_elements, mpi::trace::scalar_ids(result),
+					this->random_id(), indices, std::forward<CallArgs>(args)...);
 			}
 
 			scalar_wrapper_t<Ret> combine(bool has_partial, const Ret &partial)
@@ -807,6 +890,7 @@ namespace skepu
 				if (disjunction(is_mismatch<I>(get<I>(std::forward<CallArgs>(args)...), rows, first.total_cols())...))
 					SKEPU_ERROR("Non-matching container sizes");
 
+				mpi::trace::CallScope trace_scope("MapPairs");
 				const bool keep = this->m_in_place_requested;
 				std::vector<mpi_detail::PartInfo> parts;
 				(mpi_detail::add_part(parts, (keep && role<I>() == mpi_detail::Role::Result) ? mpi_detail::Role::ResultKeep : role<I>(), get<I>(std::forward<CallArgs>(args)...)), ...);
@@ -820,7 +904,15 @@ namespace skepu
 					exec<I>(keep, layout, std::get<I>(holders), get<I>(std::forward<CallArgs>(args)...))...};
 
 				const size_t mine = layout.my_count();
-				auto run = [&] { if (mine > 0) std::apply([this](auto &... a) { Base::operator()(a...); }, local); };
+				auto run = [&]
+				{
+					if (mine > 0)
+					{
+						trace_scope.work_begin();
+						std::apply([this](auto &... a) { Base::operator()(a...); }, local);
+						trace_scope.work_finish();
+					}
+				};
 				if constexpr (MapPairsFunc::usesPRNG)
 				{
 					// (the elements are in the order of the rows)
@@ -830,8 +922,27 @@ namespace skepu
 				else
 					run();
 
+				trace_scope.work_finished();
 				(mpi_detail::finish_argument<role<I>()>(layout, std::get<I>(holders), get<I>(std::forward<CallArgs>(args)...)), ...);
+				this->trace_call(trace_scope, first.total_rows(), first.total_cols(), mine * first.distribution().unit, pack_indices<I...>{}, std::forward<CallArgs>(args)...);
 				return first;
+			}
+
+			// (the id of the random numbers that the call uses, for its event)
+			int random_id()
+			{
+#ifdef SKEPU_TRACING
+				return this->template randomID<MapPairsFunc::randomCount>();
+#else
+				return 0;
+#endif
+			}
+
+			template<size_t... I, typename... CallArgs>
+			void trace_call(mpi::trace::CallScope &scope, size_t rows, size_t cols, size_t local_elements, pack_indices<I...> indices, CallArgs&&... args)
+			{
+				mpi_detail::trace_call<outArity, Varity + Harity, anyArity>(scope, this, {cols, rows}, local_elements, {}, this->random_id(), indices,
+					std::forward<CallArgs>(args)...);
 			}
 
 			// An in place result is read (and is not moved: see distributed_with_rows)
@@ -858,6 +969,7 @@ namespace skepu
 			template<size_t... I, typename... CallArgs>
 			auto &distributed_plain(pack_indices<I...>, CallArgs&&... args)
 			{
+				mpi::trace::CallScope trace_scope("MapPairs");
 				auto &first = get<0>(std::forward<CallArgs>(args)...);
 				const size_t rows = first.total_rows();
 				if (disjunction(is_mismatch<I>(get<I>(std::forward<CallArgs>(args)...), rows, first.total_cols())...))
@@ -866,7 +978,15 @@ namespace skepu
 				std::tuple<decltype(this->template local_argument<I>(get<I>(std::forward<CallArgs>(args)...)))...> local(
 					this->template local_argument<I>(get<I>(std::forward<CallArgs>(args)...))...);
 
-				auto run = [&] { if (first.local_size() > 0) std::apply([this](auto &... a) { Base::operator()(a...); }, local); };
+				auto run = [&]
+				{
+					if (first.local_size() > 0)
+					{
+						trace_scope.work_begin();
+						std::apply([this](auto &... a) { Base::operator()(a...); }, local);
+						trace_scope.work_finish();
+					}
+				};
 				if constexpr (MapPairsFunc::usesPRNG)
 				{
 					// (the elements are in the order of the rows)
@@ -876,7 +996,9 @@ namespace skepu
 				else
 					run();
 
+				trace_scope.work_finished();
 				pack_expand((mark_written<I>(get<I>(std::forward<CallArgs>(args)...)), 0)...);
+				this->trace_call(trace_scope, rows, first.total_cols(), first.local_size(), pack_indices<I...>{}, std::forward<CallArgs>(args)...);
 				return first;
 			}
 
@@ -995,6 +1117,7 @@ namespace skepu
 					if (this->m_mode == ReduceMode::ColWise)
 						SKEPU_ERROR("A column-wise MapPairsReduce with random numbers does not work on distributed containers (the elements are not used in the order of the rows)");
 
+				mpi::trace::CallScope trace_scope("MapPairsReduce");
 				auto &out = get<0>(std::forward<CallArgs>(args)...);
 				const size_t Vsize = vertical_size(std::forward<CallArgs>(args)...);
 				const size_t Hsize = horizontal_size(std::forward<CallArgs>(args)...);
@@ -1015,9 +1138,11 @@ namespace skepu
 					{
 						if (local_rows > 0)
 						{
+							trace_scope.work_begin();
 							this->prepare(local_rows, Hsize, origin);
 							std::apply([this](auto &... a) { Base::operator()(a...); }, local);
 							this->finish();
+							trace_scope.work_finish();
 						}
 					};
 					if constexpr (MapPairsFunc::usesPRNG)
@@ -1027,11 +1152,24 @@ namespace skepu
 					}
 					else
 						run();
+					trace_scope.work_finished();
 					out.tile_written();
 				}
 				else
-					this->column_wise(out, indices, rows, Hsize, std::forward<CallArgs>(args)...);
+					this->column_wise(trace_scope, out, indices, rows, Hsize, std::forward<CallArgs>(args)...);
+				mpi_detail::trace_call<outArity, Varity + Harity, anyArity>(trace_scope, this, {Hsize, Vsize}, local_rows * Hsize, {}, this->random_id(), indices,
+					std::forward<CallArgs>(args)...);
 				return out;
+			}
+
+			// (the id of the random numbers that the call uses, for its event)
+			int random_id()
+			{
+#ifdef SKEPU_TRACING
+				return this->template randomID<MapPairsFunc::randomCount>();
+#else
+				return 0;
+#endif
 			}
 
 			void prepare(size_t local_rows, size_t Hsize, size_t origin)
@@ -1053,7 +1191,7 @@ namespace skepu
 			// the results combines the partial results of the processes in the order of the processes. The first process
 			// has the start value, the others do their part without it.
 			template<size_t... I, typename Out, typename... CallArgs>
-			void column_wise(Out &out, pack_indices<I...>, const mpi::BlockDistribution &rows, size_t Hsize, CallArgs&&... args)
+			void column_wise(mpi::trace::CallScope &trace_scope, Out &out, pack_indices<I...>, const mpi::BlockDistribution &rows, size_t Hsize, CallArgs&&... args)
 			{
 				const int me = mpi::rank(), p = mpi::size();
 				const size_t local_rows = rows.count(me);
@@ -1066,6 +1204,7 @@ namespace skepu
 
 				if (local_rows > 0)
 				{
+					trace_scope.work_begin();
 					partial.init(Hsize);
 					this->prepare(local_rows, Hsize, rows.offset(me));
 					Base::setApplyStartValue(me == 0);
@@ -1073,7 +1212,9 @@ namespace skepu
 					Base::setApplyStartValue(true);
 					this->finish();
 					partial.flush();
+					trace_scope.work_finish();
 				}
+				trace_scope.work_finished();
 
 				// The columns of the results that this process has
 				const mpi::BlockDistribution columns{Hsize, p};
@@ -1179,6 +1320,7 @@ namespace skepu
 			template<typename Matrix>
 			T distributed(Matrix &arg)
 			{
+				mpi::trace::CallScope trace_scope("Reduce 2D");
 				const size_t rows = arg.total_rows(), cols = arg.total_cols();
 				const mpi::BlockDistribution distribution{rows, mpi::size()};
 				const int me = mpi::rank();
@@ -1191,21 +1333,27 @@ namespace skepu
 				{
 					if (local_rows > 0)
 					{
+						trace_scope.work_begin();
 						::skepu_node::Vector<T> rows_result(local_rows);
 						OneDimension::operator()(rows_result, arg.tile_for_read());
 						rows_result.flush();
 						results.assign(rows_result.getAddress(), rows_result.getAddress() + local_rows);
+						trace_scope.work_finish();
 					}
+					trace_scope.work_finished();
 				}
 				else
 				{
 					::skepu_node::Vector<T> partial;
 					if (local_rows > 0)
 					{
+						trace_scope.work_begin();
 						partial.init(cols);
 						OneDimension::operator()(partial, arg.tile_for_read());
 						partial.flush();
+						trace_scope.work_finish();
 					}
+					trace_scope.work_finished();
 					const mpi::BlockDistribution columns{cols, mpi::size()};
 					results.resize(columns.count(me));
 					mpi_detail::combine_columns(local_rows > 0 ? partial.getAddress() : nullptr, cols, distribution, results.data(),
@@ -1230,6 +1378,7 @@ namespace skepu
 				T result = partials[0];
 				for (size_t r = 1; r < partials.size(); ++r)
 					result = ReduceFuncColWise::CPU(result, partials[r]);
+				mpi_detail::trace_call<0, 1, 0>(trace_scope, this, {rows, cols}, local_rows * cols, {}, 0, make_pack_indices<1, 0>::type{}, arg);
 				return result;
 			}
 		};
@@ -1285,6 +1434,7 @@ namespace skepu
 			template<typename Container, typename In>
 			Container &distributed(Container &res, In &arg)
 			{
+				mpi::trace::CallScope trace_scope("Scan");
 				if (res.size() != arg.size() || res.first_dimension() != arg.first_dimension())
 					SKEPU_ERROR("Non-matching container sizes");
 
@@ -1313,6 +1463,7 @@ namespace skepu
 				const bool exclusive = this->m_scan_mode == ScanMode::Exclusive;
 				if (local > 0)
 				{
+					trace_scope.work_begin();
 					auto &out_tile = res.tile_for_write();
 					if (exclusive)
 					{
@@ -1338,8 +1489,11 @@ namespace skepu
 							out_tile.invalidateDeviceData();
 						}
 					}
+					trace_scope.work_finish();
 				}
+				trace_scope.work_finished();
 				res.tile_written();
+				mpi_detail::trace_call<1, 1, 0>(trace_scope, this, {res.size()}, local, {}, 0, make_pack_indices<2, 0>::type{}, res, arg);
 				return res;
 			}
 		};

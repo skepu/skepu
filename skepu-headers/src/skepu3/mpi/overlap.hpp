@@ -481,6 +481,21 @@ namespace skepu
 				return distributed_window<outArity, anyArity>(call, set_edge, geometry, pad, std::forward<CallArgs>(args)...);
 			}
 
+			// The event of a call of a skeleton with windows (the work of the process was timed by 'mpi::trace::work' around the node-level call)
+			template<size_t outArity, size_t anyArity, typename Skeleton, typename... CallArgs>
+			void trace_overlap(mpi::trace::CallScope &scope, Skeleton *skeleton, int prng, CallArgs&&... args)
+			{
+#ifdef SKEPU_TRACING
+				auto &first_out = get<0>(std::forward<CallArgs>(args)...);
+				const Shape shape = shape_of(first_out);
+				std::vector<size_t> sizes(shape.d.begin(), shape.d.begin() + shape.rank);
+				mpi_detail::trace_call<outArity, 1, anyArity>(scope, skeleton, std::move(sizes), first_out.local_size(), {},
+					prng, typename make_pack_indices<sizeof...(CallArgs), 0>::type{}, std::forward<CallArgs>(args)...);
+#else
+				(void)scope; (void)skeleton; (void)prng;
+#endif
+			}
+
 			inline std::array<long, 4> overlap_array(int o) { return {{o, 0, 0, 0}}; }
 
 			template<typename... Ints>
@@ -533,8 +548,39 @@ namespace skepu
 			}
 
 		private:
+			// (a 1D overlap of a matrix is along its rows or its columns)
+			template<typename... CallArgs>
+			const char *pattern_of(CallArgs&&... args)
+			{
+				using Input = std::decay_t<decltype(get<outArity>(std::forward<CallArgs>(args)...))>;
+				if constexpr (is_distributed_matrix<Input>::value)
+					return this->getOverlapMode() == Overlap::RowWise ? "MapOverlap RowWise" : "MapOverlap ColWise";
+				else
+					return "MapOverlap 1D";
+			}
+
+			// (the id of the random numbers that the call uses, for its event)
+			int random_id()
+			{
+#ifdef SKEPU_TRACING
+				return this->template randomID<MapOverlapFunc::randomCount>();
+#else
+				return 0;
+#endif
+			}
+
 			template<typename... CallArgs>
 			auto &distribute(CallArgs&&... args)
+			{
+				mpi::trace::CallScope trace_scope(this->pattern_of(std::forward<CallArgs>(args)...));
+				auto &result = this->distribute_untraced(std::forward<CallArgs>(args)...);
+				trace_scope.work_finished();
+				mpi_detail::trace_overlap<outArity, anyArity>(trace_scope, this, this->random_id(), std::forward<CallArgs>(args)...);
+				return result;
+			}
+
+			template<typename... CallArgs>
+			auto &distribute_untraced(CallArgs&&... args)
 			{
 				using Input = std::decay_t<decltype(get<outArity>(std::forward<CallArgs>(args)...))>;
 				if constexpr (MapOverlapFunc::usesPRNG && is_distributed_matrix<Input>::value)
@@ -565,7 +611,7 @@ namespace skepu
 						return this->run_row_wise(std::forward<CallArgs>(args)...);
 				}
 				return mpi_detail::distributed_overlap<outArity, anyArity>(
-					[this](auto &... a) { Base::operator()(a...); }, [this](Edge e) { Base::setEdgeMode(e); },
+					[this](auto &... a) { mpi::trace::work([&] { Base::operator()(a...); }); }, [this](Edge e) { Base::setEdgeMode(e); },
 					mpi_detail::overlap_array(this->getOverlap()), this->getEdgeMode(), this->getPad(), std::forward<CallArgs>(args)...);
 			}
 
@@ -578,7 +624,7 @@ namespace skepu
 					SKEPU_ERROR("Non-matching container sizes: the rows of the output and of the input");
 				if (first_out.local_size() > 0)
 				{
-					auto call = [this](auto &... a) { Base::operator()(a...); };
+					auto call = [this](auto &... a) { mpi::trace::work([&] { Base::operator()(a...); }); };
 					mpi_detail::call_on_tiles<outArity, anyArity>(call, std::make_index_sequence<sizeof...(CallArgs)>{}, std::forward<CallArgs>(args)...);
 				}
 				mpi_detail::mark_results<outArity>(std::make_index_sequence<outArity>{}, std::forward<CallArgs>(args)...);
@@ -623,8 +669,28 @@ namespace skepu
 			}
 
 		private:
+			// (the id of the random numbers that the call uses, for its event)
+			int random_id()
+			{
+#ifdef SKEPU_TRACING
+				return this->template randomID<MapOverlapFunc::randomCount>();
+#else
+				return 0;
+#endif
+			}
+
 			template<typename... CallArgs>
 			auto &distribute(CallArgs&&... args)
+			{
+				mpi::trace::CallScope trace_scope("MapOverlap 2D");
+				auto &result = this->distribute_untraced(std::forward<CallArgs>(args)...);
+				trace_scope.work_finished();
+				mpi_detail::trace_overlap<outArity, anyArity>(trace_scope, this, this->random_id(), std::forward<CallArgs>(args)...);
+				return result;
+			}
+
+			template<typename... CallArgs>
+			auto &distribute_untraced(CallArgs&&... args)
 			{
 				if constexpr (MapOverlapFunc::usesPRNG)
 				{
@@ -645,7 +711,7 @@ namespace skepu
 				geometry.edge = this->getEdgeMode();
 				geometry.allow_mirror = true;
 				return mpi_detail::distributed_window<outArity, anyArity>(
-					[this](auto &... a) { Base::operator()(a...); }, [this](Edge e) { Base::setEdgeMode(e); },
+					[this](auto &... a) { mpi::trace::work([&] { Base::operator()(a...); }); }, [this](Edge e) { Base::setEdgeMode(e); },
 					geometry, this->getPad(), std::forward<CallArgs>(args)...);
 			}
 		};
@@ -685,8 +751,28 @@ namespace skepu
 			}
 
 		private:
+			// (the id of the random numbers that the call uses, for its event)
+			int random_id()
+			{
+#ifdef SKEPU_TRACING
+				return this->template randomID<MapOverlapFunc::randomCount>();
+#else
+				return 0;
+#endif
+			}
+
 			template<typename... CallArgs>
 			auto &distribute(CallArgs&&... args)
+			{
+				mpi::trace::CallScope trace_scope("MapOverlap 3D");
+				auto &result = this->distribute_untraced(std::forward<CallArgs>(args)...);
+				trace_scope.work_finished();
+				mpi_detail::trace_overlap<outArity, anyArity>(trace_scope, this, this->random_id(), std::forward<CallArgs>(args)...);
+				return result;
+			}
+
+			template<typename... CallArgs>
+			auto &distribute_untraced(CallArgs&&... args)
 			{
 				if constexpr (MapOverlapFunc::usesPRNG)
 				{
@@ -703,7 +789,7 @@ namespace skepu
 			auto &run_distributed(CallArgs&&... args)
 			{
 				return mpi_detail::distributed_overlap<outArity, anyArity>(
-					[this](auto &... a) { Base::operator()(a...); }, [this](Edge e) { Base::setEdgeMode(e); },
+					[this](auto &... a) { mpi::trace::work([&] { Base::operator()(a...); }); }, [this](Edge e) { Base::setEdgeMode(e); },
 					mpi_detail::overlap_array(this->getOverlap()), this->getEdgeMode(), this->getPad(), std::forward<CallArgs>(args)...);
 			}
 		};
@@ -743,8 +829,28 @@ namespace skepu
 			}
 
 		private:
+			// (the id of the random numbers that the call uses, for its event)
+			int random_id()
+			{
+#ifdef SKEPU_TRACING
+				return this->template randomID<MapOverlapFunc::randomCount>();
+#else
+				return 0;
+#endif
+			}
+
 			template<typename... CallArgs>
 			auto &distribute(CallArgs&&... args)
+			{
+				mpi::trace::CallScope trace_scope("MapOverlap 4D");
+				auto &result = this->distribute_untraced(std::forward<CallArgs>(args)...);
+				trace_scope.work_finished();
+				mpi_detail::trace_overlap<outArity, anyArity>(trace_scope, this, this->random_id(), std::forward<CallArgs>(args)...);
+				return result;
+			}
+
+			template<typename... CallArgs>
+			auto &distribute_untraced(CallArgs&&... args)
 			{
 				if constexpr (MapOverlapFunc::usesPRNG)
 				{
@@ -761,7 +867,7 @@ namespace skepu
 			auto &run_distributed(CallArgs&&... args)
 			{
 				return mpi_detail::distributed_overlap<outArity, anyArity>(
-					[this](auto &... a) { Base::operator()(a...); }, [this](Edge e) { Base::setEdgeMode(e); },
+					[this](auto &... a) { mpi::trace::work([&] { Base::operator()(a...); }); }, [this](Edge e) { Base::setEdgeMode(e); },
 					mpi_detail::overlap_array(this->getOverlap()), this->getEdgeMode(), this->getPad(), std::forward<CallArgs>(args)...);
 			}
 		};
@@ -791,8 +897,28 @@ namespace skepu
 			}
 
 		private:
+			// (the id of the random numbers that the call uses, for its event)
+			int random_id()
+			{
+#ifdef SKEPU_TRACING
+				return this->template randomID<MapOverlapFunc::randomCount>();
+#else
+				return 0;
+#endif
+			}
+
 			template<typename... CallArgs>
 			auto &distribute(CallArgs&&... args)
+			{
+				mpi::trace::CallScope trace_scope("MapPool 2D");
+				auto &result = this->distribute_untraced(std::forward<CallArgs>(args)...);
+				trace_scope.work_finished();
+				mpi_detail::trace_overlap<outArity, anyArity>(trace_scope, this, this->random_id(), std::forward<CallArgs>(args)...);
+				return result;
+			}
+
+			template<typename... CallArgs>
+			auto &distribute_untraced(CallArgs&&... args)
 			{
 				if constexpr (MapOverlapFunc::usesPRNG)
 				{
@@ -817,7 +943,7 @@ namespace skepu
 				for (int k = 0; k < 2; ++k)
 					geometry.stride[k] = stride[k];
 				return mpi_detail::distributed_window<outArity, anyArity>(
-					[this](auto &... a) { Base::operator()(a...); }, [](Edge) {}, geometry, Element{}, std::forward<CallArgs>(args)...);
+					[this](auto &... a) { mpi::trace::work([&] { Base::operator()(a...); }); }, [](Edge) {}, geometry, Element{}, std::forward<CallArgs>(args)...);
 			}
 		};
 
@@ -846,8 +972,28 @@ namespace skepu
 			}
 
 		private:
+			// (the id of the random numbers that the call uses, for its event)
+			int random_id()
+			{
+#ifdef SKEPU_TRACING
+				return this->template randomID<MapOverlapFunc::randomCount>();
+#else
+				return 0;
+#endif
+			}
+
 			template<typename... CallArgs>
 			auto &distribute(CallArgs&&... args)
+			{
+				mpi::trace::CallScope trace_scope("MapPool 3D");
+				auto &result = this->distribute_untraced(std::forward<CallArgs>(args)...);
+				trace_scope.work_finished();
+				mpi_detail::trace_overlap<outArity, anyArity>(trace_scope, this, this->random_id(), std::forward<CallArgs>(args)...);
+				return result;
+			}
+
+			template<typename... CallArgs>
+			auto &distribute_untraced(CallArgs&&... args)
 			{
 				if constexpr (MapOverlapFunc::usesPRNG)
 				{
@@ -872,7 +1018,7 @@ namespace skepu
 				for (int k = 0; k < 3; ++k)
 					geometry.stride[k] = stride[k];
 				return mpi_detail::distributed_window<outArity, anyArity>(
-					[this](auto &... a) { Base::operator()(a...); }, [](Edge) {}, geometry, Element{}, std::forward<CallArgs>(args)...);
+					[this](auto &... a) { mpi::trace::work([&] { Base::operator()(a...); }); }, [](Edge) {}, geometry, Element{}, std::forward<CallArgs>(args)...);
 			}
 		};
 
@@ -901,8 +1047,28 @@ namespace skepu
 			}
 
 		private:
+			// (the id of the random numbers that the call uses, for its event)
+			int random_id()
+			{
+#ifdef SKEPU_TRACING
+				return this->template randomID<MapOverlapFunc::randomCount>();
+#else
+				return 0;
+#endif
+			}
+
 			template<typename... CallArgs>
 			auto &distribute(CallArgs&&... args)
+			{
+				mpi::trace::CallScope trace_scope("MapPool 4D");
+				auto &result = this->distribute_untraced(std::forward<CallArgs>(args)...);
+				trace_scope.work_finished();
+				mpi_detail::trace_overlap<outArity, anyArity>(trace_scope, this, this->random_id(), std::forward<CallArgs>(args)...);
+				return result;
+			}
+
+			template<typename... CallArgs>
+			auto &distribute_untraced(CallArgs&&... args)
 			{
 				if constexpr (MapOverlapFunc::usesPRNG)
 				{
@@ -927,7 +1093,7 @@ namespace skepu
 				for (int k = 0; k < 4; ++k)
 					geometry.stride[k] = stride[k];
 				return mpi_detail::distributed_window<outArity, anyArity>(
-					[this](auto &... a) { Base::operator()(a...); }, [](Edge) {}, geometry, Element{}, std::forward<CallArgs>(args)...);
+					[this](auto &... a) { mpi::trace::work([&] { Base::operator()(a...); }); }, [](Edge) {}, geometry, Element{}, std::forward<CallArgs>(args)...);
 			}
 		};
 	}

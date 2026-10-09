@@ -268,6 +268,15 @@ namespace skepu
 				void finish(Skeleton *skeleton, size_t global_elements, size_t local_elements,
 					std::vector<int> &&outputs, std::vector<int> &&elwise, std::vector<int> &&proxies, std::vector<int> &&scalars, int prng)
 				{
+					this->finish(skeleton, std::vector<size_t>{global_elements}, local_elements, std::move(outputs), std::move(elwise),
+						std::move(proxies), std::move(scalars), prng);
+				}
+
+				// ('elements' are the sizes of the call as the skeleton has them: {n}, or {rows, columns})
+				template<typename Skeleton>
+				void finish(Skeleton *skeleton, std::vector<size_t> &&elements, size_t local_elements,
+					std::vector<int> &&outputs, std::vector<int> &&elwise, std::vector<int> &&proxies, std::vector<int> &&scalars, int prng)
+				{
 					State &s = state();
 					if (!s.active)
 						return;
@@ -283,7 +292,7 @@ namespace skepu
 						extra.values["seq"] = this->seq;
 						extra.values["mpi"] = local;
 						tr::AllowScope allow;
-						tr::tracer().call(this->handle, this->pattern, base, {global_elements}, std::move(outputs), std::move(elwise), std::move(proxies),
+						tr::tracer().call(this->handle, this->pattern, base, std::move(elements), std::move(outputs), std::move(elwise), std::move(proxies),
 							std::move(scalars), prng, &extra);
 					}
 					else
@@ -296,6 +305,18 @@ namespace skepu
 					}
 				}
 			};
+
+			// The work of this process in the call that is going on (what the node-level skeleton does), timed
+			template<typename Function>
+			void work(Function &&function)
+			{
+				CallScope *scope = state().current;
+				if (scope)
+					scope->work_begin();
+				function();
+				if (scope)
+					scope->work_finish();
+			}
 
 			// A collective operation: the interval of this process in it, and what it moved. 'reason' says why the program makes it.
 			// (Bytes are the payload that goes to other processes and comes from them, not the copy within a process.)
@@ -368,6 +389,9 @@ namespace skepu
 			inline void finish(MPI_Comm) {}
 			inline void abort_flush() {}
 			inline void allocation(int, const std::string &, bool) {}
+
+			template<typename Function>
+			void work(Function &&function) { function(); }
 
 			struct CallScope
 			{

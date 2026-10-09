@@ -75,10 +75,10 @@ others waiting in a collective operation.
 
 Not yet: CUDA (a program built with `-mpi -cuda` does not compile: the kernels need the index origin of a distributed
 container, as the OpenCL launches have it, in each launch variant), MapOverlap with an update mode other than Normal, and strides; messages of more than 2^31-1 elements (MPI-3),
-tracing of all skeletons but Map (see below), calls of a skeleton with iterators, `Matrix(std::initializer_list)`, printing of tensors in the format of the
+calls of a skeleton with iterators, `Matrix(std::initializer_list)`, printing of tensors in the format of the
 single-node library.
 
-### Tracing (a pilot: container allocation, `Map` and the communication)
+### Tracing (container allocation, all skeletons, `skepu::external` and the communication)
 
 With `SKEPU_TRACING` each process writes a trace file. The first process writes the trace of the program (the events of a single
 node program, with the ids of the program's containers), the others lean files with, for each call and each collective, the same
