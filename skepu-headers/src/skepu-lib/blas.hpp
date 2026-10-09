@@ -341,8 +341,22 @@ T nrm2_uf_2(T lhs, T rhs)
 	return lhs + rhs;
 }
 
+// The square root, on the host, of the result of a reduction, as a Scalar that has the ids of what it came from (the result of a
+// reduction is a plain value when the program is not traced)
+template<typename R>
+Scalar<R> sqrt_scalar(Scalar<R> sum)
+{
+	return Scalar<R>(sqrt((R)sum), sum.m_ids);
+}
+
+template<typename R>
+Scalar<R> sqrt_scalar(R sum)
+{
+	return Scalar<R>(sqrt(sum));
+}
+
 template<typename T>
-real_type<T> nrm2(
+Scalar<real_type<T>> nrm2(
 	size_type                        n,
 	Vector<T> BLAS_CONST&            x,
 	stride_type                      incx
@@ -351,7 +365,8 @@ real_type<T> nrm2(
 	auto skel = MapReduce<1>(nrm2_uf_1<T>, nrm2_uf_2<real_type<T>>);
 	skel.setStride(incx);
 	skel.setLabel("NRM2");
-	return sqrt(skel(x)); // TODO: Scalar<T>
+	// (the square root of the sum is done on the host: the result is a Scalar with the ids of the sum, so that the trace knows what it came from)
+	return sqrt_scalar(skel(x));
 }
 
 

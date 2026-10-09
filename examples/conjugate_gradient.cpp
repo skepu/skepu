@@ -32,19 +32,20 @@ size_t conjugate_gradient(skepu::Matrix<T> BLAS_CONST& A, skepu::Vector<T> BLAS_
 	skepu::blas::copy(N, b, 1, r, 1);
 	skepu::blas::gemv(skepu::blas::Op::NoTrans, N, N, -1.f, A, N, x, 1, 1.f, r, 1); // r := b - A * x
 	skepu::blas::copy(N, r, 1, p, 1); // p := r
-	T rTr = skepu::blas::dot(N, r, 1, r, 1); // rTr = r * r
+	// (the dot products are skepu::Scalar: the trace follows them through the arithmetic to the calls that use them)
+	skepu::Scalar<T> rTr = skepu::blas::dot(N, r, 1, r, 1); // rTr = r * r
 
 	for (size_t k = 0; k < N; ++k)
 	{
-		if (std::sqrt(rTr) < tolerance)
+		if (std::sqrt(T(rTr)) < tolerance)
 			return k;
 
 		SKEPU_TRACE_SCOPE("Iteration");
 
 		// Compute alpha
 		skepu::blas::gemv(skepu::blas::Op::NoTrans, N, N, 1.f, A, N, p, 1, 0.f, Ap, 1); // Ap := A * p
-		T tmp = skepu::blas::dot(N, p, 1, Ap, 1); // tmp := p * Ap = p * A * p
-		T alpha = rTr / tmp;
+		skepu::Scalar<T> tmp = skepu::blas::dot(N, p, 1, Ap, 1); // tmp := p * Ap = p * A * p
+		skepu::Scalar<T> alpha = rTr / tmp;
 
 		// Update x
 		skepu::blas::axpy(N,  alpha,  p, 1, x, 1); // x := x + alpha * p
@@ -53,8 +54,8 @@ size_t conjugate_gradient(skepu::Matrix<T> BLAS_CONST& A, skepu::Vector<T> BLAS_
 		skepu::blas::axpy(N, -alpha, Ap, 1, r, 1); // r := r - alpha * Ap
 
 		// Compute beta
-		T rTr_new = skepu::blas::dot(N, r, 1, r, 1); // rTr_new := r * r
-		T beta = rTr_new / rTr;
+		skepu::Scalar<T> rTr_new = skepu::blas::dot(N, r, 1, r, 1); // rTr_new := r * r
+		skepu::Scalar<T> beta = rTr_new / rTr;
 
 		// Update p
 		skepu::blas::scal(N, beta, p, 1); // p := beta * p

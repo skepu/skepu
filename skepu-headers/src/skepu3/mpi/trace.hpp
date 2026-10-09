@@ -400,7 +400,7 @@ namespace skepu
 				void work_finish() {}
 				void work_finished() {}
 				template<typename... Args> void finish(Args &&...) {}
-				template<typename... Args> void finish_external(Args &&...) {}
+				void finish_external(const std::string &, const char *, int, std::vector<int> &&, std::vector<int> &&) {}
 			};
 
 			class CommScope
