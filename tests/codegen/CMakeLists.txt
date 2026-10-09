@@ -271,3 +271,14 @@ skepu_add_test_case_opencl(namespaced_types_same_name)
 skepu_add_test_case_cuda(namespaced_types_same_name)
 skepu_add_test_case_hybrid_opencl(namespaced_types_same_name)
 skepu_add_test_case_hybrid_cuda(namespaced_types_same_name)
+
+# ------------------------------------------------
+#   Types of the standard library (skepu-lib/filter.hpp) in the OpenCL code
+# ------------------------------------------------
+
+skepu_add_test_case_cpu(library_types)
+skepu_add_test_case_openmp(library_types)
+skepu_add_test_case_opencl(library_types)
+skepu_add_test_case_cuda(library_types)
+skepu_add_test_case_hybrid_opencl(library_types)
+skepu_add_test_case_hybrid_cuda(library_types)

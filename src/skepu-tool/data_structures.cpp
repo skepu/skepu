@@ -268,6 +268,29 @@ UserType::UserType(const CXXRecordDecl *t)
 			for (const DeclContext *dc = t->getDeclContext(); dc; dc = dc->getParent())
 				if (const NamespaceDecl *ns = dyn_cast<NamespaceDecl>(dc))
 					insertLoc = ns->getRBraceLoc().getLocWithOffset(1);
+
+			// A type that is declared in a header (of the library, or of the program) is not in the file that the tool writes: the
+			// specializations go into the main file, after the #include that brought the type in
+			clang::SourceManager &typeSM = GlobalRewriter.getSourceMgr();
+			const clang::FileID mainFile = typeSM.getMainFileID();
+			if (typeSM.getFileID(insertLoc) != mainFile)
+			{
+				SourceLocation include = insertLoc;
+				while (typeSM.getFileID(include) != mainFile)
+				{
+					SourceLocation outer = typeSM.getIncludeLoc(typeSM.getFileID(include));
+					if (outer.isInvalid())
+						break;
+					include = outer;
+				}
+				if (typeSM.getFileID(include) != mainFile)
+					return;
+				const unsigned includeLine = typeSM.getSpellingLineNumber(include);
+				insertLoc = typeSM.translateLineCol(mainFile, includeLine + 1, 1);
+				typeNameFunc = "\n" + typeNameFunc + "\n";
+				if (!DoNotGenLineDirectives)
+					typeNameFunc += "#line " + std::to_string(includeLine + 1) + " \"" + typeSM.getBufferName(insertLoc).str() + "\"\n";
+			}
 			GlobalRewriter.InsertText(insertLoc, typeNameFunc);
 		}
 	#endif
