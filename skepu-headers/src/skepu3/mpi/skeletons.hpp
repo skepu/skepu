@@ -425,6 +425,8 @@ namespace skepu
 				const size_t rows = arg.total_rows(), cols = arg.total_cols();
 				const mpi::BlockDistribution distribution{rows, mpi::size()};
 				const size_t local_rows = distribution.count(mpi::rank());
+				// (on every process, also on one that has no rows: making the tiles can be a collective operation)
+				arg.tile_for_read();
 				auto traced = [&]
 				{
 					trace_scope.work_finished();
@@ -1326,6 +1328,7 @@ namespace skepu
 				const int me = mpi::rank();
 				const size_t local_rows = distribution.count(me);
 				const T start = this->m_start;
+				arg.tile_for_read(); // (on every process, also on one that has no rows: making the tiles can be a collective operation)
 
 				// The results of the reductions that this process has: of its rows, or of its columns
 				std::vector<T> results;

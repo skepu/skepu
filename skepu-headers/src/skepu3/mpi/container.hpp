@@ -102,6 +102,9 @@ namespace skepu
 
 				void tile_written()
 				{
+					this->m_fill_pending = false;
+					this->m_root_only = false;
+					this->m_mirror_at_root = false;
 					this->m_tile_valid = true;
 					this->m_mirror_valid = false;
 					this->m_mirror.reset();
@@ -120,7 +123,9 @@ namespace skepu
 
 				ExternalState external_begin() const
 				{
-					this->ensure_mirror();
+					// (the code runs on the first process, which is the only one that needs the container)
+					if (!this->m_root_only && !this->m_mirror_valid && !this->m_mirror_at_root)
+						this->gather_for_external();
 					this->m_external_listed = true;
 					this->m_extents_at_begin = this->m_extents;
 					return ExternalState{this->m_tile_valid};
@@ -154,14 +159,23 @@ namespace skepu
 
 					if (this->size() > 0)
 					{
+						// Nothing moves now: the other processes get the container when something needs it (see m_root_only)
 						if (this->local_size() > 0)
 							this->m_tile->invalidateDeviceData();
-						mpi::trace::CommScope comm("scatter", "skepu::external: the container is given to its owners", {this->m_identity.id});
-						const unsigned long long total = (unsigned long long)this->size() * sizeof(T), mine = (unsigned long long)this->local_size() * sizeof(T);
-						comm.bytes(mpi::rank() == 0 ? total - mine : 0, mpi::rank() == 0 ? 0 : mine);
-						mpi::scatter_from_root(this->m_mirror.get(), this->local_size() > 0 ? this->m_tile->getAddress() : nullptr, this->m_dist);
+						this->m_fill_pending = false;
+						this->m_root_only = true;
+						this->m_mirror_at_root = false;
+						this->m_tile_valid = false;
+						if (mpi::rank() != 0)
+						{
+							this->m_mirror.reset();
+							this->m_mirror_valid = false;
+						}
+						else
+							this->m_mirror_valid = true;
 					}
-					this->tile_written();
+					else
+						this->tile_written();
 				}
 
 			protected:
@@ -186,6 +200,8 @@ namespace skepu
 					// (a node-level container cannot be empty, so a process without elements has an empty tile of no shape)
 					this->m_tile.reset(other.local_size() > 0 ? new Tile(*other.m_tile) : new Tile());
 					this->m_tile->setIndexOrigin(this->local_first_offset());
+					this->m_fill_pending = other.m_fill_pending;
+					this->m_fill_value = other.m_fill_value;
 				}
 
 				Distributed(Distributed &&other) noexcept = default;
@@ -211,6 +227,10 @@ namespace skepu
 						this->m_mirror = std::move(other.m_mirror);
 						this->m_mirror_valid = other.m_mirror_valid;
 						this->m_tile_valid = other.m_tile_valid;
+						this->m_fill_pending = other.m_fill_pending;
+						this->m_fill_value = other.m_fill_value;
+						this->m_root_only = other.m_root_only;
+						this->m_mirror_at_root = other.m_mirror_at_root;
 						this->m_extents = other.m_extents;
 						this->m_extents_at_begin = other.m_extents_at_begin;
 						this->m_external_listed = other.m_external_listed;
@@ -229,6 +249,9 @@ namespace skepu
 					this->m_mirror.reset();
 					this->m_mirror_valid = false;
 					this->m_tile_valid = true;
+					this->m_fill_pending = false;
+					this->m_root_only = false;
+					this->m_mirror_at_root = false;
 					this->m_tile.reset(new Tile());
 					this->trace_allocation(this->kind()); // (called from the constructor or init of the derived class)
 				}
@@ -236,6 +259,13 @@ namespace skepu
 				void tile_ready()
 				{
 					this->m_tile->setIndexOrigin(this->local_first_offset());
+				}
+
+				// The elements were all set to the value (on every process: see m_fill_pending)
+				void known_fill(const T &value)
+				{
+					this->m_fill_pending = true;
+					this->m_fill_value = value;
 				}
 
 				// In an skepu::external call (on the first process) the container is initialized in its gathered copy: the
@@ -250,6 +280,9 @@ namespace skepu
 					std::fill(this->m_mirror.get(), this->m_mirror.get() + this->size(), value);
 					this->m_mirror_valid = true;
 					this->m_tile_valid = false;
+					this->m_fill_pending = false;
+					this->m_root_only = false;
+					this->m_mirror_at_root = false;
 				}
 
 				Tile &tile() { return *this->m_tile; }
@@ -285,6 +318,7 @@ namespace skepu
 				{
 					this->ensure_mirror();
 					this->m_tile_valid = false;
+					this->m_fill_pending = false;
 					return this->m_mirror.get();
 				}
 
@@ -335,18 +369,63 @@ namespace skepu
 				mutable bool m_mirror_valid = false;
 				mutable bool m_tile_valid = true;
 
+				// Every element still has the value that the container was created with, and every process knows it: the gathered
+				// copy is made on each process without communication (until something writes the container)
+				bool m_fill_pending = false;
+				T m_fill_value{};
+
+				// The container was written by an skepu::external call, on the first process: only that process has it (in its gathered
+				// copy). The others get it when it is needed: the tiles when a skeleton needs them, a copy of the whole when the host reads it.
+				mutable bool m_root_only = false;
+
+				// The gathered copy is on the first process only (the code of an skepu::external call is run there, and nothing else needs the
+				// copy): m_mirror_valid is then true there and false on the others. A host read on all the processes gets it to them (a broadcast).
+				mutable bool m_mirror_at_root = false;
+
 				Extents m_extents{{0, 0, 0, 0}};
 				mutable Extents m_extents_at_begin{{0, 0, 0, 0}};
 				mutable bool m_external_listed = false;
 
 				void ensure_mirror(const char *reason = "host access: the container is gathered") const
 				{
+					if (this->m_root_only && mpi::external_depth() == 0) // (the code of an external call is on the first process, which has it)
+					{
+						// The first process gives every process a copy; the tiles are then made from it, where they are needed
+						if (mpi::rank() != 0)
+							this->m_mirror.reset(new T[this->size()]);
+						mpi::trace::CommScope comm("bcast", reason, {this->m_identity.id});
+						const unsigned long long total = (unsigned long long)this->size() * sizeof(T) * (unsigned long long)(mpi::size() - 1);
+						comm.bytes(mpi::rank() == 0 ? total : 0, mpi::rank() == 0 ? 0 : (unsigned long long)this->size() * sizeof(T));
+						mpi::broadcast_from_root(this->m_mirror.get(), this->size());
+						this->m_mirror_valid = true;
+						this->m_root_only = false;
+						return;
+					}
+					if (this->m_mirror_at_root && mpi::external_depth() == 0)
+					{
+						// The first process has the gathered copy: it gives it to the others
+						if (mpi::rank() != 0)
+							this->m_mirror.reset(new T[this->size()]);
+						mpi::trace::CommScope comm("bcast", reason, {this->m_identity.id});
+						const unsigned long long total = (unsigned long long)this->size() * sizeof(T) * (unsigned long long)(mpi::size() - 1);
+						comm.bytes(mpi::rank() == 0 ? total : 0, mpi::rank() == 0 ? 0 : (unsigned long long)this->size() * sizeof(T));
+						mpi::broadcast_from_root(this->m_mirror.get(), this->size());
+						this->m_mirror_valid = true;
+						this->m_mirror_at_root = false;
+						return;
+					}
 					if (this->m_mirror_valid)
 						return;
 					if (mpi::external_depth() > 0)
 						mpi::fatal("A distributed container is used in skepu::external without being listed in skepu::read(...) or skepu::write(...)");
 
-					if (this->size() > 0)
+					if (this->m_fill_pending && this->size() > 0)
+					{
+						// (nothing has been written: every process has the value, and makes its copy without communication)
+						this->m_mirror.reset(new T[this->size()]);
+						std::fill(this->m_mirror.get(), this->m_mirror.get() + this->size(), this->m_fill_value);
+					}
+					else if (this->size() > 0)
 					{
 						this->m_mirror.reset(new T[this->size()]);
 						const T *mine = nullptr;
@@ -363,9 +442,55 @@ namespace skepu
 					this->m_mirror_valid = true;
 				}
 
+				// What an skepu::external call begins with: the first process, which runs the code, gets the container (the others do not need it)
+				void gather_for_external() const
+				{
+					if (this->size() == 0)
+					{
+						this->m_mirror_valid = true;
+						return;
+					}
+					if (this->m_fill_pending)
+					{
+						this->ensure_mirror(); // (every process knows it: no communication)
+						return;
+					}
+					if (mpi::rank() == 0)
+						this->m_mirror.reset(new T[this->size()]);
+					const T *mine = nullptr;
+					if (this->local_size() > 0)
+					{
+						this->m_tile->flush();
+						mine = this->m_tile->getAddress();
+					}
+					mpi::trace::CommScope comm("gather", "skepu::external: the container is gathered to the process that runs the code", {this->m_identity.id});
+					const unsigned long long total = (unsigned long long)this->size() * sizeof(T), mine_bytes = (unsigned long long)this->local_size() * sizeof(T);
+					comm.bytes(mpi::rank() == 0 ? 0 : mine_bytes, mpi::rank() == 0 ? total - mine_bytes : 0);
+					mpi::gather_to_root(mine, this->m_mirror.get(), this->m_dist);
+					this->m_mirror_at_root = true;
+					this->m_mirror_valid = (mpi::rank() == 0);
+				}
+
 				// The tile from the gathered container, if the host has changed it
 				void ensure_tile() const
 				{
+					if (this->m_root_only)
+					{
+						// The first process gives each process its part
+						if (this->local_size() > 0)
+							this->m_tile->invalidateDeviceData();
+						mpi::trace::CommScope comm("scatter", "the container is given to its owners", {this->m_identity.id});
+						const unsigned long long total = (unsigned long long)this->size() * sizeof(T), mine = (unsigned long long)this->local_size() * sizeof(T);
+						comm.bytes(mpi::rank() == 0 ? total - mine : 0, mpi::rank() == 0 ? 0 : mine);
+						mpi::scatter_from_root(this->m_mirror.get(), this->local_size() > 0 ? this->m_tile->getAddress() : nullptr, this->m_dist);
+						this->m_root_only = false;
+						this->m_tile_valid = true;
+						// (the gathered copy of the first process goes: all the processes must agree on whether there is one, as a gather is collective)
+						this->m_mirror.reset();
+						this->m_mirror_valid = false;
+						this->m_mirror_at_root = false;
+						return;
+					}
 					if (this->m_tile_valid)
 						return;
 					if (this->local_size() > 0)

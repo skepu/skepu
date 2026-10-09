@@ -29,6 +29,7 @@ namespace skepu
 		{
 			this->init(l.size());
 			std::copy(l.begin() + this->local_offset(), l.begin() + this->local_offset() + this->local_size(), this->tile().getAddress());
+			this->tile_written(); // (the elements are not the value of the initialization)
 		}
 
 		// The host data is the same on all processes. (The vector does not take over the ownership of the data.)
@@ -36,6 +37,7 @@ namespace skepu
 		{
 			this->init(num);
 			std::copy(ptr + this->local_offset(), ptr + this->local_offset() + this->local_size(), this->tile().getAddress());
+			this->tile_written(); // (the elements are not the value of the initialization)
 		}
 
 		Vector(const Vector &) = default;
@@ -64,6 +66,7 @@ namespace skepu
 			if (this->local_size() > 0)
 				this->tile().init(this->local_size(), val);
 			this->tile_ready();
+			this->known_fill(val);
 		}
 
 	protected:

@@ -4,25 +4,25 @@
             "label": "A",
             "line": 0,
             "object_id": 1003,
-            "time": 3661,
+            "time": 3973,
             "type": "allocation"
         },
         {
             "label": "B",
             "line": 0,
             "object_id": 1006,
-            "time": 3690,
+            "time": 4016,
             "type": "allocation"
         },
         {
             "label": "Rules",
             "line": 0,
             "object_id": 1009,
-            "time": 3702,
+            "time": 4028,
             "type": "allocation"
         },
         {
-            "end": 3704,
+            "end": 4030,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "Domain",
             "line": 93,
@@ -30,24 +30,9 @@
                 1003,
                 1006
             ],
-            "start": 3704,
+            "start": 4030,
             "type": "virtual_container",
             "virtual_id": 1116
-        },
-        {
-            "bytes_received": 36,
-            "bytes_sent": 108,
-            "comm_seq": 1,
-            "end": 3711,
-            "object_ids": [
-                1009
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "seq": 0,
-            "start": 3704,
-            "type": "communication"
         },
         {
             "backend": "OpenMP",
@@ -55,7 +40,7 @@
                 65536
             ],
             "elwise_inputs": [],
-            "end": 3812,
+            "end": 4114,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "init_random",
             "line": 102,
@@ -70,8 +55,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 5141811143780971817,
-                "work_end": 3794,
-                "work_start": 3717
+                "work_end": 4108,
+                "work_start": 4030
             },
             "object_id": 1000,
             "outputs": [
@@ -82,15 +67,15 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 1,
-            "start": 3717,
+            "start": 4030,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 196608,
             "bytes_sent": 196608,
-            "comm_seq": 2,
-            "end": 11571,
+            "comm_seq": 1,
+            "end": 9341,
             "object_ids": [
                 1003
             ],
@@ -98,17 +83,17 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 3839,
+            "start": 4135,
             "type": "communication"
         },
         {
             "data_file": "snapshots/A@1.txt",
-            "end": 13039,
+            "end": 10952,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 103,
             "object_id": 1003,
-            "start": 3816,
+            "start": 4118,
             "type": "snapshot"
         },
         {
@@ -116,80 +101,80 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 13039,
+            "time": 10952,
             "type": "region"
+        },
+        {
+            "bytes_received": 1024,
+            "bytes_sent": 1024,
+            "comm_seq": 2,
+            "end": 10986,
+            "object_ids": [
+                1003
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "region": "Double-iteration",
+            "seq": 2,
+            "start": 10977,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256,
+                256
+            ],
+            "elwise_inputs": [
+                1003
+            ],
+            "end": 11255,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "update",
+            "line": 108,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 1024,
+                    "bytes_sent": 1024,
+                    "collectives": 1,
+                    "time_us": 9
+                },
+                "local_elements": 16384,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 11250,
+                "work_start": 11040
+            },
+            "object_id": 1002,
+            "outputs": [
+                1006
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1009
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "seq": 2,
+            "start": 10954,
+            "threads": 2,
+            "type": "skeleton_call"
         },
         {
             "bytes_received": 1024,
             "bytes_sent": 1024,
             "comm_seq": 3,
-            "end": 13070,
-            "object_ids": [
-                1003
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "region": "Double-iteration",
-            "seq": 2,
-            "start": 13063,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256,
-                256
-            ],
-            "elwise_inputs": [
-                1003
-            ],
-            "end": 13348,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "update",
-            "line": 108,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 1024,
-                    "bytes_sent": 1024,
-                    "collectives": 1,
-                    "time_us": 7
-                },
-                "local_elements": 16384,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 13342,
-                "work_start": 13123
-            },
-            "object_id": 1002,
-            "outputs": [
-                1006
-            ],
-            "parameters": {
-                "edge": "Pad",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [
-                1009
-            ],
-            "region": "Double-iteration",
-            "scalar_inputs": [],
-            "seq": 2,
-            "start": 13040,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 1024,
-            "bytes_sent": 1024,
-            "comm_seq": 4,
-            "end": 13365,
+            "end": 11271,
             "object_ids": [
                 1006
             ],
@@ -199,7 +184,7 @@
             "reason": "halo exchange",
             "region": "Double-iteration",
             "seq": 3,
-            "start": 13361,
+            "start": 11267,
             "type": "communication"
         },
         {
@@ -211,7 +196,7 @@
             "elwise_inputs": [
                 1006
             ],
-            "end": 13638,
+            "end": 11579,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -226,8 +211,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 13632,
-                "work_start": 13413
+                "work_end": 11574,
+                "work_start": 11320
             },
             "object_id": 1002,
             "outputs": [
@@ -247,42 +232,42 @@
             "region": "Double-iteration",
             "scalar_inputs": [],
             "seq": 3,
-            "start": 13353,
+            "start": 11259,
             "threads": 2,
             "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 196608,
+            "bytes_sent": 196608,
+            "comm_seq": 4,
+            "end": 11607,
+            "object_ids": [
+                1006
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "region": "Double-iteration",
+            "seq": 0,
+            "start": 11584,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/B@2.txt",
+            "end": 14082,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "B",
+            "line": 110,
+            "object_id": 1006,
+            "region": "Double-iteration",
+            "start": 11583,
+            "type": "snapshot"
         },
         {
             "bytes_received": 196608,
             "bytes_sent": 196608,
             "comm_seq": 5,
-            "end": 13672,
-            "object_ids": [
-                1006
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "region": "Double-iteration",
-            "seq": 0,
-            "start": 13649,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/B@2.txt",
-            "end": 15132,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "B",
-            "line": 110,
-            "object_id": 1006,
-            "region": "Double-iteration",
-            "start": 13648,
-            "type": "snapshot"
-        },
-        {
-            "bytes_received": 196608,
-            "bytes_sent": 196608,
-            "comm_seq": 6,
-            "end": 15159,
+            "end": 14111,
             "object_ids": [
                 1003
             ],
@@ -291,18 +276,18 @@
             "reason": "host access: the container is gathered",
             "region": "Double-iteration",
             "seq": 0,
-            "start": 15134,
+            "start": 14084,
             "type": "communication"
         },
         {
             "data_file": "snapshots/A@3.txt",
-            "end": 16677,
+            "end": 16344,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 15133,
+            "start": 14083,
             "type": "snapshot"
         },
         {
@@ -310,14 +295,14 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 16678,
+            "time": 16345,
             "type": "region"
         },
         {
             "bytes_received": 1024,
             "bytes_sent": 1024,
-            "comm_seq": 7,
-            "end": 16704,
+            "comm_seq": 6,
+            "end": 16364,
             "object_ids": [
                 1003
             ],
@@ -327,7 +312,7 @@
             "reason": "halo exchange",
             "region": "Double-iteration",
             "seq": 4,
-            "start": 16699,
+            "start": 16361,
             "type": "communication"
         },
         {
@@ -339,7 +324,201 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 16911,
+            "end": 16560,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "update",
+            "line": 108,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 1024,
+                    "bytes_sent": 1024,
+                    "collectives": 1,
+                    "time_us": 3
+                },
+                "local_elements": 16384,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 16555,
+                "work_start": 16416
+            },
+            "object_id": 1002,
+            "outputs": [
+                1006
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1009
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "seq": 4,
+            "start": 16346,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 1024,
+            "bytes_sent": 1024,
+            "comm_seq": 7,
+            "end": 16652,
+            "object_ids": [
+                1006
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "region": "Double-iteration",
+            "seq": 5,
+            "start": 16572,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256,
+                256
+            ],
+            "elwise_inputs": [
+                1006
+            ],
+            "end": 16835,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "update",
+            "line": 109,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 1024,
+                    "bytes_sent": 1024,
+                    "collectives": 1,
+                    "time_us": 80
+                },
+                "local_elements": 16384,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 16832,
+                "work_start": 16701
+            },
+            "object_id": 1002,
+            "outputs": [
+                1003
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1009
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "seq": 5,
+            "start": 16564,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 196608,
+            "bytes_sent": 196608,
+            "comm_seq": 8,
+            "end": 16968,
+            "object_ids": [
+                1006
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "region": "Double-iteration",
+            "seq": 0,
+            "start": 16842,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/B@4.txt",
+            "end": 20592,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "B",
+            "line": 110,
+            "object_id": 1006,
+            "region": "Double-iteration",
+            "start": 16841,
+            "type": "snapshot"
+        },
+        {
+            "bytes_received": 196608,
+            "bytes_sent": 196608,
+            "comm_seq": 9,
+            "end": 20612,
+            "object_ids": [
+                1003
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "region": "Double-iteration",
+            "seq": 0,
+            "start": 20594,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/A@5.txt",
+            "end": 22031,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "A",
+            "line": 111,
+            "object_id": 1003,
+            "region": "Double-iteration",
+            "start": 20592,
+            "type": "snapshot"
+        },
+        {
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "Double-iteration",
+            "line": 107,
+            "region_depth": 1,
+            "time": 22032,
+            "type": "region"
+        },
+        {
+            "bytes_received": 1024,
+            "bytes_sent": 1024,
+            "comm_seq": 10,
+            "end": 22044,
+            "object_ids": [
+                1003
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "region": "Double-iteration",
+            "seq": 6,
+            "start": 22039,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256,
+                256
+            ],
+            "elwise_inputs": [
+                1003
+            ],
+            "end": 22224,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 108,
@@ -354,8 +533,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 16907,
-                "work_start": 16756
+                "work_end": 22219,
+                "work_start": 22089
             },
             "object_id": 1002,
             "outputs": [
@@ -374,210 +553,16 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "seq": 4,
-            "start": 16678,
+            "seq": 6,
+            "start": 22032,
             "threads": 2,
             "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 1024,
-            "bytes_sent": 1024,
-            "comm_seq": 8,
-            "end": 16998,
-            "object_ids": [
-                1006
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "region": "Double-iteration",
-            "seq": 5,
-            "start": 16926,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256,
-                256
-            ],
-            "elwise_inputs": [
-                1006
-            ],
-            "end": 17190,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "update",
-            "line": 109,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 1024,
-                    "bytes_sent": 1024,
-                    "collectives": 1,
-                    "time_us": 72
-                },
-                "local_elements": 16384,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 17184,
-                "work_start": 17047
-            },
-            "object_id": 1002,
-            "outputs": [
-                1003
-            ],
-            "parameters": {
-                "edge": "Pad",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [
-                1009
-            ],
-            "region": "Double-iteration",
-            "scalar_inputs": [],
-            "seq": 5,
-            "start": 16918,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 196608,
-            "bytes_sent": 196608,
-            "comm_seq": 9,
-            "end": 17307,
-            "object_ids": [
-                1006
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "region": "Double-iteration",
-            "seq": 0,
-            "start": 17201,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/B@4.txt",
-            "end": 18655,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "B",
-            "line": 110,
-            "object_id": 1006,
-            "region": "Double-iteration",
-            "start": 17200,
-            "type": "snapshot"
-        },
-        {
-            "bytes_received": 196608,
-            "bytes_sent": 196608,
-            "comm_seq": 10,
-            "end": 18673,
-            "object_ids": [
-                1003
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "region": "Double-iteration",
-            "seq": 0,
-            "start": 18656,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/A@5.txt",
-            "end": 19977,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "A",
-            "line": 111,
-            "object_id": 1003,
-            "region": "Double-iteration",
-            "start": 18655,
-            "type": "snapshot"
-        },
-        {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "Double-iteration",
-            "line": 107,
-            "region_depth": 1,
-            "time": 19978,
-            "type": "region"
         },
         {
             "bytes_received": 1024,
             "bytes_sent": 1024,
             "comm_seq": 11,
-            "end": 19987,
-            "object_ids": [
-                1003
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "region": "Double-iteration",
-            "seq": 6,
-            "start": 19985,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256,
-                256
-            ],
-            "elwise_inputs": [
-                1003
-            ],
-            "end": 20237,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "update",
-            "line": 108,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 1024,
-                    "bytes_sent": 1024,
-                    "collectives": 1,
-                    "time_us": 2
-                },
-                "local_elements": 16384,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 20232,
-                "work_start": 20032
-            },
-            "object_id": 1002,
-            "outputs": [
-                1006
-            ],
-            "parameters": {
-                "edge": "Pad",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [
-                1009
-            ],
-            "region": "Double-iteration",
-            "scalar_inputs": [],
-            "seq": 6,
-            "start": 19978,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 1024,
-            "bytes_sent": 1024,
-            "comm_seq": 12,
-            "end": 20250,
+            "end": 22334,
             "object_ids": [
                 1006
             ],
@@ -587,7 +572,7 @@
             "reason": "halo exchange",
             "region": "Double-iteration",
             "seq": 7,
-            "start": 20247,
+            "start": 22236,
             "type": "communication"
         },
         {
@@ -599,10 +584,138 @@
             "elwise_inputs": [
                 1006
             ],
-            "end": 20457,
+            "end": 22588,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 1024,
+                    "bytes_sent": 1024,
+                    "collectives": 1,
+                    "time_us": 98
+                },
+                "local_elements": 16384,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 22583,
+                "work_start": 22380
+            },
+            "object_id": 1002,
+            "outputs": [
+                1003
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1009
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "seq": 7,
+            "start": 22229,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 196608,
+            "bytes_sent": 196608,
+            "comm_seq": 12,
+            "end": 22608,
+            "object_ids": [
+                1006
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "region": "Double-iteration",
+            "seq": 0,
+            "start": 22593,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/B@6.txt",
+            "end": 24005,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "B",
+            "line": 110,
+            "object_id": 1006,
+            "region": "Double-iteration",
+            "start": 22592,
+            "type": "snapshot"
+        },
+        {
+            "bytes_received": 196608,
+            "bytes_sent": 196608,
+            "comm_seq": 13,
+            "end": 24022,
+            "object_ids": [
+                1003
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "region": "Double-iteration",
+            "seq": 0,
+            "start": 24006,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/A@7.txt",
+            "end": 27710,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "A",
+            "line": 111,
+            "object_id": 1003,
+            "region": "Double-iteration",
+            "start": 24005,
+            "type": "snapshot"
+        },
+        {
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "Double-iteration",
+            "line": 107,
+            "region_depth": 1,
+            "time": 27711,
+            "type": "region"
+        },
+        {
+            "bytes_received": 1024,
+            "bytes_sent": 1024,
+            "comm_seq": 14,
+            "end": 27722,
+            "object_ids": [
+                1003
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "region": "Double-iteration",
+            "seq": 8,
+            "start": 27719,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256,
+                256
+            ],
+            "elwise_inputs": [
+                1003
+            ],
+            "end": 27962,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "update",
+            "line": 108,
             "mpi": {
                 "comm": {
                     "bytes_received": 1024,
@@ -614,12 +727,12 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 20454,
-                "work_start": 20295
+                "work_end": 27959,
+                "work_start": 27768
             },
             "object_id": 1002,
             "outputs": [
-                1003
+                1006
             ],
             "parameters": {
                 "edge": "Pad",
@@ -634,88 +747,26 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "seq": 7,
-            "start": 20240,
+            "seq": 8,
+            "start": 27711,
             "threads": 2,
             "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 196608,
-            "bytes_sent": 196608,
-            "comm_seq": 13,
-            "end": 20535,
-            "object_ids": [
-                1006
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "region": "Double-iteration",
-            "seq": 0,
-            "start": 20461,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/B@6.txt",
-            "end": 21932,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "B",
-            "line": 110,
-            "object_id": 1006,
-            "region": "Double-iteration",
-            "start": 20460,
-            "type": "snapshot"
-        },
-        {
-            "bytes_received": 196608,
-            "bytes_sent": 196608,
-            "comm_seq": 14,
-            "end": 21952,
-            "object_ids": [
-                1003
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "region": "Double-iteration",
-            "seq": 0,
-            "start": 21933,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/A@7.txt",
-            "end": 23323,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "A",
-            "line": 111,
-            "object_id": 1003,
-            "region": "Double-iteration",
-            "start": 21932,
-            "type": "snapshot"
-        },
-        {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "Double-iteration",
-            "line": 107,
-            "region_depth": 1,
-            "time": 23324,
-            "type": "region"
         },
         {
             "bytes_received": 1024,
             "bytes_sent": 1024,
             "comm_seq": 15,
-            "end": 23334,
+            "end": 27974,
             "object_ids": [
-                1003
+                1006
             ],
             "operation": "alltoallv",
             "phase": "before",
             "ranks": 4,
             "reason": "halo exchange",
             "region": "Double-iteration",
-            "seq": 8,
-            "start": 23332,
+            "seq": 9,
+            "start": 27972,
             "type": "communication"
         },
         {
@@ -725,12 +776,12 @@
                 256
             ],
             "elwise_inputs": [
-                1003
+                1006
             ],
-            "end": 23508,
+            "end": 28211,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "update",
-            "line": 108,
+            "line": 109,
             "mpi": {
                 "comm": {
                     "bytes_received": 1024,
@@ -742,74 +793,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 23505,
-                "work_start": 23378
-            },
-            "object_id": 1002,
-            "outputs": [
-                1006
-            ],
-            "parameters": {
-                "edge": "Pad",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [
-                1009
-            ],
-            "region": "Double-iteration",
-            "scalar_inputs": [],
-            "seq": 8,
-            "start": 23324,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 1024,
-            "bytes_sent": 1024,
-            "comm_seq": 16,
-            "end": 23621,
-            "object_ids": [
-                1006
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "region": "Double-iteration",
-            "seq": 9,
-            "start": 23518,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256,
-                256
-            ],
-            "elwise_inputs": [
-                1006
-            ],
-            "end": 23830,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "update",
-            "line": 109,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 1024,
-                    "bytes_sent": 1024,
-                    "collectives": 1,
-                    "time_us": 103
-                },
-                "local_elements": 16384,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 23825,
-                "work_start": 23701
+                "work_end": 28207,
+                "work_start": 28017
             },
             "object_id": 1002,
             "outputs": [
@@ -829,15 +814,15 @@
             "region": "Double-iteration",
             "scalar_inputs": [],
             "seq": 9,
-            "start": 23511,
+            "start": 27965,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 196608,
             "bytes_sent": 196608,
-            "comm_seq": 17,
-            "end": 23917,
+            "comm_seq": 16,
+            "end": 28321,
             "object_ids": [
                 1006
             ],
@@ -846,25 +831,25 @@
             "reason": "host access: the container is gathered",
             "region": "Double-iteration",
             "seq": 0,
-            "start": 23837,
+            "start": 28217,
             "type": "communication"
         },
         {
             "data_file": "snapshots/B@8.txt",
-            "end": 25283,
+            "end": 31957,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "B",
             "line": 110,
             "object_id": 1006,
             "region": "Double-iteration",
-            "start": 23834,
+            "start": 28217,
             "type": "snapshot"
         },
         {
             "bytes_received": 196608,
             "bytes_sent": 196608,
-            "comm_seq": 18,
-            "end": 25300,
+            "comm_seq": 17,
+            "end": 31982,
             "object_ids": [
                 1003
             ],
@@ -873,18 +858,18 @@
             "reason": "host access: the container is gathered",
             "region": "Double-iteration",
             "seq": 0,
-            "start": 25284,
+            "start": 31960,
             "type": "communication"
         },
         {
             "data_file": "snapshots/A@9.txt",
-            "end": 26616,
+            "end": 33457,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 25284,
+            "start": 31958,
             "type": "snapshot"
         },
         {
@@ -892,14 +877,14 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 26617,
+            "time": 33457,
             "type": "region"
         },
         {
             "bytes_received": 1024,
             "bytes_sent": 1024,
-            "comm_seq": 19,
-            "end": 26628,
+            "comm_seq": 18,
+            "end": 33470,
             "object_ids": [
                 1003
             ],
@@ -909,7 +894,7 @@
             "reason": "halo exchange",
             "region": "Double-iteration",
             "seq": 10,
-            "start": 26624,
+            "start": 33466,
             "type": "communication"
         },
         {
@@ -921,7 +906,7 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 26885,
+            "end": 33711,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 108,
@@ -936,8 +921,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 26880,
-                "work_start": 26670
+                "work_end": 33706,
+                "work_start": 33513
             },
             "object_id": 1002,
             "outputs": [
@@ -957,15 +942,15 @@
             "region": "Double-iteration",
             "scalar_inputs": [],
             "seq": 10,
-            "start": 26617,
+            "start": 33458,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 1024,
             "bytes_sent": 1024,
-            "comm_seq": 20,
-            "end": 26897,
+            "comm_seq": 19,
+            "end": 33724,
             "object_ids": [
                 1006
             ],
@@ -975,7 +960,7 @@
             "reason": "halo exchange",
             "region": "Double-iteration",
             "seq": 11,
-            "start": 26895,
+            "start": 33721,
             "type": "communication"
         },
         {
@@ -987,395 +972,7 @@
             "elwise_inputs": [
                 1006
             ],
-            "end": 27134,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "update",
-            "line": 109,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 1024,
-                    "bytes_sent": 1024,
-                    "collectives": 1,
-                    "time_us": 2
-                },
-                "local_elements": 16384,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 27130,
-                "work_start": 26949
-            },
-            "object_id": 1002,
-            "outputs": [
-                1003
-            ],
-            "parameters": {
-                "edge": "Pad",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [
-                1009
-            ],
-            "region": "Double-iteration",
-            "scalar_inputs": [],
-            "seq": 11,
-            "start": 26888,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 196608,
-            "bytes_sent": 196608,
-            "comm_seq": 21,
-            "end": 27176,
-            "object_ids": [
-                1006
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "region": "Double-iteration",
-            "seq": 0,
-            "start": 27137,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/B@10.txt",
-            "end": 28462,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "B",
-            "line": 110,
-            "object_id": 1006,
-            "region": "Double-iteration",
-            "start": 27136,
-            "type": "snapshot"
-        },
-        {
-            "bytes_received": 196608,
-            "bytes_sent": 196608,
-            "comm_seq": 22,
-            "end": 28478,
-            "object_ids": [
-                1003
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "region": "Double-iteration",
-            "seq": 0,
-            "start": 28463,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/A@11.txt",
-            "end": 29747,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "A",
-            "line": 111,
-            "object_id": 1003,
-            "region": "Double-iteration",
-            "start": 28463,
-            "type": "snapshot"
-        },
-        {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "Double-iteration",
-            "line": 107,
-            "region_depth": 1,
-            "time": 29749,
-            "type": "region"
-        },
-        {
-            "bytes_received": 1024,
-            "bytes_sent": 1024,
-            "comm_seq": 23,
-            "end": 29757,
-            "object_ids": [
-                1003
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "region": "Double-iteration",
-            "seq": 12,
-            "start": 29755,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256,
-                256
-            ],
-            "elwise_inputs": [
-                1003
-            ],
-            "end": 29997,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "update",
-            "line": 108,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 1024,
-                    "bytes_sent": 1024,
-                    "collectives": 1,
-                    "time_us": 2
-                },
-                "local_elements": 16384,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 29993,
-                "work_start": 29799
-            },
-            "object_id": 1002,
-            "outputs": [
-                1006
-            ],
-            "parameters": {
-                "edge": "Pad",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [
-                1009
-            ],
-            "region": "Double-iteration",
-            "scalar_inputs": [],
-            "seq": 12,
-            "start": 29749,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 1024,
-            "bytes_sent": 1024,
-            "comm_seq": 24,
-            "end": 30009,
-            "object_ids": [
-                1006
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "region": "Double-iteration",
-            "seq": 13,
-            "start": 30007,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256,
-                256
-            ],
-            "elwise_inputs": [
-                1006
-            ],
-            "end": 30250,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "update",
-            "line": 109,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 1024,
-                    "bytes_sent": 1024,
-                    "collectives": 1,
-                    "time_us": 2
-                },
-                "local_elements": 16384,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 30247,
-                "work_start": 30052
-            },
-            "object_id": 1002,
-            "outputs": [
-                1003
-            ],
-            "parameters": {
-                "edge": "Pad",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [
-                1009
-            ],
-            "region": "Double-iteration",
-            "scalar_inputs": [],
-            "seq": 13,
-            "start": 30000,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 196608,
-            "bytes_sent": 196608,
-            "comm_seq": 25,
-            "end": 30269,
-            "object_ids": [
-                1006
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "region": "Double-iteration",
-            "seq": 0,
-            "start": 30253,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/B@12.txt",
-            "end": 31550,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "B",
-            "line": 110,
-            "object_id": 1006,
-            "region": "Double-iteration",
-            "start": 30252,
-            "type": "snapshot"
-        },
-        {
-            "bytes_received": 196608,
-            "bytes_sent": 196608,
-            "comm_seq": 26,
-            "end": 31568,
-            "object_ids": [
-                1003
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "region": "Double-iteration",
-            "seq": 0,
-            "start": 31553,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/A@13.txt",
-            "end": 32891,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "A",
-            "line": 111,
-            "object_id": 1003,
-            "region": "Double-iteration",
-            "start": 31552,
-            "type": "snapshot"
-        },
-        {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "Double-iteration",
-            "line": 107,
-            "region_depth": 1,
-            "time": 32892,
-            "type": "region"
-        },
-        {
-            "bytes_received": 1024,
-            "bytes_sent": 1024,
-            "comm_seq": 27,
-            "end": 32905,
-            "object_ids": [
-                1003
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "region": "Double-iteration",
-            "seq": 14,
-            "start": 32900,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256,
-                256
-            ],
-            "elwise_inputs": [
-                1003
-            ],
-            "end": 33151,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "update",
-            "line": 108,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 1024,
-                    "bytes_sent": 1024,
-                    "collectives": 1,
-                    "time_us": 5
-                },
-                "local_elements": 16384,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 33147,
-                "work_start": 32955
-            },
-            "object_id": 1002,
-            "outputs": [
-                1006
-            ],
-            "parameters": {
-                "edge": "Pad",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [
-                1009
-            ],
-            "region": "Double-iteration",
-            "scalar_inputs": [],
-            "seq": 14,
-            "start": 32892,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 1024,
-            "bytes_sent": 1024,
-            "comm_seq": 28,
-            "end": 33165,
-            "object_ids": [
-                1006
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "region": "Double-iteration",
-            "seq": 15,
-            "start": 33162,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256,
-                256
-            ],
-            "elwise_inputs": [
-                1006
-            ],
-            "end": 33413,
+            "end": 33965,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -1390,8 +987,396 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 33410,
-                "work_start": 33209
+                "work_end": 33961,
+                "work_start": 33768
+            },
+            "object_id": 1002,
+            "outputs": [
+                1003
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1009
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "seq": 11,
+            "start": 33714,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 196608,
+            "bytes_sent": 196608,
+            "comm_seq": 20,
+            "end": 33984,
+            "object_ids": [
+                1006
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "region": "Double-iteration",
+            "seq": 0,
+            "start": 33969,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/B@10.txt",
+            "end": 35855,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "B",
+            "line": 110,
+            "object_id": 1006,
+            "region": "Double-iteration",
+            "start": 33968,
+            "type": "snapshot"
+        },
+        {
+            "bytes_received": 196608,
+            "bytes_sent": 196608,
+            "comm_seq": 21,
+            "end": 35872,
+            "object_ids": [
+                1003
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "region": "Double-iteration",
+            "seq": 0,
+            "start": 35856,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/A@11.txt",
+            "end": 37628,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "A",
+            "line": 111,
+            "object_id": 1003,
+            "region": "Double-iteration",
+            "start": 35855,
+            "type": "snapshot"
+        },
+        {
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "Double-iteration",
+            "line": 107,
+            "region_depth": 1,
+            "time": 37629,
+            "type": "region"
+        },
+        {
+            "bytes_received": 1024,
+            "bytes_sent": 1024,
+            "comm_seq": 22,
+            "end": 37648,
+            "object_ids": [
+                1003
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "region": "Double-iteration",
+            "seq": 12,
+            "start": 37639,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256,
+                256
+            ],
+            "elwise_inputs": [
+                1003
+            ],
+            "end": 37891,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "update",
+            "line": 108,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 1024,
+                    "bytes_sent": 1024,
+                    "collectives": 1,
+                    "time_us": 9
+                },
+                "local_elements": 16384,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 37887,
+                "work_start": 37689
+            },
+            "object_id": 1002,
+            "outputs": [
+                1006
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1009
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "seq": 12,
+            "start": 37629,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 1024,
+            "bytes_sent": 1024,
+            "comm_seq": 23,
+            "end": 37904,
+            "object_ids": [
+                1006
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "region": "Double-iteration",
+            "seq": 13,
+            "start": 37902,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256,
+                256
+            ],
+            "elwise_inputs": [
+                1006
+            ],
+            "end": 38108,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "update",
+            "line": 109,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 1024,
+                    "bytes_sent": 1024,
+                    "collectives": 1,
+                    "time_us": 2
+                },
+                "local_elements": 16384,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 38103,
+                "work_start": 37947
+            },
+            "object_id": 1002,
+            "outputs": [
+                1003
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1009
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "seq": 13,
+            "start": 37895,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 196608,
+            "bytes_sent": 196608,
+            "comm_seq": 24,
+            "end": 38158,
+            "object_ids": [
+                1006
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "region": "Double-iteration",
+            "seq": 0,
+            "start": 38112,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/B@12.txt",
+            "end": 39742,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "B",
+            "line": 110,
+            "object_id": 1006,
+            "region": "Double-iteration",
+            "start": 38111,
+            "type": "snapshot"
+        },
+        {
+            "bytes_received": 196608,
+            "bytes_sent": 196608,
+            "comm_seq": 25,
+            "end": 39762,
+            "object_ids": [
+                1003
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "region": "Double-iteration",
+            "seq": 0,
+            "start": 39743,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/A@13.txt",
+            "end": 41372,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "A",
+            "line": 111,
+            "object_id": 1003,
+            "region": "Double-iteration",
+            "start": 39743,
+            "type": "snapshot"
+        },
+        {
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "Double-iteration",
+            "line": 107,
+            "region_depth": 1,
+            "time": 41372,
+            "type": "region"
+        },
+        {
+            "bytes_received": 1024,
+            "bytes_sent": 1024,
+            "comm_seq": 26,
+            "end": 41385,
+            "object_ids": [
+                1003
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "region": "Double-iteration",
+            "seq": 14,
+            "start": 41383,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256,
+                256
+            ],
+            "elwise_inputs": [
+                1003
+            ],
+            "end": 41621,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "update",
+            "line": 108,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 1024,
+                    "bytes_sent": 1024,
+                    "collectives": 1,
+                    "time_us": 2
+                },
+                "local_elements": 16384,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 41618,
+                "work_start": 41428
+            },
+            "object_id": 1002,
+            "outputs": [
+                1006
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1009
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "seq": 14,
+            "start": 41373,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 1024,
+            "bytes_sent": 1024,
+            "comm_seq": 27,
+            "end": 41633,
+            "object_ids": [
+                1006
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "region": "Double-iteration",
+            "seq": 15,
+            "start": 41631,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256,
+                256
+            ],
+            "elwise_inputs": [
+                1006
+            ],
+            "end": 41826,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "update",
+            "line": 109,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 1024,
+                    "bytes_sent": 1024,
+                    "collectives": 1,
+                    "time_us": 2
+                },
+                "local_elements": 16384,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 41822,
+                "work_start": 41674
             },
             "object_id": 1002,
             "outputs": [
@@ -1411,42 +1396,42 @@
             "region": "Double-iteration",
             "scalar_inputs": [],
             "seq": 15,
-            "start": 33155,
+            "start": 41624,
             "threads": 2,
             "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 196608,
+            "bytes_sent": 196608,
+            "comm_seq": 28,
+            "end": 41882,
+            "object_ids": [
+                1006
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "region": "Double-iteration",
+            "seq": 0,
+            "start": 41830,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/B@14.txt",
+            "end": 43519,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "B",
+            "line": 110,
+            "object_id": 1006,
+            "region": "Double-iteration",
+            "start": 41829,
+            "type": "snapshot"
         },
         {
             "bytes_received": 196608,
             "bytes_sent": 196608,
             "comm_seq": 29,
-            "end": 33435,
-            "object_ids": [
-                1006
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "region": "Double-iteration",
-            "seq": 0,
-            "start": 33417,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/B@14.txt",
-            "end": 34725,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "B",
-            "line": 110,
-            "object_id": 1006,
-            "region": "Double-iteration",
-            "start": 33416,
-            "type": "snapshot"
-        },
-        {
-            "bytes_received": 196608,
-            "bytes_sent": 196608,
-            "comm_seq": 30,
-            "end": 34743,
+            "end": 43536,
             "object_ids": [
                 1003
             ],
@@ -1455,18 +1440,18 @@
             "reason": "host access: the container is gathered",
             "region": "Double-iteration",
             "seq": 0,
-            "start": 34727,
+            "start": 43520,
             "type": "communication"
         },
         {
             "data_file": "snapshots/A@15.txt",
-            "end": 35954,
+            "end": 45203,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 34726,
+            "start": 43520,
             "type": "snapshot"
         },
         {
@@ -1474,80 +1459,80 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 35955,
+            "time": 45204,
             "type": "region"
+        },
+        {
+            "bytes_received": 1024,
+            "bytes_sent": 1024,
+            "comm_seq": 30,
+            "end": 45215,
+            "object_ids": [
+                1003
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "region": "Double-iteration",
+            "seq": 16,
+            "start": 45211,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256,
+                256
+            ],
+            "elwise_inputs": [
+                1003
+            ],
+            "end": 45389,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "update",
+            "line": 108,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 1024,
+                    "bytes_sent": 1024,
+                    "collectives": 1,
+                    "time_us": 4
+                },
+                "local_elements": 16384,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 45384,
+                "work_start": 45262
+            },
+            "object_id": 1002,
+            "outputs": [
+                1006
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1009
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "seq": 16,
+            "start": 45205,
+            "threads": 2,
+            "type": "skeleton_call"
         },
         {
             "bytes_received": 1024,
             "bytes_sent": 1024,
             "comm_seq": 31,
-            "end": 35964,
-            "object_ids": [
-                1003
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "region": "Double-iteration",
-            "seq": 16,
-            "start": 35962,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256,
-                256
-            ],
-            "elwise_inputs": [
-                1003
-            ],
-            "end": 36200,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "update",
-            "line": 108,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 1024,
-                    "bytes_sent": 1024,
-                    "collectives": 1,
-                    "time_us": 2
-                },
-                "local_elements": 16384,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 36195,
-                "work_start": 36011
-            },
-            "object_id": 1002,
-            "outputs": [
-                1006
-            ],
-            "parameters": {
-                "edge": "Pad",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [
-                1009
-            ],
-            "region": "Double-iteration",
-            "scalar_inputs": [],
-            "seq": 16,
-            "start": 35955,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 1024,
-            "bytes_sent": 1024,
-            "comm_seq": 32,
-            "end": 36211,
+            "end": 45402,
             "object_ids": [
                 1006
             ],
@@ -1557,7 +1542,7 @@
             "reason": "halo exchange",
             "region": "Double-iteration",
             "seq": 17,
-            "start": 36209,
+            "start": 45400,
             "type": "communication"
         },
         {
@@ -1569,7 +1554,7 @@
             "elwise_inputs": [
                 1006
             ],
-            "end": 36407,
+            "end": 45580,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -1584,8 +1569,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 36404,
-                "work_start": 36252
+                "work_end": 45575,
+                "work_start": 45448
             },
             "object_id": 1002,
             "outputs": [
@@ -1605,42 +1590,42 @@
             "region": "Double-iteration",
             "scalar_inputs": [],
             "seq": 17,
-            "start": 36202,
+            "start": 45392,
             "threads": 2,
             "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 196608,
+            "bytes_sent": 196608,
+            "comm_seq": 32,
+            "end": 45601,
+            "object_ids": [
+                1006
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "region": "Double-iteration",
+            "seq": 0,
+            "start": 45584,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/B@16.txt",
+            "end": 47105,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "B",
+            "line": 110,
+            "object_id": 1006,
+            "region": "Double-iteration",
+            "start": 45583,
+            "type": "snapshot"
         },
         {
             "bytes_received": 196608,
             "bytes_sent": 196608,
             "comm_seq": 33,
-            "end": 36426,
-            "object_ids": [
-                1006
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "region": "Double-iteration",
-            "seq": 0,
-            "start": 36410,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/B@16.txt",
-            "end": 37642,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "B",
-            "line": 110,
-            "object_id": 1006,
-            "region": "Double-iteration",
-            "start": 36410,
-            "type": "snapshot"
-        },
-        {
-            "bytes_received": 196608,
-            "bytes_sent": 196608,
-            "comm_seq": 34,
-            "end": 37658,
+            "end": 47125,
             "object_ids": [
                 1003
             ],
@@ -1649,18 +1634,18 @@
             "reason": "host access: the container is gathered",
             "region": "Double-iteration",
             "seq": 0,
-            "start": 37643,
+            "start": 47106,
             "type": "communication"
         },
         {
             "data_file": "snapshots/A@17.txt",
-            "end": 38886,
+            "end": 48577,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 37643,
+            "start": 47106,
             "type": "snapshot"
         },
         {
@@ -1668,80 +1653,80 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 38886,
+            "time": 48578,
             "type": "region"
+        },
+        {
+            "bytes_received": 1024,
+            "bytes_sent": 1024,
+            "comm_seq": 34,
+            "end": 48587,
+            "object_ids": [
+                1003
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "region": "Double-iteration",
+            "seq": 18,
+            "start": 48584,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256,
+                256
+            ],
+            "elwise_inputs": [
+                1003
+            ],
+            "end": 48827,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
+            "label": "update",
+            "line": 108,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 1024,
+                    "bytes_sent": 1024,
+                    "collectives": 1,
+                    "time_us": 3
+                },
+                "local_elements": 16384,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 48823,
+                "work_start": 48629
+            },
+            "object_id": 1002,
+            "outputs": [
+                1006
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1009
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "seq": 18,
+            "start": 48578,
+            "threads": 2,
+            "type": "skeleton_call"
         },
         {
             "bytes_received": 1024,
             "bytes_sent": 1024,
             "comm_seq": 35,
-            "end": 38894,
-            "object_ids": [
-                1003
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "region": "Double-iteration",
-            "seq": 18,
-            "start": 38892,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256,
-                256
-            ],
-            "elwise_inputs": [
-                1003
-            ],
-            "end": 39141,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
-            "label": "update",
-            "line": 108,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 1024,
-                    "bytes_sent": 1024,
-                    "collectives": 1,
-                    "time_us": 2
-                },
-                "local_elements": 16384,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 39138,
-                "work_start": 38937
-            },
-            "object_id": 1002,
-            "outputs": [
-                1006
-            ],
-            "parameters": {
-                "edge": "Pad",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [
-                1009
-            ],
-            "region": "Double-iteration",
-            "scalar_inputs": [],
-            "seq": 18,
-            "start": 38886,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 1024,
-            "bytes_sent": 1024,
-            "comm_seq": 36,
-            "end": 39152,
+            "end": 48838,
             "object_ids": [
                 1006
             ],
@@ -1751,7 +1736,7 @@
             "reason": "halo exchange",
             "region": "Double-iteration",
             "seq": 19,
-            "start": 39150,
+            "start": 48836,
             "type": "communication"
         },
         {
@@ -1763,7 +1748,7 @@
             "elwise_inputs": [
                 1006
             ],
-            "end": 39360,
+            "end": 49062,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -1778,8 +1763,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 39355,
-                "work_start": 39192
+                "work_end": 49057,
+                "work_start": 48878
             },
             "object_id": 1002,
             "outputs": [
@@ -1799,15 +1784,15 @@
             "region": "Double-iteration",
             "scalar_inputs": [],
             "seq": 19,
-            "start": 39144,
+            "start": 48829,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 196608,
             "bytes_sent": 196608,
-            "comm_seq": 37,
-            "end": 39381,
+            "comm_seq": 36,
+            "end": 49080,
             "object_ids": [
                 1006
             ],
@@ -1816,25 +1801,25 @@
             "reason": "host access: the container is gathered",
             "region": "Double-iteration",
             "seq": 0,
-            "start": 39364,
+            "start": 49065,
             "type": "communication"
         },
         {
             "data_file": "snapshots/B@18.txt",
-            "end": 40770,
+            "end": 50385,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "B",
             "line": 110,
             "object_id": 1006,
             "region": "Double-iteration",
-            "start": 39363,
+            "start": 49064,
             "type": "snapshot"
         },
         {
             "bytes_received": 196608,
             "bytes_sent": 196608,
-            "comm_seq": 38,
-            "end": 40797,
+            "comm_seq": 37,
+            "end": 50403,
             "object_ids": [
                 1003
             ],
@@ -1843,18 +1828,18 @@
             "reason": "host access: the container is gathered",
             "region": "Double-iteration",
             "seq": 0,
-            "start": 40772,
+            "start": 50386,
             "type": "communication"
         },
         {
             "data_file": "snapshots/A@19.txt",
-            "end": 42057,
+            "end": 51712,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 40771,
+            "start": 50385,
             "type": "snapshot"
         },
         {
@@ -1862,14 +1847,14 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 42057,
+            "time": 51713,
             "type": "region"
         },
         {
             "bytes_received": 1024,
             "bytes_sent": 1024,
-            "comm_seq": 39,
-            "end": 42066,
+            "comm_seq": 38,
+            "end": 51721,
             "object_ids": [
                 1003
             ],
@@ -1879,7 +1864,7 @@
             "reason": "halo exchange",
             "region": "Double-iteration",
             "seq": 20,
-            "start": 42064,
+            "start": 51719,
             "type": "communication"
         },
         {
@@ -1891,7 +1876,7 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 42225,
+            "end": 51970,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 108,
@@ -1906,8 +1891,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 42221,
-                "work_start": 42109
+                "work_end": 51967,
+                "work_start": 51763
             },
             "object_id": 1002,
             "outputs": [
@@ -1927,15 +1912,15 @@
             "region": "Double-iteration",
             "scalar_inputs": [],
             "seq": 20,
-            "start": 42057,
+            "start": 51713,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 1024,
             "bytes_sent": 1024,
-            "comm_seq": 40,
-            "end": 42344,
+            "comm_seq": 39,
+            "end": 51982,
             "object_ids": [
                 1006
             ],
@@ -1945,7 +1930,7 @@
             "reason": "halo exchange",
             "region": "Double-iteration",
             "seq": 21,
-            "start": 42235,
+            "start": 51980,
             "type": "communication"
         },
         {
@@ -1957,7 +1942,7 @@
             "elwise_inputs": [
                 1006
             ],
-            "end": 42589,
+            "end": 52212,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -1966,14 +1951,14 @@
                     "bytes_received": 1024,
                     "bytes_sent": 1024,
                     "collectives": 1,
-                    "time_us": 109
+                    "time_us": 2
                 },
                 "local_elements": 16384,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 42585,
-                "work_start": 42384
+                "work_end": 52207,
+                "work_start": 52023
             },
             "object_id": 1002,
             "outputs": [
@@ -1993,15 +1978,15 @@
             "region": "Double-iteration",
             "scalar_inputs": [],
             "seq": 21,
-            "start": 42228,
+            "start": 51973,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 196608,
             "bytes_sent": 196608,
-            "comm_seq": 41,
-            "end": 42608,
+            "comm_seq": 40,
+            "end": 52231,
             "object_ids": [
                 1006
             ],
@@ -2010,25 +1995,25 @@
             "reason": "host access: the container is gathered",
             "region": "Double-iteration",
             "seq": 0,
-            "start": 42594,
+            "start": 52217,
             "type": "communication"
         },
         {
             "data_file": "snapshots/B@20.txt",
-            "end": 43847,
+            "end": 53735,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "B",
             "line": 110,
             "object_id": 1006,
             "region": "Double-iteration",
-            "start": 42593,
+            "start": 52216,
             "type": "snapshot"
         },
         {
             "bytes_received": 196608,
             "bytes_sent": 196608,
-            "comm_seq": 42,
-            "end": 43866,
+            "comm_seq": 41,
+            "end": 53758,
             "object_ids": [
                 1003
             ],
@@ -2037,23 +2022,23 @@
             "reason": "host access: the container is gathered",
             "region": "Double-iteration",
             "seq": 0,
-            "start": 43848,
+            "start": 53737,
             "type": "communication"
         },
         {
             "data_file": "snapshots/A@21.txt",
-            "end": 45073,
+            "end": 55092,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 43847,
+            "start": 53736,
             "type": "snapshot"
         },
         {
             "elwise_inputs": [],
-            "end": 48856,
+            "end": 58676,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -2068,8 +2053,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 7346190368624812788,
-                "work_end": 48855,
-                "work_start": 45073
+                "work_end": 58675,
+                "work_start": 55093
             },
             "outputs": [],
             "proxy_inputs": [
@@ -2077,41 +2062,41 @@
             ],
             "scalar_inputs": [],
             "seq": 22,
-            "start": 45073,
+            "start": 55093,
             "type": "external"
         },
         {
             "label": "Rules",
             "line": 0,
             "object_id": 1009,
-            "time": 48869,
+            "time": 58687,
             "type": "deallocation"
         },
         {
             "label": "B",
             "line": 0,
             "object_id": 1006,
-            "time": 48871,
+            "time": 58689,
             "type": "deallocation"
         },
         {
             "label": "A",
             "line": 0,
             "object_id": 1003,
-            "time": 48873,
+            "time": 58691,
             "type": "deallocation"
         }
     ],
     "header": {
         "clock": {
             "end": {
-                "local_us": 48904,
+                "local_us": 58721,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             },
             "method": "ping-pong",
             "start": {
-                "local_us": 3186,
+                "local_us": 3410,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             }
@@ -2119,7 +2104,7 @@
         "mpi": {
             "detail_rank": 0,
             "host": "Augusts-Laptop.local",
-            "pid": 13423,
+            "pid": 34725,
             "rank": 0,
             "ranks": 4,
             "role": "full"

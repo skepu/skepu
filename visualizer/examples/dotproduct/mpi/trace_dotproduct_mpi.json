@@ -4,51 +4,51 @@
             "label": "Vector #1001",
             "line": 0,
             "object_id": 1001,
-            "time": 4192,
+            "time": 2897,
             "type": "allocation"
         },
         {
             "label": "Vector #1004",
             "line": 0,
             "object_id": 1004,
-            "time": 4196,
+            "time": 2902,
             "type": "allocation"
         },
         {
             "bytes_received": 6144,
-            "bytes_sent": 6144,
+            "bytes_sent": 0,
             "comm_seq": 1,
-            "end": 4248,
+            "end": 2952,
             "object_ids": [
                 1001
             ],
-            "operation": "allgather",
+            "operation": "gather",
             "phase": "before",
             "ranks": 4,
-            "reason": "host access: the container is gathered",
+            "reason": "skepu::external: the container is gathered to the process that runs the code",
             "seq": 1,
-            "start": 4226,
+            "start": 2933,
             "type": "communication"
         },
         {
             "elwise_inputs": [],
-            "end": 4563,
+            "end": 3256,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
             "mpi": {
                 "comm": {
                     "bytes_received": 6144,
-                    "bytes_sent": 6144,
+                    "bytes_sent": 0,
                     "collectives": 1,
-                    "time_us": 22
+                    "time_us": 19
                 },
                 "local_elements": 0,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 7346190368624812788,
-                "work_end": 4562,
-                "work_start": 4255
+                "work_end": 3256,
+                "work_start": 2959
             },
             "outputs": [],
             "proxy_inputs": [
@@ -56,44 +56,44 @@
             ],
             "scalar_inputs": [],
             "seq": 1,
-            "start": 4225,
+            "start": 2932,
             "type": "external"
         },
         {
             "bytes_received": 6144,
-            "bytes_sent": 6144,
+            "bytes_sent": 0,
             "comm_seq": 2,
-            "end": 4592,
+            "end": 3274,
             "object_ids": [
                 1004
             ],
-            "operation": "allgather",
+            "operation": "gather",
             "phase": "before",
             "ranks": 4,
-            "reason": "host access: the container is gathered",
+            "reason": "skepu::external: the container is gathered to the process that runs the code",
             "seq": 2,
-            "start": 4585,
+            "start": 3273,
             "type": "communication"
         },
         {
             "elwise_inputs": [],
-            "end": 4850,
+            "end": 3557,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
             "mpi": {
                 "comm": {
                     "bytes_received": 6144,
-                    "bytes_sent": 6144,
+                    "bytes_sent": 0,
                     "collectives": 1,
-                    "time_us": 7
+                    "time_us": 1
                 },
                 "local_elements": 0,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 7346190368624812788,
-                "work_end": 4849,
-                "work_start": 4597
+                "work_end": 3556,
+                "work_start": 3280
             },
             "outputs": [],
             "proxy_inputs": [
@@ -101,21 +101,21 @@
             ],
             "scalar_inputs": [],
             "seq": 2,
-            "start": 4585,
+            "start": 3273,
             "type": "external"
         },
         {
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 3,
-            "end": 4928,
+            "end": 3658,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 3,
-            "start": 4925,
+            "start": 3653,
             "type": "communication"
         },
         {
@@ -127,7 +127,7 @@
                 1001,
                 1004
             ],
-            "end": 4940,
+            "end": 3667,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/dotproduct.cpp",
             "label": "dotprod",
             "line": 38,
@@ -136,14 +136,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 3
+                    "time_us": 5
                 },
                 "local_elements": 512,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 14352682950218836157,
-                "work_end": 4924,
-                "work_start": 4877
+                "work_end": 3653,
+                "work_start": 3583
             },
             "object_id": 1000,
             "outputs": [
@@ -153,7 +153,7 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 3,
-            "start": 4877,
+            "start": 3583,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -161,27 +161,27 @@
             "label": "Vector #1004",
             "line": 0,
             "object_id": 1004,
-            "time": 4948,
+            "time": 3675,
             "type": "deallocation"
         },
         {
             "label": "Vector #1001",
             "line": 0,
             "object_id": 1001,
-            "time": 4951,
+            "time": 3678,
             "type": "deallocation"
         }
     ],
     "header": {
         "clock": {
             "end": {
-                "local_us": 4995,
+                "local_us": 3708,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             },
             "method": "ping-pong",
             "start": {
-                "local_us": 3705,
+                "local_us": 2412,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             }
@@ -189,7 +189,7 @@
         "mpi": {
             "detail_rank": 0,
             "host": "Augusts-Laptop.local",
-            "pid": 13517,
+            "pid": 34812,
             "rank": 0,
             "ranks": 4,
             "role": "full"

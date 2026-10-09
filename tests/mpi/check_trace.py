@@ -135,6 +135,33 @@ worst = max(spreads) if spreads else 0
 if worst > 20000:
     fail("the collectives end up to %d us apart on the clock of rank 0 (the clocks are not aligned)" % worst)
 
+# a container that has only its initial value is not gathered (nothing is moved to read what every process knows)
+for e in full:
+    if e["type"] == "allocation" and e.get("label") in ("fresh", "fresh_matrix"):
+        for c in comms0:
+            if e["object_id"] in c["object_ids"] and c["operation"] == "allgather" and c["seq"] == 0:
+                fail("the container %s was gathered before anything was written to it: %s" % (e["label"], c["reason"]))
+
+# the data of an skepu::external call is not moved when the call ends: it goes where it is needed, when it is (a copy to all
+# for the host, the tiles for a skeleton)
+external_seqs = {c["seq"] for c in calls0 if c["type"] == "external"}
+for c in comms0:
+    if c["operation"] == "allgather" and c["seq"] in external_seqs:
+        fail("collective %d: an external call has the container on every process, and the code runs on one: %s" % (c["comm_seq"], c["reason"]))
+    if c["operation"] == "scatter" and c["seq"] in external_seqs:
+        fail("collective %d: the container of an external call is scattered in the call: %s" % (c["comm_seq"], c["reason"]))
+if not any(c["operation"] == "gather" and c["seq"] in external_seqs for c in comms0):
+    fail("no gather to the first process for an external call")
+if not any(c["operation"] == "bcast" for c in comms0):
+    fail("no bcast: the host reads data that an external call wrote")
+
+# the line numbers of the source are kept by skepu-tool where it replaces a skeleton declared over several lines
+source = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "trace_map.cpp")).read().split("\n")
+marked = [i + 1 for i, l in enumerate(source) if '"line-mark"' in l]
+found = [e["line"] for e in full if e["type"] == "external" and e.get("label") == "line-mark"]
+if found != marked:
+    fail("the external 'line-mark' is on line %s in the trace, and on line %s in the source" % (found, marked))
+
 # the elements that were read (Vector::elem): of a container that was allocated, and given to a call as a scalar
 accesses = [e for e in full if e["type"] == "element_access"]
 if not accesses:

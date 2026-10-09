@@ -964,6 +964,14 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		// The source location of the call, as for the call of a skeleton variable
 		std::stringstream SSUse;
 		SSUse << InstanceName << ".setSourceLoc(\"" << inlineInstance->callFile << "\", " << inlineInstance->callLine << ")";
+		// (the call can span lines, which the replacement does not: the line numbers go on from where it ended)
+		{
+			SourceLocation callEnd = inlineInstance->factoryCall->getSourceRange().getEnd();
+			SourceLocation callBegin = inlineInstance->factoryCall->getSourceRange().getBegin();
+			SourceManager &SM = GlobalRewriter.getSourceMgr();
+			if (!DoNotGenLineDirectives && SM.getSpellingLineNumber(callEnd) > SM.getSpellingLineNumber(callBegin))
+				SSUse << "\n" << lineDirectiveForSourceLoc(callEnd) << "\n";
+		}
 		if (GlobalRewriter.ReplaceText(inlineInstance->factoryCall->getSourceRange(), SSUse.str()))
 			SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
 		return true;
@@ -980,6 +988,14 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		<< "<" << SSTemplateArgs.str()
 		<< "> " << InstanceName << "("
 		<< SSCallArgs.str() << ")";
+
+	// (a declaration that spans lines is replaced by one line: the line numbers go on from where it ended, with the rest of that line, the semicolon)
+	{
+		SourceLocation declEnd = d->getSourceRange().getEnd();
+		SourceManager &SM = GlobalRewriter.getSourceMgr();
+		if (!DoNotGenLineDirectives && SM.getSpellingLineNumber(declEnd) > SM.getSpellingLineNumber(declStart))
+			SSNewDecl << "\n" << lineDirectiveForSourceLoc(declEnd) << "\n";
+	}
 
 	if (GlobalRewriter.InsertText(declStart, SSNewDecl.str()))
 		SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);

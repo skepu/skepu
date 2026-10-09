@@ -30,6 +30,7 @@ namespace skepu
 		{
 			this->init(rows, cols);
 			std::copy(ptr + this->local_offset(), ptr + this->local_offset() + this->local_size(), this->tile().getAddress());
+			this->tile_written(); // (the elements are not the value of the initialization)
 		}
 
 		Matrix(const Matrix &) = default;
@@ -47,6 +48,7 @@ namespace skepu
 			if (this->local_size() > 0)
 				this->tile().init(this->local_first_dimension(), cols, val);
 			this->tile_ready();
+			this->known_fill(val);
 		}
 
 	protected:

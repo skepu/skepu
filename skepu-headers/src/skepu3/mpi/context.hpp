@@ -183,6 +183,21 @@ namespace skepu
 			MPI_Scatterv(whole, counts.data(), displs.data(), datatype<T>(), mine, counts[rank()], datatype<T>(), 0, comm());
 		}
 
+		// Each process has its part; the first process gets the whole sequence
+		template<typename T>
+		void gather_to_root(const T *mine, T *whole, const BlockDistribution &d)
+		{
+			auto counts = d.counts(), displs = d.displacements();
+			MPI_Gatherv(mine, counts[rank()], datatype<T>(), whole, counts.data(), displs.data(), datatype<T>(), 0, comm());
+		}
+
+		// The first process has the whole sequence, and gives all the processes a copy of it
+		template<typename T>
+		void broadcast_from_root(T *whole, size_t n)
+		{
+			MPI_Bcast(whole, checked_count(n, "broadcast"), datatype<T>(), 0, comm());
+		}
+
 		// One value from each process, in the order of the processes, to every process
 		template<typename T>
 		std::vector<T> allgather_one(const T &mine)

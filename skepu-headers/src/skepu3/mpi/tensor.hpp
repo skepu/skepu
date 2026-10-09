@@ -31,6 +31,7 @@ namespace skepu
 		{
 			this->init(si, sj, sk);
 			std::copy(ptr + this->local_offset(), ptr + this->local_offset() + this->local_size(), this->tile().getAddress());
+			this->tile_written(); // (the elements are not the value of the initialization)
 		}
 
 		Tensor3(const Tensor3 &) = default;
@@ -50,6 +51,7 @@ namespace skepu
 			if (this->local_size() > 0)
 				this->tile().init(this->local_first_dimension(), sj, sk, val);
 			this->tile_ready();
+			this->known_fill(val);
 		}
 
 	protected:
@@ -115,6 +117,7 @@ namespace skepu
 		{
 			this->init(si, sj, sk, sl);
 			std::copy(ptr + this->local_offset(), ptr + this->local_offset() + this->local_size(), this->tile().getAddress());
+			this->tile_written(); // (the elements are not the value of the initialization)
 		}
 
 		Tensor4(const Tensor4 &) = default;
@@ -135,6 +138,7 @@ namespace skepu
 			if (this->local_size() > 0)
 				this->tile().init(this->local_first_dimension(), sj, sk, sl, val);
 			this->tile_ready();
+			this->known_fill(val);
 		}
 
 	protected:

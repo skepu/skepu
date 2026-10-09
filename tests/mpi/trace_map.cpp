@@ -61,6 +61,14 @@ int main()
 	rows(few, m);
 	std::cout << "rows: " << few[4] << "\n";
 
+	// (a skeleton that is declared over several lines: what comes after it keeps its line numbers, which the trace has: check_trace.py)
+	auto multi_line = skepu::Map<1>([](int a)
+	{
+		return a + 3;
+	});
+	multi_line(c, a);
+	skepu::external("line-mark", skepu::read(c), [&] {});
+
 	// the other skeletons: reductions (of a vector, of the rows and of the columns of a matrix, of a matrix), a map and a
 	// reduction, one of the indices, a scan
 	auto sum = skepu::Reduce(plus);
@@ -91,6 +99,12 @@ int main()
 	prefix(scanned, a);
 	SKEPU_TRACE_SNAPSHOT(scanned); // (a snapshot of a distributed container: gathered, and written by the first process)
 	SKEPU_TRACE_SNAPSHOT(m);
+	// containers that have only their initial value are not gathered to be read: every process knows what is in them
+	skepu::Vector<int> fresh(40, "fresh", 7), cold(30, "cold");
+	skepu::Matrix<int> fresh_matrix(4, 5, "fresh_matrix", 3);
+	std::cout << "fresh: " << fresh[3] << " " << fresh_matrix(2, 2) << " " << cold[1] << "\n";
+	skepu::external([&] { cold(0) = 42; cold(29) = 43; }, skepu::write(cold)); // (the old content of what is written is not needed)
+	std::cout << "cold: " << cold[0] << " " << cold[1] << " " << cold[29] << "\n";
 	std::cout << "reductions: " << total << " " << row_totals[3] << " " << col_totals[5] << " " << whole << " " << squares << " " << by_index
 		<< " " << scanned[n - 1] << "\n";
 

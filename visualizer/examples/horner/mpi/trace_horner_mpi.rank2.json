@@ -1,46 +1,20 @@
 {
     "data": [
         {
-            "bytes_received": 12,
-            "bytes_sent": 12,
-            "comm_seq": 1,
-            "end": 4064,
-            "operation": "allgather",
-            "phase": "before",
-            "rank": 2,
-            "reason": "host access: the container is gathered",
-            "seq": 1,
-            "start": 4054,
-            "type": "rank_communication"
-        },
-        {
-            "bytes_received": 4,
-            "bytes_sent": 0,
-            "comm_seq": 2,
-            "end": 4073,
-            "operation": "scatter",
-            "phase": "after",
-            "rank": 2,
-            "reason": "skepu::external: the container is given to its owners",
-            "seq": 1,
-            "start": 4072,
-            "type": "rank_communication"
-        },
-        {
             "comm": {
-                "bytes_received": 16,
-                "bytes_sent": 12,
-                "collectives": 2,
-                "time_us": 11
+                "bytes_received": 0,
+                "bytes_sent": 0,
+                "collectives": 0,
+                "time_us": 0
             },
-            "end": 4077,
+            "end": 2845,
             "local_elements": 0,
             "pattern": "external",
             "rank": 2,
             "ranks": 4,
             "seq": 1,
             "signature": 10592143196905225400,
-            "start": 4043,
+            "start": 2831,
             "type": "rank_call",
             "work_end": 0,
             "work_start": 0
@@ -52,72 +26,60 @@
                 "collectives": 0,
                 "time_us": 0
             },
-            "end": 4150,
+            "end": 2921,
             "local_elements": 512,
             "pattern": "Map",
             "rank": 2,
             "ranks": 4,
             "seq": 2,
             "signature": 3168216515977543315,
-            "start": 4088,
+            "start": 2871,
             "type": "rank_call",
-            "work_end": 4149,
-            "work_start": 4088
+            "work_end": 2920,
+            "work_start": 2872
         },
         {
-            "bytes_received": 6144,
-            "bytes_sent": 6144,
-            "comm_seq": 3,
-            "end": 4232,
-            "operation": "allgather",
+            "bytes_received": 0,
+            "bytes_sent": 2048,
+            "comm_seq": 1,
+            "end": 2979,
+            "operation": "gather",
             "phase": "before",
             "rank": 2,
-            "reason": "host access: the container is gathered",
+            "reason": "skepu::external: the container is gathered to the process that runs the code",
             "seq": 3,
-            "start": 4177,
+            "start": 2948,
             "type": "rank_communication"
         },
         {
             "comm": {
-                "bytes_received": 6144,
-                "bytes_sent": 6144,
+                "bytes_received": 0,
+                "bytes_sent": 2048,
                 "collectives": 1,
-                "time_us": 55
+                "time_us": 31
             },
-            "end": 4238,
+            "end": 2985,
             "local_elements": 0,
             "pattern": "external",
             "rank": 2,
             "ranks": 4,
             "seq": 3,
             "signature": 7346190368624812788,
-            "start": 4177,
+            "start": 2948,
             "type": "rank_call",
             "work_end": 0,
             "work_start": 0
         },
         {
-            "bytes_received": 12,
-            "bytes_sent": 12,
-            "comm_seq": 4,
-            "end": 5235,
-            "operation": "allgather",
+            "bytes_received": 16,
+            "bytes_sent": 0,
+            "comm_seq": 2,
+            "end": 3623,
+            "operation": "bcast",
             "rank": 2,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 4246,
-            "type": "rank_communication"
-        },
-        {
-            "bytes_received": 6144,
-            "bytes_sent": 6144,
-            "comm_seq": 5,
-            "end": 5268,
-            "operation": "allgather",
-            "rank": 2,
-            "reason": "host access: the container is gathered",
-            "seq": 0,
-            "start": 5248,
+            "start": 2994,
             "type": "rank_communication"
         },
         {
@@ -127,28 +89,28 @@
                 "collectives": 0,
                 "time_us": 0
             },
-            "end": 5305,
+            "end": 3687,
             "local_elements": 512,
             "pattern": "Map",
             "rank": 2,
             "ranks": 4,
             "seq": 4,
             "signature": 17527840532851208280,
-            "start": 5272,
+            "start": 3636,
             "type": "rank_call",
-            "work_end": 5304,
-            "work_start": 5272
+            "work_end": 3687,
+            "work_start": 3636
         },
         {
             "bytes_received": 6144,
             "bytes_sent": 6144,
-            "comm_seq": 6,
-            "end": 5747,
+            "comm_seq": 3,
+            "end": 4010,
             "operation": "allgather",
             "rank": 2,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 5313,
+            "start": 3702,
             "type": "rank_communication"
         },
         {
@@ -158,28 +120,28 @@
                 "collectives": 0,
                 "time_us": 0
             },
-            "end": 5788,
+            "end": 4048,
             "local_elements": 512,
             "pattern": "Map",
             "rank": 2,
             "ranks": 4,
             "seq": 5,
             "signature": 17527840532851208280,
-            "start": 5754,
+            "start": 4017,
             "type": "rank_call",
-            "work_end": 5788,
-            "work_start": 5754
+            "work_end": 4047,
+            "work_start": 4017
         },
         {
             "bytes_received": 6144,
             "bytes_sent": 6144,
-            "comm_seq": 7,
-            "end": 6212,
+            "comm_seq": 4,
+            "end": 4454,
             "operation": "allgather",
             "rank": 2,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 5800,
+            "start": 4056,
             "type": "rank_communication"
         },
         {
@@ -189,28 +151,28 @@
                 "collectives": 0,
                 "time_us": 0
             },
-            "end": 6248,
+            "end": 4494,
             "local_elements": 512,
             "pattern": "Map",
             "rank": 2,
             "ranks": 4,
             "seq": 6,
             "signature": 17527840532851208280,
-            "start": 6219,
+            "start": 4459,
             "type": "rank_call",
-            "work_end": 6247,
-            "work_start": 6219
+            "work_end": 4494,
+            "work_start": 4459
         },
         {
             "bytes_received": 6144,
             "bytes_sent": 6144,
-            "comm_seq": 8,
-            "end": 6696,
+            "comm_seq": 5,
+            "end": 4892,
             "operation": "allgather",
             "rank": 2,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 6262,
+            "start": 4504,
             "type": "rank_communication"
         },
         {
@@ -220,14 +182,14 @@
                 "collectives": 0,
                 "time_us": 0
             },
-            "end": 6700,
+            "end": 4897,
             "local_elements": 0,
             "pattern": "external",
             "rank": 2,
             "ranks": 4,
             "seq": 7,
             "signature": 7346190368624812788,
-            "start": 6700,
+            "start": 4897,
             "type": "rank_call",
             "work_end": 0,
             "work_start": 0
@@ -236,21 +198,21 @@
     "header": {
         "clock": {
             "end": {
-                "local_us": 7545,
-                "offset_us": 0.0,
+                "local_us": 5898,
+                "offset_us": 17.0,
                 "uncertainty_us": 0.0
             },
             "method": "ping-pong",
             "start": {
-                "local_us": 3580,
-                "offset_us": 0.0,
+                "local_us": 2319,
+                "offset_us": 17.0,
                 "uncertainty_us": 0.0
             }
         },
         "mpi": {
             "detail_rank": 0,
             "host": "Augusts-Laptop.local",
-            "pid": 13329,
+            "pid": 34636,
             "rank": 2,
             "ranks": 4,
             "role": "lean"

@@ -4,18 +4,18 @@
             "label": "DomainA",
             "line": 0,
             "object_id": 1001,
-            "time": 3178,
+            "time": 3194,
             "type": "allocation"
         },
         {
             "label": "DomainB",
             "line": 0,
             "object_id": 1004,
-            "time": 3195,
+            "time": 3211,
             "type": "allocation"
         },
         {
-            "end": 3198,
+            "end": 3213,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "Domain",
             "line": 128,
@@ -23,93 +23,29 @@
                 1001,
                 1004
             ],
-            "start": 3198,
+            "start": 3213,
             "type": "virtual_container",
             "virtual_id": 1109
         },
         {
-            "bytes_received": 12288,
-            "bytes_sent": 12288,
-            "comm_seq": 1,
-            "end": 3242,
-            "object_ids": [
-                1001
-            ],
-            "operation": "allgather",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "seq": 1,
-            "start": 3207,
-            "type": "communication"
-        },
-        {
-            "bytes_received": 12288,
-            "bytes_sent": 12288,
-            "comm_seq": 2,
-            "end": 3262,
-            "object_ids": [
-                1004
-            ],
-            "operation": "allgather",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "seq": 1,
-            "start": 3251,
-            "type": "communication"
-        },
-        {
-            "bytes_received": 0,
-            "bytes_sent": 12288,
-            "comm_seq": 3,
-            "end": 3276,
-            "object_ids": [
-                1001
-            ],
-            "operation": "scatter",
-            "phase": "after",
-            "ranks": 4,
-            "reason": "skepu::external: the container is given to its owners",
-            "seq": 1,
-            "start": 3269,
-            "type": "communication"
-        },
-        {
-            "bytes_received": 0,
-            "bytes_sent": 12288,
-            "comm_seq": 4,
-            "end": 3285,
-            "object_ids": [
-                1004
-            ],
-            "operation": "scatter",
-            "phase": "after",
-            "ranks": 4,
-            "reason": "skepu::external: the container is given to its owners",
-            "seq": 1,
-            "start": 3281,
-            "type": "communication"
-        },
-        {
             "elwise_inputs": [],
-            "end": 3289,
+            "end": 3232,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "[external]",
             "line": 130,
             "mpi": {
                 "comm": {
-                    "bytes_received": 24576,
-                    "bytes_sent": 49152,
-                    "collectives": 4,
-                    "time_us": 57
+                    "bytes_received": 0,
+                    "bytes_sent": 0,
+                    "collectives": 0,
+                    "time_us": 0
                 },
                 "local_elements": 0,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 10206839627986143913,
-                "work_end": 3268,
-                "work_start": 3267
+                "work_end": 3219,
+                "work_start": 3218
             },
             "outputs": [
                 1001,
@@ -118,64 +54,64 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 1,
-            "start": 3199,
+            "start": 3213,
             "type": "external"
         },
         {
-            "bytes_received": 12288,
-            "bytes_sent": 12288,
-            "comm_seq": 5,
-            "end": 3366,
+            "bytes_received": 0,
+            "bytes_sent": 49152,
+            "comm_seq": 1,
+            "end": 3368,
             "object_ids": [
                 1001
             ],
-            "operation": "allgather",
+            "operation": "bcast",
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 3350,
+            "start": 3268,
             "type": "communication"
         },
         {
             "data_file": "snapshots/DomainA@1.txt",
-            "end": 3811,
+            "end": 3813,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainA",
             "line": 147,
             "object_id": 1001,
-            "start": 3303,
+            "start": 3246,
             "type": "snapshot"
         },
         {
-            "bytes_received": 12288,
-            "bytes_sent": 12288,
-            "comm_seq": 6,
-            "end": 3821,
+            "bytes_received": 0,
+            "bytes_sent": 49152,
+            "comm_seq": 2,
+            "end": 3829,
             "object_ids": [
                 1004
             ],
-            "operation": "allgather",
+            "operation": "bcast",
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 3813,
+            "start": 3815,
             "type": "communication"
         },
         {
             "data_file": "snapshots/DomainB@2.txt",
-            "end": 4205,
+            "end": 4208,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainB",
             "line": 148,
             "object_id": 1004,
-            "start": 3812,
+            "start": 3814,
             "type": "snapshot"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
-            "comm_seq": 7,
-            "end": 4216,
+            "comm_seq": 3,
+            "end": 4220,
             "object_ids": [
                 1001
             ],
@@ -184,7 +120,7 @@
             "ranks": 4,
             "reason": "halo exchange",
             "seq": 2,
-            "start": 4210,
+            "start": 4214,
             "type": "communication"
         },
         {
@@ -196,7 +132,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 4295,
+            "end": 4283,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 151,
@@ -211,8 +147,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 4288,
-                "work_start": 4227
+                "work_end": 4277,
+                "work_start": 4231
             },
             "object_id": 1000,
             "outputs": [
@@ -229,15 +165,15 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 2,
-            "start": 4208,
+            "start": 4209,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
-            "comm_seq": 8,
-            "end": 4308,
+            "comm_seq": 4,
+            "end": 4313,
             "object_ids": [
                 1004
             ],
@@ -246,7 +182,7 @@
             "ranks": 4,
             "reason": "halo exchange",
             "seq": 3,
-            "start": 4304,
+            "start": 4295,
             "type": "communication"
         },
         {
@@ -258,7 +194,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 4356,
+            "end": 4375,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 152,
@@ -267,14 +203,14 @@
                     "bytes_received": 256,
                     "bytes_sent": 256,
                     "collectives": 1,
-                    "time_us": 4
+                    "time_us": 18
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 4351,
-                "work_start": 4319
+                "work_end": 4370,
+                "work_start": 4324
             },
             "object_id": 1000,
             "outputs": [
@@ -291,15 +227,15 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 3,
-            "start": 4300,
+            "start": 4293,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 12288,
             "bytes_sent": 12288,
-            "comm_seq": 9,
-            "end": 4379,
+            "comm_seq": 5,
+            "end": 4395,
             "object_ids": [
                 1004
             ],
@@ -307,24 +243,24 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 4362,
+            "start": 4381,
             "type": "communication"
         },
         {
             "data_file": "snapshots/DomainB@3.txt",
-            "end": 4801,
+            "end": 4848,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainB",
             "line": 153,
             "object_id": 1004,
-            "start": 4360,
+            "start": 4380,
             "type": "snapshot"
         },
         {
             "bytes_received": 12288,
             "bytes_sent": 12288,
-            "comm_seq": 10,
-            "end": 4808,
+            "comm_seq": 6,
+            "end": 4857,
             "object_ids": [
                 1001
             ],
@@ -332,24 +268,24 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 4802,
+            "start": 4850,
             "type": "communication"
         },
         {
             "data_file": "snapshots/DomainA@4.txt",
-            "end": 5218,
+            "end": 5261,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainA",
             "line": 154,
             "object_id": 1001,
-            "start": 4801,
+            "start": 4849,
             "type": "snapshot"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
-            "comm_seq": 11,
-            "end": 5223,
+            "comm_seq": 7,
+            "end": 5264,
             "object_ids": [
                 1001
             ],
@@ -358,7 +294,7 @@
             "ranks": 4,
             "reason": "halo exchange",
             "seq": 4,
-            "start": 5220,
+            "start": 5262,
             "type": "communication"
         },
         {
@@ -370,7 +306,181 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 5265,
+            "end": 5307,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 151,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 2
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 5301,
+                "work_start": 5274
+            },
+            "object_id": 1000,
+            "outputs": [
+                1004
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 4,
+            "start": 5261,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 8,
+            "end": 5317,
+            "object_ids": [
+                1004
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 5,
+            "start": 5312,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 5375,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 152,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 5
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 5371,
+                "work_start": 5327
+            },
+            "object_id": 1000,
+            "outputs": [
+                1001
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 5,
+            "start": 5311,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 12288,
+            "bytes_sent": 12288,
+            "comm_seq": 9,
+            "end": 5388,
+            "object_ids": [
+                1004
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "seq": 0,
+            "start": 5379,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/DomainB@5.txt",
+            "end": 5817,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
+            "label": "DomainB",
+            "line": 153,
+            "object_id": 1004,
+            "start": 5378,
+            "type": "snapshot"
+        },
+        {
+            "bytes_received": 12288,
+            "bytes_sent": 12288,
+            "comm_seq": 10,
+            "end": 5825,
+            "object_ids": [
+                1001
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "seq": 0,
+            "start": 5818,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/DomainA@6.txt",
+            "end": 8215,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
+            "label": "DomainA",
+            "line": 154,
+            "object_id": 1001,
+            "start": 5818,
+            "type": "snapshot"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 11,
+            "end": 8219,
+            "object_ids": [
+                1001
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 6,
+            "start": 8216,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 8281,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 151,
@@ -385,8 +495,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 5259,
-                "work_start": 5235
+                "work_end": 8277,
+                "work_start": 8228
             },
             "object_id": 1000,
             "outputs": [
@@ -402,8 +512,8 @@
             "pattern": "MapOverlap 2D",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "seq": 4,
-            "start": 5219,
+            "seq": 6,
+            "start": 8215,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -411,181 +521,7 @@
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 12,
-            "end": 5272,
-            "object_ids": [
-                1004
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 5,
-            "start": 5270,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1004
-            ],
-            "end": 5322,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 152,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 2
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 5317,
-                "work_start": 5282
-            },
-            "object_id": 1000,
-            "outputs": [
-                1001
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 5,
-            "start": 5269,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 12288,
-            "bytes_sent": 12288,
-            "comm_seq": 13,
-            "end": 5349,
-            "object_ids": [
-                1004
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "seq": 0,
-            "start": 5328,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/DomainB@5.txt",
-            "end": 5806,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
-            "label": "DomainB",
-            "line": 153,
-            "object_id": 1004,
-            "start": 5326,
-            "type": "snapshot"
-        },
-        {
-            "bytes_received": 12288,
-            "bytes_sent": 12288,
-            "comm_seq": 14,
-            "end": 5814,
-            "object_ids": [
-                1001
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "seq": 0,
-            "start": 5807,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/DomainA@6.txt",
-            "end": 6345,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
-            "label": "DomainA",
-            "line": 154,
-            "object_id": 1001,
-            "start": 5807,
-            "type": "snapshot"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 15,
-            "end": 6351,
-            "object_ids": [
-                1001
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 6,
-            "start": 6347,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 6400,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 151,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 4
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 6395,
-                "work_start": 6364
-            },
-            "object_id": 1000,
-            "outputs": [
-                1004
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 6,
-            "start": 6346,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 16,
-            "end": 6416,
+            "end": 8286,
             "object_ids": [
                 1004
             ],
@@ -594,7 +530,7 @@
             "ranks": 4,
             "reason": "halo exchange",
             "seq": 7,
-            "start": 6404,
+            "start": 8285,
             "type": "communication"
         },
         {
@@ -606,181 +542,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 6456,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 152,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 12
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 6453,
-                "work_start": 6425
-            },
-            "object_id": 1000,
-            "outputs": [
-                1001
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 7,
-            "start": 6403,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 12288,
-            "bytes_sent": 12288,
-            "comm_seq": 17,
-            "end": 6495,
-            "object_ids": [
-                1004
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "seq": 0,
-            "start": 6460,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/DomainB@7.txt",
-            "end": 6977,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
-            "label": "DomainB",
-            "line": 153,
-            "object_id": 1004,
-            "start": 6459,
-            "type": "snapshot"
-        },
-        {
-            "bytes_received": 12288,
-            "bytes_sent": 12288,
-            "comm_seq": 18,
-            "end": 6985,
-            "object_ids": [
-                1001
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "seq": 0,
-            "start": 6978,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/DomainA@8.txt",
-            "end": 7436,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
-            "label": "DomainA",
-            "line": 154,
-            "object_id": 1001,
-            "start": 6977,
-            "type": "snapshot"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 19,
-            "end": 7440,
-            "object_ids": [
-                1001
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 8,
-            "start": 7438,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 7489,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 151,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 2
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 7486,
-                "work_start": 7450
-            },
-            "object_id": 1000,
-            "outputs": [
-                1004
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 8,
-            "start": 7437,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 20,
-            "end": 7494,
-            "object_ids": [
-                1004
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 9,
-            "start": 7493,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1004
-            ],
-            "end": 7555,
+            "end": 8322,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 152,
@@ -795,8 +557,182 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 7548,
-                "work_start": 7503
+                "work_end": 8316,
+                "work_start": 8294
+            },
+            "object_id": 1000,
+            "outputs": [
+                1001
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 7,
+            "start": 8284,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 12288,
+            "bytes_sent": 12288,
+            "comm_seq": 13,
+            "end": 8338,
+            "object_ids": [
+                1004
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "seq": 0,
+            "start": 8328,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/DomainB@7.txt",
+            "end": 8810,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
+            "label": "DomainB",
+            "line": 153,
+            "object_id": 1004,
+            "start": 8327,
+            "type": "snapshot"
+        },
+        {
+            "bytes_received": 12288,
+            "bytes_sent": 12288,
+            "comm_seq": 14,
+            "end": 8819,
+            "object_ids": [
+                1001
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "seq": 0,
+            "start": 8811,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/DomainA@8.txt",
+            "end": 9259,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
+            "label": "DomainA",
+            "line": 154,
+            "object_id": 1001,
+            "start": 8811,
+            "type": "snapshot"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 15,
+            "end": 9263,
+            "object_ids": [
+                1001
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 8,
+            "start": 9261,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 9303,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 151,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 2
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 9299,
+                "work_start": 9275
+            },
+            "object_id": 1000,
+            "outputs": [
+                1004
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 8,
+            "start": 9259,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 16,
+            "end": 9324,
+            "object_ids": [
+                1004
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 9,
+            "start": 9309,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 9379,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 152,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 15
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 9375,
+                "work_start": 9332
             },
             "object_id": 1000,
             "outputs": [
@@ -813,15 +749,15 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 9,
-            "start": 7492,
+            "start": 9308,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 12288,
             "bytes_sent": 12288,
-            "comm_seq": 21,
-            "end": 7573,
+            "comm_seq": 17,
+            "end": 9392,
             "object_ids": [
                 1004
             ],
@@ -829,24 +765,24 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 7563,
+            "start": 9383,
             "type": "communication"
         },
         {
             "data_file": "snapshots/DomainB@9.txt",
-            "end": 8071,
+            "end": 9865,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainB",
             "line": 153,
             "object_id": 1004,
-            "start": 7562,
+            "start": 9382,
             "type": "snapshot"
         },
         {
             "bytes_received": 12288,
             "bytes_sent": 12288,
-            "comm_seq": 22,
-            "end": 8082,
+            "comm_seq": 18,
+            "end": 9874,
             "object_ids": [
                 1001
             ],
@@ -854,24 +790,24 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 8075,
+            "start": 9866,
             "type": "communication"
         },
         {
             "data_file": "snapshots/DomainA@10.txt",
-            "end": 8544,
+            "end": 10326,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainA",
             "line": 154,
             "object_id": 1001,
-            "start": 8072,
+            "start": 9866,
             "type": "snapshot"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
-            "comm_seq": 23,
-            "end": 8549,
+            "comm_seq": 19,
+            "end": 10329,
             "object_ids": [
                 1001
             ],
@@ -880,7 +816,7 @@
             "ranks": 4,
             "reason": "halo exchange",
             "seq": 10,
-            "start": 8546,
+            "start": 10328,
             "type": "communication"
         },
         {
@@ -892,7 +828,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 8605,
+            "end": 10366,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 151,
@@ -901,14 +837,14 @@
                     "bytes_received": 256,
                     "bytes_sent": 256,
                     "collectives": 1,
-                    "time_us": 3
+                    "time_us": 1
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 8591,
-                "work_start": 8559
+                "work_end": 10362,
+                "work_start": 10340
             },
             "object_id": 1000,
             "outputs": [
@@ -925,15 +861,15 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 10,
-            "start": 8545,
+            "start": 10327,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
-            "comm_seq": 24,
-            "end": 8618,
+            "comm_seq": 20,
+            "end": 10378,
             "object_ids": [
                 1004
             ],
@@ -942,7 +878,7 @@
             "ranks": 4,
             "reason": "halo exchange",
             "seq": 11,
-            "start": 8610,
+            "start": 10370,
             "type": "communication"
         },
         {
@@ -954,7 +890,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 8690,
+            "end": 10415,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 152,
@@ -969,8 +905,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 8686,
-                "work_start": 8627
+                "work_end": 10412,
+                "work_start": 10385
             },
             "object_id": 1000,
             "outputs": [
@@ -987,7 +923,181 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 11,
-            "start": 8609,
+            "start": 10369,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 12288,
+            "bytes_sent": 12288,
+            "comm_seq": 21,
+            "end": 10432,
+            "object_ids": [
+                1004
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "seq": 0,
+            "start": 10418,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/DomainB@11.txt",
+            "end": 10920,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
+            "label": "DomainB",
+            "line": 153,
+            "object_id": 1004,
+            "start": 10417,
+            "type": "snapshot"
+        },
+        {
+            "bytes_received": 12288,
+            "bytes_sent": 12288,
+            "comm_seq": 22,
+            "end": 10927,
+            "object_ids": [
+                1001
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "seq": 0,
+            "start": 10921,
+            "type": "communication"
+        },
+        {
+            "data_file": "snapshots/DomainA@12.txt",
+            "end": 11400,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
+            "label": "DomainA",
+            "line": 154,
+            "object_id": 1001,
+            "start": 10920,
+            "type": "snapshot"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 23,
+            "end": 11402,
+            "object_ids": [
+                1001
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 12,
+            "start": 11401,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 11512,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 151,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 1
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 11507,
+                "work_start": 11410
+            },
+            "object_id": 1000,
+            "outputs": [
+                1004
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 12,
+            "start": 11400,
+            "threads": 2,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 24,
+            "end": 11519,
+            "object_ids": [
+                1004
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 13,
+            "start": 11517,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 11650,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 152,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 2
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 11644,
+                "work_start": 11527
+            },
+            "object_id": 1000,
+            "outputs": [
+                1001
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 13,
+            "start": 11516,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -995,7 +1105,7 @@
             "bytes_received": 12288,
             "bytes_sent": 12288,
             "comm_seq": 25,
-            "end": 8814,
+            "end": 11690,
             "object_ids": [
                 1004
             ],
@@ -1003,24 +1113,24 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 8693,
+            "start": 11656,
             "type": "communication"
         },
         {
-            "data_file": "snapshots/DomainB@11.txt",
-            "end": 9353,
+            "data_file": "snapshots/DomainB@13.txt",
+            "end": 12254,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainB",
             "line": 153,
             "object_id": 1004,
-            "start": 8693,
+            "start": 11654,
             "type": "snapshot"
         },
         {
             "bytes_received": 12288,
             "bytes_sent": 12288,
             "comm_seq": 26,
-            "end": 9406,
+            "end": 12263,
             "object_ids": [
                 1001
             ],
@@ -1028,24 +1138,24 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 9380,
+            "start": 12256,
             "type": "communication"
         },
         {
-            "data_file": "snapshots/DomainA@12.txt",
-            "end": 9926,
+            "data_file": "snapshots/DomainA@14.txt",
+            "end": 12747,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainA",
             "line": 154,
             "object_id": 1001,
-            "start": 9375,
+            "start": 12255,
             "type": "snapshot"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 27,
-            "end": 9931,
+            "end": 12751,
             "object_ids": [
                 1001
             ],
@@ -1053,8 +1163,8 @@
             "phase": "before",
             "ranks": 4,
             "reason": "halo exchange",
-            "seq": 12,
-            "start": 9928,
+            "seq": 14,
+            "start": 12749,
             "type": "communication"
         },
         {
@@ -1066,7 +1176,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 9984,
+            "end": 12788,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 151,
@@ -1075,14 +1185,14 @@
                     "bytes_received": 256,
                     "bytes_sent": 256,
                     "collectives": 1,
-                    "time_us": 3
+                    "time_us": 2
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 9979,
-                "work_start": 9940
+                "work_end": 12784,
+                "work_start": 12761
             },
             "object_id": 1000,
             "outputs": [
@@ -1098,8 +1208,8 @@
             "pattern": "MapOverlap 2D",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "seq": 12,
-            "start": 9927,
+            "seq": 14,
+            "start": 12747,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1107,7 +1217,7 @@
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 28,
-            "end": 9990,
+            "end": 12794,
             "object_ids": [
                 1004
             ],
@@ -1115,8 +1225,8 @@
             "phase": "before",
             "ranks": 4,
             "reason": "halo exchange",
-            "seq": 13,
-            "start": 9989,
+            "seq": 15,
+            "start": 12793,
             "type": "communication"
         },
         {
@@ -1128,7 +1238,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 10026,
+            "end": 12836,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 152,
@@ -1143,8 +1253,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 10021,
-                "work_start": 9999
+                "work_end": 12833,
+                "work_start": 12802
             },
             "object_id": 1000,
             "outputs": [
@@ -1160,8 +1270,8 @@
             "pattern": "MapOverlap 2D",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "seq": 13,
-            "start": 9987,
+            "seq": 15,
+            "start": 12791,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1169,7 +1279,7 @@
             "bytes_received": 12288,
             "bytes_sent": 12288,
             "comm_seq": 29,
-            "end": 10041,
+            "end": 12861,
             "object_ids": [
                 1004
             ],
@@ -1177,24 +1287,24 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 10031,
+            "start": 12840,
             "type": "communication"
         },
         {
-            "data_file": "snapshots/DomainB@13.txt",
-            "end": 10534,
+            "data_file": "snapshots/DomainB@15.txt",
+            "end": 13379,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainB",
             "line": 153,
             "object_id": 1004,
-            "start": 10031,
+            "start": 12839,
             "type": "snapshot"
         },
         {
             "bytes_received": 12288,
             "bytes_sent": 12288,
             "comm_seq": 30,
-            "end": 10546,
+            "end": 13391,
             "object_ids": [
                 1001
             ],
@@ -1202,24 +1312,24 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 10535,
+            "start": 13385,
             "type": "communication"
         },
         {
-            "data_file": "snapshots/DomainA@14.txt",
-            "end": 11005,
+            "data_file": "snapshots/DomainA@16.txt",
+            "end": 13900,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainA",
             "line": 154,
             "object_id": 1001,
-            "start": 10534,
+            "start": 13384,
             "type": "snapshot"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 31,
-            "end": 11007,
+            "end": 13903,
             "object_ids": [
                 1001
             ],
@@ -1227,8 +1337,8 @@
             "phase": "before",
             "ranks": 4,
             "reason": "halo exchange",
-            "seq": 14,
-            "start": 11006,
+            "seq": 16,
+            "start": 13902,
             "type": "communication"
         },
         {
@@ -1240,7 +1350,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 11058,
+            "end": 13958,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 151,
@@ -1255,8 +1365,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 11055,
-                "work_start": 11015
+                "work_end": 13952,
+                "work_start": 13912
             },
             "object_id": 1000,
             "outputs": [
@@ -1272,8 +1382,8 @@
             "pattern": "MapOverlap 2D",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "seq": 14,
-            "start": 11005,
+            "seq": 16,
+            "start": 13900,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1281,7 +1391,7 @@
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 32,
-            "end": 11065,
+            "end": 13963,
             "object_ids": [
                 1004
             ],
@@ -1289,8 +1399,8 @@
             "phase": "before",
             "ranks": 4,
             "reason": "halo exchange",
-            "seq": 15,
-            "start": 11064,
+            "seq": 17,
+            "start": 13962,
             "type": "communication"
         },
         {
@@ -1302,7 +1412,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 11100,
+            "end": 13998,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 152,
@@ -1317,8 +1427,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 11095,
-                "work_start": 11073
+                "work_end": 13994,
+                "work_start": 13971
             },
             "object_id": 1000,
             "outputs": [
@@ -1334,8 +1444,8 @@
             "pattern": "MapOverlap 2D",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "seq": 15,
-            "start": 11063,
+            "seq": 17,
+            "start": 13961,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1343,7 +1453,7 @@
             "bytes_received": 12288,
             "bytes_sent": 12288,
             "comm_seq": 33,
-            "end": 11110,
+            "end": 14009,
             "object_ids": [
                 1004
             ],
@@ -1351,24 +1461,24 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 11104,
+            "start": 14003,
             "type": "communication"
         },
         {
-            "data_file": "snapshots/DomainB@15.txt",
-            "end": 11638,
+            "data_file": "snapshots/DomainB@17.txt",
+            "end": 14534,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainB",
             "line": 153,
             "object_id": 1004,
-            "start": 11103,
+            "start": 14002,
             "type": "snapshot"
         },
         {
             "bytes_received": 12288,
             "bytes_sent": 12288,
             "comm_seq": 34,
-            "end": 11647,
+            "end": 14541,
             "object_ids": [
                 1001
             ],
@@ -1376,24 +1486,24 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 11639,
+            "start": 14535,
             "type": "communication"
         },
         {
-            "data_file": "snapshots/DomainA@16.txt",
-            "end": 12139,
+            "data_file": "snapshots/DomainA@18.txt",
+            "end": 15056,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainA",
             "line": 154,
             "object_id": 1001,
-            "start": 11638,
+            "start": 14535,
             "type": "snapshot"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 35,
-            "end": 12142,
+            "end": 15059,
             "object_ids": [
                 1001
             ],
@@ -1401,8 +1511,8 @@
             "phase": "before",
             "ranks": 4,
             "reason": "halo exchange",
-            "seq": 16,
-            "start": 12140,
+            "seq": 18,
+            "start": 15058,
             "type": "communication"
         },
         {
@@ -1414,7 +1524,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 12179,
+            "end": 15110,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 151,
@@ -1423,14 +1533,14 @@
                     "bytes_received": 256,
                     "bytes_sent": 256,
                     "collectives": 1,
-                    "time_us": 2
+                    "time_us": 1
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 12174,
-                "work_start": 12150
+                "work_end": 15106,
+                "work_start": 15068
             },
             "object_id": 1000,
             "outputs": [
@@ -1446,8 +1556,8 @@
             "pattern": "MapOverlap 2D",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "seq": 16,
-            "start": 12139,
+            "seq": 18,
+            "start": 15056,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1455,7 +1565,7 @@
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 36,
-            "end": 12187,
+            "end": 15115,
             "object_ids": [
                 1004
             ],
@@ -1463,8 +1573,8 @@
             "phase": "before",
             "ranks": 4,
             "reason": "halo exchange",
-            "seq": 17,
-            "start": 12185,
+            "seq": 19,
+            "start": 15114,
             "type": "communication"
         },
         {
@@ -1476,7 +1586,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 12229,
+            "end": 15155,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 152,
@@ -1485,14 +1595,14 @@
                     "bytes_received": 256,
                     "bytes_sent": 256,
                     "collectives": 1,
-                    "time_us": 2
+                    "time_us": 1
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 12224,
-                "work_start": 12195
+                "work_end": 15152,
+                "work_start": 15123
             },
             "object_id": 1000,
             "outputs": [
@@ -1508,8 +1618,8 @@
             "pattern": "MapOverlap 2D",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "seq": 17,
-            "start": 12184,
+            "seq": 19,
+            "start": 15113,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1517,7 +1627,7 @@
             "bytes_received": 12288,
             "bytes_sent": 12288,
             "comm_seq": 37,
-            "end": 12260,
+            "end": 15176,
             "object_ids": [
                 1004
             ],
@@ -1525,24 +1635,24 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 12233,
+            "start": 15161,
             "type": "communication"
         },
         {
-            "data_file": "snapshots/DomainB@17.txt",
-            "end": 12814,
+            "data_file": "snapshots/DomainB@19.txt",
+            "end": 15690,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainB",
             "line": 153,
             "object_id": 1004,
-            "start": 12232,
+            "start": 15160,
             "type": "snapshot"
         },
         {
             "bytes_received": 12288,
             "bytes_sent": 12288,
             "comm_seq": 38,
-            "end": 12822,
+            "end": 15697,
             "object_ids": [
                 1001
             ],
@@ -1550,24 +1660,24 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 12816,
+            "start": 15691,
             "type": "communication"
         },
         {
-            "data_file": "snapshots/DomainA@18.txt",
-            "end": 15942,
+            "data_file": "snapshots/DomainA@20.txt",
+            "end": 16217,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainA",
             "line": 154,
             "object_id": 1001,
-            "start": 12815,
+            "start": 15690,
             "type": "snapshot"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 39,
-            "end": 15945,
+            "end": 16220,
             "object_ids": [
                 1001
             ],
@@ -1575,8 +1685,8 @@
             "phase": "before",
             "ranks": 4,
             "reason": "halo exchange",
-            "seq": 18,
-            "start": 15944,
+            "seq": 20,
+            "start": 16219,
             "type": "communication"
         },
         {
@@ -1588,7 +1698,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 15988,
+            "end": 16278,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 151,
@@ -1603,8 +1713,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 15984,
-                "work_start": 15954
+                "work_end": 16274,
+                "work_start": 16227
             },
             "object_id": 1000,
             "outputs": [
@@ -1620,8 +1730,8 @@
             "pattern": "MapOverlap 2D",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "seq": 18,
-            "start": 15942,
+            "seq": 20,
+            "start": 16218,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1629,7 +1739,7 @@
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 40,
-            "end": 15992,
+            "end": 16283,
             "object_ids": [
                 1004
             ],
@@ -1637,8 +1747,8 @@
             "phase": "before",
             "ranks": 4,
             "reason": "halo exchange",
-            "seq": 19,
-            "start": 15991,
+            "seq": 21,
+            "start": 16282,
             "type": "communication"
         },
         {
@@ -1650,7 +1760,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 16039,
+            "end": 16316,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 152,
@@ -1665,8 +1775,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 16035,
-                "work_start": 16000
+                "work_end": 16312,
+                "work_start": 16290
             },
             "object_id": 1000,
             "outputs": [
@@ -1682,8 +1792,8 @@
             "pattern": "MapOverlap 2D",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "seq": 19,
-            "start": 15991,
+            "seq": 21,
+            "start": 16281,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1691,7 +1801,7 @@
             "bytes_received": 12288,
             "bytes_sent": 12288,
             "comm_seq": 41,
-            "end": 16065,
+            "end": 16327,
             "object_ids": [
                 1004
             ],
@@ -1699,24 +1809,24 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 16043,
+            "start": 16319,
             "type": "communication"
         },
         {
-            "data_file": "snapshots/DomainB@19.txt",
-            "end": 16601,
+            "data_file": "snapshots/DomainB@21.txt",
+            "end": 16856,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainB",
             "line": 153,
             "object_id": 1004,
-            "start": 16043,
+            "start": 16319,
             "type": "snapshot"
         },
         {
             "bytes_received": 12288,
             "bytes_sent": 12288,
             "comm_seq": 42,
-            "end": 16608,
+            "end": 16862,
             "object_ids": [
                 1001
             ],
@@ -1724,196 +1834,22 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 16602,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/DomainA@20.txt",
-            "end": 17134,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
-            "label": "DomainA",
-            "line": 154,
-            "object_id": 1001,
-            "start": 16601,
-            "type": "snapshot"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 43,
-            "end": 17136,
-            "object_ids": [
-                1001
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 20,
-            "start": 17135,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 17202,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 151,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 1
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 17198,
-                "work_start": 17155
-            },
-            "object_id": 1000,
-            "outputs": [
-                1004
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 20,
-            "start": 17134,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 44,
-            "end": 17207,
-            "object_ids": [
-                1004
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 21,
-            "start": 17205,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1004
-            ],
-            "end": 17265,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 152,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 2
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 17262,
-                "work_start": 17214
-            },
-            "object_id": 1000,
-            "outputs": [
-                1001
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 21,
-            "start": 17204,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 12288,
-            "bytes_sent": 12288,
-            "comm_seq": 45,
-            "end": 17339,
-            "object_ids": [
-                1004
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "seq": 0,
-            "start": 17268,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/DomainB@21.txt",
-            "end": 17973,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
-            "label": "DomainB",
-            "line": 153,
-            "object_id": 1004,
-            "start": 17268,
-            "type": "snapshot"
-        },
-        {
-            "bytes_received": 12288,
-            "bytes_sent": 12288,
-            "comm_seq": 46,
-            "end": 17991,
-            "object_ids": [
-                1001
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "seq": 0,
-            "start": 17974,
+            "start": 16857,
             "type": "communication"
         },
         {
             "data_file": "snapshots/DomainA@22.txt",
-            "end": 18572,
+            "end": 19666,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/heat_diffusion.cpp",
             "label": "DomainA",
             "line": 154,
             "object_id": 1001,
-            "start": 17974,
+            "start": 16857,
             "type": "snapshot"
         },
         {
             "elwise_inputs": [],
-            "end": 19433,
+            "end": 20586,
             "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -1928,8 +1864,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 7346190368624812788,
-                "work_end": 19433,
-                "work_start": 18573
+                "work_end": 20585,
+                "work_start": 19667
             },
             "outputs": [],
             "proxy_inputs": [
@@ -1937,34 +1873,34 @@
             ],
             "scalar_inputs": [],
             "seq": 22,
-            "start": 18573,
+            "start": 19667,
             "type": "external"
         },
         {
             "label": "DomainB",
             "line": 0,
             "object_id": 1004,
-            "time": 19449,
+            "time": 20598,
             "type": "deallocation"
         },
         {
             "label": "DomainA",
             "line": 0,
             "object_id": 1001,
-            "time": 19451,
+            "time": 20600,
             "type": "deallocation"
         }
     ],
     "header": {
         "clock": {
             "end": {
-                "local_us": 19484,
+                "local_us": 20629,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             },
             "method": "ping-pong",
             "start": {
-                "local_us": 2679,
+                "local_us": 2663,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             }
@@ -1972,7 +1908,7 @@
         "mpi": {
             "detail_rank": 0,
             "host": "Augusts-Laptop.local",
-            "pid": 13576,
+            "pid": 34871,
             "rank": 0,
             "ranks": 4,
             "role": "full"

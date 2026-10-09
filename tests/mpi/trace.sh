@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds tests/mpi/trace_map.cpp for the MPI backend with SKEPU_TRACING, runs it on several numbers of processes, and checks the
+# Builds tests/mpi/trace_map.cpp (C++20: the source locations of the events) for the MPI backend with SKEPU_TRACING, runs it on several numbers of processes, and checks the
 # trace files with check_trace.py.
 #
 #   trace.sh [skepu-tool flags: -openmp ...]
@@ -18,7 +18,7 @@ mkdir -p $WORK
 OMP=""; case "$BACKENDS" in *openmp*) OMP="-fopenmp";; esac
 
 $SKEPU_TOOL -mpi $BACKENDS -silent -name trace_map -dir=$WORK $HERE/trace_map.cpp -- $SKEPU_SYSTEM_FLAGS -I$SKEPU_HEADERS
-OMPI_CXX=$CXX MPICH_CXX=$CXX mpicxx -O1 -std=gnu++17 -DSKEPU_TRACING -DSKEPU_TRACE_SNAPSHOT_DIR=snapshots $EXTRA $OMP -I$SKEPU_HEADERS $WORK/trace_map.cpp -o $WORK/trace_map
+OMPI_CXX=$CXX MPICH_CXX=$CXX mpicxx -O1 -std=gnu++20 -DSKEPU_TRACING -DSKEPU_TRACE_SNAPSHOT_DIR=snapshots $EXTRA $OMP -I$SKEPU_HEADERS $WORK/trace_map.cpp -o $WORK/trace_map
 
 for n in $RANKS; do
   rm -rf $WORK/skepu_trace*.json $WORK/snapshots; mkdir -p $WORK/snapshots

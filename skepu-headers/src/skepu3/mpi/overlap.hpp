@@ -293,7 +293,7 @@ namespace skepu
 			template<size_t... OI, typename... CallArgs>
 			void make_tiles_valid(std::index_sequence<OI...>, CallArgs&&... args)
 			{
-				auto touch = [](auto &c) { if (c.local_size() > 0) c.tile_for_read(); };
+				auto touch = [](auto &c) { c.tile_for_read(); }; // (also on a process that has no rows: making the tiles can be a collective operation)
 				(touch(get<OI>(std::forward<CallArgs>(args)...)), ...);
 			}
 
@@ -360,6 +360,7 @@ namespace skepu
 
 				const RowRange mine = interior(me);
 				// (the results are made valid on all the processes that have rows, also when they compute none)
+				make_tiles_valid(std::make_index_sequence<outArity>{}, std::forward<CallArgs>(args)...); // (on every process: it can be a collective operation)
 				if (mine.first < mine.second)
 				{
 					auto outs = make_mirror_outs<outArity>(std::make_index_sequence<outArity>{}, mine, out_distribution.offset(me), in_shape, o, std::forward<CallArgs>(args)...);
@@ -369,8 +370,6 @@ namespace skepu
 					call_mirror<outArity, anyArity>(call, outs, block, std::make_index_sequence<sizeof...(CallArgs)>{}, std::forward<CallArgs>(args)...);
 					copy_back_mirror(std::make_index_sequence<outArity>{}, outs, mine, out_distribution.offset(me), o, std::forward<CallArgs>(args)...);
 				}
-				else
-					make_tiles_valid(std::make_index_sequence<outArity>{}, std::forward<CallArgs>(args)...);
 
 				mark_results<outArity>(std::make_index_sequence<outArity>{}, std::forward<CallArgs>(args)...);
 				return first_out;
