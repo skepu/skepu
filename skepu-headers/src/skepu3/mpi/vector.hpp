@@ -51,7 +51,9 @@ namespace skepu
 		// not there
 		const Scalar<T> elem(size_type index SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM) const
 		{
-			return Scalar<T>(this->read_access()[index]);
+			Scalar<T> value(this->read_access()[index]);
+			SKEPU_TRACE_ELEMENT_ACCESS(value.m_ids[0], this->getObjectID(), index, this->getLabel(), SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS);
+			return value;
 		}
 
 		void init(size_type num, const T &val)

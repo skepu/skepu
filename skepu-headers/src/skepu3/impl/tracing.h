@@ -176,7 +176,8 @@ namespace skepu
 			~Scope();
 		};
 
-		// What a recorded event is, for a tracer that the MPI backend has configured (see Tracer::configureMPI)
+		// What a recorded event is, for a tracer that the MPI backend has configured (see Tracer::configureMPI). Region: what the program
+		// itself marks (regions, snapshots, virtual datasets, the elements it reads)
 		enum class CaptureKind { Node, Region, Raw };
 
 		// While a thread has one of these, the events that it records are not dropped by a tracer that is configured to

@@ -45,7 +45,7 @@ if not calls0:
 
 # nothing of the node-level library on rank 0, and nothing but lean events elsewhere
 for e in full:
-    if e["type"] not in ("allocation", "deallocation", "skeleton_call", "communication", "region", "external", "transfer"):
+    if e["type"] not in ("allocation", "deallocation", "skeleton_call", "communication", "region", "external", "transfer", "snapshot", "element_access"):
         fail("rank 0: unexpected event type " + e["type"])
     if e["type"] == "transfer":
         fail("rank 0: a node-level transfer event (those are not recorded in MPI programs)")
@@ -135,6 +135,39 @@ worst = max(spreads) if spreads else 0
 if worst > 20000:
     fail("the collectives end up to %d us apart on the clock of rank 0 (the clocks are not aligned)" % worst)
 
+# the elements that were read (Vector::elem): of a container that was allocated, and given to a call as a scalar
+accesses = [e for e in full if e["type"] == "element_access"]
+if not accesses:
+    fail("no element_access event on rank 0")
+scalar_inputs = set()
+for c in calls0:
+    scalar_inputs.update(c.get("scalar_inputs", []))
+for e in accesses:
+    if e["source"] not in allocs:
+        fail("element_access of the container %d, which was not allocated" % e["source"])
+    if e["object_id"] not in scalar_inputs:
+        fail("element_access %d is not used by a call" % e["object_id"])
+for k in range(1, P):
+    if any(e["type"] == "element_access" for e in files[k]["data"]):
+        fail("rank %d has an element_access event" % k)
+
+# the snapshots (SKEPU_TRACE_SNAPSHOT of a distributed container): events of the first process, whose files have the whole container
+snapshots = [e for e in full if e["type"] == "snapshot"]
+for e in snapshots:
+    path = os.path.join(directory, e["data_file"])
+    if not os.path.exists(path):
+        fail("snapshot %s: no file %s" % (e["label"], path))
+    with open(path) as f:
+        header = f.readline().split()
+    size = 1
+    for d in header[1:]:
+        size *= int(d)
+    if int(header[0]) not in (1, 2) or size != len(open(path).read().split("\n", 1)[1].split()):
+        fail("snapshot %s: the file does not have all %s elements" % (e["label"], header[1:]))
+for k in range(1, P):
+    if any(e["type"] == "snapshot" for e in files[k]["data"]):
+        fail("rank %d has a snapshot event" % k)
+
 # the number of events: the same for every call
 per_call = {}
 for k in range(P):
@@ -144,5 +177,5 @@ for k in range(P):
 if set(per_call.values()) != {P}:
     fail("not one event per process for each call: %s" % sorted(set(per_call.values())))
 
-print("OK: %d processes, %d calls, %d collectives (%s), collectives end within %d us on the clock of rank 0"
-      % (P, len(calls0), len(comms0), ", ".join(sorted(reasons)), worst))
+print("OK: %d processes, %d calls, %d collectives (%s), %d snapshots, collectives end within %d us on the clock of rank 0"
+      % (P, len(calls0), len(comms0), ", ".join(sorted(reasons)), len(snapshots), worst))

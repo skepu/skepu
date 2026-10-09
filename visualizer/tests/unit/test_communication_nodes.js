@@ -27,6 +27,38 @@ function graphOf(events, tweak = () => {}) {
     return DirectedGraph.fromEvents(trace(events), s);
 }
 
+// A collective that is part of a call is connected to it, also when the data of the containers does not do that
+describe('the collectives of a call', () => {
+    const b = builder();
+    const external = { ...b.external('fill', { outs: [1] }), seq: 1 };
+    const events = [
+        b.alloc(1, 'A'),
+        b.comm([1], { operation: 'allgather', seq: 1, phase: 'before', comm_seq: 1 }),   // (the container is gathered before the code writes it)
+        b.comm([1], { operation: 'scatter', reason: 'skepu::external: the container is given to its owners', seq: 1, phase: 'after', comm_seq: 2 }),
+        external,
+        b.comm([], { operation: 'allgather', reason: 'the partial results are combined', seq: 2, phase: 'after', comm_seq: 3 }),
+        { ...b.call('reduce', { ins: [1] }), seq: 2 },
+    ];
+
+    it('before the call feed it, and after it are fed by it', () => {
+        const g = graphOf(events);
+        const [gather, scatter, partials] = nodesOf(g, 'communication');
+        const fill = g.getAllNodes().find(n => n.label === 'fill');
+        const reduce = g.getAllNodes().find(n => n.label === 'reduce');
+        expect(sourcesOf(fill)).toContain(gather);
+        expect(sourcesOf(scatter)).toContain(fill);
+        expect(sourcesOf(partials)).toContain(reduce);
+        expect(sourcesOf(reduce)).toContain(scatter);
+    });
+
+    it('do not make a second edge where the data made one', () => {
+        const c = builder();
+        const g = graphOf([c.alloc(1, 'A'), c.comm([1], { seq: 1, phase: 'before' }), { ...c.call('use', { ins: [1] }), seq: 1 }]);
+        const use = g.getAllNodes().find(n => n.label === 'use');
+        expect(sourcesOf(use).filter(n => n.type === 'communication')).toHaveLength(1);
+    });
+});
+
 describe('a communication node', () => {
     const b = builder();
     const events = [
@@ -146,18 +178,21 @@ describe('the merged trace of an MPI program', () => {
         }
     });
 
-    it('has the collective that gives the results back after the call that made them', () => {
+    it('has the collectives that give the results back after the call that made them', () => {
         const g = DirectedGraph.fromEvents(merged.events, testSettings());
-        const back = nodesOf(g, 'communication').find(n => n.phase === 'after');
-        expect(back).toBeDefined();
-        const call = g.getAllNodes().filter(n => n.type === 'skeleton_call').at(-1);
-        expect(back.totalOrder).toBeGreaterThan(call.totalOrder);
-        expect(sourcesOf(back).some(n => n === call || sourcesOf(n).includes(call))).toBe(true);
+        const backs = nodesOf(g, 'communication').filter(n => n.phase === 'after');
+        expect(backs.length).toBeGreaterThan(0);
+        const isCall = n => n.type === 'skeleton_call' || n.type === 'external';
+        for (const back of backs) {
+            const call = sourcesOf(back).flatMap(n => isCall(n) ? [n] : sourcesOf(n)).find(isCall);
+            expect(call, back.label).toBeDefined();
+            expect(back.totalOrder).toBeGreaterThan(call.totalOrder);
+        }
     });
 });
 
 describe('the example of the splash page (Coulombic on 4 MPI processes)', () => {
-    const dir = join(dirname(fileURLToPath(import.meta.url)), '../../examples/coulombic_mpi');
+    const dir = join(dirname(fileURLToPath(import.meta.url)), '../../examples/coulombic/mpi');
     const files = ['trace_coulombic_mpi.json', 'trace_coulombic_mpi.rank1.json', 'trace_coulombic_mpi.rank2.json', 'trace_coulombic_mpi.rank3.json']
         .map(name => ({ name, text: readFileSync(join(dir, name), 'utf-8') }));
     const m = mergeMpiTraces(files);
@@ -225,5 +260,67 @@ describe('the imbalance of the calls of an MPI program', () => {
         provider.settings['node-color-call'] = 'comm-bytes';
         expect(provider.normFromData('node-color-call', { comm_bytes: 50 }, mm)).toBeCloseTo(0.5, 6);
         expect(data.some(d => d.imbalance != null)).toBe(true);
+    });
+});
+
+describe('the graph of every MPI example', () => {
+    const dir = join(dirname(fileURLToPath(import.meta.url)), '../../examples');
+    const examples = JSON.parse(readFileSync(join(dir, 'examples.json'), 'utf-8')).filter(ex => ex.trace.mpi);
+
+    const components = (nodes, edges) => {
+        const parent = new Map(nodes.map(n => [n.data.id, n.data.id]));
+        const find = x => parent.get(x) === x ? x : (parent.set(x, find(parent.get(x))), parent.get(x));
+        for (const e of edges)
+            if (parent.has(e.data.source) && parent.has(e.data.target)) parent.set(find(e.data.source), find(e.data.target));
+        return new Set(nodes.map(n => find(n.data.id))).size;
+    };
+
+    it('is in one piece: a collective is connected to the call that it is part of', () => {
+        expect(examples.length).toBeGreaterThan(0);
+        for (const ex of examples) {
+            const m = mergeMpiTraces(ex.trace.mpi.map(rel => ({ name: rel.split('/').pop(), text: readFileSync(join(dir, rel), 'utf-8') })));
+            const { graph } = buildDisplayGraph(trace(m.events), {});
+            const [nodes, edges] = graph.toCytoscape();
+            expect(components(nodes, edges), ex.title).toBe(1);
+        }
+    });
+});
+
+describe('the Dot Product example on MPI', () => {
+    const dir = join(dirname(fileURLToPath(import.meta.url)), '../../examples/dotproduct/mpi');
+    const m = mergeMpiTraces(['trace_dotproduct_mpi.json', 'trace_dotproduct_mpi.rank1.json', 'trace_dotproduct_mpi.rank2.json', 'trace_dotproduct_mpi.rank3.json']
+        .map(name => ({ name, text: readFileSync(join(dir, name), 'utf-8') })));
+
+    for (const updates of [true, false]) {
+        it(`has the scalar as the result of the collective that combines the partial results (updates: ${updates})`, () => {
+            const g = graphOf(m.events, s => { s.updates = updates; });
+            const call = g.getAllNodes().find(n => n.label === 'dotprod' || n.type === 'skeleton_call');
+            const partials = nodesOf(g, 'communication').find(n => n.callSeq && n.phase === 'after' && !n.label.includes(':'));
+            expect(partials).toBeDefined();
+            expect(sourcesOf(partials)).toContain(call);
+            if (updates) {
+                const scalar = nodesOf(g, 'scalar')[0];
+                expect(sourcesOf(scalar)).toContain(partials);
+                expect(sourcesOf(scalar)).not.toContain(call);
+                expect(scalar.totalOrder).toBeGreaterThan(partials.totalOrder);
+            } else {
+                expect(g.producerForID(m.events.find(e => e.type === 'skeleton_call').outputs[0])).toBe(partials);
+            }
+        });
+    }
+});
+
+describe('a region of an MPI program', () => {
+    it('lasts until the last rank has left the calls in it', () => {
+        const b = builder();
+        const call = { ...b.call('work', { ins: [], outs: [] }), seq: 1 };
+        call.rank_summary = { interval: { start: call.start - 5, end: call.end + 900 }, wait_us: [0, 0], max_wait_us: 0 };
+        call.rank_data = [{ rank: 0, start: call.start, end: call.end }, { rank: 1, start: call.start, end: call.end + 900 }];
+        call.region = 'R';
+        const g = graphOf([{ type: 'region', label: 'R', time: 0, region_depth: 1, file: 'x.cpp', line: 1 }, call], s => { s.show_regions = true; });
+        const region = g.getAllNodes().find(n => n.type === 'region');
+        region.computeExtent();
+        expect(region.regionEnd).toBe(call.end + 900);
+        expect(region.regionStart).toBe(call.start - 5);
     });
 });

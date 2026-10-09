@@ -6,7 +6,7 @@ import {
     Node, ComputationNode, CallNode, ExternalNode, RegionNode, FusedNode,
     AllocationNode, DeallocationNode, UpdateNode, ScalarNode, TransferNode, CommunicationNode,
 } from './node.js';
-import { ElwiseEdge, VirtualAliasEdge } from './edge.js';
+import { ElwiseEdge, ProxyEdge, VirtualAliasEdge } from './edge.js';
 
 // ── Backend → memory-space map ────────────────────────────────────────────────
 
@@ -635,10 +635,42 @@ export class DirectedGraph {
 
         // A collective that a call makes after its work (the results go back to their owners) is recorded before the call
         // (the call is recorded when it ends): it is made after the call node, which it then reads the output of.
-        const after = new Map();   // seq of the call -> [[event, index]]
+        const after = new Map();    // seq of the call -> [[event, index]]
+        const before = new Map();   // seq of the call -> [collective nodes made before its work]
         const makeCommunication = (ev, index, order) => {
             g.setCurrentTraceIndex(index);
-            if (g.settings.communications) new CommunicationNode(g, ev, order);
+            return g.settings.communications ? new CommunicationNode(g, ev, order) : null;
+        };
+        // The collectives of a call are part of it: what it needs from them (the container that it gets is gathered first, also when it only writes it)
+        // and what it gives to them (a collective that combines its partial results has no container). The edges are those that the data of the
+        // containers did not already make.
+        const link = (from, to) => {
+            if (from && to && !to.getIncomingEdges().some(e => e.source === from))
+                new ProxyEdge(g, from.label, from, to);
+        };
+        const giveScalarsTo = (call, comm, ev) => {
+            for (const e of [...call.getOutgoingEdges()]) {
+                if (!(e.target instanceof ScalarNode) || e.source !== call) continue;
+                call.getOutgoingEdges().splice(call.getOutgoingEdges().indexOf(e), 1);
+                e.source = comm;
+                comm.addOutgoingEdge(e);
+                e.target.totalOrder = comm.totalOrder + 1;
+                e.target.totalOrders = [e.target.totalOrder];
+            }
+            if (!g.settings.updates)
+                for (const id of ev.outputs ?? []) g.writeToID(id, comm, 'ALL');
+        };
+        const callMade = (node, ev, order) => {
+            if (ev.seq == null) return;
+            for (const c of before.get(ev.seq) ?? []) link(c, node);
+            before.delete(ev.seq);
+            (after.get(ev.seq) ?? []).forEach(([c, ci], k) => {
+                const made = makeCommunication(c, ci, order + 2 + k);
+                link(node, made);
+                // The collective that combines the partial results of a call (it has no container) is where the scalar result comes from
+                if (made && !(c.object_ids ?? []).length && node.hasScalarOutput?.()) giveScalarsTo(node, made, ev);
+            });
+            after.delete(ev.seq);
         };
 
         for (let i = 0; i < events.length; i++) {
@@ -650,16 +682,17 @@ export class DirectedGraph {
                 if (ev.seq && ev.phase === 'after') {
                     if (!after.has(ev.seq)) after.set(ev.seq, []);
                     after.get(ev.seq).push([ev, i]);
-                } else makeCommunication(ev, i, order);
-            }
-            else if (t === 'skeleton_call') {
-                new CallNode(g, ev, order);
-                if (ev.seq != null && after.has(ev.seq)) {
-                    after.get(ev.seq).forEach(([c, ci], k) => makeCommunication(c, ci, order + 2 + k));
-                    after.delete(ev.seq);
+                } else {
+                    const made = makeCommunication(ev, i, order);
+                    if (made && ev.seq && ev.phase === 'before') {
+                        if (!before.has(ev.seq)) before.set(ev.seq, []);
+                        before.get(ev.seq).push(made);
+                    }
                 }
             }
-            else if (t === 'external')          new ExternalNode(g, ev, order);
+            // (an skepu::external call is a call too, and gives its containers back to their owners after it)
+            else if (t === 'skeleton_call')     callMade(new CallNode(g, ev, order), ev, order);
+            else if (t === 'external')          callMade(new ExternalNode(g, ev, order), ev, order);
             else if (t === 'allocation')        new AllocationNode(g, ev, order);
             else if (t === 'deallocation')      new DeallocationNode(g, ev, order);
             else if (t === 'element_access')    ScalarNode.fromEventData(g, ev, order);

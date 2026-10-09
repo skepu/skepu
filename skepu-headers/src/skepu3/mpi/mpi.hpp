@@ -24,3 +24,4 @@ namespace skepu
 #include "skepu3/mpi/helpers.hpp"
 #include "skepu3/mpi/skeletons.hpp"
 #include "skepu3/mpi/overlap.hpp"
+#include "skepu3/mpi/snapshot.hpp"

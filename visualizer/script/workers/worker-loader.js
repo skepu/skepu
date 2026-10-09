@@ -37,6 +37,12 @@ const BACKEND_NAMES = {
     mixed: 'CPU, OpenMP, OpenCL', synthetic: 'Synthetic', mpi: 'MPI',
 };
 
+/** The backends of an example in the order that they are shown: the MPI backend (all of the processes at once) last. */
+function _orderedBackends(ex) {
+    var backends = Object.keys(ex.trace || {});
+    return backends.filter(function(b) { return b !== 'mpi'; }).concat(backends.filter(function(b) { return b === 'mpi'; }));
+}
+
 async function _buildExamplesUI() {
     var resp;
     try {
@@ -62,7 +68,7 @@ function _buildExamplesMenu(examples) {
     html    += '<div class="dropdown">';
 
     examples.forEach(function(ex, idx) {
-        var backends = Object.keys(ex.trace || {});
+        var backends = _orderedBackends(ex);
         if (!backends.length) return;
 
         // Use single-quoted JS strings inside the double-quoted HTML attribute.
@@ -100,7 +106,7 @@ function _buildWelcomeExamples(examples) {
     if (!list || !section) return;
 
     examples.forEach(function(ex, idx) {
-        var backends = Object.keys(ex.trace || {});
+        var backends = _orderedBackends(ex);
         if (!backends.length) return;
 
         // One multi-segment pill per example: [title | backend | backend ...]

@@ -514,6 +514,12 @@ export class RegionNode extends Node {
             } else if (node instanceof ComputationNode) {
                 starts.push(node.start);
                 ends.push(node.end);
+                // (of an MPI program: what the other ranks did in the call, which can be later than rank 0 did)
+                for (const summary of node.rankSummaries ?? []) {
+                    if (!summary?.interval) continue;
+                    starts.push(summary.interval.start);
+                    ends.push(summary.interval.end);
+                }
             } else if (node.timestamp != null) {
                 starts.push(node.timestamp);
                 ends.push(node.timestamp);

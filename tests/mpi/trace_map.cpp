@@ -49,6 +49,7 @@ int main()
 		idx(c, a, b);
 	}
 
+	scale(a, c, b.elem(2)); // (an element of a container as a uniform argument)
 	std::cout << "element: " << c[3] << " " << c[n - 1] << "\n"; // (the host reads: c is gathered)
 	skepu::external([&] { c(0) = 42; }, skepu::write(c));      // (and written: c goes back to the owners)
 
@@ -88,6 +89,8 @@ int main()
 	const int squares = sum_squares(a);
 	const int by_index = sum_index();
 	prefix(scanned, a);
+	SKEPU_TRACE_SNAPSHOT(scanned); // (a snapshot of a distributed container: gathered, and written by the first process)
+	SKEPU_TRACE_SNAPSHOT(m);
 	std::cout << "reductions: " << total << " " << row_totals[3] << " " << col_totals[5] << " " << whole << " " << squares << " " << by_index
 		<< " " << scanned[n - 1] << "\n";
 

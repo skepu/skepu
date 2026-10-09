@@ -18,10 +18,10 @@ mkdir -p $WORK
 OMP=""; case "$BACKENDS" in *openmp*) OMP="-fopenmp";; esac
 
 $SKEPU_TOOL -mpi $BACKENDS -silent -name trace_map -dir=$WORK $HERE/trace_map.cpp -- $SKEPU_SYSTEM_FLAGS -I$SKEPU_HEADERS
-OMPI_CXX=$CXX MPICH_CXX=$CXX mpicxx -O1 -std=gnu++17 -DSKEPU_TRACING $EXTRA $OMP -I$SKEPU_HEADERS $WORK/trace_map.cpp -o $WORK/trace_map
+OMPI_CXX=$CXX MPICH_CXX=$CXX mpicxx -O1 -std=gnu++17 -DSKEPU_TRACING -DSKEPU_TRACE_SNAPSHOT_DIR=snapshots $EXTRA $OMP -I$SKEPU_HEADERS $WORK/trace_map.cpp -o $WORK/trace_map
 
 for n in $RANKS; do
-  rm -f $WORK/skepu_trace*.json
+  rm -rf $WORK/skepu_trace*.json $WORK/snapshots; mkdir -p $WORK/snapshots
   (cd $WORK && mpirun --oversubscribe -n $n ./trace_map > /dev/null)
   python3 $HERE/check_trace.py $WORK $n
 done

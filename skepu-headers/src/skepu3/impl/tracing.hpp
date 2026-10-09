@@ -258,7 +258,7 @@ namespace skepu
 				entry[Schema::Keys::REGION] = this->m_regions().top();
 
 			this->m_trace_json.push_back(entry);
-			}; this->push_capture(std::move(capture));
+			}; this->push_capture(std::move(capture), CaptureKind::Region);
 #endif
 		}
 
@@ -590,7 +590,7 @@ namespace skepu
 				entry[Schema::Keys::REGION] = this->m_regions().top();
       
 			this->m_trace_json.push_back(entry);
-			}; this->push_capture(std::move(capture));
+			}; this->push_capture(std::move(capture), CaptureKind::Region);
          
 #endif
 		}
@@ -633,7 +633,7 @@ namespace skepu
             entry[Schema::Keys::REGION] = this->m_regions().top();
                 
             this->m_trace_json.push_back(entry);
-            }; this->push_capture(std::move(capture));
+            }; this->push_capture(std::move(capture), CaptureKind::Region);
 #endif
 		}
 

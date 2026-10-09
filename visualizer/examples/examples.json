@@ -3,53 +3,86 @@
     "title": "Horner",
     "trace": {
       "openmp": "horner/trace_horner_openmp.json",
-      "opencl": "horner/trace_horner_opencl.json"
+      "opencl": "horner/trace_horner_opencl.json",
+      "mpi": [
+        "horner/mpi/trace_horner_mpi.json",
+        "horner/mpi/trace_horner_mpi.rank1.json",
+        "horner/mpi/trace_horner_mpi.rank2.json",
+        "horner/mpi/trace_horner_mpi.rank3.json"
+      ]
     },
-    "snapshot_archive": "horner/snapshots_horner.zip",
-    "cpp_files": [
-      "horner/horner.cpp"
-    ]
+    "snapshot_archive": {
+      "openmp": "horner/snapshots_horner.zip",
+      "opencl": "horner/snapshots_horner.zip",
+      "mpi": "horner/mpi/snapshots_horner_mpi.zip"
+    },
+    "cpp_files": {
+      "default": [
+        "horner/horner.cpp"
+      ],
+      "mpi": [
+        "horner/mpi/horner.cpp"
+      ]
+    }
   },
   {
     "title": "Cellular Automaton",
     "trace": {
       "openmp": "cellular_automaton/trace_cellular_automaton_openmp.json",
-      "opencl": "cellular_automaton/trace_cellular_automaton_opencl.json"
+      "opencl": "cellular_automaton/trace_cellular_automaton_opencl.json",
+      "mpi": [
+        "cellular_automaton/mpi/trace_cellular_automaton_mpi.json",
+        "cellular_automaton/mpi/trace_cellular_automaton_mpi.rank1.json",
+        "cellular_automaton/mpi/trace_cellular_automaton_mpi.rank2.json",
+        "cellular_automaton/mpi/trace_cellular_automaton_mpi.rank3.json"
+      ]
     },
-    "snapshot_archive": "cellular_automaton/snapshots_cellular_automaton.zip",
-    "cpp_files": [
-      "cellular_automaton/cellular_automaton.cpp"
-    ]
+    "snapshot_archive": {
+      "openmp": "cellular_automaton/snapshots_cellular_automaton.zip",
+      "opencl": "cellular_automaton/snapshots_cellular_automaton.zip",
+      "mpi": "cellular_automaton/mpi/snapshots_cellular_automaton_mpi.zip"
+    },
+    "cpp_files": {
+      "default": [
+        "cellular_automaton/cellular_automaton.cpp"
+      ],
+      "mpi": [
+        "cellular_automaton/mpi/cellular_automaton.cpp"
+      ]
+    }
   },
   {
     "title": "Coulombic",
     "trace": {
       "openmp": "coulombic/trace_coulombic_openmp.json",
-      "opencl": "coulombic/trace_coulombic_opencl.json"
-    },
-    "cpp_files": [
-      "coulombic/coulombic.cpp"
-    ]
-  },
-  {
-    "title": "Coulombic on 4 MPI processes",
-    "trace": {
+      "opencl": "coulombic/trace_coulombic_opencl.json",
       "mpi": [
-        "coulombic_mpi/trace_coulombic_mpi.json",
-        "coulombic_mpi/trace_coulombic_mpi.rank1.json",
-        "coulombic_mpi/trace_coulombic_mpi.rank2.json",
-        "coulombic_mpi/trace_coulombic_mpi.rank3.json"
+        "coulombic/mpi/trace_coulombic_mpi.json",
+        "coulombic/mpi/trace_coulombic_mpi.rank1.json",
+        "coulombic/mpi/trace_coulombic_mpi.rank2.json",
+        "coulombic/mpi/trace_coulombic_mpi.rank3.json"
       ]
     },
-    "cpp_files": [
-      "coulombic_mpi/coulombic.cpp"
-    ]
+    "cpp_files": {
+      "default": [
+        "coulombic/coulombic.cpp"
+      ],
+      "mpi": [
+        "coulombic/mpi/coulombic.cpp"
+      ]
+    }
   },
   {
     "title": "Dot Product",
     "trace": {
       "openmp": "dotproduct/trace_dotproduct_openmp.json",
-      "opencl": "dotproduct/trace_dotproduct_opencl.json"
+      "opencl": "dotproduct/trace_dotproduct_opencl.json",
+      "mpi": [
+        "dotproduct/mpi/trace_dotproduct_mpi.json",
+        "dotproduct/mpi/trace_dotproduct_mpi.rank1.json",
+        "dotproduct/mpi/trace_dotproduct_mpi.rank2.json",
+        "dotproduct/mpi/trace_dotproduct_mpi.rank3.json"
+      ]
     },
     "cpp_files": [
       "dotproduct/dotproduct.cpp"
@@ -58,9 +91,18 @@
   {
     "title": "Heat Diffusion",
     "trace": {
-      "openmp": "heat_diffusion/trace_heat_diffusion_openmp.json"
+      "openmp": "heat_diffusion/trace_heat_diffusion_openmp.json",
+      "mpi": [
+        "heat_diffusion/mpi/trace_heat_diffusion_mpi.json",
+        "heat_diffusion/mpi/trace_heat_diffusion_mpi.rank1.json",
+        "heat_diffusion/mpi/trace_heat_diffusion_mpi.rank2.json",
+        "heat_diffusion/mpi/trace_heat_diffusion_mpi.rank3.json"
+      ]
     },
-    "snapshot_archive": "heat_diffusion/snapshots_heat_diffusion.zip",
+    "snapshot_archive": {
+      "openmp": "heat_diffusion/snapshots_heat_diffusion.zip",
+      "mpi": "heat_diffusion/mpi/snapshots_heat_diffusion_mpi.zip"
+    },
     "cpp_files": [
       "heat_diffusion/heat_diffusion.cpp"
     ]

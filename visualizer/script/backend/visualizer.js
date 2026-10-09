@@ -223,7 +223,9 @@ async function _handleLoadExample({ index, backend }) {
     _snapshotFiles   = {};
 
     // Fetch accompanying source files.
-    for (const relPath of (ex.cpp_files ?? [])) {
+    // (the source files: one list, or a list for each backend, with "default" for the others: the MPI version of a program can differ)
+    const cppList = Array.isArray(ex.cpp_files) ? ex.cpp_files : (ex.cpp_files?.[chosen] ?? ex.cpp_files?.default ?? []);
+    for (const relPath of cppList) {
         const url = new URL('../examples/' + relPath, _BASE_URL).href;
         try {
             const content = await fetch(url).then(r => r.ok ? r.text() : Promise.reject(r.statusText));

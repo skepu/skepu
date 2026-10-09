@@ -83,7 +83,8 @@ single-node library.
 With `SKEPU_TRACING` each process writes a trace file. The first process writes the trace of the program (the events of a single
 node program, with the ids of the program's containers), the others lean files with, for each call and each collective, the same
 sequence number, the interval and a few numbers (no ids). The number of events is the number of processes times a constant for each
-call, whatever the size of the problem. The events of the node-level library are not recorded. The headers have what puts the times
+call, whatever the size of the problem. The events of the node-level library are not recorded; those that the program marks itself
+are (regions, `SKEPU_TRACE_SNAPSHOT` of a distributed container, which every process takes part in as a gather, and the first one writes). The headers have what puts the times
 on the clock of rank 0. See `skepu3/mpi/trace.hpp` and `visualizer/TRACE_FORMAT.md`; `tests/mpi/trace.sh` tests it.
 
 ### GPU backends

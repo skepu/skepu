@@ -111,6 +111,9 @@ function commSummary(entries) {
     };
 }
 
+// The collectives that no process leaves before all have arrived
+const SYNCHRONIZING = new Set(['allgather', 'allgatherv', 'allreduce', 'barrier']);
+
 function toTrace(file) {
     if (file.trace) return file.trace;
     return parseTrace(file.text);
@@ -231,10 +234,11 @@ export function mergeMpiTraces(files) {
             diverge({ kind: 'extra', rank: r, message: `Rank ${r} has ${extraCalls} calls and ${extraComms} collectives that rank ${detail} does not have` });
     }
 
-    // How well the clocks are aligned: the uncertainty of the measurement, and what the collectives say (they end at about the same time)
+    // How well the clocks are aligned: the uncertainty of the measurement, and what the collectives say (those that need every process end at
+    // about the same time. An alltoallv does not: a process that gets nothing from a late one can leave before it arrives)
     const uncertainty = Math.max(0, ...info.map(i => i.uncertainty_us));
     let worstSpread = 0;
-    for (const e of events) if (e.type === 'communication' && e.rank_summary) worstSpread = Math.max(worstSpread, e.rank_summary.end_spread_us);
+    for (const e of events) if (e.type === 'communication' && e.rank_summary && SYNCHRONIZING.has(e.operation)) worstSpread = Math.max(worstSpread, e.rank_summary.end_spread_us);
     if (worstSpread > Math.max(1000, 20 * uncertainty))
         warnings.push(`The collectives end up to ${Math.round(worstSpread)} us apart on the clock of rank ${detail}: the clocks are not well aligned (measured to within ${Math.round(uncertainty)} us)`);
 

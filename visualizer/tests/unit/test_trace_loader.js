@@ -127,7 +127,7 @@ describe('the examples', () => {
         for (const ex of examples) {
             for (const rel of Object.values(ex.trace).flat())
                 expect(() => readFileSync(join(exampleDir, rel)), `${ex.title}: ${rel}`).not.toThrow();
-            for (const rel of ex.cpp_files ?? [])
+            for (const rel of Array.isArray(ex.cpp_files) ? ex.cpp_files : Object.values(ex.cpp_files ?? {}).flat())
                 expect(() => readFileSync(join(exampleDir, rel)), `${ex.title}: ${rel}`).not.toThrow();
         }
     });

@@ -125,7 +125,7 @@ program, so that a clock that runs fast or slow is followed):
 * `rank_summary`. For a call: `interval` (from the first start to the last end), `arrival_spread_us`, and `duration`, `work`, `comm_time`,
   `comm_bytes`, `local_elements` as `{ min, mean, max, argmax }`, `slowest_rank` and `imbalance` (the longest work divided by the mean over all ranks, where a rank that did no work counts as zero: 1 is balanced, and the number of ranks means that one rank does it all, as it does in an `external` call). For
   a collective: `interval`, `wait_us` (what each rank waited for the last one to arrive), `max_wait_us`, `last_arrival_rank`,
-  `end_spread_us` (how far apart the ranks leave it: what is left of the misalignment of the clocks), and the bytes in total.
+  `end_spread_us` (how far apart the ranks leave it: what is left of the misalignment of the clocks, for the collectives that no rank leaves before all have arrived (`allgather`); an `alltoallv` lets a rank leave early if it gets nothing from a late one, so the merge does not take its spread as a sign of misaligned clocks), and the bytes in total.
 
 The merge also says what is wrong with the files: a missing rank, a rank that makes another call or collective than rank 0
 (`divergence`: the program does not do the same on all processes), more calls on a rank than on rank 0, and clocks that are not aligned well
