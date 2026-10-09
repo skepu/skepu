@@ -340,6 +340,88 @@ export class ExternalNode extends ComputationNode {
     // toCytoscape delegates to super intentionally.
 }
 
+// ── CommunicationNode ─────────────────────────────────────────────────────────
+// A collective operation of the MPI backend that moves a container (or its rows) between processes: the gather
+// of a container that the host or a random access argument needs, the exchange of the rows that a call needs
+// (a MatRow, a halo, the layout of a call), what a skepu::external gives back to the owners. The data are the
+// same after it, so it reads each container and makes itself the latest producer of it: what uses the container
+// afterwards depends on the move. (A trace of a single node has none.)
+
+export class CommunicationNode extends ComputationNode {
+    constructor(graph, jsonData, totalOrder) {
+        const ids = jsonData.object_ids ?? [];
+        const what = ids.map(id => graph.labelForID(id)).join(', ');
+        super(graph, {
+            label:        what ? `${jsonData.operation}: ${what}` : jsonData.operation,
+            region:       jsonData.region,
+            start:        jsonData.start,
+            end:          jsonData.end,
+            backend:      'ANY',                      // (reads what is there, in whichever memory space)
+            proxy_inputs: ids,
+        }, totalOrder);
+
+        this.type        = 'communication';
+        this.operation   = jsonData.operation;
+        this.reason      = jsonData.reason ?? null;
+        this.commSeq     = jsonData.comm_seq ?? null;
+        this.callSeq     = jsonData.seq || null;     // (the call it is made in; 0 or none for host code)
+        this.phase       = jsonData.phase ?? null;   // before or after the work of that call
+        this.bytesSent   = jsonData.bytes_sent ?? 0;
+        this.bytesReceived = jsonData.bytes_received ?? 0;
+        this.ranks       = jsonData.ranks ?? jsonData.rank_data?.length ?? null;
+        // What every process did, if the trace files of all of them were merged (mpi.js)
+        this.rankSummary = jsonData.rank_summary ?? null;
+        this.keypathDiscriminator = `${this.operation}:${this.reason}`;
+        this.file = null;
+        this.line = null;
+
+        // (it is on the side of the host that made it, for the edges)
+        this.backend = this._incoming[0]?.source.backend ?? 'CPU';
+        for (const id of ids) graph.writeToID(id, this, 'ALL');
+    }
+
+    toCytoscape() {
+        const d = {
+            ...super.toCytoscape(),
+            operation:      this.operation,
+            reason:         this.reason,
+            bytes_sent:     this.bytesSent,
+            bytes_received: this.bytesReceived,
+        };
+        if (this.ranks != null) d.ranks = this.ranks;
+        if (this.rankSummary) {
+            d.max_wait_us = this.rankSummary.max_wait_us;
+            d.bytes_total = this.rankSummary.bytes_sent;
+        }
+        return d;
+    }
+
+    toTimeline() {
+        return { ...super.toTimeline(), operation: this.operation };
+    }
+
+    infoData() {
+        const info = super.infoData();
+        delete info.File; delete info.Line; delete info.Backend;
+        const s = this.rankSummary;
+        return {
+            ...info,
+            Operation: this.operation,
+            Reason:    this.reason,
+            Ranks:     this.ranks,
+            // what this process (rank 0) sent and received; the total of all processes when they are merged
+            'Bytes sent (rank 0)':     this.bytesSent,
+            'Bytes received (rank 0)': this.bytesReceived,
+            ...(s ? {
+                'Bytes moved (all ranks)':     s.bytes_sent,
+                'Longest wait (us)':           Math.round(s.max_wait_us),
+                'Last to arrive (rank)':       s.last_arrival_rank,
+                'Ranks leave within (us)':     Math.round(s.end_spread_us),
+            } : {}),
+        };
+    }
+}
+
 // ── RegionNode ────────────────────────────────────────────────────────────────
 
 export class RegionNode extends Node {

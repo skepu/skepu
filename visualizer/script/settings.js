@@ -7,7 +7,7 @@ var STORAGE_KEY = SETTINGS_KEY;
 
 var SETTING_CHECKBOXES = [
   'container-updates', 'container-allocations', 'container-deallocations',
-  'container-transfers', 'element-accesses', 'anti-deps', 'virtual-alias-edges',
+  'container-transfers', 'communications', 'element-accesses', 'anti-deps', 'virtual-alias-edges',
   'edge-labels', 'node-labels', 'show_regions', 'collapse_iteration', 'fusion_analysis',
 ];
 var SETTING_SELECTS = [
@@ -18,7 +18,7 @@ var SETTING_SELECTS = [
 var DEFAULTS = {
   checkboxes: {
     'container-updates': false, 'container-allocations': false,
-    'container-deallocations': false, 'container-transfers': false,
+    'container-deallocations': false, 'container-transfers': false, 'communications': true,
     'element-accesses': false, 'anti-deps': false, 'virtual-alias-edges': false,
     'edge-labels': false, 'node-labels': true, 'show_regions': false,
     'collapse_iteration': false, 'fusion_analysis': false,

@@ -1,0 +1,143 @@
+#!/usr/bin/env python3
+"""Checks the trace files of tests/mpi/trace_map.cpp, run on P processes: check_trace.py <directory> <P>.
+
+The first process writes the trace of the program, the others lean files (see skepu3/mpi/trace.hpp). What is checked:
+the files and their headers; that the processes agree on the calls (seq, pattern and signature) and on the collectives (comm_seq); that the
+local elements of a call add up to the elements of the call; that the bytes sent by all processes in a collective are the bytes
+received; that the number of events is the same for every call (O(P), nothing that grows with the problem); that the ids of a call
+are of containers that were allocated; and that, on the clock of rank 0, a collective ends at about the same time everywhere.
+"""
+import json, os, sys
+
+def load(path):
+    with open(path) as f:
+        return json.load(f)
+
+def fail(msg):
+    print("FAIL:", msg)
+    sys.exit(1)
+
+directory, P = sys.argv[1], int(sys.argv[2])
+names = ["skepu_trace.json"] + ["skepu_trace.rank%d.json" % k for k in range(1, P)]
+files = []
+for k, name in enumerate(names):
+    path = os.path.join(directory, name)
+    if not os.path.exists(path):
+        fail("missing " + path)
+    t = load(path)
+    if not isinstance(t, dict) or "header" not in t or "data" not in t:
+        fail(name + ": not { header, data }")
+    h = t["header"]
+    if h["mpi"]["rank"] != k or h["mpi"]["ranks"] != P:
+        fail(name + ": wrong rank/ranks in the header: %s" % h["mpi"])
+    if h["mpi"]["role"] != ("full" if k == 0 else "lean"):
+        fail(name + ": wrong role")
+    if "start" not in h["clock"] or "end" not in h["clock"]:
+        fail(name + ": no clock samples")
+    files.append(t)
+
+full = files[0]["data"]
+calls0 = [e for e in full if e["type"] in ("skeleton_call", "external") and "seq" in e]   # (an external is a call too)
+comms0 = [e for e in full if e["type"] == "communication"]
+allocs = {e["object_id"]: e for e in full if e["type"] == "allocation"}
+if not calls0:
+    fail("no skeleton_call events on rank 0")
+
+# nothing of the node-level library on rank 0, and nothing but lean events elsewhere
+for e in full:
+    if e["type"] not in ("allocation", "deallocation", "skeleton_call", "communication", "region", "external", "transfer"):
+        fail("rank 0: unexpected event type " + e["type"])
+    if e["type"] == "transfer":
+        fail("rank 0: a node-level transfer event (those are not recorded in MPI programs)")
+for k in range(1, P):
+    for e in files[k]["data"]:
+        if e["type"] not in ("rank_call", "rank_communication"):
+            fail("rank %d: not a lean event: %s" % (k, e["type"]))
+        if "object_id" in e or "object_ids" in e or "outputs" in e:
+            fail("rank %d: a lean event has ids" % k)
+
+# the calls
+lean_calls = [{e["seq"]: e for e in files[k]["data"] if e["type"] == "rank_call"} for k in range(1, P)]
+for c in calls0:
+    seq = c["seq"]
+    m = c["mpi"]
+    total = m["local_elements"]
+    for k in range(1, P):
+        if seq not in lean_calls[k - 1]:
+            fail("rank %d has no call seq %d" % (k, seq))
+        l = lean_calls[k - 1][seq]
+        pattern = c.get("pattern", "external")
+        if l["pattern"] != pattern or l["signature"] != m["signature"]:
+            fail("rank %d disagrees about call %d: %s vs %s" % (k, seq, l["pattern"], pattern))
+        total += l["local_elements"]
+        if not (l["start"] <= l["work_start"] <= l["work_end"] <= l["end"] or l["work_start"] == 0):
+            fail("rank %d call %d: the work is not inside the call" % (k, seq))
+    if c["type"] == "skeleton_call" and total != c["elements"][0]:
+        fail("call %d: local elements add up to %d, not %d" % (seq, total, c["elements"][0]))
+    if c["type"] == "external" and (m["work_start"] == 0 or total != 0):
+        fail("external %d: the code runs on rank 0 and has no elements" % seq)
+    if c["start"] > c["end"]:
+        fail("call %d: start after end" % seq)
+    for key in ("outputs", "elwise_inputs", "proxy_inputs"):
+        for i in c[key]:
+            if i not in allocs:
+                fail("call %d: %s has the id %d, which was not allocated" % (seq, key, i))
+for k in range(1, P):
+    if len(lean_calls[k - 1]) != len(calls0):
+        fail("rank %d has %d calls, rank 0 has %d" % (k, len(lean_calls[k - 1]), len(calls0)))
+
+# the collectives
+lean_comms = [{e["comm_seq"]: e for e in files[k]["data"] if e["type"] == "rank_communication"} for k in range(1, P)]
+if not comms0:
+    fail("no communication events on rank 0")
+reasons = set()
+spreads = []
+for c in comms0:
+    cs = c["comm_seq"]
+    sent, received = c["bytes_sent"], c["bytes_received"]
+    ends = [c["end"]]
+    reasons.add(c["reason"].split(":")[0])
+    if (c["seq"] != 0) != ("phase" in c) or c.get("phase", "before") not in ("before", "after"):
+        fail("collective %d: phase %s for the call %d" % (cs, c.get("phase"), c["seq"]))
+    for k in range(1, P):
+        if cs not in lean_comms[k - 1]:
+            fail("rank %d has no collective %d" % (k, cs))
+        l = lean_comms[k - 1][cs]
+        if l["operation"] != c["operation"] or l["seq"] != c["seq"] or l.get("phase") != c.get("phase"):
+            fail("rank %d disagrees about collective %d" % (k, cs))
+        sent += l["bytes_sent"]
+        received += l["bytes_received"]
+        # on the clock of rank 0
+        off = files[k]["header"]["clock"]["start"]["offset_us"]
+        ends.append(l["end"] + off)
+    if sent != received:
+        fail("collective %d (%s): %d bytes sent, %d received" % (cs, c["reason"], sent, received))
+    spreads.append(max(ends) - min(ends))
+for k in range(1, P):
+    if len(lean_comms[k - 1]) != len(comms0):
+        fail("rank %d has %d collectives, rank 0 has %d" % (k, len(lean_comms[k - 1]), len(comms0)))
+
+# (with SKEPU_TRACE_TEST_SKEW_US the clocks of the processes start at different times: the raw times are far apart, the aligned ones are not)
+skew = int(os.environ.get("SKEPU_TRACE_TEST_SKEW_US", "0"))
+if skew > 0 and P > 1:
+    raw = []
+    for c in comms0:
+        ends = [c["end"]] + [lean_comms[k - 1][c["comm_seq"]]["end"] for k in range(1, P)]
+        raw.append(max(ends) - min(ends))
+    if min(raw) < skew * (P - 1) / 2:
+        fail("the test did not skew the clocks: the raw times are only %d us apart" % min(raw))
+worst = max(spreads) if spreads else 0
+if worst > 20000:
+    fail("the collectives end up to %d us apart on the clock of rank 0 (the clocks are not aligned)" % worst)
+
+# the number of events: the same for every call
+per_call = {}
+for k in range(P):
+    for e in files[k]["data"]:
+        if e["type"] in ("skeleton_call", "external", "rank_call"):
+            per_call[e["seq"]] = per_call.get(e["seq"], 0) + 1
+if set(per_call.values()) != {P}:
+    fail("not one event per process for each call: %s" % sorted(set(per_call.values())))
+
+print("OK: %d processes, %d calls, %d collectives (%s), collectives end within %d us on the clock of rank 0"
+      % (P, len(calls0), len(comms0), ", ".join(sorted(reasons)), worst))

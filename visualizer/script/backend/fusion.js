@@ -110,6 +110,7 @@ function accessOf(e) {
             if (e.prng != null) { reads.add(e.prng); writes.add(e.prng); }   // the state of the stream
             break;
         case 'copy':           reads.add(e.source); writes.add(e.object_id); break;
+        case 'communication':  for (const id of e.object_ids ?? []) { reads.add(id); writes.add(id); } break;   // (a move: nothing can be fused across it)
         case 'transfer':
         case 'snapshot':       reads.add(e.object_id); break;
         case 'element_access': reads.add(e.source);    break;

@@ -19,6 +19,10 @@ export function builder() {
         copy:     (source, id, label = 'copy') => ({ type: 'copy', label, source, object_id: id, elements: 100, ...span(3) }),
         access:   (id, source) => ({ type: 'element_access', label: 'x', object_id: id, source, index: 0, time: t }),
         snapshot: id => ({ type: 'snapshot', object_id: id, data_file: 's.txt', time: t }),
+        // a collective operation of an MPI program that moves the containers ids (seq: the call it is in; phase: before or after its work)
+        comm:     (ids, { operation = 'allgather', reason = 'host access: the container is gathered', seq = 0, phase, comm_seq = 1 } = {}) => ({
+            type: 'communication', operation, reason, object_ids: ids, seq, comm_seq, ...(phase ? { phase } : {}),
+            bytes_sent: 64, bytes_received: 32, ranks: 4, ...span(4) }),
         transfer: (id, label = 'T', direction = 'device-to-host', backend = 'OpenCL') => ({ type: 'transfer', label, object_id: id, direction, backend, elements: 100, ...span(5) }),
     };
 }

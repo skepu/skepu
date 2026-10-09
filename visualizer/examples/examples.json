@@ -5,8 +5,10 @@
       "openmp": "horner/trace_horner_openmp.json",
       "opencl": "horner/trace_horner_opencl.json"
     },
-    "snapshot_archive" : "horner/snapshots_horner.zip",
-    "cpp_files": ["horner/horner.cpp"]
+    "snapshot_archive": "horner/snapshots_horner.zip",
+    "cpp_files": [
+      "horner/horner.cpp"
+    ]
   },
   {
     "title": "Cellular Automaton",
@@ -14,8 +16,10 @@
       "openmp": "cellular_automaton/trace_cellular_automaton_openmp.json",
       "opencl": "cellular_automaton/trace_cellular_automaton_opencl.json"
     },
-    "snapshot_archive" : "cellular_automaton/snapshots_cellular_automaton.zip",
-    "cpp_files": ["cellular_automaton/cellular_automaton.cpp"]
+    "snapshot_archive": "cellular_automaton/snapshots_cellular_automaton.zip",
+    "cpp_files": [
+      "cellular_automaton/cellular_automaton.cpp"
+    ]
   },
   {
     "title": "Coulombic",
@@ -23,7 +27,23 @@
       "openmp": "coulombic/trace_coulombic_openmp.json",
       "opencl": "coulombic/trace_coulombic_opencl.json"
     },
-    "cpp_files": ["coulombic/coulombic.cpp"]
+    "cpp_files": [
+      "coulombic/coulombic.cpp"
+    ]
+  },
+  {
+    "title": "Coulombic on 4 MPI processes",
+    "trace": {
+      "mpi": [
+        "coulombic_mpi/trace_coulombic_mpi.json",
+        "coulombic_mpi/trace_coulombic_mpi.rank1.json",
+        "coulombic_mpi/trace_coulombic_mpi.rank2.json",
+        "coulombic_mpi/trace_coulombic_mpi.rank3.json"
+      ]
+    },
+    "cpp_files": [
+      "coulombic_mpi/coulombic.cpp"
+    ]
   },
   {
     "title": "Dot Product",
@@ -31,15 +51,19 @@
       "openmp": "dotproduct/trace_dotproduct_openmp.json",
       "opencl": "dotproduct/trace_dotproduct_opencl.json"
     },
-    "cpp_files": ["dotproduct/dotproduct.cpp"]
+    "cpp_files": [
+      "dotproduct/dotproduct.cpp"
+    ]
   },
   {
     "title": "Heat Diffusion",
     "trace": {
       "openmp": "heat_diffusion/trace_heat_diffusion_openmp.json"
     },
-    "snapshot_archive" : "heat_diffusion/snapshots_heat_diffusion.zip",
-    "cpp_files": ["heat_diffusion/heat_diffusion.cpp"]
+    "snapshot_archive": "heat_diffusion/snapshots_heat_diffusion.zip",
+    "cpp_files": [
+      "heat_diffusion/heat_diffusion.cpp"
+    ]
   },
   {
     "title": "DNN CIFAR-10 (small CNN)",
@@ -47,7 +71,9 @@
       "openmp": "dnn_cifar10/trace_dnn_cifar10_openmp.json",
       "opencl": "dnn_cifar10/trace_dnn_cifar10_opencl.json"
     },
-    "cpp_files": ["dnn_cifar10/dnn_cifar10.cpp"]
+    "cpp_files": [
+      "dnn_cifar10/dnn_cifar10.cpp"
+    ]
   },
   {
     "title": "Cellular Automaton (SkePY, Python)",
@@ -56,20 +82,26 @@
       "opencl": "cellular_automaton_skepy/trace_cellular_automaton_opencl.json"
     },
     "snapshot_archive": "cellular_automaton_skepy/snapshots_cellular_automaton.zip",
-    "cpp_files": ["cellular_automaton_skepy/cellular_automaton.py"]
+    "cpp_files": [
+      "cellular_automaton_skepy/cellular_automaton.py"
+    ]
   },
   {
     "title": "Backend switching",
     "trace": {
       "mixed": "backend_switching/trace_backend_switching_mixed.json"
     },
-    "cpp_files": ["backend_switching/backend_switching.cpp"]
+    "cpp_files": [
+      "backend_switching/backend_switching.cpp"
+    ]
   },
   {
     "title": "Fusion patterns",
     "trace": {
       "synthetic": "fusion_patterns/trace_fusion_patterns_synthetic.json"
     },
-    "cpp_files": ["fusion_patterns/fusion_patterns.cpp"]
+    "cpp_files": [
+      "fusion_patterns/fusion_patterns.cpp"
+    ]
   }
 ]

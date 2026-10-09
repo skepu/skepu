@@ -48,7 +48,7 @@ ostream &operator<<(ostream &s, T const& arg)
   return s;
 }
 
-template<typename C, REQUIRES_VALUE(is_skepu_container<C>)>
+template<typename C, REQUIRES_VALUE(is_skepu_io_container<C>)>
 ostream &operator<<(ostream &s, C &arg)
 {
   skepu::external("I/O", skepu::read(arg), [&]{
@@ -72,7 +72,7 @@ ostream &&operator<<(ostream &&s, T const& arg)
   return std::forward<ostream>(s);
 }
 
-template<typename C, REQUIRES_VALUE(is_skepu_container<C>)>
+template<typename C, REQUIRES_VALUE(is_skepu_io_container<C>)>
 ostream &&operator<<(ostream &&s, C &arg)
 {
   skepu::external("I/O", skepu::read(arg), [&]{
@@ -91,7 +91,7 @@ Stream &&operator<<(Stream &&s, T const& arg)
   return std::forward<istream>(s);
 }
 
-template<typename Stream, typename C, REQUIRES_VALUE(is_skepu_istream<Stream>), REQUIRES_VALUE(is_skepu_container<C>)>
+template<typename Stream, typename C, REQUIRES_VALUE(is_skepu_istream<Stream>), REQUIRES_VALUE(is_skepu_io_container<C>)>
 Stream &&operator<<(Stream &&s, C &arg)
 {
   skepu::external("I/O", [&]{

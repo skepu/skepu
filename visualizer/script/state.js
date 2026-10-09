@@ -13,6 +13,7 @@ export const State = {
     'container-allocations':   false,
     'container-deallocations': false,
     'container-transfers':     false,
+    'communications':          true,
     'element-accesses':        false,
     'anti-deps':               false,
     'virtual-alias-edges':     false,

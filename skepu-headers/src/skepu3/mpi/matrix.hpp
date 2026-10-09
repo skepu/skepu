@@ -51,6 +51,7 @@ namespace skepu
 
 	protected:
 		void reshape_from_extents(const typename Core::Extents &e) override { this->init(e[0], e[1]); }
+		const char *kind() const override { return "Matrix"; }
 
 	public:
 		size_type total_rows() const { return this->distribution().n; }

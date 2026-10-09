@@ -216,6 +216,7 @@ namespace skepu
 				if (disjunction(size_mismatch<I>(get<I>(std::forward<CallArgs>(args)...), n, first.first_dimension())...))
 					SKEPU_ERROR("Non-matching container sizes");
 
+				mpi::trace::CallScope trace_scope("Map");
 				const size_t elements = first.first_dimension();
 				std::vector<mpi_detail::PartInfo> parts;
 				(mpi_detail::add_part(parts, role<I>(), get<I>(std::forward<CallArgs>(args)...)), ...);
@@ -229,7 +230,15 @@ namespace skepu
 					mpi_detail::exec_argument<role<I>()>(layout, std::get<I>(holders), get<I>(std::forward<CallArgs>(args)...))...};
 
 				const size_t mine = layout.my_count();
-				auto run = [&] { if (mine > 0) std::apply([this](auto &... a) { Base::operator()(a...); }, local); };
+				auto run = [&]
+				{
+					if (mine > 0)
+					{
+						trace_scope.work_begin();
+						std::apply([this](auto &... a) { Base::operator()(a...); }, local);
+						trace_scope.work_finish();
+					}
+				};
 				if constexpr (MapFunc::usesPRNG)
 				{
 					mpi_detail::PrngShift shift(this->m_prng, layout.mine().first * first.distribution().unit * MapFunc::randomCount, first.size() * MapFunc::randomCount);
@@ -237,8 +246,10 @@ namespace skepu
 				}
 				else
 					run();
+				trace_scope.work_finished();
 
 				(mpi_detail::finish_argument<role<I>()>(layout, std::get<I>(holders), get<I>(std::forward<CallArgs>(args)...)), ...);
+				this->trace_call(trace_scope, first.size(), mine * first.distribution().unit, pack_indices<I...>{}, std::forward<CallArgs>(args)...);
 				return first;
 			}
 
@@ -254,6 +265,7 @@ namespace skepu
 			template<size_t... I, typename... CallArgs>
 			auto &distributed_plain(pack_indices<I...>, CallArgs&&... args)
 			{
+				mpi::trace::CallScope trace_scope("Map");
 				auto &first = get<0>(std::forward<CallArgs>(args)...);
 				const size_t n = first.size();
 				if (disjunction(size_mismatch<I>(get<I>(std::forward<CallArgs>(args)...), n, first.first_dimension())...))
@@ -263,7 +275,15 @@ namespace skepu
 				std::tuple<decltype(mpi_detail::local_argument<I, outArity, arity, anyArity>(get<I>(std::forward<CallArgs>(args)...)))...> local(
 					mpi_detail::local_argument<I, outArity, arity, anyArity>(get<I>(std::forward<CallArgs>(args)...))...);
 
-				auto run = [&] { if (first.local_size() > 0) std::apply([this](auto &... a) { Base::operator()(a...); }, local); };
+				auto run = [&]
+				{
+					if (first.local_size() > 0)
+					{
+						trace_scope.work_begin();
+						std::apply([this](auto &... a) { Base::operator()(a...); }, local);
+						trace_scope.work_finish();
+					}
+				};
 				if constexpr (MapFunc::usesPRNG)
 				{
 					mpi_detail::PrngShift shift(this->m_prng, first.local_offset() * MapFunc::randomCount, first.size() * MapFunc::randomCount);
@@ -271,11 +291,54 @@ namespace skepu
 				}
 				else
 					run();
+				trace_scope.work_finished();
 
 				// The results are the tiles now
 				pack_expand((mark_written<I>(get<I>(std::forward<CallArgs>(args)...)), 0)...);
+				this->trace_call(trace_scope, first.size(), first.local_size(), pack_indices<I...>{}, std::forward<CallArgs>(args)...);
 				return first;
 			}
+
+			// The event of the call (see trace.hpp): the containers that it wrote and read by their ids
+			template<size_t... I, typename... CallArgs>
+			void trace_call(mpi::trace::CallScope &scope, size_t global_elements, size_t local_elements, pack_indices<I...>, CallArgs&&... args)
+			{
+#ifdef SKEPU_TRACING
+				std::vector<int> outputs, elwise, proxies;
+				(this->collect_id<I>(outputs, elwise, proxies, get<I>(std::forward<CallArgs>(args)...)), ...);
+				std::vector<int> scalars = mpi::trace::scalar_ids(this->uniform_or_skip<I>(get<I>(std::forward<CallArgs>(args)...))...);
+				scope.finish(this, global_elements, local_elements, std::move(outputs), std::move(elwise), std::move(proxies), std::move(scalars),
+					this->template randomID<MapFunc::randomCount>());
+#else
+				(void)scope; (void)global_elements; (void)local_elements;
+#endif
+			}
+
+#ifdef SKEPU_TRACING
+			template<size_t I, typename Arg>
+			void collect_id(std::vector<int> &outputs, std::vector<int> &elwise, std::vector<int> &proxies, Arg &&arg)
+			{
+				if constexpr (is_distributed_container<Arg>::value)
+				{
+					if constexpr (I < outArity)
+						outputs.push_back(arg.getObjectID());
+					else if constexpr (I < outArity + arity)
+						elwise.push_back(arg.getObjectID());
+					else if constexpr (I < outArity + arity + anyArity)
+						proxies.push_back(arg.getObjectID());
+				}
+			}
+
+			// (only the uniform arguments can be scalars: the others are given as an int that is not one)
+			template<size_t I, typename Arg>
+			decltype(auto) uniform_or_skip(Arg &&arg)
+			{
+				if constexpr (I >= outArity + arity + anyArity)
+					return std::forward<Arg>(arg);
+				else
+					return 0;
+			}
+#endif
 
 			template<size_t I, typename Arg>
 			static bool size_mismatch(Arg &&arg, size_t n, size_t first_dimension)

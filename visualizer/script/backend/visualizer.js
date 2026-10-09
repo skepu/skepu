@@ -25,11 +25,14 @@
 
 import { UpdateNode } from './node.js';
 import { buildDisplayGraph } from './pipeline.js';
-import { computeTraceLineRanges as _computeTraceLineRanges, preprocessFilePaths as _preprocessFilePaths } from './trace.js';
+import { computeTraceLineRanges as _computeTraceLineRanges, preprocessFilePaths as _preprocessFilePaths, parseTrace as _parseTrace } from './trace.js';
+import { isMpiHeader as _isMpiHeader, mergeMpiTraces as _mergeMpiTraces } from './mpi.js';
 
 // ── Module-level state (mirrors Flask globals) ────────────────────────────────
 
 let _eventData       = null;   // parsed trace events array
+let _traceHeader     = null;   // the header of the trace, if it has one ({ header, data } traces)
+let _mpi             = null;   // what the merge of the trace files of an MPI program says: { mpi, warnings, divergence }, or null
 let _cppFiles        = {};     // { basename: content }
 let _traceFilename   = null;
 let _traceJsonRaw    = null;   // original file text (verbatim for source pane)
@@ -108,24 +111,53 @@ async function _fetchLibraryFiles() {
     await Promise.all(fetches);
 }
 
+// ── The trace files of a program ──────────────────────────────────────────────
+// A program is one trace file, or the trace files of an MPI program (one for each process: see
+// TRACE_FORMAT.md), which are merged into the trace of the first process with what every process did added to
+// the calls (mpi.js).  files: [{ name, text }].  Sets the state; returns what the loaders reply with, and the
+// text of the trace that the trace pane shows (the one that the events and their line ranges are of).
+
+function _installTraces(files) {
+    const parsed = files.map(f => ({ name: f.name, text: f.text, ..._parseTrace(f.text) }));
+    let primary = parsed[0];
+    _mpi = null;
+    if (parsed.some(f => _isMpiHeader(f.header))) {
+        const merged = _mergeMpiTraces(parsed.map(f => ({ name: f.name, trace: { header: f.header, events: f.events } })));
+        primary = parsed.find(f => f.header?.mpi?.role === 'full') ?? parsed[0];
+        _eventData   = merged.events;
+        _traceHeader = merged.header;
+        _mpi = { mpi: merged.mpi, warnings: merged.warnings, divergence: merged.divergence };
+    } else {
+        if (parsed.length > 1) throw new Error('Several trace files, but they are not the files of an MPI program');
+        _eventData   = primary.events;
+        _traceHeader = primary.header;
+    }
+    _traceJsonRaw    = primary.text;
+    _traceFilename   = primary.name;
+    _traceLineRanges = _computeTraceLineRanges(primary.text);
+    _graph           = null;
+    _preprocessFilePaths(_eventData);
+}
+
+// What a reply says about the merge of the files of an MPI program (nothing for other traces)
+function _mpiReply() {
+    return _mpi ? { mpi: _mpi.mpi, warnings: _mpi.warnings, divergence: _mpi.divergence } : {};
+}
+
 // ── Handler: load ─────────────────────────────────────────────────────────────
 // Replaces POST /upload.
-// Payload: { traceJson, traceFilename?, cppFiles?, snapshotFiles? }
+// Payload: { traceJson, traceFilename?, traceFiles?, cppFiles?, snapshotFiles? }
 //   traceJson      — raw JSON text of the trace file
 //   traceFilename  — display name (default 'trace.json')
+//   traceFiles     — [{ name, text }]: the trace files of an MPI program, instead of traceJson
 //   cppFiles       — { basename: content } source files
 //   snapshotFiles  — { basename: content } already-extracted snapshot data
 // Result: { traceFilename, traceLineRanges, cppFiles, eventCount }
 
-async function _handleLoad({ traceJson, traceFilename = 'trace.json', cppFiles = {}, snapshotFiles = {} }) {
-    _traceJsonRaw    = traceJson;
-    _traceFilename   = traceFilename;
-    _eventData       = JSON.parse(traceJson);
-    _traceLineRanges = _computeTraceLineRanges(traceJson);
+async function _handleLoad({ traceJson, traceFilename = 'trace.json', traceFiles = null, cppFiles = {}, snapshotFiles = {} }) {
+    _installTraces(traceFiles ?? [{ name: traceFilename, text: traceJson }]);
     _cppFiles        = { ...cppFiles };
     _snapshotFiles   = { ...snapshotFiles };
-    _graph           = null;
-    _preprocessFilePaths(_eventData);
     await _fetchLibraryFiles();
     return {
         traceFilename:   _traceFilename,
@@ -133,6 +165,8 @@ async function _handleLoad({ traceJson, traceFilename = 'trace.json', cppFiles =
         traceJsonRaw:    _traceJsonRaw,
         cppFiles:        _cppFiles,
         eventCount:      _eventData.length,
+        header:          _traceHeader,
+        ..._mpiReply(),
     };
 }
 
@@ -156,18 +190,16 @@ async function _handleLoadExample({ index, backend }) {
     if (!(chosen in traceDict))
         throw new Error('Backend not available for this example: ' + chosen);
 
-    const traceRelPath = traceDict[chosen];
-    const traceUrl     = new URL('../examples/' + traceRelPath, _BASE_URL).href;
-    const traceText    = await fetch(traceUrl).then(r => { if (!r.ok) throw new Error(r.statusText); return r.text(); });
-
-    _traceJsonRaw    = traceText;
-    _traceFilename   = traceRelPath.split('/').pop();
-    _eventData       = JSON.parse(traceText);
-    _traceLineRanges = _computeTraceLineRanges(traceText);
+    // (the trace files of an MPI program are an array of paths)
+    const traceRelPaths = [].concat(traceDict[chosen]);
+    const traceFiles = await Promise.all(traceRelPaths.map(async rel => {
+        const url = new URL('../examples/' + rel, _BASE_URL).href;
+        const text = await fetch(url).then(r => { if (!r.ok) throw new Error(r.statusText); return r.text(); });
+        return { name: rel.split('/').pop(), text };
+    }));
+    _installTraces(traceFiles);
     _cppFiles        = {};
     _snapshotFiles   = {};
-    _graph           = null;
-    _preprocessFilePaths(_eventData);
 
     // Fetch accompanying source files.
     for (const relPath of (ex.cpp_files ?? [])) {
@@ -194,6 +226,8 @@ async function _handleLoadExample({ index, backend }) {
         traceJsonRaw:     _traceJsonRaw,
         cppFiles:         _cppFiles,
         eventCount:       _eventData.length,
+        header:           _traceHeader,
+        ..._mpiReply(),
         // Tell the main thread which archive to extract + send back, if any.
         snapshotArchiveUrl: archiveRel
             ? new URL('../examples/' + archiveRel, _BASE_URL).href
@@ -236,6 +270,7 @@ function _handleGraph({
     container_allocations   = false,
     container_deallocations = false,
     container_transfers     = false,
+    show_communications     = true,
     show_scalars            = false,
     anti_deps               = false,
     data_as_edges           = false,
@@ -270,7 +305,7 @@ function _handleGraph({
 
     // Re-preprocess paths on every build (idempotent after first call, matches Flask).
     ({ graph: _graph, fusionHints } = buildDisplayGraph(_eventData, {
-        mode, container_allocations, container_deallocations, container_transfers,
+        mode, container_allocations, container_deallocations, container_transfers, show_communications,
         show_scalars, anti_deps, data_as_edges, show_regions,
         collapse_iteration, fusion_analysis, show_virtual_alias, aggregate_by,
     }));

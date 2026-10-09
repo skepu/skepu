@@ -20,6 +20,7 @@ export function graphSettings({
     container_allocations   = false,
     container_deallocations = false,
     container_transfers     = false,
+    show_communications     = true,
     show_scalars            = false,
     anti_deps               = false,
     data_as_edges           = false,
@@ -31,6 +32,7 @@ export function graphSettings({
     settings.allocations   = container_allocations;
     settings.deallocations = container_deallocations;
     settings.transfers     = container_transfers;
+    settings.communications = show_communications;
     settings.updates       = !data_as_edges;        // data_as_edges=true → updates=false (edges only)
     settings.scalars       = show_scalars;
     settings.regions       = show_regions;

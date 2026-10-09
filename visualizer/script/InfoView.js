@@ -53,6 +53,7 @@ const NODE_HEADINGS = {
   'allocation'      : 'Container Allocation',
   'deallocation'    : 'Container Deallocation',
   'transfer'        : 'Data Transfer',
+  'communication'   : 'Communication (MPI)',
   'container_update': 'Container Write',
   'region'          : 'Instrumented Region',
   'fusion'          : 'Suggested Skeleton Call Fusion',

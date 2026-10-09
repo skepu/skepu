@@ -66,6 +66,7 @@ namespace skepu
 
 	protected:
 		void reshape_from_extents(const typename Core::Extents &e) override { this->init(e[0]); }
+		const char *kind() const override { return "Vector"; }
 
 	public:
 		T &operator()(size_type index) { return this->write_access()[index]; }

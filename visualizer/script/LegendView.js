@@ -87,6 +87,9 @@ export class LegendView {
     if (inGraph('node[type="transfer"]'))
       nodeEntries.push([nodeIcon('<polygon points="10,1 19,10 10,19 1,10" fill="purple" stroke="#6a006a" stroke-width="1.5"/>'),
        'Transfer', 'transfer']);
+    if (inGraph('node[type="communication"]'))
+      nodeEntries.push([nodeIcon('<polygon points="5,2 15,2 19,10 15,18 5,18 1,10" fill="' + COLORS.communication.fill + '" stroke="' + COLORS.communication.stroke + '" stroke-width="1.5"/>'),
+       'Communication', 'communication']);
     if (inGraph('node[type="container_update"]'))
       nodeEntries.push([nodeIcon('<rect x="3" y="3" width="14" height="14" fill="' + ctFill + '" stroke="' + ctStroke + '" stroke-width="2"/>'),
        'Data Update', 'container_update']);
@@ -196,6 +199,7 @@ export class LegendView {
         'external':         'external',
         'scalar':           'scalar-node',
         'transfer':         'transfer',
+        'communication':    'communication',
         'container_update': 'container_update',
         'allocation':       'allocation',
         'deallocation':     'deallocation',

@@ -14,10 +14,13 @@
 #include <string>
 #include <vector>
 
+#include "skepu3/mpi/trace.hpp"
+
 // An error in the node-level library (SKEPU_ERROR) stops all processes
 [[noreturn]] inline void skepu_mpi_abort()
 {
 	std::cerr.flush();
+	skepu::mpi::trace::abort_flush(); // (the events that there are)
 	MPI_Abort(MPI_COMM_WORLD, 1);
 	std::abort();
 }
@@ -60,6 +63,12 @@ namespace skepu
 					MPI_Comm_rank(comm, &rank);
 					MPI_Comm_size(comm, &size);
 
+#ifdef SKEPU_TRACING
+					// (the tracer is made before this is done, so that it is destroyed after: the trace is written when MPI ends)
+					::skepu_node::tracing::tracer();
+#endif
+					trace::init(comm, rank, size);
+
 					const char *all = std::getenv("SKEPU_MPI_ALL_OUTPUT");
 					if (rank != 0 && !(all && std::string(all) == "1"))
 					{
@@ -74,6 +83,8 @@ namespace skepu
 				{
 					int finalized = 0;
 					MPI_Finalized(&finalized);
+					if (!finalized)
+						trace::finish(comm); // (the clock again and the trace file: every process does this before MPI ends)
 					if (owned && !finalized)
 						MPI_Finalize();
 				}

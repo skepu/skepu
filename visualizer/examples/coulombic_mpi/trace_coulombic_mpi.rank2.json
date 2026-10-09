@@ -1,0 +1,110 @@
+{
+    "data": [
+        {
+            "comm": {
+                "bytes_received": 0,
+                "bytes_sent": 0,
+                "collectives": 0,
+                "time_us": 0
+            },
+            "end": 4097,
+            "local_elements": 75000,
+            "pattern": "Map",
+            "rank": 2,
+            "ranks": 4,
+            "seq": 1,
+            "signature": 799112393638874305,
+            "start": 3584,
+            "type": "rank_call",
+            "work_end": 4097,
+            "work_start": 3585
+        },
+        {
+            "bytes_received": 3600000,
+            "bytes_sent": 3600000,
+            "comm_seq": 1,
+            "end": 11114,
+            "operation": "allgather",
+            "phase": "before",
+            "rank": 2,
+            "reason": "random access argument: the container is gathered",
+            "seq": 2,
+            "start": 4113,
+            "type": "rank_communication"
+        },
+        {
+            "comm": {
+                "bytes_received": 3600000,
+                "bytes_sent": 3600000,
+                "collectives": 1,
+                "time_us": 7001
+            },
+            "end": 16593,
+            "local_elements": 20,
+            "pattern": "Map",
+            "rank": 2,
+            "ranks": 4,
+            "seq": 2,
+            "signature": 2401589220252713033,
+            "start": 4109,
+            "type": "rank_call",
+            "work_end": 16592,
+            "work_start": 11122
+        },
+        {
+            "bytes_received": 320,
+            "bytes_sent": 240,
+            "comm_seq": 2,
+            "end": 17314,
+            "operation": "allgather",
+            "phase": "before",
+            "rank": 2,
+            "reason": "host access: the container is gathered",
+            "seq": 3,
+            "start": 16627,
+            "type": "rank_communication"
+        },
+        {
+            "comm": {
+                "bytes_received": 320,
+                "bytes_sent": 240,
+                "collectives": 1,
+                "time_us": 687
+            },
+            "end": 17318,
+            "local_elements": 0,
+            "pattern": "external",
+            "rank": 2,
+            "ranks": 4,
+            "seq": 3,
+            "signature": 7346190368624812788,
+            "start": 16626,
+            "type": "rank_call",
+            "work_end": 0,
+            "work_start": 0
+        }
+    ],
+    "header": {
+        "clock": {
+            "end": {
+                "local_us": 17398,
+                "offset_us": 53.0,
+                "uncertainty_us": 0.0
+            },
+            "method": "ping-pong",
+            "start": {
+                "local_us": 3105,
+                "offset_us": 53.0,
+                "uncertainty_us": 0.0
+            }
+        },
+        "mpi": {
+            "detail_rank": 0,
+            "host": "Augusts-Laptop.local",
+            "pid": 95516,
+            "rank": 2,
+            "ranks": 4,
+            "role": "lean"
+        }
+    }
+}

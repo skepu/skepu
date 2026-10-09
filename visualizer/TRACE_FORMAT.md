@@ -4,6 +4,11 @@ What `SKEPU_TRACING` writes (`skepu3/impl/tracing.h`, `tracing.hpp`) and what Sk
 events, in the order in which they were recorded (a trace is written when the program ends, or by `SKEPU_TRACE_FLUSH()`).
 `tests/codegen/tracing_skeletons.cpp` checks the parts of it that are described here, on every backend.
 
+A trace is a JSON array of events, or an object `{ header, data }` whose `data` is that array (the key can be anywhere in the
+object). The header has what is known about the run as a whole. Source files: a key that is the path of a source file with the hash of its
+contents as value (so that SkeVU can tell whether the source it has is the source that was run). The other sections have names that are not
+paths: `mpi` and `clock` (below). SkeVU reads both forms; a trace that is an array has no header.
+
 Times are microseconds since the first event of the program. An event that takes time has `start` and `end`; one that
 happens at a moment has `time`. Every event has the `region` it happened in, if any (the innermost
 `SKEPU_TRACE_SCOPE`; regions nest per thread, so an event of a thread that did not open the region, such as
@@ -78,6 +83,53 @@ copied (a part of a container if a part was needed). `line` is the line in the S
 `element_access` (`object_id` of the value, `source` the container, `index`, `label`, `file`, `line`): `Vector::elem`.
 `external` (`label`, `file`, `line`, `start`, `end`, `outputs`, and the containers it reads as `proxy_inputs`): `skepu::external`, the output of a
 scalar, and the operations above that write a container. `snapshot` (`data_file`), `region` (`region_depth`) and `virtual_container` (`object_ids`) are as the macros of the same name.
+
+## MPI programs (a pilot: allocation, `Map`, communication)
+
+A program built with the MPI backend (`skepu-tool -mpi`) writes one file for each process. File names: `skepu_trace.json` for the first
+process (rank 0) and `skepu_trace.rank<k>.json` for the others (`%r` in `SKEPU_TRACE_FILE` is the rank). The files are
+`{ header, data }`; the header has `mpi` (`rank`, `ranks`, `detail_rank`: 0, `role`: `full` or `lean`, `host`, `pid`) and `clock`: the
+clock of the process against that of rank 0, measured at the start and at the end of the program (`start` and `end`, each with
+`local_us`, the time of the process when it was measured, `offset_us`, what to add to a time of this process to get that of
+rank 0, and `uncertainty_us`, half of the shortest round trip). Times in the files are those of each process.
+
+**Rank 0** has the trace of the program: `allocation`, `deallocation`, `skeleton_call` and `external` as in a single node program, with the ids of the
+distributed containers and `elements` for the whole call. A call also has `seq`, the number of the call among the calls of the program
+(the same on every process: the processes make the same calls in the same order), and `mpi`: `rank`, `ranks`, `local_elements`,
+`work_start` and `work_end` (what the node-level skeleton did on this process), `comm` (the communication that the call made:
+`bytes_sent`, `bytes_received`, `time_us`, `collectives`) and `signature` (a hash of the pattern and the label: the processes must agree).
+An `external` (a skepu::external call, also what printing a container with `skepu::io::cout` is) with a label and a place has the same `seq` and `mpi` as a call: rank 0 runs the code (its `work_start` and `work_end`), the
+others wait for it, and the gather of the containers it reads comes `before` it and the scatter of those it writes `after` it. (A call without a label and
+without containers is not recorded, as in a single node program.) `communication` is a collective operation: `comm_seq` (the same on every process), `seq` (the call it is in, 0 for none), `phase` (for a collective in a call: `before` its work, such as the rows that it needs, or `after`, such as the results that go back to their owners), `operation`
+(`allgather`, `scatter`, `alltoallv`), `reason` (why the program does it: host access to a distributed container, `skepu::external`, the
+rows that a MatRow argument needs, the layout of a call, the halo of an overlap), `object_ids`, `start`, `end`, `bytes_sent` and
+`bytes_received` (the payload to and from other processes) and `ranks`.
+
+**The other processes** have lean events only: `rank_call` (`seq`, `pattern`, `signature`, `start`, `end`, `work_start`, `work_end`,
+`local_elements`, `comm`) and `rank_communication` (`comm_seq`, `seq`, `phase`, `operation`, `reason`, `start`, `end`, `bytes_sent`,
+`bytes_received`), with no ids. Events of the same `seq` or `comm_seq` in the files are the same call or the same collective. The events
+of the node-level library (the calls on the parts of the containers, the transfers of the parts) are not recorded, and skeletons
+other than `Map` are not traced yet.
+
+A merged trace has the number of events of one process plus a constant number of events for each other process and each call:
+nothing in it depends on the size of the problem. `tests/mpi/check_trace.py` checks what is said here.
+
+### Merging the files (SkeVU, `script/backend/mpi.js`)
+
+SkeVU merges the files of a program into the trace of rank 0 (its events, with their `idx`) and adds to each call and each collective what
+every rank did, on the clock of rank 0 (the time of a rank plus the offset of its header, interpolated between the start and the end of the
+program, so that a clock that runs fast or slow is followed):
+
+* `rank_data`: one entry for each rank (`null` if its file is missing). For a call: `rank`, `start`, `end`, `work_start` and `work_end` (`null`
+  for a rank that did no work), `local_elements`, `comm`. For a collective: `rank`, `start`, `end`, `bytes_sent`, `bytes_received`.
+* `rank_summary`. For a call: `interval` (from the first start to the last end), `arrival_spread_us`, and `duration`, `work`, `comm_time`,
+  `comm_bytes`, `local_elements` as `{ min, mean, max, argmax }`, `slowest_rank` and `imbalance` (the longest work divided by the mean). For
+  a collective: `interval`, `wait_us` (what each rank waited for the last one to arrive), `max_wait_us`, `last_arrival_rank`,
+  `end_spread_us` (how far apart the ranks leave it: what is left of the misalignment of the clocks), and the bytes in total.
+
+The merge also says what is wrong with the files: a missing rank, a rank that makes another call or collective than rank 0
+(`divergence`: the program does not do the same on all processes), more calls on a rank than on rank 0, and clocks that are not aligned well
+(the collectives end far apart).
 
 ## Known limits
 

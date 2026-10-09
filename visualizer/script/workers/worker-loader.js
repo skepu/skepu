@@ -34,7 +34,7 @@ window._vizWorker = _worker;
 
 const BACKEND_NAMES = {
     cpu: 'CPU', openmp: 'OpenMP', opencl: 'OpenCL', cuda: 'CUDA',
-    mixed: 'CPU, OpenMP, OpenCL', synthetic: 'Synthetic',
+    mixed: 'CPU, OpenMP, OpenCL', synthetic: 'Synthetic', mpi: 'MPI',
 };
 
 async function _buildExamplesUI() {

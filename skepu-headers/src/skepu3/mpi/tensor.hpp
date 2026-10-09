@@ -54,6 +54,7 @@ namespace skepu
 
 	protected:
 		void reshape_from_extents(const typename Core::Extents &e) override { this->init(e[0], e[1], e[2]); }
+		const char *kind() const override { return "Tensor3"; }
 
 	public:
 		size_type size_i() const { return this->distribution().n; }
@@ -138,6 +139,7 @@ namespace skepu
 
 	protected:
 		void reshape_from_extents(const typename Core::Extents &e) override { this->init(e[0], e[1], e[2], e[3]); }
+		const char *kind() const override { return "Tensor4"; }
 
 	public:
 		size_type size_i() const { return this->distribution().n; }

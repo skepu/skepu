@@ -6,6 +6,7 @@ import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { DirectedGraph, GraphSettings } from '../script/backend/graph.js';
+import { parseTrace } from '../script/backend/trace.js';
 
 const __dirname   = dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = join(__dirname, '../tests/fixtures');
@@ -31,7 +32,7 @@ export function loadFixture(name) {
 }
 
 export function graphFromFile(path, settings = testSettings()) {
-    const events = JSON.parse(readFileSync(path, 'utf-8'));
+    const events = parseTrace(readFileSync(path, 'utf-8')).events; // (an array of events, or { header, data })
     return DirectedGraph.fromEvents(events, settings);
 }
 
@@ -141,7 +142,8 @@ function walkDir(dir, predicate, results = []) {
 export function collectExampleTraces() {
     return walkDir(
         EXAMPLES_DIR,
-        name => name.startsWith('trace_') && name.endsWith('.json')
+        // (the lean files of the other processes of an MPI program, trace_x.rank1.json, are not traces of a program: they are merged into trace_x.json)
+        name => name.startsWith('trace_') && name.endsWith('.json') && !/\.rank\d+\.json$/.test(name)
     ).sort();
 }
 

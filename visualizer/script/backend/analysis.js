@@ -5,6 +5,8 @@
 // Graph based analyses (dependences, the critical path) are in graph_analysis.js.
 'use strict';
 
+import { headerSourceFiles } from './trace.js';
+
 export const duration = e => (e.start != null && e.end != null) ? e.end - e.start : 0;
 export const eventId  = e => 'e' + e.idx;
 
@@ -186,7 +188,7 @@ export function summarize(events, header = null) {
         backends: [...backends], regions: [...regions], files: [...files],
         skeleton_calls: { count: calls, total_us: callTime },
         transfers: { count: tr.count, total_us: tr.total_us, by_kind: tr.by_kind },
-        header: header ? { files: Object.keys(header).length } : null,
+        header: header ? { files: Object.keys(headerSourceFiles(header)).length, ...(header.mpi ? { mpi: header.mpi } : {}) } : null,
     };
 }
 

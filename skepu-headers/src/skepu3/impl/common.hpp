@@ -568,6 +568,11 @@ namespace skepu
 				!is_skepu_tensor4<typename std::remove_cv<typename std::remove_reference<T>::type>::type>::value)>
 		{};
 
+	/* What the stream operators of skepu-lib/io.hpp treat as a container (they read or write it in an skepu::external call). It is
+	 * the containers of the library; the MPI backend adds its distributed containers (skepu3/mpi/container.hpp). */
+	template<typename T, typename = void>
+	struct is_skepu_io_container: is_skepu_container<T> {};
+
 	/** Check that all parameters in a pack are SkePU containers. */
 	template<typename ...> struct are_skepu_containers;
 

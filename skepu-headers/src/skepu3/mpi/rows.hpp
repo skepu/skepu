@@ -74,9 +74,10 @@ namespace skepu
 			// Every process gets the rows that it needs (needed[r] for the process r), from the processes that have them. The
 			// result is the rows of the ranges of this process, one after the other, in the order of the ranges.
 			// ('distribution' says which rows each process has in 'tile': offset(r) and count(r))
+			// ('reason' and 'ids' say why, for the trace)
 			template<typename T, typename Distribution>
 			std::vector<T> exchange_rows(const T *tile, size_t unit, const Distribution &distribution,
-				const std::vector<std::vector<RowRange>> &needed)
+				const std::vector<std::vector<RowRange>> &needed, const char *reason = "row exchange", std::vector<int> ids = {})
 			{
 				const int me = mpi::rank(), p = mpi::size();
 				const size_t my_first = distribution.offset(me), my_last = my_first + distribution.count(me);
@@ -122,8 +123,19 @@ namespace skepu
 				}
 
 				std::vector<T> received(total > 0 ? total : 1);
-				MPI_Alltoallv(send.empty() ? nullptr : send.data(), send_counts.data(), send_displs.data(), mpi::datatype<T>(),
-					received.data(), receive_counts.data(), receive_displs.data(), mpi::datatype<T>(), mpi::comm());
+				{
+					mpi::trace::CommScope comm("alltoallv", reason, std::move(ids));
+					unsigned long long sent = 0, got = 0;
+					for (int r = 0; r < p; ++r)
+						if (r != me)
+						{
+							sent += (unsigned long long)send_counts[r];
+							got += (unsigned long long)receive_counts[r];
+						}
+					comm.bytes(sent * sizeof(T), got * sizeof(T));
+					MPI_Alltoallv(send.empty() ? nullptr : send.data(), send_counts.data(), send_displs.data(), mpi::datatype<T>(),
+						received.data(), receive_counts.data(), receive_displs.data(), mpi::datatype<T>(), mpi::comm());
+				}
 
 				// The rows in the order of the ranges. (From each process they come in the order of the ranges.)
 				std::vector<T> rows(total_rows * unit > 0 ? total_rows * unit : 1);
@@ -346,7 +358,9 @@ namespace skepu
 						for (int r = 0; r < mpi::size(); ++r)
 							if (layout.count(r) > 0)
 								needed[r].push_back(layout.ranges[r]);
-						const std::vector<T> rows = exchange_rows(data, d.unit, d, needed);
+						const std::vector<T> rows = exchange_rows(data, d.unit, d, needed,
+							R == Role::MatRow ? "MatRow: the rows of the matrix go to the processes that have the elements" : "layout: an element-wise container goes to the processes that have the rows",
+							{arg.getObjectID()});
 						if (count > 0)
 						{
 							Shape s = shape_of(arg);
@@ -384,7 +398,7 @@ namespace skepu
 						for (int r = 0; r < mpi::size(); ++r)
 							if (d.count(r) > 0)
 								needed[r].push_back({d.offset(r), d.offset(r) + d.count(r)});
-						const std::vector<T> rows = exchange_rows(data, d.unit, layout, needed);
+						const std::vector<T> rows = exchange_rows(data, d.unit, layout, needed, "layout: the results go back to their owners", {arg.getObjectID()});
 						if (arg.local_size() > 0)
 						{
 							auto &tile = arg.tile_for_write();

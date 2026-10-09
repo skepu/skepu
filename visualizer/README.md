@@ -94,7 +94,7 @@ tests/
     test_serial_fusion.js findSerialFusions() algorithm
     test_cytoscape.js     toCytoscape() and infoData() schema contracts
 
-examples/               built-in example trace files
+examples/               built-in example trace files (the trace files of an MPI program: an array of paths)
 ```
 
 ---

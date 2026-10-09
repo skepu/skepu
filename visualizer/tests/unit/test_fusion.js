@@ -46,7 +46,7 @@ describe('serial fusion', () => {
     });
 
     it('does not fuse when the host looks at the intermediate (element access, snapshot, transfer, external)', () => {
-        for (const observe of [b => b.access(9, 2), b => b.snapshot(2), b => b.transfer(2), b => b.external('print', { scalars: [2] }), b => b.copy(2, 4)]) {
+        for (const observe of [b => b.access(9, 2), b => b.snapshot(2), b => b.transfer(2), b => b.external('print', { scalars: [2] }), b => b.copy(2, 4), b => b.comm([2])]) {
             const r = chain(b => [b.call('A', { ins: [1], outs: [2] }), observe(b), b.call('B', { ins: [2], outs: [3] })]);
             expect(reasonOf(r)[0]).toBe('host-access');
             expect(r.serial_groups).toBe(0);

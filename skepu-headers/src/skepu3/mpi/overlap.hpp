@@ -356,7 +356,7 @@ namespace skepu
 					tile.updateHost();
 					tile_data = tile.getAddress();
 				}
-				const std::vector<T> rows = exchange_rows(tile_data, in_distribution.unit, in_distribution, needed);
+				const std::vector<T> rows = exchange_rows(tile_data, in_distribution.unit, in_distribution, needed, "halo exchange", {input.getObjectID()});
 
 				const RowRange mine = interior(me);
 				// (the results are made valid on all the processes that have rows, also when they compute none)
@@ -437,7 +437,7 @@ namespace skepu
 					tile.updateHost();
 					tile_data = tile.getAddress();
 				}
-				const std::vector<T> rows = exchange_rows(tile_data, in_distribution.unit, in_distribution, needed);
+				const std::vector<T> rows = exchange_rows(tile_data, in_distribution.unit, in_distribution, needed, "halo exchange", {input.getObjectID()});
 
 				const size_t count = out_distribution.count(me);
 				if (count > 0)

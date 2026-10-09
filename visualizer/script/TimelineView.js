@@ -421,6 +421,10 @@ export class TimelineView {
       return n.data.type === 'transfer' &&
         n.data.start != null && n.data.end != null;
     });
+    var timedComms = cyNodes.filter(function(n) {
+      return n.data.type === 'communication' &&
+        n.data.start != null && n.data.end != null;
+    });
     var timedMarkers = cyNodes.filter(function(n) {
       return n.data.timestamp != null &&
         (n.data.type === 'allocation' || n.data.type === 'deallocation');
@@ -449,6 +453,10 @@ export class TimelineView {
       var ivs = n.data.intervals || [[n.data.start, n.data.end]];
       ivs.forEach(function(iv) { minT = Math.min(minT, iv[0]); maxT = Math.max(maxT, iv[1]); });
     });
+    timedComms.forEach(function(n) {
+      var ivs = n.data.intervals || [[n.data.start, n.data.end]];
+      ivs.forEach(function(iv) { minT = Math.min(minT, iv[0]); maxT = Math.max(maxT, iv[1]); });
+    });
     timedMarkers.forEach(function(n) {
       minT = Math.min(minT, n.data.timestamp); maxT = Math.max(maxT, n.data.timestamp);
     });
@@ -471,9 +479,10 @@ export class TimelineView {
     var LW = _LW, AH = _AXIS_H, RH = _ROW_H, RP = _ROW_PAD, PAD_RIGHT = _PAD_RIGHT;
     var REGION_RH   = timedRegions.length   > 0 ? AH : 0;
     var TRANSFER_RH = timedTransfers.length > 0 ? RH : 0;
+    var COMM_RH     = timedComms.length     > 0 ? RH : 0;
     var EVENT_RH    = timedMarkers.length   > 0 ? RH : 0;
     var SVG_W = Math.max(container.clientWidth || 400, 200) * this._scale;
-    var H     = REGION_RH + backends.length * RH + TRANSFER_RH + EVENT_RH + AH;
+    var H     = REGION_RH + backends.length * RH + TRANSFER_RH + COMM_RH + EVENT_RH + AH;
     var BW    = Math.max(1, SVG_W - LW - PAD_RIGHT);
 
     // Dark-mode palette
@@ -482,6 +491,7 @@ export class TimelineView {
     var _rowBgEven = dark ? '#1a1824' : '#fff';
     var _rowBgOdd  = dark ? '#201e2c' : '#f8f8f8';
     var _rowBgTr   = dark ? '#221e2e' : '#f8f4ff';
+    var _rowBgCm   = dark ? '#182529' : '#f0fafb';
     var _rowBgEv   = dark ? '#1e1c28' : '#fff8f5';
     var _labelFill = dark ? '#a09ab8' : '#555';
     var _tickFill  = dark ? '#706880' : '#777';
@@ -541,8 +551,13 @@ export class TimelineView {
       body.push('<rect x="0" y="' + trRowY + '" width="' + SVG_W + '" height="' + TRANSFER_RH + '" fill="' + _rowBgTr + '"/>');
       body.push('<text x="' + (LW - 6) + '" y="' + (trRowY + TRANSFER_RH / 2 + 4) + '" text-anchor="end" fill="' + _labelFill + '">Transfers</text>');
     }
+    if (COMM_RH > 0) {
+      var cmRowY = REGION_RH + backends.length * RH + TRANSFER_RH;
+      body.push('<rect x="0" y="' + cmRowY + '" width="' + SVG_W + '" height="' + COMM_RH + '" fill="' + _rowBgCm + '"/>');
+      body.push('<text x="' + (LW - 6) + '" y="' + (cmRowY + COMM_RH / 2 + 4) + '" text-anchor="end" fill="' + _labelFill + '">Communication</text>');
+    }
     if (EVENT_RH > 0) {
-      var evRowY = REGION_RH + backends.length * RH + TRANSFER_RH;
+      var evRowY = REGION_RH + backends.length * RH + TRANSFER_RH + COMM_RH;
       body.push('<rect x="0" y="' + evRowY + '" width="' + SVG_W + '" height="' + EVENT_RH + '" fill="' + _rowBgEv + '"/>');
       body.push('<text x="' + (LW - 6) + '" y="' + (evRowY + EVENT_RH / 2 + 4) + '" text-anchor="end" fill="' + _labelFill + '">Events</text>');
     }
@@ -679,9 +694,44 @@ export class TimelineView {
       });
     }
 
+    // ── Communication bars (the collective operations of an MPI program) ─────
+    if (COMM_RH > 0) {
+      var cmBarY   = REGION_RH + backends.length * RH + TRANSFER_RH + RP;
+      var cmBarH   = COMM_RH - RP * 2;
+      var cmBarIdx = 0;
+      timedComms.forEach(function(n) {
+        var d     = n.data;
+        var ivs   = d.intervals || [[d.start, d.end]];
+        var total = ivs.length;
+        var opacityAttr = d.hidden ? ' opacity="0.3"' : '';
+        ivs.forEach(function(iv, iidx) {
+          var x1 = tx(iv[0]), x2 = tx(iv[1]);
+          var bw = Math.max(2, x2 - x1);
+          var centerX = x1 + bw / 2;
+          var clipId  = 'gantt-cm-' + (cmBarIdx++);
+          var selCls  = d.id === selectedId ? ' gantt-selected' : '';
+          var iterLabel = total > 1 ? ' [' + (iidx + 1) + '/' + total + ']' : '';
+          var tip = escTxt(d.label + iterLabel + '\n' + (d.operation || 'communication') + '\n' + fmtDt(iv[1] - iv[0]));
+          defs.push('<clipPath id="' + clipId + '"><rect x="' + (x1 + 2) + '" y="' + cmBarY
+            + '" width="' + Math.max(0, bw - 4) + '" height="' + cmBarH + '"/></clipPath>');
+          body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr
+            + ' data-node-id="' + escAttr(d.id) + '" data-center-x="' + centerX + '" data-interval-idx="' + iidx + '"'
+            + ' x="' + x1 + '" y="' + cmBarY + '" width="' + bw + '" height="' + cmBarH + '" rx="2"'
+            + ' fill="#17a2b8" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer">'
+            + '<title>' + tip + '</title></rect>');
+          if (bw > _MIN_LABEL_W) {
+            var iterSuffix = total > 1 ? ' ' + (iidx + 1) : '';
+            body.push('<text x="' + (x1 + 4) + '" y="' + (cmBarY + cmBarH / 2 + 4) + '"' + opacityAttr
+              + ' fill="rgba(255,255,255,0.9)" clip-path="url(#' + clipId + ')" style="pointer-events:none">'
+              + escTxt(d.label + iterSuffix) + '</text>');
+          }
+        });
+      });
+    }
+
     // ── Event markers (allocation / deallocation) ─────────────────────────────
     if (EVENT_RH > 0) {
-      var evRowY2 = REGION_RH + backends.length * RH + TRANSFER_RH;
+      var evRowY2 = REGION_RH + backends.length * RH + TRANSFER_RH + COMM_RH;
       var evCY    = evRowY2 + EVENT_RH / 2;
       var HS = 7;
 
@@ -909,6 +959,9 @@ export class TimelineView {
         ganttBarCount += (n.data.intervals || [[n.data.start, n.data.end]]).length;
       });
       timedTransfers.forEach(function(n) {
+        ganttBarCount += (n.data.intervals || [[n.data.start, n.data.end]]).length;
+      });
+      timedComms.forEach(function(n) {
         ganttBarCount += (n.data.intervals || [[n.data.start, n.data.end]]).length;
       });
       timedMarkers.forEach(function() { ganttBarCount += 1; });

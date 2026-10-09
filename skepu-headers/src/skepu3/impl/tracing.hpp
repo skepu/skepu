@@ -183,7 +183,15 @@ namespace skepu
 
 			std::ofstream ofs;
 			ofs.open(this->m_file_name, std::ofstream::out | std::ofstream::trunc);
-			ofs << this->m_trace_json.dump(4) << std::endl;
+			if (this->m_header.empty())
+				ofs << this->m_trace_json.dump(4) << std::endl;
+			else
+			{
+				nlohmann::json whole = nlohmann::json::object();
+				whole["header"] = this->m_header;
+				whole["data"] = this->m_trace_json.is_null() ? nlohmann::json::array() : this->m_trace_json;
+				ofs << whole.dump(4) << std::endl;
+			}
 			ofs.close();
 #endif
 		}
@@ -309,13 +317,50 @@ namespace skepu
 		}
 
 		// (the events come from any thread that runs a skeleton or touches a container)
-		inline void Tracer::push_capture(std::function<void()> &&capture)
+		inline int &allow_depth()
+		{
+			static thread_local int depth = 0;
+			return depth;
+		}
+
+		inline AllowScope::AllowScope()
 		{
 #ifdef SKEPU_TRACING
+			++allow_depth();
+#endif
+		}
+
+		inline AllowScope::~AllowScope()
+		{
+#ifdef SKEPU_TRACING
+			--allow_depth();
+#endif
+		}
+
+		inline void Tracer::push_capture(std::function<void()> &&capture, CaptureKind kind)
+		{
+#ifdef SKEPU_TRACING
+			if (this->m_lean && kind != CaptureKind::Raw)
+				return;
+			if (this->m_suppress_node && kind == CaptureKind::Node && allow_depth() == 0)
+				return;
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 			this->m_captures.push_back(Capture{std::this_thread::get_id(), std::move(capture)});
 #endif
 		}
+
+#ifdef SKEPU_TRACING
+		inline void Tracer::raw(nlohmann::json entry)
+		{
+			const bool lean = this->m_lean;
+			auto capture = [=, this]{
+			nlohmann::json e = entry;
+			if (!lean && !this->m_regions().empty())
+				e[Schema::Keys::REGION] = this->m_regions().top();
+			this->m_trace_json.push_back(e);
+			}; this->push_capture(std::move(capture), CaptureKind::Raw);
+		}
+#endif
 
 		inline EventHandle Tracer::startEvent()
 		{
@@ -331,10 +376,12 @@ namespace skepu
 			std::vector<TraceID> &&elwise_inputs,
 			std::vector<TraceID> &&proxy_inputs,
 			std::vector<TraceID> &&scalar_inputs,
-			TraceID prng)
+			TraceID prng,
+			Parameters const *extra)
 		{
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
+			nlohmann::json extra_fields = extra ? extra->values : nlohmann::json::object();
 			std::tuple<std::string, int> source_location = skel_instance->getSourceLoc();
 			const BackendSpec *backend = skel_instance->m_selected_spec;
 			UniqueIdentifier::ID id = skel_instance->getObjectID();
@@ -369,6 +416,8 @@ namespace skepu
 				entry[Schema::Keys::REGION] = this->m_regions().top();
 			if (!parameters.values.empty())
 				entry[Schema::Keys::PARAMETERS] = parameters.values;
+			for (auto it = extra_fields.begin(); it != extra_fields.end(); ++it)
+				entry[it.key()] = it.value();
 			if (backend)
 			{
 				std::stringstream ss;
@@ -611,7 +660,7 @@ namespace skepu
 
 			this->m_trace_json.push_back(entry);
 			this->m_regions().push(label);
-			}; this->push_capture(std::move(capture));
+			}; this->push_capture(std::move(capture), CaptureKind::Region);
 #endif
 		}
 
@@ -620,7 +669,7 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			auto capture = [=, this]{
 			this->m_regions().pop();
-			}; this->push_capture(std::move(capture));
+			}; this->push_capture(std::move(capture), CaptureKind::Region);
 #endif
 		}
 

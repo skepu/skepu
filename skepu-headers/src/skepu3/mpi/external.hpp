@@ -53,8 +53,37 @@ namespace skepu
 				--external_depth();
 			}
 		}
+
+		template<typename Tuple, size_t... I>
+		std::vector<int> ids_of(Tuple &cs, std::index_sequence<I...>)
+		{
+			return std::vector<int>{std::get<I + 1>(cs).getObjectID()...};
+		}
+
+		// What all the forms of external do: the containers that are read are brought to the first process, which runs the code, the
+		// containers that are written are given back to their owners, and the call is recorded in the trace (as a call, with its
+		// number: the processes make the same calls in the same order; the gather is before the code and the scatter after it).
+		template<typename... ContR, typename OP, typename... ContW>
+		void external_core(const std::string &label, const char *file, int line, std::tuple<label::read, ContR...> &cr, OP &&op, std::tuple<label::write, ContW...> &cw)
+		{
+			constexpr auto read_indices = std::index_sequence_for<ContR...>{};
+			constexpr auto write_indices = std::index_sequence_for<ContW...>{};
+			trace::CallScope scope("external");
+			auto states = mpi::external_begin(cr, read_indices);
+			mpi::external_begin(cw, write_indices);
+			if (mpi::rank() == 0)
+				scope.work_begin();
+			mpi::run_on_root(op);
+			if (mpi::rank() == 0)
+				scope.work_finish();
+			scope.work_finished();
+			mpi::external_end_read(cr, states, read_indices);
+			mpi::external_end_write(cw, write_indices);
+			scope.finish_external(label, file, line, mpi::ids_of(cw, write_indices), mpi::ids_of(cr, read_indices));
+		}
 	}
 
+	// (the single node library does not record the call of an external that has no label and no container)
 	template<typename OP>
 	void inline external(OP &&op)
 	{
@@ -62,58 +91,52 @@ namespace skepu
 	}
 
 	template<typename... ContR, typename OP>
-	void inline external(std::tuple<label::read, ContR...> cr, OP &&op)
+	void inline external(std::tuple<label::read, ContR...> cr, OP &&op SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM)
 	{
-		constexpr auto indices = std::index_sequence_for<ContR...>{};
-		auto states = mpi::external_begin(cr, indices);
-		mpi::run_on_root(op);
-		mpi::external_end_read(cr, states, indices);
+		std::tuple<label::write> no_writes{label::write{}};
+		mpi::external_core("[external]", SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS, cr, op, no_writes);
 	}
 
 	template<typename OP, typename... ContW>
-	void inline external(OP &&op, std::tuple<label::write, ContW...> cw)
+	void inline external(OP &&op, std::tuple<label::write, ContW...> cw SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM)
 	{
-		constexpr auto indices = std::index_sequence_for<ContW...>{};
-		mpi::external_begin(cw, indices);
-		mpi::run_on_root(op);
-		mpi::external_end_write(cw, indices);
+		std::tuple<label::read> no_reads{label::read{}};
+		mpi::external_core("[external]", SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS, no_reads, op, cw);
 	}
 
 	template<typename... ContR, typename OP, typename... ContW>
-	void inline external(std::tuple<label::read, ContR...> cr, OP &&op, std::tuple<label::write, ContW...> cw)
+	void inline external(std::tuple<label::read, ContR...> cr, OP &&op, std::tuple<label::write, ContW...> cw SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM)
 	{
-		constexpr auto read_indices = std::index_sequence_for<ContR...>{};
-		constexpr auto write_indices = std::index_sequence_for<ContW...>{};
-		auto states = mpi::external_begin(cr, read_indices);
-		mpi::external_begin(cw, write_indices);
-		mpi::run_on_root(op);
-		mpi::external_end_read(cr, states, read_indices);
-		mpi::external_end_write(cw, write_indices);
+		mpi::external_core("[external]", SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS, cr, op, cw);
 	}
 
-	// With a description of the code (for the trace of a single node: not used here)
+	// With a description of the code: the label of the call in the trace
 
 	template<typename OP>
-	void inline external(std::string /*description*/, OP &&op SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM)
+	void inline external(std::string label, OP &&op SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM)
 	{
-		external(std::forward<OP>(op));
+		std::tuple<label::read> no_reads{label::read{}};
+		std::tuple<label::write> no_writes{label::write{}};
+		mpi::external_core(label, SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS, no_reads, op, no_writes);
 	}
 
 	template<typename... ContR, typename OP>
-	void inline external(std::string /*description*/, std::tuple<label::read, ContR...> cr, OP &&op SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM)
+	void inline external(std::string label, std::tuple<label::read, ContR...> cr, OP &&op SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM)
 	{
-		external(cr, std::forward<OP>(op));
+		std::tuple<label::write> no_writes{label::write{}};
+		mpi::external_core(label, SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS, cr, op, no_writes);
 	}
 
 	template<typename OP, typename... ContW>
-	void inline external(std::string /*description*/, OP &&op, std::tuple<label::write, ContW...> cw SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM)
+	void inline external(std::string label, OP &&op, std::tuple<label::write, ContW...> cw SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM)
 	{
-		external(std::forward<OP>(op), cw);
+		std::tuple<label::read> no_reads{label::read{}};
+		mpi::external_core(label, SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS, no_reads, op, cw);
 	}
 
 	template<typename... ContR, typename OP, typename... ContW>
-	void inline external(std::string /*description*/, std::tuple<label::read, ContR...> cr, OP &&op, std::tuple<label::write, ContW...> cw SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM)
+	void inline external(std::string label, std::tuple<label::read, ContR...> cr, OP &&op, std::tuple<label::write, ContW...> cw SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM)
 	{
-		external(cr, std::forward<OP>(op), cw);
+		mpi::external_core(label, SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS, cr, op, cw);
 	}
 }

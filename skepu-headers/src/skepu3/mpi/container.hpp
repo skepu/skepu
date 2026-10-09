@@ -12,6 +12,7 @@
 #include <type_traits>
 
 #include "skepu3/mpi/context.hpp"
+#include "skepu3/mpi/trace.hpp"
 
 namespace skepu
 {
@@ -61,6 +62,9 @@ namespace skepu
 				void setLabel(std::string label) { this->m_label = label; }
 				std::string getLabel() const { return this->m_label; }
 
+				// The id of the container in the traces (it goes with the data when the container is moved)
+				int getObjectID() const { return this->m_identity.id; }
+
 				// -------------------- Element access from the host --------------------
 
 				iterator begin() { return this->write_access(); }
@@ -104,7 +108,11 @@ namespace skepu
 				}
 
 				// The whole container on every process, to be read (a random access argument of a skeleton)
-				const T *replicated() const { return this->read_access(); }
+				const T *replicated() const
+				{
+					this->ensure_mirror("random access argument: the container is gathered");
+					return this->m_mirror.get();
+				}
 
 				// -------------------- For skepu::external --------------------
 
@@ -148,6 +156,9 @@ namespace skepu
 					{
 						if (this->local_size() > 0)
 							this->m_tile->invalidateDeviceData();
+						mpi::trace::CommScope comm("scatter", "skepu::external: the container is given to its owners", {this->m_identity.id});
+						const unsigned long long total = (unsigned long long)this->size() * sizeof(T), mine = (unsigned long long)this->local_size() * sizeof(T);
+						comm.bytes(mpi::rank() == 0 ? total - mine : 0, mpi::rank() == 0 ? 0 : mine);
 						mpi::scatter_from_root(this->m_mirror.get(), this->local_size() > 0 ? this->m_tile->getAddress() : nullptr, this->m_dist);
 					}
 					this->tile_written();
@@ -156,8 +167,11 @@ namespace skepu
 			protected:
 				typedef std::array<size_t, 4> Extents;
 
+				// What the traces call the container: Vector, Matrix, Tensor3 or Tensor4
+				virtual const char *kind() const = 0;
+
 				Distributed() : m_tile(new Tile()) {}
-				virtual ~Distributed() = default;
+				virtual ~Distributed() { this->trace_deallocation(); }
 
 				// The container gets the shape: the sizes of its dimensions (init of the derived class). Called on all processes, or in an
 				// skepu::external call on the first process only
@@ -167,6 +181,8 @@ namespace skepu
 				{
 					other.ensure_tile();
 					this->m_dist = other.m_dist;
+					if (other.m_identity.live)
+						this->trace_allocation(other.m_identity.kind); // (the copy is a container of its own)
 					// (a node-level container cannot be empty, so a process without elements has an empty tile of no shape)
 					this->m_tile.reset(other.local_size() > 0 ? new Tile(*other.m_tile) : new Tile());
 					this->m_tile->setIndexOrigin(this->local_first_offset());
@@ -184,18 +200,37 @@ namespace skepu
 					return *this;
 				}
 
-				Distributed &operator=(Distributed &&other) noexcept = default;
+				Distributed &operator=(Distributed &&other) noexcept
+				{
+					if (this != &other)
+					{
+						this->trace_deallocation();
+						this->m_dist = std::move(other.m_dist);
+						this->m_tile = std::move(other.m_tile);
+						this->m_label = std::move(other.m_label);
+						this->m_mirror = std::move(other.m_mirror);
+						this->m_mirror_valid = other.m_mirror_valid;
+						this->m_tile_valid = other.m_tile_valid;
+						this->m_extents = other.m_extents;
+						this->m_extents_at_begin = other.m_extents_at_begin;
+						this->m_external_listed = other.m_external_listed;
+						this->m_identity = std::move(other.m_identity);
+					}
+					return *this;
+				}
 
 				// A new shape: n indices of the first dimension, each of unit elements. The tile is then empty
 				// (the derived class gives it its shape); the container is valid.
 				void setup(size_t n, size_t unit, const Extents &extents)
 				{
+					this->trace_deallocation();
 					this->m_extents = extents;
 					this->m_dist = mpi::BlockDistribution{n, mpi::size(), unit};
 					this->m_mirror.reset();
 					this->m_mirror_valid = false;
 					this->m_tile_valid = true;
 					this->m_tile.reset(new Tile());
+					this->trace_allocation(this->kind()); // (called from the constructor or init of the derived class)
 				}
 
 				void tile_ready()
@@ -254,6 +289,43 @@ namespace skepu
 				}
 
 			private:
+				// The identity of the container in the traces: an id, and whether its allocation was recorded
+				struct Identity
+				{
+					int id = ::skepu_node::UniqueIdentifier::generate();
+					std::string kind, name;
+					bool live = false;
+
+					Identity() = default;
+					Identity(Identity &&other) noexcept: id(other.id), kind(std::move(other.kind)), name(std::move(other.name)), live(other.live) { other.live = false; }
+					Identity &operator=(Identity &&other) noexcept
+					{
+						this->id = other.id;
+						this->kind = std::move(other.kind);
+						this->name = std::move(other.name);
+						this->live = other.live;
+						other.live = false;
+						return *this;
+					}
+				};
+
+				void trace_allocation(const std::string &kind)
+				{
+					this->m_identity.kind = kind;
+					this->m_identity.name = this->m_label.empty() ? kind + " #" + std::to_string(this->m_identity.id) : this->m_label;
+					this->m_identity.live = true;
+					mpi::trace::allocation(this->m_identity.id, this->m_identity.name, true);
+				}
+
+				void trace_deallocation()
+				{
+					if (!this->m_identity.live)
+						return;
+					this->m_identity.live = false;
+					mpi::trace::allocation(this->m_identity.id, this->m_identity.name, false);
+				}
+
+				Identity m_identity;
 				mpi::BlockDistribution m_dist;
 				std::unique_ptr<Tile> m_tile;
 				std::string m_label;
@@ -267,7 +339,7 @@ namespace skepu
 				mutable Extents m_extents_at_begin{{0, 0, 0, 0}};
 				mutable bool m_external_listed = false;
 
-				void ensure_mirror() const
+				void ensure_mirror(const char *reason = "host access: the container is gathered") const
 				{
 					if (this->m_mirror_valid)
 						return;
@@ -283,6 +355,9 @@ namespace skepu
 							this->m_tile->flush();
 							mine = this->m_tile->getAddress();
 						}
+						mpi::trace::CommScope comm("allgather", reason, {this->m_identity.id});
+						comm.bytes((unsigned long long)this->local_size() * sizeof(T) * (unsigned long long)(mpi::size() - 1),
+							(unsigned long long)(this->size() - this->local_size()) * sizeof(T));
 						mpi::allgather(mine, this->m_mirror.get(), this->m_dist);
 					}
 					this->m_mirror_valid = true;
@@ -307,4 +382,11 @@ namespace skepu
 
 	template<typename T>
 	struct is_distributed_container : std::is_base_of<mpi::detail::DistributedTag, std::decay_t<T>> {};
+}
+
+// The stream operators of skepu-lib/io.hpp read a distributed container in an skepu::external call (a node-level trait: see common.hpp)
+namespace skepu_node
+{
+	template<typename T>
+	struct is_skepu_io_container<T, std::enable_if_t<::skepu::is_distributed_container<T>::value>> : std::true_type {};
 }

@@ -14,6 +14,7 @@ export const COLORS = {
   allocation:   { fill: 'white',     stroke: '#333' },
   deallocation: { fill: 'black',     stroke: '#ddd' },
   transfer:     { fill: 'purple',    stroke: '#6a006a' },
+  communication:{ fill: '#17a2b8',   stroke: '#0e6676' },       // a collective operation of an MPI program (a teal hexagon)
   fusion:       { fill: '#88f' },
   prng:         { fill: ['#e2d2f2', '#4b3a63'], stroke: ['#8e44ad', '#bb8fce'] },     // [light, dark]: the allocation of a random stream (a violet hexagon)
   edge:         ['#333', '#ccc'],                               // [light, dark]
@@ -111,6 +112,17 @@ export function buildGraphStyle(self, minmax) {
         'background-color': COLORS.transfer.fill,
         'border-width':     3,
         'border-color':     COLORS.transfer.stroke,
+      }
+    },
+    {
+      selector: 'node[type="communication"]',
+      style: {
+        'content':          function(ele) { return node_labels ? ele.data('label') : ''; },
+        'text-valign':      'center',
+        'shape':            'hexagon',
+        'background-color': COLORS.communication.fill,
+        'border-width':     3,
+        'border-color':     COLORS.communication.stroke,
       }
     },
     {

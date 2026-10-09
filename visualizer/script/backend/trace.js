@@ -23,6 +23,19 @@ export function parseTrace(text) {
     return { header, events: data.map((e, i) => ({ ...e, idx: i })) };
 }
 
+// The sections of a trace header that are not source files. The rest of the header maps the path of a
+// source file to the hash of its contents (what the tracer writes, so that SkeVU can tell whether the source it
+// has is the source that was run).
+export const RESERVED_HEADER_KEYS = ['mpi', 'clock'];
+
+/** The source files of a header, as { path: hash }. */
+export function headerSourceFiles(header) {
+    const files = {};
+    for (const [k, v] of Object.entries(header ?? {}))
+        if (!RESERVED_HEADER_KEYS.includes(k) && typeof v === 'string') files[k] = v;
+    return files;
+}
+
 // ── Utility: trace line-range computation ─────────────────────────────────────
 // Mirrors compute_trace_line_ranges() in visualizer.py.
 // Maps each top-level JSON array element to the (1-based inclusive) line span
@@ -79,6 +92,33 @@ function jsonValueEnd(text, pos) {
     return i;
 }
 
+/**
+ * The position of the '[' that starts the events: the start of the text for a trace that is an array, the
+ * value of "data" for one that is { header, data } (wherever the key is: the header can have arrays).
+ */
+export function eventsArrayStart(text) {
+    let pos = 0;
+    const skip = () => { while (pos < text.length && ' \t\n\r'.includes(text[pos])) pos++; };
+    skip();
+    if (text[pos] === '[') return pos;
+    if (text[pos] !== '{') throw new Error('Not a SkePU trace: expected an array of events or an object { header, data }');
+    pos++;
+    while (pos < text.length) {
+        while (pos < text.length && ' \t\n\r,'.includes(text[pos])) pos++;
+        if (text[pos] === '}') break;
+        const keyEnd = jsonValueEnd(text, pos);
+        const key = JSON.parse(text.slice(pos, keyEnd));
+        pos = keyEnd;
+        skip();
+        if (text[pos] !== ':') throw new SyntaxError('Expected ":" at offset ' + pos);
+        pos++;
+        skip();
+        if (key === 'data') return pos;
+        pos = jsonValueEnd(text, pos);
+    }
+    throw new Error('Not a SkePU trace: the object has no "data" array');
+}
+
 export function computeTraceLineRanges(jsonText) {
     // Build sorted array of character offsets where each line begins.
     const lineStarts = [0];
@@ -88,7 +128,7 @@ export function computeTraceLineRanges(jsonText) {
     const charToLine = pos => bisectRight(lineStarts, pos);
 
     const ranges = [];
-    let pos = jsonText.indexOf('[') + 1;
+    let pos = eventsArrayStart(jsonText) + 1;
     while (pos < jsonText.length) {
         while (pos < jsonText.length && ' \t\n\r,'.includes(jsonText[pos])) pos++;
         if (pos >= jsonText.length || jsonText[pos] === ']') break;

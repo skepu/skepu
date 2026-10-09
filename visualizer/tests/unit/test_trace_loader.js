@@ -1,0 +1,136 @@
+// test_trace_loader.js — a trace is an array of events or { header, data }: the loader (trace.js and the worker) reads both,
+// and the line ranges of the events are those of the events wherever the "data" key is.
+import { describe, it, expect, beforeAll } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { parseTrace, eventsArrayStart, computeTraceLineRanges, headerSourceFiles } from '../../script/backend/trace.js';
+import { summarize } from '../../script/backend/analysis.js';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
+const events = [
+    { type: 'allocation', object_id: 1, label: 'a', time: 5 },
+    { type: 'skeleton_call', object_id: 9, label: 'map', pattern: 'Map', start: 6, end: 8, elements: [4], outputs: [1], elwise_inputs: [], proxy_inputs: [], scalar_inputs: [] },
+];
+
+describe('trace formats', () => {
+    it('an array of events', () => {
+        const text = JSON.stringify(events, null, 4);
+        const t = parseTrace(text);
+        expect(t.header).toBeNull();
+        expect(t.events.map(e => e.idx)).toEqual([0, 1]);
+        expect(computeTraceLineRanges(text)).toHaveLength(2);
+    });
+
+    it('{ header, data }, with arrays in the header and the data first or last', () => {
+        const header = { '/src/a.cpp': 'abc', other: [1, [2, 3], '[']  };
+        for (const text of [JSON.stringify({ header, data: events }, null, 4), JSON.stringify({ data: events, header }, null, 4)]) {
+            const t = parseTrace(text);
+            expect(t.header).toEqual(header);
+            expect(t.events).toHaveLength(2);
+            const ranges = computeTraceLineRanges(text);
+            expect(ranges).toHaveLength(2);
+            // the lines of the range are the lines of that event
+            const lines = text.split('\n');
+            expect(lines.slice(ranges[1][0] - 1, ranges[1][1]).join('\n')).toContain('"skeleton_call"');
+            expect(lines.slice(ranges[0][0] - 1, ranges[0][1]).join('\n')).toContain('"allocation"');
+        }
+    });
+
+    it('finds the start of the events', () => {
+        expect(eventsArrayStart('  [1]')).toBe(2);
+        const text = '{"header": {"x": "[data]"}, "data": [1, 2]}';
+        expect(text[eventsArrayStart(text)]).toBe('[');
+        expect(text.slice(eventsArrayStart(text))).toBe('[1, 2]}');
+        expect(() => eventsArrayStart('{"header": {}}')).toThrow(/no "data"/);
+        expect(() => eventsArrayStart('42')).toThrow(/Not a SkePU trace/);
+    });
+
+    it('the source files of a header are not its sections', () => {
+        const header = { '/a.cpp': 'h1', '/b.cpp': 'h2', mpi: { rank: 0 }, clock: { start: {} } };
+        expect(headerSourceFiles(header)).toEqual({ '/a.cpp': 'h1', '/b.cpp': 'h2' });
+        const s = summarize(parseTrace(JSON.stringify({ header, data: events })).events, header);
+        expect(s.header.files).toBe(2);
+        expect(s.header.mpi).toEqual({ rank: 0 });
+        expect(summarize([], null).header).toBeNull();
+    });
+});
+
+describe('the worker loads { header, data }', () => {
+    const replies = {};
+    let seq = 0;
+    const call = async (type, payload = {}) => {
+        const id = String(++seq);
+        await globalThis.self.onmessage({ data: { id, type, ...payload } });
+        const reply = replies[id];
+        if (reply.type === 'error') throw new Error(reply.error);
+        return reply;
+    };
+    beforeAll(async () => {
+        globalThis.self = {
+            postMessage: m => { replies[m.id] = m; },
+            location: { href: 'file://' + join(ROOT, 'script/backend/visualizer.js') },
+            addEventListener() {},
+        };
+        await import(join(ROOT, 'script/backend/visualizer.js'));
+    });
+
+    const fixture = name => readFileSync(join(ROOT, 'tests/fixtures/mpi/trace_map_3', name), 'utf-8');
+
+    it('the trace of rank 0 of an MPI program', async () => {
+        const text = fixture('skepu_trace.json');
+        const loaded = await call('load', { traceJson: text, traceFilename: 'skepu_trace.json' });
+        expect(loaded.eventCount).toBe(JSON.parse(text).data.length);
+        expect(loaded.header.mpi).toMatchObject({ rank: 0, ranks: 3, role: 'full' });
+        expect(loaded.traceLineRanges).toHaveLength(loaded.eventCount);
+        const graph = await call('graph', {});
+        expect(graph.event_count).toBe(loaded.eventCount);
+        const calls = JSON.parse(text).data.filter(e => e.type === 'skeleton_call').length;
+        expect(calls).toBe(10);
+        expect(graph.nodes.length).toBeGreaterThan(0);
+    });
+
+    it('an array trace as before', async () => {
+        const text = JSON.stringify(events);
+        const loaded = await call('load', { traceJson: text });
+        expect(loaded.eventCount).toBe(2);
+        expect(loaded.header).toBeNull();
+    });
+});
+
+describe('the examples', () => {
+    const exampleDir = join(ROOT, 'examples');
+    const examples = JSON.parse(readFileSync(join(exampleDir, 'examples.json'), 'utf-8'));
+
+    it('have all their files', () => {
+        for (const ex of examples) {
+            for (const rel of Object.values(ex.trace).flat())
+                expect(() => readFileSync(join(exampleDir, rel)), `${ex.title}: ${rel}`).not.toThrow();
+            for (const rel of ex.cpp_files ?? [])
+                expect(() => readFileSync(join(exampleDir, rel)), `${ex.title}: ${rel}`).not.toThrow();
+        }
+    });
+
+    it('with the trace files of an MPI program are merged without a warning, and the worker loads them', async () => {
+        const mpi = examples.filter(ex => Object.keys(ex.trace).includes('mpi'));
+        expect(mpi.length).toBeGreaterThan(0);
+        const replies = {};
+        globalThis.self = { postMessage: m => { replies[m.id] = m; }, location: { href: 'file://' + join(ROOT, 'script/backend/visualizer.js') }, addEventListener() {} };
+        await import(join(ROOT, 'script/backend/visualizer.js?mpi-example'));
+        for (const ex of mpi) {
+            const traceFiles = ex.trace.mpi.map(rel => ({ name: rel.split('/').pop(), text: readFileSync(join(exampleDir, rel), 'utf-8') }));
+            const id = 'x' + ex.title;
+            await globalThis.self.onmessage({ data: { id, type: 'load', traceFiles } });
+            const loaded = replies[id];
+            expect(loaded.type, loaded.error).not.toBe('error');
+            expect(loaded.mpi.ranks).toBe(ex.trace.mpi.length);
+            expect(loaded.warnings, ex.title).toEqual([]);
+            expect(loaded.divergence).toBeNull();
+            expect(loaded.traceFilename).toBe(ex.trace.mpi[0].split('/').pop()); // (the trace of rank 0 is what the trace pane shows)
+            const gid = 'g' + ex.title;
+            await globalThis.self.onmessage({ data: { id: gid, type: 'graph' } });
+            expect(replies[gid].nodes.length).toBeGreaterThan(0);
+        }
+    });
+});

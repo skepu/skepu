@@ -4,7 +4,7 @@
 
 import {
     Node, ComputationNode, CallNode, ExternalNode, RegionNode, FusedNode,
-    AllocationNode, DeallocationNode, UpdateNode, ScalarNode, TransferNode,
+    AllocationNode, DeallocationNode, UpdateNode, ScalarNode, TransferNode, CommunicationNode,
 } from './node.js';
 import { ElwiseEdge, VirtualAliasEdge } from './edge.js';
 
@@ -31,6 +31,7 @@ export class GraphSettings {
     constructor() {
         this.updates       = true;
         this.transfers     = true;
+        this.communications = true;   // the collective operations of an MPI program
         this.antideps      = true;
         this.allocations   = true;
         this.deallocations = true;
@@ -630,12 +631,32 @@ export class DirectedGraph {
             g._rootPhase = false;
         }
 
+        // A collective that a call makes after its work (the results go back to their owners) is recorded before the call
+        // (the call is recorded when it ends): it is made after the call node, which it then reads the output of.
+        const after = new Map();   // seq of the call -> [[event, index]]
+        const makeCommunication = (ev, index, order) => {
+            g.setCurrentTraceIndex(index);
+            if (g.settings.communications) new CommunicationNode(g, ev, order);
+        };
+
         for (let i = 0; i < events.length; i++) {
             const ev = events[i];
             g.setCurrentTraceIndex(i);
             const order = (i + 1) * 100;
             const t = ev.type;
-            if      (t === 'skeleton_call')     new CallNode(g, ev, order);
+            if (t === 'communication') {
+                if (ev.seq && ev.phase === 'after') {
+                    if (!after.has(ev.seq)) after.set(ev.seq, []);
+                    after.get(ev.seq).push([ev, i]);
+                } else makeCommunication(ev, i, order);
+            }
+            else if (t === 'skeleton_call') {
+                new CallNode(g, ev, order);
+                if (ev.seq != null && after.has(ev.seq)) {
+                    after.get(ev.seq).forEach(([c, ci], k) => makeCommunication(c, ci, order + 2 + k));
+                    after.delete(ev.seq);
+                }
+            }
             else if (t === 'external')          new ExternalNode(g, ev, order);
             else if (t === 'allocation')        new AllocationNode(g, ev, order);
             else if (t === 'deallocation')      new DeallocationNode(g, ev, order);
@@ -648,6 +669,9 @@ export class DirectedGraph {
             else if (t === 'snapshot')          g.attachSnapshot(ev.object_id, ev.data_file, order);
             else if (t === 'virtual_container') g.registerVirtualContainer(ev.virtual_id, ev.label, ev.object_ids);
         }
+        // (collectives of a call that is not in the trace)
+        for (const list of after.values())
+            for (const [c, ci] of list) makeCommunication(c, ci, (ci + 1) * 100);
 
         return g;
     }

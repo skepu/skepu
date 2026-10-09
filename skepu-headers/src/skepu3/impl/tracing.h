@@ -176,6 +176,17 @@ namespace skepu
 			~Scope();
 		};
 
+		// What a recorded event is, for a tracer that the MPI backend has configured (see Tracer::configureMPI)
+		enum class CaptureKind { Node, Region, Raw };
+
+		// While a thread has one of these, the events that it records are not dropped by a tracer that is configured to
+		// drop the events of the node-level library (the MPI backend records the events of a call itself)
+		struct AllowScope
+		{
+			AllowScope();
+			~AllowScope();
+		};
+
 		struct Tracer
 		{
 
@@ -203,7 +214,8 @@ namespace skepu
 				std::vector<TraceID> &&elwise_inputs,
 				std::vector<TraceID> &&proxy_inputs = {},
 				std::vector<TraceID> &&scalar_inputs = {},
-				TraceID prng = UniqueIdentifier::null());
+				TraceID prng = UniqueIdentifier::null(),
+				Parameters const *extra = nullptr); // (fields that are added to the event as they are)
 
 			void call(
 				std::string pattern,
@@ -247,6 +259,20 @@ namespace skepu
 			    std::string const& file, int line
 			);
 
+#ifdef SKEPU_TRACING
+			// The MPI backend (skepu3/mpi/trace.hpp). Every process has a tracer. The events of the node-level library (the
+			// skeletons and containers of a process work on parts of the containers) are dropped: the backend records the
+			// events of the program itself with raw(). On a process that is not the first (lean), everything but raw
+			// events is dropped, as the first process records the events of the program that all processes agree on.
+			void configureMPI(bool lean) { this->m_suppress_node = true; this->m_lean = lean; }
+			void setFileName(std::string const& name) { this->m_file_name = name; }
+			std::string const &fileName() const { return this->m_file_name; }
+			// An event as it is (it also has the region that it was recorded in, unless lean)
+			void raw(nlohmann::json entry);
+			// What the file starts with (the trace is then an object { header, data })
+			nlohmann::json &header() { return this->m_header; }
+#endif
+
 			// Writes the events recorded so far to the trace file (the trace is also written when the
 			// tracer is destroyed, at the end of the program; call this to have it earlier, for
 			// example from a program that does not end normally or is an extension module of another)
@@ -260,11 +286,13 @@ namespace skepu
 				std::function<void(void)> &&work_func SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM);
 
 		private:
-			void push_capture(std::function<void()> &&capture);
+			void push_capture(std::function<void()> &&capture, CaptureKind kind = CaptureKind::Node);
 
 #ifdef SKEPU_TRACING
 			std::mutex m_mutex; // guards m_captures
 			nlohmann::json m_trace_json;
+			nlohmann::json m_header = nlohmann::json::object();
+			bool m_suppress_node = false, m_lean = false;
 			// The events are recorded as closures that run in the order they were recorded when the
 			// trace is written (see the destructor). Regions nest per thread: a closure sees the region
 			// stack of the thread that recorded it.
