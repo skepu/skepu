@@ -8,7 +8,7 @@
 //   model: conv1d | mlp (fully connected baseline)
 //
 // Sequential build (no precompiler):
-//   clang++ -std=c++20 -O2 -I ../skepu-headers/src -Wno-attributes dnn_signals1d.cpp -o dnn_signals1d
+//   clang++ -std=c++20 -O2 -I ../../skepu-headers/src -Wno-attributes dnn_signals1d.cpp -o dnn_signals1d
 #include <iostream>
 #include <random>
 #include <cmath>

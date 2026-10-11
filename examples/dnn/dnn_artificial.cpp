@@ -7,7 +7,7 @@
 // Usage: dnn_artificial batch_size learning_rate epochs backend [classes] [train_samples]
 //
 // Sequential build (no precompiler):
-//   clang++ -std=c++20 -O2 -I ../skepu-headers/src -Wno-attributes dnn_artificial.cpp -o dnn_artificial
+//   clang++ -std=c++20 -O2 -I ../../skepu-headers/src -Wno-attributes dnn_artificial.cpp -o dnn_artificial
 #include <iostream>
 #include <string>
 

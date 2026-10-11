@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 	auto run = atoi(argv[5]);
 
 	// Dataset configuration
-	const std::string param_path = "./data/pretrained/";
+	const std::string param_path = "../data/pretrained/";
 	const size_t num_classes = 10;
 	using namespace skepu::dnn;
 	
@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
 
     /*********************** MINST loading ************************** */ 
 
-    const std::string data_path = "./data/mnist/";
+    const std::string data_path = "../data/mnist/";
     
     skepu::Tensor4<float> train_images_temp = mnist::parse_mnist_images(data_path + "train-images.idx3-ubyte", 0, 1.0);
     skepu::Tensor4<float> test_images_temp  = mnist::parse_mnist_images(data_path + "t10k-images.idx3-ubyte", 0, 1.0);

@@ -50,11 +50,3 @@ index afdd613b4ee9..111f916cd255 100644
 +# Add the skepu-tool subdirectory
 +add_clang_subdirectory(skepu-tool)
 \ No newline at end of file
-diff --git a/clang/tools/skepu-tool b/clang/tools/skepu-tool
-new file mode 120000
-index 000000000000..45351279b112
---- /dev/null
-+++ b/clang/tools/skepu-tool
-@@ -0,0 +1 @@
-+../../../src/skepu-tool/
-\ No newline at end of file

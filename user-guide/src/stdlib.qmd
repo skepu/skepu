@@ -42,7 +42,7 @@ generate(labels, 10);
 
 The random numbers are a function of the seed and the position of the element, not of how
 the work is divided, so the CPU, OpenMP and OpenCL backends produce the same numbers
-(`examples/dnn_artificial.cpp` generates its whole data set this way, and `examples/coulombic.cpp`
+(`examples/dnn/dnn_artificial.cpp` generates its whole data set this way, and `examples/coulombic.cpp`
 its atoms).
 
 ## Utility Functions
@@ -122,8 +122,8 @@ The layers are `Dense`, `Conv2D`, `Conv1D`, `MaxPooling2D`, `AvgPooling2D`, `Max
 The convolution and pooling layers support unit stride (pooling: stride equal to the pool size)
 and "valid" mode; other settings are rejected with an error. `evaluate` gives the loss and accuracy of a data set (optionally with a confusion matrix),
 `predict` the predictions, and `save` and `load_model` write and read a model, with its
-weights, as a plain-text file (`examples/models/`). Examples, using the MNIST and CIFAR-10 data
-sets and synthetic data, are `examples/dnn_mnist10.cpp`, `dnn_cifar10.cpp`, `dnn_signals1d.cpp`,
+weights, as a plain-text file (`examples/dnn/models/`). Examples, using the MNIST and CIFAR-10 data
+sets and synthetic data, are `examples/dnn/dnn_mnist10.cpp`, `dnn_cifar10.cpp`, `dnn_signals1d.cpp`,
 `dnn_artificial.cpp` and `dnn_model_file.cpp`.
 
 [^13]: This is not a formal standard as decided by a standardization

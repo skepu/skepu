@@ -29,6 +29,10 @@ option(SKEPU_TOOL_STATIC
 	OFF)
 mark_as_advanced(SKEPU_TOOL_STATIC)
 
+option(SKEPU_LSP
+	"Also build the SkePU language server (clangd with SkePU support) in the LLVM build tree. Patches clang-tools-extra with clangd.patch."
+	OFF)
+
 # Check for languages and options
 include(CheckLanguage)
 check_language(CUDA)
@@ -96,7 +100,8 @@ macro(skepu_print_config)
     Buid type           ${CMAKE_BUILD_TYPE}
     Install prefix      ${CMAKE_INSTALL_PREFIX}
     Build examples      ${SKEPU_BUILD_EXAMPLES}
-    Test suite enabled  ${SKEPU_ENABLE_TESTING}")
+    Test suite enabled  ${SKEPU_ENABLE_TESTING}
+    Language server     ${SKEPU_LSP}")
 
 	if(SKEPU_BUILD_EXAMPLES OR SKEPU_ENABLE_TESTING)
 		message("

@@ -7,7 +7,7 @@
 //
 // Expects the CIFAR-10 binary version in ./data/cifar-10-batches-bin/.
 // Sequential build (no precompiler):
-//   clang++ -std=c++20 -O3 -I ../skepu-headers/src -Wno-attributes dnn_cifar10.cpp -o dnn_cifar10
+//   clang++ -std=c++20 -O3 -I ../../skepu-headers/src -Wno-attributes dnn_cifar10.cpp -o dnn_cifar10
 #include <iostream>
 #include <string>
 #include <chrono>
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 	const size_t max_train = (argc > 6) ? atoi(argv[6]) : 0;
 	const size_t max_test  = (argc > 7) ? atoi(argv[7]) : 0;
 
-	const std::string data_path = "./data/cifar-10-batches-bin/";
+	const std::string data_path = "../data/cifar-10-batches-bin/";
 	std::vector<std::string> train_files;
 	for (int i = 1; i <= 5; ++i) train_files.push_back(data_path + "data_batch_" + std::to_string(i) + ".bin");
 

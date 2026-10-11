@@ -7,7 +7,7 @@
 //   train_samples / test_samples: optionally use only the first N samples (0 = all)
 //
 // Sequential build (no precompiler):
-//   clang++ -std=c++20 -O2 -I ../skepu-headers/src -Wno-attributes dnn_mnist10.cpp -o dnn_mnist10
+//   clang++ -std=c++20 -O2 -I ../../skepu-headers/src -Wno-attributes dnn_mnist10.cpp -o dnn_mnist10
 #include <iostream>
 #include <string>
 
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 			<< Dense(num_classes).weights(Init::Xavier_uniform).biases(Init::Zero).activation(Act::SoftMax);
 	};
 
-	const std::string data_path = "./data/mnist/";
+	const std::string data_path = "../data/mnist/";
 	skepu::Tensor4<float> train_images = mnist::parse_mnist_images(data_path + "train-images.idx3-ubyte", 0, 1.0);
 	skepu::Tensor4<float> test_images  = mnist::parse_mnist_images(data_path + "t10k-images.idx3-ubyte", 0, 1.0);
 	skepu::Vector<mnist::label_t> train_labels_raw = mnist::parse_mnist_labels(data_path + "train-labels.idx1-ubyte");

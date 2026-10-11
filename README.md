@@ -49,23 +49,17 @@ the [cmake homepage](https://cmake.org).
 
 ## Setting up the SkePU language server
 
-To build the SkePU LSP, run the following commands in the project root:
+The language server is a clangd with SkePU support. It is built in the same LLVM build tree as `skepu-tool` (the `build/llvm` directory of the project build), so that the two share the compiled LLVM and Clang libraries. Configure the project with `SKEPU_LSP` on, in the project root:
 
-`$ cd llvm`
+`$ cmake -B build -DCMAKE_BUILD_TYPE=Release -DSKEPU_LSP=ON`
 
-`$ patch -Np1 -i ../clangd.patch`
+`$ cmake --build build -jN`
 
-`$ mkdir build && cd build` (Note that this is creates a build folder within the llvm folder, it is separate from the build folder at the project root)
+Replace N with how many threads you want to build with in parallel, e.g. -j12. The first configuration applies `clangd.patch` to the `llvm` submodule (as `llvm.patch` is applied for `skepu-tool`) and adds `clang-tools-extra` to the LLVM projects; with `SKEPU_LSP` off (the default) clangd is not built.
 
-`$ cmake ../llvm/ -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra"`
+After this you have built the clangd tool with modifications specific to SkePU. To use it, point to the clangd executable in \<project_root\>/build/llvm/bin/. For example, VSCode has a clangd extension which has an option to specify the path to a clangd executable.
 
-`$ cmake --build . --target clangd -jN`
-
-Replace N in the last command with how many threads you want to build with in parallel, e.g. -j12.
-
-After running these commands, you will have built the clangd tool with modifications specific to SkePU. To use this, you can point to the clangd executable in \<project_root\>/llvm/build/bin/. For example, VSCode has a clangd extension which has an option to specify the path to a clangd executable.
-
-To make the LSP aware of SkePU and its files, you need to generate a compile_commands.json file. See the Project setup section of the clangd [installation](https://clangd.llvm.org/installation) guide on how to do this. A simple option is to run bear on the make command, e.g. `bear -- make sequential/dotprod` in the examples folder. After doing this, the LSP should be able to find where the `#include <skepu>` and similar are fetched from. You might need to restart your code editor after generating the compile_commands.json for the changes to take effect.
+To make the LSP aware of SkePU and its files, you need to generate a compile_commands.json file. In the examples folder, `make compile-commands` writes one for the example programs. After doing this, the LSP should be able to find where the `#include <skepu>` and similar are fetched from. You might need to restart your code editor after generating the compile_commands.json for the changes to take effect.
 
 ## Compatibility with SkePU 1 and 2
 

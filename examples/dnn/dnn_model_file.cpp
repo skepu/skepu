@@ -5,7 +5,7 @@
 //   e.g. dnn_model_file models/mnist_cnn.dnn 32 0.05 2 cpu 3200 640 trained.dnn
 //
 // Sequential build (no precompiler):
-//   clang++ -std=c++20 -O2 -I ../skepu-headers/src -Wno-attributes dnn_model_file.cpp -o dnn_model_file
+//   clang++ -std=c++20 -O2 -I ../../skepu-headers/src -Wno-attributes dnn_model_file.cpp -o dnn_model_file
 #include <iostream>
 #include <string>
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 	const size_t max_test  = (argc > 7) ? atoi(argv[7]) : 0;
 	const std::string saved_file = (argc > 8) ? argv[8] : "trained.dnn";
 
-	const std::string data_path = "./data/mnist/";
+	const std::string data_path = "../data/mnist/";
 	skepu::Tensor4<float> train_images = mnist::parse_mnist_images(data_path + "train-images.idx3-ubyte", 0, 1.0);
 	skepu::Tensor4<float> test_images  = mnist::parse_mnist_images(data_path + "t10k-images.idx3-ubyte", 0, 1.0);
 	skepu::Vector<mnist::label_t> train_labels = mnist::parse_mnist_labels(data_path + "train-labels.idx1-ubyte");

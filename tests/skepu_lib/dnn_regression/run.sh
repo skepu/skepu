@@ -16,6 +16,7 @@ set -u
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root="$(cd "$here/../../.." && pwd)"
 examples="$root/examples"
+programs="$examples/dnn"
 golden="$here/golden"
 
 cxx="${CXX:-clang++}"
@@ -62,7 +63,7 @@ for c in "${cases[@]}"; do
 	fi
 
 	if [[ "$built" != *" $prog "* ]]; then
-		if ! "$cxx" -std=c++20 -O2 -I "$root/skepu-headers/src" -Wno-attributes "$examples/$prog.cpp" -o "$build_dir/$prog" > "$build_dir/$prog.build.log" 2>&1; then
+		if ! "$cxx" -std=c++20 -O2 -I "$root/skepu-headers/src" -Wno-attributes "$programs/$prog.cpp" -o "$build_dir/$prog" > "$build_dir/$prog.build.log" 2>&1; then
 			echo "FAIL  $name (build of $prog failed, see $build_dir/$prog.build.log)"
 			failed=$((failed + 1))
 			continue
@@ -70,9 +71,9 @@ for c in "${cases[@]}"; do
 		built="$built$prog "
 	fi
 
-	# The examples read their data relative to the examples directory
+	# The examples read their data relative to their directory (../data)
 	# shellcheck disable=SC2086
-	(cd "$examples" && "$build_dir/$prog" $args) > "$build_dir/$name.log" 2>&1
+	(cd "$programs" && "$build_dir/$prog" $args) > "$build_dir/$name.log" 2>&1
 	filter < "$build_dir/$name.log" > "$build_dir/$name.txt"
 
 	if [ "$update" = 1 ]; then

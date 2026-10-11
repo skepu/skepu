@@ -7,6 +7,20 @@
 #                                                                     #
 #                       ~ SkePU main Makefile ~                       #
 #######################################################################
+# The directory of this Makefile. A program in a subdirectory of the examples (or anywhere else) is built with this
+# Makefile by a Makefile of its own that lists its programs and includes this one:
+#     PROGS = mnist
+#     include ../Makefile
+
+EXAMPLES_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
+
+# The MPI backend (distributed containers over the node-level backends; programs run SPMD-style, one process per rank):
+#     make MPI=1 parallel-mpi/dotproduct         builds it for MPI (with the other backends of BACKENDS, but CUDA)
+#     make MPI=1 run-mpi/dotproduct              runs it on MPI_RANKS processes (the log is run-mpi/dotproduct.log)
+#     make MPI=1 MPI_RANKS=2 all-run             all the programs that the MPI backend supports, on 2 processes
+# or put -mpi in BACKENDS in Makefile.in. The MPI compiler, the program that starts the processes and its options are
+# set below (MPI_CXX, MPI_BASE_CXX, MPIRUN, MPIRUN_OPTIONS, MPI_RANKS).
+
 .DEFAULT_GOAL=all
 
 # ------------------------------------------------------------------- #
@@ -15,7 +29,7 @@
 
 # Default path to the SkePU installation
 # Override in Makefile.in
-SKEPU_SRC_PATH = $(dir $(lastword $(MAKEFILE_LIST)))/../
+SKEPU_SRC_PATH = $(EXAMPLES_DIR)/../
 
 # Default path to LLVM build directory (relative to SkePU installation path)
 # Override in Makefile.in
@@ -64,6 +78,18 @@ SKEPU_TOOL_USER_FLAGS ?= -I /usr/local/include \
 endif
 endif
 
+# The MPI backend. MPI=1 on the command line adds -mpi to BACKENDS (and takes -cuda out: the MPI backend has no CUDA).
+# Override in Makefile.in
+MPI_CXX = mpicxx
+# The compiler that the MPI compiler wrapper runs (OMPI_CXX for Open MPI, MPICH_CXX for MPICH); the default is CXX
+# MPI_BASE_CXX =
+# The program that starts the processes of a run, its options (for example --oversubscribe) and the number of processes
+MPIRUN = mpirun
+MPIRUN_OPTIONS =
+MPI_RANKS = 4
+# What a run of a program is prefixed with (environment variables for the processes: RUN_ENV = OMP_NUM_THREADS=2)
+RUN_ENV =
+
 # Uncomment for launching SkePU precompiler in debugger
 # DBGR = lldb --
 
@@ -72,11 +98,33 @@ endif
 # Includes.
 # ------------------------------------------------------------------- #
 
-Makefile.in:
-	./generate_makefile.in.sh
+$(EXAMPLES_DIR)Makefile.in:
+	cd $(EXAMPLES_DIR) && ./generate_makefile.in.sh
 
 # Overrides default values for various paths and options
-include $(dir $(lastword $(MAKEFILE_LIST)))Makefile.in
+include $(EXAMPLES_DIR)Makefile.in
+
+# MPI mode: -mpi among the backends (MPI=1 puts it there). The programs are built with the MPI compiler, in directories of their own
+# (parallel-mpi, run-mpi, trace-mpi) so that the builds, logs and traces of the two ways do not replace each other.
+ifdef MPI
+ifeq (,$(filter -mpi,$(BACKENDS)))
+BACKENDS := $(filter-out -cuda,$(BACKENDS)) -mpi
+endif
+endif
+MPI_MODE := $(filter -mpi,$(BACKENDS))
+MPI_SUFFIX := $(if $(MPI_MODE),-mpi)
+
+ifdef MPI_MODE
+ifneq (,$(filter -cuda,$(BACKENDS)))
+$(error The MPI backend cannot be built together with CUDA: remove -cuda from BACKENDS)
+endif
+ifndef MPI_BASE_CXX
+MPI_BASE_CXX := $(CXX)
+endif
+export OMPI_CXX  := $(MPI_BASE_CXX)
+export MPICH_CXX := $(MPI_BASE_CXX)
+CXX := $(MPI_CXX)
+endif
 
 
 # ------------------------------------------------------------------- #
@@ -109,15 +157,18 @@ SKEPU_OPTIONS += -DSKEPU_DEBUG=$(SKEPU_DEBUG_LEVEL)
 # ---------------------------------------------------------------------------- #
 # Test program names and target directories.
 
-PAR_DIR     = parallel
+PAR_BASE    = parallel
+RUN_BASE    = run
+TRACE_BASE  = trace
+PAR_DIR     = $(PAR_BASE)$(MPI_SUFFIX)
 SEQ_DIR     = sequential
-RUN_DIR     = run
+RUN_DIR     = $(RUN_BASE)$(MPI_SUFFIX)
 SNAPSHOT_DIR ?= snapshots
-TRACE_DIR    ?= trace
+TRACE_DIR    ?= $(TRACE_BASE)$(MPI_SUFFIX)
 
-# All SkePU example programs (used for 'make all-[parallel|sequential]' and 'make clean').
+# All SkePU example programs (unless the Makefile that includes this one has set PROGS; used for 'make all-[parallel|sequential]' and 'make clean').
 
-PROGS=
+ifndef PROGS
 PROGS += cellular_automaton
 PROGS += cma
 PROGS += conjugate_gradient
@@ -142,6 +193,14 @@ PROGS += ppmcc
 PROGS += psnr
 PROGS += riemann_sum
 PROGS += taylor
+
+# The programs that the MPI backend supports (see examples/CMake/example-options.cmake): the others are not built in MPI mode
+MPI_PROGS = cellular_automaton cma conjugate_gradient coulombic dotproduct horner mandelbrot maxmin miller_rabin \
+	mmmult mmmult_row_col montecarlo mvmult mvmult_row nbody nbody_mappairs ppmcc psnr riemann_sum taylor
+ifdef MPI_MODE
+PROGS := $(filter $(MPI_PROGS),$(PROGS))
+endif
+endif
 
 RUN_BACKEND = OpenCL
 SIZE_BACKEND = 2048
@@ -170,6 +229,14 @@ lookup.psnr                := 128 128 $(RUN_BACKEND)
 lookup.riemann_sum         := 0 1 $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.taylor              := 0.1 $(SIZE_BACKEND) $(RUN_BACKEND)
 
+
+# The programs that have more than one source file list them: sources.<program> := a.cpp b.cpp
+# (the default is <program>.cpp). Each of them is precompiled and the results are built into one program.
+# (see multifile/Makefile)
+srcs = $(or $(sources.$(1)),$(1).cpp)
+
+# Sources that are built into every program (the image reading and writing of the examples).
+COMMON_SOURCES ?= $(EXAMPLES_DIR)lodepng.cpp
 
 TESTS          = $(addprefix $(SEQ_DIR)/,      $(PROGS))
 PTESTS         = $(addprefix $(PAR_DIR)/,      $(PROGS))
@@ -206,10 +273,10 @@ BACKEND_FLAGS += $(OPENCL_FLAGS)
 endif
 
 # Flags for target compiler (preprocessed sources).
-TARGET_FLAGS = $(SKEPU_OPTIONS) -I $(SKEPU_INCLUDE_PATH) -I ./  $(NVCCPASS) -Wno-attributes $(BACKEND_FLAGS)
+TARGET_FLAGS = $(SKEPU_OPTIONS) -I $(SKEPU_INCLUDE_PATH) -I ./ -I $(EXAMPLES_DIR) $(NVCCPASS) -Wno-attributes $(BACKEND_FLAGS)
 
 # Flags for non-preprocessed compilation.
-SEQ_FLAGS    = $(SKEPU_OPTIONS) -I $(SKEPU_INCLUDE_PATH) -Wno-attributes # -fno-rtti -fno-exceptions
+SEQ_FLAGS    = $(SKEPU_OPTIONS) -I $(SKEPU_INCLUDE_PATH) -I $(EXAMPLES_DIR) -Wno-attributes # -fno-rtti -fno-exceptions
 
 
 # ---------------------------------------------------------------------------- #
@@ -223,9 +290,9 @@ all-parallel: $(PTESTS)
 
 all-run: $(RUN_TESTS)
 
-all: Makefile.in all-sequential all-parallel
+all: $(EXAMPLES_DIR)Makefile.in all-sequential all-parallel
 
-.PHONY: all all-sequential all-parallel all-run pack-snapshots clean
+.PHONY: all all-sequential all-parallel all-run pack-snapshots clean compile-commands
 
 $(PAR_DIR):
 	@mkdir -p $(PAR_DIR)
@@ -243,24 +310,40 @@ $(SNAPSHOT_DIR):
 $(TRACE_DIR):
 	@mkdir -p $(TRACE_DIR)
 
+# A compilation database (compile_commands.json) for editors and language servers (VS Code, Zed, clangd): one entry for each
+# example source, with the flags of the sequential build, which is the source as it is written (the precompiled sources of
+# the parallel builds are generated files). Written by make itself, no extra tool needed. Regenerated when the flags change.
+COMPILE_COMMANDS = compile_commands.json
+COMPILE_SOURCES  = $(sort $(foreach p,$(PROGS),$(call srcs,$(p))) $(COMMON_SOURCES))
+json_entry = {"directory": "$(CURDIR)", "file": "$(1)", "command": "$(SEQ_CXX) $(SEQ_FLAGS) -c $(1)"}
+
+compile-commands: $(COMPILE_COMMANDS)
+
+$(COMPILE_COMMANDS): $(MAKEFILE_LIST)
+	@printf '[' > $@
+	@sep='\n'; $(foreach f,$(COMPILE_SOURCES),printf "$$sep%s" '$(call json_entry,$(f))' >> $@; sep=',\n';) true
+	@printf '\n]\n' >> $@
+	@echo "$@ written for $(words $(COMPILE_SOURCES)) sources"
+
+# (the prerequisites of the rules below name the sources of the program: second expansion)
+.SECONDEXPANSION:
+
 # Builds a single sequential test program.
-$(SEQ_DIR)/% : %.cpp $(SEQ_DEPS) | $(SEQ_DIR)
-	$(DBGR) $(SEQ_CXX) $(SEQ_FLAGS) lodepng.cpp $< -o $@
+$(SEQ_DIR)/% : $$(call srcs,$$*) $(SEQ_DEPS) | $(SEQ_DIR)
+	$(DBGR) $(SEQ_CXX) $(SEQ_FLAGS) $(COMMON_SOURCES) $(call srcs,$*) -o $@
 
-# Precompiles and builds a single parallel test program.
-$(PAR_DIR)/%: %.cpp $(PAR_DEPS) | $(PAR_DIR) $(TRACE_DIR)
-	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name $*_precompiled $<  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) $@_precompiled.$(FILETYPE) lodepng.cpp $(TARGET_FLAGS) -DSKEPU_TRACE_FILE="$(TRACE_DIR)/trace_$*.json" -DSKEPU_TRACE_SNAPSHOT_DIR="$(SNAPSHOT_DIR)" -o $@
+# Precompiles and builds a single parallel test program (the precompiled source of each of its sources is
+# $(PAR_DIR)/<source>_precompiled.$(FILETYPE)).
+$(PAR_DIR)/%: $$(call srcs,$$*) $(PAR_DEPS) | $(PAR_DIR) $(TRACE_DIR)
+	set -e; $(foreach s,$(call srcs,$*),$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name $(basename $(notdir $(s)))_precompiled $(s) -dir $(PAR_DIR) $(SKEPU_FLAGS);) true
+	$(DBGR) $(CXX) $(foreach s,$(call srcs,$*),$(PAR_DIR)/$(basename $(notdir $(s)))_precompiled.$(FILETYPE)) $(COMMON_SOURCES) $(TARGET_FLAGS) -DSKEPU_TRACE_FILE="$(TRACE_DIR)/trace_$*.json" -DSKEPU_TRACE_SNAPSHOT_DIR="$(SNAPSHOT_DIR)" -o $@
 
-# Precompiles and builds the two-file test program.
-$(PAR_DIR)/multifile: multifile_1.cpp multifile_2.cpp $(PAR_DEPS) | $(PAR_DIR)
-	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name multifile_1_precompiled multifile_1.cpp  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name multifile_2_precompiled multifile_2.cpp  -dir $(PAR_DIR) $(SKEPU_FLAGS)
-	$(DBGR) $(CXX) -fopenmp $(PAR_DIR)/multifile_1_precompiled.$(FILETYPE) $(PAR_DIR)/multifile_2_precompiled.$(FILETYPE)  $(TARGET_FLAGS)  -o $@
+# The start of a run: the processes of an MPI program are started by MPIRUN, one for each rank (SPMD)
+RUN_PREFIX = $(RUN_ENV) $(if $(MPI_MODE),$(MPIRUN) $(MPIRUN_OPTIONS) -n $(MPI_RANKS))
 
 # Run an example program while collecting log file
 $(RUN_DIR)/% : $(PAR_DIR)/% | $(RUN_DIR) $(SNAPSHOT_DIR) $(TRACE_DIR)
-	$< $(lookup.$*) > $@.log 2>&1
+	$(RUN_PREFIX) $< $(lookup.$*) > $@.log 2>&1
 	$(MAKE) pack-snapshots ARCHIVE_TITLE=snapshots_$*
 
 ARCHIVE_TITLE ?= snapshots
@@ -278,7 +361,7 @@ pack-snapshots:
 # products of running them (logs, traces, snapshots); all of it can be regenerated.
 clean:
 	$(RM) -R $(SEQ_DIR)
-	$(RM) -R $(PAR_DIR)
-	$(RM) -R $(RUN_DIR)
-	$(RM) -R $(TRACE_DIR) $(SNAPSHOT_DIR)
-	$(RM) snapshots_*.zip
+	$(RM) -R $(PAR_BASE) $(PAR_BASE)-mpi
+	$(RM) -R $(RUN_BASE) $(RUN_BASE)-mpi
+	$(RM) -R $(TRACE_BASE) $(TRACE_BASE)-mpi $(SNAPSHOT_DIR)
+	$(RM) snapshots_*.zip $(COMPILE_COMMANDS)
