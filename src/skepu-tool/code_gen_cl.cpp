@@ -735,6 +735,7 @@ enum {
 	SKEPU_EDGE_CYCLIC = 1,
 	SKEPU_EDGE_DUPLICATE = 2,
 	SKEPU_EDGE_PAD = 3,
+	SKEPU_EDGE_MIRROR = 4, // (the edge mode None with an input of the size of the output, "mirror mode": the interior of the output is computed; the halo is loaded as for Duplicate)
 };
 
 #define SKEPU_BLAS_STRIDE_TYPE_UF int

@@ -246,7 +246,10 @@ namespace skepu
 				size_t inputSize = input.size();
 
 				
-				if (inputSize != this->expectedInputSize(firstOutputSize, 0))
+				// Mirror mode: the edge mode None with an input of the size of the output; only the interior of the output is computed (the other elements keep their values)
+				this->m_mirror_mode = (this->m_edge == skepu::Edge::None && inputSize == firstOutputSize);
+				
+				if (!this->m_mirror_mode && inputSize != this->expectedInputSize(firstOutputSize, 0))
 					SKEPU_ERROR(this->generateCallMetadata()
 					<< "\ninput/output vector size mismatch"
 					<< "\noutput vector (label: " << firstOutput.getLabel() << ", size: " << firstOutputSize << ")"
@@ -264,11 +267,17 @@ namespace skepu
 
 				this->checkVectorSizes(this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
+				if (this->mirrorHasNoInterior(get<0>(std::forward<CallArgs>(args)...).size())) // (mirror mode with nothing to compute: only the random numbers are used)
+				{
+					this->template prepareRandom<MapOverlapFunc::randomCount>(get<0>(std::forward<CallArgs>(args)...).size());
+					return get<0>(std::forward<CallArgs>(args)...);
+				}
+
 				size_t size = get<OutArity>(std::forward<CallArgs>(args)...).size();
 
 				this->selectBackend(size);
 
-				switch (this->m_selected_spec->activateBackend())
+				switch (this->checkMirrorBackend(this->m_selected_spec->activateBackend(), "MapOverlap 1D"))
 				{
 				case Backend::Type::Hybrid:
 #ifdef SKEPU_HYBRID
@@ -330,14 +339,17 @@ namespace skepu
 				size_t inputRows = input.total_rows();
 				size_t inputCols = input.total_cols();
 				
-				if (inputRows != expectedInputRows)
+				// Mirror mode: the edge mode None with an input of the size of the output; only the interior of the output is computed (the other elements keep their values)
+				this->m_mirror_mode = (this->m_edge == skepu::Edge::None && inputRows == firstOutputRows && inputCols == firstOutputCols);
+				
+				if (!this->m_mirror_mode && inputRows != expectedInputRows)
 					SKEPU_ERROR(callMetadata
 					<< "\ninput/output matrix row count mismatch"
 					<< "\nfirst output matrix (label: " << firstOutput.getLabel() << ", rows: " << firstOutputRows << ")"
 					<< "\nexpected input matrix rows: " << colorRed(expectedInputRows)
 					<< "\ninput matrix (label: " << input.getLabel() << ", rows: " << colorRed(inputRows) << ")");
 				
-				if (inputCols != expectedInputCols)
+				if (!this->m_mirror_mode && inputCols != expectedInputCols)
 					SKEPU_ERROR(callMetadata
 					<< "\ninput/output matrix col count mismatch"
 					<< "\nfirst output matrix (label: " << firstOutput.getLabel() << ", cols: " << firstOutputCols << ")"
@@ -376,6 +388,12 @@ namespace skepu
 					checkMatrixSizes(firstOutputRows, this->expectedInputSize(firstOutputCols, 0), generateRowwiseCallMetadata(),
 									 this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
+				if (this->mirrorHasNoInterior(this->m_overlapPolicy == Overlap::ColWise ? firstOutputRows : firstOutputCols)) // (mirror mode with nothing to compute: only the random numbers are used)
+				{
+					this->template prepareRandom<MapOverlapFunc::randomCount>(firstOutput.size());
+					return get<0>(std::forward<CallArgs>(args)...);
+				}
+
 				size_t size_i = get<0>(std::forward<CallArgs>(args)...).size_i();
 				size_t size_j = get<0>(std::forward<CallArgs>(args)...).size_j();
 
@@ -384,7 +402,7 @@ namespace skepu
 				switch (this->m_overlapPolicy)
 				{
 					case Overlap::ColWise:
-						switch (this->m_selected_spec->activateBackend())
+						switch (this->checkMirrorBackend(this->m_selected_spec->activateBackend(), "MapOverlap 1D"))
 						{
 						case Backend::Type::Hybrid:
 #ifdef SKEPU_HYBRID
@@ -413,7 +431,7 @@ namespace skepu
 						break;
 
 					case Overlap::RowWise:
-						switch (this->m_selected_spec->activateBackend())
+						switch (this->checkMirrorBackend(this->m_selected_spec->activateBackend(), "MapOverlap 1D"))
 						{
 						case Backend::Type::Hybrid:
 #ifdef SKEPU_HYBRID

@@ -43,11 +43,20 @@ namespace skepu
 				(out_size_k - arg.size_k()) / 2 * this->m_overlap[2], (out_size_l - arg.size_l()) / 2 * this->m_overlap[3]
 			};
 
-			const size_t threads = std::min<size_t>(out_size_i, omp_get_max_threads());
-			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(out_size_i * out_size_j * out_size_k * out_size_l, threads, out_size_j * out_size_k * out_size_l);
+			// (mirror mode: the edge mode None with an input of the size of the output; only the interior of the output is computed, the elements near the edges keep their values and their random numbers are skipped)
+			// The rows of the loop below are the units of the random numbers (the interior ones in mirror mode: they get the numbers one after the other)
+			const size_t first_i = this->m_mirror_mode ? this->m_overlap[0] : 0, first_j = this->m_mirror_mode ? this->m_overlap[1] : 0;
+			const size_t first_k = this->m_mirror_mode ? this->m_overlap[2] : 0, first_l = this->m_mirror_mode ? this->m_overlap[3] : 0;
+			const size_t rows = out_size_i - 2 * first_i;
+			const size_t work_unit = (out_size_j - 2 * first_j) * (out_size_k - 2 * first_k) * (out_size_l - 2 * first_l);
+			const size_t threads = std::min<size_t>(rows, omp_get_max_threads());
+			const size_t final_size = out_size_i * out_size_j * out_size_k * out_size_l;
+			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(rows * work_unit, threads, work_unit);
+			if (this->m_mirror_mode)
+				this->template prepareRandom<MapOverlapFunc::randomCount>(final_size - rows * work_unit);
 
 			long offset[4] = {0, 0, 0, 0};
-			if (!this->isPool)
+			if (!this->isPool && !this->m_mirror_mode)
 			{
 				offset[0] = region_offset(out_size_i, arg.size_i(), this->m_overlap[0], this->m_edge);
 				offset[1] = region_offset(out_size_j, arg.size_j(), this->m_overlap[1], this->m_edge);
@@ -56,10 +65,10 @@ namespace skepu
 			}
 
 #pragma omp parallel for schedule(runtime) firstprivate(region)
-			for (size_t i = 0; i < out_size_i; i++)
-				for (size_t j = 0; j < out_size_j; j++)
-					for (size_t k = 0; k < out_size_k; k++)
-						for (size_t l = 0; l < out_size_l; l++)
+			for (size_t i = first_i; i < out_size_i - first_i; i++)
+				for (size_t j = first_j; j + first_j < out_size_j; j++)
+					for (size_t k = first_k; k + first_k < out_size_k; k++)
+						for (size_t l = first_l; l + first_l < out_size_l; l++)
 							if (p == Parity::None || index_parity(p, i, j, k, l))
 							{
 								region.idx = Index4D{

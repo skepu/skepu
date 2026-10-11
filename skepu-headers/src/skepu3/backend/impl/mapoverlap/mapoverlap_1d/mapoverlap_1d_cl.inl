@@ -29,13 +29,13 @@ namespace skepu
 			size_t out_offset = std::min(startIdx, overlap);
 
 			size_t out_numelements;
-			if (this->m_edge != skepu::Edge::None)
+			if (this->m_edge != skepu::Edge::None || this->m_mirror_mode)
 				out_numelements = numElem;
 			else
 				out_numelements = numElem - overlap * 2;
 			
 			// Sets the pad and edge policy values that are sent to the kernel
-			const int _poly = static_cast<int>(this->m_edge);
+			const int _poly = this->m_mirror_mode ? 4 /* SKEPU_EDGE_MIRROR of the kernel */ : static_cast<int>(this->m_edge);
 			const T _pad = (this->m_edge == Edge::Pad) ? this->m_pad : T{};
 			
 			// Constructs a wrap vector, which is used if cyclic edge policy is specified.
@@ -66,10 +66,14 @@ namespace skepu
 			auto in_mem_p = arg.updateDevice_CL(arg.getAddress() + startIdx - out_offset, n, device, true);
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...)
 					.getAddress(), get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
-			auto outMemP    = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + startIdx, out_numelements, device, false)...);
+			auto outMemP    = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + startIdx, out_numelements, device, this->m_mirror_mode)...);
 			
-			size_t threads = std::min<size_t>(numElem, numBlocks * numThreads);
-			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(numElem, threads);
+			// (one number for each element of the output: not for those of the input; mirror mode: the elements near the edges are not computed and their numbers are skipped)
+			const size_t computed = this->m_mirror_mode ? out_numelements - 2 * overlap : out_numelements;
+			size_t threads = std::min<size_t>(computed, numBlocks * numThreads);
+			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(computed, threads);
+			if (this->m_mirror_mode)
+				this->template prepareRandom<MapOverlapFunc::randomCount>(out_numelements - computed);
 			auto randomMemP = random.updateDevice_CL(random.getAddress(), threads, device, true);
 			
 			CLKernel::mapOverlapVector(
@@ -220,6 +224,9 @@ namespace skepu
 			
 			const size_t numDevices = std::min(this->m_selected_spec->devices(), this->m_environment->m_devices_CL.size());
 			
+			if (numDevices > 1 && this->m_mirror_mode)
+				SKEPU_ERROR("MapOverlap 1D with the edge mode None and an input of the size of the output (mirror mode) does not work on multiple OpenCL devices; use one device");
+			
 #ifndef SKEPU_DEBUG_FORCE_MULTI_GPU_IMPL
 			if (numDevices <= 1)
 				return this->mapOverlapSingle_CL(0, startIdx, p, oi, ei, ai, ci, std::forward<CallArgs>(args)...);
@@ -324,7 +331,7 @@ namespace skepu
 			}
 			
 			// Sets the pad and edge policy values that are sent to the kernel
-			const int _poly = static_cast<int>(this->m_edge);
+			const int _poly = this->m_mirror_mode ? 4 /* SKEPU_EDGE_MIRROR of the kernel */ : static_cast<int>(this->m_edge);
 			const T _pad = (this->m_edge == Edge::Pad) ? this->m_pad : T{};
 			
 			// Constructs a wrap vector, which is used if cyclic edge policy is specified.
@@ -365,12 +372,16 @@ namespace skepu
 			
 			// Copy elements to device and allocate output memory.
 			auto inMemP  = arg.updateDevice_CL(arg.getAddress(), numrows, rowWidth, device, true);
-			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress(), res.total_rows(), res.total_cols(), device, false)...);
+			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress(), res.total_rows(), res.total_cols(), device, this->m_mirror_mode)...);
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(),
 				get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
 				
-			size_t threads = std::min<size_t>(n, numBlocks * numThreads);
-			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(n, threads);
+			// (one number for each element of the output; mirror mode: the elements near the edges are not computed and their numbers are skipped)
+			const size_t computed = this->m_mirror_mode ? res.total_rows() * (res.total_cols() - 2 * overlap) : out_numelements;
+			size_t threads = std::min<size_t>(computed, numBlocks * numThreads);
+			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(computed, threads);
+			if (this->m_mirror_mode)
+				this->template prepareRandom<MapOverlapFunc::randomCount>(out_numelements - computed);
 			auto randomMemP = random.updateDevice_CL(random.getAddress(), threads, device, true);
 			
 			CLKernel::mapOverlapMatrixRowWise(
@@ -560,6 +571,9 @@ namespace skepu
 			
 			const size_t numDevices = std::min(this->m_selected_spec->devices(), this->m_environment->m_devices_CL.size());
 			
+			if (numDevices > 1 && this->m_mirror_mode)
+				SKEPU_ERROR("MapOverlap 1D with the edge mode None and an input of the size of the output (mirror mode) does not work on multiple OpenCL devices; use one device");
+			
 #ifndef SKEPU_DEBUG_FORCE_MULTI_GPU_IMPL
 			if (numDevices <= 1)
 				return this->mapOverlapSingle_CL_Row(0, numrows, p, oi, ei, ai, ci, std::forward<CallArgs>(args)...);
@@ -605,7 +619,7 @@ namespace skepu
 			}
 			
 			// Sets the pad and edge policy values that are sent to the kernel
-			const int _poly = static_cast<int>(this->m_edge);
+			const int _poly = this->m_mirror_mode ? 4 /* SKEPU_EDGE_MIRROR of the kernel */ : static_cast<int>(this->m_edge);
 			const T _pad = (this->m_edge == Edge::Pad) ? this->m_pad : T{};
 			
 			// Constructs a wrap vector, which is used if cyclic edge policy is specified.
@@ -644,12 +658,16 @@ namespace skepu
 			
 			// Copy elements to device and allocate output memory.
 			auto inMemP  = arg.updateDevice_CL(arg.getAddress(), colWidth, numcols, device, true);
-			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress(), res.total_rows(), res.total_cols(), device, false)...);
+			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress(), res.total_rows(), res.total_cols(), device, this->m_mirror_mode)...);
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(),
 				get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
 					
-			size_t threads = std::min<size_t>(n, numBlocks * numThreads);
-			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(n, threads);
+			// (one number for each element of the output; mirror mode: the elements near the edges are not computed and their numbers are skipped)
+			const size_t computed = this->m_mirror_mode ? (res.total_rows() - 2 * overlap) * res.total_cols() : out_numelements;
+			size_t threads = std::min<size_t>(computed, numBlocks * numThreads);
+			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(computed, threads);
+			if (this->m_mirror_mode)
+				this->template prepareRandom<MapOverlapFunc::randomCount>(out_numelements - computed);
 			auto randomMemP = random.updateDevice_CL(random.getAddress(), threads, device, true);
 			
 			CLKernel::mapOverlapMatrixColWise(
@@ -878,6 +896,9 @@ namespace skepu
 				<< ", maxBlocks = " << this->m_selected_spec->GPUBlocks() << ", maxThreads = " << this->m_selected_spec->GPUThreads());
 			
 			const size_t numDevices = std::min(this->m_selected_spec->devices(), this->m_environment->m_devices_CL.size());
+			
+			if (numDevices > 1 && this->m_mirror_mode)
+				SKEPU_ERROR("MapOverlap 1D with the edge mode None and an input of the size of the output (mirror mode) does not work on multiple OpenCL devices; use one device");
 			
 #ifndef SKEPU_DEBUG_FORCE_MULTI_GPU_IMPL
 			

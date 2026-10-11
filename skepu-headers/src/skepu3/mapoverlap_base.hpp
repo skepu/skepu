@@ -50,6 +50,17 @@ namespace skepu
             StrideList<4> m_strides{1, 1, 1, 1};
             bool m_mirror_mode = false;
 
+            // Mirror mode (the edge mode None with an input of the size of the output; only the interior of the output is computed) when no element
+            // has its whole overlap in the input: a dimension of the output is not larger than twice its overlap. Nothing is computed.
+            template<typename... Sizes>
+            bool mirrorHasNoInterior(Sizes... sizes) const
+            {
+                size_t k = 0;
+                bool empty = false;
+                ((empty = empty || (size_t)sizes <= 2 * (size_t)this->m_overlap[k++]), ...);
+                return this->m_mirror_mode && empty;
+            }
+
             size_t getSmallestAllowedInputSizePool(size_t out_size, size_t dim) const
             {
                 return (out_size - 1) * this->m_strides[dim] + this->m_overlap[dim];

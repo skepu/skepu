@@ -32,13 +32,19 @@ namespace skepu
 			RegionType region{arg, this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_edge, this->m_pad};
 			
 
-			size_t threads = std::min<size_t>(out_size_i, omp_get_max_threads());
+			// (mirror mode: the edge mode None with an input of the size of the output; only the interior of the output is computed, the elements near the edges keep their values and their random numbers are skipped)
+			// The rows of the loop below are the units of the random numbers (the interior ones in mirror mode: they get the numbers one after the other)
+			const size_t first_i = this->m_mirror_mode ? this->m_overlap[0] : 0, first_j = this->m_mirror_mode ? this->m_overlap[1] : 0, first_k = this->m_mirror_mode ? this->m_overlap[2] : 0;
+			const size_t rows = out_size_i - 2 * first_i;
+			const size_t work_unit = (out_size_j - 2 * first_j) * (out_size_k - 2 * first_k);
+			size_t threads = std::min<size_t>(rows, omp_get_max_threads());
 			size_t final_size = out_size_i * out_size_j * out_size_k;
-			size_t work_unit = out_size_j * out_size_k;
-			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(final_size, threads, work_unit);
+			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(rows * work_unit, threads, work_unit);
+			if (this->m_mirror_mode)
+				this->template prepareRandom<MapOverlapFunc::randomCount>(final_size - rows * work_unit);
 			
             Index3D offset{0, 0, 0};
-            if (!this->isPool)
+            if (!this->isPool && !this->m_mirror_mode)
             {
                 if (this->m_edge == Edge::None)
                 {
@@ -55,9 +61,9 @@ namespace skepu
             }
 
 #pragma omp parallel for schedule(runtime) firstprivate(region)
-			for (size_t i = 0; i < out_size_i; i++)
-				for (size_t j = 0; j < out_size_j; j++)
-					for (size_t k = 0; k < out_size_k; k++)
+			for (size_t i = first_i; i < out_size_i - first_i; i++)
+				for (size_t j = first_j; j + first_j < out_size_j; j++)
+					for (size_t k = first_k; k + first_k < out_size_k; k++)
 						if (p == Parity::None || index_parity(p, i, j, k))
 						{
 							region.idx = Index3D{(i + offset.i) * this->m_strides[0], (j + offset.j) * this->m_strides[1], (k + offset.k) * this->m_strides[2]};

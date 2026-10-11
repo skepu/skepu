@@ -49,6 +49,15 @@ namespace skepu
                     parameters.add("update_mode", to_string(this->m_updateMode));
             }
 
+            // The backend of the call, checked: mirror mode (the edge mode None with an input of the size of the output; only the interior of the
+            // output is computed) is not implemented for the CUDA and Hybrid backends.
+            Backend::Type checkMirrorBackend(Backend::Type type, const char *skeleton)
+            {
+                if (this->m_mirror_mode && (type == Backend::Type::CUDA || type == Backend::Type::Hybrid))
+                    SKEPU_ERROR(skeleton << " with the edge mode None and an input of the size of the output (mirror mode) is not implemented for the CUDA and Hybrid backends");
+                return type;
+            }
+
             size_t expectedInputSize(size_t size, size_t dim) const
 			{
 				if (isPool) return this->m_overlap[dim] + this->m_strides[dim] * (size - 1);

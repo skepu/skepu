@@ -31,10 +31,12 @@ namespace skepu
 			const size_t size = arg.size();
 			const size_t stride = 1;
 			
-			auto random_pre = this->template prepareRandom<MapOverlapFunc::randomCount>(overlap);
+			auto random_pre = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0); // (no edge elements are computed with Edge::None)
 			size_t threads = std::min<size_t>(size - 2*overlap, omp_get_max_threads());
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(size - 2*overlap, threads);
-			auto random_post = this->template prepareRandom<MapOverlapFunc::randomCount>(overlap);
+			auto random_post = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0); // (no edge elements are computed with Edge::None)
+			if (this->m_mirror_mode) // (mirror mode: the elements near the edges are not computed: their numbers are skipped)
+				this->template prepareRandom<MapOverlapFunc::randomCount>(2 * overlap);
 			
 			if (this->m_edge != Edge::None)
 			{
@@ -93,12 +95,13 @@ namespace skepu
 
 			else // Edge::None
 			{
+				const size_t first = this->m_mirror_mode ? overlap : 0; // (mirror mode: the output keeps its values near the edges)
 #pragma omp parallel for schedule(runtime)
 				for (size_t i = 0; i < size - overlap * 2; ++i)
 				{
-					auto res = F::forward(MapOverlapFunc::OMP, Index1D{i + get<0>(std::forward<CallArgs>(args)...).indexOrigin()}, random(omp_get_thread_num()), Region1D<T>{overlap, stride, &arg(i + overlap)},
+					auto res = F::forward(MapOverlapFunc::OMP, Index1D{i + first + get<0>(std::forward<CallArgs>(args)...).indexOrigin()}, random(omp_get_thread_num()), Region1D<T>{overlap, stride, &arg(i + overlap)},
 						get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-					SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i)..., res);
+					SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i + first)..., res);
 				}
 			}
 
@@ -142,10 +145,10 @@ namespace skepu
 			
 			for (size_t row = 0; row < colWidth; ++row)
 			{
-				auto random_pre = this->template prepareRandom<MapOverlapFunc::randomCount>(overlap);
+				auto random_pre = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0); // (no edge elements are computed with Edge::None)
 				size_t threads = std::min<size_t>(rowWidth - 2*overlap, omp_get_max_threads());
 				auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(rowWidth - 2*overlap, threads);
-				auto random_post = this->template prepareRandom<MapOverlapFunc::randomCount>(overlap);
+				auto random_post = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0); // (no edge elements are computed with Edge::None)
 				
 				inputEnd = inputBegin + rowWidth;
 				
@@ -202,17 +205,20 @@ namespace skepu
 				else // Edge::None
 				{
 					size_t out_cols = get<0>(std::forward<CallArgs>(args)...).total_cols();
+					const size_t first = this->m_mirror_mode ? overlap : 0; // (mirror mode: the output keeps its values near the edges)
 #pragma omp parallel for schedule(runtime)
-					for (size_t i = 0; i < out_cols; ++i)
+					for (size_t i = 0; i < out_cols - 2 * first; ++i)
 					{
-						auto res = F::forward(MapOverlapFunc::OMP, Index1D{i}, random(omp_get_thread_num()), Region1D<T>{overlap, stride, &inputBegin[i + overlap]},
+						auto res = F::forward(MapOverlapFunc::OMP, Index1D{i + first}, random(omp_get_thread_num()), Region1D<T>{overlap, stride, &inputBegin[i + overlap]},
 							get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-						SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(row, i)..., res);
+						SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(row, i + first)..., res);
 					}
 				}
 				
 				inputBegin += rowWidth;
 			}
+			if (this->m_mirror_mode) // (mirror mode: the elements near the edges are not computed: their numbers are skipped)
+				this->template prepareRandom<MapOverlapFunc::randomCount>(colWidth * 2 * overlap);
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap RowWise", this, {colWidth, rowWidth},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
@@ -253,10 +259,10 @@ namespace skepu
 
 			for (size_t col = 0; col < arg.total_cols(); ++col)
 			{
-				auto random_pre = this->template prepareRandom<MapOverlapFunc::randomCount>(overlap);
+				auto random_pre = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0); // (no edge elements are computed with Edge::None)
 				size_t threads = std::min<size_t>(colWidth - 2*overlap, omp_get_max_threads());
 				auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(colWidth - 2*overlap, threads);
-				auto random_post = this->template prepareRandom<MapOverlapFunc::randomCount>(overlap);
+				auto random_post = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0); // (no edge elements are computed with Edge::None)
 				
 				inputEnd = inputBegin + (rowWidth * (colWidth-1));
 				
@@ -316,17 +322,20 @@ namespace skepu
 				else // Edge::None
 				{
 					size_t out_rows = get<0>(std::forward<CallArgs>(args)...).total_rows();
+					const size_t first = this->m_mirror_mode ? overlap : 0; // (mirror mode: the output keeps its values near the edges)
 #pragma omp parallel for schedule(runtime)
-					for (size_t i = 0; i < out_rows; ++i)
+					for (size_t i = 0; i < out_rows - 2 * first; ++i)
 					{
-						auto res = F::forward(MapOverlapFunc::OMP, Index1D{i + get<0>(std::forward<CallArgs>(args)...).indexOrigin()}, random(omp_get_thread_num()), Region1D<T>{overlap, stride, &inputBegin[(i + overlap)*stride]},
+						auto res = F::forward(MapOverlapFunc::OMP, Index1D{i + first + get<0>(std::forward<CallArgs>(args)...).indexOrigin()}, random(omp_get_thread_num()), Region1D<T>{overlap, stride, &inputBegin[(i + overlap)*stride]},
 							get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-						SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, col)..., res);
+						SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i + first, col)..., res);
 					}
 				}
 				
 				inputBegin += 1;
 			}
+			if (this->m_mirror_mode) // (mirror mode: the elements near the edges are not computed: their numbers are skipped)
+				this->template prepareRandom<MapOverlapFunc::randomCount>(arg.total_cols() * 2 * overlap);
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap ColWise", this, {colWidth, rowWidth},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},

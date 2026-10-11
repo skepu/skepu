@@ -214,6 +214,21 @@ namespace skepu
 				pack_expand((get<I>(std::forward<CallArgs>(args)...).tile_written(), 0)...);
 			}
 
+			// Whether a call of a skeleton with an overlap is in mirror mode: the edge mode None and an input of the size of the output
+			template<typename Output, typename Input>
+			bool is_mirror_call(Edge edge, Output &output, Input &input)
+			{
+				if (edge != Edge::None)
+					return false;
+				const Shape out_shape = shape_of(output), in_shape = shape_of(input);
+				if (out_shape.rank != in_shape.rank)
+					return false;
+				for (int k = 0; k < in_shape.rank; ++k)
+					if (out_shape.d[k] != in_shape.d[k])
+						return false;
+				return true;
+			}
+
 			// What a window of the user function is: an overlap (a region around an element, with an edge mode) or a pool
 			// (a window of the size of the pool that starts every stride elements, with no edges)
 			struct WindowGeometry
@@ -222,8 +237,8 @@ namespace skepu
 				std::array<long, 4> overlap{{0, 0, 0, 0}}; // the overlap, or the size of the pool
 				std::array<long, 4> stride{{1, 1, 1, 1}};
 				Edge edge = Edge::None;
-				// The 2D skeleton with the edge mode None and an input of the size of the output computes the interior of the output
-				// only ("mirror mode"; the elements of the output near the edges keep their values)
+				// A skeleton with an overlap (not a pool) with the edge mode None and an input of the size of the output computes the
+				// interior of the output only ("mirror mode"; the elements of the output near the edges keep their values)
 				bool allow_mirror = false;
 			};
 
@@ -477,6 +492,7 @@ namespace skepu
 				WindowGeometry geometry;
 				geometry.overlap = overlap;
 				geometry.edge = edge;
+				geometry.allow_mirror = true; // (in any dimension: the edge mode None with an input of the size of the output)
 				return distributed_window<outArity, anyArity>(call, set_edge, geometry, pad, std::forward<CallArgs>(args)...);
 			}
 
@@ -586,11 +602,12 @@ namespace skepu
 					SKEPU_ERROR("A MapOverlap 1D of a matrix with random numbers does not work on distributed containers yet");
 				if constexpr (MapOverlapFunc::usesPRNG)
 				{
-					// (the elements of the output are used in the order of the memory; the node-level 1D overlap of a
-					// vector takes the numbers for the size of its input)
+					// (the elements of the output are used in the order of the memory, and the call uses one number for each of
+					// them: with the edge mode None the output is smaller than the input)
 					auto &first_out = get<0>(std::forward<CallArgs>(args)...);
-					auto &input = get<outArity>(std::forward<CallArgs>(args)...);
-					mpi_detail::PrngShift shift(this->m_prng, first_out.local_offset() * MapOverlapFunc::randomCount, input.size() * MapOverlapFunc::randomCount);
+					if (mpi_detail::is_mirror_call(this->getEdgeMode(), first_out, get<outArity>(std::forward<CallArgs>(args)...)))
+						SKEPU_ERROR("A MapOverlap with the edge mode None and an input of the size of the output (mirror mode) and random numbers does not work on distributed containers yet");
+					mpi_detail::PrngShift shift(this->m_prng, first_out.local_offset() * MapOverlapFunc::randomCount, first_out.size() * MapOverlapFunc::randomCount);
 					return this->run_distributed(std::forward<CallArgs>(args)...);
 				}
 				else
@@ -621,6 +638,9 @@ namespace skepu
 				auto &input = get<outArity>(std::forward<CallArgs>(args)...);
 				if (first_out.total_rows() != input.total_rows())
 					SKEPU_ERROR("Non-matching container sizes: the rows of the output and of the input");
+				// (in mirror mode the elements of the output near the edges keep their values: the tiles of the results must have them)
+				if (mpi_detail::is_mirror_call(this->getEdgeMode(), first_out, input))
+					mpi_detail::make_tiles_valid(std::make_index_sequence<outArity>{}, std::forward<CallArgs>(args)...);
 				if (first_out.local_size() > 0)
 				{
 					auto call = [this](auto &... a) { mpi::trace::work([&] { Base::operator()(a...); }); };
@@ -695,6 +715,8 @@ namespace skepu
 				{
 					// (the elements of the output are used in the order of the memory)
 					auto &first_out = get<0>(std::forward<CallArgs>(args)...);
+					if (mpi_detail::is_mirror_call(this->getEdgeMode(), first_out, get<outArity>(std::forward<CallArgs>(args)...)))
+						SKEPU_ERROR("A MapOverlap with the edge mode None and an input of the size of the output (mirror mode) and random numbers does not work on distributed containers yet");
 					mpi_detail::PrngShift shift(this->m_prng, first_out.local_offset() * MapOverlapFunc::randomCount, first_out.size() * MapOverlapFunc::randomCount);
 					return this->run_distributed(std::forward<CallArgs>(args)...);
 				}
@@ -777,6 +799,8 @@ namespace skepu
 				{
 					// (the elements of the output are used in the order of the memory)
 					auto &first_out = get<0>(std::forward<CallArgs>(args)...);
+					if (mpi_detail::is_mirror_call(this->getEdgeMode(), first_out, get<outArity>(std::forward<CallArgs>(args)...)))
+						SKEPU_ERROR("A MapOverlap with the edge mode None and an input of the size of the output (mirror mode) and random numbers does not work on distributed containers yet");
 					mpi_detail::PrngShift shift(this->m_prng, first_out.local_offset() * MapOverlapFunc::randomCount, first_out.size() * MapOverlapFunc::randomCount);
 					return this->run_distributed(std::forward<CallArgs>(args)...);
 				}
@@ -855,6 +879,8 @@ namespace skepu
 				{
 					// (the elements of the output are used in the order of the memory)
 					auto &first_out = get<0>(std::forward<CallArgs>(args)...);
+					if (mpi_detail::is_mirror_call(this->getEdgeMode(), first_out, get<outArity>(std::forward<CallArgs>(args)...)))
+						SKEPU_ERROR("A MapOverlap with the edge mode None and an input of the size of the output (mirror mode) and random numbers does not work on distributed containers yet");
 					mpi_detail::PrngShift shift(this->m_prng, first_out.local_offset() * MapOverlapFunc::randomCount, first_out.size() * MapOverlapFunc::randomCount);
 					return this->run_distributed(std::forward<CallArgs>(args)...);
 				}

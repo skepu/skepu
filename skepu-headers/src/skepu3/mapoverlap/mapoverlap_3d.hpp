@@ -179,16 +179,25 @@ namespace skepu
 
 				DEBUG_TEXT_LEVEL1("Native C++ MapOverlap3D: size = " << out_size_i << " x " << out_size_j << " x" << out_size_k);
 
-				checkTensor3Sizes(this->out_indices, std::forward<CallArgs>(args)...);
-
 				auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
+
+				// Mirror mode: the edge mode None with an input of the size of the output; only the interior of the output is computed
+				// (the other elements keep their values) and the stream of random numbers is used by the elements that are computed
+				this->m_mirror_mode = !this->isPool && this->m_edge == Edge::None && out_size_i == arg.size_i() && out_size_j == arg.size_j() && out_size_k == arg.size_k();
+				if (!this->m_mirror_mode)
+					checkTensor3Sizes(this->out_indices, std::forward<CallArgs>(args)...);
+				else if (this->mirrorHasNoInterior(out_size_i, out_size_j, out_size_k)) // (nothing to compute: only the random numbers are used)
+				{
+					this->template prepareRandom<randomCount>(out_size_i * out_size_j * out_size_k);
+					return;
+				}
 
 				RegionType region{arg, this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_edge, this->m_pad};
 
 				auto random = this->template prepareRandom<randomCount>(out_size_i * out_size_j * out_size_k);
 
                 Index3D offset{0, 0, 0};
-                if (!this->isPool)
+                if (!this->isPool && !this->m_mirror_mode)
                 {
                     if (this->m_edge == Edge::None)
                     {
@@ -204,9 +213,10 @@ namespace skepu
                     }
                 }
 
-				for (size_t i = 0; i < out_size_i; i++)
-					for (size_t j = 0; j < out_size_j; j++)
-						for (size_t k = 0; k < out_size_k; k++)
+				const size_t first_i = this->m_mirror_mode ? this->m_overlap[0] : 0, first_j = this->m_mirror_mode ? this->m_overlap[1] : 0, first_k = this->m_mirror_mode ? this->m_overlap[2] : 0;
+				for (size_t i = first_i; i + first_i < out_size_i; i++)
+					for (size_t j = first_j; j + first_j < out_size_j; j++)
+						for (size_t k = first_k; k + first_k < out_size_k; k++)
 							if (p == Parity::None || index_parity(p, i, j, k))
 							{
 								region.idx = Index3D{

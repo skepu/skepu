@@ -162,8 +162,14 @@ namespace skepu
 				// Mirror mode: the input has the size of the output and there is no edge handling, so only the interior of the output
 				// is computed (the other elements keep their values)
 				const bool mirror = !this->isPool && this->m_edge == Edge::None && out_size_i == arg.size_i() && out_size_j == arg.size_j();
+				this->m_mirror_mode = mirror;
 				if (!mirror)
 					checkMatrixSizes(this->out_indices, std::forward<CallArgs>(args)...);
+				else if (this->mirrorHasNoInterior(out_size_i, out_size_j)) // (nothing to compute: only the random numbers are used)
+				{
+					this->template prepareRandom<randomCount>(out_size_i * out_size_j);
+					return;
+				}
 
 				RegionType region{arg, this->m_overlap[0], this->m_overlap[1], this->m_edge, this->m_pad};
 

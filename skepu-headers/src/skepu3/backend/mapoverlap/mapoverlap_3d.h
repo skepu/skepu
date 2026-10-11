@@ -172,6 +172,11 @@ namespace skepu
 				size_t in_size_j = input.size_j();
 				size_t in_size_k = input.size_k();
 				
+				// Mirror mode: the edge mode None with an input of the size of the output; only the interior of the output is computed (the other elements keep their values)
+				this->m_mirror_mode = !this->isPool && this->m_edge == skepu::Edge::None && out_size_i == in_size_i && out_size_j == in_size_j && out_size_k == in_size_k;
+				if (this->m_mirror_mode)
+					return;
+				
 				if (!this->isInputSizeValid(out_size_i, in_size_i, 0) && this->m_overlap[0] > 0)
 					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninput/output tensor3 size i mismatch"
@@ -219,9 +224,18 @@ namespace skepu
 			{
 				checkTensor3Sizes(this->out_indices, std::forward<CallArgs>(args)...);
 
+				{
+					auto &first_output = get<0>(std::forward<CallArgs>(args)...);
+					if (this->mirrorHasNoInterior(first_output.size_i(), first_output.size_j(), first_output.size_k())) // (mirror mode with nothing to compute: only the random numbers are used)
+					{
+						this->template prepareRandom<MapOverlapFunc::randomCount>(first_output.size());
+						return first_output;
+					}
+				}
+
 				this->selectBackend(get<0>(std::forward<CallArgs>(args)...).size());
 
-				switch (this->m_selected_spec->activateBackend())
+				switch (this->checkMirrorBackend(this->m_selected_spec->activateBackend(), "MapOverlap 3D"))
 				{
 				case Backend::Type::Hybrid:
 #ifdef SKEPU_HYBRID

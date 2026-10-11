@@ -208,17 +208,27 @@ namespace skepu
 				DEBUG_TEXT_LEVEL1("Native C++ " << Name << ": kernel = " << this->m_overlap[0] << " x " << this->m_overlap[1] << " x " << this->m_overlap[2] << " x " << this->m_overlap[3]);
 				DEBUG_TEXT_LEVEL1("Native C++ " << Name << ": strides = " << this->m_strides[0] << " x " << this->m_strides[1] << " x " << this->m_strides[2] << " x " << this->m_strides[3]);
 
-				checkTensor4Sizes(this->out_indices, std::forward<CallArgs>(args)...);
+				auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
+
+				// Mirror mode: the edge mode None with an input of the size of the output; only the interior of the output is computed
+				// (the other elements keep their values) and the stream of random numbers is used by the elements that are computed
+				this->m_mirror_mode = !this->isPool && this->m_edge == Edge::None && out_size_i == arg.size_i() && out_size_j == arg.size_j() && out_size_k == arg.size_k() && out_size_l == arg.size_l();
+				if (!this->m_mirror_mode)
+					checkTensor4Sizes(this->out_indices, std::forward<CallArgs>(args)...);
+				else if (this->mirrorHasNoInterior(out_size_i, out_size_j, out_size_k, out_size_l)) // (nothing to compute: only the random numbers are used)
+				{
+					this->template prepareRandom<randomCount>(out_size_i * out_size_j * out_size_k * out_size_l);
+					return;
+				}
 
 				SKEPU_TRACE_START_EVENT(trace_handle);
-				auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 
 				RegionType region{arg, this->m_overlap[0], this->m_overlap[1], this->m_overlap[2], this->m_overlap[3], this->m_edge, this->m_pad};
 
 				auto random = this->template prepareRandom<randomCount>(out_size_i * out_size_j * out_size_k * out_size_l);
 
 			long offset[4] = {0, 0, 0, 0};
-			if (!this->isPool)
+			if (!this->isPool && !this->m_mirror_mode)
 			{
 				offset[0] = region_offset(out_size_i, arg.size_i(), this->m_overlap[0], this->m_edge);
 				offset[1] = region_offset(out_size_j, arg.size_j(), this->m_overlap[1], this->m_edge);
@@ -226,10 +236,12 @@ namespace skepu
 				offset[3] = region_offset(out_size_l, arg.size_l(), this->m_overlap[3], this->m_edge);
 			}
 
-				for (size_t i = 0; i < out_size_i; i++)
-					for (size_t j = 0; j < out_size_j; j++)
-						for (size_t k = 0; k < out_size_k; k++)
-							for (size_t l = 0; l < out_size_l; l++)
+				const size_t first_i = this->m_mirror_mode ? this->m_overlap[0] : 0, first_j = this->m_mirror_mode ? this->m_overlap[1] : 0;
+				const size_t first_k = this->m_mirror_mode ? this->m_overlap[2] : 0, first_l = this->m_mirror_mode ? this->m_overlap[3] : 0;
+				for (size_t i = first_i; i + first_i < out_size_i; i++)
+					for (size_t j = first_j; j + first_j < out_size_j; j++)
+						for (size_t k = first_k; k + first_k < out_size_k; k++)
+							for (size_t l = first_l; l + first_l < out_size_l; l++)
 								if (p == Parity::None || index_parity(p, i, j, k, l))
 								{
 									region.idx = Index4D{

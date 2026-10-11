@@ -215,6 +215,12 @@ namespace skepu
 
 				checkMatrixSizes(this->out_indices, std::forward<CallArgs>(args)...);
 
+				if (this->mirrorHasNoInterior(firstOutputRows, firstOutputCols)) // (mirror mode with nothing to compute: only the random numbers are used)
+				{
+					this->template prepareRandom<MapOverlapFunc::randomCount>(firstOutputRows * firstOutputCols);
+					return get<0>(std::forward<CallArgs>(args)...);
+				}
+
 				// Remove later
 				auto &res = get<0>(std::forward<CallArgs>(args)...);
 				auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
@@ -222,7 +228,7 @@ namespace skepu
 
 				this->selectBackend(get<0>(std::forward<CallArgs>(args)...).size());
 
-				switch (this->m_selected_spec->activateBackend())
+				switch (this->checkMirrorBackend(this->m_selected_spec->activateBackend(), "MapOverlap 2D"))
 				{
 				case Backend::Type::Hybrid:
 #ifdef SKEPU_HYBRID

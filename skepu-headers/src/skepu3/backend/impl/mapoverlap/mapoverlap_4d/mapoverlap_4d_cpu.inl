@@ -41,7 +41,7 @@ namespace skepu
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(out_size_i * out_size_j * out_size_k * out_size_l);
 			
 			long offset[4] = {0, 0, 0, 0};
-			if (!this->isPool)
+			if (!this->isPool && !this->m_mirror_mode)
 			{
 				offset[0] = region_offset(out_size_i, arg.size_i(), this->m_overlap[0], this->m_edge);
 				offset[1] = region_offset(out_size_j, arg.size_j(), this->m_overlap[1], this->m_edge);
@@ -49,10 +49,13 @@ namespace skepu
 				offset[3] = region_offset(out_size_l, arg.size_l(), this->m_overlap[3], this->m_edge);
 			}
 
-			for (size_t i = 0; i < out_size_i; i++)
-				for (size_t j = 0; j < out_size_j; j++)
-					for (size_t k = 0; k < out_size_k; k++)
-						for (size_t l = 0; l < out_size_l; l++)
+			// (mirror mode: the edge mode None with an input of the size of the output; only the interior of the output is computed, the elements near the edges keep their values and their random numbers are skipped)
+			const size_t first_i = this->m_mirror_mode ? this->m_overlap[0] : 0, first_j = this->m_mirror_mode ? this->m_overlap[1] : 0;
+			const size_t first_k = this->m_mirror_mode ? this->m_overlap[2] : 0, first_l = this->m_mirror_mode ? this->m_overlap[3] : 0;
+			for (size_t i = first_i; i + first_i < out_size_i; i++)
+				for (size_t j = first_j; j + first_j < out_size_j; j++)
+					for (size_t k = first_k; k + first_k < out_size_k; k++)
+						for (size_t l = first_l; l + first_l < out_size_l; l++)
 							if (p == Parity::None || index_parity(p, i, j, k, l))
 							{
 								region.idx = Index4D{

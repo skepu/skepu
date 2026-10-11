@@ -48,10 +48,13 @@ namespace skepu
             size_t out_i = (this->m_mirror_mode) ? this->m_overlap[0] : 0;
             size_t out_j = (this->m_mirror_mode) ? this->m_overlap[1] : 0;
 
-			size_t threads = std::min<size_t>(out_size_i, omp_get_max_threads());
-			size_t final_size = out_size_i * out_size_j;
-			size_t work_unit = out_size_j;
-			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(final_size, threads, work_unit);
+			// (in mirror mode only the inner rows are computed, and they get the numbers one after the other: the rows of the loop below are
+			// the units of the numbers, and the stream is advanced over the elements that are not computed)
+			const size_t rows = out_size_i - 2 * out_i, columns = out_size_j - 2 * out_j;
+			size_t threads = std::min<size_t>(rows, omp_get_max_threads());
+			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(rows * columns, threads, columns);
+			if (this->m_mirror_mode)
+				this->template prepareRandom<MapOverlapFunc::randomCount>(out_size_i * out_size_j - rows * columns);
 			
 #pragma omp parallel for schedule(runtime) firstprivate(region)
 			for (size_t i = out_i; i < out_size_i - out_i; i++)

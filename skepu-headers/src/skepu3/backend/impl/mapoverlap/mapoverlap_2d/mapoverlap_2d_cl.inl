@@ -83,8 +83,12 @@ namespace skepu
 				<< "[" << numThreads[0] << " x " << numThreads[1] << "]" 
 				<< ", numBlocks = " << "[" << numBlocks[0] << " x " << numBlocks[1] << "], shmem = " << shared_mem); 
 			
-			size_t threads = std::min<size_t>(out_size_i * out_size_j, numBlocks[0] * numBlocks[1] * numThreads[0] * numThreads[1]);
-			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(out_size_i * out_size_j, threads);
+			// (in mirror mode only the inner elements are computed, they get the numbers one after the other; the stream is advanced over all the elements)
+			const size_t computed = this->m_mirror_mode ? (out_size_i - 2 * this->m_overlap[0]) * (out_size_j - 2 * this->m_overlap[1]) : out_size_i * out_size_j;
+			size_t threads = std::min<size_t>(computed, numBlocks[0] * numBlocks[1] * numThreads[0] * numThreads[1]);
+			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(computed, threads);
+			if (this->m_mirror_mode)
+				this->template prepareRandom<MapOverlapFunc::randomCount>(out_size_i * out_size_j - computed);
 			auto randomMemP = random.updateDevice_CL(random.getAddress(), threads, device, true);
 			
 			CLKernel::mapOverlap2D(

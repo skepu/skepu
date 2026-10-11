@@ -106,7 +106,10 @@ namespace skepu
 				size_t firstOutputSize = firstOutput.size();
 				size_t inputSize = input.size();
 				
-				if (inputSize != this->expectedInputSize(firstOutputSize, 0))
+				// Mirror mode: the edge mode None with an input of the size of the output; only the interior of the output is computed
+				this->m_mirror_mode = (this->m_edge == Edge::None && inputSize == firstOutputSize);
+				
+				if (!this->m_mirror_mode && inputSize != this->expectedInputSize(firstOutputSize, 0))
 					SKEPU_ERROR(generateCallMetadata()
 					<< "\ninput/output vector size mismatch"
 					<< "\noutput vector (label: " << firstOutput.getLabel() << ", size: " << firstOutputSize << ")"
@@ -128,6 +131,12 @@ namespace skepu
 				
 				checkVectorSizes(this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
+				if (this->mirrorHasNoInterior(get<0>(std::forward<CallArgs>(args)...).size())) // (mirror mode with nothing to compute: only the random numbers are used)
+				{
+					this->template prepareRandom<randomCount>(get<0>(std::forward<CallArgs>(args)...).size());
+					return;
+				}
+
 
 				size_t edge_prng_size = (this->m_edge != Edge::None) ? overlap : 0;
 				auto random_pre = this->template prepareRandom<randomCount>(edge_prng_size);
@@ -136,6 +145,8 @@ namespace skepu
 				if (p == Parity::Odd && size % 2 == 1) random_size += 1;
 				auto random = this->template prepareRandom<randomCount>(random_size);
 				auto random_post = this->template prepareRandom<randomCount>(edge_prng_size);
+				if (this->m_mirror_mode) // (the elements near the edges are not computed: their numbers are skipped)
+					this->template prepareRandom<randomCount>(2 * overlap);
 
 				if (this->m_edge != Edge::None)
 				{
@@ -199,12 +210,13 @@ namespace skepu
 				else // Edge::None
 				{
 					size_t out_size = get<0>(std::forward<CallArgs>(args)...).size();
-					for (size_t i = 0; i < out_size; ++i)
+					const size_t first = this->m_mirror_mode ? overlap : 0;
+					for (size_t i = 0; i < out_size - 2 * first; ++i)
 					{
-						if (p == Parity::None || index_parity(p, i))
+						if (p == Parity::None || index_parity(p, i + first))
 						{
-							auto res = F::forward(this->mapFunc, Index1D{i}, random, RegionType{overlap, 1, &arg[i + overlap]}, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-							SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i)..., res);
+							auto res = F::forward(this->mapFunc, Index1D{i + first}, random, RegionType{overlap, 1, &arg[i + overlap]}, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+							SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i + first)..., res);
 						}
 					}
 				}
@@ -264,14 +276,17 @@ namespace skepu
 				size_t inputRows = input.total_rows();
 				size_t inputCols = input.total_cols();
 				
-				if (inputRows != expectedInputRows)
+				// Mirror mode: the edge mode None with an input of the size of the output; only the interior of the output is computed
+				this->m_mirror_mode = (this->m_edge == Edge::None && inputRows == firstOutputRows && inputCols == firstOutputCols);
+				
+				if (!this->m_mirror_mode && inputRows != expectedInputRows)
 					SKEPU_ERROR(callMetadata
 					<< "\ninput/output matrix row count mismatch"
 					<< "\nfirst output matrix (label: " << firstOutput.getLabel() << ", rows: " << firstOutputRows << ")"
 					<< "\nexpected input matrix rows: " << colorRed(expectedInputRows)
 					<< "\ninput matrix (label: " << input.getLabel() << ", rows: " << colorRed(inputRows) << ")");
 				
-				if (inputCols != expectedInputCols)
+				if (!this->m_mirror_mode && inputCols != expectedInputCols)
 					SKEPU_ERROR(callMetadata
 					<< "\ninput/output matrix col count mismatch"
 					<< "\nfirst output matrix (label: " << firstOutput.getLabel() << ", cols: " << firstOutputCols << ")"
@@ -301,6 +316,12 @@ namespace skepu
 
 				checkMatrixSizes(this->expectedInputSize(firstOutputRows, 0), firstOutputCols,
 								 generateColwiseCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
+
+				if (this->mirrorHasNoInterior(firstOutputRows)) // (mirror mode with nothing to compute: only the random numbers are used)
+				{
+					this->template prepareRandom<randomCount>(firstOutputRows * firstOutputCols);
+					return;
+				}
 
 				const int overlap = this->m_overlap[0];
 				size_t size = arg.size();
@@ -390,18 +411,21 @@ namespace skepu
 					else // Edge::None
 					{
 						size_t out_rows = get<0>(std::forward<CallArgs>(args)...).total_rows();
-						for (size_t i = 0; i < out_rows; ++i)
+						const size_t first = this->m_mirror_mode ? overlap : 0;
+						for (size_t i = 0; i < out_rows - 2 * first; ++i)
 						{
-							if (p == Parity::None || index_parity(p, i))
+							if (p == Parity::None || index_parity(p, i + first))
 							{
-								auto res = F::forward(this->mapFunc, Index1D{i}, random, RegionType{overlap, stride, &inputBegin[(i + overlap)*stride]}, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-								SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i, col)..., res);
+								auto res = F::forward(this->mapFunc, Index1D{i + first}, random, RegionType{overlap, stride, &inputBegin[(i + overlap)*stride]}, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+								SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(i + first, col)..., res);
 							}
 						}
 					}
 
 					inputBegin += 1;
 				}
+				if (this->m_mirror_mode) // (the elements near the edges are not computed: their numbers are skipped)
+					this->template prepareRandom<randomCount>(arg.total_cols() * 2 * overlap);
 			}
 
 			std::string generateRowwiseCallMetadata()
@@ -424,6 +448,12 @@ namespace skepu
 
 				checkMatrixSizes(firstOutputRows, this->expectedInputSize(firstOutputCols, 0),
 								 generateRowwiseCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
+
+				if (this->mirrorHasNoInterior(firstOutputCols)) // (mirror mode with nothing to compute: only the random numbers are used)
+				{
+					this->template prepareRandom<randomCount>(firstOutputRows * firstOutputCols);
+					return;
+				}
 
 				const int overlap = this->m_overlap[0];
 				T start[3*overlap], end[3*overlap];
@@ -508,18 +538,21 @@ namespace skepu
 					else // Edge::None
 					{
 						size_t out_cols = get<0>(std::forward<CallArgs>(args)...).total_cols();
-						for (size_t i = 0; i < out_cols; ++i)
+						const size_t first = this->m_mirror_mode ? overlap : 0;
+						for (size_t i = 0; i < out_cols - 2 * first; ++i)
 						{
-							if (p == Parity::None || index_parity(p, i))
+							if (p == Parity::None || index_parity(p, i + first))
 							{
-								auto res = F::forward(this->mapFunc, Index1D{i}, random, RegionType{overlap, stride, &inputBegin[i + overlap]}, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
-								SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(row, i)..., res);
+								auto res = F::forward(this->mapFunc, Index1D{i + first}, random, RegionType{overlap, stride, &inputBegin[i + overlap]}, get<AI>(std::forward<CallArgs>(args)...).hostProxy()..., get<CI>(std::forward<CallArgs>(args)...)...);
+								SKEPU_VARIADIC_RETURN(get<OI>(std::forward<CallArgs>(args)...)(row, i + first)..., res);
 							}
 						}
 					}
 
 					inputBegin += rowWidth;
 				}
+				if (this->m_mirror_mode) // (the elements near the edges are not computed: their numbers are skipped)
+					this->template prepareRandom<randomCount>(arg.total_rows() * 2 * overlap);
 			}
 
 
