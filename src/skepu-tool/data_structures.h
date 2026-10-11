@@ -342,6 +342,7 @@ struct Skeleton
 	std::vector<SkeletonInvocation*> invocations;
 	
 	clang::SourceLocation location;
+	clang::clangd::Position namePosition;   // where the name of the instance is
 	clang::clangd::Range selectionRange;
 	clang::clangd::Range range;
 

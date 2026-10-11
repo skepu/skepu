@@ -5,6 +5,7 @@
 #include "support/Logger.h"
 #include <filesystem>
 #include "clang/AST/Type.h"
+#include "llvm/Support/FileSystem.h"
 #endif
 
 
@@ -341,15 +342,20 @@ bool SkepuMatcher::runMatcher()
 {
 	std::filesystem::path p(File.str());
 
-	// Not cross-platform, see https://stackoverflow.com/questions/1528298/get-path-of-executable
-	std::filesystem::path skepuDir(std::filesystem::canonical("/proc/self/exe"));//.parent_path().parent_path().parent_path().parent_path());
+	// The directory of SkePU is found from the location of this program (clangd, in the build directory of SkePU)
+	static int anchor;
+	const std::string executable = llvm::sys::fs::getMainExecutable(nullptr, &anchor);
+	if (executable.empty())
+		return false;
+	std::filesystem::path skepuDir(executable);
 	while (!skepuDir.empty())
 	{
-		std::filesystem::path skepu_headers = skepuDir / "skepu-headers";
-		std::filesystem::path llvm_dir = skepuDir / "llvm";
+		// (a build directory of SkePU also has directories skepu-headers and llvm, so look for what is needed from them)
+		std::filesystem::path skepu_headers = skepuDir / "skepu-headers" / "src" / "skepu";
+		std::filesystem::path llvm_headers = skepuDir / "llvm" / "clang" / "lib" / "Headers";
 
-		if (std::filesystem::is_directory(skepu_headers) &&
-			std::filesystem::is_directory(llvm_dir))
+		if (std::filesystem::is_regular_file(skepu_headers) &&
+			std::filesystem::is_directory(llvm_headers))
 				break;
 		
 		std::filesystem::path parent = skepuDir.parent_path();

@@ -291,6 +291,10 @@ HandleSkeletonInstance(clang::VarDecl *d)
 		clangdRange.end.line = SM.getSpellingLineNumber(range.getEnd()) - 1;
 		clangdRange.end.character = SM.getSpellingColumnNumber(range.getEnd());
 
+		clang::SourceLocation nameLoc = d->getLocation();
+		skeleton->namePosition.line = SM.getSpellingLineNumber(nameLoc) - 1;
+		skeleton->namePosition.character = SM.getSpellingColumnNumber(nameLoc) - 1;
+
 		skeleton->selectionRange = clangdRange;
 		clangdRange.start.character = 0;
 		clangdRange.end.character = SM.getSpellingColumnNumber(range.getEnd()) + 1;

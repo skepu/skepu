@@ -57,7 +57,7 @@ The language server is a clangd with SkePU support. It is built in the same LLVM
 
 Replace N with how many threads you want to build with in parallel, e.g. -j12. The first configuration applies `clangd.patch` to the `llvm` submodule (as `llvm.patch` is applied for `skepu-tool`) and adds `clang-tools-extra` to the LLVM projects; with `SKEPU_LSP` off (the default) clangd is not built.
 
-After this you have built the clangd tool with modifications specific to SkePU. To use it, point to the clangd executable in \<project_root\>/build/llvm/bin/. For example, VSCode has a clangd extension which has an option to specify the path to a clangd executable.
+The SkePU additions to clangd are in `src/skepu-lsp/` (and the analysis of `skepu-tool` in `src/skepu-tool/`); `clangd.patch` only adds the files to clangd's build and calls them from three places (hover, document symbols and signature help). After this you have built the clangd tool with modifications specific to SkePU. To use it, point to the clangd executable in \<project_root\>/build/llvm/bin/. For example, VSCode has a clangd extension which has an option to specify the path to a clangd executable.
 
 To make the LSP aware of SkePU and its files, you need to generate a compile_commands.json file. In the examples folder, `make compile-commands` writes one for the example programs. After doing this, the LSP should be able to find where the `#include <skepu>` and similar are fetched from. You might need to restart your code editor after generating the compile_commands.json for the changes to take effect.
 
