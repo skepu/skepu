@@ -1061,8 +1061,25 @@ and *uniform* scalar arguments follow just as in `Map` and `MapReduce`.
 
 :   Sets the mode to use for out-of-bounds accesses in the overlap
     region. Allowed values are `Edge::Pad` for a user-supplied constant
-    value, `Edge::Cyclic` for cyclic access, or `Edge::Duplicate`
-    (default) which duplicates the closest element.
+    value, `Edge::Cyclic` for cyclic access, `Edge::Duplicate`
+    (default) which duplicates the closest element, or `Edge::None`, for
+    which there are no out-of-bounds accesses: the input is larger than
+    the output by twice the overlap in each dimension, and the output
+    element at index i is computed from the region centered at the input
+    element at index i + overlap.
+
+    With `Edge::None` and an input of *the same size* as the output
+    ("mirror mode"; 1D, 2D, 3D and 4D `MapOverlap`, not `MapPool`), only
+    the *interior* of the output (the elements that have their whole
+    overlap in the input) is computed, and the other output elements
+    keep their values. The index passed to the user function is the
+    index in the output, as in the other modes. The elements that are
+    computed get the random numbers of a call one after the other, and
+    the random stream is advanced over all the elements of the output.
+    Mirror mode works in the sequential, CPU, OpenMP, OpenCL (one device)
+    and MPI backends; the CUDA, hybrid and multi-device OpenCL backends
+    stop with an error. With random numbers on distributed containers
+    (MPI) it is not available yet.
 
 `instance.setOverlapMode(`*`mode`*`)`
 
