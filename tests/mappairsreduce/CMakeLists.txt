@@ -22,11 +22,11 @@ skepu_add_test_case_cpu(mpr_multi_return)
 skepu_add_test_case_openmp(mpr_multi_return)
 
 # This was fixed to run, i.e. it doesn't throw and error at runtime.
-# However, the result is incorrect so this test will be disabled until someone fixes the implementation.
+# However, the result is incorrect (all the checks of the test fail), so this test will be disabled until someone fixes the implementation.
 #skepu_add_test_case_opencl(mpr_multi_return)
 
-# The OpenMP part of this works, while the OpenCL part has the same errors as above.
-#skepu_add_test_case_hybrid_opencl(mpr_multi_return)
+# The hybrid backend passes. (With these sizes the work may be done by OpenMP alone, as in the Map with stride test.)
+skepu_add_test_case_hybrid_opencl(mpr_multi_return)
 
 
 # These do not compile for the same reason as OpenCL: the implementation has not been properly configured for multi return.

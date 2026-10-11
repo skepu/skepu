@@ -1,5 +1,6 @@
 #include "../../external/catch2/catch.hpp"
 
+#include <algorithm>
 #include <skepu>
 #include <skepu-lib/io.hpp>
 #include <test_helper_automatic_setup.hpp>
@@ -37,21 +38,34 @@ TEST_CASE("MapOverlap 4D fundamentals")
 			auto i(0);
 			for(auto & e : ten4)
 				e = i++;
-			std::cout << "ten4: " << ten4 << "\n";
 		},
 		skepu::write(ten4));
 
+	// The user function gives the element at +1 in the first dimension. The value of ten4 at (a, b, c, d) is ((a * size + b) * size + c) * size + d.
+	auto value = [&](long a, long b, long c, long d) { return float(((a * long(size) + b) * long(size) + c) * long(size) + d); };
+	auto clamp = [&](long v) { return std::min<long>(std::max<long>(v, 0), size - 1); };
+	
+	auto checkAll = [&](auto expected)
+	{
+		skepu::external(skepu::read(ret_ten4), [&]
+		{
+			for (long a = 0; a < long(size); ++a)
+				for (long b = 0; b < long(size); ++b)
+					for (long c = 0; c < long(size); ++c)
+						for (long d = 0; d < long(size); ++d)
+							CHECK(ret_ten4(a, b, c, d) == expected(a, b, c, d));
+		});
+	};
+
 	conv4.setEdgeMode(skepu::Edge::Cyclic);
 	conv4(ret_ten4, ten4, stencil4);
-	
-	skepu::io::cout << "Tensor4D Cyclic: " << ret_ten4 << "\n";
+	checkAll([&](long a, long b, long c, long d) { return value((a + 1) % size, b, c, d); });
 
 	conv4.setEdgeMode(skepu::Edge::Duplicate);
 	conv4(ret_ten4, ten4, stencil4);
-	skepu::io::cout << "Tensor4D Duplicate: " << ret_ten4 << "\n";
+	checkAll([&](long a, long b, long c, long d) { return value(clamp(a + 1), b, c, d); });
 
 	conv4.setEdgeMode(skepu::Edge::Pad);
 	conv4(ret_ten4, ten4, stencil4);
-	skepu::io::cout << "Tensor4D Pad 0: " << ret_ten4 << "\n";
-	
+	checkAll([&](long a, long b, long c, long d) { return a + 1 >= long(size) ? -5.f : value(a + 1, b, c, d); });
 }

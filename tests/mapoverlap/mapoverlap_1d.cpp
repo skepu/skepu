@@ -1,192 +1,337 @@
+#define SKEPU_ENABLE_EXCEPTIONS
 #include "../../external/catch2/catch.hpp"
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
 #include <test_helper_automatic_setup.hpp>
 
-int rotate_f(skepu::Region1D<int> r, int dir)
+int overlap_sum(skepu::Region1D<int> r)
 {
-	return r(dir);
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        val += r(i);
+    return val;
+}
+
+std::vector<int> generate_expected(skepu::Vector<int>& input, int overlap, skepu::Edge edge, int pad = 0)
+{
+    input.flush();
+    std::vector<int> res;
+    if (edge == skepu::Edge::None)
+        res.resize(input.size() - overlap * 2);
+    else
+        res.resize(input.size());
+    
+    int data[overlap*3];
+    for (int i = 0; i < res.size(); ++i)
+    {
+        int sum = 0;
+        int dataIndex = 0;
+        for (int o = -overlap; o <= overlap; ++o)
+        {
+            int pos = i + o + ((edge == skepu::Edge::None) ? overlap : 0);
+            if (pos < 0 or pos > input.size() - 1)
+            {
+                switch (edge)
+                {
+                    case skepu::Edge::Duplicate:
+                        pos = std::clamp(pos, 0, static_cast<int>(input.size() - 1));
+                        break;
+                    case skepu::Edge::Cyclic:
+                        pos = (pos + input.size()) % input.size();
+                        break;
+                    case skepu::Edge::Pad:
+                        pos = -1;
+                        break;
+                    case skepu::Edge::None:
+                        throw;
+                        break;
+                }
+            }
+            if (pos == -1)
+                data[dataIndex++] = pad;
+            else
+                data[dataIndex++] = input[pos];
+        }
+        skepu::Region1D<int> r{overlap, 1, &data[overlap]};
+        res[i] = overlap_sum(r);
+    }
+    return res;
+}
+
+void compare(skepu::Vector<int>& actual, std::vector<int>& expected)
+{
+    actual.flush();
+    for (int i = 0; i < actual.size(); ++i)
+    {
+        INFO("i = " + std::to_string(i));
+        CHECK(actual(i) == expected[i]);
+    }
+}
+
+auto overlap = skepu::MapOverlap(overlap_sum);
+
+TEST_CASE("Fundamentals")
+{
+    std::vector<skepu::Edge> regularEdges{skepu::Edge::Duplicate, skepu::Edge::Cyclic, skepu::Edge::Pad};
+    int pad = 10;
+    int overlapRadius = 1;
+    overlap.setOverlap(overlapRadius);
+    overlap.setPad(pad);
+
+    for (int size = 2; size <= 100; ++size)
+    {
+        skepu::Vector<int> input(size, 1);
+        skepu::Vector<int> actual(input.size(), 0);
+        std::vector<int> expected;
+        skepu::external(skepu::read(input), [&]{
+        for (int i = 0; i < input.size(); ++i)
+        {
+            input(i) = i;
+        }
+        }, skepu::write(input));
+
+        // TODO: Add overlaps larger than input size.
+
+        for (skepu::Edge edge : regularEdges)
+        {
+            INFO("size = " + std::to_string(size) + ", edge = " + skepu::to_string(edge));
+            overlap.setEdgeMode(edge);
+            overlap(actual, input);
+            expected = generate_expected(input, overlap.getOverlap(), overlap.getEdgeMode(), pad);
+            compare(actual, expected);
+        }
+
+        if (size > overlapRadius * 2)
+        {
+            INFO("size = " + std::to_string(size) + ", edge = None");
+            skepu::Vector<int> actual2(input.size() - 2, 0);
+            overlap.setEdgeMode(skepu::Edge::None);
+            overlap(actual2, input);
+            expected = generate_expected(input, overlap.getOverlap(), overlap.getEdgeMode());
+            compare(actual2, expected);
+        }
+    }
+}
+/*
+std::ostream& operator<<(std::ostream& os, std::vector<int> v)
+{
+    os << "[";
+    for (int i = 0; i < v.size(); ++i)
+    {
+        os << v[i];
+        if (i < v.size() - 1)
+            os << ", ";
+    }
+    os << "]";
+    return os;
 }
 
 
-auto rotate = skepu::MapOverlap(rotate_f);
+// This does not work because the start and end get larger than the vector itself
+// Discuss with August.
 
-void helper_vector_rotate(skepu::Vector<int> &v, int dir)
+TEST_CASE("Overlap radius")
 {
-	const size_t size{v.size()};
-	const int defaultval = 9268;
-	const	int pad = 4561;
-	skepu::Vector<int> rv_a(size, defaultval), rv_b(size), rv_c(size), rv_d(size);
-	
-	const size_t overlap = std::abs(dir);
-	rotate.setOverlap(overlap);
-	
-	rotate.setEdgeMode(skepu::Edge::None);
-	rotate(rv_a, v, dir);
-	skepu::io::cout << "none:    rv_a = " << rv_a << "\n";
-	skepu::external(skepu::read(rv_a), [&]
-	{
-		for (size_t i = 0; i < size; ++i)
-		{
-			if (i < overlap || i > size-overlap-1);//  CHECK(rv_a(i) == defaultval); // TODO: Maybe assert this?
-			else                                    CHECK(rv_a(i) == (i+1 + dir));
-		}
-	});
-	
-	
-	rotate.setEdgeMode(skepu::Edge::Cyclic);
-	rotate(rv_b, v, dir);
-	skepu::io::cout << "cyclic:    rv_b = " << rv_b << "\n";
-	skepu::external(skepu::read(rv_b), [&]
-	{
-		for (size_t i = 0; i < size; ++i)
-		{
-			CHECK(rv_b(i) == (i + dir + size) % size + 1);
-		}
-	});
+    std::vector<skepu::Edge> regularEdges{skepu::Edge::Duplicate};
+    int pad = 10;
+    
 
-	rotate.setEdgeMode(skepu::Edge::Duplicate);
-	rotate(rv_c, v, dir);
-	skepu::io::cout << "duplicate:    rv_c = " << rv_c << "\n";
-	skepu::external(skepu::read(rv_c), [&]
-	{
-		for (size_t i = 0; i < size; ++i)
-		{
-			if      (dir < 0 && i < overlap)        CHECK(rv_c(i) == 1);
-			else if (dir > 0 && i > size-overlap-1) CHECK(rv_c(i) == (size));
-			else                                    CHECK(rv_c(i) == (i+1 + dir));
-		}
-	});
+    for (int overlapRadius = 6; overlapRadius <= 6; ++overlapRadius)
+    {
+        overlap.setOverlap(overlapRadius);
+        skepu::Vector<int> input(10, 1);
+        skepu::Vector<int> actual(input.size(), 0);
+        std::vector<int> expected;
+        skepu::external(skepu::read(input), [&]{
+        for (int i = 0; i < input.size(); ++i)
+        {
+            input(i) = i;
+        }
+        }, skepu::write(input));
 
-	rotate.setEdgeMode(skepu::Edge::Pad);
-	rotate.setPad(pad);
-	rotate(rv_d, v, dir);
-	skepu::io::cout << "pad:    rv_d = " << rv_d << "\n";
-	skepu::external(skepu::read(rv_d), [&]
-	{
-		for (size_t i = 0; i < size; ++i)
-		{
-			if      (dir < 0 && i < overlap)        CHECK(rv_d(i) == pad);
-			else if (dir > 0 && i > size-overlap-1) CHECK(rv_d(i) == pad);
-			else                                    CHECK(rv_d(i) == (i+1 + dir));
-		}
-	});
+        for (skepu::Edge edge : regularEdges)
+        {
+            INFO("overlapRadius = " + std::to_string(overlapRadius) + ", edge = " + skepu::to_string(edge));
+            overlap.setEdgeMode(skepu::Edge::Duplicate);
+            overlap(actual, input);
+            expected = generate_expected(input, overlap.getOverlap(), overlap.getEdgeMode(), pad);
+            if (overlapRadius == 6)
+            {
+                std::cout << actual << "\n";
+                std::cout << expected << "\n";
+            }
+            compare(actual, expected);
+        }
+
+        if (10 > overlapRadius * 2)
+        {
+            INFO("overlapRadius = " + std::to_string(overlapRadius) + ", edge = None");
+            skepu::Vector<int> actual2(input.size() - overlapRadius * 2, 0);
+            overlap.setEdgeMode(skepu::Edge::None);
+            overlap(actual2, input);
+            expected = generate_expected(input, overlap.getOverlap(), overlap.getEdgeMode());
+            compare(actual2, expected);
+        }
+    }
+}*/
+
+TEST_CASE("Invalid sizes")
+{
+    overlap.setOverlap(1);
+    int overlapOffset = overlap.getOverlap() * 2;
+    skepu::Vector<int> input(10), correctSize(10), small(input.size()-1), large(input.size()+1),
+    correctSizeNone(input.size()-overlapOffset), smallNone(input.size()-overlapOffset-1), largeNone(input.size()-overlapOffset+1);
+
+    skepu::Edge regularEdges[] = {skepu::Edge::Duplicate, skepu::Edge::Cyclic, skepu::Edge::Pad};
+
+    for (skepu::Edge edge : regularEdges)
+    {
+        INFO("edge = " + skepu::to_string(edge));
+        overlap.setEdgeMode(edge);
+        CHECK_THROWS_WITH(overlap(small, input), Catch::Matchers::Contains("input/output vector size mismatch"));
+        CHECK_THROWS_WITH(overlap(large, input), Catch::Matchers::Contains("input/output vector size mismatch"));
+    }
+
+    INFO("edge = None");
+    overlap.setEdgeMode(skepu::Edge::None);
+    CHECK_THROWS_WITH(overlap(smallNone, input), Catch::Matchers::Contains("input/output vector size mismatch"));
+    CHECK_THROWS_WITH(overlap(largeNone, input), Catch::Matchers::Contains("input/output vector size mismatch"));
+    overlap.setOverlap(6);
+    CHECK_THROWS_WITH(overlap(correctSizeNone, input), Catch::Matchers::Contains("input/output vector size mismatch"));
 }
 
-
-TEST_CASE("MapOverlap 1D vector fundamentals")
+skepu::multiple<int, int> overlap_sum_2(skepu::Region1D<int> r)
 {
-	const size_t size{20};
-
-	skepu::Vector<int> v(size);
-	skepu::external([&]
-	{
-		for (size_t i = 0; i < size; ++i)
-			v(i) = i+1;
-		std::cout << "v: " << v <<"\n";
-	}, skepu::write(v));
-	
-	
-//	SECTION( "Rotate:  0" ) { helper_vector_rotate(v,  0); } // Invalid for OpenCL backend
-	SECTION( "Rotate: -1" ) { helper_vector_rotate(v, -1); }
-	SECTION( "Rotate: +1" ) { helper_vector_rotate(v, +1); }
-	SECTION( "Rotate: -2" ) { helper_vector_rotate(v, -2); }
-	SECTION( "Rotate: +2" ) { helper_vector_rotate(v, +2); }
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        val += r(i);
+    return skepu::ret(val, val+1);
 }
 
-
-
-void helper_matrix_rotate(skepu::Matrix<int> &m, int dir)
+std::vector<std::vector<int>> generate_expected_2(skepu::Vector<int>& input, int overlap, skepu::Edge edge, int pad = 0)
 {
-	const size_t rows{m.size_i()};
-	const size_t cols{m.size_j()};
-	const int defaultval = 9268;
-	const	int pad = 4561;
-	
-	skepu::Matrix<int>
-		rm_a(m.size_i(), m.size_j(), defaultval),
-		rm_b(m.size_i(), m.size_j(), defaultval),
-		rm_c(m.size_i(), m.size_j(), defaultval),
-		rm_d(m.size_i(), m.size_j(), defaultval),
-		rm_e(m.size_i(), m.size_j(), defaultval),
-		rm_f(m.size_i(), m.size_j(), defaultval),
-		rm_g(m.size_i(), m.size_j(), defaultval),
-		rm_h(m.size_i(), m.size_j(), defaultval);
-
-	
-	const size_t overlap = std::abs(dir);
-	rotate.setOverlap(overlap);
-	
-	rotate.setOverlapMode(skepu::Overlap::RowWise);
-	
-	rotate.setEdgeMode(skepu::Edge::None);
-	rotate(rm_a, m, dir);
-	skepu::io::cout << "Matrix Row-wise None:    rm_a = " << rm_a << "\n";
-	skepu::external(skepu::read(rm_a, m), [&]
-	{
-		for (size_t i = 0; i < rows; ++i)
-			for (size_t j = 0; j < cols; ++j)
-			{
-				if (j < overlap || j > cols-overlap-1);//  CHECK(rm_a(i, j) == defaultval); // TODO: Maybe assert this?
-				else                                    CHECK(rm_a(i, j) == m(i, j+dir));
-			}
-	});
-	
-	rotate.setEdgeMode(skepu::Edge::Cyclic);
-	rotate(rm_b, m, dir);
-	skepu::io::cout << "Matrix Row-wise Cyclic:    rm_b = " << rm_b << "\n";
-
-	rotate.setEdgeMode(skepu::Edge::Duplicate);
-	rotate(rm_c, m, dir);
-	skepu::io::cout << "Matrix Row-wise Duplicate  rm_c = " << rm_c << "\n";
-
-	rotate.setEdgeMode(skepu::Edge::Pad);
-	rotate.setPad(pad);
-	rotate(rm_d, m, dir);
-	skepu::io::cout << "Matrix Row-wise Pad:     rm_d = " << rm_d << "\n";
-
-
-	rotate.setOverlapMode(skepu::Overlap::ColWise);
-	
-	rotate.setEdgeMode(skepu::Edge::None);
-	rotate(rm_e, m, dir);
-	skepu::io::cout << "Matrix Col-wise None:    rm_e = " << rm_e << "\n";
-	rotate.setEdgeMode(skepu::Edge::Cyclic);
-	rotate(rm_f, m, dir);
-	skepu::io::cout << "Matrix Col-wise Cyclic:    rm_f = " << rm_f << "\n";
-
-	rotate.setEdgeMode(skepu::Edge::Duplicate);
-	rotate(rm_g, m, dir);
-	skepu::io::cout << "Matrix Col-wise Duplicate  rm_g = " << rm_g << "\n";
-
-	rotate.setEdgeMode(skepu::Edge::Pad);
-	rotate.setPad(pad);
-	rotate(rm_h, m, dir);
-	skepu::io::cout << "Matrix Col-wise Pad 0:     rm_h = " << rm_h << "\n";
-	
+    input.flush();
+    std::vector<int> res, res2;
+    if (edge == skepu::Edge::None)
+        res.resize(input.size() - overlap * 2);
+    else
+        res.resize(input.size());
+    res2.resize(res.size());
+    
+    int data[overlap*3];
+    for (int i = 0; i < res.size(); ++i)
+    {
+        int sum = 0;
+        int dataIndex = 0;
+        for (int o = -overlap; o <= overlap; ++o)
+        {
+            int pos = i + o + ((edge == skepu::Edge::None) ? overlap : 0);
+            if (pos < 0 or pos > input.size() - 1)
+            {
+                switch (edge)
+                {
+                    case skepu::Edge::Duplicate:
+                        pos = std::clamp(pos, 0, static_cast<int>(input.size() - 1));
+                        break;
+                    case skepu::Edge::Cyclic:
+                        pos = (pos + input.size()) % input.size();
+                        break;
+                    case skepu::Edge::Pad:
+                        pos = -1;
+                        break;
+                    case skepu::Edge::None:
+                        throw;
+                        break;
+                }
+            }
+            if (pos == -1)
+                data[dataIndex++] = pad;
+            else
+                data[dataIndex++] = input[pos];
+        }
+        skepu::Region1D<int> r{overlap, 1, &data[overlap]};
+        std::tuple<int, int> output = overlap_sum_2(r);
+        res[i] = std::get<0>(output);
+        res2[i] = std::get<1>(output);
+    }
+    return {res, res2};
 }
 
+auto overlap2 = skepu::MapOverlap(overlap_sum_2);
 
-TEST_CASE("MapOverlap 1D matrix fundamentals")
+TEST_CASE("Multi return")
 {
-	const size_t size{16};
-	
-	skepu::Matrix<int> m(size, size);
-	skepu::external([&]
-	{
-		int i = 1;
-		for(size_t y = 0; y < size; ++y)
-			for(size_t x = 0; x < size; ++x)
-				m(y, x) = i++;
-		std::cout << "m: " << m <<"\n";
-	},
-	skepu::write(m));
-	
-//	SECTION( "Rotate:  0" ) { helper_matrix_rotate(m,  0); } // Invalid for OpenCL backend
-	SECTION( "Rotate: -1" ) { helper_matrix_rotate(m, -1); }
-	SECTION( "Rotate: +1" ) { helper_matrix_rotate(m, +1); }
-	SECTION( "Rotate: -2" ) { helper_matrix_rotate(m, -2); }
-	SECTION( "Rotate: +2" ) { helper_matrix_rotate(m, +2); }
-	
+    std::vector<skepu::Edge> regularEdges{skepu::Edge::Duplicate, skepu::Edge::Cyclic, skepu::Edge::Pad};
+    int pad = 10;
+    int overlapRadius = 1;
+    overlap2.setOverlap(overlapRadius);
+    overlap2.setPad(pad);
+
+    for (int size = 2; size <= 100; ++size)
+    {
+        skepu::Vector<int> input(size, 1);
+        skepu::Vector<int> actual(input.size(), 0), actual2(input.size(), 0);
+        std::vector<std::vector<int>> expected;
+        skepu::external(skepu::read(input), [&]{
+        for (int i = 0; i < input.size(); ++i)
+        {
+            input(i) = i;
+        }
+        }, skepu::write(input));
+
+        // TODO: Add overlaps larger than input size.
+
+        for (skepu::Edge edge : regularEdges)
+        {
+            overlap2.setEdgeMode(edge);
+            overlap2(actual, actual2, input);
+            expected = generate_expected_2(input, overlap2.getOverlap(), overlap2.getEdgeMode(), pad);
+            {
+                INFO("size = " + std::to_string(size) + ", edge = " + skepu::to_string(edge) + ", actual");
+                compare(actual, expected[0]);
+            }
+            {
+                INFO("size = " + std::to_string(size) + ", edge = " + skepu::to_string(edge) + ", actual2");
+                compare(actual2, expected[1]);
+            }
+        }
+
+        if (size > overlapRadius * 2)
+        {
+            skepu::Vector<int> actual3(input.size() - 2, 0), actual4(input.size() - 2, 0);
+            overlap2.setEdgeMode(skepu::Edge::None);
+            overlap2(actual3, actual4, input);
+            expected = generate_expected_2(input, overlap2.getOverlap(), overlap2.getEdgeMode());
+            {
+                INFO("size = " + std::to_string(size) + ", edge = None" + ", actual3");
+                compare(actual3, expected[0]);
+            }
+            {
+                INFO("size = " + std::to_string(size) + ", edge = None" + ", actual4");
+                compare(actual4, expected[1]);
+            }
+        }
+    }
+}
+
+TEST_CASE("Invalid sizes 2 output vectors")
+{
+    overlap2.setOverlap(1);
+    int overlapOffset = overlap2.getOverlap() * 2;
+    skepu::Vector<int> input(10), correctSize(10), small(input.size()-1), large(input.size()+1),
+    correctSizeNone(input.size()-overlapOffset), smallNone(input.size()-overlapOffset-1), largeNone(input.size()-overlapOffset+1);
+
+    skepu::Edge similarEdgeModes[] = {skepu::Edge::Duplicate, skepu::Edge::Cyclic, skepu::Edge::Pad};
+
+    for (skepu::Edge edge : similarEdgeModes)
+    {
+        overlap2.setEdgeMode(edge);
+        CHECK_THROWS_WITH(overlap2(correctSize, small, input), Catch::Matchers::Contains("invalid output vector size"));
+        CHECK_THROWS_WITH(overlap2(correctSize, large, input), Catch::Matchers::Contains("invalid output vector size"));
+    }
+
+    overlap2.setEdgeMode(skepu::Edge::None);
+    CHECK_THROWS_WITH(overlap2(correctSizeNone, smallNone, input), Catch::Matchers::Contains("invalid output vector size"));
+    CHECK_THROWS_WITH(overlap2(correctSizeNone, largeNone, input), Catch::Matchers::Contains("invalid output vector size"));
 }

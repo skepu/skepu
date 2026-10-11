@@ -111,7 +111,7 @@ skepu_add_test_case_cpu(lambda)
 skepu_add_test_case_openmp(lambda)
 skepu_add_test_case_opencl(lambda)
 skepu_add_test_case_cuda(lambda)
-#skepu_add_test_case_hybrid_opencl(lambda)
+skepu_add_test_case_hybrid_opencl(lambda)
 #skepu_add_test_case_hybrid_cuda(lambda)
 
 # ------------------------------------------------

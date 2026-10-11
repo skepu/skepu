@@ -5,11 +5,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # ------------------------------------------------
 
 skepu_add_test_case_sequential(blas)
-#skepu_add_test_case_cpu(blas)
-#skepu_add_test_case_openmp(blas)
-##skepu_add_test_case_opencl(blas)
+# The precompiled build of this test does not compile (blas.hpp: "expected nested-name-specifier before 'complex'"). The tests below
+# (blas_float, blas_level1, blas_level23, blas_complex, blas_mixed_precision) are the precompiled tests of the library.
 #skepu_add_test_case_cuda(blas)
-##skepu_add_test_case_hybrid_opencl(blas)
 #skepu_add_test_case_hybrid_cuda(blas)
 
 # ------------------------------------------------
@@ -19,6 +17,8 @@ skepu_add_test_case_sequential(blas)
 skepu_add_test_case_sequential(complex)
 skepu_add_test_case_cpu(complex)
 skepu_add_test_case_openmp(complex)
+# OpenCL (also hybrid): the generated kernel does not compile ("returning '_Complex double' from a function with incompatible result
+# type 'skepu_complex_float'").
 #skepu_add_test_case_opencl(complex)
 skepu_add_test_case_cuda(complex)
 #skepu_add_test_case_hybrid_opencl(complex)
@@ -28,12 +28,12 @@ skepu_add_test_case_hybrid_cuda(complex)
 #   Random fundamentals
 # ------------------------------------------------
 
-#skepu_add_test_case_sequential(random)
-#skepu_add_test_case_cpu(random)
-#skepu_add_test_case_openmp(random)
-#skepu_add_test_case_opencl(random)
+skepu_add_test_case_sequential(random)
+skepu_add_test_case_cpu(random)
+skepu_add_test_case_openmp(random)
+skepu_add_test_case_opencl(random)
 #skepu_add_test_case_cuda(random)
-#skepu_add_test_case_hybrid_opencl(random)
+skepu_add_test_case_hybrid_opencl(random)
 #skepu_add_test_case_hybrid_cuda(random)
 
 # ------------------------------------------------
@@ -52,14 +52,13 @@ skepu_add_test_case_hybrid_cuda(skepu_external)
 #   Standard library namespaces
 # ------------------------------------------------
 
-# TEST-ERROR: precompiler segfaults
 
-# skepu_add_test_case_sequential(using_namespace)
-# skepu_add_test_case_cpu(using_namespace)
-# skepu_add_test_case_openmp(using_namespace)
-# skepu_add_test_case_opencl(using_namespace)
+skepu_add_test_case_sequential(using_namespace)
+skepu_add_test_case_cpu(using_namespace)
+skepu_add_test_case_openmp(using_namespace)
+skepu_add_test_case_opencl(using_namespace)
 # skepu_add_test_case_cuda(using_namespace)
-# skepu_add_test_case_hybrid_opencl(using_namespace)
+skepu_add_test_case_hybrid_opencl(using_namespace)
 # skepu_add_test_case_hybrid_cuda(using_namespace)
 
 # ------------------------------------------------

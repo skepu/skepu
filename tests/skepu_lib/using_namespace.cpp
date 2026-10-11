@@ -28,27 +28,39 @@ TEST_CASE("Standard library namespaces")
 		b(i) = 1;
 	}
 	
-	std::cout << "A: " << a << "\n";
-	std::cout << "B: " << b << "\n";
+	// c is checked after each call: a(i) is i and b(i) is 1
+	auto check = [&](auto expected)
+	{
+		skepu::external(skepu::read(c), [&]
+		{
+			for (size_t i = 0; i < size; ++i)
+				CHECK(c(i) == Approx(expected(i)));
+		});
+	};
 	
 	test1(c, a, b);
+	check([](size_t i){ return i + 1.f; });
+	
 	test2(c, a, b);
+	check([](size_t i){ return i + 1.f; });
 	
 	test3(c, a, 100);
+	check([](size_t i){ return i + 100.f; });
+	
 	test4(c, a, 100);
+	check([](size_t i){ return i + 100.f; });
 	
 	// vector sum
 	skepu::Map([](float lhs, float rhs){ return lhs + rhs;})(c, a, b);
+	check([](size_t i){ return i + 1.f; });
 	
 	// vector scale (library function)
 	skepu::Map<1>(skepu::util::mul<float>)(c, a, 2);
+	check([](size_t i){ return i * 2.f; });
 	
-  using namespace skepu;
-  
-	// dot product (library function + using namespace)
+	using namespace skepu;
+	
+	// sum (library function + using namespace)
 	float sum = Reduce(util::add<float>)(a);
-	
-	skepu::io::cout << "C: " << c << "\n";
-//	std::cout << "sum: " << sum << "\n";
-	
+	CHECK(sum == Approx(size * (size - 1) / 2.f));
 }

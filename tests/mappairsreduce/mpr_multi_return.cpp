@@ -29,35 +29,48 @@ TEST_CASE("MapPairsReduce with variadic return")
 	for (int i = 0; i < Vsize; ++i) v1(i) = i+1;
 	for (int i = 0; i < Hsize; ++i) h1(i) = (i+1)*10;
 
-	skepu::external(
-		skepu::read(v1, h1),
-		[&]{
-			std::cout << "\nv1: " << v1 << "\nh1: " << h1 << "\n\n";
-		});
-
+	// Column-wise: one result for each element of h1, from all the elements of v1
 	pairs.setReduceMode(skepu::ReduceMode::ColWise);
 	pairs(resH1, resH2, v1, h1);
 
 	skepu::external(
 		skepu::read(resH1, resH2),
 		[&]{
-			std::cout << "\nresH1: " << resH1 << "\n";
-			std::cout << "\nresH2: " << resH2 << "\n";
+			for (size_t j = 0; j < Hsize; ++j)
+			{
+				int sumProduct{0}, sumSum{0};
+				for (size_t i = 0; i < Vsize; ++i)
+				{
+					sumProduct += v1(i) * h1(j);
+					sumSum += v1(i) + h1(j);
+				}
+				CHECK(resH1(j) == sumProduct);
+				CHECK(resH2(j) == sumSum);
+			}
 		});
 
+	// Row-wise: one result for each element of v1, from all the elements of h1
 	pairs.setReduceMode(skepu::ReduceMode::RowWise);
 	pairs(resV1, resV2, v1, h1);
 
 	skepu::external(
 		skepu::read(resV1, resV2),
 		[&]{
-			std::cout << "\nresV1: " << resV1 << "\n";
-			std::cout << "\nresV2: " << resV2 << "\n";
+			for (size_t i = 0; i < Vsize; ++i)
+			{
+				int sumProduct{0}, sumSum{0};
+				for (size_t j = 0; j < Hsize; ++j)
+				{
+					sumProduct += v1(i) * h1(j);
+					sumSum += v1(i) + h1(j);
+				}
+				CHECK(resV1(i) == sumProduct);
+				CHECK(resV2(i) == sumSum);
+			}
 		});
 
-	// Test implicit dimensions
+	// Test implicit dimensions: the index of the pair and a random access argument
 	{
-
 		pairs4.setDefaultSize(Vsize, Hsize);
 		pairs4.setReduceMode(skepu::ReduceMode::ColWise);
 		pairs4(resH1, resH2, v1, 0);
@@ -65,17 +78,30 @@ TEST_CASE("MapPairsReduce with variadic return")
 		skepu::external(
 			skepu::read(resH1, resH2),
 			[&]{
-				std::cout << "\nresH1: " << resH1 << "\n";
-				std::cout << "\nresH2: " << resH2 << "\n";
+				for (size_t j = 0; j < Hsize; ++j)
+				{
+					int sumIndex{0};
+					for (size_t i = 0; i < Vsize; ++i)
+						sumIndex += i + j + 0;
+					CHECK(resH1(j) == sumIndex);
+					CHECK(resH2(j) == (int)Vsize * v1(0));
+				}
 			});
 
 		pairs4.setReduceMode(skepu::ReduceMode::RowWise);
 		pairs4(resV1, resV2, v1, 0);
+
 		skepu::external(
 			skepu::read(resV1, resV2),
 			[&]{
-				std::cout << "\nresV1: " << resV1 << "\n";
-				std::cout << "\nresV2: " << resV2 << "\n";
+				for (size_t i = 0; i < Vsize; ++i)
+				{
+					int sumIndex{0};
+					for (size_t j = 0; j < Hsize; ++j)
+						sumIndex += i + j + 0;
+					CHECK(resV1(i) == sumIndex);
+					CHECK(resV2(i) == (int)Hsize * v1(0));
+				}
 			});
 	}
 }

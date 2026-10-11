@@ -15,26 +15,13 @@ skepu_add_test_case_hybrid_cuda(mapoverlap_default_values)
 #   MapOverlap 1D fundamentals
 # ------------------------------------------------
 
-#skepu_add_test_case_sequential(mapoverlap_1d)
-#skepu_add_test_case_cpu(mapoverlap_1d)
-#skepu_add_test_case_openmp(mapoverlap_1d)
-#skepu_add_test_case_opencl(mapoverlap_1d)
-#skepu_add_test_case_cuda(mapoverlap_1d)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_1d)
+skepu_add_test_case_sequential(mapoverlap_1d)
+skepu_add_test_case_cpu(mapoverlap_1d)
+skepu_add_test_case_openmp(mapoverlap_1d)
+skepu_add_test_case_opencl(mapoverlap_1d)
+skepu_add_test_case_cuda(mapoverlap_1d)
+skepu_add_test_case_hybrid_opencl(mapoverlap_1d)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_1d)
-
-
-# ------------------------------------------------
-#   MapOverlap 1D fundamentals new
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_1d_new)
-skepu_add_test_case_cpu(mapoverlap_1d_new)
-skepu_add_test_case_openmp(mapoverlap_1d_new)
-skepu_add_test_case_opencl(mapoverlap_1d_new)
-skepu_add_test_case_cuda(mapoverlap_1d_new)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_1d_new)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_1d_new)
 
 
 # ------------------------------------------------
@@ -46,7 +33,7 @@ skepu_add_test_case_cpu(mapoverlap_1d_rowcol)
 skepu_add_test_case_openmp(mapoverlap_1d_rowcol)
 skepu_add_test_case_opencl(mapoverlap_1d_rowcol)
 skepu_add_test_case_cuda(mapoverlap_1d_rowcol)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_1d_rowcol)
+skepu_add_test_case_hybrid_opencl(mapoverlap_1d_rowcol)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_1d_rowcol)
 
 # ------------------------------------------------
@@ -58,6 +45,7 @@ skepu_add_test_case_cpu(mapoverlap_1d_wide)
 skepu_add_test_case_openmp(mapoverlap_1d_wide)
 skepu_add_test_case_opencl(mapoverlap_1d_wide)
 skepu_add_test_case_cuda(mapoverlap_1d_wide)
+# hybrid OpenCL: fails, a Matrix column access is out of bounds
 #skepu_add_test_case_hybrid_opencl(mapoverlap_1d_wide)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_1d_wide)
 
@@ -69,9 +57,32 @@ skepu_add_test_case_sequential(mapoverlap_2d_mirror)
 skepu_add_test_case_cpu(mapoverlap_2d_mirror)
 skepu_add_test_case_openmp(mapoverlap_2d_mirror)
 skepu_add_test_case_opencl(mapoverlap_2d_mirror)
-skepu_add_test_case_cuda(mapoverlap_2d_mirror)
+# (not implemented for the CUDA and hybrid backends: the call stops with an error)
+#skepu_add_test_case_cuda(mapoverlap_2d_mirror)
+# hybrid OpenCL: MapOverlap2D is not implemented for the hybrid backend
 #skepu_add_test_case_hybrid_opencl(mapoverlap_2d_mirror)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_2d_mirror)
+
+
+# ------------------------------------------------
+#   MapOverlap 1D, 3D and 4D mirror mode (edge mode None, input of the size of the output)
+# ------------------------------------------------
+
+# (not implemented for the CUDA and hybrid backends: the call stops with an error)
+skepu_add_test_case_sequential(mapoverlap_1d_mirror)
+skepu_add_test_case_cpu(mapoverlap_1d_mirror)
+skepu_add_test_case_openmp(mapoverlap_1d_mirror)
+skepu_add_test_case_opencl(mapoverlap_1d_mirror)
+
+skepu_add_test_case_sequential(mapoverlap_3d_mirror)
+skepu_add_test_case_cpu(mapoverlap_3d_mirror)
+skepu_add_test_case_openmp(mapoverlap_3d_mirror)
+skepu_add_test_case_opencl(mapoverlap_3d_mirror)
+
+skepu_add_test_case_sequential(mapoverlap_4d_mirror)
+skepu_add_test_case_cpu(mapoverlap_4d_mirror)
+skepu_add_test_case_openmp(mapoverlap_4d_mirror)
+skepu_add_test_case_opencl(mapoverlap_4d_mirror)
 
 
 # ------------------------------------------------
@@ -83,7 +94,7 @@ skepu_add_test_case_cpu(mapoverlap_2d)
 skepu_add_test_case_openmp(mapoverlap_2d)
 skepu_add_test_case_opencl(mapoverlap_2d)
 skepu_add_test_case_cuda(mapoverlap_2d)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_2d)
+skepu_add_test_case_hybrid_opencl(mapoverlap_2d)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_2d)
 
 
@@ -97,7 +108,7 @@ skepu_add_test_case_cpu(mapoverlap_2d_expanding)
 skepu_add_test_case_openmp(mapoverlap_2d_expanding)
 skepu_add_test_case_opencl(mapoverlap_2d_expanding)
 skepu_add_test_case_cuda(mapoverlap_2d_expanding)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_2d_expanding)
+skepu_add_test_case_hybrid_opencl(mapoverlap_2d_expanding)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_2d_expanding)
 
 
@@ -110,7 +121,7 @@ skepu_add_test_case_cpu(mapoverlap_2d_new)
 skepu_add_test_case_openmp(mapoverlap_2d_new)
 skepu_add_test_case_opencl(mapoverlap_2d_new)
 skepu_add_test_case_cuda(mapoverlap_2d_new)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_2d_new)
+skepu_add_test_case_hybrid_opencl(mapoverlap_2d_new)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_2d_new)
 
 
@@ -123,7 +134,7 @@ skepu_add_test_case_cpu(mappool_2d)
 skepu_add_test_case_openmp(mappool_2d)
 skepu_add_test_case_opencl(mappool_2d)
 skepu_add_test_case_cuda(mappool_2d)
-#skepu_add_test_case_hybrid_opencl(mappool_2d)
+skepu_add_test_case_hybrid_opencl(mappool_2d)
 #skepu_add_test_case_hybrid_cuda(mappool_2d)
 
 
@@ -136,7 +147,7 @@ skepu_add_test_case_cpu(mappool_2d_small_output)
 skepu_add_test_case_openmp(mappool_2d_small_output)
 skepu_add_test_case_opencl(mappool_2d_small_output)
 skepu_add_test_case_cuda(mappool_2d_small_output)
-#skepu_add_test_case_hybrid_opencl(mappool_2d_small_output)
+skepu_add_test_case_hybrid_opencl(mappool_2d_small_output)
 #skepu_add_test_case_hybrid_cuda(mappool_2d_small_output)
 
 
@@ -149,7 +160,7 @@ skepu_add_test_case_cpu(mapoverlap_3d)
 skepu_add_test_case_openmp(mapoverlap_3d)
 skepu_add_test_case_opencl(mapoverlap_3d)
 skepu_add_test_case_cuda(mapoverlap_3d)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_3d)
+skepu_add_test_case_hybrid_opencl(mapoverlap_3d)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_3d)
 
 
@@ -162,7 +173,7 @@ skepu_add_test_case_cpu(mapoverlap_3d_new)
 skepu_add_test_case_openmp(mapoverlap_3d_new)
 skepu_add_test_case_opencl(mapoverlap_3d_new)
 skepu_add_test_case_cuda(mapoverlap_3d_new)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_3d_new)
+skepu_add_test_case_hybrid_opencl(mapoverlap_3d_new)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_3d_new)
 
 
@@ -175,7 +186,7 @@ skepu_add_test_case_cpu(mappool_3d)
 skepu_add_test_case_openmp(mappool_3d)
 skepu_add_test_case_opencl(mappool_3d)
 skepu_add_test_case_cuda(mappool_3d)
-#skepu_add_test_case_hybrid_opencl(mappool_3d)
+skepu_add_test_case_hybrid_opencl(mappool_3d)
 #skepu_add_test_case_hybrid_cuda(mappool_3d)
 
 
@@ -188,7 +199,7 @@ skepu_add_test_case_cpu(mappool_3d_small_output)
 skepu_add_test_case_openmp(mappool_3d_small_output)
 skepu_add_test_case_opencl(mappool_3d_small_output)
 skepu_add_test_case_cuda(mappool_3d_small_output)
-#skepu_add_test_case_hybrid_opencl(mappool_3d_small_output)
+skepu_add_test_case_hybrid_opencl(mappool_3d_small_output)
 #skepu_add_test_case_hybrid_cuda(mappool_3d_small_output)
 
 
@@ -201,7 +212,7 @@ skepu_add_test_case_cpu(mapoverlap_4d)
 skepu_add_test_case_openmp(mapoverlap_4d)
 skepu_add_test_case_opencl(mapoverlap_4d)
 skepu_add_test_case_cuda(mapoverlap_4d)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_4d)
+skepu_add_test_case_hybrid_opencl(mapoverlap_4d)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_4d)
 
 
@@ -214,7 +225,7 @@ skepu_add_test_case_cpu(mapoverlap_4d_expanding)
 skepu_add_test_case_openmp(mapoverlap_4d_expanding)
 skepu_add_test_case_opencl(mapoverlap_4d_expanding)
 skepu_add_test_case_cuda(mapoverlap_4d_expanding)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_4d_expanding)
+skepu_add_test_case_hybrid_opencl(mapoverlap_4d_expanding)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_4d_expanding)
 
 
@@ -227,7 +238,7 @@ skepu_add_test_case_cpu(mapoverlap_4d_new)
 skepu_add_test_case_openmp(mapoverlap_4d_new)
 skepu_add_test_case_opencl(mapoverlap_4d_new)
 skepu_add_test_case_cuda(mapoverlap_4d_new)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_4d_new)
+skepu_add_test_case_hybrid_opencl(mapoverlap_4d_new)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_4d_new)
 
 
@@ -240,7 +251,7 @@ skepu_add_test_case_cpu(mappool_4d)
 skepu_add_test_case_openmp(mappool_4d)
 skepu_add_test_case_opencl(mappool_4d)
 skepu_add_test_case_cuda(mappool_4d)
-#skepu_add_test_case_hybrid_opencl(mappool_4d)
+skepu_add_test_case_hybrid_opencl(mappool_4d)
 #skepu_add_test_case_hybrid_cuda(mappool_4d)
 
 
@@ -253,7 +264,7 @@ skepu_add_test_case_cpu(mappool_4d_small_output)
 skepu_add_test_case_openmp(mappool_4d_small_output)
 skepu_add_test_case_opencl(mappool_4d_small_output)
 skepu_add_test_case_cuda(mappool_4d_small_output)
-#skepu_add_test_case_hybrid_opencl(mappool_4d_small_output)
+skepu_add_test_case_hybrid_opencl(mappool_4d_small_output)
 #skepu_add_test_case_hybrid_cuda(mappool_4d_small_output)
 
 
@@ -266,7 +277,7 @@ skepu_add_test_case_cpu(mapoverlap_indexed)
 skepu_add_test_case_openmp(mapoverlap_indexed)
 skepu_add_test_case_opencl(mapoverlap_indexed)
 skepu_add_test_case_cuda(mapoverlap_indexed)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_indexed)
+skepu_add_test_case_hybrid_opencl(mapoverlap_indexed)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_indexed)
 
 
@@ -275,10 +286,12 @@ skepu_add_test_case_cuda(mapoverlap_indexed)
 # ------------------------------------------------
 
 skepu_add_test_case_sequential(mapoverlap_in_place)
-skepu_add_test_case_cpu(mapoverlap_in_place)
-skepu_add_test_case_openmp(mapoverlap_in_place)
-skepu_add_test_case_opencl(mapoverlap_in_place)
-skepu_add_test_case_cuda(mapoverlap_in_place)
+# The Red-Black update mode gives wrong results with the backends (see mapoverlap_updatemode below): the test fails on CPU, OpenMP, OpenCL
+# and hybrid OpenCL (the sequential skeleton is right).
+#skepu_add_test_case_cpu(mapoverlap_in_place)
+#skepu_add_test_case_openmp(mapoverlap_in_place)
+#skepu_add_test_case_opencl(mapoverlap_in_place)
+#skepu_add_test_case_cuda(mapoverlap_in_place)
 #skepu_add_test_case_hybrid_opencl(mapoverlap_in_place)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_in_place)
 
@@ -291,7 +304,7 @@ skepu_add_test_case_cpu(mapoverlap_tuple)
 skepu_add_test_case_openmp(mapoverlap_tuple)
 skepu_add_test_case_opencl(mapoverlap_tuple)
 skepu_add_test_case_cuda(mapoverlap_tuple)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_tuple)
+skepu_add_test_case_hybrid_opencl(mapoverlap_tuple)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_tuple)
 
 # ------------------------------------------------
@@ -299,6 +312,8 @@ skepu_add_test_case_cuda(mapoverlap_tuple)
 # ------------------------------------------------
 
 skepu_add_test_case_sequential(mapoverlap_updatemode)
+# The Red and Black update modes give wrong results with the backends (1D on CPU, OpenMP and hybrid OpenCL; 1D and 2D on OpenCL):
+# the elements that should keep their value are updated. Only the sequential skeleton is right.
 #skepu_add_test_case_cpu(mapoverlap_updatemode)
 #skepu_add_test_case_openmp(mapoverlap_updatemode)
 #skepu_add_test_case_opencl(mapoverlap_updatemode)

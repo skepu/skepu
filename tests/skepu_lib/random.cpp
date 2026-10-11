@@ -1,6 +1,5 @@
 #include "../../external/catch2/catch.hpp"
 //#define SKEPU_DEBUG_PRNG
-#define SKEPU_DEBUG 3
 #include <iostream>
 #include <skepu>
 
@@ -271,13 +270,13 @@ TEST_CASE("PRNG API: MapPairs + MapPairsReduce")
   
 }
 
-/*
+// The edge mode None makes an output that is 2 * overlap smaller than the input
 TEST_CASE("PRNG API: MapOverlap 1D EdgeMode == None")
 {
   size_t size_i{10}, size_j{9};
   size_t overlap{3};
   
-  skepu::Vector<int> in(size_i, 1), out(size_i, 0);
+  skepu::Vector<int> in(size_i + 2 * overlap, 1), out(size_i, 0);
   
   mapoverlapper1d.setOverlap(overlap);
   mapoverlapper1d.setEdgeMode(skepu::Edge::None);
@@ -286,36 +285,32 @@ TEST_CASE("PRNG API: MapOverlap 1D EdgeMode == None")
   mapoverlapper1d.setPRNG(prng);
   
   mapoverlapper1d(out, in);
-  skepu::external(skepu::read(out), [&] { for (size_t i = overlap; i < size_i - overlap; ++i) CHECK(out(i) == ref_prng.get() % 100); });
+  skepu::external(skepu::read(out), [&] { for (size_t i = 0; i < size_i; ++i) CHECK(out(i) == ref_prng.get() % 100); });
   CHECK(prng.get() == ref_prng.get()); // next value should also be correct
-  skepu::io::cout << "Result: " << out << "\n";
   
   
-  skepu::Matrix<int> in_m(size_i, size_j, 1), out_mR(size_i, size_j, 0), out_mC(size_i, size_j, 0);
+  skepu::Matrix<int> in_mR(size_i, size_j + 2 * overlap, 1), in_mC(size_i + 2 * overlap, size_j, 1), out_mR(size_i, size_j, 0), out_mC(size_i, size_j, 0);
   
   mapoverlapper1d.setOverlapMode(skepu::Overlap::RowWise);
-  mapoverlapper1d(out_mR, in_m);
+  mapoverlapper1d(out_mR, in_mR);
   skepu::external(skepu::read(out_mR), [&] 
   {
     for (size_t i = 0; i < size_i; ++i)
-      for (size_t j = overlap; j < size_j - overlap; ++j)
+      for (size_t j = 0; j < size_j; ++j)
         CHECK(out_mR(i, j) == ref_prng.get() % 100);
   });
   CHECK(prng.get() == ref_prng.get()); // next value should also be correct
-  skepu::io::cout << "Result: " << out_mR << "\n";
   
   
   mapoverlapper1d.setOverlapMode(skepu::Overlap::ColWise);
-  mapoverlapper1d(out_mC, in_m);
+  mapoverlapper1d(out_mC, in_mC);
   skepu::external(skepu::read(out_mC), [&] 
   {
     for (size_t j = 0; j < size_j; ++j)
-      for (size_t i = overlap; i < size_i - overlap; ++i)
+      for (size_t i = 0; i < size_i; ++i)
         CHECK(out_mC(i, j) == ref_prng.get() % 100);
   });
   CHECK(prng.get() == ref_prng.get()); // next value should also be correct
-  skepu::io::cout << "Result: " << out_mC << "\n";
-  
 }
 
 
@@ -361,7 +356,46 @@ TEST_CASE("PRNG API: MapOverlap 1D EdgeMode != None")
 //  skepu::io::cout << "Result: " << out_m << "\n";
   
 }
-*/  
+
+// Enough elements for the backends that share the work between devices to use more than one (the numbers of the elements must not depend on that)
+TEST_CASE("PRNG API: MapOverlap 1D with a large vector")
+{
+  size_t size{200000};
+  size_t overlap{2};
+  
+  skepu::Vector<int> in(size, 1), out(size, 0), out_none(size - 2 * overlap, 0);
+  
+  mapoverlapper1d.setOverlap(overlap);
+  mapoverlapper1d.setOverlapMode(skepu::Overlap::RowWise);
+  
+  skepu::PRNG prng, ref_prng;
+  mapoverlapper1d.setPRNG(prng);
+  
+  mapoverlapper1d.setEdgeMode(skepu::Edge::Cyclic);
+  mapoverlapper1d(out, in);
+  skepu::external(skepu::read(out), [&] 
+  {
+    size_t wrong{0};
+    for (size_t i = 0; i < size; ++i)
+      if (out(i) != ref_prng.get() % 100)
+        ++wrong;
+    CHECK(wrong == 0);
+  });
+  CHECK(prng.get() == ref_prng.get()); // next value should also be correct
+  
+  mapoverlapper1d.setEdgeMode(skepu::Edge::None);
+  mapoverlapper1d(out_none, in);
+  skepu::external(skepu::read(out_none), [&] 
+  {
+    size_t wrong{0};
+    for (size_t i = 0; i < size - 2 * overlap; ++i)
+      if (out_none(i) != ref_prng.get() % 100)
+        ++wrong;
+    CHECK(wrong == 0);
+  });
+  CHECK(prng.get() == ref_prng.get());
+}
+
 
 TEST_CASE("PRNG API: MapOverlap 2D EdgeMode == None")
 {
@@ -383,6 +417,8 @@ TEST_CASE("PRNG API: MapOverlap 2D EdgeMode == None")
       for (size_t j = overlap_j; j < size_j - overlap_j; ++j)
         CHECK(out(i, j) == ref_prng.get() % 100);
   });
+  // (the inner elements get the numbers in order; the stream is advanced by the number of elements of the output)
+  ref_prng.forward(size_i * size_j - (size_i - 2 * overlap_i) * (size_j - 2 * overlap_j));
   CHECK(prng.get() == ref_prng.get()); // next value should also be correct
   //skepu::io::cout << "Result: " << out << "\n";
 }
@@ -415,7 +451,8 @@ TEST_CASE("PRNG API: MapOverlap 3D EdgeMode == None")
   size_t size_i{38}, size_j{27}, size_k{15};
   size_t overlap_i{3}, overlap_j{3}, overlap_k{3};
   
-  skepu::Tensor3<int> in(size_i, size_j, size_k, "", 1), out(size_i, size_j, size_k);
+  // (the edge mode None makes an output that is 2 * overlap smaller than the input)
+  skepu::Tensor3<int> in(size_i + 2 * overlap_i, size_j + 2 * overlap_j, size_k + 2 * overlap_k, "", 1), out(size_i, size_j, size_k);
   
   mapoverlapper3d.setOverlap(overlap_i, overlap_j, overlap_k);
   mapoverlapper3d.setEdgeMode(skepu::Edge::None);
@@ -426,9 +463,9 @@ TEST_CASE("PRNG API: MapOverlap 3D EdgeMode == None")
   mapoverlapper3d(out, in);
   skepu::external(skepu::read(out), [&] 
   {
-    for (size_t i = overlap_i; i < size_i - overlap_i; ++i)
-      for (size_t j = overlap_j; j < size_j - overlap_j; ++j)
-        for (size_t k = overlap_k; k < size_k - overlap_k; ++k)
+    for (size_t i = 0; i < size_i; ++i)
+      for (size_t j = 0; j < size_j; ++j)
+        for (size_t k = 0; k < size_k; ++k)
           CHECK(out(i, j, k) == ref_prng.get() % 100);
   });
   CHECK(prng.get() == ref_prng.get()); // next value should also be correct

@@ -1,6 +1,5 @@
 // Random numbers in a MapOverlap on distributed containers, with an edge mode (the skeleton of the node-level library runs
-// in a process with the edge mode None, and its OpenMP path uses the random numbers in another order than its
-// other paths: same output as a single node with the sequential, OpenCL and hybrid backends only).
+// in a process with the edge mode None).
 
 #include <iostream>
 #include <skepu>

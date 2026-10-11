@@ -1,6 +1,7 @@
 #include "../../external/catch2/catch.hpp"
 
 #define SKEPU_DEBUG 3
+#include <algorithm>
 #include <skepu>
 #include <skepu-lib/io.hpp>
 #include <test_helper_automatic_setup.hpp>
@@ -35,23 +36,44 @@ TEST_CASE("MapOverlap 3D fundamentals")
 		auto i(0);
 		for(auto & e : ten3)
 			e = i++;
-		std::cout << "ten3: " << ten3 << "\n";
 	}, skepu::write(ten3));
+	
+	// The user function gives the element at +1 in the first dimension. The value of ten3 at (a, b, c) is (a * size + b) * size + c.
+	auto value = [&](long a, long b, long c) { return float((a * long(size) + b) * long(size) + c); };
+	auto clamp = [&](long v) { return std::min<long>(std::max<long>(v, 0), size - 1); };
 	
 	conv3.setEdgeMode(skepu::Edge::None);
 	conv3(ret_ten3_none, ten3, stencil3);
-	skepu::io::cout << "Tensor3D None: " << ret_ten3 << "\n";
+	
+	skepu::external(skepu::read(ret_ten3_none), [&]
+	{
+		// None: the output has the elements that have a full neighbourhood, so its element (a, b, c) is at (a + 1, b + 1, c + 1) of ten3
+		for (long a = 0; a < long(size) - 2; ++a)
+			for (long b = 0; b < long(size) - 2; ++b)
+				for (long c = 0; c < long(size) - 2; ++c)
+					CHECK(ret_ten3_none(a, b, c) == value(a + 2, b + 1, c + 1));
+	});
+
+	auto checkAll = [&](auto expected)
+	{
+		skepu::external(skepu::read(ret_ten3), [&]
+		{
+			for (long a = 0; a < long(size); ++a)
+				for (long b = 0; b < long(size); ++b)
+					for (long c = 0; c < long(size); ++c)
+						CHECK(ret_ten3(a, b, c) == expected(a, b, c));
+		});
+	};
 
 	conv3.setEdgeMode(skepu::Edge::Cyclic);
 	conv3(ret_ten3, ten3, stencil3);
-	skepu::io::cout << "Tensor3D Cyclic: " << ret_ten3 << "\n";
+	checkAll([&](long a, long b, long c) { return value((a + 1) % size, b, c); });
 
 	conv3.setEdgeMode(skepu::Edge::Duplicate);
 	conv3(ret_ten3, ten3, stencil3);
-	skepu::io::cout << "Tensor3D Duplicate: " << ret_ten3 << "\n";
+	checkAll([&](long a, long b, long c) { return value(clamp(a + 1), b, c); });
 
 	conv3.setEdgeMode(skepu::Edge::Pad);
 	conv3(ret_ten3, ten3, stencil3);
-	skepu::io::cout << "Tensor3D Pad 0: " << ret_ten3 << "\n";
-	
+	checkAll([&](long a, long b, long c) { return a + 1 >= long(size) ? -5.f : value(a + 1, b, c); });
 }
