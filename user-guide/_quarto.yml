@@ -15,6 +15,7 @@ book:
     - src/programming.qmd
     - src/stdlib.qmd
     - src/skevu.qmd
+    - src/lsp.qmd
     - src/streaming.qmd
     - src/blas.qmd
     - src/changelog.qmd

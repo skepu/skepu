@@ -1,0 +1,228 @@
+# SkePU Language Server {#sec-lsp}
+
+The SkePU language server (SkePU-LSP) puts what the SkePU precompiler knows about a program into
+the code editor. It is a build of `clangd`, the language server of the Clang project, with SkePU
+additions, so it does everything that `clangd` does (diagnostics, completion, go to definition,
+rename, and so on) and in addition understands the skeletons, user functions and constants of a
+SkePU program. Any editor that speaks the Language Server Protocol can use it, for instance
+Visual Studio Code, Zed and Neovim.
+
+The SkePU-specific functionality is in four places:
+
+| Where | What the editor shows |
+|---|---|
+| Outline of a file | The skeleton instances, user functions, user constants and user types of the program, in groups |
+| Hover on a skeleton instance | What the instance takes and returns, in terms of SkePU |
+| Signature help in a call of a skeleton instance | The parameters of the call: output and input containers, random-access containers, scalars |
+| Signature help when a skeleton is created | The user functions that the skeleton takes |
+
+@sec-lsp-usecases goes through them with an example of each.
+
+## Setting up {#sec-lsp-setup}
+
+#### Building the language server {#lsp-build .unnumbered}
+
+The language server is built in the same LLVM build tree as `skepu-tool`, so it shares the compiled
+LLVM and Clang libraries with it. Configure SkePU with the option `SKEPU_LSP` and build the target
+`clangd`:
+
+```bash
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release -DSKEPU_LSP=ON ..
+make -j8 clangd
+```
+
+The first configuration applies `clangd.patch` to the `llvm` submodule (a few lines that add the
+SkePU files to clangd and call them) and adds `clang-tools-extra` to the LLVM projects. With
+`SKEPU_LSP` on, a plain `make` builds `skepu-tool` and the language server together. The result is
+`build/llvm/bin/clangd`.
+
+The language server finds the headers of SkePU from the location of its own executable, by looking
+upward for `skepu-headers/src/skepu` and `llvm/clang/lib/Headers`. It must therefore stay where it
+is built (in the SkePU tree); to use it from elsewhere, point the editor at it there. If it is
+started from somewhere else, everything of `clangd` works but the SkePU-specific parts are empty.
+
+#### Telling the editor about it {#lsp-editor .unnumbered}
+
+Point the editor's `clangd` setting to `build/llvm/bin/clangd`:
+
+* **Visual Studio Code**, with the clangd extension: the setting `clangd.path`.
+* **Zed**, in `settings.json`:
+
+  ```json
+  { "lsp": { "clangd": { "binary": { "path": "/path/to/skepu/build/llvm/bin/clangd" } } } }
+  ```
+
+* **Neovim**, with `nvim-lspconfig`: `require('lspconfig').clangd.setup{ cmd = { '/path/to/skepu/build/llvm/bin/clangd' } }`.
+
+#### Compile flags {#lsp-flags .unnumbered}
+
+Like any `clangd`, the language server needs a compilation database,
+`compile_commands.json`, to know how the files of a project are compiled (most importantly, where
+the SkePU headers are). The examples directory of SkePU makes one with its Makefile:
+
+```bash
+cd examples
+make compile-commands
+```
+
+The programs in subdirectories of the examples (`dnn/`, `multifile/`) have a Makefile of their own,
+that makes the database of their directory in the same way. For a project of your own, make the
+database with the build system of the project (`cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`) or a tool
+such as `bear -- make`. The flags needed are only `-I <skepu>/skepu-headers/src` and a C++ standard of
+17 or later. Restart the editor, or the language server, after the database is made.
+
+## What it does {#sec-lsp-usecases}
+
+All examples use this program (a sum of squares, a three-point average, and a prefix sum):
+
+```cpp
+#include <skepu>
+
+[[skepu::userconstant]] constexpr float SCALE = 1.0f;
+
+float square(float x)
+{
+    return x * x;
+}
+
+float add(float a, float b)
+{
+    return a + b;
+}
+
+float average(skepu::Region1D<float> r, float scale)
+{
+    return scale * (r(-1) + r(0) + r(1)) / 3.f;
+}
+
+int main()
+{
+    auto sumsq  = skepu::MapReduce(square, add);
+    auto sum    = skepu::Reduce(add);
+    auto smooth = skepu::MapOverlap(average);
+    auto scan   = skepu::Scan(add);
+
+    skepu::Vector<float> v(100), w(100);
+    float s = sumsq(v);
+    sum(v);
+    smooth(w, v, SCALE);
+    scan(w, v);
+}
+```
+
+### Finding your way around a program {#sec-lsp-outline}
+
+*Scenario:* you open a SkePU program of a few hundred lines that you did not write, and want to see
+which skeletons it has and which functions are user functions, without reading all of it.
+
+The outline view of the editor (the symbol list of a file) groups the symbols by their role in the
+program (a group that would be empty is not shown):
+
+| Group | Contains | In the example |
+|---|---|---|
+| Skeletons | The skeleton instances, with the skeleton and the types of its user functions | `sumsq` (`MapReduce(float, float)`), `sum` (`Reduce1D(float)`), `smooth` (`MapOverlap1D(float)`), `scan` (`Scan(float)`) |
+| User Constants | The constants declared with `[[skepu::userconstant]]` | `SCALE` |
+| Userfunctions | The functions that are used as user functions, with their signatures | `square`, `add`, `average` |
+| User Types | The structures used by user functions | (none) |
+| Various | Everything else | `main` |
+
+Selecting a symbol goes to it. A file always has the group *Various*, also when it has no
+skeletons.
+
+### Seeing what a skeleton instance takes {#sec-lsp-hover}
+
+*Scenario:* you want to call `sumsq` and need to know what it takes and gives.
+
+Hovering over the name of a skeleton instance, `sumsq` in `auto sumsq = …` or at a call, shows the
+return type and the parameters, derived from the user functions, and what the skeleton is:
+
+```
+variable sumsq
+
+→ float
+
+Parameters:
+
+- float x | (Can be skepu container of float type)
+
+Skeleton of MapReduce: Efficient chaining of Map and Reduce.
+```
+
+The parameters are those of the *call* of the instance, not of the user functions: the `x` of
+`square` is one element of the container that the call takes. A `Map`, `MapPairs`,
+`MapPairsReduce` or `MapOverlap` instance has its output containers first
+(`Return: float& Return0 | (Can be skepu container)`), a reduction returns a value. Containers of
+random access and scalars of the user function follow the elementwise parameters.
+
+Hovering over the name of the skeleton itself, as in `skepu::MapReduce`, shows its description and
+the user functions that it takes (`map` and `red`). Only the declaration of the instance has the
+description of the skeleton: a variable of the same name elsewhere gets the usual hover.
+
+### Writing a call of a skeleton instance {#sec-lsp-calls}
+
+*Scenario:* you are typing the arguments of `smooth(w, v, SCALE)` and have forgotten the order.
+
+Signature help (in most editors it opens when you type `(` or `,`, or with a key such as
+`Ctrl+Shift+Space`) shows the parameters of the call, with the one you are on highlighted. The text is
+in terms of SkePU: containers instead of the elements of the user function.
+
+| Call | Signature help |
+|---|---|
+| `sumsq(` | `skepu::MapReduce(skepu::container<float>& Input0) -> float` |
+| `smooth(` | `skepu::MapOverlap1D(skepu::Vector<float>& Return0, skepu::Vector<float>& Input, float Scalar0)` and `skepu::MapOverlap1D(skepu::Vector<float>& Return0, skepu::Vector<float>& Input, skepu::Matrix<float>& Input)` |
+| `sum(` | `skepu::Reduce1D(skepu::container<float>& Input) -> float` and `skepu::Reduce1D(skepu::Vector<float>& Return, skepu::Matrix<float>& Input) -> skepu::Vector<float>` |
+| `scan(` | `skepu::Scan(skepu::container<float>& Return, skepu::container<float>& Input)` and the version for iterators (`…containerIterator<float>& Return iterator begin`, …) |
+
+Where a skeleton has more than one form of call, as the reduction of a vector or of the rows of a
+matrix and the scan of containers or iterators, the forms are listed as overloads, and the editor
+lets you step between them. `skepu::container` stands for a `skepu::Vector`, `skepu::Matrix` or
+tensor of the element type (its dimension is that of the container that you pass; an instance that
+takes an index parameter shows the exact container).
+
+### Creating a skeleton {#sec-lsp-create}
+
+*Scenario:* you write `auto sumsq = skepu::MapReduce(` and want to remember what goes in it.
+
+Signature help for the creation of a skeleton shows how many user functions it takes, and what it is:
+
+```
+skepu::MapReduce((*func0)(), (*func1)()) -> auto
+Efficient chaining of Map and Reduce.
+```
+
+The highlighted parameter follows the argument that you are on (map function, then reduction
+function). This is shown for `skepu::Map`, `skepu::MapReduce`, `skepu::Scan`, `skepu::MapPairs` and
+`skepu::MapPairsReduce`; for the other skeletons, the usual `clangd` signatures of the creation
+function are shown.
+
+### The rest of clangd {#sec-lsp-clangd}
+
+Since the language server is `clangd`, the checks and help for the C++ code of the program work as
+usual, with the SkePU headers in view:
+
+* Errors and warnings are shown in the file as they are typed. A call with arguments of the wrong
+  type, for example, is reported by the compiler's diagnostics at the call.
+* *Go to definition* and *find references* work in the program and into the SkePU headers (from
+  `smooth` to `MapOverlap1D`, for example).
+* Completion lists the members of the instance, as in `smooth.setOverlap(1)` and
+  `sumsq.setBackend(spec)`, and the functions and containers in scope.
+* *Rename* of a user function, instance or container changes all its uses.
+
+## Things to know {#sec-lsp-limits}
+
+* **Save to refresh.** The SkePU-specific information (outline groups, hover and signature help of
+  skeletons) is made from the file *as saved*, by the same analysis that `skepu-tool` makes, and is
+  made again when the file has changed on the disk. The ordinary `clangd` functions follow the
+  text in the editor. After a change of a skeleton or a user function, save the file to see it in
+  the outline and hover. A change of an included file is seen when the main file is saved.
+* **Instances are variables.** A skeleton that is created and called in one expression, without a
+  variable, is not an instance of the file, and is not listed in the outline.
+* **Constants need the attribute.** A constant is listed under *User Constants* when it has
+  `[[skepu::userconstant]]`, as SkePU requires for it to be used in user functions.
+* **The standard is fixed.** The SkePU analysis is made with C++20 and the headers of the SkePU tree
+  the language server is in, whatever flags are in the compilation database; the rest of `clangd` uses
+  the flags of the database.
+* **Where it is.** If the SkePU-specific parts are empty (the outline has only *Various*), check that
+  `clangd` was started from the build tree of SkePU (see "Building the language server" above) and that the file is saved.
+  The log of the language server (`--log=verbose`) says more.

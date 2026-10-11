@@ -104,6 +104,7 @@ Some notable build options:
 | `SKEPU_EXAMPLES_PAR` | `ON` if CUDA, OpenCL or OpenMP is found | With examples: build the parallel examples. |
 | `SKEPU_EXAMPLES_MPI` | `ON` if MPI is found | With examples: build the MPI examples. |
 | `SKEPU_EXAMPLES_TRACING` | `OFF` | With examples: build the parallel examples with tracing (see @sec-tracing). |
+| `SKEPU_LSP` | `OFF` | Also build the SkePU language server (see @sec-lsp). |
 
 For more build options, run `cmake -LAH`.
 
