@@ -286,11 +286,10 @@ skepu_add_test_case_hybrid_opencl(mapoverlap_indexed)
 # ------------------------------------------------
 
 skepu_add_test_case_sequential(mapoverlap_in_place)
-# The Red-Black update mode gives wrong results with the backends (see mapoverlap_updatemode below): the test fails on CPU, OpenMP, OpenCL
-# and hybrid OpenCL (the sequential skeleton is right).
-#skepu_add_test_case_cpu(mapoverlap_in_place)
-#skepu_add_test_case_openmp(mapoverlap_in_place)
-#skepu_add_test_case_opencl(mapoverlap_in_place)
+# The hybrid backends ignore the update modes (see mapoverlap_updatemode below): the test fails on hybrid OpenCL.
+skepu_add_test_case_cpu(mapoverlap_in_place)
+skepu_add_test_case_openmp(mapoverlap_in_place)
+skepu_add_test_case_opencl(mapoverlap_in_place)
 #skepu_add_test_case_cuda(mapoverlap_in_place)
 #skepu_add_test_case_hybrid_opencl(mapoverlap_in_place)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_in_place)
@@ -312,11 +311,10 @@ skepu_add_test_case_hybrid_opencl(mapoverlap_tuple)
 # ------------------------------------------------
 
 skepu_add_test_case_sequential(mapoverlap_updatemode)
-# The Red and Black update modes give wrong results with the backends (1D on CPU, OpenMP and hybrid OpenCL; 1D and 2D on OpenCL):
-# the elements that should keep their value are updated. Only the sequential skeleton is right.
-#skepu_add_test_case_cpu(mapoverlap_updatemode)
-#skepu_add_test_case_openmp(mapoverlap_updatemode)
-#skepu_add_test_case_opencl(mapoverlap_updatemode)
+# The update modes work with the sequential skeleton, CPU, OpenMP and OpenCL in all the variants; the hybrid backends ignore them.
+skepu_add_test_case_cpu(mapoverlap_updatemode)
+skepu_add_test_case_openmp(mapoverlap_updatemode)
+skepu_add_test_case_opencl(mapoverlap_updatemode)
 #skepu_add_test_case_cuda(mapoverlap_updatemode)
 #skepu_add_test_case_hybrid_opencl(mapoverlap_updatemode)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_updatemode)

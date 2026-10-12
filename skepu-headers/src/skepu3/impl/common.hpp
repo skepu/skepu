@@ -343,6 +343,14 @@ namespace skepu
 		return ((i + j + k + l) % 2) == static_cast<int>(p);
 	}
 
+	// The parity argument of the OpenCL MapOverlap kernels: -1 for all the elements, else the parity of the sum of the indices that the
+	// kernel tests. The kernel counts from the start of the part (e.g. the slice of a device) it works on, which begins at a sum of
+	// indices that is 'offset'.
+	constexpr static int parity_cl(Parity p, size_t offset = 0)
+	{
+		return (p == Parity::None) ? -1 : (static_cast<int>(p) ^ static_cast<int>(offset % 2));
+	}
+
 
 #ifdef SKEPU_OPENCL
 

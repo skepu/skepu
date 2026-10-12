@@ -61,6 +61,14 @@ namespace skepu
                 return this->m_mirror_mode && empty;
             }
 
+            // The update modes Red and Black compute the elements of one colour at a time, in several passes: the numbering of the random
+            // numbers of the elements is not the same on all the backends, so the combination is not supported
+            void checkUpdateModeRandom(size_t random_count) const
+            {
+                if (this->m_updateMode != UpdateMode::Normal && random_count != SKEPU_NO_RANDOM)
+                    SKEPU_ERROR("MapOverlap: the update modes Red, Black and RedBlack cannot be used with a user function that uses random numbers");
+            }
+
             size_t getSmallestAllowedInputSizePool(size_t out_size, size_t dim) const
             {
                 return (out_size - 1) * this->m_strides[dim] + this->m_overlap[dim];

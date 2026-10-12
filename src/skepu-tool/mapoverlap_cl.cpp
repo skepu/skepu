@@ -19,7 +19,7 @@ using namespace clang;
 static const std::string MapOverlapKernel_CL = R"~~~(
 __kernel void {{KERNEL_NAME}}_Vector({{KERNEL_PARAMS}}
 	__global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap, size_t skepu_n, size_t skepu_overlap, size_t out_offset,
-	size_t out_numelements, int skepu_poly, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, size_t skepu_index_origin, __local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* sdata
+	size_t out_numelements, int skepu_poly, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, size_t skepu_index_origin, int skepu_parity, __local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* sdata
 )
 {
 	size_t skepu_global_prng_id = get_global_id(0);
@@ -30,7 +30,12 @@ __kernel void {{KERNEL_NAME}}_Vector({{KERNEL_PARAMS}}
 
 	if (skepu_poly == SKEPU_EDGE_NONE)
 	{
-		sdata[skepu_tid] = {{INPUT_PARAM_NAME}}[skepu_i];
+		// (the thread of an output element: its region begins at the element of the input of its index, and ends 2 * overlap elements after
+		// it, so the first threads of the next block load the end of the region of the last threads of this block)
+		if (skepu_i < skepu_n)
+			sdata[skepu_tid] = {{INPUT_PARAM_NAME}}[skepu_i];
+		if (skepu_tid < 2 * skepu_overlap && (get_group_id(0) + 1) * get_local_size(0) + skepu_tid < skepu_n)
+			sdata[get_local_size(0) + skepu_tid] = {{INPUT_PARAM_NAME}}[(get_group_id(0) + 1) * get_local_size(0) + skepu_tid];
 	}
 
 	else if (skepu_poly == SKEPU_EDGE_PAD)
@@ -70,7 +75,8 @@ __kernel void {{KERNEL_NAME}}_Vector({{KERNEL_PARAMS}}
 	barrier(CLK_LOCAL_MEM_FENCE);
 
 	// (mirror mode: only the elements that have the whole overlap in the input are computed; they are numbered one after the other)
-	if (skepu_i >= out_offset && skepu_i < out_offset + out_numelements && (skepu_poly != SKEPU_EDGE_MIRROR || (skepu_i >= skepu_overlap && skepu_i + skepu_overlap < skepu_n)))
+	// (update modes: skepu_parity is -1 for all the elements, else the parity of the index of the elements to compute)
+	if (skepu_i >= out_offset && skepu_i < out_offset + out_numelements && (skepu_parity < 0 || (int)((skepu_i - out_offset) & 1) == skepu_parity) && (skepu_poly != SKEPU_EDGE_MIRROR || (skepu_i >= skepu_overlap && skepu_i + skepu_overlap < skepu_n)))
 	{
 		skepu_i = skepu_i - out_offset;
 		if (skepu_poly == SKEPU_EDGE_MIRROR)
@@ -100,7 +106,7 @@ __kernel void {{KERNEL_NAME}}_Vector({{KERNEL_PARAMS}}
 static const std::string MapOverlapKernel_CL_Matrix_Row = R"~~~(
 __kernel void {{KERNEL_NAME}}_MatRowWise({{KERNEL_PARAMS}}
 	__global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap, size_t skepu_n, size_t skepu_overlap, size_t out_offset, size_t out_numelements,
-	int skepu_poly, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, size_t blocksPerRow, size_t rowWidth, __local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* sdata
+	int skepu_poly, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, size_t blocksPerRow, size_t rowWidth, int skepu_parity, __local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* sdata
 )
 {
 	size_t skepu_global_prng_id = get_global_id(0);
@@ -165,9 +171,11 @@ __kernel void {{KERNEL_NAME}}_MatRowWise({{KERNEL_PARAMS}}
 	// mode None the output row is shorter, by the overlap on each side)
 	const size_t skepu_col = skepu_tmp * get_local_size(0) + skepu_tid;
 	// (mirror mode: like the edge mode None, only the elements that have the whole overlap in the row are computed, but the output row is as long as the input row)
-	if ((skepu_poly != SKEPU_EDGE_NONE && skepu_poly != SKEPU_EDGE_MIRROR) || (skepu_col >= skepu_overlap && skepu_col < rowWidth - skepu_overlap))
+	const size_t skepu_out_col = (skepu_poly == SKEPU_EDGE_NONE) ? skepu_col - skepu_overlap : skepu_col; // (unused if the thread computes nothing)
+	// (update modes: the parity of the index in the row)
+	if (((skepu_poly != SKEPU_EDGE_NONE && skepu_poly != SKEPU_EDGE_MIRROR) || (skepu_col >= skepu_overlap && skepu_col < rowWidth - skepu_overlap))
+		&& (skepu_parity < 0 || (int)(skepu_out_col & 1) == skepu_parity))
 	{
-		const size_t skepu_out_col = (skepu_poly == SKEPU_EDGE_NONE) ? skepu_col - skepu_overlap : skepu_col;
 		skepu_i = skepu_i - out_offset;
 		const size_t skepu_base = 0;
 		const size_t saved_skepu_i = skepu_i;
@@ -201,7 +209,7 @@ __kernel void {{KERNEL_NAME}}_MatRowWise({{KERNEL_PARAMS}}
 static const std::string MapOverlapKernel_CL_Matrix_Col = R"~~~(
 __kernel void {{KERNEL_NAME}}_MatColWise({{KERNEL_PARAMS}}
 	__global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap, size_t skepu_n, size_t skepu_overlap, size_t out_offset, size_t out_numelements,
-	int skepu_poly, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, size_t blocksPerCol, size_t rowWidth, size_t colWidth, size_t skepu_index_origin, __local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* sdata
+	int skepu_poly, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, size_t blocksPerCol, size_t rowWidth, size_t colWidth, size_t skepu_index_origin, int skepu_parity, __local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* sdata
 	)
 {
 	size_t skepu_global_prng_id = get_global_id(0);
@@ -268,7 +276,10 @@ __kernel void {{KERNEL_NAME}}_MatColWise({{KERNEL_PARAMS}}
 	const size_t skepu_row = skepu_tmp * get_local_size(0) + skepu_tid;
 	const bool skepu_none = (skepu_poly == SKEPU_EDGE_NONE);
 	// (mirror mode: like the edge mode None, only the elements that have the whole overlap in the column are computed, but the output column is as long as the input column)
-	if ((skepu_none || skepu_poly == SKEPU_EDGE_MIRROR) ? (skepu_row >= skepu_overlap && skepu_row < colWidth - skepu_overlap) : ((arrInd >= out_offset) && (arrInd < out_offset + out_numelements)))
+	// (update modes: the parity of the index in the column, that is the row of the output)
+	const size_t skepu_out_row = skepu_none ? skepu_row - skepu_overlap : (arrInd >= out_offset ? (arrInd - out_offset) / rowWidth : 0); // (unused if the thread computes nothing)
+	if (((skepu_none || skepu_poly == SKEPU_EDGE_MIRROR) ? (skepu_row >= skepu_overlap && skepu_row < colWidth - skepu_overlap) : ((arrInd >= out_offset) && (arrInd < out_offset + out_numelements)))
+		&& (skepu_parity < 0 || (int)((skepu_poly == SKEPU_EDGE_MIRROR ? skepu_row : skepu_out_row) & 1) == skepu_parity))
 	{
 		skepu_i = skepu_none ? (skepu_row - skepu_overlap) * rowWidth + skepu_tmp2 : arrInd - out_offset; // (in mirror mode too: the output column is as long as the input column)
 		const size_t skepu_base = skepu_index_origin;
@@ -305,7 +316,7 @@ static const std::string MapOverlapKernel_CL_Matrix_ColMulti = R"~~~(
 __kernel void {{KERNEL_NAME}}_MatColWiseMulti({{KERNEL_PARAMS}}
 	__global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap, size_t skepu_n, size_t skepu_overlap, size_t in_offset, size_t out_numelements,
 	int skepu_poly, int deviceType, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, size_t blocksPerCol, size_t rowWidth, size_t colWidth,
-	size_t skepu_index_origin, __local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* sdata
+	size_t skepu_index_origin, int skepu_parity, __local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* sdata
 )
 {
 	size_t skepu_global_prng_id = get_global_id(0);
@@ -407,7 +418,8 @@ __kernel void {{KERNEL_NAME}}_MatColWiseMulti({{KERNEL_PARAMS}}
 	}
 
 	barrier(CLK_LOCAL_MEM_FENCE);
-	if (arrInd < out_numelements)
+	// (update modes: the parity of the row in the slice of this device, adjusted by the host)
+	if (arrInd < out_numelements && (skepu_parity < 0 || (int)((arrInd / rowWidth) & 1) == skepu_parity))
 	{
 		skepu_i = arrInd;
 		const size_t skepu_base = skepu_index_origin;
@@ -495,14 +507,14 @@ public:
 		{{HOST_KERNEL_PARAMS}} {{SIZES_TUPLE_PARAM}}
 		skepu::backend::DeviceMemPointer_CL<{{MAPOVERLAP_INPUT_TYPE}}> *skepu_wrap,
 		size_t skepu_n, size_t skepu_overlap, size_t out_offset, size_t out_numelements, int skepu_poly, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad,
-		size_t skepu_index_origin,
+		size_t skepu_index_origin, int skepu_parity,
 		size_t sharedMemSize
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_VECTOR);
 		skepu::backend::cl_helpers::setKernelArgs(kernel, {{KERNEL_ARGS}}
-			skepu_wrap->getDeviceDataPointer(), skepu_n, skepu_overlap, out_offset, out_numelements, skepu_poly, skepu_pad, skepu_index_origin);
-		clSetKernelArg(kernel, {{KERNEL_ARG_COUNT}} + 8, sharedMemSize, NULL);
+			skepu_wrap->getDeviceDataPointer(), skepu_n, skepu_overlap, out_offset, out_numelements, skepu_poly, skepu_pad, skepu_index_origin, skepu_parity);
+		clSetKernelArg(kernel, {{KERNEL_ARG_COUNT}} + 9, sharedMemSize, NULL);
 		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(), kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching MapOverlap 1D vector kernel");
 	}
@@ -513,14 +525,14 @@ public:
 		size_t deviceID, size_t localSize, size_t globalSize,
 		{{HOST_KERNEL_PARAMS}} {{SIZES_TUPLE_PARAM}}
 		skepu::backend::DeviceMemPointer_CL<{{MAPOVERLAP_INPUT_TYPE}}> *skepu_wrap,
-		size_t skepu_n, size_t skepu_overlap, size_t out_offset, size_t out_numelements, int skepu_poly, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad, size_t blocksPerRow, size_t rowWidth,
+		size_t skepu_n, size_t skepu_overlap, size_t out_offset, size_t out_numelements, int skepu_poly, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad, size_t blocksPerRow, size_t rowWidth, int skepu_parity,
 		size_t sharedMemSize
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_MATRIX_ROW);
 		skepu::backend::cl_helpers::setKernelArgs(kernel, {{KERNEL_ARGS}}
-			skepu_wrap->getDeviceDataPointer(), skepu_n, skepu_overlap, out_offset, out_numelements, skepu_poly, skepu_pad, blocksPerRow, rowWidth);
-		clSetKernelArg(kernel, {{KERNEL_ARG_COUNT}} + 9, sharedMemSize, NULL);
+			skepu_wrap->getDeviceDataPointer(), skepu_n, skepu_overlap, out_offset, out_numelements, skepu_poly, skepu_pad, blocksPerRow, rowWidth, skepu_parity);
+		clSetKernelArg(kernel, {{KERNEL_ARG_COUNT}} + 10, sharedMemSize, NULL);
 		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
 			kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching MapOverlap 1D matrix row-wise kernel");
@@ -533,14 +545,14 @@ public:
 		{{HOST_KERNEL_PARAMS}} {{SIZES_TUPLE_PARAM}}
 		skepu::backend::DeviceMemPointer_CL<{{MAPOVERLAP_INPUT_TYPE}}> *skepu_wrap,
 		size_t skepu_n, size_t skepu_overlap, size_t out_offset, size_t out_numelements, int skepu_poly, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad, size_t blocksPerCol, size_t rowWidth, size_t colWidth,
-		size_t skepu_index_origin,
+		size_t skepu_index_origin, int skepu_parity,
 		size_t sharedMemSize
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_MATRIX_COL);
 		skepu::backend::cl_helpers::setKernelArgs(kernel, {{KERNEL_ARGS}}
-			skepu_wrap->getDeviceDataPointer(), skepu_n, skepu_overlap, out_offset, out_numelements, skepu_poly, skepu_pad, blocksPerCol, rowWidth, colWidth, skepu_index_origin);
-		clSetKernelArg(kernel, {{KERNEL_ARG_COUNT}} + 11, sharedMemSize, NULL);
+			skepu_wrap->getDeviceDataPointer(), skepu_n, skepu_overlap, out_offset, out_numelements, skepu_poly, skepu_pad, blocksPerCol, rowWidth, colWidth, skepu_index_origin, skepu_parity);
+		clSetKernelArg(kernel, {{KERNEL_ARG_COUNT}} + 12, sharedMemSize, NULL);
 		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
 			kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching MapOverlap 1D matrix col-wise kernel");
@@ -553,14 +565,14 @@ public:
 		{{HOST_KERNEL_PARAMS}} {{SIZES_TUPLE_PARAM}}
 		skepu::backend::DeviceMemPointer_CL<{{MAPOVERLAP_INPUT_TYPE}}> *skepu_wrap,
 		size_t skepu_n, size_t skepu_overlap, size_t in_offset, size_t out_numelements, int skepu_poly, int deviceType, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad, size_t blocksPerCol, size_t rowWidth, size_t colWidth,
-		size_t skepu_index_origin,
+		size_t skepu_index_origin, int skepu_parity,
 		size_t sharedMemSize
 	)
 	{
 		cl_kernel kernel = kernels(deviceID, KERNEL_MATRIX_COL_MULTI);
 		skepu::backend::cl_helpers::setKernelArgs(kernel, {{KERNEL_ARGS}}
-			skepu_wrap->getDeviceDataPointer(), skepu_n, skepu_overlap, in_offset, out_numelements, skepu_poly, deviceType, skepu_pad, blocksPerCol, rowWidth, colWidth, skepu_index_origin);
-		clSetKernelArg(kernel, {{KERNEL_ARG_COUNT}} + 12, sharedMemSize, NULL);
+			skepu_wrap->getDeviceDataPointer(), skepu_n, skepu_overlap, in_offset, out_numelements, skepu_poly, deviceType, skepu_pad, blocksPerCol, rowWidth, colWidth, skepu_index_origin, skepu_parity);
+		clSetKernelArg(kernel, {{KERNEL_ARG_COUNT}} + 13, sharedMemSize, NULL);
 		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
 			kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching MapOverlap 1D matrix col-wise multi kernel");
@@ -644,7 +656,7 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
 	size_t skepu_in_rows, size_t skepu_in_cols,
 	size_t skepu_sharedRows, size_t skepu_sharedCols,
 	int skepu_is_pool, int skepu_edge, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, __global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap,
-	size_t skepu_index_origin,
+	size_t skepu_index_origin, int skepu_parity,
 	__local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_sdata)
 {
 	size_t skepu_xx = ((size_t)(get_global_id(0) / get_local_size(0))) * get_local_size(0) * skepu_stride_x;
@@ -739,7 +751,8 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
 	// Mirror mode (the edge mode None and an input of the size of the output): only the interior of the output is computed, the
 	// elements near the edges keep their values
 	const bool skepu_mirror = !skepu_is_pool && skepu_edge == SKEPU_EDGE_NONE && skepu_out_rows == skepu_in_rows && skepu_out_cols == skepu_in_cols;
-	if (skepu_x < skepu_out_cols && skepu_y < skepu_out_rows
+	// (update modes: skepu_parity is -1 for all the elements, else the parity of the sum of the indices of the elements to compute)
+	if (skepu_x < skepu_out_cols && skepu_y < skepu_out_rows && (skepu_parity < 0 || (int)((skepu_x + skepu_y) & 1) == skepu_parity)
 		&& (!skepu_mirror || (skepu_x >= skepu_overlap_x && skepu_x + skepu_overlap_x < skepu_out_cols && skepu_y >= skepu_overlap_y && skepu_y + skepu_overlap_y < skepu_out_rows)))
 	{
 		size_t skepu_i = skepu_y * skepu_out_cols + skepu_x;
@@ -807,15 +820,15 @@ public:
 		size_t in_rows, size_t in_cols, size_t sharedRows, size_t sharedCols,
 		int skepu_is_pool, int skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad,
 		skepu::backend::DeviceMemPointer_CL<{{MAPOVERLAP_INPUT_TYPE}}> *skepu_wrap,
-		size_t skepu_index_origin,
+		size_t skepu_index_origin, int skepu_parity,
 		size_t sharedMemSize
 	)
 	{
 		skepu::backend::cl_helpers::setKernelArgs(kernels(deviceID), {{KERNEL_ARGS}}
 			out_rows, out_cols, skepu_overlap_y, skepu_overlap_x, skepu_stride_y, skepu_stride_x,
 			in_rows, in_cols, sharedRows, sharedCols,
-			skepu_is_pool, skepu_edge, skepu_pad, skepu_wrap->getDeviceDataPointer(), skepu_index_origin);
-		clSetKernelArg(kernels(deviceID), {{KERNEL_ARG_COUNT}} + 15, sharedMemSize, NULL);
+			skepu_is_pool, skepu_edge, skepu_pad, skepu_wrap->getDeviceDataPointer(), skepu_index_origin, skepu_parity);
+		clSetKernelArg(kernels(deviceID), {{KERNEL_ARG_COUNT}} + 16, sharedMemSize, NULL);
 		cl_int err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(deviceID)->getQueue(),
 			kernels(deviceID), 2, NULL, globalSize, localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(err, "Error launching MapOverlap 2D kernel");
@@ -934,7 +947,7 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
 	size_t skepu_in_size_i, size_t skepu_in_size_j, size_t skepu_in_size_k,
 	size_t skepu_shared_size_i, size_t skepu_shared_size_j, size_t skepu_shared_size_k,
 	int skepu_is_pool, int skepu_edge, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, __global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap,
-	size_t skepu_index_origin,
+	size_t skepu_index_origin, int skepu_parity,
 	__local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_sdata)
 {
 	size_t skepu_global_prng_id = get_global_id(0);
@@ -1047,7 +1060,8 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
 	// Mirror mode (the edge mode None and an input of the size of the output): only the interior of the output is computed, the
 	// elements near the edges keep their values
 	const bool skepu_mirror = !skepu_is_pool && skepu_edge == SKEPU_EDGE_NONE && skepu_out_size_i == skepu_in_size_i && skepu_out_size_j == skepu_in_size_j && skepu_out_size_k == skepu_in_size_k;
-	if (skepu_i < skepu_out_size_i && skepu_j < skepu_out_size_j && skepu_k < skepu_out_size_k
+	// (update modes: skepu_parity is -1 for all the elements, else the parity of the sum of the indices of the elements to compute)
+	if (skepu_i < skepu_out_size_i && skepu_j < skepu_out_size_j && skepu_k < skepu_out_size_k && (skepu_parity < 0 || (int)((skepu_i + skepu_j + skepu_k) & 1) == skepu_parity)
 		&& (!skepu_mirror || (skepu_i >= skepu_overlap_i && skepu_i + skepu_overlap_i < skepu_out_size_i && skepu_j >= skepu_overlap_j && skepu_j + skepu_overlap_j < skepu_out_size_j
 			&& skepu_k >= skepu_overlap_k && skepu_k + skepu_overlap_k < skepu_out_size_k)))
 	{
@@ -1119,7 +1133,7 @@ public:
 		size_t skepu_shared_size_i, size_t skepu_shared_size_j, size_t skepu_shared_size_k,
 		int skepu_is_pool, int skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad,
 		skepu::backend::DeviceMemPointer_CL<{{MAPOVERLAP_INPUT_TYPE}}> *skepu_wrap,
-		size_t skepu_index_origin,
+		size_t skepu_index_origin, int skepu_parity,
 		size_t skepu_sharedMemSize
 	)
 	{
@@ -1129,9 +1143,9 @@ public:
             skepu_stride_i, skepu_stride_j, skepu_stride_k,
 	 		skepu_in_size_i, skepu_in_size_j, skepu_in_size_k,
 			skepu_shared_size_i, skepu_shared_size_j, skepu_shared_size_k,
-			skepu_is_pool, skepu_edge, skepu_pad, skepu_wrap->getDeviceDataPointer(), skepu_index_origin
+			skepu_is_pool, skepu_edge, skepu_pad, skepu_wrap->getDeviceDataPointer(), skepu_index_origin, skepu_parity
 		);
-		clSetKernelArg(kernels(skepu_deviceID), {{KERNEL_ARG_COUNT}} + 20, skepu_sharedMemSize, NULL);
+		clSetKernelArg(kernels(skepu_deviceID), {{KERNEL_ARG_COUNT}} + 21, skepu_sharedMemSize, NULL);
 		cl_int skepu_err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(skepu_deviceID)->getQueue(),
 			kernels(skepu_deviceID), 3, NULL, skepu_globalSize, skepu_localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(skepu_err, "Error launching MapOverlap 3D kernel");
@@ -1265,7 +1279,7 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
 	size_t skepu_shared_size_i, size_t skepu_shared_size_j, size_t skepu_shared_size_k, size_t skepu_shared_size_l,
 	size_t skepu_numThreads_0a, size_t skepu_numBlocks_0a,
 	int skepu_is_pool, int skepu_edge, {{MAPOVERLAP_INPUT_TYPE_OPENCL}} skepu_pad, __global {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_wrap,
-	size_t skepu_index_origin,
+	size_t skepu_index_origin, int skepu_parity,
 	__local {{MAPOVERLAP_INPUT_TYPE_OPENCL}}* skepu_sdata)
 {
 	size_t skepu_global_prng_id = get_global_id(0); // todo fix
@@ -1406,7 +1420,9 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
 	// Mirror mode (the edge mode None and an input of the size of the output): only the interior of the output is computed, the
 	// elements near the edges keep their values
 	const bool skepu_mirror = !skepu_is_pool && skepu_edge == SKEPU_EDGE_NONE && skepu_out_size_i == skepu_in_size_i && skepu_out_size_j == skepu_in_size_j && skepu_out_size_k == skepu_in_size_k && skepu_out_size_l == skepu_in_size_l;
+	// (update modes: skepu_parity is -1 for all the elements, else the parity of the sum of the indices of the elements to compute)
 	if (skepu_i < skepu_out_size_i && skepu_j < skepu_out_size_j && skepu_k < skepu_out_size_k && skepu_l < skepu_out_size_l
+		&& (skepu_parity < 0 || (int)((skepu_i + skepu_j + skepu_k + skepu_l) & 1) == skepu_parity)
 		&& (!skepu_mirror || (skepu_i >= skepu_overlap_i && skepu_i + skepu_overlap_i < skepu_out_size_i && skepu_j >= skepu_overlap_j && skepu_j + skepu_overlap_j < skepu_out_size_j
 			&& skepu_k >= skepu_overlap_k && skepu_k + skepu_overlap_k < skepu_out_size_k && skepu_l >= skepu_overlap_l && skepu_l + skepu_overlap_l < skepu_out_size_l)))
 	{
@@ -1481,7 +1497,7 @@ public:
 		size_t skepu_numThreads_0a, size_t skepu_numBlocks_0a,
 		int skepu_is_pool, int skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad,
 		skepu::backend::DeviceMemPointer_CL<{{MAPOVERLAP_INPUT_TYPE}}> *skepu_wrap,
-		size_t skepu_index_origin,
+		size_t skepu_index_origin, int skepu_parity,
 		size_t skepu_sharedMemSize
 	)
 	{
@@ -1492,9 +1508,9 @@ public:
 	 		skepu_in_size_i, skepu_in_size_j, skepu_in_size_k, skepu_in_size_l,
 			skepu_shared_size_i, skepu_shared_size_j, skepu_shared_size_k, skepu_shared_size_l,
 			skepu_numThreads_0a, skepu_numBlocks_0a,
-			skepu_is_pool, skepu_edge, skepu_pad, skepu_wrap->getDeviceDataPointer(), skepu_index_origin
+			skepu_is_pool, skepu_edge, skepu_pad, skepu_wrap->getDeviceDataPointer(), skepu_index_origin, skepu_parity
 		);
-		clSetKernelArg(kernels(skepu_deviceID), {{KERNEL_ARG_COUNT}} + 27, skepu_sharedMemSize, NULL);
+		clSetKernelArg(kernels(skepu_deviceID), {{KERNEL_ARG_COUNT}} + 28, skepu_sharedMemSize, NULL);
 		cl_int skepu_err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(skepu_deviceID)->getQueue(),
 			kernels(skepu_deviceID), 3, NULL, skepu_globalSize, skepu_localSize, 0, NULL, event);
 		CL_CHECK_ERROR(skepu_err, "Error launching MapOverlap 4D kernel");

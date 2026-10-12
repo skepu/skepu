@@ -1095,11 +1095,22 @@ and *uniform* scalar arguments follow just as in `Map` and `MapReduce`.
     region when using `Edge::Pad` overlap mode. Defaults to a
     default-constructed object, which is `0` for built-in numeric types.
 
-`instance.setupdateMode(`*`mode`*`)`
+`instance.setUpdateMode(`*`mode`*`)`
 
-:   Sets the mode of update to use for a single invocation to this
-    instance. Options: `UpdateMode::Normal`, `UpdateMode::RedBlack`,
-    `UpdateMode::Red`, `UpdateMode::Black`.
+:   Sets the mode of update to use for invocations of this instance.
+    Options: `UpdateMode::Normal`, `UpdateMode::RedBlack`,
+    `UpdateMode::Red`, `UpdateMode::Black`. The *red* elements are those
+    where the sum of the indices is odd, and the *black* ones those where it
+    is even. `Red` and `Black` compute only the elements of that colour and
+    leave the others of the output as they are; `RedBlack` computes the red
+    elements, and then the black ones from the updated values, so that the
+    output can be the same container as the input (Gauss--Seidel and
+    red-black successive over-relaxation). The update modes work with all
+    backends except the hybrid ones and CUDA, in all variants of MapOverlap,
+    and on distributed containers with the MPI backend; each pass gets the
+    halos again, so that the black pass uses the elements that the red pass
+    computed on other processes. They cannot be combined with a user
+    function that uses random numbers: the call stops with an error.
 
 ### MapPool {#sec-mappool}
 

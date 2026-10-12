@@ -26,6 +26,9 @@ namespace skepu
 			pack_expand((get<EI>(std::forward<CallArgs>(args)...).getParent().updateHost(), 0)...);
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateHost(hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
+			// (with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values)
+			if (p != Parity::None || this->m_mirror_mode)
+				pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().updateHost(), 0)...);
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
 			SKEPU_TRACE_START_EVENT(trace_handle);
 			

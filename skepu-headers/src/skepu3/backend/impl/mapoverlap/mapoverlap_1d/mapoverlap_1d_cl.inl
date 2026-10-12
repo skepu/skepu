@@ -66,7 +66,7 @@ namespace skepu
 			auto in_mem_p = arg.updateDevice_CL(arg.getAddress() + startIdx - out_offset, n, device, true);
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...)
 					.getAddress(), get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
-			auto outMemP    = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + startIdx, out_numelements, device, this->m_mirror_mode)...);
+			auto outMemP    = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + startIdx, out_numelements, device, this->m_mirror_mode || p != Parity::None)...);
 			
 			// (one number for each element of the output: not for those of the input; mirror mode: the elements near the edges are not computed and their numbers are skipped)
 			const size_t computed = this->m_mirror_mode ? out_numelements - 2 * overlap : out_numelements;
@@ -87,6 +87,7 @@ namespace skepu
 				&wrap_mem_p,
 				n, overlap, out_offset, out_numelements, _poly, _pad,
 				get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first element, in the whole container)
+				parity_cl(p, startIdx),
 				sharedMemSize
 			);
 			
@@ -169,7 +170,7 @@ namespace skepu
 				const size_t sharedMemSize = sizeof(T) * (numThreads + 2 * overlap);
 				
 				// Allocate memory for output.
-				auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + startIdx + i * numElemPerSlice, numElem, device, false)...);
+				auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + startIdx + i * numElemPerSlice, numElem, device, p != Parity::None)...);
 				auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...)
 					.getAddress(), get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
 					
@@ -188,6 +189,7 @@ namespace skepu
 					&wrap_mem_p,
 					n, overlap, out_offset, out_numelements, _poly, _pad,
 					get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first element, in the whole container)
+					parity_cl(p, startIdx + i * numElemPerSlice),
 					sharedMemSize
 				);
 				
@@ -372,7 +374,7 @@ namespace skepu
 			
 			// Copy elements to device and allocate output memory.
 			auto inMemP  = arg.updateDevice_CL(arg.getAddress(), numrows, rowWidth, device, true);
-			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress(), res.total_rows(), res.total_cols(), device, this->m_mirror_mode)...);
+			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress(), res.total_rows(), res.total_cols(), device, this->m_mirror_mode || p != Parity::None)...);
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(),
 				get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
 				
@@ -394,6 +396,7 @@ namespace skepu
 				get<0>(std::forward<CallArgs>(args)...).getParent().row_size_info(),
 				&wrapMemP, n,
 				overlap, out_offset, out_numelements, _poly, _pad, blocksPerRow, rowWidth,
+				parity_cl(p),
 				sharedMemSize
 			);
 			
@@ -495,7 +498,7 @@ namespace skepu
 				
 				// Copy elements to device and allocate output memory.
 				in_mem_p[i]  = arg.updateDevice_CL(arg.getAddress() + i * numElemPerSlice, numRows, rowWidth, device, false);
-				outMemP[i] = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + i * numElemPerSlice, numRows, rowWidth, device, false)...);
+				outMemP[i] = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + i * numElemPerSlice, numRows, rowWidth, device, p != Parity::None)...);
 			}
 			
 			size_t out_offset = 0;
@@ -537,6 +540,7 @@ namespace skepu
 					wrap_mem_p[i],
 					numElems, overlap, out_offset, numElems, _poly, _pad,
 					blocksPerRow, rowWidth,
+					parity_cl(p),
 					sharedMemSize
 				);
 				
@@ -658,7 +662,7 @@ namespace skepu
 			
 			// Copy elements to device and allocate output memory.
 			auto inMemP  = arg.updateDevice_CL(arg.getAddress(), colWidth, numcols, device, true);
-			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress(), res.total_rows(), res.total_cols(), device, this->m_mirror_mode)...);
+			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress(), res.total_rows(), res.total_cols(), device, this->m_mirror_mode || p != Parity::None)...);
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(),
 				get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
 					
@@ -682,6 +686,7 @@ namespace skepu
 				n, overlap, out_offset, out_numelements, _poly, _pad,
 				blocksPerCol, numcols, colWidth,
 				get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first row, in the whole matrix)
+				parity_cl(p),
 				sharedMemSize
 			);
 			
@@ -776,7 +781,7 @@ namespace skepu
 				else if (i == numDevices-1) in_mem_p[i] = arg.updateDevice_CL(arg.getAddress() + i * numElemPerSlice - overlapElems, numRows + overlap,     numCols, device, false);
 				else                        in_mem_p[i] = arg.updateDevice_CL(arg.getAddress() + i * numElemPerSlice - overlapElems, numRows + overlap * 2, numCols, device, false);
 				
-				outMemP[i] = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + i * numElemPerSlice, numRows, numCols, device, false)...);
+				outMemP[i] = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + i * numElemPerSlice, numRows, numCols, device, p != Parity::None)...);
 				
 				// wrap vector, don't copy just allocates space on OpenCL device.
 				wrapStartDev_mem_p[i] = new DeviceMemPointer_CL<T>(&wrapStartDev[0], &wrapStartDev[0], wrapStartDev.size(), device);
@@ -854,6 +859,7 @@ namespace skepu
 					numElems, _poly, _deviceType[i], _pad,
 					blocksPerCol[i], numCols, numRows,
 					get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first row, in the whole matrix)
+					parity_cl(p, i * numRowsPerSlice),
 					sharedMemSize
 				);
 				

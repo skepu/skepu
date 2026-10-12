@@ -9,6 +9,7 @@
 // skeleton then works on the extended block with the edge mode None, and its output is exactly the rows of the process.
 
 #include <array>
+#include <functional>
 #include <vector>
 
 #include "skepu3/mpi/rows.hpp"
@@ -240,7 +241,20 @@ namespace skepu
 				// A skeleton with an overlap (not a pool) with the edge mode None and an input of the size of the output computes the
 				// interior of the output only ("mirror mode"; the elements of the output near the edges keep their values)
 				bool allow_mirror = false;
+				// The update mode of the call (Normal, or the elements of one colour, or both colours one after the other), and how to set
+				// the update mode of the node-level skeleton. A pool has no update modes.
+				UpdateMode update_mode = UpdateMode::Normal;
+				std::function<void(UpdateMode)> set_update_mode;
 			};
+
+			// The update mode of the node-level skeleton for a pass of the call (Red or Black, in the global indices) when the first row of
+			// its output block is the row 'first_row' of the whole output: the node-level skeleton counts the rows from 0
+			inline UpdateMode node_update_mode(UpdateMode pass, size_t first_row)
+			{
+				if (pass == UpdateMode::Normal || first_row % 2 == 0)
+					return pass;
+				return pass == UpdateMode::Red ? UpdateMode::Black : UpdateMode::Red;
+			}
 
 			// The argument of the node-level skeleton in mirror mode: the blocks for the results, the block for the input
 			template<size_t I, size_t outArity, size_t anyArity, typename Outs, typename Block, typename Arg>
@@ -335,7 +349,7 @@ namespace skepu
 			// the output), from the rows [a - o, b + o) of the input, with the edge mode None and an output block that has the size of
 			// the input block, so that the node-level skeleton is in mirror mode too. Then the rows of the block are copied back into the tile.
 			template<size_t outArity, size_t anyArity, typename T, typename Call, typename... CallArgs>
-			auto &distributed_mirror(Call call, const WindowGeometry &geometry, CallArgs&&... args)
+			auto &distributed_mirror(Call call, const WindowGeometry &geometry, UpdateMode pass, CallArgs&&... args)
 			{
 				auto &first_out = get<0>(std::forward<CallArgs>(args)...);
 				auto &input = get<outArity>(std::forward<CallArgs>(args)...);
@@ -382,7 +396,12 @@ namespace skepu
 					const std::array<long, 4> no_pad{{0, 0, 0, 0}};
 					const size_t count = mine.second - mine.first;
 					auto block = extended_block<InputContainer>(in_shape, count + 2 * (size_t)o, (long)mine.first - o, no_pad, Edge::None, T(), needed[me], rows);
+					// (the rows of the output block are counted from the row 'mine.first - o' of the output)
+					if (pass != UpdateMode::Normal)
+						geometry.set_update_mode(node_update_mode(pass, mine.first - (size_t)o));
 					call_mirror<outArity, anyArity>(call, outs, block, std::make_index_sequence<sizeof...(CallArgs)>{}, std::forward<CallArgs>(args)...);
+					if (pass != UpdateMode::Normal)
+						geometry.set_update_mode(geometry.update_mode);
 					copy_back_mirror(std::make_index_sequence<outArity>{}, outs, mine, out_distribution.offset(me), o, std::forward<CallArgs>(args)...);
 				}
 
@@ -394,7 +413,7 @@ namespace skepu
 			// is given, 'set_edge' sets its edge mode. The arguments are the results, the input, the random access containers and the
 			// uniforms.
 			template<size_t outArity, size_t anyArity, typename T, typename Call, typename SetEdge, typename... CallArgs>
-			auto &distributed_window(Call call, SetEdge set_edge, const WindowGeometry &geometry, T pad, CallArgs&&... args)
+			auto &distributed_window_pass(Call call, SetEdge set_edge, const WindowGeometry &geometry, UpdateMode pass, T pad, CallArgs&&... args)
 			{
 				auto &first_out = get<0>(std::forward<CallArgs>(args)...);
 				auto &input = get<outArity>(std::forward<CallArgs>(args)...);
@@ -409,7 +428,7 @@ namespace skepu
 				for (int k = 0; k < in_shape.rank && mirror; ++k)
 					mirror = in_shape.d[k] == out_shape.d[k];
 				if (mirror)
-					return distributed_mirror<outArity, anyArity, T>(call, geometry, std::forward<CallArgs>(args)...);
+					return distributed_mirror<outArity, anyArity, T>(call, geometry, pass, std::forward<CallArgs>(args)...);
 
 				for (int k = 0; k < in_shape.rank; ++k)
 				{
@@ -453,6 +472,10 @@ namespace skepu
 				}
 				const std::vector<T> rows = exchange_rows(tile_data, in_distribution.unit, in_distribution, needed, "halo exchange", {input.getObjectID()});
 
+				// (a pass of the update modes Red and Black does not compute all the elements of the output: they keep their values)
+				if (pass != UpdateMode::Normal)
+					make_tiles_valid(std::make_index_sequence<outArity>{}, std::forward<CallArgs>(args)...); // (on every process: it can be a collective operation)
+
 				const size_t count = out_distribution.count(me);
 				if (count > 0)
 				{
@@ -476,7 +499,12 @@ namespace skepu
 					// The node-level skeleton works on the extended block without handling the edges
 					if (!geometry.pool)
 						set_edge(Edge::None);
+					// (the node-level skeleton counts the rows of the output from 0, and the first row of the output of this process is 'first')
+					if (pass != UpdateMode::Normal)
+						geometry.set_update_mode(node_update_mode(pass, first));
 					call_overlap<outArity, anyArity>(call, block, std::make_index_sequence<sizeof...(CallArgs)>{}, std::forward<CallArgs>(args)...);
+					if (pass != UpdateMode::Normal)
+						geometry.set_update_mode(geometry.update_mode);
 					if (!geometry.pool)
 						set_edge(edge);
 				}
@@ -485,11 +513,29 @@ namespace skepu
 				return first_out;
 			}
 
+			// The call of a skeleton with windows on distributed containers, with its update mode: a call with Red or Black is one pass
+			// that computes the elements of that colour (by the index in the whole container); RedBlack is the Red pass and then the
+			// Black pass, which gets the halos with the elements that the Red pass computed.
+			template<size_t outArity, size_t anyArity, typename T, typename Call, typename SetEdge, typename... CallArgs>
+			auto &distributed_window(Call call, SetEdge set_edge, const WindowGeometry &geometry, T pad, CallArgs&&... args)
+			{
+				if (geometry.pool || geometry.update_mode == UpdateMode::Normal)
+					return distributed_window_pass<outArity, anyArity>(call, set_edge, geometry, UpdateMode::Normal, pad, std::forward<CallArgs>(args)...);
+
+				if (geometry.update_mode != UpdateMode::Black)
+					distributed_window_pass<outArity, anyArity>(call, set_edge, geometry, UpdateMode::Red, pad, std::forward<CallArgs>(args)...);
+				if (geometry.update_mode != UpdateMode::Red)
+					distributed_window_pass<outArity, anyArity>(call, set_edge, geometry, UpdateMode::Black, pad, std::forward<CallArgs>(args)...);
+				return get<0>(std::forward<CallArgs>(args)...);
+			}
+
 			// An overlap
 			template<size_t outArity, size_t anyArity, typename T, typename Call, typename SetEdge, typename... CallArgs>
-			auto &distributed_overlap(Call call, SetEdge set_edge, const std::array<long, 4> &overlap, Edge edge, T pad, CallArgs&&... args)
+			auto &distributed_overlap(Call call, SetEdge set_edge, std::function<void(UpdateMode)> set_update_mode, UpdateMode update_mode, const std::array<long, 4> &overlap, Edge edge, T pad, CallArgs&&... args)
 			{
 				WindowGeometry geometry;
+				geometry.update_mode = update_mode;
+				geometry.set_update_mode = std::move(set_update_mode);
 				geometry.overlap = overlap;
 				geometry.edge = edge;
 				geometry.allow_mirror = true; // (in any dimension: the edge mode None with an input of the size of the output)
@@ -556,6 +602,7 @@ namespace skepu
 			{
 				if constexpr (mpi_detail::any_distributed<CallArgs...>::value)
 				{
+					this->checkUpdateModeRandom(MapOverlapFunc::randomCount);
 					return this->distribute(std::forward<CallArgs>(args)...);
 				}
 				else
@@ -628,7 +675,7 @@ namespace skepu
 				}
 				return mpi_detail::distributed_overlap<outArity, anyArity>(
 					[this](auto &... a) { mpi::trace::work([&] { Base::operator()(a...); }); }, [this](Edge e) { Base::setEdgeMode(e); },
-					mpi_detail::overlap_array(this->getOverlap()), this->getEdgeMode(), this->getPad(), std::forward<CallArgs>(args)...);
+					[this](UpdateMode m) { Base::setUpdateMode(m); }, this->getUpdateMode(), mpi_detail::overlap_array(this->getOverlap()), this->getEdgeMode(), this->getPad(), std::forward<CallArgs>(args)...);
 			}
 
 			template<typename... CallArgs>
@@ -638,8 +685,8 @@ namespace skepu
 				auto &input = get<outArity>(std::forward<CallArgs>(args)...);
 				if (first_out.total_rows() != input.total_rows())
 					SKEPU_ERROR("Non-matching container sizes: the rows of the output and of the input");
-				// (in mirror mode the elements of the output near the edges keep their values: the tiles of the results must have them)
-				if (mpi_detail::is_mirror_call(this->getEdgeMode(), first_out, input))
+				// (in mirror mode, and with the update modes Red and Black, some elements of the output keep their values: the tiles of the results must have them)
+				if (mpi_detail::is_mirror_call(this->getEdgeMode(), first_out, input) || this->getUpdateMode() != UpdateMode::Normal)
 					mpi_detail::make_tiles_valid(std::make_index_sequence<outArity>{}, std::forward<CallArgs>(args)...);
 				if (first_out.local_size() > 0)
 				{
@@ -679,8 +726,7 @@ namespace skepu
 			{
 				if constexpr (mpi_detail::any_distributed<CallArgs...>::value)
 				{
-					if (this->getUpdateMode() != UpdateMode::Normal)
-						SKEPU_ERROR("A MapOverlap with an update mode other than Normal does not work on distributed containers yet");
+					this->checkUpdateModeRandom(MapOverlapFunc::randomCount);
 					return this->distribute(std::forward<CallArgs>(args)...);
 				}
 				else
@@ -731,6 +777,8 @@ namespace skepu
 				geometry.overlap = mpi_detail::overlap_array(this->getOverlap());
 				geometry.edge = this->getEdgeMode();
 				geometry.allow_mirror = true;
+				geometry.update_mode = this->getUpdateMode();
+				geometry.set_update_mode = [this](UpdateMode m) { Base::setUpdateMode(m); };
 				return mpi_detail::distributed_window<outArity, anyArity>(
 					[this](auto &... a) { mpi::trace::work([&] { Base::operator()(a...); }); }, [this](Edge e) { Base::setEdgeMode(e); },
 					geometry, this->getPad(), std::forward<CallArgs>(args)...);
@@ -765,6 +813,7 @@ namespace skepu
 			{
 				if constexpr (mpi_detail::any_distributed<CallArgs...>::value)
 				{
+					this->checkUpdateModeRandom(MapOverlapFunc::randomCount);
 					return this->distribute(std::forward<CallArgs>(args)...);
 				}
 				else
@@ -813,7 +862,7 @@ namespace skepu
 			{
 				return mpi_detail::distributed_overlap<outArity, anyArity>(
 					[this](auto &... a) { mpi::trace::work([&] { Base::operator()(a...); }); }, [this](Edge e) { Base::setEdgeMode(e); },
-					mpi_detail::overlap_array(this->getOverlap()), this->getEdgeMode(), this->getPad(), std::forward<CallArgs>(args)...);
+					[this](UpdateMode m) { Base::setUpdateMode(m); }, this->getUpdateMode(), mpi_detail::overlap_array(this->getOverlap()), this->getEdgeMode(), this->getPad(), std::forward<CallArgs>(args)...);
 			}
 		};
 
@@ -845,6 +894,7 @@ namespace skepu
 			{
 				if constexpr (mpi_detail::any_distributed<CallArgs...>::value)
 				{
+					this->checkUpdateModeRandom(MapOverlapFunc::randomCount);
 					return this->distribute(std::forward<CallArgs>(args)...);
 				}
 				else
@@ -893,7 +943,7 @@ namespace skepu
 			{
 				return mpi_detail::distributed_overlap<outArity, anyArity>(
 					[this](auto &... a) { mpi::trace::work([&] { Base::operator()(a...); }); }, [this](Edge e) { Base::setEdgeMode(e); },
-					mpi_detail::overlap_array(this->getOverlap()), this->getEdgeMode(), this->getPad(), std::forward<CallArgs>(args)...);
+					[this](UpdateMode m) { Base::setUpdateMode(m); }, this->getUpdateMode(), mpi_detail::overlap_array(this->getOverlap()), this->getEdgeMode(), this->getPad(), std::forward<CallArgs>(args)...);
 			}
 		};
 

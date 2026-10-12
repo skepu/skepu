@@ -469,6 +469,8 @@ namespace skepu
 			template<typename... CallArgs>
 			auto operator()(CallArgs&&... args) -> decltype(get<0>(std::forward<CallArgs>(args)...))
 			{
+				this->checkUpdateModeRandom(MapOverlapFunc::randomCount);
+				
 				if (this->m_updateMode == UpdateMode::Normal)
 				{
 					this->backendDispatch(Parity::None, this->out_indices, this->elwise_indices, this->any_indices, this->const_indices, std::forward<CallArgs>(args)...);

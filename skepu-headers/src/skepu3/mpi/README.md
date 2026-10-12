@@ -74,7 +74,7 @@ An error in the node-level library (`SKEPU_ERROR`) on any process stops all of t
 others waiting in a collective operation.
 
 Not yet: CUDA (a program built with `-mpi -cuda` does not compile: the kernels need the index origin of a distributed
-container, as the OpenCL launches have it, in each launch variant), MapOverlap with an update mode other than Normal, strides, and random numbers in the mirror mode of MapOverlap (the edge mode None with an input of the size of the output: only the interior is computed, 1D to 4D; the elements that are computed get the numbers one after the other, which the processes do not know of each other yet); messages of more than 2^31-1 elements (MPI-3),
+container, as the OpenCL launches have it, in each launch variant), strides, and random numbers in the mirror mode of MapOverlap (the edge mode None with an input of the size of the output: only the interior is computed, 1D to 4D; the elements that are computed get the numbers one after the other, which the processes do not know of each other yet); messages of more than 2^31-1 elements (MPI-3),
 calls of a skeleton with iterators, `Matrix(std::initializer_list)`, printing of tensors in the format of the
 single-node library.
 
@@ -112,7 +112,7 @@ write containers in `skepu::external` and to `flush()` before reading elements.
 `tests/mpi/compare.sh` builds a program for one node and for MPI with the same backend flags (none, `-openmp`, `-opencl`,
 `-openmp -opencl`), and compares the output on several numbers of processes. The programs in `tests/mpi/` are written for
 one node: `prototype`, `containers`, `mapreduce`, `mapreduce_index`, `mappairs`, `mappairsreduce`, `reduce_matrix`, `scan`,
-`mapoverlap`, `mapoverlap_mirror` (and `mapoverlap_mirror_1d`, `_3d`, `_4d`), `mapoverlap_matrix1d`, `mappool`, `random`, `api`, `matrow`, `trace_map` (with `trace.sh` and `check_trace.py`) (not with the hybrid backend, whose node-level
+`mapoverlap`, `mapoverlap_mirror` (and `mapoverlap_mirror_1d`, `_3d`, `_4d`), `mapoverlap_updatemode`, `mapoverlap_matrix1d`, `mappool`, `random`, `api`, `matrow`, `trace_map` (with `trace.sh` and `check_trace.py`) (not with the hybrid backend, whose node-level
 MapReduce has no MatRow). `noncommutative`, `noncommutative_scan` and `random_overlap` are for some of the backends only (see
 their first lines). A few things that a single-node program needs in order to work with the GPU backends: C-style casts in
 user functions (`(int)x`), `Random` parameters by reference and right after the index, host writes in `skepu::external`, and

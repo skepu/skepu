@@ -35,8 +35,8 @@ namespace skepu
 			std::vector<T> wrap(1);
 			
 			auto elwiseMemP = std::make_tuple(get<EI>(std::forward<CallArgs>(args)...).updateDevice_CL(get<EI>(std::forward<CallArgs>(args)...).getAddress(), in_size_i * in_size_j * in_size_k, device, true)...);
-			// (in mirror mode the elements near the edges are not computed: the output keeps its values, so it is copied to the device)
-			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getParent().getAddress(), out_size_i * out_size_j * out_size_k, device, this->m_mirror_mode)...);
+			// (in mirror mode and with the update modes Red and Black some elements are not computed: the output keeps their values, so it is copied to the device)
+			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getParent().getAddress(), out_size_i * out_size_j * out_size_k, device, this->m_mirror_mode || p != Parity::None)...);
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(),
 				get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
 			
@@ -115,6 +115,7 @@ namespace skepu
 				shared_i, shared_j, shared_k,
 				(int)(this->isPool ? 1 : 0), edge, pad, &wrapMemP,
 				get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first element, in the whole container)
+				parity_cl(p),
 				shared_mem
 			);
 			
@@ -165,7 +166,7 @@ namespace skepu
 				const size_t inRows = outRows + 2 * this->m_overlap_y; // no matter which device, number of input rows is same.
 				
 				auto elwiseMemP = std::make_tuple(get<EI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<EI>(std::forward<CallArgs>(args)...).getAddress() + i * numRowsPerSlice * in_cols, inRows, in_cols, device, true)...);
-				auto outMemP    = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + i * numRowsPerSlice * out_cols, outRows, out_cols, device, false)...);
+				auto outMemP    = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + i * numRowsPerSlice * out_cols, outRows, out_cols, device, p != Parity::None)...);
 				
 				size_t numBlocks[2], numThreads[2];
 				numThreads[0] = std::min<size_t>(out_cols, 16);
