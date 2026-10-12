@@ -45,16 +45,20 @@ compiling (the value is stringified by the preprocessor, so `-DSKEPU_TRACE_FILE=
 works), or in the `SKEPU_TRACE_FILE` environment variable when running.
 
 A program can also take *snapshots* of the contents of containers, with
-`SKEPU_TRACE_SNAPSHOT(container)`, which SkeVU can show as heat maps. The snapshot files are
-written to the directory given by `-DSKEPU_TRACE_SNAPSHOT_DIR=dir`; archive its files as a `.zip`
-to load them.
+`SKEPU_TRACE_SNAPSHOT(container)`, which SkeVU can show as heat maps. Snapshots are only taken if
+the program is also compiled with `-DSKEPU_TRACING_SNAPSHOTS` (in addition to `-DSKEPU_TRACING`);
+otherwise `SKEPU_TRACE_SNAPSHOT` does nothing. Each snapshot is a file with the whole contents of
+the container, so a program that takes them in a loop can write a lot of data and run much more
+slowly. The snapshot files are written to the directory given by `-DSKEPU_TRACE_SNAPSHOT_DIR=dir`;
+archive its files as a `.zip` to load them.
 
 The example programs of SkePU can be built with tracing as follows; their traces are written
 to a `trace/` directory:
 
 - with `make` in `examples/`: the programs are built with tracing (`BACKEND_FLAGS` in
-  `examples/Makefile`);
-- with CMake: configure with `-DSKEPU_EXAMPLES_TRACING=ON`.
+  `examples/Makefile`); add `TRACE_SNAPSHOTS=1` to the `make` command to take snapshots too;
+- with CMake: configure with `-DSKEPU_EXAMPLES_TRACING=ON`, and also
+  `-DSKEPU_EXAMPLES_TRACING_SNAPSHOTS=ON` for snapshots.
 
 Traces carry the file name and line of each call. For the source panel, load the source files
 of the program together with the trace.

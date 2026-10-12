@@ -34,6 +34,10 @@ option(SKEPU_EXAMPLES_TRACING
 	"Build the parallel examples with tracing (SKEPU_TRACING); the traces, for SkeVU, are written to trace/ in the build directory of the examples."
 	OFF)
 
+option(SKEPU_EXAMPLES_TRACING_SNAPSHOTS
+	"With SKEPU_EXAMPLES_TRACING: the examples also take snapshots of containers (SKEPU_TRACING_SNAPSHOTS), written to snapshots/ in the build directory of the examples. They can be large and slow the programs down."
+	OFF)
+
 if(SKEPU_CUDA)
 	enable_language(CUDA)
 endif()
@@ -98,6 +102,9 @@ if(SKEPU_EXAMPLES_PAR)
 					SKEPU_TRACING
 					SKEPU_TRACE_FILE=${_trace_dir}/trace_${example}.json
 					SKEPU_TRACE_SNAPSHOT_DIR=${_snapshot_dir})
+				if(SKEPU_EXAMPLES_TRACING_SNAPSHOTS)
+					target_compile_definitions(${example}_par PRIVATE SKEPU_TRACING_SNAPSHOTS)
+				endif()
 			endif()
 			add_dependencies(all-parallel ${example}_par)
 		endif()

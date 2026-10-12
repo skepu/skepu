@@ -104,7 +104,12 @@ namespace skepu
 #define SKEPU_TRACE_ELEMENT_ACCESS(...) skepu::tracing::tracer().element_access(__VA_ARGS__)
 #define SKEPU_TRACE_COPY(...) skepu::tracing::tracer().copy(__VA_ARGS__)
 #define SKEPU_TRACE_SCALAR_IO(...) skepu::tracing::tracer().scalar_io(__VA_ARGS__)
+// (a snapshot writes the contents of a container to a file each time: it is taken only if SKEPU_TRACING_SNAPSHOTS is defined too)
+#ifdef SKEPU_TRACING_SNAPSHOTS
 #define SKEPU_TRACE_SNAPSHOT(...) skepu::tracing::tracer().data_snapshot(__VA_ARGS__)
+#else
+#define SKEPU_TRACE_SNAPSHOT(...)
+#endif
 #define SKEPU_TRACE_VIRTUAL_DATASET(...) skepu::tracing::tracer().virtual_dataset(__VA_ARGS__)
 #define SKEPU_TRACE_FLUSH() skepu::tracing::tracer().flush()
 #else

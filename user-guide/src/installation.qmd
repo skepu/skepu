@@ -104,6 +104,7 @@ Some notable build options:
 | `SKEPU_EXAMPLES_PAR` | `ON` if CUDA, OpenCL or OpenMP is found | With examples: build the parallel examples. |
 | `SKEPU_EXAMPLES_MPI` | `ON` if MPI is found | With examples: build the MPI examples. |
 | `SKEPU_EXAMPLES_TRACING` | `OFF` | With examples: build the parallel examples with tracing (see @sec-tracing). |
+| `SKEPU_EXAMPLES_TRACING_SNAPSHOTS` | `OFF` | With examples and tracing: the examples also take snapshots of containers, which can be large and slow the programs down (see @sec-tracing). |
 | `SKEPU_LSP` | `OFF` | Also build the SkePU language server (see @sec-lsp). |
 
 For more build options, run `cmake -LAH`.
@@ -273,7 +274,10 @@ The SkePU distribution comes with a selection of example programs:
 
 - **Dot product** (`dotproduct`)
 
-- **Heat diffusion** (`heat_diffusion`)
+- **Heat diffusion** (`heat_diffusion`): relaxation to the steady state in 1 to 4 dimensions, with a
+  double-buffered (Jacobi) or an in-place red-black (Gauss--Seidel) update, selected on the command line
+  (`heat_diffusion dim size iterations backend [normal|redblack] [tolerance]`); it prints the largest change per
+  iteration to compare their convergence
 
 - **Horner** (`horner`)
 

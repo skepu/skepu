@@ -115,6 +115,18 @@ skepu_add_test_case_hybrid_opencl(lambda)
 #skepu_add_test_case_hybrid_cuda(lambda)
 
 # ------------------------------------------------
+#   Skeleton instances passed by reference to function templates
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(skeleton_reference)
+skepu_add_test_case_cpu(skeleton_reference)
+skepu_add_test_case_openmp(skeleton_reference)
+skepu_add_test_case_opencl(skeleton_reference)
+#skepu_add_test_case_cuda(skeleton_reference) # (not run: no CUDA here)
+skepu_add_test_case_hybrid_opencl(skeleton_reference)
+#skepu_add_test_case_hybrid_cuda(skeleton_reference)
+
+# ------------------------------------------------
 #   Namespace in skeleton instances
 # ------------------------------------------------
 

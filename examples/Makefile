@@ -164,6 +164,14 @@ PAR_DIR     = $(PAR_BASE)$(MPI_SUFFIX)
 SEQ_DIR     = sequential
 RUN_DIR     = $(RUN_BASE)$(MPI_SUFFIX)
 SNAPSHOT_DIR ?= snapshots
+
+# Snapshots of containers (SKEPU_TRACE_SNAPSHOT in the programs, shown as heat maps in SkeVU) are only taken if the programs are built
+# with 'make TRACE_SNAPSHOTS=1 ...' (-DSKEPU_TRACING_SNAPSHOTS, in addition to tracing). Each snapshot is a file with the whole
+# container, so they can fill the disk and slow the program down.
+TRACE_SNAPSHOTS ?= 0
+ifeq ($(TRACE_SNAPSHOTS),1)
+BACKEND_FLAGS += -DSKEPU_TRACING_SNAPSHOTS
+endif
 TRACE_DIR    ?= $(TRACE_BASE)$(MPI_SUFFIX)
 
 # All SkePU example programs (unless the Makefile that includes this one has set PROGS; used for 'make all-[parallel|sequential]' and 'make clean').
@@ -175,7 +183,7 @@ PROGS += conjugate_gradient
 PROGS += coulombic
 PROGS += dotproduct
 PROGS += edgedetect
-PROGS += heat_diffusion # no red-black update mode in CUDA
+PROGS += heat_diffusion # no red-black update mode or mirror mode in CUDA
 PROGS += horner
 PROGS += image_manip
 PROGS += mandelbrot
@@ -210,7 +218,7 @@ lookup.conjugate_gradient  := 256 $(RUN_BACKEND)
 lookup.coulombic           := $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.dotproduct          := $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.edgedetect          := edge data/goose.png run/result_edgedetect 2 $(RUN_BACKEND)
-lookup.heat_diffusion      := 2 64 10 $(RUN_BACKEND)
+lookup.heat_diffusion      := 2 64 100 $(RUN_BACKEND) redblack
 lookup.horner              := 3 1 2 3 4 $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.image_manip         := $(RUN_BACKEND)
 lookup.mandelbrot          := 256 256 $(RUN_BACKEND)
@@ -354,7 +362,7 @@ pack-snapshots:
 		  rm *.txt && \
 		  echo "$(ARCHIVE_TITLE).zip created from $(SNAPSHOT_DIR)/*.txt (existing files removed)"; \
 		else \
-		  echo "No snapshot files in $(SNAPSHOT_DIR)."; \
+		  echo "No snapshot files in $(SNAPSHOT_DIR) (snapshots are taken only with TRACE_SNAPSHOTS=1)."; \
 		fi
 
 # Deletes all temporary files (including all precompiled sources), binaries and the

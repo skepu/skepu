@@ -547,6 +547,31 @@ namespace skepu
     	    }
 		}
 
+		template<typename T>
+		inline void snapshot_serializer(skepu::Tensor3<T> &data, std::string &fname)
+		{
+			std::ofstream fs(fname);
+			data.flush();
+			fs << 3 << " " << data.size_i() << " " << data.size_j() << " " << data.size_k() << "\n";
+			for (size_t i = 0; i < data.size_i(); ++i)
+				for (size_t j = 0; j < data.size_j(); ++j)
+					for (size_t k = 0; k < data.size_k(); ++k)
+						fs << data(i, j, k) << " ";
+		}
+
+		template<typename T>
+		inline void snapshot_serializer(skepu::Tensor4<T> &data, std::string &fname)
+		{
+			std::ofstream fs(fname);
+			data.flush();
+			fs << 4 << " " << data.size_i() << " " << data.size_j() << " " << data.size_k() << " " << data.size_l() << "\n";
+			for (size_t i = 0; i < data.size_i(); ++i)
+				for (size_t j = 0; j < data.size_j(); ++j)
+					for (size_t k = 0; k < data.size_k(); ++k)
+						for (size_t l = 0; l < data.size_l(); ++l)
+							fs << data(i, j, k, l) << " ";
+		}
+
  		template<typename C
         //, REQUIRES_VALUE(is_skepu_container<C>)
         >
