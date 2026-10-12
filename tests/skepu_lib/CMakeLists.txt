@@ -35,6 +35,20 @@ skepu_add_test_case_hybrid_opencl(random)
 #skepu_add_test_case_hybrid_cuda(random)
 
 # ------------------------------------------------
+#   Random fills (skepu-lib/randomize.hpp)
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(randomize)
+skepu_add_test_case_cpu(randomize)
+skepu_add_test_case_openmp(randomize)
+skepu_add_test_case_opencl(randomize)
+
+# (double precision: not on OpenCL, which the platform may not support)
+skepu_add_test_case_sequential(randomize_double)
+skepu_add_test_case_cpu(randomize_double)
+skepu_add_test_case_openmp(randomize_double)
+
+# ------------------------------------------------
 #   skepu_external
 # ------------------------------------------------
 

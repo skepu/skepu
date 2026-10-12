@@ -139,6 +139,9 @@ namespace library_markers
 	extern bool foundBlas;
 	extern clang::SourceLocation blasBegin, blasEnd;
 
+	extern bool foundRandomize;
+	extern clang::SourceLocation randomizeBegin, randomizeEnd;
+
 	extern bool foundML;
 	extern clang::SourceLocation mlBegin, mlEnd;
 	extern clang::SourceLocation sequentialModelBegin, sequentialModelEnd;

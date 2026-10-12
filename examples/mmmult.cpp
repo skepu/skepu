@@ -1,6 +1,7 @@
 #include <iostream>
 #include <skepu>
 #include <skepu-lib/io.hpp>
+#include <skepu-lib/randomize.hpp>
 
 
 template<typename T>
@@ -46,8 +47,8 @@ int main(int argc, char *argv[])
 	skepu::setGlobalBackendSpec(spec);
 	
 	skepu::Matrix<float> lhs(height, inner), rhs(inner, width), res(height, width), res2(height, width);
-	lhs.randomize(3, 9);
-	rhs.randomize(0, 9);
+	skepu::randomize::uniform(lhs, 3, 9);
+	skepu::randomize::uniform(rhs, 0, 9);
 	
 	skepu::io::cout << "lhs: " << lhs << "\n";
 	skepu::io::cout << "rhs: " << rhs << "\n";

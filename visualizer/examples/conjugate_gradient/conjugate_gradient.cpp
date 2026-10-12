@@ -4,6 +4,7 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
+#include <skepu-lib/randomize.hpp>
 #include <skepu-lib/blas.hpp>
 
 
@@ -86,8 +87,8 @@ int main(int argc, char *argv[])
 	skepu::Matrix<T> R(N, N, "R"), A(N, N, "A");
 	skepu::Vector<T> x(N, "x", 0);
 
-	b.randomize(0, 10); // PRNG
-	R.randomizeReal(); // PRNG
+	skepu::randomize::uniform(b, 0, 10); // PRNG
+	skepu::randomize::uniform(R); // PRNG
 
 	auto make_spd = skepu::Map<0>(symmetrize<T>);
 	make_spd(A, R, static_cast<T>(N));

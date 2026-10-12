@@ -6,6 +6,7 @@
 #include <skepu>
 #include <skepu-lib/util.hpp>
 #include <skepu-lib/io.hpp>
+#include <skepu-lib/randomize.hpp>
 
 [[skepu::userconstant]] constexpr int
 	MAX = 255,
@@ -55,8 +56,8 @@ int main(int argc, char *argv[])
 	skepu::Matrix<int> img(rows, cols), noise(rows, cols);
 	
 	// Generate random image and random noise
-	img.randomize(0, MAX);
-	noise.randomize(-NOISE, NOISE);
+	skepu::randomize::uniform(img, 0, MAX);
+	skepu::randomize::uniform(noise, -NOISE, NOISE);
 	
 	skepu::io::cout << "Actual image: " << img << "\n";
 	

@@ -1,5 +1,6 @@
 #include <skepu>
 #include <skepu-lib/io.hpp>
+#include <skepu-lib/randomize.hpp>
 
 template<typename T>
 T mult(T a, T b)
@@ -29,8 +30,8 @@ int main(int argc, char *argv[])
 	dotprod.setBackend(spec);
 	
 	skepu::Vector<float> a(size), b(size);
-	a.randomize(0, 3);
-	b.randomize(0, 2);
+	skepu::randomize::uniform(a, 0, 3);
+	skepu::randomize::uniform(b, 0, 2);
 	
 	skepu::io::cout << a << "\n";
 	skepu::io::cout << b << "\n";

@@ -11,99 +11,174 @@
             "label": "b",
             "line": 251,
             "object_id": 1002,
-            "time": 1,
+            "time": 0,
             "type": "allocation"
         },
         {
-            "elwise_inputs": [],
-            "end": 9,
-            "file": "",
-            "label": "randomize",
-            "line": 0,
-            "outputs": [
-                1001
-            ],
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "start": 2,
-            "type": "external"
+            "label": "[Global PRNG]",
+            "line": 139,
+            "object_id": 1004,
+            "time": 14542,
+            "type": "allocation"
         },
         {
-            "elwise_inputs": [],
-            "end": 17,
-            "file": "",
-            "label": "randomize",
-            "line": 0,
-            "outputs": [
-                1002
-            ],
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "start": 10,
-            "type": "external"
-        },
-        {
-            "elwise_inputs": [],
-            "end": 193,
-            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
-            "label": "I/O",
-            "line": 54,
-            "outputs": [],
-            "proxy_inputs": [
-                1001
-            ],
-            "scalar_inputs": [],
-            "start": 17,
-            "type": "external"
-        },
-        {
-            "elwise_inputs": [],
-            "end": 341,
-            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
-            "label": "I/O",
-            "line": 54,
-            "outputs": [],
-            "proxy_inputs": [
-                1002
-            ],
-            "scalar_inputs": [],
-            "start": 193,
-            "type": "external"
+            "label": "[Internal PRNG]",
+            "line": 251,
+            "object_id": 1006,
+            "time": 14593,
+            "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 2048,
-            "end": 2713,
+            "end": 16707,
+            "label": "[Internal PRNG]",
+            "line": 258,
+            "object_id": 1006,
+            "start": 14598,
+            "time": 16707,
+            "type": "transfer"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 282,
+            "object_id": 1006,
+            "time": 16717,
+            "type": "deallocation"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2048
+            ],
+            "elwise_inputs": [],
+            "end": 17452,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+            "label": "randomize::uniform",
+            "line": 244,
+            "object_id": 1003,
+            "outputs": [
+                1001
+            ],
+            "pattern": "Map",
+            "prng": 1004,
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 14591,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 251,
+            "object_id": 1010,
+            "time": 17493,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2048,
+            "end": 18022,
+            "label": "[Internal PRNG]",
+            "line": 258,
+            "object_id": 1010,
+            "start": 17498,
+            "time": 18022,
+            "type": "transfer"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 282,
+            "object_id": 1010,
+            "time": 18030,
+            "type": "deallocation"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2048
+            ],
+            "elwise_inputs": [],
+            "end": 18777,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+            "label": "randomize::uniform",
+            "line": 244,
+            "object_id": 1008,
+            "outputs": [
+                1002
+            ],
+            "pattern": "Map",
+            "prng": 1004,
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 17492,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2048,
+            "end": 19013,
             "label": "a",
-            "line": 258,
+            "line": 306,
             "object_id": 1001,
-            "start": 376,
-            "time": 2713,
+            "start": 18787,
+            "time": 19013,
             "type": "transfer"
         },
         {
+            "elwise_inputs": [],
+            "end": 19283,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
+            "label": "I/O",
+            "line": 54,
+            "outputs": [],
+            "proxy_inputs": [
+                1001
+            ],
+            "scalar_inputs": [],
+            "start": 18787,
+            "type": "external"
+        },
+        {
             "backend": "OpenCL",
-            "direction": "host-to-device",
+            "direction": "device-to-host",
             "elements": 2048,
-            "end": 3043,
+            "end": 19771,
             "label": "b",
-            "line": 258,
+            "line": 306,
             "object_id": 1002,
-            "start": 2732,
-            "time": 3043,
+            "start": 19283,
+            "time": 19771,
             "type": "transfer"
+        },
+        {
+            "elwise_inputs": [],
+            "end": 20006,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
+            "label": "I/O",
+            "line": 54,
+            "outputs": [],
+            "proxy_inputs": [
+                1002
+            ],
+            "scalar_inputs": [],
+            "start": 19283,
+            "type": "external"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 3420,
+            "end": 20726,
             "label": "Internal (reduce-temp)",
             "line": 306,
-            "object_id": 1009,
-            "start": 3055,
-            "time": 3420,
+            "object_id": 1016,
+            "start": 20013,
+            "time": 20726,
             "type": "transfer"
         },
         {
@@ -116,32 +191,32 @@
                 1001,
                 1002
             ],
-            "end": 3433,
+            "end": 20731,
             "file": "/Users/august/Claude/skepu-alpha/examples/dotproduct.cpp",
             "label": "dotprod",
-            "line": 38,
+            "line": 39,
             "object_id": 1000,
             "outputs": [
-                1012
+                1019
             ],
             "pattern": "MapReduce",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 3048,
+            "start": 20008,
             "type": "skeleton_call"
         },
         {
             "label": "b",
             "line": 282,
             "object_id": 1002,
-            "time": 3456,
+            "time": 20745,
             "type": "deallocation"
         },
         {
             "label": "a",
             "line": 282,
             "object_id": 1001,
-            "time": 3459,
+            "time": 20754,
             "type": "deallocation"
         }
     ],
@@ -149,25 +224,59 @@
         "instances": {
             "1000": {
                 "instance": {
-                    "end_line": 28,
+                    "end_line": 29,
                     "file": "/Users/august/Claude/skepu-alpha/examples/dotproduct.cpp",
-                    "line": 28
+                    "line": 29
                 },
                 "label": "dotprod",
                 "user_functions": [
                     {
-                        "end_line": 8,
+                        "end_line": 9,
                         "file": "/Users/august/Claude/skepu-alpha/examples/dotproduct.cpp",
                         "kind": "function",
-                        "line": 5,
+                        "line": 6,
                         "name": "mult"
                     },
                     {
-                        "end_line": 14,
+                        "end_line": 15,
                         "file": "/Users/august/Claude/skepu-alpha/examples/dotproduct.cpp",
                         "kind": "function",
-                        "line": 11,
+                        "line": 12,
                         "name": "add"
+                    }
+                ]
+            },
+            "1003": {
+                "instance": {
+                    "end_line": 241,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+                    "line": 241
+                },
+                "label": "randomize::uniform",
+                "user_functions": [
+                    {
+                        "end_line": 158,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+                        "kind": "function",
+                        "line": 149,
+                        "name": "uniform_real_uf"
+                    }
+                ]
+            },
+            "1008": {
+                "instance": {
+                    "end_line": 241,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+                    "line": 241
+                },
+                "label": "randomize::uniform",
+                "user_functions": [
+                    {
+                        "end_line": 158,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+                        "kind": "function",
+                        "line": 149,
+                        "name": "uniform_real_uf"
                     }
                 ]
             }

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <skepu>
 #include <skepu-lib/io.hpp>
+#include <skepu-lib/randomize.hpp>
 
 
 template<typename T>
@@ -45,8 +46,8 @@ int main(int argc, char *argv[])
 	
 	skepu::Vector<float> v(cols), r(rows), r2(rows);
 	skepu::Matrix<float> m(rows, cols);
-	m.randomize(3, 9);
-	v.randomize(0, 9);
+	skepu::randomize::uniform(m, 3, 9);
+	skepu::randomize::uniform(v, 0, 9);
 	
 	skepu::io::cout << "v: " << v << "\n";
 	skepu::io::cout << "m: " << m << "\n";

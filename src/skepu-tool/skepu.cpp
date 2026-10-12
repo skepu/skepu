@@ -175,6 +175,9 @@ namespace library_markers
 	bool foundBlas = false;
 	clang::SourceLocation blasBegin, blasEnd;
 
+	bool foundRandomize = false;
+	clang::SourceLocation randomizeBegin, randomizeEnd;
+
 	bool foundML = false;
 	clang::SourceLocation mlBegin, mlEnd;
 	clang::SourceLocation sequentialModelBegin, sequentialModelEnd;
@@ -289,6 +292,7 @@ public:
 
 			namespace lm = library_markers;
 			libraryFileHandlerHelper(lm::foundBlas, lm::blasBegin, lm::blasEnd, lm::blasBegin, "BLAS");
+			libraryFileHandlerHelper(lm::foundRandomize, lm::randomizeBegin, lm::randomizeEnd, lm::randomizeBegin, "RANDOMIZE");
 
 			libraryFileHandlerHelper(lm::foundML, lm::mlBegin,              lm::mlEnd,              lm::mlBegin, "ML");
 			libraryFileHandlerHelper(lm::foundML, lm::dnnSupportBegin,      lm::dnnSupportEnd,      lm::mlBegin, "DNN_SUPPORT");

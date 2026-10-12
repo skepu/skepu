@@ -1,5 +1,6 @@
 #include <skepu>
 #include <skepu-lib/io.hpp>
+#include <skepu-lib/randomize.hpp>
 
 struct MaxMin
 {
@@ -46,7 +47,7 @@ int main(int argc, char *argv[])
 	skepu::setGlobalBackendSpec(spec);
 	
 	skepu::Vector<float> floats(size);
-	floats.randomize(0, 10000);
+	skepu::randomize::uniform(floats, 0, 10000);
 
 	skepu::io::cout << "Input: " << floats << "\n";
 

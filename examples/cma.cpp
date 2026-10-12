@@ -1,6 +1,7 @@
 #include <skepu>
 #include <skepu-lib/util.hpp>
 #include <skepu-lib/io.hpp>
+#include <skepu-lib/randomize.hpp>
 
 template<typename T, typename U>
 U avg(skepu::Index1D index, T sum)
@@ -32,7 +33,7 @@ int main(int argc, char *argv[])
 	
 	skepu::Vector<int> in(size);
 	skepu::Vector<float> out(size);
-	in.randomize(0, 10);
+	skepu::randomize::uniform(in, 0, 10);
 	
 	if (size <= 50)
 		skepu::io::cout << "Elements: " << in << "\n";

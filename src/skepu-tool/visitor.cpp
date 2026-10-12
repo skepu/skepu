@@ -369,6 +369,7 @@ bool SkePUASTVisitor::VisitVarDecl(clang::VarDecl *d)
 			struct Marker { const char *begin, *end; clang::SourceLocation *beginLoc, *endLoc; bool *found; };
 			static const Marker markers[] = {
 				{"startOfBlasHPP",                 "endOfBlasHPP",                 &library_markers::blasBegin,            &library_markers::blasEnd,            &library_markers::foundBlas},
+				{"startOfRandomizeHPP",            "endOfRandomizeHPP",            &library_markers::randomizeBegin,       &library_markers::randomizeEnd,       &library_markers::foundRandomize},
 				{"startOf_ML_HPP",                 "endOf_ML_HPP",                 &library_markers::mlBegin,              &library_markers::mlEnd,              &library_markers::foundML},
 				{"startOf_SequentialModel_HPP",    "endOf_SequentialModel_HPP",    &library_markers::sequentialModelBegin, &library_markers::sequentialModelEnd, nullptr},
 				{"startOf_DNN_Support_HPP",        "endOf_DNN_Support_HPP",        &library_markers::dnnSupportBegin,      &library_markers::dnnSupportEnd,      nullptr},

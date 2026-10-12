@@ -9,6 +9,7 @@
 #include <skepu>
 #include <skepu-lib/util.hpp>
 #include <skepu-lib/io.hpp>
+#include <skepu-lib/randomize.hpp>
 
 using T = float;
 
@@ -42,8 +43,8 @@ int main(int argc, char *argv[])
 
 	// Vector operands
 	skepu::Vector<T> x(size), y(size);
-	x.randomize(1, 3);
-	y.randomize(2, 4);
+	skepu::randomize::uniform(x, 1, 3);
+	skepu::randomize::uniform(y, 2, 4);
 
 	skepu::io::cout << "X: " << x << "\nY: " << y << "\n";
 
