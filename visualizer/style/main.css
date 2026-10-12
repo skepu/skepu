@@ -816,6 +816,30 @@ html.dark-mode .cpp-tab-pane.hljs-loading.active::after {
   color: #1a1a1a;
 }
 
+/* The links to where an instance and its user functions are defined (info pane) */
+.info-link
+{
+  color: #2a6fb0;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.info-link:hover
+{
+  text-decoration: underline;
+}
+
+.info-link-disabled
+{
+  color: #999;
+  cursor: default;
+}
+
+html.dark-mode .info-link
+{
+  color: #7fb4e8;
+}
+
 /* Container dependency tags — used in compound edge info */
 .info-containers
 {

@@ -114,6 +114,7 @@ export function buildDisplayGraph(events, options = {}) {
 
     preprocessFilePaths(events);
     const graph = DirectedGraph.fromEvents(events, graphSettings(options));
+    graph.instances = options.instances ?? new Map();   // where the instances are defined: Map by instance id (headerInstances)
 
     graph.computeDepths();
     graph.findCriticalPath();

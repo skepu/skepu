@@ -25,12 +25,13 @@
 
 import { UpdateNode } from './node.js';
 import { buildDisplayGraph } from './pipeline.js';
-import { computeTraceLineRanges as _computeTraceLineRanges, preprocessFilePaths as _preprocessFilePaths, parseTrace as _parseTrace } from './trace.js';
+import { computeTraceLineRanges as _computeTraceLineRanges, preprocessFilePaths as _preprocessFilePaths, parseTrace as _parseTrace, headerInstances } from './trace.js';
 import { isMpiHeader as _isMpiHeader, mergeMpiTraces as _mergeMpiTraces } from './mpi.js';
 
 // ── Module-level state (mirrors Flask globals) ────────────────────────────────
 
 let _eventData       = null;   // parsed trace events array
+let _instances       = new Map();   // where the instances of the trace are defined (headerInstances of its header)
 let _traceHeader     = null;   // the header of the trace, if it has one ({ header, data } traces)
 let _mpi             = null;   // what the merge of the trace files of an MPI program says: { mpi, warnings, divergence }, or null
 let _cppFiles        = {};     // { basename: content }
@@ -133,6 +134,7 @@ function _installTraces(files) {
         _eventData   = primary.events;
         _traceHeader = primary.header;
     }
+    _instances       = headerInstances(_traceHeader);
     _traceJsonRaw    = primary.text;
     _traceFilename   = primary.name;
     _traceLineRanges = _computeTraceLineRanges(primary.text);
@@ -330,7 +332,7 @@ function _handleGraph({
     ({ graph: _graph, fusionHints } = buildDisplayGraph(_eventData, {
         mode, container_allocations, container_deallocations, container_transfers, show_communications,
         show_scalars, anti_deps, data_as_edges, show_regions,
-        collapse_iteration, fusion_analysis, show_virtual_alias, aggregate_by,
+        collapse_iteration, fusion_analysis, show_virtual_alias, aggregate_by, instances: _instances,
     }));
 
     const snapshotEvents = _eventData.filter(e => e.type === 'snapshot');

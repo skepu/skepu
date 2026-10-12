@@ -220,6 +220,14 @@ var _infoView = new InfoView({
     if (typeof openInfoPane === 'function') openInfoPane();
   },
 
+  onShowSource: function(place) {
+    if (State.sourceView) State.sourceView.highlightSourceLine(place.line, place.file, undefined, place.end_line);
+  },
+
+  canShowSource: function(file) {
+    return !!State.sourceView && State.sourceView.hasSourceFile(file);
+  },
+
   onError: function(err) {
     if (typeof showAlert === 'function')
       showAlert('Could not load node info: ' + (err && err.message ? err.message : err));

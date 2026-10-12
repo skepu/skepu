@@ -344,6 +344,7 @@ export class CallNode extends ComputationNode {
               jsonData.elements ?? null,
               jsonData.pattern  ?? null);
         this.type = 'skeleton_call';
+        this.instanceId = jsonData.object_id ?? null;   // the skeleton instance (what the table of the instances in the header is by)
         // this.elements and this.pattern already set by ComputationNode
         this.parameters = jsonData.parameters ?? null;   // what is not the default: overlap, strides, modes (see TRACE_FORMAT.md)
     }
@@ -363,6 +364,9 @@ export class CallNode extends ComputationNode {
 
     infoData() {
         const info = { ...super.infoData(), Pattern: this.pattern, Elements: this.elements };
+        // where the instance and its user functions are defined (the info pane has links to them)
+        const definitions = this.instanceId != null ? this.graph.instances?.get(this.instanceId) : null;
+        if (definitions) info.definitions = definitions;
         if (this.parameters)
             info['Parameters'] = Object.entries(this.parameters).map(([k, v]) => `${k.replace(/_/g, ' ')}: ${Array.isArray(v) ? v.join(' x ') : v}`).join('; ');
         // Set by the fusion analysis: the pairs with a consumer of this call's output that could not be fused.

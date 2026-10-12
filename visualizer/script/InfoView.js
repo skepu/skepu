@@ -65,7 +65,41 @@ const HIDDEN_KEYS = new Set([
   'type', 'durations', 'trace_index',
   'content_snapshot', 'content_snapshots',
   'content_snapshot_labels', 'content_snapshot_virtual_label',
+  'definitions',
 ]);
+
+// ── Definitions ───────────────────────────────────────────────────────────────
+
+function _escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function _basename(path) { return String(path).split('\\').pop().split('/').pop(); }
+
+/**
+ * The rows for where the instance of a skeleton call and its user functions are defined (the "definitions" of the info
+ * data: { instance, user_functions }): each is a link that shows the lines in the source, unless the file is not there.
+ * `canShow(file)` says whether it is.
+ */
+export function definitionRows(definitions, canShow) {
+  if (!definitions) return '';
+  var rows = [];
+  function row(key, text, place) {
+    var label = _escapeHtml(text + ' @ ' + _basename(place.file) + ':' + place.line);
+    var shown = canShow ? canShow(place.file) : true;
+    var link = shown
+      ? '<a href="#" class="info-link" data-file="' + _escapeHtml(place.file) + '" data-line="' + place.line + '" data-end-line="' + (place.end_line || place.line) + '">' + label + '</a>'
+      : '<span class="info-link-disabled" title="The source file is not open">' + label + '</span>';
+    rows.push('<div class="info-row"><span class="info-key">' + key + '</span><span class="info-value">' + link + '</span></div>');
+  }
+  var inst = definitions.instance;
+  row('Instance', (definitions.label || 'instance') + (inst.anonymous ? ' (anonymous)' : ''), inst);
+  var fns = definitions.user_functions || [];
+  fns.forEach(function(f, i) {
+    row(fns.length > 1 ? 'User function ' + (i + 1) : 'User function', f.kind === 'lambda' ? 'lambda' : (f.name || 'function'), f);
+  });
+  return rows.join('');
+}
 
 // ── InfoView ──────────────────────────────────────────────────────────────────
 
@@ -86,6 +120,8 @@ export class InfoView {
    * @param {Function}        [options.onSelectIteration] (nodeId, iterIdx) → void
    * @param {Function}        [options.onOpen]            () → void
    * @param {Function}        [options.onError]           err → void
+   * @param {Function}        [options.onShowSource]      ({ file, line, end_line }) → void; a link to a definition
+   * @param {Function}        [options.canShowSource]     file → boolean; whether the source file of a definition is open
    */
   constructor(options) {
     options = options || {};
@@ -99,6 +135,8 @@ export class InfoView {
     this._onSelectIteration = options.onSelectIteration || null;
     this._onOpen            = options.onOpen            || null;
     this._onError           = options.onError           || null;
+    this._onShowSource      = options.onShowSource      || null;
+    this._canShowSource     = options.canShowSource     || null;
   }
 
   // ── Public API ───────────────────────────────────────────────────────────────
@@ -152,7 +190,16 @@ export class InfoView {
         html += '<div class="info-row"><span class="info-key">' + key +
                 '</span><span class="info-value">' + value + '</span></div>';
       }
+      html += definitionRows(data.definitions, this._onShowSource ? this._canShowSource : function() { return false; });
       bodyEl.innerHTML = html;
+      // (the links of the definitions)
+      var onShowSource = this._onShowSource;
+      bodyEl.onclick = function(ev) {
+        var link = ev.target.closest && ev.target.closest('a.info-link');
+        if (!link) return;
+        ev.preventDefault();
+        if (onShowSource) onShowSource({ file: link.dataset.file, line: +link.dataset.line, end_line: +link.dataset.endLine });
+      };
     }
 
     // ── Heatmap ───────────────────────────────────────────────────────────────

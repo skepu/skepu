@@ -562,8 +562,9 @@ export class SourceCodeView {
    *                            against cpp-tab-pane data-filename attributes.
    * @param {boolean} [animate=true]  Pass false to skip the scroll animation
    *                                  (e.g. while the simulation scrubber is dragging).
+   * @param {number}  [endLine]       Highlight the lines up to this one too (a function or a declaration of several lines).
    */
-  highlightSourceLine(lineNr, filePath, animate) {
+  highlightSourceLine(lineNr, filePath, animate, endLine) {
     this.clearHighlight();
     if (lineNr == -1) return;
 
@@ -582,7 +583,17 @@ export class SourceCodeView {
 
     if (!foundFile) return;
 
-    this.highlightLines([lineNr], { scroll: true, animate: animate });
+    var lines = [];
+    for (var n = lineNr; n <= Math.max(lineNr, endLine || lineNr); n++) lines.push(n);
+    this.highlightLines(lines, { scroll: true, target: lineNr, animate: animate });
+  }
+
+  /** Whether there is a source tab for the file (its basename is matched, as for the highlight of a line). */
+  hasSourceFile(filePath) {
+    var basename = filePath ? filePath.split('/').pop().split('\\').pop() : '';
+    return Array.from(this._tabPanesEl.querySelectorAll('.cpp-tab-pane')).some(function(pane) {
+      return pane.dataset.filename === basename;
+    });
   }
 
   /**
