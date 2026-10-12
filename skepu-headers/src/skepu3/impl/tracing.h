@@ -133,6 +133,40 @@ namespace skepu
 #define SKEPU_TRACE_FLUSH()
 #endif
 
+		// Where the instance of a skeleton and its user functions are defined in the source. The precompiler gives the struct of each
+		// user function of an instance a JSON text of both (the member "definition"); a skeleton says which structs are its
+		// own in SkeletonBase::traceDefinition(), and the tracer writes the definition once for each instance, in the
+		// section "instances" of the header of the trace. Without tracing it is empty.
+		struct Definition
+		{
+#ifdef SKEPU_TRACING
+			nlohmann::json values; // null if the user functions of the instance have no definition
+
+			template<typename... UserFunctions>
+			void describe() { (this->add<UserFunctions>(), ...); }
+
+		private:
+			template<typename UserFunction>
+			static auto text(int) -> decltype(std::string(UserFunction::definition)) { return UserFunction::definition; }
+			template<typename UserFunction>
+			static std::string text(long) { return ""; }
+
+			template<typename UserFunction>
+			void add()
+			{
+				nlohmann::json definition = nlohmann::json::parse(text<UserFunction>(0), nullptr, false);
+				if (!definition.is_object() || !definition.contains("function"))
+					return;
+				if (this->values.is_null())
+					this->values = {{"instance", definition["instance"]}, {"user_functions", nlohmann::json::array()}};
+				this->values["user_functions"].push_back(definition["function"]);
+			}
+#else
+			template<typename... UserFunctions>
+			void describe() {}
+#endif
+		};
+
 		// The parameters of a skeleton that change what its calls do (the overlap and strides of a MapOverlap,
 		// the mode of a Scan, ...). A skeleton describes them in SkeletonBase::traceParameters(), and the
 		// tracer records them with every call, as they are when the call is made. Without tracing it is empty.
@@ -302,6 +336,7 @@ namespace skepu
 			std::mutex m_mutex; // guards m_captures
 			nlohmann::json m_trace_json;
 			nlohmann::json m_header = nlohmann::json::object();
+			std::map<TraceID, nlohmann::json> m_definitions; // of the instances that have made a call (guarded by m_mutex)
 			bool m_suppress_node = false, m_lean = false;
 			// The events are recorded as closures that run in the order they were recorded when the
 			// trace is written (see the destructor). Regions nest per thread: a closure sees the region

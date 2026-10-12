@@ -20,7 +20,8 @@ namespace
 		std::ifstream file(std::getenv("SKEPU_TRACE_FILE"));
 		REQUIRE(file.good());
 		std::map<std::string, int> result;
-		for (auto const& e : json::parse(file))
+		json trace = json::parse(file);
+		for (auto const& e : trace.is_object() ? trace["data"] : trace)
 			if (e["type"] == "allocation")
 				result[e["label"].get<std::string>()]++;
 		return result;

@@ -7,7 +7,7 @@ events, in the order in which they were recorded (a trace is written when the pr
 A trace is a JSON array of events, or an object `{ header, data }` whose `data` is that array (the key can be anywhere in the
 object). The header has what is known about the run as a whole. Source files: a key that is the path of a source file with the hash of its
 contents as value (so that SkeVU can tell whether the source it has is the source that was run). The other sections have names that are not
-paths: `mpi` and `clock` (below). SkeVU reads both forms; a trace that is an array has no header.
+paths: `instances` (below), `mpi` and `clock` (below). SkeVU reads both forms; a trace that is an array has no header.
 
 Times are microseconds since the first event of the program. An event that takes time has `start` and `end`; one that
 happens at a moment has `time`. Every event has the `region` it happened in, if any (the innermost
@@ -57,6 +57,26 @@ A call on OpenCL is waited for, so its interval is its own. It includes the tran
 and `end` belongs to the call; one before `start` was made by something else, such as a host access), and the host
 synchronisation before it does not. A call on the Hybrid backend has the share of the work that the device did (`elements`
 is smaller than the call), and no event for the CPU share.
+
+### Definitions of the instances
+
+The header has a section `instances`: where each skeleton instance that made a call, and its user functions, are defined in the source. The key is
+the `object_id` of the instance (what its calls have), and it is written with the first call of the instance (an instance that makes no call is
+not there; the precompiler gives the lines, see `definition` in the generated struct of a user function):
+
+```json
+"instances": { "1000": {
+    "label": "dotp",
+    "instance": { "file": "/src/a.cpp", "line": 12, "end_line": 13 },
+    "user_functions": [ { "name": "mult", "kind": "function", "file": "/src/a.cpp", "line": 4, "end_line": 6 } ] } }
+```
+
+`instance` is the declaration of a skeleton variable, or the call of an anonymous skeleton (`"anonymous": true`: the same place as its
+calls). `user_functions` are the functions that the skeleton was given, in order (a `MapReduce` has the map and the reduce function): `kind`
+is `function` or `lambda`; a lambda has no name, and its lines are the lambda expression (on the line of the instance when it is
+written in the declaration). The lines are those of the file as it was given to the precompiler (the same as `file` of a call), and `end_line` is the line of the
+end of the declaration or the function. An instance in a library (`skepu-lib`) has its lines in the files of the library. In an MPI program only the first process has the table.
+`tests/codegen/tracing_definitions.cpp` checks it.
 
 ### Parameters
 

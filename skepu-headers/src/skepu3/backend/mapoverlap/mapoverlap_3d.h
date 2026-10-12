@@ -74,6 +74,10 @@ namespace skepu
 				return std::make_tuple(this->m_strides[0], this->m_strides[1], this->m_strides[2]);
 			}
 
+			// Where the instance and its user functions are defined (for the tracer)
+			void traceDefinition(tracing::Definition &definition) const override { definition.template describe<MapOverlapFunc>(); }
+
+
 			void traceParameters(tracing::Parameters &parameters) const override
 			{
 				this->describeOverlap(parameters, 3);

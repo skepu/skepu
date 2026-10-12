@@ -58,6 +58,10 @@ namespace skepu
 				return *this;
 			}
 
+			// Where the instance and its user functions are defined (for the tracer)
+			void traceDefinition(tracing::Definition &definition) const override { definition.template describe<ReduceFunc>(); }
+
+
 			void traceParameters(tracing::Parameters &parameters) const override
 			{
 				if (this->m_mode == ReduceMode::ColWise)     // (the reduction of rows is the default)
@@ -264,6 +268,10 @@ namespace skepu
 
 			static constexpr auto skeletonType = SkeletonType::Reduce2D;
 			static constexpr bool prefers_matrix = true;
+
+			// Where the instance and its user functions are defined (for the tracer)
+			void traceDefinition(tracing::Definition &definition) const override { definition.template describe<ReduceFuncRowWise, ReduceFuncColWise>(); }
+
 
 			Reduce2D(std::string label, CUDARowWise row, CUDAColWise col) : Reduce1D<ReduceFuncRowWise, CUDARowWise, CLKernel>(label, row), m_cuda_colwise_kernel(col) {}
 

@@ -26,7 +26,7 @@ export function parseTrace(text) {
 // The sections of a trace header that are not source files. The rest of the header maps the path of a
 // source file to the hash of its contents (what the tracer writes, so that SkeVU can tell whether the source it
 // has is the source that was run).
-export const RESERVED_HEADER_KEYS = ['mpi', 'clock'];
+export const RESERVED_HEADER_KEYS = ['mpi', 'clock', 'instances'];
 
 /** The source files of a header, as { path: hash }. */
 export function headerSourceFiles(header) {
@@ -34,6 +34,27 @@ export function headerSourceFiles(header) {
     for (const [k, v] of Object.entries(header ?? {}))
         if (!RESERVED_HEADER_KEYS.includes(k) && typeof v === 'string') files[k] = v;
     return files;
+}
+
+/**
+ * The table of the skeleton instances in a header: where each instance and its user functions are defined in the source.
+ * Returns a Map from the object id of the instance (what the calls of the instance have) to
+ *   { label, instance: { file, line, end_line, anonymous? }, user_functions: [{ name, kind, file, line, end_line }] }
+ * (kind is "function" or "lambda", and a lambda has no name).  An entry that does not have the lines is left out: the
+ * table is what the tracer wrote, but a header can come from anywhere.
+ */
+export function headerInstances(header) {
+    const result = new Map();
+    const table = header?.instances;
+    if (!table || typeof table !== 'object') return result;
+    const place = p => p && typeof p.file === 'string' && Number.isInteger(p.line);
+    for (const [id, e] of Object.entries(table)) {
+        if (!e || !place(e.instance) || !Array.isArray(e.user_functions)) continue;
+        const instance = { ...e.instance, end_line: e.instance.end_line ?? e.instance.line };
+        const user_functions = e.user_functions.filter(place).map(f => ({ name: '', kind: 'function', ...f, end_line: f.end_line ?? f.line }));
+        result.set(Number(id), { label: e.label ?? '', instance, user_functions });
+    }
+    return result;
 }
 
 // ── Utility: trace line-range computation ─────────────────────────────────────

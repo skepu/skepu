@@ -69,6 +69,9 @@ namespace skepu
 			// such parameters says what they are now, and the tracer records them with each call
 			virtual void traceParameters(tracing::Parameters &) const {}
 
+			// Where the instance and its user functions are defined in the source (the tracer writes it once for each instance)
+			virtual void traceDefinition(tracing::Definition &) const {}
+
 			// How many devices a call on a GPU backend uses: the devices that the backend specification asks for, if there are that many
 			size_t traceDevices() const
 			{

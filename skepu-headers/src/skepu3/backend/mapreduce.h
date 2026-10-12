@@ -112,6 +112,10 @@ namespace skepu
 				return *this;
 			}
 
+			// Where the instance and its user functions are defined (for the tracer)
+			void traceDefinition(tracing::Definition &definition) const override { definition.template describe<MapFunc, ReduceFunc>(); }
+
+
 			void traceParameters(tracing::Parameters &parameters) const override
 			{
 				int strides[arity + 1];

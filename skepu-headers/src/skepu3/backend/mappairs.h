@@ -59,6 +59,10 @@ namespace skepu
 
 			// =========================      Constructors      ==========================
 
+			// Where the instance and its user functions are defined (for the tracer)
+			void traceDefinition(tracing::Definition &definition) const override { definition.template describe<MapPairsFunc>(); }
+
+
 			MapPairs(std::string label, CUDAKernel kernel): SkeletonBase(label), m_cuda_kernel(kernel)
 			{
 #ifdef SKEPU_OPENCL

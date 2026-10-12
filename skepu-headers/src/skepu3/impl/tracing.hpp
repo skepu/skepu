@@ -410,6 +410,17 @@ namespace skepu
 			const size_t threads = backend ? backend->CPUThreads() : 0, devices = skel_instance->traceDevices();
 			Parameters parameters;
 			skel_instance->traceParameters(parameters);
+			// (an instance says where it is defined with its first call, also when that event is not recorded: the call
+			// of a skeleton that an MPI skeleton makes on its node is not, but the call of the MPI skeleton is)
+			{
+				std::lock_guard<std::mutex> lock(this->m_mutex);
+				if (!this->m_definitions.count(id))
+				{
+					Definition definition;
+					skel_instance->traceDefinition(definition);
+					this->m_definitions[id] = std::move(definition.values);
+				}
+			}
 			// a MapPool is a MapOverlap that pools: say so in the name
 			if (parameters.values.value("pool", false) && pattern.compare(0, 10, "MapOverlap") == 0)
 				pattern.replace(0, 10, "MapPool");
@@ -449,6 +460,18 @@ namespace skepu
 					entry[Schema::Keys::THREADS]   = threads;
 				if (type == Backend::Type::OpenCL || type == Backend::Type::CUDA || type == Backend::Type::Hybrid)
 					entry[Schema::Keys::DEVICES]   = devices;
+			}
+
+			// where the instance and its user functions are defined: once, in the header of the file
+			{
+				std::lock_guard<std::mutex> lock(this->m_mutex);
+				const nlohmann::json &definition = this->m_definitions[id];
+				if (!definition.is_null() && !this->m_header["instances"].contains(std::to_string(id)))
+				{
+					nlohmann::json described = definition;
+					described[Schema::Keys::LABEL] = label;
+					this->m_header["instances"][std::to_string(id)] = std::move(described);
+				}
 			}
 
 			this->m_trace_json.push_back(entry);

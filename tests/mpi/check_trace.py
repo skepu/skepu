@@ -135,6 +135,18 @@ worst = max(spreads) if spreads else 0
 if worst > 20000:
     fail("the collectives end up to %d us apart on the clock of rank 0 (the clocks are not aligned)" % worst)
 
+# where the instances and their user functions are defined: rank 0 has a table with all the instances that made a call, and the other ranks do not
+instances = files[0]["header"].get("instances", {})
+for e in calls0:
+    if e["type"] == "skeleton_call" and str(e["object_id"]) not in instances:
+        fail("the instance %s of a call is not in the table of the instances" % e["label"])
+for e in instances.values():
+    if not e["user_functions"] or not e["instance"].get("line") or not all(f.get("line") for f in e["user_functions"]):
+        fail("the instance %s has no lines" % e["label"])
+for t in files[1:]:
+    if "instances" in t["header"]:
+        fail("a rank that is not the first has a table of the instances")
+
 # the containers are named after their variables (skepu-tool does it for the ones that the program does not name itself),
 # also in the allocation events that came before the name
 names = {e["label"] for e in allocs.values()}

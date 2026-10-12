@@ -64,6 +64,10 @@ namespace skepu
 #endif
 			}
 
+			// Where the instance and its user functions are defined (for the tracer)
+			void traceDefinition(tracing::Definition &definition) const override { definition.template describe<MapFunc>(); }
+
+
 			void traceParameters(tracing::Parameters &parameters) const override
 			{
 				// one stride for each container argument, the outputs first; only if one is not 1 (it skips elements)

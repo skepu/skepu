@@ -294,6 +294,41 @@ bool testAndSet(bool &arg, bool newVal = true)
 
 static std::set<std::string> generatedStructs;
 
+// Where a skeleton instance and one of its user functions are defined in the source, as JSON: the struct of the user function
+// has it for the tracer (see Tracer::call), which writes it once for each instance. The lines are those of the declaration
+// or the function (a lambda: its expression), and a lambda user function or an anonymous instance is called so.
+static std::string jsonQuoted(const std::string &s)
+{
+	std::string result = "\"";
+	for (char c : s)
+	{
+		if (c == '"' || c == '\\')
+			result += '\\';
+		result += c;
+	}
+	return result + "\"";
+}
+
+static std::string sourceRangeJSON(clang::SourceRange range)
+{
+	clang::SourceManager &SM = GlobalRewriter.getSourceMgr();
+	clang::SourceLocation begin = SM.getSpellingLoc(range.getBegin()), end = SM.getSpellingLoc(range.getEnd());
+	return "\"file\":" + jsonQuoted(SM.getFilename(begin).str()) + ",\"line\":" + std::to_string(SM.getSpellingLineNumber(begin))
+		+ ",\"end_line\":" + std::to_string(SM.getSpellingLineNumber(end));
+}
+
+static std::string definitionJSON(UserFunction &UF, VarDecl *d, const InlineInstance *inlineInstance)
+{
+	const bool lambda = UF.rawName.compare(0, 10, "lambda_uf_") == 0;
+	std::string instance = inlineInstance ? sourceRangeJSON(inlineInstance->factoryCall->getSourceRange()) + ",\"anonymous\":true"
+		: d ? sourceRangeJSON(d->getSourceRange()) : "";
+	return "{\"instance\":{" + instance + "},\"function\":{\"name\":" + jsonQuoted(lambda ? "" : UF.rawName)
+		+ ",\"kind\":" + (lambda ? "\"lambda\"" : "\"function\"") + "," + sourceRangeJSON(UF.astDeclNode->getSourceRange()) + "}}";
+}
+
+// (by the name of the struct of the user function of the instance: a user function that another one refers to has its struct made first)
+static std::map<std::string, std::string> definitionsByStruct;
+
 void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clang::SourceLocation loc)
 {
 	std::set<std::string> usingDecls;
@@ -315,6 +350,8 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 	std::stringstream SSSkepuFunctorStruct;
 	SSSkepuFunctorStruct << "\nstruct " << FunctorName;
 	SSSkepuFunctorStruct << "\n{\n";
+	if (definitionsByStruct.count(FunctorName))
+		SSSkepuFunctorStruct << "static constexpr const char *definition = R\"SKEPUDEF(" << definitionsByStruct[FunctorName] << ")SKEPUDEF\";\n";
 
 	// Code generation specific to templated user functions
 	if (UF.fromTemplate)
@@ -717,6 +754,8 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		if (GlobalRewriter.RemoveText(d->getSourceRange()))
 			SkePUAbort("Code gen target source loc not rewritable: instance" + InstanceName);
 
+	for (UserFunction* UF : FuncArgs)
+		definitionsByStruct[SkePU_UF_Prefix + skeletonID + InstanceName + "_" + UF->uniqueName] = definitionJSON(*UF, d, inlineInstance);
 	for (UserFunction* UF : FuncArgs)
 	{
 		generateUserFunctionStruct(*UF, skeletonID + InstanceName, loc);

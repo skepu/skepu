@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { parseTrace, eventsArrayStart, computeTraceLineRanges, headerSourceFiles } from '../../script/backend/trace.js';
+import { parseTrace, eventsArrayStart, computeTraceLineRanges, headerSourceFiles, headerInstances } from '../../script/backend/trace.js';
 import { summarize } from '../../script/backend/analysis.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -152,5 +152,33 @@ describe('the examples', () => {
             await globalThis.self.onmessage({ data: { id: gid, type: 'graph' } });
             expect(replies[gid].nodes.length).toBeGreaterThan(0);
         }
+    });
+});
+
+describe('the table of the instances in the header', () => {
+    const table = {
+        '7': { label: 'dotp', instance: { file: '/a.cpp', line: 12, end_line: 13 }, user_functions: [
+            { name: 'mult', kind: 'function', file: '/a.cpp', line: 4, end_line: 6 }, { name: '', kind: 'lambda', file: '/a.cpp', line: 12 }] },
+        '8': { label: 'Map@a.cpp:30', instance: { file: '/a.cpp', line: 30, anonymous: true }, user_functions: [] },
+        '9': { label: 'broken', instance: { file: '/a.cpp' }, user_functions: [] },
+    };
+
+    it('is a Map by the id of the instance, with the lines of the instance and of the functions', () => {
+        const instances = headerInstances({ '/a.cpp': 'hash', instances: table });
+        expect([...instances.keys()]).toEqual([7, 8]);   // (the entry without lines is left out)
+        expect(instances.get(7).instance).toEqual({ file: '/a.cpp', line: 12, end_line: 13 });
+        expect(instances.get(7).user_functions.map(f => [f.name, f.kind, f.line, f.end_line])).toEqual([['mult', 'function', 4, 6], ['', 'lambda', 12, 12]]);
+        expect(instances.get(8).instance).toEqual({ file: '/a.cpp', line: 30, end_line: 30, anonymous: true });
+    });
+
+    it('is empty without a table, and is not a source file', () => {
+        expect(headerInstances(null).size).toBe(0);
+        expect(headerInstances({ mpi: {} }).size).toBe(0);
+        expect(headerSourceFiles({ '/a.cpp': 'hash', instances: table })).toEqual({ '/a.cpp': 'hash' });
+    });
+
+    it('goes through parseTrace as it is', () => {
+        const t = parseTrace(JSON.stringify({ header: { instances: table }, data: events }, null, 4));
+        expect(headerInstances(t.header).get(7).label).toBe('dotp');
     });
 });

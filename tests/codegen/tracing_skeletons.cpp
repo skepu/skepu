@@ -34,7 +34,8 @@ namespace
 		SKEPU_TRACE_FLUSH();
 		std::ifstream file(std::getenv("SKEPU_TRACE_FILE"));
 		REQUIRE(file.good());
-		return json::parse(file);
+		json trace = json::parse(file);
+		return trace.is_object() ? trace["data"] : trace;    // (with a header, the events are the data)
 	}
 
 	// The container labels of a list of object ids
