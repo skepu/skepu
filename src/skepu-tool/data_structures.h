@@ -244,6 +244,8 @@ public:
 	// the places in the body where a user type is named (by a name that needs a qualifier or an alias, see UserFunctionVisitor)
 	std::vector<std::pair<clang::SourceRange, UserType*>> UTReferences{};
 	std::set<UserType*> ReferencedUTs{};
+	// the aliases (typedef, using) that the body names and that are declared outside the function, with the OpenCL type of each
+	std::map<std::string, std::string> TypeAliases{};
 
 
 	std::vector<clang::CXXOperatorCallExpr*> containerSubscripts{}, containerCalls{};

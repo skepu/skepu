@@ -17,11 +17,9 @@ skepu_add_test_case_sequential(blas)
 skepu_add_test_case_sequential(complex)
 skepu_add_test_case_cpu(complex)
 skepu_add_test_case_openmp(complex)
-# OpenCL (also hybrid): the generated kernel does not compile ("returning '_Complex double' from a function with incompatible result
-# type 'skepu_complex_float'").
-#skepu_add_test_case_opencl(complex)
+skepu_add_test_case_opencl(complex)
 skepu_add_test_case_cuda(complex)
-#skepu_add_test_case_hybrid_opencl(complex)
+skepu_add_test_case_hybrid_opencl(complex)
 skepu_add_test_case_hybrid_cuda(complex)
 
 # ------------------------------------------------

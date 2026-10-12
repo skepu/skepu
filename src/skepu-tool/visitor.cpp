@@ -523,8 +523,13 @@ bool SkePUASTVisitor::VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr *c)
 					std::string file_name = this->Context->getSourceManager().getFilename(c->getSourceRange().getBegin()).str();
 					unsigned line_nr = this->Context->getSourceManager().getSpellingLineNumber(c->getSourceRange().getBegin());
 
+					// (the instance as the call names it, with its qualifier if it is in a namespace)
+					std::string written_name = clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(arg->getSourceRange()), this->Context->getSourceManager(), this->Context->getLangOpts()).str();
+					if (written_name.empty() || written_name.find_first_of("()[]{} ,") != std::string::npos)
+						written_name = instance_name;
+
 					std::stringstream ss;
-					ss << "(" << instance_name << ".setSourceLoc(\"" << file_name << "\", " << line_nr << ") , ";
+					ss << "(" << written_name << ".setSourceLoc(\"" << file_name << "\", " << line_nr << ") , ";
 
 					GlobalRewriter.InsertText(c->getSourceRange().getBegin(), ss.str());
 					GlobalRewriter.InsertTextBefore(c->getSourceRange().getEnd(), ")");

@@ -955,7 +955,16 @@ std::string generateUserFunctionCode_CL(UserFunction &Func, std::set<UserFunctio
 		SSFuncSource << Func.returnTypeNameOpenCL();
 	SSFuncSource << " " << Func.uniqueName << "(" << SSFuncParamList.str() << ")\n{";
 	for (UserFunction::TemplateArgument &arg : Func.templateArguments)
-		SSFuncSource << (arg.valueType.empty() ? "typedef " + arg.rawTypeName + " " + arg.paramName + ";\n" : arg.alias(false));
+		SSFuncSource << (arg.valueType.empty() ? "typedef " + (arg.resolvedTypeName.find("skepu::complex") != std::string::npos ? std::string("skepu_complex_float") /* todo fix templated type */ : arg.rawTypeName) + " " + arg.paramName + ";\n" : arg.alias(false));
+
+	for (auto &alias : Func.TypeAliases)
+	{
+		bool isTemplateArgument = false;
+		for (UserFunction::TemplateArgument &arg : Func.templateArguments)
+			isTemplateArgument = isTemplateArgument || arg.paramName == alias.first;
+		if (!isTemplateArgument)
+			SSFuncSource << "typedef " << alias.second << " " << alias.first << ";\n";
+	}
 
 	SSFuncSource << transformedSource << "\n}\n\n";
     if (UserFunction::RegionParam *param = Func.regionParam)

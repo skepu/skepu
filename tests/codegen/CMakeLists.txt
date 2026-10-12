@@ -118,14 +118,12 @@ skepu_add_test_case_hybrid_opencl(lambda)
 #   Namespace in skeleton instances
 # ------------------------------------------------
 
-# TEST-ERROR: skel::instance3 is not generated in the precompiled code
-
-# skepu_add_test_case_cpu(namespace)
-# skepu_add_test_case_openmp(namespace)
-# skepu_add_test_case_opencl(namespace)
-# skepu_add_test_case_cuda(namespace)
-# skepu_add_test_case_hybrid_opencl(namespace)
-# skepu_add_test_case_hybrid_cuda(namespace)
+skepu_add_test_case_cpu(namespace)
+skepu_add_test_case_openmp(namespace)
+skepu_add_test_case_opencl(namespace)
+#skepu_add_test_case_cuda(namespace)
+skepu_add_test_case_hybrid_opencl(namespace)
+#skepu_add_test_case_hybrid_cuda(namespace)
 
 # ------------------------------------------------
 #   Object-oriented SkePU usage

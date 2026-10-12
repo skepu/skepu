@@ -9,12 +9,18 @@ using namespace clang;
 
 const char *MapPairsReduceKernelTemplate_CL = R"~~~(
 #define skepu_w2 skepu_Hsize
+// One accumulator and one part of the shared memory for each output of the user function (one, if it does not return multiple values)
+#define SKEPU_REDUCE_STEP(OFFSET) \
+	if (skepu_tid < (OFFSET) && skepu_tid + (OFFSET) < skepu_minorSize) \
+		for (size_t skepu_k = 0; skepu_k < {{OUTPUT_COUNT}}; ++skepu_k) \
+			skepu_sdata[skepu_k * skepu_blockSize + skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_k * skepu_blockSize + skepu_tid], skepu_sdata[skepu_k * skepu_blockSize + skepu_tid + (OFFSET)]); \
+	barrier(CLK_LOCAL_MEM_FENCE);
 __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_majorSize, size_t skepu_minorSize, size_t skepu_base, int skepu_transposed, size_t skepu_row_origin, __local {{REDUCE_RESULT_TYPE}}* skepu_sdata)
 {
 	size_t skepu_blockSize = get_local_size(0);
 	size_t skepu_tid = get_local_id(0);
 	{{CONTAINER_PROXIES}}
-	{{REDUCE_RESULT_TYPE}} skepu_result;
+	{{REDUCE_RESULT_TYPE}} skepu_result[{{OUTPUT_COUNT}}];
 	
 	size_t skepu_thread_major = get_group_id(0);
 	size_t skepu_thread_minor = get_local_id(0);
@@ -29,11 +35,10 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_maj
 		{{INDEX_INITIALIZER}}
 		{{CONTAINER_PROXIE_INNER}}
 #if !{{USE_MULTIRETURN}}
-		skepu_result = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
+		skepu_result[0] = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
 #else
-		size_t skepu_i = skepu_tid;
 		{{MULTI_TYPE}} skepu_out_temp = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
-		{{OUTPUT_ASSIGN}}
+		{{OUTPUT_FIRST}}
 #endif
 		skepu_thread_minor += skepu_blockSize;
 		if (!skepu_transposed)
@@ -48,11 +53,10 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_maj
 		{{CONTAINER_PROXIE_INNER}}
 #if !{{USE_MULTIRETURN}}
 		{{MAPPAIRS_RESULT_TYPE}} tempMap = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
-		skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, tempMap);
+		skepu_result[0] = {{FUNCTION_NAME_REDUCE}}(skepu_result[0], tempMap);
 #else
-		size_t skepu_i = skepu_tid;
 		{{MULTI_TYPE}} skepu_out_temp = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
-		{{OUTPUT_ASSIGN}}
+		{{OUTPUT_ACCUMULATE}}
 #endif
 		skepu_thread_minor += skepu_blockSize;
 		if (!skepu_transposed)
@@ -61,28 +65,30 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_n, size_t skepu_maj
 			skepu_lookup_V += skepu_blockSize;
 	}
 	
-	skepu_sdata[skepu_tid] = skepu_result;
+	for (size_t skepu_k = 0; skepu_k < {{OUTPUT_COUNT}}; ++skepu_k)
+		skepu_sdata[skepu_k * skepu_blockSize + skepu_tid] = skepu_result[skepu_k];
 	
 	barrier(CLK_LOCAL_MEM_FENCE);
 	
-	if (skepu_blockSize >= 1024) { if (skepu_tid < 512 && skepu_tid + 512 < skepu_minorSize) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid + 512]); } barrier(CLK_LOCAL_MEM_FENCE); }
-	if (skepu_blockSize >=  512) { if (skepu_tid < 256 && skepu_tid + 256 < skepu_minorSize) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid + 256]); } barrier(CLK_LOCAL_MEM_FENCE); }
-	if (skepu_blockSize >=  256) { if (skepu_tid < 128 && skepu_tid + 128 < skepu_minorSize) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid + 128]); } barrier(CLK_LOCAL_MEM_FENCE); }
-	if (skepu_blockSize >=  128) { if (skepu_tid <  64 && skepu_tid +  64 < skepu_minorSize) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +  64]); } barrier(CLK_LOCAL_MEM_FENCE); }
-	if (skepu_blockSize >=   64) { if (skepu_tid <  32 && skepu_tid +  32 < skepu_minorSize) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +  32]); } barrier(CLK_LOCAL_MEM_FENCE); }
-	if (skepu_blockSize >=   32) { if (skepu_tid <  16 && skepu_tid +  16 < skepu_minorSize) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +  16]); } barrier(CLK_LOCAL_MEM_FENCE); }
-	if (skepu_blockSize >=   16) { if (skepu_tid <   8 && skepu_tid +   8 < skepu_minorSize) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +   8]); } barrier(CLK_LOCAL_MEM_FENCE); }
-	if (skepu_blockSize >=    8) { if (skepu_tid <   4 && skepu_tid +   4 < skepu_minorSize) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +   4]); } barrier(CLK_LOCAL_MEM_FENCE); }
-	if (skepu_blockSize >=    4) { if (skepu_tid <   2 && skepu_tid +   2 < skepu_minorSize) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +   2]); } barrier(CLK_LOCAL_MEM_FENCE); }
-	if (skepu_blockSize >=    2) { if (skepu_tid <   1 && skepu_tid +   1 < skepu_minorSize) { skepu_sdata[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(skepu_sdata[skepu_tid], skepu_sdata[skepu_tid +   1]); } barrier(CLK_LOCAL_MEM_FENCE); }
+	if (skepu_blockSize >= 1024) { SKEPU_REDUCE_STEP(512) }
+	if (skepu_blockSize >=  512) { SKEPU_REDUCE_STEP(256) }
+	if (skepu_blockSize >=  256) { SKEPU_REDUCE_STEP(128) }
+	if (skepu_blockSize >=  128) { SKEPU_REDUCE_STEP( 64) }
+	if (skepu_blockSize >=   64) { SKEPU_REDUCE_STEP( 32) }
+	if (skepu_blockSize >=   32) { SKEPU_REDUCE_STEP( 16) }
+	if (skepu_blockSize >=   16) { SKEPU_REDUCE_STEP(  8) }
+	if (skepu_blockSize >=    8) { SKEPU_REDUCE_STEP(  4) }
+	if (skepu_blockSize >=    4) { SKEPU_REDUCE_STEP(  2) }
+	if (skepu_blockSize >=    2) { SKEPU_REDUCE_STEP(  1) }
 	
-
-#if !{{USE_MULTIRETURN}}
 	if (skepu_tid == 0)
 	{
-		skepu_output[skepu_thread_major] = skepu_sdata[skepu_tid];
-	}
+#if !{{USE_MULTIRETURN}}
+		skepu_output[skepu_thread_major] = skepu_sdata[0];
+#else
+		{{OUTPUT_STORE}}
 #endif
+	}
 }
 )~~~";
 
@@ -155,7 +161,16 @@ std::string createMapPairsReduceKernelProgram_CL(SkeletonInstance &instance, Use
 	}
 	IndexCodeGen indexInfo = indexInitHelper_CL(mapPairsFunc);
 	bool first = !indexInfo.hasIndex;
-	std::string multiOutputAssign = handleOutputs_CL(mapPairsFunc, SSHostKernelParamList, SSKernelParamList, SSKernelArgs);
+	// (the outputs of a user function that returns multiple values are reduced one by one with the reduction function)
+	handleOutputs_CL(mapPairsFunc, SSHostKernelParamList, SSKernelParamList, SSKernelArgs);
+	const size_t outputCount = std::max<size_t>(1, mapPairsFunc.multipleReturnTypes.size());
+	std::stringstream SSOutputFirst, SSOutputAccumulate, SSOutputStore;
+	for (size_t k = 0; k < mapPairsFunc.multipleReturnTypes.size(); ++k)
+	{
+		SSOutputFirst << "skepu_result[" << k << "] = skepu_out_temp.e" << k << ";\n";
+		SSOutputAccumulate << "skepu_result[" << k << "] = " << reduceFunc.uniqueName << "(skepu_result[" << k << "], skepu_out_temp.e" << k << ");\n";
+		SSOutputStore << "skepu_output_" << k << "[skepu_thread_major] = skepu_sdata[" << k << " * skepu_blockSize];\n";
+	}
 	handleRandomParam_CL(mapPairsFunc, sourceStream, SSMapPairsFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
 	
 	size_t ctr = 0;
@@ -208,7 +223,10 @@ std::string createMapPairsReduceKernelProgram_CL(SkeletonInstance &instance, Use
 		{"{{CONTAINER_PROXIE_INNER}}",  argsInfo.proxyInitializerInner},
 		{"{{MULTI_TYPE}}",              mapPairsFunc.multiReturnTypeNameGPU()},
 		{"{{USE_MULTIRETURN}}",         (mapPairsFunc.multipleReturnTypes.size() > 0) ? "1" : "0"},
-		{"{{OUTPUT_ASSIGN}}",           multiOutputAssign},
+		{"{{OUTPUT_COUNT}}",            std::to_string(outputCount)},
+		{"{{OUTPUT_FIRST}}",            SSOutputFirst.str()},
+		{"{{OUTPUT_ACCUMULATE}}",       SSOutputAccumulate.str()},
+		{"{{OUTPUT_STORE}}",            SSOutputStore.str()},
 		
 		{"{{MAPPAIRS_RESULT_TYPE}}",    mapPairsFunc.returnTypeNameOpenCL()},
 		{"{{REDUCE_RESULT_TYPE}}",      reduceFunc.returnTypeNameOpenCL()},

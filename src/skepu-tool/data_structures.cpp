@@ -122,6 +122,31 @@ public:
 
 	bool VisitTypeLoc(TypeLoc tl)
 	{
+		// An alias (a typedef or a using) that the body names but that is declared outside the function (not in a system header): the
+		// backends copy the body to another scope, where the alias does not exist
+		if (auto ttl = tl.getAs<TypedefTypeLoc>())
+			if (function && function->hasBody())
+			{
+				const TypedefNameDecl *alias = ttl.getDecl();
+				const SourceManager &SM = alias->getASTContext().getSourceManager();
+				const SourceRange body = function->getBody()->getSourceRange();
+				const bool inBody = !SM.isBeforeInTranslationUnit(tl.getBeginLoc(), body.getBegin()) && !SM.isBeforeInTranslationUnit(body.getEnd(), tl.getBeginLoc());
+				const bool declaredInBody = !SM.isBeforeInTranslationUnit(alias->getLocation(), body.getBegin()) && !SM.isBeforeInTranslationUnit(body.getEnd(), alias->getLocation());
+				if (inBody && !declaredInBody && !SM.isInSystemHeader(alias->getLocation()) && !tl.getBeginLoc().isMacroID())
+				{
+					const QualType underlying = alias->getUnderlyingType().getCanonicalType();
+					std::string type = underlying.getAsString();
+					if (type.find("skepu::complex") != std::string::npos)
+						type = "skepu_complex_float"; // todo fix templated type (as in Param::typeNameOpenCL)
+					else if (underlying->getAs<RecordType>())
+					{
+						replaceTextInString(type, "struct ", "");
+						type = transformToCXXIdentifier(type);
+					}
+					TypeAliases[alias->getNameAsString()] = type;
+				}
+			}
+
 		// The name of a class or struct as written, with its qualifier and keyword, if there are any
 		auto rtl = tl.getAs<RecordTypeLoc>();
 		if (!rtl || tl.getBeginLoc().isMacroID() || tl.getEndLoc().isMacroID())
@@ -153,6 +178,10 @@ public:
 		return true;
 	}
 
+
+	// The function that is visited, and the aliases of its body that are declared outside it, with the OpenCL type they stand for
+	const FunctionDecl *function = nullptr;
+	std::map<std::string, std::string> TypeAliases{};
 
 	std::vector<std::pair<const CallExpr*, UserFunction*>> UFReferences{};
 	std::set<UserFunction*> ReferencedUFs{};
@@ -898,7 +927,9 @@ UserFunction::UserFunction(clang::FunctionDecl *f)
 
 	// Referenced functions and types
 	UserFunctionVisitor UFVisitor;
+	UFVisitor.function = this->astDeclNode;
 	UFVisitor.TraverseDecl(this->astDeclNode);
+	this->TypeAliases = UFVisitor.TypeAliases;
 
 	this->ReferencedUFs = UFVisitor.ReferencedUFs;
 	this->UFReferences = UFVisitor.UFReferences;
