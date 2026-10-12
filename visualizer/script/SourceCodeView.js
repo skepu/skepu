@@ -23,7 +23,7 @@
 //   src.clearBadges();
 //   src.placeBadges(badgeNodes);
 
-import { collectBadges } from './badges.js';
+import { collectBadges, definitionMarks, sitesAt } from './badges.js';
 import { isDarkTheme } from './appearance.js';
 
 'use strict';
@@ -57,6 +57,7 @@ export class SourceCodeView {
     this._onBadgeClick    = options.onBadgeClick    || null;
 
     this._codePaths       = options.codePaths !== undefined ? options.codePaths : true;
+    this._pinDefinitions  = !!options.pinDefinitions;   // the marks of every definition, not only those of the selected call
     this._traceLineRanges = [];
     this._rankTraces      = [];     // the other trace files of an MPI program: [{ rank, name, text, ranges }]
     this._detailRank      = null;   // the rank whose trace file is the main trace (the others are in _rankTraces)
@@ -64,6 +65,8 @@ export class SourceCodeView {
     this._tracePanes      = {};     // rank → the pane of its trace file (the one that is not shown is out of the DOM)
     this._lastBadgeNodes  = null;
     this._badgeCycleIndex = {};
+    this._definitionSites = [];     // where the instances and user functions of the calls are defined (collectBadges: sites)
+    this._siteCycle       = {};     // site key -> which of its calls the last click on its lines selected
     this._badgeNodeMap    = new Map();  // nodeId → its gutter elements (one per place it has a badge); rebuilt by _placeBadgesInDOM
 
     // Provider attachment (set by attachProvider).
@@ -80,7 +83,13 @@ export class SourceCodeView {
     if (this._tabPanesEl) {
       this._tabPanesEl.addEventListener('click', function(e) {
         var badge = e.target.closest('[data-badge-entries]');
-        if (!badge) return;
+        if (!badge) {
+          // (the line number of a line of a definition: select the calls that use it)
+          var cell = e.target.closest('.hljs-ln-n.def-site');
+          var pane = cell && cell.closest('.cpp-tab-pane');
+          if (cell && pane && pane.dataset.filename) self.siteClick(pane.dataset.filename, +cell.dataset.lineNumber);
+          return;
+        }
         try {
           self.badgeClick(JSON.parse(badge.dataset.badgeEntries));
         } catch (err) {
@@ -112,6 +121,7 @@ export class SourceCodeView {
     var self = this;
     this._boundFetchStart = function() {
       self.clearHighlight();
+      self.clearDefinitions();
       self.clearBadges();
     };
     this._boundRenderEnd = function(stats) {
@@ -135,6 +145,7 @@ export class SourceCodeView {
 
     this._boundOnClear = function() {
       self.clearHighlight();
+      self.clearDefinitions();
     };
 
     provider.on('fetchstart', this._boundFetchStart);
@@ -723,12 +734,120 @@ export class SourceCodeView {
   placeBadges(badgeNodes) {
     var c = collectBadges(badgeNodes, this._viewRanges());
     var badges = c.badges, traceBadges = c.traceBadges, orderMap = c.orders;
+    this._definitionSites = c.sites;
 
     var self = this;
     setTimeout(function() {
       self.resetBadgeCycleIndex();
       self._placeBadgesInDOM(badges, traceBadges, orderMap);
+      self._markSites();
+      self._markPinned();
     }, SourceCodeView.BADGE_PLACEMENT_DELAY_MS);
+  }
+
+  // ── Definitions of the instances and user functions ──────────────────────────
+
+  /**
+   * The line number cells of the lines that are a definition of a call (an instance, a user function) are marked: a click on one
+   * selects the calls that use it (siteClick).
+   */
+  _markSites() {
+    var self = this;
+    this._tabPanesEl.querySelectorAll('.hljs-ln-n.def-site').forEach(function(el) {
+      el.classList.remove('def-site');
+      el.removeAttribute('title');
+    });
+    this._definitionSites.forEach(function(site) {
+      var pane = self._paneForFile(site.file);
+      if (!pane) return;
+      for (var n = site.line; n <= site.end_line; n++) {
+        var cell = pane.querySelector('.hljs-ln-n[data-line-number="' + n + '"]');
+        if (!cell) continue;
+        cell.classList.add('def-site');
+        cell.title = site.role === 'instance' ? 'Select the calls of this skeleton instance' : 'Select the calls that use this user function';
+      }
+    });
+  }
+
+  /** Show the marks of all the definitions (the instances and the user functions of all the calls), or only those of the selected call. */
+  setPinDefinitions(enabled) {
+    this._pinDefinitions = !!enabled;
+    this._markPinned();
+  }
+
+  _markPinned() {
+    var self = this;
+    this._tabPanesEl.querySelectorAll('.def-pin-instance, .def-pin-function').forEach(function(el) {
+      el.classList.remove('def-pin-instance');
+      el.classList.remove('def-pin-function');
+    });
+    if (!this._pinDefinitions) return;
+    this._definitionSites.forEach(function(site) {
+      var pane = self._paneForFile(site.file);
+      if (!pane) return;
+      pane.querySelectorAll('.hljs-ln-line[data-line-number]').forEach(function(el) {
+        var n = +el.dataset.lineNumber;
+        if (n >= site.line && n <= site.end_line) el.classList.add(site.role === 'instance' ? 'def-pin-instance' : 'def-pin-function');
+      });
+    });
+  }
+
+  _paneForFile(filePath) {
+    var basename = filePath ? String(filePath).split('/').pop().split('\\').pop() : '';
+    var found = null;
+    this._tabPanesEl.querySelectorAll('.cpp-tab-pane').forEach(function(pane) {
+      if (pane.dataset.filename === basename) found = pane;
+    });
+    return found;
+  }
+
+  /**
+   * A click on the line number of a line that defines an instance or a user function: select the calls that use it (all of them
+   * are highlighted, and the click on the same line again goes on to the next of them).
+   */
+  siteClick(file, line) {
+    var sites = sitesAt(this._definitionSites, file, line);
+    var ids = [];
+    sites.forEach(function(s) { s.ids.forEach(function(id) { if (ids.indexOf(id) < 0) ids.push(id); }); });
+    if (!ids.length) return;
+    var key = file + ':' + line;
+    this._siteCycle[key] = key in this._siteCycle ? (this._siteCycle[key] + 1) % ids.length : 0;
+    var focusId = ids[this._siteCycle[key]];
+    // (what was clicked is the selection, with more opacity than the definitions of the call that get shaded)
+    var lines = [];
+    sites.forEach(function(s) { for (var n = s.line; n <= s.end_line; n++) if (lines.indexOf(n) < 0) lines.push(n); });
+    this.highlightLines(lines, { pane: this._paneForFile(file), scroll: false });
+    if (this._attachedProvider)
+      this._attachedProvider._emit('select', { nodeId: focusId, source: 'code-listing', focusId: focusId, allIds: ids });
+  }
+
+  /**
+   * Mark the lines where the instance and the user functions of the selected call are defined (the lines of the instance, the
+   * lines of the functions), in the panes of their files, and the line of the call itself (`call`: { file, line }) with them, so that
+   * the three are shaded together; null for no marks. `definitions` is that of the info data of the call.
+   */
+  showDefinitions(definitions, call) {
+    var self = this;
+    this.clearDefinitions();
+    var marks = definitionMarks(definitions);
+    if (marks.length && call && call.file && Number.isInteger(call.line) && call.line > 0)
+      marks.push({ role: 'call', file: call.file, from: call.line, to: call.line });
+    marks.forEach(function(mark) {
+      var pane = self._paneForFile(mark.file);
+      if (!pane) return;
+      pane.querySelectorAll('.hljs-ln-line[data-line-number]').forEach(function(el) {
+        var n = +el.dataset.lineNumber;
+        if (n >= mark.from && n <= mark.to) el.classList.add(mark.role === 'instance' ? 'def-instance' : mark.role === 'call' ? 'def-call' : 'def-function');
+      });
+    });
+  }
+
+  clearDefinitions() {
+    this._tabPanesEl.querySelectorAll('.def-instance, .def-function, .def-call').forEach(function(el) {
+      el.classList.remove('def-instance');
+      el.classList.remove('def-function');
+      el.classList.remove('def-call');
+    });
   }
 
   /**

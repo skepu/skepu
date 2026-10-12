@@ -104,6 +104,7 @@
               <button id="menu-check-timeline" class="menu-check" onclick="toggleGanttPane();menuClose()"><span class="menu-icon"></span>Timeline<span class="menu-key">G</span></button>
               <button id="menu-check-source"     class="menu-check" onclick="toggleSourcePane();menuClose()"><span class="menu-icon"></span>Source Panel<span class="menu-key">S</span></button>
               <button id="menu-check-code-paths" class="menu-check" onclick="toggleCodePaths();menuClose()"><span class="menu-icon"></span>Code Paths</button>
+              <button id="menu-check-definitions" class="menu-check" onclick="toggleDefinitions();menuClose()" title="Mark where all the skeleton instances and user functions are defined"><span class="menu-icon"></span>Definitions</button>
               <div class="menu-sep"></div>
               <div class="menu-form-row" onclick="event.stopPropagation()" style="padding:0.35em 0.75em">
                 <label style="font-size:0.85em;color:#666">Timeline Scale: <span id="gantt-scale-label">1×</span></label>
@@ -312,6 +313,8 @@
             if (sb) sb.querySelector('.menu-icon').textContent = State._sourcePaneOpen ? '✓' : '';
             var cp = document.getElementById('menu-check-code-paths');
             if (cp) cp.querySelector('.menu-icon').textContent = State._codePaths ? '✓' : '';
+            var dfb = document.getElementById('menu-check-definitions');
+            if (dfb) dfb.querySelector('.menu-icon').textContent = State._pinDefinitions ? '✓' : '';
             var db = document.getElementById('menu-check-dark');
             if (db) db.querySelector('.menu-icon').textContent = State._darkMode ? '✓' : '';
             // hljs theme icons are owned by SourceCodeView (window.setHljsTheme /
@@ -357,6 +360,7 @@
 
               <div id="welcome-examples-section" style="display:none">
                 <h3>Load a built-in example</h3>
+                <div id="welcome-language" class="welcome-language" role="tablist" aria-label="Language of the examples" style="display:none"></div>
                 <div id="welcome-examples-list"></div>
               </div>
 

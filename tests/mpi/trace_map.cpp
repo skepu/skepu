@@ -99,6 +99,11 @@ int main()
 	prefix(scanned, a);
 	SKEPU_TRACE_SNAPSHOT(scanned); // (a snapshot of a distributed container: gathered, and written by the first process)
 	SKEPU_TRACE_SNAPSHOT(m);
+	// (tensors too: the heat diffusion example snapshots a container of any dimension)
+	skepu::Tensor3<int> volume(6, 2, 3, "volume", 5);
+	skepu::Tensor4<int> hypervolume(5, 2, 2, 3, "hypervolume", 6);
+	SKEPU_TRACE_SNAPSHOT(volume);
+	SKEPU_TRACE_SNAPSHOT(hypervolume);
 	// randomize is an external call of the library, as in a single node
 	skepu::Vector<int> rnd(30, "rnd");
 	rnd.randomize(0, 9);

@@ -225,7 +225,7 @@ export class TimelineView {
         ? parseFloat(firstEl.dataset.centerX)
         : parseFloat(firstEl.getAttribute('x') || 0) + parseFloat(firstEl.getAttribute('width') || 0) / 2;
       var dur = this._getSimDragging() ? 0 : this._animScrollMs;
-      $(container).stop(true).animate({ scrollLeft: Math.max(0, cx - container.clientWidth / 2) }, dur);
+      container.scrollTo({ left: Math.max(0, cx - container.clientWidth / 2), behavior: dur > 0 ? 'smooth' : 'auto' });
     }
   }
 
@@ -251,7 +251,7 @@ export class TimelineView {
       ? parseFloat(target.dataset.centerX)
       : parseFloat(target.getAttribute('x') || 0) + parseFloat(target.getAttribute('width') || 0) / 2;
     var dur = this._getSimDragging() ? 0 : this._animScrollMs;
-    $(container).stop(true).animate({ scrollLeft: Math.max(0, cx - container.clientWidth / 2) }, dur);
+    container.scrollTo({ left: Math.max(0, cx - container.clientWidth / 2), behavior: dur > 0 ? 'smooth' : 'auto' });
   }
 
   clearSelection() {

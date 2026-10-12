@@ -164,6 +164,13 @@ export function toggleCodePaths() {
   saveSettings();
 }
 
+export function toggleDefinitions() {
+  State._pinDefinitions = !State._pinDefinitions;
+  if (State.sourceView) State.sourceView.setPinDefinitions(State._pinDefinitions);
+  if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
+  saveSettings();
+}
+
 export function toggleLegend()
 {
   State._legendOpen = !State._legendOpen;
@@ -398,6 +405,7 @@ window.openSourcePane              = openSourcePane;
 window.closeSourcePane             = closeSourcePane;
 window.toggleSourcePane            = toggleSourcePane;
 window.toggleCodePaths             = toggleCodePaths;
+window.toggleDefinitions           = toggleDefinitions;
 window.toggleLegend                = toggleLegend;
 window.closePopup                  = closePopup;
 window.showAlert                   = showAlert;

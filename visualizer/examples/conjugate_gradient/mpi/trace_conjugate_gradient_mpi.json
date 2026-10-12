@@ -4,33 +4,33 @@
             "label": "b",
             "line": 0,
             "object_id": 1000,
-            "time": 4719,
+            "time": 3725,
             "type": "allocation"
         },
         {
             "label": "R",
             "line": 0,
             "object_id": 1003,
-            "time": 4723,
+            "time": 3748,
             "type": "allocation"
         },
         {
             "label": "A",
             "line": 0,
             "object_id": 1006,
-            "time": 4729,
+            "time": 3759,
             "type": "allocation"
         },
         {
             "label": "x",
             "line": 0,
             "object_id": 1009,
-            "time": 4734,
+            "time": 3769,
             "type": "allocation"
         },
         {
             "elwise_inputs": [],
-            "end": 4737,
+            "end": 3772,
             "file": "",
             "label": "randomize",
             "line": 0,
@@ -45,8 +45,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 49753133207228844,
-                "work_end": 4737,
-                "work_start": 4735
+                "work_end": 3772,
+                "work_start": 3770
             },
             "outputs": [
                 1000
@@ -54,12 +54,12 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 1,
-            "start": 4735,
+            "start": 3770,
             "type": "external"
         },
         {
             "elwise_inputs": [],
-            "end": 5088,
+            "end": 4171,
             "file": "",
             "label": "randomize",
             "line": 0,
@@ -74,8 +74,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 49753133207228844,
-                "work_end": 5087,
-                "work_start": 4749
+                "work_end": 4171,
+                "work_start": 3785
             },
             "outputs": [
                 1003
@@ -83,14 +83,14 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 2,
-            "start": 4749,
+            "start": 3785,
             "type": "external"
         },
         {
             "bytes_received": 196608,
             "bytes_sent": 196608,
             "comm_seq": 1,
-            "end": 10521,
+            "end": 9209,
             "object_ids": [
                 1003
             ],
@@ -99,7 +99,7 @@
             "ranks": 4,
             "reason": "random access argument: the container is gathered",
             "seq": 3,
-            "start": 5104,
+            "start": 4184,
             "type": "communication"
         },
         {
@@ -108,8 +108,8 @@
                 65536
             ],
             "elwise_inputs": [],
-            "end": 10631,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/conjugate_gradient.cpp",
+            "end": 9327,
+            "file": "/Users/august/Claude/skepu-alpha/examples/conjugate_gradient.cpp",
             "label": "make_spd",
             "line": 93,
             "mpi": {
@@ -117,14 +117,14 @@
                     "bytes_received": 196608,
                     "bytes_sent": 196608,
                     "collectives": 1,
-                    "time_us": 5417
+                    "time_us": 5025
                 },
                 "local_elements": 16384,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 9462874062100644050,
-                "work_end": 10624,
-                "work_start": 10529
+                "work_end": 9323,
+                "work_start": 9217
             },
             "object_id": 1014,
             "outputs": [
@@ -136,7 +136,7 @@
             ],
             "scalar_inputs": [],
             "seq": 3,
-            "start": 5104,
+            "start": 4182,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -144,21 +144,21 @@
             "label": "p",
             "line": 0,
             "object_id": 1019,
-            "time": 10636,
+            "time": 9331,
             "type": "allocation"
         },
         {
             "label": "r",
             "line": 0,
             "object_id": 1022,
-            "time": 10638,
+            "time": 9333,
             "type": "allocation"
         },
         {
             "label": "Ap",
             "line": 0,
             "object_id": 1025,
-            "time": 10640,
+            "time": 9335,
             "type": "allocation"
         },
         {
@@ -169,8 +169,8 @@
             "elwise_inputs": [
                 1000
             ],
-            "end": 10748,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 9399,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "COPY",
             "line": 237,
             "mpi": {
@@ -184,8 +184,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 3452042895525156464,
-                "work_end": 10742,
-                "work_start": 10643
+                "work_end": 9396,
+                "work_start": 9343
             },
             "object_id": 1028,
             "outputs": [
@@ -195,7 +195,7 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 4,
-            "start": 10643,
+            "start": 9343,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -207,8 +207,8 @@
             "elwise_inputs": [
                 1022
             ],
-            "end": 10815,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 9473,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
             "mpi": {
@@ -222,8 +222,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2582579205623260140,
-                "work_end": 10810,
-                "work_start": 10754
+                "work_end": 9470,
+                "work_start": 9406
             },
             "object_id": 1031,
             "outputs": [
@@ -236,7 +236,7 @@
             ],
             "scalar_inputs": [],
             "seq": 5,
-            "start": 10752,
+            "start": 9404,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -248,8 +248,8 @@
             "elwise_inputs": [
                 1022
             ],
-            "end": 10842,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 9524,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "COPY",
             "line": 237,
             "mpi": {
@@ -263,8 +263,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 3452042895525156464,
-                "work_end": 10838,
-                "work_start": 10820
+                "work_end": 9521,
+                "work_start": 9476
             },
             "object_id": 1036,
             "outputs": [
@@ -274,7 +274,7 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 6,
-            "start": 10820,
+            "start": 9476,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -282,14 +282,14 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 2,
-            "end": 10887,
+            "end": 9548,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 7,
-            "start": 10885,
+            "start": 9546,
             "type": "communication"
         },
         {
@@ -301,8 +301,8 @@
                 1022,
                 1022
             ],
-            "end": 10898,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 9556,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
             "mpi": {
@@ -316,8 +316,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2085082910694666183,
-                "work_end": 10885,
-                "work_start": 10849
+                "work_end": 9546,
+                "work_start": 9527
             },
             "object_id": 1039,
             "outputs": [
@@ -327,16 +327,16 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 7,
-            "start": 10849,
+            "start": 9527,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/conjugate_gradient.cpp",
+            "file": "/Users/august/Claude/skepu-alpha/examples/conjugate_gradient.cpp",
             "label": "Iteration",
             "line": 43,
             "region_depth": 1,
-            "time": 10902,
+            "time": 9559,
             "type": "region"
         },
         {
@@ -347,8 +347,8 @@
             "elwise_inputs": [
                 1025
             ],
-            "end": 10965,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 9613,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
             "mpi": {
@@ -362,8 +362,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2736649070977756066,
-                "work_end": 10962,
-                "work_start": 10902
+                "work_end": 9609,
+                "work_start": 9559
             },
             "object_id": 1044,
             "outputs": [
@@ -374,7 +374,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 8,
-            "start": 10902,
+            "start": 9559,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -382,7 +382,7 @@
             "bytes_received": 768,
             "bytes_sent": 768,
             "comm_seq": 3,
-            "end": 10981,
+            "end": 9626,
             "object_ids": [
                 1019
             ],
@@ -392,7 +392,7 @@
             "reason": "random access argument: the container is gathered",
             "region": "Iteration",
             "seq": 9,
-            "start": 10970,
+            "start": 9618,
             "type": "communication"
         },
         {
@@ -403,8 +403,8 @@
             "elwise_inputs": [
                 1025
             ],
-            "end": 11037,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 9679,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
             "mpi": {
@@ -412,14 +412,14 @@
                     "bytes_received": 768,
                     "bytes_sent": 768,
                     "collectives": 1,
-                    "time_us": 11
+                    "time_us": 8
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2582579205623260140,
-                "work_end": 11033,
-                "work_start": 10986
+                "work_end": 9677,
+                "work_start": 9631
             },
             "object_id": 1047,
             "outputs": [
@@ -433,7 +433,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 9,
-            "start": 10968,
+            "start": 9616,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -441,7 +441,7 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 4,
-            "end": 11126,
+            "end": 9751,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
@@ -449,7 +449,7 @@
             "reason": "the partial results of the processes are combined",
             "region": "Iteration",
             "seq": 10,
-            "start": 11106,
+            "start": 9721,
             "type": "communication"
         },
         {
@@ -461,8 +461,8 @@
                 1019,
                 1025
             ],
-            "end": 11135,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 9759,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
             "mpi": {
@@ -470,14 +470,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 20
+                    "time_us": 30
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2085082910694666183,
-                "work_end": 11105,
-                "work_start": 11041
+                "work_end": 9721,
+                "work_start": 9682
             },
             "object_id": 1052,
             "outputs": [
@@ -488,7 +488,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 10,
-            "start": 11041,
+            "start": 9682,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -501,8 +501,8 @@
                 1019,
                 1009
             ],
-            "end": 11176,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 9809,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
             "mpi": {
@@ -516,8 +516,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 4008178793429682347,
-                "work_end": 11173,
-                "work_start": 11138
+                "work_end": 9806,
+                "work_start": 9763
             },
             "object_id": 1057,
             "outputs": [
@@ -531,7 +531,7 @@
                 1056
             ],
             "seq": 11,
-            "start": 11138,
+            "start": 9763,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -544,8 +544,8 @@
                 1025,
                 1022
             ],
-            "end": 11224,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 9852,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
             "mpi": {
@@ -559,8 +559,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 4008178793429682347,
-                "work_end": 11221,
-                "work_start": 11179
+                "work_end": 9849,
+                "work_start": 9811
             },
             "object_id": 1060,
             "outputs": [
@@ -574,7 +574,7 @@
                 1056
             ],
             "seq": 12,
-            "start": 11179,
+            "start": 9811,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -582,7 +582,7 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 5,
-            "end": 11258,
+            "end": 9920,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
@@ -590,7 +590,7 @@
             "reason": "the partial results of the processes are combined",
             "region": "Iteration",
             "seq": 13,
-            "start": 11248,
+            "start": 9890,
             "type": "communication"
         },
         {
@@ -602,8 +602,8 @@
                 1022,
                 1022
             ],
-            "end": 11327,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 9926,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
             "mpi": {
@@ -611,14 +611,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 10
+                    "time_us": 30
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2085082910694666183,
-                "work_end": 11248,
-                "work_start": 11226
+                "work_end": 9890,
+                "work_start": 9855
             },
             "object_id": 1063,
             "outputs": [
@@ -629,7 +629,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 13,
-            "start": 11226,
+            "start": 9855,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -641,8 +641,8 @@
             "elwise_inputs": [
                 1019
             ],
-            "end": 11354,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 9970,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
             "mpi": {
@@ -656,8 +656,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2736649070977756066,
-                "work_end": 11350,
-                "work_start": 11330
+                "work_end": 9967,
+                "work_start": 9929
             },
             "object_id": 1068,
             "outputs": [
@@ -671,7 +671,7 @@
                 1043
             ],
             "seq": 14,
-            "start": 11330,
+            "start": 9929,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -684,8 +684,8 @@
                 1022,
                 1019
             ],
-            "end": 11386,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10011,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
             "mpi": {
@@ -699,8 +699,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 4008178793429682347,
-                "work_end": 11383,
-                "work_start": 11357
+                "work_end": 10008,
+                "work_start": 9973
             },
             "object_id": 1071,
             "outputs": [
@@ -711,16 +711,16 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 15,
-            "start": 11356,
+            "start": 9973,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/conjugate_gradient.cpp",
+            "file": "/Users/august/Claude/skepu-alpha/examples/conjugate_gradient.cpp",
             "label": "Iteration",
             "line": 43,
             "region_depth": 1,
-            "time": 11389,
+            "time": 10014,
             "type": "region"
         },
         {
@@ -731,8 +731,8 @@
             "elwise_inputs": [
                 1025
             ],
-            "end": 11405,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10057,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
             "mpi": {
@@ -746,8 +746,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2736649070977756066,
-                "work_end": 11402,
-                "work_start": 11389
+                "work_end": 10054,
+                "work_start": 10014
             },
             "object_id": 1074,
             "outputs": [
@@ -758,7 +758,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 16,
-            "start": 11389,
+            "start": 10014,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -766,7 +766,7 @@
             "bytes_received": 768,
             "bytes_sent": 768,
             "comm_seq": 6,
-            "end": 11416,
+            "end": 10105,
             "object_ids": [
                 1019
             ],
@@ -776,7 +776,7 @@
             "reason": "random access argument: the container is gathered",
             "region": "Iteration",
             "seq": 17,
-            "start": 11410,
+            "start": 10060,
             "type": "communication"
         },
         {
@@ -787,8 +787,8 @@
             "elwise_inputs": [
                 1025
             ],
-            "end": 11461,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10157,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
             "mpi": {
@@ -796,14 +796,14 @@
                     "bytes_received": 768,
                     "bytes_sent": 768,
                     "collectives": 1,
-                    "time_us": 6
+                    "time_us": 45
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2582579205623260140,
-                "work_end": 11457,
-                "work_start": 11420
+                "work_end": 10154,
+                "work_start": 10109
             },
             "object_id": 1077,
             "outputs": [
@@ -817,7 +817,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 17,
-            "start": 11409,
+            "start": 10059,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -825,7 +825,7 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 7,
-            "end": 11501,
+            "end": 10217,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
@@ -833,7 +833,7 @@
             "reason": "the partial results of the processes are combined",
             "region": "Iteration",
             "seq": 18,
-            "start": 11495,
+            "start": 10183,
             "type": "communication"
         },
         {
@@ -845,8 +845,8 @@
                 1019,
                 1025
             ],
-            "end": 11509,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10223,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
             "mpi": {
@@ -854,14 +854,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 6
+                    "time_us": 34
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2085082910694666183,
-                "work_end": 11494,
-                "work_start": 11468
+                "work_end": 10183,
+                "work_start": 10161
             },
             "object_id": 1082,
             "outputs": [
@@ -872,7 +872,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 18,
-            "start": 11468,
+            "start": 10161,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -885,8 +885,8 @@
                 1019,
                 1009
             ],
-            "end": 11548,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10264,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
             "mpi": {
@@ -900,8 +900,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 4008178793429682347,
-                "work_end": 11544,
-                "work_start": 11512
+                "work_end": 10259,
+                "work_start": 10226
             },
             "object_id": 1087,
             "outputs": [
@@ -915,7 +915,7 @@
                 1086
             ],
             "seq": 19,
-            "start": 11512,
+            "start": 10226,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -928,8 +928,8 @@
                 1025,
                 1022
             ],
-            "end": 11594,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10329,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
             "mpi": {
@@ -943,8 +943,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 4008178793429682347,
-                "work_end": 11591,
-                "work_start": 11550
+                "work_end": 10326,
+                "work_start": 10266
             },
             "object_id": 1090,
             "outputs": [
@@ -958,7 +958,7 @@
                 1086
             ],
             "seq": 20,
-            "start": 11550,
+            "start": 10266,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -966,7 +966,7 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 8,
-            "end": 11630,
+            "end": 10390,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
@@ -974,7 +974,7 @@
             "reason": "the partial results of the processes are combined",
             "region": "Iteration",
             "seq": 21,
-            "start": 11628,
+            "start": 10368,
             "type": "communication"
         },
         {
@@ -986,8 +986,8 @@
                 1022,
                 1022
             ],
-            "end": 11638,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10398,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
             "mpi": {
@@ -995,14 +995,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 2
+                    "time_us": 22
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2085082910694666183,
-                "work_end": 11628,
-                "work_start": 11597
+                "work_end": 10368,
+                "work_start": 10331
             },
             "object_id": 1093,
             "outputs": [
@@ -1013,7 +1013,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 21,
-            "start": 11597,
+            "start": 10331,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1025,8 +1025,8 @@
             "elwise_inputs": [
                 1019
             ],
-            "end": 11691,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10445,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
             "mpi": {
@@ -1040,8 +1040,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2736649070977756066,
-                "work_end": 11686,
-                "work_start": 11640
+                "work_end": 10442,
+                "work_start": 10401
             },
             "object_id": 1098,
             "outputs": [
@@ -1055,7 +1055,7 @@
                 1067
             ],
             "seq": 22,
-            "start": 11640,
+            "start": 10401,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1068,8 +1068,8 @@
                 1022,
                 1019
             ],
-            "end": 11722,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10486,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
             "mpi": {
@@ -1083,8 +1083,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 4008178793429682347,
-                "work_end": 11719,
-                "work_start": 11693
+                "work_end": 10483,
+                "work_start": 10449
             },
             "object_id": 1101,
             "outputs": [
@@ -1095,16 +1095,16 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 23,
-            "start": 11693,
+            "start": 10449,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/conjugate_gradient.cpp",
+            "file": "/Users/august/Claude/skepu-alpha/examples/conjugate_gradient.cpp",
             "label": "Iteration",
             "line": 43,
             "region_depth": 1,
-            "time": 11724,
+            "time": 10491,
             "type": "region"
         },
         {
@@ -1115,8 +1115,8 @@
             "elwise_inputs": [
                 1025
             ],
-            "end": 11752,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10555,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
             "mpi": {
@@ -1130,8 +1130,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2736649070977756066,
-                "work_end": 11749,
-                "work_start": 11725
+                "work_end": 10552,
+                "work_start": 10492
             },
             "object_id": 1104,
             "outputs": [
@@ -1142,7 +1142,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 24,
-            "start": 11725,
+            "start": 10492,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1150,7 +1150,7 @@
             "bytes_received": 768,
             "bytes_sent": 768,
             "comm_seq": 9,
-            "end": 11778,
+            "end": 10563,
             "object_ids": [
                 1019
             ],
@@ -1160,7 +1160,7 @@
             "reason": "random access argument: the container is gathered",
             "region": "Iteration",
             "seq": 25,
-            "start": 11755,
+            "start": 10559,
             "type": "communication"
         },
         {
@@ -1171,8 +1171,8 @@
             "elwise_inputs": [
                 1025
             ],
-            "end": 11834,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10633,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
             "mpi": {
@@ -1180,14 +1180,14 @@
                     "bytes_received": 768,
                     "bytes_sent": 768,
                     "collectives": 1,
-                    "time_us": 23
+                    "time_us": 4
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2582579205623260140,
-                "work_end": 11832,
-                "work_start": 11781
+                "work_end": 10631,
+                "work_start": 10567
             },
             "object_id": 1107,
             "outputs": [
@@ -1201,7 +1201,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 25,
-            "start": 11754,
+            "start": 10557,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1209,7 +1209,7 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 10,
-            "end": 11870,
+            "end": 10675,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
@@ -1217,7 +1217,7 @@
             "reason": "the partial results of the processes are combined",
             "region": "Iteration",
             "seq": 26,
-            "start": 11862,
+            "start": 10668,
             "type": "communication"
         },
         {
@@ -1229,8 +1229,8 @@
                 1019,
                 1025
             ],
-            "end": 11877,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10682,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
             "mpi": {
@@ -1238,14 +1238,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 8
+                    "time_us": 7
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2085082910694666183,
-                "work_end": 11862,
-                "work_start": 11837
+                "work_end": 10668,
+                "work_start": 10636
             },
             "object_id": 1112,
             "outputs": [
@@ -1256,7 +1256,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 26,
-            "start": 11837,
+            "start": 10636,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1269,8 +1269,8 @@
                 1019,
                 1009
             ],
-            "end": 11922,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10729,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
             "mpi": {
@@ -1284,8 +1284,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 4008178793429682347,
-                "work_end": 11919,
-                "work_start": 11880
+                "work_end": 10726,
+                "work_start": 10685
             },
             "object_id": 1117,
             "outputs": [
@@ -1299,7 +1299,7 @@
                 1116
             ],
             "seq": 27,
-            "start": 11880,
+            "start": 10685,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1312,8 +1312,8 @@
                 1025,
                 1022
             ],
-            "end": 11965,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10767,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
             "mpi": {
@@ -1327,8 +1327,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 4008178793429682347,
-                "work_end": 11962,
-                "work_start": 11925
+                "work_end": 10764,
+                "work_start": 10731
             },
             "object_id": 1120,
             "outputs": [
@@ -1342,7 +1342,7 @@
                 1116
             ],
             "seq": 28,
-            "start": 11925,
+            "start": 10731,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1350,7 +1350,7 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 11,
-            "end": 11995,
+            "end": 10861,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
@@ -1358,7 +1358,7 @@
             "reason": "the partial results of the processes are combined",
             "region": "Iteration",
             "seq": 29,
-            "start": 11994,
+            "start": 10812,
             "type": "communication"
         },
         {
@@ -1370,8 +1370,8 @@
                 1022,
                 1022
             ],
-            "end": 12002,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10875,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
             "mpi": {
@@ -1379,14 +1379,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 1
+                    "time_us": 49
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2085082910694666183,
-                "work_end": 11994,
-                "work_start": 11967
+                "work_end": 10812,
+                "work_start": 10772
             },
             "object_id": 1123,
             "outputs": [
@@ -1397,7 +1397,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 29,
-            "start": 11967,
+            "start": 10772,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1409,8 +1409,8 @@
             "elwise_inputs": [
                 1019
             ],
-            "end": 12039,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10916,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
             "mpi": {
@@ -1424,8 +1424,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2736649070977756066,
-                "work_end": 12035,
-                "work_start": 12006
+                "work_end": 10913,
+                "work_start": 10878
             },
             "object_id": 1128,
             "outputs": [
@@ -1439,7 +1439,7 @@
                 1097
             ],
             "seq": 30,
-            "start": 12006,
+            "start": 10878,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1452,8 +1452,8 @@
                 1022,
                 1019
             ],
-            "end": 12063,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 10950,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
             "mpi": {
@@ -1467,8 +1467,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 4008178793429682347,
-                "work_end": 12061,
-                "work_start": 12041
+                "work_end": 10947,
+                "work_start": 10919
             },
             "object_id": 1131,
             "outputs": [
@@ -1479,16 +1479,16 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 31,
-            "start": 12041,
+            "start": 10919,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/conjugate_gradient.cpp",
+            "file": "/Users/august/Claude/skepu-alpha/examples/conjugate_gradient.cpp",
             "label": "Iteration",
             "line": 43,
             "region_depth": 1,
-            "time": 12065,
+            "time": 10953,
             "type": "region"
         },
         {
@@ -1499,8 +1499,8 @@
             "elwise_inputs": [
                 1025
             ],
-            "end": 12089,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 11033,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
             "mpi": {
@@ -1514,8 +1514,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2736649070977756066,
-                "work_end": 12086,
-                "work_start": 12065
+                "work_end": 11030,
+                "work_start": 10953
             },
             "object_id": 1134,
             "outputs": [
@@ -1526,7 +1526,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 32,
-            "start": 12065,
+            "start": 10953,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1534,7 +1534,7 @@
             "bytes_received": 768,
             "bytes_sent": 768,
             "comm_seq": 12,
-            "end": 12114,
+            "end": 11041,
             "object_ids": [
                 1019
             ],
@@ -1544,7 +1544,7 @@
             "reason": "random access argument: the container is gathered",
             "region": "Iteration",
             "seq": 33,
-            "start": 12093,
+            "start": 11037,
             "type": "communication"
         },
         {
@@ -1555,8 +1555,8 @@
             "elwise_inputs": [
                 1025
             ],
-            "end": 12151,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 11092,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
             "mpi": {
@@ -1564,14 +1564,14 @@
                     "bytes_received": 768,
                     "bytes_sent": 768,
                     "collectives": 1,
-                    "time_us": 21
+                    "time_us": 4
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2582579205623260140,
-                "work_end": 12148,
-                "work_start": 12118
+                "work_end": 11089,
+                "work_start": 11047
             },
             "object_id": 1137,
             "outputs": [
@@ -1585,7 +1585,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 33,
-            "start": 12092,
+            "start": 11036,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1593,7 +1593,7 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 13,
-            "end": 12173,
+            "end": 11151,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
@@ -1601,7 +1601,7 @@
             "reason": "the partial results of the processes are combined",
             "region": "Iteration",
             "seq": 34,
-            "start": 12172,
+            "start": 11125,
             "type": "communication"
         },
         {
@@ -1613,8 +1613,8 @@
                 1019,
                 1025
             ],
-            "end": 12179,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 11158,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
             "mpi": {
@@ -1622,14 +1622,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 1
+                    "time_us": 26
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2085082910694666183,
-                "work_end": 12172,
-                "work_start": 12153
+                "work_end": 11125,
+                "work_start": 11095
             },
             "object_id": 1142,
             "outputs": [
@@ -1640,7 +1640,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 34,
-            "start": 12153,
+            "start": 11095,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1653,8 +1653,8 @@
                 1019,
                 1009
             ],
-            "end": 12216,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 11214,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
             "mpi": {
@@ -1668,8 +1668,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 4008178793429682347,
-                "work_end": 12212,
-                "work_start": 12181
+                "work_end": 11211,
+                "work_start": 11161
             },
             "object_id": 1147,
             "outputs": [
@@ -1683,7 +1683,7 @@
                 1146
             ],
             "seq": 35,
-            "start": 12181,
+            "start": 11161,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1696,8 +1696,8 @@
                 1025,
                 1022
             ],
-            "end": 12239,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 11269,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
             "mpi": {
@@ -1711,8 +1711,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 4008178793429682347,
-                "work_end": 12236,
-                "work_start": 12218
+                "work_end": 11266,
+                "work_start": 11217
             },
             "object_id": 1150,
             "outputs": [
@@ -1726,7 +1726,7 @@
                 1146
             ],
             "seq": 36,
-            "start": 12218,
+            "start": 11217,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1734,7 +1734,7 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 14,
-            "end": 12272,
+            "end": 11324,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
@@ -1742,7 +1742,7 @@
             "reason": "the partial results of the processes are combined",
             "region": "Iteration",
             "seq": 37,
-            "start": 12259,
+            "start": 11313,
             "type": "communication"
         },
         {
@@ -1754,8 +1754,8 @@
                 1022,
                 1022
             ],
-            "end": 12278,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 11330,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
             "mpi": {
@@ -1763,14 +1763,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 13
+                    "time_us": 11
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2085082910694666183,
-                "work_end": 12259,
-                "work_start": 12241
+                "work_end": 11313,
+                "work_start": 11273
             },
             "object_id": 1153,
             "outputs": [
@@ -1781,7 +1781,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 37,
-            "start": 12241,
+            "start": 11273,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1793,8 +1793,8 @@
             "elwise_inputs": [
                 1019
             ],
-            "end": 12306,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 11362,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
             "mpi": {
@@ -1808,8 +1808,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2736649070977756066,
-                "work_end": 12304,
-                "work_start": 12281
+                "work_end": 11359,
+                "work_start": 11333
             },
             "object_id": 1158,
             "outputs": [
@@ -1823,7 +1823,7 @@
                 1127
             ],
             "seq": 38,
-            "start": 12281,
+            "start": 11333,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1836,8 +1836,8 @@
                 1022,
                 1019
             ],
-            "end": 12334,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 11396,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
             "mpi": {
@@ -1851,8 +1851,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 4008178793429682347,
-                "work_end": 12329,
-                "work_start": 12309
+                "work_end": 11393,
+                "work_start": 11364
             },
             "object_id": 1161,
             "outputs": [
@@ -1863,7 +1863,7 @@
             "region": "Iteration",
             "scalar_inputs": [],
             "seq": 39,
-            "start": 12309,
+            "start": 11364,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1871,28 +1871,28 @@
             "label": "Ap",
             "line": 0,
             "object_id": 1025,
-            "time": 12336,
+            "time": 11398,
             "type": "deallocation"
         },
         {
             "label": "r",
             "line": 0,
             "object_id": 1022,
-            "time": 12338,
+            "time": 11400,
             "type": "deallocation"
         },
         {
             "label": "p",
             "line": 0,
             "object_id": 1019,
-            "time": 12340,
+            "time": 11401,
             "type": "deallocation"
         },
         {
             "label": "r",
             "line": 0,
             "object_id": 1164,
-            "time": 12341,
+            "time": 11403,
             "type": "allocation"
         },
         {
@@ -1903,8 +1903,8 @@
             "elwise_inputs": [
                 1000
             ],
-            "end": 12370,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 11434,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "COPY",
             "line": 237,
             "mpi": {
@@ -1918,8 +1918,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 3452042895525156464,
-                "work_end": 12366,
-                "work_start": 12342
+                "work_end": 11432,
+                "work_start": 11407
             },
             "object_id": 1167,
             "outputs": [
@@ -1929,7 +1929,7 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 40,
-            "start": 12342,
+            "start": 11407,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1937,7 +1937,7 @@
             "bytes_received": 768,
             "bytes_sent": 768,
             "comm_seq": 15,
-            "end": 12391,
+            "end": 11504,
             "object_ids": [
                 1009
             ],
@@ -1946,7 +1946,7 @@
             "ranks": 4,
             "reason": "random access argument: the container is gathered",
             "seq": 41,
-            "start": 12374,
+            "start": 11438,
             "type": "communication"
         },
         {
@@ -1957,8 +1957,8 @@
             "elwise_inputs": [
                 1164
             ],
-            "end": 12425,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 11581,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
             "mpi": {
@@ -1966,14 +1966,14 @@
                     "bytes_received": 768,
                     "bytes_sent": 768,
                     "collectives": 1,
-                    "time_us": 17
+                    "time_us": 66
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2582579205623260140,
-                "work_end": 12422,
-                "work_start": 12395
+                "work_end": 11578,
+                "work_start": 11509
             },
             "object_id": 1170,
             "outputs": [
@@ -1986,7 +1986,7 @@
             ],
             "scalar_inputs": [],
             "seq": 41,
-            "start": 12374,
+            "start": 11437,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -1994,14 +1994,14 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 16,
-            "end": 12450,
+            "end": 11641,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 42,
-            "start": 12446,
+            "start": 11628,
             "type": "communication"
         },
         {
@@ -2012,8 +2012,8 @@
             "elwise_inputs": [
                 1164
             ],
-            "end": 12457,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 11650,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "NRM2",
             "line": 369,
             "mpi": {
@@ -2021,14 +2021,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 4
+                    "time_us": 13
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 14109229228329515139,
-                "work_end": 12446,
-                "work_start": 12427
+                "work_end": 11628,
+                "work_start": 11584
             },
             "object_id": 1175,
             "outputs": [
@@ -2038,14 +2038,14 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 42,
-            "start": 12427,
+            "start": 11584,
             "threads": 2,
             "type": "skeleton_call"
         },
         {
             "elwise_inputs": [],
-            "end": 12554,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/io.hpp",
+            "end": 11744,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
             "mpi": {
@@ -2059,8 +2059,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 7346190368624812788,
-                "work_end": 12553,
-                "work_start": 12515
+                "work_end": 11744,
+                "work_start": 11701
             },
             "outputs": [],
             "proxy_inputs": [
@@ -2068,21 +2068,21 @@
             ],
             "scalar_inputs": [],
             "seq": 43,
-            "start": 12515,
+            "start": 11701,
             "type": "external"
         },
         {
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 17,
-            "end": 12618,
+            "end": 11843,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 44,
-            "start": 12612,
+            "start": 11842,
             "type": "communication"
         },
         {
@@ -2093,8 +2093,8 @@
             "elwise_inputs": [
                 1000
             ],
-            "end": 12632,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/blas.hpp",
+            "end": 11849,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "NRM2",
             "line": 369,
             "mpi": {
@@ -2102,14 +2102,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 6
+                    "time_us": 1
                 },
                 "local_elements": 64,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 14109229228329515139,
-                "work_end": 12611,
-                "work_start": 12582
+                "work_end": 11842,
+                "work_start": 11806
             },
             "object_id": 1181,
             "outputs": [
@@ -2119,7 +2119,7 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 44,
-            "start": 12582,
+            "start": 11806,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -2127,56 +2127,832 @@
             "label": "r",
             "line": 0,
             "object_id": 1164,
-            "time": 12648,
+            "time": 11855,
             "type": "deallocation"
         },
         {
             "label": "x",
             "line": 0,
             "object_id": 1009,
-            "time": 12651,
+            "time": 11857,
             "type": "deallocation"
         },
         {
             "label": "A",
             "line": 0,
             "object_id": 1006,
-            "time": 12652,
+            "time": 11859,
             "type": "deallocation"
         },
         {
             "label": "R",
             "line": 0,
             "object_id": 1003,
-            "time": 12655,
+            "time": 11861,
             "type": "deallocation"
         },
         {
             "label": "b",
             "line": 0,
             "object_id": 1000,
-            "time": 12657,
+            "time": 11862,
             "type": "deallocation"
         }
     ],
     "header": {
         "clock": {
             "end": {
-                "local_us": 12733,
+                "local_us": 11892,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             },
             "method": "ping-pong",
             "start": {
-                "local_us": 4338,
+                "local_us": 3302,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             }
         },
+        "instances": {
+            "1014": {
+                "instance": {
+                    "end_line": 92,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/conjugate_gradient.cpp",
+                    "line": 92
+                },
+                "label": "make_spd",
+                "user_functions": [
+                    {
+                        "end_line": 16,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/conjugate_gradient.cpp",
+                        "kind": "function",
+                        "line": 13,
+                        "name": "symmetrize"
+                    }
+                ]
+            },
+            "1028": {
+                "instance": {
+                    "end_line": 234,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 234
+                },
+                "label": "COPY",
+                "user_functions": [
+                    {
+                        "end_line": 223,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 220,
+                        "name": "copy_uf"
+                    }
+                ]
+            },
+            "1031": {
+                "instance": {
+                    "end_line": 617,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 617
+                },
+                "label": "GEMV",
+                "user_functions": [
+                    {
+                        "end_line": 559,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 553,
+                        "name": "gemv_uf_notrans_noconj"
+                    }
+                ]
+            },
+            "1036": {
+                "instance": {
+                    "end_line": 234,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 234
+                },
+                "label": "COPY",
+                "user_functions": [
+                    {
+                        "end_line": 223,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 220,
+                        "name": "copy_uf"
+                    }
+                ]
+            },
+            "1039": {
+                "instance": {
+                    "end_line": 293,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 293
+                },
+                "label": "DOT",
+                "user_functions": [
+                    {
+                        "end_line": 276,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 273,
+                        "name": "dot_uf_1"
+                    },
+                    {
+                        "end_line": 282,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 279,
+                        "name": "dot_uf_2"
+                    }
+                ]
+            },
+            "1044": {
+                "instance": {
+                    "end_line": 208,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 208
+                },
+                "label": "SCAL",
+                "user_functions": [
+                    {
+                        "end_line": 197,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 194,
+                        "name": "scal_uf"
+                    }
+                ]
+            },
+            "1047": {
+                "instance": {
+                    "end_line": 617,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 617
+                },
+                "label": "GEMV",
+                "user_functions": [
+                    {
+                        "end_line": 559,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 553,
+                        "name": "gemv_uf_notrans_noconj"
+                    }
+                ]
+            },
+            "1052": {
+                "instance": {
+                    "end_line": 293,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 293
+                },
+                "label": "DOT",
+                "user_functions": [
+                    {
+                        "end_line": 276,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 273,
+                        "name": "dot_uf_1"
+                    },
+                    {
+                        "end_line": 282,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 279,
+                        "name": "dot_uf_2"
+                    }
+                ]
+            },
+            "1057": {
+                "instance": {
+                    "end_line": 261,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 261
+                },
+                "label": "AXPY",
+                "user_functions": [
+                    {
+                        "end_line": 249,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 246,
+                        "name": "axpy_uf"
+                    }
+                ]
+            },
+            "1060": {
+                "instance": {
+                    "end_line": 261,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 261
+                },
+                "label": "AXPY",
+                "user_functions": [
+                    {
+                        "end_line": 249,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 246,
+                        "name": "axpy_uf"
+                    }
+                ]
+            },
+            "1063": {
+                "instance": {
+                    "end_line": 293,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 293
+                },
+                "label": "DOT",
+                "user_functions": [
+                    {
+                        "end_line": 276,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 273,
+                        "name": "dot_uf_1"
+                    },
+                    {
+                        "end_line": 282,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 279,
+                        "name": "dot_uf_2"
+                    }
+                ]
+            },
+            "1068": {
+                "instance": {
+                    "end_line": 208,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 208
+                },
+                "label": "SCAL",
+                "user_functions": [
+                    {
+                        "end_line": 197,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 194,
+                        "name": "scal_uf"
+                    }
+                ]
+            },
+            "1071": {
+                "instance": {
+                    "end_line": 261,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 261
+                },
+                "label": "AXPY",
+                "user_functions": [
+                    {
+                        "end_line": 249,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 246,
+                        "name": "axpy_uf"
+                    }
+                ]
+            },
+            "1074": {
+                "instance": {
+                    "end_line": 208,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 208
+                },
+                "label": "SCAL",
+                "user_functions": [
+                    {
+                        "end_line": 197,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 194,
+                        "name": "scal_uf"
+                    }
+                ]
+            },
+            "1077": {
+                "instance": {
+                    "end_line": 617,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 617
+                },
+                "label": "GEMV",
+                "user_functions": [
+                    {
+                        "end_line": 559,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 553,
+                        "name": "gemv_uf_notrans_noconj"
+                    }
+                ]
+            },
+            "1082": {
+                "instance": {
+                    "end_line": 293,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 293
+                },
+                "label": "DOT",
+                "user_functions": [
+                    {
+                        "end_line": 276,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 273,
+                        "name": "dot_uf_1"
+                    },
+                    {
+                        "end_line": 282,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 279,
+                        "name": "dot_uf_2"
+                    }
+                ]
+            },
+            "1087": {
+                "instance": {
+                    "end_line": 261,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 261
+                },
+                "label": "AXPY",
+                "user_functions": [
+                    {
+                        "end_line": 249,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 246,
+                        "name": "axpy_uf"
+                    }
+                ]
+            },
+            "1090": {
+                "instance": {
+                    "end_line": 261,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 261
+                },
+                "label": "AXPY",
+                "user_functions": [
+                    {
+                        "end_line": 249,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 246,
+                        "name": "axpy_uf"
+                    }
+                ]
+            },
+            "1093": {
+                "instance": {
+                    "end_line": 293,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 293
+                },
+                "label": "DOT",
+                "user_functions": [
+                    {
+                        "end_line": 276,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 273,
+                        "name": "dot_uf_1"
+                    },
+                    {
+                        "end_line": 282,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 279,
+                        "name": "dot_uf_2"
+                    }
+                ]
+            },
+            "1098": {
+                "instance": {
+                    "end_line": 208,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 208
+                },
+                "label": "SCAL",
+                "user_functions": [
+                    {
+                        "end_line": 197,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 194,
+                        "name": "scal_uf"
+                    }
+                ]
+            },
+            "1101": {
+                "instance": {
+                    "end_line": 261,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 261
+                },
+                "label": "AXPY",
+                "user_functions": [
+                    {
+                        "end_line": 249,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 246,
+                        "name": "axpy_uf"
+                    }
+                ]
+            },
+            "1104": {
+                "instance": {
+                    "end_line": 208,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 208
+                },
+                "label": "SCAL",
+                "user_functions": [
+                    {
+                        "end_line": 197,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 194,
+                        "name": "scal_uf"
+                    }
+                ]
+            },
+            "1107": {
+                "instance": {
+                    "end_line": 617,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 617
+                },
+                "label": "GEMV",
+                "user_functions": [
+                    {
+                        "end_line": 559,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 553,
+                        "name": "gemv_uf_notrans_noconj"
+                    }
+                ]
+            },
+            "1112": {
+                "instance": {
+                    "end_line": 293,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 293
+                },
+                "label": "DOT",
+                "user_functions": [
+                    {
+                        "end_line": 276,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 273,
+                        "name": "dot_uf_1"
+                    },
+                    {
+                        "end_line": 282,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 279,
+                        "name": "dot_uf_2"
+                    }
+                ]
+            },
+            "1117": {
+                "instance": {
+                    "end_line": 261,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 261
+                },
+                "label": "AXPY",
+                "user_functions": [
+                    {
+                        "end_line": 249,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 246,
+                        "name": "axpy_uf"
+                    }
+                ]
+            },
+            "1120": {
+                "instance": {
+                    "end_line": 261,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 261
+                },
+                "label": "AXPY",
+                "user_functions": [
+                    {
+                        "end_line": 249,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 246,
+                        "name": "axpy_uf"
+                    }
+                ]
+            },
+            "1123": {
+                "instance": {
+                    "end_line": 293,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 293
+                },
+                "label": "DOT",
+                "user_functions": [
+                    {
+                        "end_line": 276,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 273,
+                        "name": "dot_uf_1"
+                    },
+                    {
+                        "end_line": 282,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 279,
+                        "name": "dot_uf_2"
+                    }
+                ]
+            },
+            "1128": {
+                "instance": {
+                    "end_line": 208,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 208
+                },
+                "label": "SCAL",
+                "user_functions": [
+                    {
+                        "end_line": 197,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 194,
+                        "name": "scal_uf"
+                    }
+                ]
+            },
+            "1131": {
+                "instance": {
+                    "end_line": 261,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 261
+                },
+                "label": "AXPY",
+                "user_functions": [
+                    {
+                        "end_line": 249,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 246,
+                        "name": "axpy_uf"
+                    }
+                ]
+            },
+            "1134": {
+                "instance": {
+                    "end_line": 208,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 208
+                },
+                "label": "SCAL",
+                "user_functions": [
+                    {
+                        "end_line": 197,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 194,
+                        "name": "scal_uf"
+                    }
+                ]
+            },
+            "1137": {
+                "instance": {
+                    "end_line": 617,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 617
+                },
+                "label": "GEMV",
+                "user_functions": [
+                    {
+                        "end_line": 559,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 553,
+                        "name": "gemv_uf_notrans_noconj"
+                    }
+                ]
+            },
+            "1142": {
+                "instance": {
+                    "end_line": 293,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 293
+                },
+                "label": "DOT",
+                "user_functions": [
+                    {
+                        "end_line": 276,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 273,
+                        "name": "dot_uf_1"
+                    },
+                    {
+                        "end_line": 282,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 279,
+                        "name": "dot_uf_2"
+                    }
+                ]
+            },
+            "1147": {
+                "instance": {
+                    "end_line": 261,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 261
+                },
+                "label": "AXPY",
+                "user_functions": [
+                    {
+                        "end_line": 249,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 246,
+                        "name": "axpy_uf"
+                    }
+                ]
+            },
+            "1150": {
+                "instance": {
+                    "end_line": 261,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 261
+                },
+                "label": "AXPY",
+                "user_functions": [
+                    {
+                        "end_line": 249,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 246,
+                        "name": "axpy_uf"
+                    }
+                ]
+            },
+            "1153": {
+                "instance": {
+                    "end_line": 293,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 293
+                },
+                "label": "DOT",
+                "user_functions": [
+                    {
+                        "end_line": 276,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 273,
+                        "name": "dot_uf_1"
+                    },
+                    {
+                        "end_line": 282,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 279,
+                        "name": "dot_uf_2"
+                    }
+                ]
+            },
+            "1158": {
+                "instance": {
+                    "end_line": 208,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 208
+                },
+                "label": "SCAL",
+                "user_functions": [
+                    {
+                        "end_line": 197,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 194,
+                        "name": "scal_uf"
+                    }
+                ]
+            },
+            "1161": {
+                "instance": {
+                    "end_line": 261,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 261
+                },
+                "label": "AXPY",
+                "user_functions": [
+                    {
+                        "end_line": 249,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 246,
+                        "name": "axpy_uf"
+                    }
+                ]
+            },
+            "1167": {
+                "instance": {
+                    "end_line": 234,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 234
+                },
+                "label": "COPY",
+                "user_functions": [
+                    {
+                        "end_line": 223,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 220,
+                        "name": "copy_uf"
+                    }
+                ]
+            },
+            "1170": {
+                "instance": {
+                    "end_line": 617,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 617
+                },
+                "label": "GEMV",
+                "user_functions": [
+                    {
+                        "end_line": 559,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 553,
+                        "name": "gemv_uf_notrans_noconj"
+                    }
+                ]
+            },
+            "1175": {
+                "instance": {
+                    "end_line": 365,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 365
+                },
+                "label": "NRM2",
+                "user_functions": [
+                    {
+                        "end_line": 336,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 333,
+                        "name": "nrm2_uf_1"
+                    },
+                    {
+                        "end_line": 342,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 339,
+                        "name": "nrm2_uf_2"
+                    }
+                ]
+            },
+            "1181": {
+                "instance": {
+                    "end_line": 365,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                    "line": 365
+                },
+                "label": "NRM2",
+                "user_functions": [
+                    {
+                        "end_line": 336,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 333,
+                        "name": "nrm2_uf_1"
+                    },
+                    {
+                        "end_line": 342,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
+                        "kind": "function",
+                        "line": 339,
+                        "name": "nrm2_uf_2"
+                    }
+                ]
+            }
+        },
         "mpi": {
             "detail_rank": 0,
-            "host": "Augusts-Laptop.local",
-            "pid": 54813,
+            "host": "mac.staff.netlogon.liu.se",
+            "pid": 92995,
             "rank": 0,
             "ranks": 4,
             "role": "full"

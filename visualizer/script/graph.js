@@ -171,6 +171,7 @@ window.renderLegend = function() { _legendView.render(State._darkMode); };
 var _sourceView = new SourceCodeView({
   initialTheme: State._hljsTheme,
   codePaths:    State._codePaths,
+  pinDefinitions: State._pinDefinitions,
 
   onThemeChange: function(theme) {
     State._hljsTheme = theme;
@@ -224,6 +225,10 @@ var _infoView = new InfoView({
     if (State.sourceView) State.sourceView.highlightSourceLine(place.line, place.file, undefined, place.end_line);
   },
 
+  onDefinitions: function(definitions, call) {
+    if (State.sourceView) State.sourceView.showDefinitions(definitions, call);
+  },
+
   canShowSource: function(file) {
     return !!State.sourceView && State.sourceView.hasSourceFile(file);
   },
@@ -275,7 +280,7 @@ _provider.on('select', function(ev) {
   // events emitted by simulation.js.  (The iteration is not a trace index: with it as one, a click on a bar
   // would show the trace entry with the number of the iteration, the first, instead of the entry of the node.)
   var infoIdx = ev.traceIdx;
-  if (State.infoView) State.infoView.open(ev.nodeId, ev.source, infoIdx);
+  if (State.infoView) State.infoView.open(ev.nodeId, ev.source, infoIdx, ev.reveal);
 });
 
 // Provider 'clear' — emitted by GraphView on background click.  Each view

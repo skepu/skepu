@@ -33,6 +33,13 @@ npx serve -l 5001
 # → open http://localhost:5001
 ```
 
+While you edit SkeVU, the browser may keep serving old copies of the scripts and styles (`python3 -m http.server`
+sends no cache headers, so the browser guesses). `serve.py` is the same server with `Cache-Control: no-store`:
+
+```bash
+python3 serve.py 5005        # from any directory; → open http://localhost:5005
+```
+
 Upload a trace file via the file picker, or load one of the built-in examples
 from the **Files** menu.
 
@@ -99,6 +106,24 @@ examples/               built-in example trace files (the trace files of an MPI 
 ```
 
 ---
+
+## Where the instances and user functions are defined
+
+A trace of a program that the precompiler made has, in its header, a table of the skeleton instances with the lines of the instance and of
+its user functions (see `TRACE_FORMAT.md`). SkeVU shows them for each call:
+
+- **Info pane**: an `Instance` row and a `User function` row for each function, as links that show the lines in the source (a link to a
+  file that is not open is grey).
+- **Source panes**: when a call is selected, the lines of its instance and of its user functions are shaded in the colour of the selection,
+  with less opacity than the line that is selected (the call). The shading fades out when the selection is cleared.
+  The menu item **View > Definitions** keeps the shading of all the definitions.
+- **From the source to the calls**: the line number of a line that defines an instance or a user function can be clicked (it is underlined):
+  it selects the calls that use it, and the next click goes on to the next of them.
+- **From a node to the source**: shift-click on a node of the graph shows the instance of the call, alt-click shows its user function (the next one
+  each time, for a skeleton with more than one).
+
+A lambda is a user function on the line of the instance, and an anonymous skeleton has its instance on the line of the call: the marks and the
+badge of the line are then both there.
 
 ## Tests
 

@@ -75,6 +75,6 @@ describe('the pages', () => {
     }
     it('do not load jQuery any more, and no script uses it', () => {
         for (const page of ['index.html', 'designer.html', 'embed-test.html']) expect(readFileSync(join(root, page), 'utf8')).not.toMatch(/jquery/i);
-        for (const file of ['SourceCodeView.js', 'InfoView.js', 'GraphView.js', 'ui.js', 'graph.js']) expect(readFileSync(join(root, 'script', file), 'utf8'), file).not.toMatch(/jQuery|(^|[^.\w])\$\(|\)\.scrollTo\(/m);          // (cy.$() is Cytoscape's)
+        for (const file of ['SourceCodeView.js', 'InfoView.js', 'GraphView.js', 'TimelineView.js', 'ui.js', 'graph.js']) expect(readFileSync(join(root, 'script', file), 'utf8'), file).not.toMatch(/jQuery|(^|[^.\w])\$\(|\)\.scrollTo\(/m);          // (cy.$() is Cytoscape's)
     });
 });

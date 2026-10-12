@@ -1,719 +1,815 @@
-[
-    {
-        "label": "PRNG stream",
-        "line": 139,
-        "object_id": 1002,
-        "time": 0,
-        "type": "allocation"
-    },
-    {
-        "label": "domain_a",
-        "line": 285,
-        "object_id": 1003,
-        "time": 8,
-        "type": "allocation"
-    },
-    {
-        "label": "domain_b",
-        "line": 285,
-        "object_id": 1004,
-        "time": 3551,
-        "type": "allocation"
-    },
-    {
-        "label": "rules",
-        "line": 285,
-        "object_id": 1005,
-        "time": 3551,
-        "type": "allocation"
-    },
-    {
-        "elwise_inputs": [],
-        "end": 3551,
-        "file": "cellular_automaton.py",
-        "label": "[external]",
-        "line": 72,
-        "outputs": [
-            1005
-        ],
-        "proxy_inputs": [],
-        "scalar_inputs": [],
-        "start": 3551,
-        "type": "external"
-    },
-    {
-        "end": 3552,
-        "file": "cellular_automaton.py",
-        "label": "Domain",
-        "line": 78,
-        "object_ids": [
-            1003,
-            1004
-        ],
-        "start": 3552,
-        "type": "virtual_container",
-        "virtual_id": 1046
-    },
-    {
-        "label": "[Internal PRNG]",
-        "line": 246,
-        "object_id": 1009,
-        "time": 3580,
-        "type": "allocation"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 144,
-        "end": 5384,
-        "label": "[Internal PRNG]",
-        "line": 258,
-        "object_id": 1009,
-        "start": 3582,
-        "time": 5384,
-        "type": "transfer"
-    },
-    {
-        "label": "[Internal PRNG]",
-        "line": 277,
-        "object_id": 1009,
-        "time": 5392,
-        "type": "deallocation"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            144
-        ],
-        "elwise_inputs": [],
-        "end": 5661,
-        "file": "cellular_automaton.py",
-        "label": "init_random",
-        "line": 80,
-        "object_id": 1000,
-        "outputs": [
-            1003
-        ],
-        "pattern": "Map",
-        "prng": 1002,
-        "proxy_inputs": [],
-        "scalar_inputs": [],
-        "start": 3580,
-        "threads": 15,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "device-to-host",
-        "elements": 144,
-        "end": 6025,
-        "label": "domain_a",
-        "line": 306,
-        "object_id": 1003,
-        "start": 5781,
-        "time": 6025,
-        "type": "transfer"
-    },
-    {
-        "data_file": "domain_a@1.txt",
-        "end": 6138,
-        "file": "cellular_automaton.py",
-        "label": "domain_a",
-        "line": 81,
-        "object_id": 1003,
-        "start": 5672,
-        "type": "snapshot"
-    },
-    {
-        "file": "cellular_automaton.py",
-        "label": "Double-iteration",
-        "line": 83,
-        "region_depth": 1,
-        "time": 6140,
-        "type": "region"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 18,
-        "end": 6501,
-        "label": "rules",
-        "line": 258,
-        "object_id": 1005,
-        "region": "Double-iteration",
-        "start": 6287,
-        "time": 6501,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 1,
-        "end": 6688,
-        "label": "Internal (overlap-wrap)",
-        "line": 258,
-        "object_id": 1013,
-        "region": "Double-iteration",
-        "start": 6504,
-        "time": 6688,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            12,
-            12
-        ],
-        "elwise_inputs": [
-            1003
-        ],
-        "end": 6695,
-        "file": "cellular_automaton.py",
-        "label": "update",
-        "line": 84,
-        "object_id": 1001,
-        "outputs": [
-            1004
-        ],
-        "pattern": "MapOverlap 2D",
-        "proxy_inputs": [
-            1005
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 6688,
-        "threads": 15,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 1,
-        "end": 7032,
-        "label": "Internal (overlap-wrap)",
-        "line": 258,
-        "object_id": 1016,
-        "region": "Double-iteration",
-        "start": 6698,
-        "time": 7032,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            12,
-            12
-        ],
-        "elwise_inputs": [
-            1004
-        ],
-        "end": 7037,
-        "file": "cellular_automaton.py",
-        "label": "update",
-        "line": 85,
-        "object_id": 1001,
-        "outputs": [
-            1003
-        ],
-        "pattern": "MapOverlap 2D",
-        "proxy_inputs": [
-            1005
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 7032,
-        "threads": 15,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "device-to-host",
-        "elements": 144,
-        "end": 7787,
-        "label": "domain_b",
-        "line": 306,
-        "object_id": 1004,
-        "region": "Double-iteration",
-        "start": 7093,
-        "time": 7787,
-        "type": "transfer"
-    },
-    {
-        "data_file": "domain_b@2.txt",
-        "end": 7873,
-        "file": "cellular_automaton.py",
-        "label": "domain_b",
-        "line": 86,
-        "object_id": 1004,
-        "region": "Double-iteration",
-        "start": 7037,
-        "type": "snapshot"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "device-to-host",
-        "elements": 144,
-        "end": 8459,
-        "label": "domain_a",
-        "line": 306,
-        "object_id": 1003,
-        "region": "Double-iteration",
-        "start": 7910,
-        "time": 8459,
-        "type": "transfer"
-    },
-    {
-        "data_file": "domain_a@3.txt",
-        "end": 8494,
-        "file": "cellular_automaton.py",
-        "label": "domain_a",
-        "line": 87,
-        "object_id": 1003,
-        "region": "Double-iteration",
-        "start": 7874,
-        "type": "snapshot"
-    },
-    {
-        "file": "cellular_automaton.py",
-        "label": "Double-iteration",
-        "line": 83,
-        "region_depth": 1,
-        "time": 8496,
-        "type": "region"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 1,
-        "end": 9190,
-        "label": "Internal (overlap-wrap)",
-        "line": 258,
-        "object_id": 1021,
-        "region": "Double-iteration",
-        "start": 8499,
-        "time": 9190,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            12,
-            12
-        ],
-        "elwise_inputs": [
-            1003
-        ],
-        "end": 9207,
-        "file": "cellular_automaton.py",
-        "label": "update",
-        "line": 84,
-        "object_id": 1001,
-        "outputs": [
-            1004
-        ],
-        "pattern": "MapOverlap 2D",
-        "proxy_inputs": [
-            1005
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 9191,
-        "threads": 15,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 1,
-        "end": 9755,
-        "label": "Internal (overlap-wrap)",
-        "line": 258,
-        "object_id": 1024,
-        "region": "Double-iteration",
-        "start": 9216,
-        "time": 9755,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            12,
-            12
-        ],
-        "elwise_inputs": [
-            1004
-        ],
-        "end": 9759,
-        "file": "cellular_automaton.py",
-        "label": "update",
-        "line": 85,
-        "object_id": 1001,
-        "outputs": [
-            1003
-        ],
-        "pattern": "MapOverlap 2D",
-        "proxy_inputs": [
-            1005
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 9755,
-        "threads": 15,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "device-to-host",
-        "elements": 144,
-        "end": 10382,
-        "label": "domain_b",
-        "line": 306,
-        "object_id": 1004,
-        "region": "Double-iteration",
-        "start": 9809,
-        "time": 10382,
-        "type": "transfer"
-    },
-    {
-        "data_file": "domain_b@4.txt",
-        "end": 10420,
-        "file": "cellular_automaton.py",
-        "label": "domain_b",
-        "line": 86,
-        "object_id": 1004,
-        "region": "Double-iteration",
-        "start": 9759,
-        "type": "snapshot"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "device-to-host",
-        "elements": 144,
-        "end": 10705,
-        "label": "domain_a",
-        "line": 306,
-        "object_id": 1003,
-        "region": "Double-iteration",
-        "start": 10477,
-        "time": 10705,
-        "type": "transfer"
-    },
-    {
-        "data_file": "domain_a@5.txt",
-        "end": 10740,
-        "file": "cellular_automaton.py",
-        "label": "domain_a",
-        "line": 87,
-        "object_id": 1003,
-        "region": "Double-iteration",
-        "start": 10421,
-        "type": "snapshot"
-    },
-    {
-        "file": "cellular_automaton.py",
-        "label": "Double-iteration",
-        "line": 83,
-        "region_depth": 1,
-        "time": 10741,
-        "type": "region"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 1,
-        "end": 10953,
-        "label": "Internal (overlap-wrap)",
-        "line": 258,
-        "object_id": 1029,
-        "region": "Double-iteration",
-        "start": 10743,
-        "time": 10953,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            12,
-            12
-        ],
-        "elwise_inputs": [
-            1003
-        ],
-        "end": 10956,
-        "file": "cellular_automaton.py",
-        "label": "update",
-        "line": 84,
-        "object_id": 1001,
-        "outputs": [
-            1004
-        ],
-        "pattern": "MapOverlap 2D",
-        "proxy_inputs": [
-            1005
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 10953,
-        "threads": 15,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 1,
-        "end": 11177,
-        "label": "Internal (overlap-wrap)",
-        "line": 258,
-        "object_id": 1032,
-        "region": "Double-iteration",
-        "start": 10959,
-        "time": 11177,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            12,
-            12
-        ],
-        "elwise_inputs": [
-            1004
-        ],
-        "end": 11180,
-        "file": "cellular_automaton.py",
-        "label": "update",
-        "line": 85,
-        "object_id": 1001,
-        "outputs": [
-            1003
-        ],
-        "pattern": "MapOverlap 2D",
-        "proxy_inputs": [
-            1005
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 11178,
-        "threads": 15,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "device-to-host",
-        "elements": 144,
-        "end": 11417,
-        "label": "domain_b",
-        "line": 306,
-        "object_id": 1004,
-        "region": "Double-iteration",
-        "start": 11219,
-        "time": 11417,
-        "type": "transfer"
-    },
-    {
-        "data_file": "domain_b@6.txt",
-        "end": 11438,
-        "file": "cellular_automaton.py",
-        "label": "domain_b",
-        "line": 86,
-        "object_id": 1004,
-        "region": "Double-iteration",
-        "start": 11181,
-        "type": "snapshot"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "device-to-host",
-        "elements": 144,
-        "end": 11647,
-        "label": "domain_a",
-        "line": 306,
-        "object_id": 1003,
-        "region": "Double-iteration",
-        "start": 11469,
-        "time": 11647,
-        "type": "transfer"
-    },
-    {
-        "data_file": "domain_a@7.txt",
-        "end": 11669,
-        "file": "cellular_automaton.py",
-        "label": "domain_a",
-        "line": 87,
-        "object_id": 1003,
-        "region": "Double-iteration",
-        "start": 11438,
-        "type": "snapshot"
-    },
-    {
-        "file": "cellular_automaton.py",
-        "label": "Double-iteration",
-        "line": 83,
-        "region_depth": 1,
-        "time": 11670,
-        "type": "region"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 1,
-        "end": 11847,
-        "label": "Internal (overlap-wrap)",
-        "line": 258,
-        "object_id": 1037,
-        "region": "Double-iteration",
-        "start": 11671,
-        "time": 11847,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            12,
-            12
-        ],
-        "elwise_inputs": [
-            1003
-        ],
-        "end": 11851,
-        "file": "cellular_automaton.py",
-        "label": "update",
-        "line": 84,
-        "object_id": 1001,
-        "outputs": [
-            1004
-        ],
-        "pattern": "MapOverlap 2D",
-        "proxy_inputs": [
-            1005
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 11847,
-        "threads": 15,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 1,
-        "end": 12072,
-        "label": "Internal (overlap-wrap)",
-        "line": 258,
-        "object_id": 1040,
-        "region": "Double-iteration",
-        "start": 11853,
-        "time": 12072,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            12,
-            12
-        ],
-        "elwise_inputs": [
-            1004
-        ],
-        "end": 12076,
-        "file": "cellular_automaton.py",
-        "label": "update",
-        "line": 85,
-        "object_id": 1001,
-        "outputs": [
-            1003
-        ],
-        "pattern": "MapOverlap 2D",
-        "proxy_inputs": [
-            1005
-        ],
-        "region": "Double-iteration",
-        "scalar_inputs": [],
-        "start": 12073,
-        "threads": 15,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "device-to-host",
-        "elements": 144,
-        "end": 12333,
-        "label": "domain_b",
-        "line": 306,
-        "object_id": 1004,
-        "region": "Double-iteration",
-        "start": 12120,
-        "time": 12333,
-        "type": "transfer"
-    },
-    {
-        "data_file": "domain_b@8.txt",
-        "end": 12361,
-        "file": "cellular_automaton.py",
-        "label": "domain_b",
-        "line": 86,
-        "object_id": 1004,
-        "region": "Double-iteration",
-        "start": 12077,
-        "type": "snapshot"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "device-to-host",
-        "elements": 144,
-        "end": 12601,
-        "label": "domain_a",
-        "line": 306,
-        "object_id": 1003,
-        "region": "Double-iteration",
-        "start": 12406,
-        "time": 12601,
-        "type": "transfer"
-    },
-    {
-        "data_file": "domain_a@9.txt",
-        "end": 12624,
-        "file": "cellular_automaton.py",
-        "label": "domain_a",
-        "line": 87,
-        "object_id": 1003,
-        "region": "Double-iteration",
-        "start": 12362,
-        "type": "snapshot"
-    },
-    {
-        "elwise_inputs": [],
-        "end": 12625,
-        "file": "cellular_automaton.py",
-        "label": "I/O",
-        "line": 88,
-        "outputs": [],
-        "proxy_inputs": [
-            1003
-        ],
-        "scalar_inputs": [],
-        "start": 12625,
-        "type": "external"
-    },
-    {
-        "label": "domain_a",
-        "line": 315,
-        "object_id": 1003,
-        "time": 13218,
-        "type": "deallocation"
-    },
-    {
-        "label": "domain_b",
-        "line": 315,
-        "object_id": 1004,
-        "time": 13221,
-        "type": "deallocation"
-    },
-    {
-        "label": "rules",
-        "line": 315,
-        "object_id": 1005,
-        "time": 13224,
-        "type": "deallocation"
+{
+    "data": [
+        {
+            "label": "PRNG stream",
+            "line": 139,
+            "object_id": 1002,
+            "time": 0,
+            "type": "allocation"
+        },
+        {
+            "label": "domain_a",
+            "line": 292,
+            "object_id": 1003,
+            "time": 9,
+            "type": "allocation"
+        },
+        {
+            "label": "domain_b",
+            "line": 292,
+            "object_id": 1004,
+            "time": 264,
+            "type": "allocation"
+        },
+        {
+            "label": "rules",
+            "line": 292,
+            "object_id": 1005,
+            "time": 264,
+            "type": "allocation"
+        },
+        {
+            "elwise_inputs": [],
+            "end": 266,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "[external]",
+            "line": 72,
+            "outputs": [
+                1005
+            ],
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 265,
+            "type": "external"
+        },
+        {
+            "end": 266,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "Domain",
+            "line": 78,
+            "object_ids": [
+                1003,
+                1004
+            ],
+            "start": 266,
+            "type": "virtual_container",
+            "virtual_id": 1046
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 251,
+            "object_id": 1009,
+            "time": 283,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 144,
+            "end": 2178,
+            "label": "[Internal PRNG]",
+            "line": 258,
+            "object_id": 1009,
+            "start": 285,
+            "time": 2178,
+            "type": "transfer"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 282,
+            "object_id": 1009,
+            "time": 2187,
+            "type": "deallocation"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                144
+            ],
+            "elwise_inputs": [],
+            "end": 2820,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "init_random",
+            "line": 80,
+            "object_id": 1000,
+            "outputs": [
+                1003
+            ],
+            "pattern": "Map",
+            "prng": 1002,
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 283,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 144,
+            "end": 3497,
+            "label": "domain_a",
+            "line": 306,
+            "object_id": 1003,
+            "start": 2965,
+            "time": 3497,
+            "type": "transfer"
+        },
+        {
+            "data_file": ".//domain_a@1.txt",
+            "end": 3577,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "domain_a",
+            "line": 81,
+            "object_id": 1003,
+            "start": 2867,
+            "type": "snapshot"
+        },
+        {
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "Double-iteration",
+            "line": 83,
+            "region_depth": 1,
+            "time": 3579,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 18,
+            "end": 3823,
+            "label": "rules",
+            "line": 258,
+            "object_id": 1005,
+            "region": "Double-iteration",
+            "start": 3587,
+            "time": 3823,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 1,
+            "end": 4032,
+            "label": "Internal (overlap-wrap)",
+            "line": 258,
+            "object_id": 1013,
+            "region": "Double-iteration",
+            "start": 3828,
+            "time": 4032,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                12,
+                12
+            ],
+            "elwise_inputs": [
+                1003
+            ],
+            "end": 4383,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "update",
+            "line": 84,
+            "object_id": 1001,
+            "outputs": [
+                1004
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1005
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "start": 4033,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 1,
+            "end": 4604,
+            "label": "Internal (overlap-wrap)",
+            "line": 258,
+            "object_id": 1016,
+            "region": "Double-iteration",
+            "start": 4402,
+            "time": 4604,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                12,
+                12
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 4820,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "update",
+            "line": 85,
+            "object_id": 1001,
+            "outputs": [
+                1003
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1005
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "start": 4604,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 144,
+            "end": 5238,
+            "label": "domain_b",
+            "line": 306,
+            "object_id": 1004,
+            "region": "Double-iteration",
+            "start": 4921,
+            "time": 5238,
+            "type": "transfer"
+        },
+        {
+            "data_file": ".//domain_b@2.txt",
+            "end": 5274,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "domain_b",
+            "line": 86,
+            "object_id": 1004,
+            "region": "Double-iteration",
+            "start": 4866,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 144,
+            "end": 5498,
+            "label": "domain_a",
+            "line": 306,
+            "object_id": 1003,
+            "region": "Double-iteration",
+            "start": 5313,
+            "time": 5498,
+            "type": "transfer"
+        },
+        {
+            "data_file": ".//domain_a@3.txt",
+            "end": 5525,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "domain_a",
+            "line": 87,
+            "object_id": 1003,
+            "region": "Double-iteration",
+            "start": 5275,
+            "type": "snapshot"
+        },
+        {
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "Double-iteration",
+            "line": 83,
+            "region_depth": 1,
+            "time": 5526,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 1,
+            "end": 5729,
+            "label": "Internal (overlap-wrap)",
+            "line": 258,
+            "object_id": 1021,
+            "region": "Double-iteration",
+            "start": 5529,
+            "time": 5729,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                12,
+                12
+            ],
+            "elwise_inputs": [
+                1003
+            ],
+            "end": 5938,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "update",
+            "line": 84,
+            "object_id": 1001,
+            "outputs": [
+                1004
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1005
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "start": 5729,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 1,
+            "end": 6152,
+            "label": "Internal (overlap-wrap)",
+            "line": 258,
+            "object_id": 1024,
+            "region": "Double-iteration",
+            "start": 5946,
+            "time": 6152,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                12,
+                12
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 6427,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "update",
+            "line": 85,
+            "object_id": 1001,
+            "outputs": [
+                1003
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1005
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "start": 6152,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 144,
+            "end": 7068,
+            "label": "domain_b",
+            "line": 306,
+            "object_id": 1004,
+            "region": "Double-iteration",
+            "start": 6496,
+            "time": 7068,
+            "type": "transfer"
+        },
+        {
+            "data_file": ".//domain_b@4.txt",
+            "end": 7106,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "domain_b",
+            "line": 86,
+            "object_id": 1004,
+            "region": "Double-iteration",
+            "start": 6436,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 144,
+            "end": 7619,
+            "label": "domain_a",
+            "line": 306,
+            "object_id": 1003,
+            "region": "Double-iteration",
+            "start": 7155,
+            "time": 7619,
+            "type": "transfer"
+        },
+        {
+            "data_file": ".//domain_a@5.txt",
+            "end": 7643,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "domain_a",
+            "line": 87,
+            "object_id": 1003,
+            "region": "Double-iteration",
+            "start": 7106,
+            "type": "snapshot"
+        },
+        {
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "Double-iteration",
+            "line": 83,
+            "region_depth": 1,
+            "time": 7647,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 1,
+            "end": 8238,
+            "label": "Internal (overlap-wrap)",
+            "line": 258,
+            "object_id": 1029,
+            "region": "Double-iteration",
+            "start": 7651,
+            "time": 8238,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                12,
+                12
+            ],
+            "elwise_inputs": [
+                1003
+            ],
+            "end": 8534,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "update",
+            "line": 84,
+            "object_id": 1001,
+            "outputs": [
+                1004
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1005
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "start": 8239,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 1,
+            "end": 8715,
+            "label": "Internal (overlap-wrap)",
+            "line": 258,
+            "object_id": 1032,
+            "region": "Double-iteration",
+            "start": 8541,
+            "time": 8715,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                12,
+                12
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 8948,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "update",
+            "line": 85,
+            "object_id": 1001,
+            "outputs": [
+                1003
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1005
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "start": 8715,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 144,
+            "end": 9173,
+            "label": "domain_b",
+            "line": 306,
+            "object_id": 1004,
+            "region": "Double-iteration",
+            "start": 8996,
+            "time": 9173,
+            "type": "transfer"
+        },
+        {
+            "data_file": ".//domain_b@6.txt",
+            "end": 9201,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "domain_b",
+            "line": 86,
+            "object_id": 1004,
+            "region": "Double-iteration",
+            "start": 8955,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 144,
+            "end": 9429,
+            "label": "domain_a",
+            "line": 306,
+            "object_id": 1003,
+            "region": "Double-iteration",
+            "start": 9244,
+            "time": 9429,
+            "type": "transfer"
+        },
+        {
+            "data_file": ".//domain_a@7.txt",
+            "end": 9450,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "domain_a",
+            "line": 87,
+            "object_id": 1003,
+            "region": "Double-iteration",
+            "start": 9202,
+            "type": "snapshot"
+        },
+        {
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "Double-iteration",
+            "line": 83,
+            "region_depth": 1,
+            "time": 9450,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 1,
+            "end": 9644,
+            "label": "Internal (overlap-wrap)",
+            "line": 258,
+            "object_id": 1037,
+            "region": "Double-iteration",
+            "start": 9452,
+            "time": 9644,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                12,
+                12
+            ],
+            "elwise_inputs": [
+                1003
+            ],
+            "end": 9917,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "update",
+            "line": 84,
+            "object_id": 1001,
+            "outputs": [
+                1004
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1005
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "start": 9644,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 1,
+            "end": 10109,
+            "label": "Internal (overlap-wrap)",
+            "line": 258,
+            "object_id": 1040,
+            "region": "Double-iteration",
+            "start": 9925,
+            "time": 10109,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                12,
+                12
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 10322,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "update",
+            "line": 85,
+            "object_id": 1001,
+            "outputs": [
+                1003
+            ],
+            "parameters": {
+                "edge": "Pad",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [
+                1005
+            ],
+            "region": "Double-iteration",
+            "scalar_inputs": [],
+            "start": 10109,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 144,
+            "end": 10551,
+            "label": "domain_b",
+            "line": 306,
+            "object_id": 1004,
+            "region": "Double-iteration",
+            "start": 10364,
+            "time": 10551,
+            "type": "transfer"
+        },
+        {
+            "data_file": ".//domain_b@8.txt",
+            "end": 10571,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "domain_b",
+            "line": 86,
+            "object_id": 1004,
+            "region": "Double-iteration",
+            "start": 10331,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 144,
+            "end": 10807,
+            "label": "domain_a",
+            "line": 306,
+            "object_id": 1003,
+            "region": "Double-iteration",
+            "start": 10612,
+            "time": 10807,
+            "type": "transfer"
+        },
+        {
+            "data_file": ".//domain_a@9.txt",
+            "end": 10830,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "domain_a",
+            "line": 87,
+            "object_id": 1003,
+            "region": "Double-iteration",
+            "start": 10571,
+            "type": "snapshot"
+        },
+        {
+            "elwise_inputs": [],
+            "end": 10831,
+            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "label": "I/O",
+            "line": 88,
+            "outputs": [],
+            "proxy_inputs": [
+                1003
+            ],
+            "scalar_inputs": [],
+            "start": 10831,
+            "type": "external"
+        },
+        {
+            "label": "rules",
+            "line": 322,
+            "object_id": 1005,
+            "time": 10851,
+            "type": "deallocation"
+        },
+        {
+            "label": "domain_b",
+            "line": 322,
+            "object_id": 1004,
+            "time": 10854,
+            "type": "deallocation"
+        },
+        {
+            "label": "domain_a",
+            "line": 322,
+            "object_id": 1003,
+            "time": 11402,
+            "type": "deallocation"
+        }
+    ],
+    "header": {
+        "instances": {
+            "1000": {
+                "instance": {
+                    "end_line": 62,
+                    "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+                    "line": 62
+                },
+                "label": "init_random",
+                "user_functions": [
+                    {
+                        "end_line": 13,
+                        "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+                        "kind": "function",
+                        "line": 9,
+                        "name": "init_random_f"
+                    }
+                ]
+            },
+            "1001": {
+                "instance": {
+                    "end_line": 64,
+                    "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+                    "line": 64
+                },
+                "label": "update",
+                "user_functions": [
+                    {
+                        "end_line": 34,
+                        "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+                        "kind": "function",
+                        "line": 25,
+                        "name": "automaton2d"
+                    }
+                ]
+            }
+        }
     }
-]
+}

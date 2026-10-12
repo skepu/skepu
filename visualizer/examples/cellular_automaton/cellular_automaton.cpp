@@ -47,6 +47,8 @@ int main(int argc, char *argv[])
 	skepu::setGlobalBackendSpec(spec);
 
 	auto init_random = skepu::Map<0>(init_random_f);
+	skepu::PRNG prng;
+	init_random.setPRNG(prng);
 
 #if ENABLE_1D_EXAMPLE
 	if (dim == 1)
@@ -56,7 +58,8 @@ int main(int argc, char *argv[])
 		update.setEdgeMode(skepu::Edge::Pad);
 		update.setPad(0);
 		skepu::Vector<int> domainA(size, "A", 0), domainB(size, "B");
-		skepu::Matrix<int> updateRules(2, 2, "Rules");
+		// (rows: dead/alive cell, columns: number of alive neighbors, 0 to 2)
+		skepu::Matrix<int> updateRules(2, 3, "Rules");
 		updateRules(0, 1) = true;
 		SKEPU_TRACE_VIRTUAL_DATASET("Domain", domainA, domainB);
 		
@@ -85,7 +88,8 @@ int main(int argc, char *argv[])
 		update.setEdgeMode(skepu::Edge::Pad);
 		update.setPad(0);
 		skepu::Matrix<int> domainA(size, size, "A", 0), domainB(size, size, "B");
-		skepu::Matrix<int> updateRules(2, 8, "Rules");
+		// (rows: dead/alive cell, columns: number of alive neighbors, 0 to 8)
+		skepu::Matrix<int> updateRules(2, 9, "Rules");
 		SKEPU_TRACE_VIRTUAL_DATASET("Domain", domainA, domainB);
 		
 		// Each empty cell with three neighbors becomes populated.

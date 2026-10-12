@@ -215,7 +215,7 @@ for e in snapshots:
     size = 1
     for d in header[1:]:
         size *= int(d)
-    if int(header[0]) not in (1, 2) or size != len(open(path).read().split("\n", 1)[1].split()):
+    if int(header[0]) not in (1, 2, 3, 4) or size != len(open(path).read().split("\n", 1)[1].split()):
         fail("snapshot %s: the file does not have all %s elements" % (e["label"], header[1:]))
 for k in range(1, P):
     if any(e["type"] == "snapshot" for e in files[k]["data"]):

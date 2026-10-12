@@ -362,6 +362,14 @@ export class CallNode extends ComputationNode {
         return { ...super.toTimeline(), pattern: this.pattern, elements: this.elements };
     }
 
+    // (the badge nodes also say where the instance and the user functions of the call are, for the marks in the source panes)
+    toSourceBadge() {
+        const badge = super.toSourceBadge();
+        const d = badge && this.instanceId != null ? this.graph.instances?.get(this.instanceId) : null;
+        if (d) badge.definitions = { instance: d.instance, functions: d.user_functions };
+        return badge;
+    }
+
     infoData() {
         const info = { ...super.infoData(), Pattern: this.pattern, Elements: this.elements };
         // where the instance and its user functions are defined (the info pane has links to them)

@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { collectBadges } from '../../script/badges.js';
+import { collectBadges, badgeNodesToShow } from '../../script/badges.js';
 import { builder } from '../event_builders.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -60,6 +60,24 @@ describe('the badge data of a coalesced node', () => {
     it('has none for a node of one iteration', async () => {
         const sum = (await badgesOf(loop([10, 20], 1), { collapse_iteration: false })).filter(n => n.type === 'skeleton_call');
         for (const n of sum) expect(n).not.toHaveProperty('locations');
+    });
+});
+
+// The backend always has the regions in the graph (the graph view needs them for its layout, and draws them as invisible nodes
+// when View > Regions is off): their gutter badges must not show then.
+describe('the badges of the regions', () => {
+    it('are not shown while the regions are not shown, and the others stay', async () => {
+        const nodes = (await badgesOf(loop([10], 2), { collapse_iteration: false })).map(data => ({ data }));
+        expect(nodes.some(n => n.data.type === 'region')).toBe(true);               // (the backend sends them)
+
+        const hidden = badgeNodesToShow(nodes, false);
+        expect(hidden.some(n => n.data.type === 'region')).toBe(false);
+        expect(hidden.filter(n => n.data.type === 'skeleton_call')).toHaveLength(2);
+        expect(Object.keys(collectBadges(hidden, []).badges)).toEqual(['prog.cpp:10']);          // (not prog.cpp:3, the line of the region)
+
+        const shown = badgeNodesToShow(nodes, true);
+        expect(shown).toHaveLength(nodes.length);
+        expect(Object.keys(collectBadges(shown, []).badges).sort()).toEqual(['prog.cpp:10', 'prog.cpp:3']);
     });
 });
 

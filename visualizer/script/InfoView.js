@@ -24,6 +24,7 @@
 
 import { formatDuration } from './format.js';
 import { renderHeatmap } from './heatmap.js';
+import { definitionPlace } from './badges.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -122,6 +123,7 @@ export class InfoView {
    * @param {Function}        [options.onError]           err → void
    * @param {Function}        [options.onShowSource]      ({ file, line, end_line }) → void; a link to a definition
    * @param {Function}        [options.canShowSource]     file → boolean; whether the source file of a definition is open
+   * @param {Function}        [options.onDefinitions]     (definitions | null, { file, line } of the call) → void; the definitions of the selected call (shading in the source)
    */
   constructor(options) {
     options = options || {};
@@ -137,6 +139,8 @@ export class InfoView {
     this._onError           = options.onError           || null;
     this._onShowSource      = options.onShowSource      || null;
     this._canShowSource     = options.canShowSource     || null;
+    this._onDefinitions     = options.onDefinitions     || null;
+    this._revealIndex       = {};   // node id -> the user function that the last 'function' reveal showed
   }
 
   // ── Public API ───────────────────────────────────────────────────────────────
@@ -147,11 +151,13 @@ export class InfoView {
    * @param {string}  nodeId    Graph node UUID.
    * @param {string}  [source]  Originating view: 'graph' | 'gantt' | 'code-listing'
    * @param {number}  [traceIdx] Per-iteration trace_index override (simulation mode).
+   * @param {string}  [reveal]   'instance' | 'function': also show that definition of the call in the source (the
+   *                             shortcuts of the graph: shift-click, alt-click); 'function' goes on to the next user function each time.
    */
-  open(nodeId, source, traceIdx) {
+  open(nodeId, source, traceIdx, reveal) {
     var self = this;
     this._provider.fetchNodeData(nodeId)
-      .then(function(data) { self._render(data, nodeId, source, traceIdx); })
+      .then(function(data) { self._render(data, nodeId, source, traceIdx, reveal); })
       .catch(function(err) {
         console.error('[InfoView] fetch error:', err);
         if (self._onError) self._onError(err);
@@ -160,6 +166,7 @@ export class InfoView {
 
   /** Clear the info pane — called on background click / deselection. */
   close() {
+    if (this._onDefinitions) this._onDefinitions(null);
     var headingEl = document.getElementById('info-heading');
     var bodyEl    = document.getElementById('info');
     var heatmapEl = document.getElementById('heatmap-container');
@@ -172,7 +179,7 @@ export class InfoView {
 
   // ── Internal render ──────────────────────────────────────────────────────────
 
-  _render(data, nodeId, source, traceIdx) {
+  _render(data, nodeId, source, traceIdx, reveal) {
     // ── Heading ───────────────────────────────────────────────────────────────
     var headingEl = document.getElementById('info-heading');
     if (headingEl) headingEl.textContent = NODE_HEADINGS[data.type] || data.type || '';
@@ -224,6 +231,14 @@ export class InfoView {
       var nodeData = Object.assign({}, data);
       if (traceIdx != null) nodeData.trace_index = traceIdx;
       this._onHighlightNode(nodeData);
+    }
+
+    // ── The marks of the definitions in the source, and the shortcut that shows one ──────
+    if (this._onDefinitions) this._onDefinitions(data.definitions || null, { file: data.File, line: data.Line });
+    if (reveal && data.definitions && this._onShowSource) {
+      var index = reveal === 'function' ? (this._revealIndex[nodeId] = nodeId in this._revealIndex ? this._revealIndex[nodeId] + 1 : 0) : 0;
+      var place = definitionPlace(data.definitions, reveal, index);
+      if (place && (!this._canShowSource || this._canShowSource(place.file))) this._onShowSource(place);
     }
 
     // ── Opaque-node dimming ───────────────────────────────────────────────────

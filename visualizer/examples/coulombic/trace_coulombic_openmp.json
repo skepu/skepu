@@ -1,83 +1,166 @@
-[
-    {
-        "label": "0x7f9e0a1d6400",
-        "line": 239,
-        "object_id": 1001,
-        "time": 0,
-        "type": "allocation"
-    },
-    {
-        "label": "0x7f9e09f07350",
-        "line": 278,
-        "object_id": 1002,
-        "time": 45,
-        "type": "allocation"
-    },
-    {
-        "label": "0x7f9e0a9067d0",
-        "line": 278,
-        "object_id": 1003,
-        "time": 749,
-        "type": "allocation"
-    },
-    {
-        "backend": "OpenMP",
-        "elements": [
-            100
-        ],
-        "elwise_inputs": [
-            1003
-        ],
-        "end": 1252,
-        "file": "/Users/august/Developer/skepu-alpha/examples/coulombic.cpp",
-        "label": "columbicPotential",
-        "line": 110,
-        "object_id": 1000,
-        "outputs": [
-            1002
-        ],
-        "pattern": "Map",
-        "proxy_inputs": [
-            1001
-        ],
-        "scalar_inputs": [],
-        "start": 766,
-        "threads": 8,
-        "type": "skeleton_call"
-    },
-    {
-        "label": "0x7f9e0a9067d0",
-        "line": 308,
-        "object_id": 1003,
-        "time": 1259,
-        "type": "deallocation"
-    },
-    {
-        "elwise_inputs": [],
-        "end": 1368,
-        "file": "",
-        "label": "I/O",
-        "line": 0,
-        "outputs": [],
-        "proxy_inputs": [
-            1002
-        ],
-        "scalar_inputs": [],
-        "start": 1285,
-        "type": "external"
-    },
-    {
-        "label": "0x7f9e09f07350",
-        "line": 308,
-        "object_id": 1002,
-        "time": 1370,
-        "type": "deallocation"
-    },
-    {
-        "label": "0x7f9e0a1d6400",
-        "line": 270,
-        "object_id": 1001,
-        "time": 1372,
-        "type": "deallocation"
+{
+    "data": [
+        {
+            "label": "atoms",
+            "line": 251,
+            "object_id": 1001,
+            "time": 0,
+            "type": "allocation"
+        },
+        {
+            "label": "energy_out",
+            "line": 292,
+            "object_id": 1002,
+            "time": 1,
+            "type": "allocation"
+        },
+        {
+            "label": "PRNG stream",
+            "line": 139,
+            "object_id": 1004,
+            "time": 2,
+            "type": "allocation"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 251,
+            "object_id": 1006,
+            "time": 19,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                100
+            ],
+            "elwise_inputs": [],
+            "end": 114,
+            "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
+            "label": "init",
+            "line": 88,
+            "object_id": 1003,
+            "outputs": [
+                1001
+            ],
+            "pattern": "Map",
+            "prng": 1004,
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 5,
+            "threads": 4,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 282,
+            "object_id": 1006,
+            "time": 162,
+            "type": "deallocation"
+        },
+        {
+            "label": "grid_in",
+            "line": 292,
+            "object_id": 1007,
+            "time": 163,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                100
+            ],
+            "elwise_inputs": [
+                1007
+            ],
+            "end": 212,
+            "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
+            "label": "columbicPotential",
+            "line": 106,
+            "object_id": 1000,
+            "outputs": [
+                1002
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1001
+            ],
+            "scalar_inputs": [],
+            "start": 164,
+            "threads": 4,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "grid_in",
+            "line": 322,
+            "object_id": 1007,
+            "time": 233,
+            "type": "deallocation"
+        },
+        {
+            "elwise_inputs": [],
+            "end": 298,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
+            "label": "I/O",
+            "line": 54,
+            "outputs": [],
+            "proxy_inputs": [
+                1002
+            ],
+            "scalar_inputs": [],
+            "start": 264,
+            "type": "external"
+        },
+        {
+            "label": "energy_out",
+            "line": 322,
+            "object_id": 1002,
+            "time": 298,
+            "type": "deallocation"
+        },
+        {
+            "label": "atoms",
+            "line": 282,
+            "object_id": 1001,
+            "time": 299,
+            "type": "deallocation"
+        }
+    ],
+    "header": {
+        "instances": {
+            "1000": {
+                "instance": {
+                    "end_line": 95,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
+                    "line": 95
+                },
+                "label": "columbicPotential",
+                "user_functions": [
+                    {
+                        "end_line": 68,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
+                        "kind": "function",
+                        "line": 48,
+                        "name": "coulombPotential_f"
+                    }
+                ]
+            },
+            "1003": {
+                "instance": {
+                    "end_line": 85,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
+                    "line": 85
+                },
+                "label": "init",
+                "user_functions": [
+                    {
+                        "end_line": 80,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
+                        "kind": "function",
+                        "line": 72,
+                        "name": "random_atom"
+                    }
+                ]
+            }
+        }
     }
-]
+}

@@ -9,6 +9,7 @@
 
 #include "skepu3/mpi/vector.hpp"
 #include "skepu3/mpi/matrix.hpp"
+#include "skepu3/mpi/tensor.hpp"
 
 namespace skepu
 {
@@ -37,5 +38,36 @@ namespace skepu
 		for (size_t i = 0; i < data.size_i(); ++i)
 			for (size_t j = 0; j < data.size_j(); ++j)
 				fs << view(i, j) << " ";
+	}
+
+	template<typename T>
+	inline void snapshot_serializer(Tensor3<T> &data, std::string &fname)
+	{
+		data.flush(); // (the gather)
+		if (mpi::rank() != 0)
+			return;
+		const Tensor3<T> &view = data;
+		std::ofstream fs(fname);
+		fs << 3 << " " << data.size_i() << " " << data.size_j() << " " << data.size_k() << "\n";
+		for (size_t i = 0; i < data.size_i(); ++i)
+			for (size_t j = 0; j < data.size_j(); ++j)
+				for (size_t k = 0; k < data.size_k(); ++k)
+					fs << view(i, j, k) << " ";
+	}
+
+	template<typename T>
+	inline void snapshot_serializer(Tensor4<T> &data, std::string &fname)
+	{
+		data.flush(); // (the gather)
+		if (mpi::rank() != 0)
+			return;
+		const Tensor4<T> &view = data;
+		std::ofstream fs(fname);
+		fs << 4 << " " << data.size_i() << " " << data.size_j() << " " << data.size_k() << " " << data.size_l() << "\n";
+		for (size_t i = 0; i < data.size_i(); ++i)
+			for (size_t j = 0; j < data.size_j(); ++j)
+				for (size_t k = 0; k < data.size_k(); ++k)
+					for (size_t l = 0; l < data.size_l(); ++l)
+						fs << view(i, j, k, l) << " ";
 	}
 }

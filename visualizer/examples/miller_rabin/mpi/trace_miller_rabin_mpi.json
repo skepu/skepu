@@ -4,14 +4,14 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 1,
-            "end": 3808,
+            "end": 3857,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 1,
-            "start": 3803,
+            "start": 3842,
             "type": "communication"
         },
         {
@@ -20,8 +20,8 @@
                 6
             ],
             "elwise_inputs": [],
-            "end": 3820,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+            "end": 3869,
+            "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
             "mpi": {
@@ -29,14 +29,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 5
+                    "time_us": 15
                 },
                 "local_elements": 2,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 850697691479707070,
-                "work_end": 3802,
-                "work_start": 3712
+                "work_end": 3842,
+                "work_start": 3746
             },
             "object_id": 1000,
             "outputs": [
@@ -47,7 +47,7 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 1,
-            "start": 3711,
+            "start": 3745,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -55,14 +55,14 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 2,
-            "end": 3923,
+            "end": 3996,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 2,
-            "start": 3921,
+            "start": 3956,
             "type": "communication"
         },
         {
@@ -71,8 +71,8 @@
                 96
             ],
             "elwise_inputs": [],
-            "end": 3937,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+            "end": 4008,
+            "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
             "mpi": {
@@ -80,14 +80,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 2
+                    "time_us": 40
                 },
                 "local_elements": 24,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 850697691479707070,
-                "work_end": 3920,
-                "work_start": 3886
+                "work_end": 3956,
+                "work_start": 3908
             },
             "object_id": 1007,
             "outputs": [
@@ -98,7 +98,7 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 2,
-            "start": 3885,
+            "start": 3908,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -106,14 +106,14 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 3,
-            "end": 4011,
+            "end": 4096,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 3,
-            "start": 4010,
+            "start": 4094,
             "type": "communication"
         },
         {
@@ -122,8 +122,8 @@
                 996
             ],
             "elwise_inputs": [],
-            "end": 4019,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+            "end": 4107,
+            "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
             "mpi": {
@@ -131,14 +131,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 1
+                    "time_us": 2
                 },
                 "local_elements": 249,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 850697691479707070,
-                "work_end": 4010,
-                "work_start": 3950
+                "work_end": 4094,
+                "work_start": 4020
             },
             "object_id": 1014,
             "outputs": [
@@ -149,7 +149,7 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 3,
-            "start": 3950,
+            "start": 4020,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -157,14 +157,14 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 4,
-            "end": 4174,
+            "end": 4301,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 4,
-            "start": 4148,
+            "start": 4275,
             "type": "communication"
         },
         {
@@ -173,8 +173,8 @@
                 9996
             ],
             "elwise_inputs": [],
-            "end": 4184,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+            "end": 4310,
+            "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
             "mpi": {
@@ -188,8 +188,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 850697691479707070,
-                "work_end": 4148,
-                "work_start": 4030
+                "work_end": 4275,
+                "work_start": 4117
             },
             "object_id": 1021,
             "outputs": [
@@ -200,7 +200,7 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 4,
-            "start": 4029,
+            "start": 4117,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -208,14 +208,14 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 5,
-            "end": 5653,
+            "end": 6061,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 5,
-            "start": 5487,
+            "start": 5643,
             "type": "communication"
         },
         {
@@ -224,8 +224,8 @@
                 99996
             ],
             "elwise_inputs": [],
-            "end": 5681,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+            "end": 6070,
+            "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
             "mpi": {
@@ -233,14 +233,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 166
+                    "time_us": 418
                 },
                 "local_elements": 24999,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 850697691479707070,
-                "work_end": 5487,
-                "work_start": 4195
+                "work_end": 5643,
+                "work_start": 4322
             },
             "object_id": 1028,
             "outputs": [
@@ -251,7 +251,7 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 5,
-            "start": 4195,
+            "start": 4321,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -259,14 +259,14 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 6,
-            "end": 22326,
+            "end": 23890,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 6,
-            "start": 20402,
+            "start": 21845,
             "type": "communication"
         },
         {
@@ -275,8 +275,8 @@
                 999996
             ],
             "elwise_inputs": [],
-            "end": 22336,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+            "end": 23902,
+            "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
             "mpi": {
@@ -284,14 +284,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 1924
+                    "time_us": 2045
                 },
                 "local_elements": 249999,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 850697691479707070,
-                "work_end": 20401,
-                "work_start": 5691
+                "work_end": 21845,
+                "work_start": 6078
             },
             "object_id": 1035,
             "outputs": [
@@ -302,7 +302,7 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 6,
-            "start": 5691,
+            "start": 6077,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -310,14 +310,14 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 7,
-            "end": 210901,
+            "end": 217009,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 7,
-            "start": 185770,
+            "start": 186702,
             "type": "communication"
         },
         {
@@ -326,8 +326,8 @@
                 9999996
             ],
             "elwise_inputs": [],
-            "end": 210915,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/miller_rabin.cpp",
+            "end": 217021,
+            "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
             "mpi": {
@@ -335,14 +335,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 25131
+                    "time_us": 30307
                 },
                 "local_elements": 2499999,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 850697691479707070,
-                "work_end": 185770,
-                "work_start": 22350
+                "work_end": 186701,
+                "work_start": 23915
             },
             "object_id": 1042,
             "outputs": [
@@ -353,7 +353,7 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 7,
-            "start": 22349,
+            "start": 23914,
             "threads": 2,
             "type": "skeleton_call"
         }
@@ -361,21 +361,191 @@
     "header": {
         "clock": {
             "end": {
-                "local_us": 210962,
+                "local_us": 217087,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             },
             "method": "ping-pong",
             "start": {
-                "local_us": 3267,
+                "local_us": 3248,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             }
         },
+        "instances": {
+            "1000": {
+                "instance": {
+                    "end_line": 75,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
+                    "line": 75
+                },
+                "label": "prime_counter",
+                "user_functions": [
+                    {
+                        "end_line": 64,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
+                        "kind": "function",
+                        "line": 20,
+                        "name": "isprime"
+                    },
+                    {
+                        "end_line": 19,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/util.hpp",
+                        "kind": "function",
+                        "line": 16,
+                        "name": "add"
+                    }
+                ]
+            },
+            "1007": {
+                "instance": {
+                    "end_line": 75,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
+                    "line": 75
+                },
+                "label": "prime_counter",
+                "user_functions": [
+                    {
+                        "end_line": 64,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
+                        "kind": "function",
+                        "line": 20,
+                        "name": "isprime"
+                    },
+                    {
+                        "end_line": 19,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/util.hpp",
+                        "kind": "function",
+                        "line": 16,
+                        "name": "add"
+                    }
+                ]
+            },
+            "1014": {
+                "instance": {
+                    "end_line": 75,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
+                    "line": 75
+                },
+                "label": "prime_counter",
+                "user_functions": [
+                    {
+                        "end_line": 64,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
+                        "kind": "function",
+                        "line": 20,
+                        "name": "isprime"
+                    },
+                    {
+                        "end_line": 19,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/util.hpp",
+                        "kind": "function",
+                        "line": 16,
+                        "name": "add"
+                    }
+                ]
+            },
+            "1021": {
+                "instance": {
+                    "end_line": 75,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
+                    "line": 75
+                },
+                "label": "prime_counter",
+                "user_functions": [
+                    {
+                        "end_line": 64,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
+                        "kind": "function",
+                        "line": 20,
+                        "name": "isprime"
+                    },
+                    {
+                        "end_line": 19,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/util.hpp",
+                        "kind": "function",
+                        "line": 16,
+                        "name": "add"
+                    }
+                ]
+            },
+            "1028": {
+                "instance": {
+                    "end_line": 75,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
+                    "line": 75
+                },
+                "label": "prime_counter",
+                "user_functions": [
+                    {
+                        "end_line": 64,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
+                        "kind": "function",
+                        "line": 20,
+                        "name": "isprime"
+                    },
+                    {
+                        "end_line": 19,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/util.hpp",
+                        "kind": "function",
+                        "line": 16,
+                        "name": "add"
+                    }
+                ]
+            },
+            "1035": {
+                "instance": {
+                    "end_line": 75,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
+                    "line": 75
+                },
+                "label": "prime_counter",
+                "user_functions": [
+                    {
+                        "end_line": 64,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
+                        "kind": "function",
+                        "line": 20,
+                        "name": "isprime"
+                    },
+                    {
+                        "end_line": 19,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/util.hpp",
+                        "kind": "function",
+                        "line": 16,
+                        "name": "add"
+                    }
+                ]
+            },
+            "1042": {
+                "instance": {
+                    "end_line": 75,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
+                    "line": 75
+                },
+                "label": "prime_counter",
+                "user_functions": [
+                    {
+                        "end_line": 64,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
+                        "kind": "function",
+                        "line": 20,
+                        "name": "isprime"
+                    },
+                    {
+                        "end_line": 19,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/util.hpp",
+                        "kind": "function",
+                        "line": 16,
+                        "name": "add"
+                    }
+                ]
+            }
+        },
         "mpi": {
             "detail_rank": 0,
-            "host": "Augusts-Laptop.local",
-            "pid": 37637,
+            "host": "mac.staff.netlogon.liu.se",
+            "pid": 93034,
             "rank": 0,
             "ranks": 4,
             "role": "full"

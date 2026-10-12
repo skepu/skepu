@@ -41,6 +41,7 @@ import { PAN_ZOOM_OPTIONS, bindPanZoom, ZOOM_FIT_PAD, roomAround, animateFit } f
 import { showTooltip, hideTooltip, positionTooltip, nodeTooltipText, edgeTooltipText } from './tooltip.js';
 import { highlightSelection, bindHover } from './graph_interaction.js';
 import { basePattern } from './TraceDataProvider.js';
+import { badgeNodesToShow } from './badges.js';
 
 // ── Shared page resources ─────────────────────────────────────────────────────
 // One ELK instance per page is correct: the ELK worker is expensive to spawn. (The tooltip is tooltip.js.)
@@ -521,7 +522,7 @@ export class GraphView {
       renderingMs:   null,
       timelineNodes: rawData.timeline_nodes || [],
       graphNodes:    nodes,
-      badgeNodes:    rawData.badge_nodes || nodes,
+      badgeNodes:    badgeNodesToShow(rawData.badge_nodes || nodes, !!this.settings['show_regions']),
       lastMinmax:    minmax,
     };
 
@@ -628,11 +629,14 @@ export class GraphView {
       // Broadcast via the shared event bus so every attached view
       // (TimelineView, SourceCodeView, …) can update itself.  The 'graph'
       // source tag prevents this GraphView from receiving its own event back.
+      // (shift-click also shows where the instance of the call is defined in the source, alt-click where a user function is)
+      var mouse = event.originalEvent || {};
       self._provider._emit('select', {
         nodeId:  nodeId,
         source:  'graph',
         focusId: nodeId,
         allIds:  [nodeId],
+        reveal:  mouse.shiftKey ? 'instance' : (mouse.altKey ? 'function' : undefined),
       });
     });
 

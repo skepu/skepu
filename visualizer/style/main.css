@@ -3,10 +3,12 @@
 :root {
   --highlight:       #0055cc;
   --highlight-alpha: rgba(0, 85, 204, 0.18);
+  --highlight-alpha-soft: rgba(0, 85, 204, 0.09);
 }
 html.dark-mode {
   --highlight:       #e8720c;
   --highlight-alpha: rgba(232, 114, 12, 0.22);
+  --highlight-alpha-soft: rgba(232, 114, 12, 0.11);
 }
 
 body, html {
@@ -1080,34 +1082,43 @@ body.hljs-theme-dark .hljs-ln tr:hover
 }
 
 
+/* A badge must not change the height of its source line (the lines were taller where a badge was, and jumped when the badges came and
+   went): its box is smaller than the line, centred on it, with margins that take no height from the line box, and it is drawn larger
+   with a transform, which does not take part in the layout. */
 .badge
 {
+  --badge-scale: 1.2;
   background-color: var(--highlight);
   color: white;   /* overridden in dark mode below — orange bg suits black text */
   font-size: 0.9em;
   border-radius: 100%;
   cursor: pointer;
   display: inline-block;
-  height: 1.5em;
-  width: 1.5em;
-  line-height: 1.5em;
+  height: 1.25em;
+  width: 1.25em;
+  line-height: 1.25em;
   position: relative;
-  right: -1.75em;
-  margin-left: -1.5em;
+  top: -0.07em;
+  right: -1.62em;
+  margin-left: -1.25em;
+  margin-top: -0.3em;
+  margin-bottom: -0.3em;
+  vertical-align: middle;
   text-align: center;
+  transform: scale(var(--badge-scale));
   transition: 0.3s transform;
 }
 
 .badge:hover
 {
-  transform: scale(1.2);
+  transform: scale(calc(var(--badge-scale) * 1.2));
 }
 
 /* Graph-hover highlight — applied by SourceCodeView when the pointer enters the
    corresponding Cytoscape node or edge. */
 .badge.badge-node-hover
 {
-  transform: scale(1.3);
+  transform: scale(calc(var(--badge-scale) * 1.3));
   box-shadow: 0 0 0 3px var(--highlight), 0 0 8px 2px rgba(0,0,0,0.25);
   z-index: 10;
 }
@@ -1131,6 +1142,24 @@ path.badge-arrow-hover
 .line-selected
 {
   background-color: var(--highlight-alpha) !important;
+}
+
+/* Where the instance and the user functions of the selected call are defined: the colour of the selection, with less opacity than
+   the line that is selected (the call, or the definition that was asked for); the shading fades in and out */
+.hljs-ln-line
+{
+  transition: background-color 0.4s ease-out;
+}
+
+.def-function, .def-pin-function, .def-instance, .def-pin-instance, .def-call
+{
+  background-color: var(--highlight-alpha-soft);
+}
+
+.hljs-ln-n.def-site
+{
+  cursor: pointer;
+  text-decoration: underline dotted;
 }
 
 
@@ -1464,6 +1493,29 @@ html.dark-mode .logo.logo-dark { display: block; }
   margin-top: 0.4em;
 }
 
+/* The language of the examples (C++ or Python): a segmented control */
+.welcome-language {
+  display: inline-flex;
+  margin-top: 0.4em;
+  border: 1px solid #1a6abf;
+  border-radius: 0.6em;
+  overflow: hidden;
+  font-family: monospace;
+  font-size: 0.83em;
+}
+.welcome-language-seg {
+  background: transparent;
+  color: #1a6abf;
+  border: none;
+  border-left: 1px solid #1a6abf;
+  padding: 0.3em 0.9em;
+  font: inherit;
+  cursor: pointer;
+}
+.welcome-language-seg:first-child { border-left: none; }
+.welcome-language-seg:hover { background: rgba(26, 106, 191, 0.12); }
+.welcome-language-seg.selected { background: #1a6abf; color: #fff; }
+
 .welcome-example-pill {
   display: inline-flex;
   align-items: stretch;
@@ -1503,6 +1555,10 @@ html.dark-mode .welcome-card ol          { color: #b0a8c0; }
 html.dark-mode .welcome-card ol code     { background: #1e1c28; color: #e0d8f0; }
 html.dark-mode .welcome-card .welcome-hint { color: #888; }
 html.dark-mode .welcome-card .welcome-hint strong { color: #b0a8c0; }
+html.dark-mode .welcome-language { border-color: #5a8fd0; }
+html.dark-mode .welcome-language-seg { color: #8fb4e8; border-left-color: #5a8fd0; }
+html.dark-mode .welcome-language-seg:hover { background: rgba(143, 180, 232, 0.14); }
+html.dark-mode .welcome-language-seg.selected { background: #1a6abf; color: #fff; }
 
 /* Welcome mode — hide source pane and gutter regardless of user toggle.
    Removed from body by worker-loader.js when the first trace is loaded;

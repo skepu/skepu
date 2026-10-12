@@ -24,6 +24,7 @@ class Prog:
     def __init__(self, name, header, seed):
         self.name, self.rng = name, random.Random(seed)
         self.lines, self.events = [], []
+        self.instances = {}            # object id of an instance that made a call -> where it and its user functions are defined
         self.t, self.next_id = 100, 1000
         self.regions = []
         self._rec = self._play = None
@@ -124,8 +125,19 @@ class Prog:
 
     # -- skeletons ---------------------------------------------------------
     def skel(self, label, pattern, text):
-        """A skeleton instance, with the line of the end of its definition."""
-        return dict(label=label, pattern=pattern, id=self.id(), line=self.src(text))
+        """A skeleton instance, with the line of the end of its definition, and where it and its user functions are defined
+        (the table of the instances in the header of the trace): the declaration is the first line of `text`, and a lambda
+        in it is a user function on that line. (A user function that is a named function is not in these programs.)"""
+        line = self.src(text)
+        first = line - text.count('\n')
+        return dict(label=label, pattern=pattern, id=self.id(), line=line, definition=self.definition(label, first, text.split('\n')[0].count('[](')))
+
+    def definition(self, label, line, lambdas):
+        """Where an instance is declared (`line`) and its user functions, which are `lambdas` lambdas on that line."""
+        return {'label': label,
+                'instance': {'file': self.file, 'line': line, 'end_line': line},
+                'user_functions': [{'name': '', 'kind': 'lambda', 'file': self.file, 'line': line, 'end_line': line}
+                                   for _ in range(lambdas)]}
 
     def duration(self, pattern, backend, n):
         base = pattern.split()[0]
@@ -135,8 +147,9 @@ class Prog:
 
     def call(self, sk, text, *, backend, n=None, elements=None, ins=(), proxy=(), scalars=(), outs=(), prng=None, size=None, params=None):
         """A call of skeleton `sk` (a line of source `text` makes it) on `backend`.
-        Transfers happen before it if a container is on the wrong side."""
-        self.src(text)
+        Transfers happen before it if a container is on the wrong side. The event has the line of this statement, not
+        the one of the declaration of the instance."""
+        line = self.src(text)
         elements = elements or [n]
         cost_n = size or 1
         if size is None:
@@ -156,8 +169,9 @@ class Prog:
         for c in outs:
             s = self.state[c]
             s['host'], s['dev'] = (not cl or scalar), (cl and not scalar)
+        self.instances.setdefault(str(sk['id']), sk['definition'])     # (with the first call, as the tracer does)
         e = {'type': 'skeleton_call', 'label': sk['label'], 'pattern': sk['pattern'], 'backend': backend,
-             'object_id': sk['id'], 'file': self.file, 'line': sk['line'], 'start': start, 'end': end,
+             'object_id': sk['id'], 'file': self.file, 'line': line, 'start': start, 'end': end,
              'elements': elements, 'elwise_inputs': list(ins), 'proxy_inputs': list(proxy), 'scalar_inputs': list(scalars),
              'outputs': list(outs), 'threads': 1 if backend == 'CPU' else 8}
         if prng is not None: e['prng'] = prng
@@ -206,7 +220,8 @@ class Prog:
 
     def write(self, path):
         with open(os.path.join(HERE, path), 'w') as f:
-            json.dump(self.events, f, indent=1, sort_keys=True)
+            trace = {'header': {'instances': self.instances}, 'data': self.events} if self.instances else self.events
+            json.dump(trace, f, indent=1, sort_keys=True)
             f.write('\n')
         with open(os.path.join(HERE, self.name.split('/')[0], self.name.split('/')[-1] + '.cpp'), 'w') as f:
             f.write('\n'.join(self.lines) + '\n')
@@ -242,7 +257,7 @@ int main()
 	auto total    = skepu::Reduce([](float a, float b) { return a + b; });''')
     # the five skeletons above get their lines from the statements: one skeleton per line
     base = len(p.lines) - 5
-    sk = {name: dict(label=name, pattern=pat, id=p.id(), line=base + i + 1)
+    sk = {name: dict(label=name, pattern=pat, id=p.id(), line=base + i + 1, definition=p.definition(name, base + i + 1, 1))
           for i, (name, pat) in enumerate([('generate', 'Map'), ('scale', 'Map'), ('offset', 'Map'), ('square', 'Map'), ('total', 'Reduce')])}
     p.blank()
 
@@ -273,8 +288,8 @@ int main()
 	// Alternating backends: every switch moves the vector to the other side.
 	auto step_a = skepu::Map<1>([](float x) { return x * 0.5f + 1.0f; });
 	auto step_b = skepu::Map<1>([](float x) { return x - std::floor(x); });''')
-    sa = dict(label='step_a', pattern='Map', id=p.id(), line=len(p.lines) - 1)
-    sb = dict(label='step_b', pattern='Map', id=p.id(), line=len(p.lines))
+    sa = dict(label='step_a', pattern='Map', id=p.id(), line=len(p.lines) - 1, definition=p.definition('step_a', len(p.lines) - 1, 1))
+    sb = dict(label='step_b', pattern='Map', id=p.id(), line=len(p.lines), definition=p.definition('step_b', len(p.lines), 1))
     with p.region('Alternating backends', '\t{ SKEPU_TRACE_SCOPE("Alternating backends");'):
         state = p.vec('State', 1 << 20, '\t\tskepu::Vector<float> state(N, "State", 0.5f);')
         p.src('\t\tstep_a.setBackend(BackendSpec(Backend::Type::OpenCL));\n\t\tstep_b.setBackend(BackendSpec(Backend::Type::OpenMP));')
@@ -300,7 +315,7 @@ int main()
     # 5. Code of the host between two calls on the device.
     p.src('''
 	auto blur = skepu::Map<1>([](float x) { return 0.9f * x; });''')
-    bl = dict(label='blur', pattern='Map', id=p.id(), line=len(p.lines))
+    bl = dict(label='blur', pattern='Map', id=p.id(), line=len(p.lines), definition=p.definition('blur', len(p.lines), 1))
     with p.region('Host code between kernels', '\t{ SKEPU_TRACE_SCOPE("Host code between kernels");'):
         img = p.vec('Image', 1 << 20, '\t\tskepu::Vector<float> image(N, "Image", 1.0f);')
         p.src('\t\tblur.setBackend(BackendSpec(Backend::Type::OpenCL));')

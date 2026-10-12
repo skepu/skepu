@@ -31,7 +31,7 @@ var DEFAULTS = {
     'right-pane-width': 500, 'source-open': true, 'info-pane-ratio': 0,
     'gantt-open': false, 'gantt-scale': 1, 'legend-open': false,
     'color-spectrum': 'default', 'dark-mode': false, 'hljs-theme': 'default',
-    'code-paths': true,
+    'code-paths': true, 'pin-definitions': false,
   },
 };
 
@@ -72,6 +72,7 @@ export function saveSettings(layoutOverrides) {
   s.layout['dark-mode']      = State._darkMode;
   s.layout['hljs-theme']     = State._hljsTheme;
   s.layout['code-paths']     = State._codePaths;
+  s.layout['pin-definitions'] = State._pinDefinitions;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
 }
 
@@ -122,6 +123,9 @@ export function loadSettings() {
     }
     if (s.layout['code-paths'] != null) {
       State._codePaths = s.layout['code-paths'];
+    }
+    if (s.layout['pin-definitions'] != null) {
+      State._pinDefinitions = s.layout['pin-definitions'];
     }
   }
   if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();

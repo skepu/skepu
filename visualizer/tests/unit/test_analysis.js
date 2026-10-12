@@ -84,44 +84,45 @@ describe('the DNN CIFAR-10 trace (OpenCL)', () => {
 
     it('has the events of the trace', () => {
         const s = A.summarize(events, header);
-        expect(s.events).toBe(812);
-        expect(s.by_type).toMatchObject({ skeleton_call: 424, transfer: 116, region: 42 });
+        expect(s.events).toBe(1080);
+        expect(s.by_type).toMatchObject({ skeleton_call: 579, transfer: 173, region: 55 });
         expect(s.backends).toEqual(['OpenCL']);
-        expect(s.skeleton_calls).toEqual({ count: 424, total_us: 245525 });
+        expect(s.skeleton_calls).toEqual({ count: 579, total_us: 347334 });
     });
 
     it('splits the transfers by kind, the library\'s own being most of the time', () => {
         const t = A.transfers(events, { limit: 5 });
-        expect(t.count).toBe(116);
-        expect(t.by_kind.container).toMatchObject({ count: 32, total_us: 6406 });
-        expect(t.by_kind['reduce-temp']).toMatchObject({ count: 24, total_us: 5299, device_to_host: 24 });
-        expect(t.by_kind['overlap-wrap']).toMatchObject({ count: 57, total_us: 9740, host_to_device: 57 });
-        expect(t.by_kind.prng).toMatchObject({ count: 3, total_us: 2735 });
-        expect(t.total_us).toBe(24180);
+        expect(t.count).toBe(173);
+        expect(t.by_kind.container).toMatchObject({ count: 56, total_us: 10228 });
+        expect(t.by_kind['reduce-temp']).toMatchObject({ count: 34, total_us: 6978, device_to_host: 34 });
+        expect(t.by_kind['overlap-wrap']).toMatchObject({ count: 80, total_us: 12793, host_to_device: 80 });
+        expect(t.by_kind.prng).toMatchObject({ count: 3, total_us: 2670 });
+        expect(t.total_us).toBe(32669);
     });
 
     it('attributes the library\'s transfers to the skeleton calls that cause them', () => {
         const t = A.transfers(events);
-        expect(t.internal_by_owner_pattern['Reduce']).toMatchObject({ count: 24 });
-        expect(t.internal_by_owner_pattern['MapOverlap 4D']).toMatchObject({ count: 57 });
+        expect(t.internal_by_owner_pattern['Reduce 1D-Full']).toMatchObject({ count: 34 });
+        expect(t.internal_by_owner_pattern['MapOverlap 4D']).toMatchObject({ count: 46 });
+        expect(t.internal_by_owner_pattern['MapPool 4D']).toMatchObject({ count: 34 });
         expect(t.internal_by_owner_pattern['Map']).toMatchObject({ count: 3 });
         expect(t.internal_by_owner_pattern.unattributed).toBeUndefined();
     });
 
     it('attributes the time to the patterns', () => {
         const r = A.timeBy(events, 'pattern');
-        expect(r.rows.map(x => [x.key, x.count])).toEqual([['Map', 343], ['MapOverlap 4D', 57], ['Reduce', 24]]);
-        expect(r.rows[0].share).toBeCloseTo(0.8705, 4);
+        expect(r.rows.map(x => [x.key, x.count])).toEqual([['Map', 465], ['MapOverlap 4D', 46], ['Reduce 1D-Full', 34], ['MapPool 4D', 34]]);
+        expect(r.rows[0].share).toBeCloseTo(0.8829, 4);
     });
 
     it('finds a path of a time that the work could not be done faster than', () => {
         const r = criticalPath(events);
-        expect(r.work_us).toBe(245525);
+        expect(r.work_us).toBe(347334);
         expect(r.total_us).toBeGreaterThan(100000);
         expect(r.total_us).toBeLessThan(r.work_us);
         expect(r.parallelism).toBeGreaterThan(1);
         const shares = r.path.reduce((s, n) => s + n.share, 0);
-        expect(shares).toBeLessThanOrEqual(1.0001);
+        expect(shares).toBeLessThanOrEqual(1 + r.path.length * 0.00005 + 1e-9);   // (each share is rounded to 4 decimals)
     });
 
     it('does not change the events', () => {

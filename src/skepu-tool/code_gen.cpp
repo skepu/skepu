@@ -309,12 +309,18 @@ static std::string jsonQuoted(const std::string &s)
 	return result + "\"";
 }
 
+// (the place that a #line directive says, if the source has one: the code that another program generates, such as SkePY, says
+// where it is in its own source)
 static std::string sourceRangeJSON(clang::SourceRange range)
 {
 	clang::SourceManager &SM = GlobalRewriter.getSourceMgr();
-	clang::SourceLocation begin = SM.getSpellingLoc(range.getBegin()), end = SM.getSpellingLoc(range.getEnd());
-	return "\"file\":" + jsonQuoted(SM.getFilename(begin).str()) + ",\"line\":" + std::to_string(SM.getSpellingLineNumber(begin))
-		+ ",\"end_line\":" + std::to_string(SM.getSpellingLineNumber(end));
+	clang::SourceLocation beginLoc = SM.getSpellingLoc(range.getBegin()), endLoc = SM.getSpellingLoc(range.getEnd());
+	clang::PresumedLoc begin = SM.getPresumedLoc(beginLoc), end = SM.getPresumedLoc(endLoc);
+	if (begin.isInvalid() || end.isInvalid())
+		return "\"file\":" + jsonQuoted(SM.getFilename(beginLoc).str()) + ",\"line\":" + std::to_string(SM.getSpellingLineNumber(beginLoc))
+			+ ",\"end_line\":" + std::to_string(SM.getSpellingLineNumber(endLoc));
+	return "\"file\":" + jsonQuoted(begin.getFilename()) + ",\"line\":" + std::to_string(begin.getLine())
+		+ ",\"end_line\":" + std::to_string(end.getLine());
 }
 
 static std::string definitionJSON(UserFunction &UF, VarDecl *d, const InlineInstance *inlineInstance)

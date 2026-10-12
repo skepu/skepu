@@ -63,6 +63,7 @@ export const State = {
   _sourcePaneOpen: true,  // overridden by loadSettings
   _legendOpen:     true,  // overridden by loadSettings
   _codePaths:      true,  // overridden by loadSettings
+  _pinDefinitions: false, // the marks of all the definitions of the instances and user functions stay in the source; overridden by loadSettings
 
   // Colour spectrum — active key into COLOR_SPECTRUMS; overridden by loadSettings
   _colorSpectrum:  'default',

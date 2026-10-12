@@ -68,28 +68,24 @@ float coulombPotential_f(skepu::Index2D index, float energygridItem, const skepu
 }
 
 
-// Function to initialize atoms
-void initatoms(skepu::Vector<Atom> &atombuf, dimension3 volsize, double gridspacing)
+// Random atom: a charge in [-1, 1) and a position in the unit cube
+Atom random_atom(skepu::Random<4> &random)
 {
-	srand(0);
-	
-	// compute grid dimensions in angstroms
-	dimension3 size;
-	size.x = gridspacing * volsize.x;
-	size.y = gridspacing * volsize.y;
-	size.z = gridspacing * volsize.z;
-	
-	size_t count = atombuf.size();
-	atombuf.flush();
-	for (size_t i = 0; i < count; i++)
-	{
-		Atom a;
-		a.charge = ((rand() / (double) RAND_MAX) * 2.0) - 1.0;  // charge
-		a.x = (rand() / (double) RAND_MAX);// * size.x;
-		a.y = (rand() / (double) RAND_MAX);// * size.y;
-		a.z = (rand() / (double) RAND_MAX);// * size.z;
-		atombuf(i) = a;
-	}
+	Atom a;
+	a.charge = random.getNormalized() * 2.0 - 1.0;
+	a.x = random.getNormalized();
+	a.y = random.getNormalized();
+	a.z = random.getNormalized();
+	return a;
+}
+
+// Function to initialize atoms
+void initatoms(skepu::Vector<Atom> &atombuf)
+{
+	auto init = skepu::Map<0>(random_atom);
+	skepu::PRNG prng(0);
+	init.setPRNG(prng);
+	init(atombuf);
 }
 
 
@@ -125,8 +121,7 @@ int main(int argc, char* argv[])
 	skepu::Matrix<float> energy_out(matrixSize, matrixSize);
 	
 	// allocate and initialize atom coordinates and charges
-	dimension3 volsize {2048, 2048, 1};
-	initatoms(atoms, volsize, gridspacing);
+	initatoms(atoms);
 	
 	coulombic(energy_out, atoms, &spec);
 	

@@ -22,7 +22,9 @@ async function call(type, payload = {}) {
     return reply;
 }
 
-const events = JSON.parse(readFileSync(TRACE, 'utf-8'));
+// (a trace is an array of events, or { header, data })
+const parsed = JSON.parse(readFileSync(TRACE, 'utf-8'));
+const events = Array.isArray(parsed) ? parsed : parsed.data;
 const snapshotEvents = events.filter(e => e.type === 'snapshot');
 // (the contents are not needed, only that every snapshot file is there: its name will do)
 const snapshotFiles = Object.fromEntries(

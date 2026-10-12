@@ -13,6 +13,7 @@
 
 import { initWorkerBackend, workerCall } from '../transport.js';
 import { State } from '../state.js';
+import { LANGUAGE_LABELS, exampleLanguages, examplesOfLanguage, initialLanguage } from '../examples_list.js';
 
 // ── 1. Spawn worker ───────────────────────────────────────────────────────────
 
@@ -99,35 +100,72 @@ function _buildExamplesMenu(examples) {
     placeholder.outerHTML = html;
 }
 
-/** Populate the welcome-panel example buttons. */
+/**
+ * Populate the welcome-panel examples: a segmented control for the language of the programs (C++ or Python, if there are examples
+ * of both; the one that was chosen last is remembered), and one multi-segment pill [title | backend | backend ...] for each example of it.
+ */
 function _buildWelcomeExamples(examples) {
     var list    = document.getElementById('welcome-examples-list');
     var section = document.getElementById('welcome-examples-section');
+    var control = document.getElementById('welcome-language');
     if (!list || !section) return;
 
-    examples.forEach(function(ex, idx) {
-        var backends = _orderedBackends(ex);
-        if (!backends.length) return;
+    var remembered = null;
+    try { remembered = localStorage.getItem('skevu-example-language'); } catch (e) { /* (no storage: the default) */ }
+    var language  = initialLanguage(examples, remembered);
+    var languages = exampleLanguages(examples);
 
-        // One multi-segment pill per example: [title | backend | backend ...]
-        var pill = document.createElement('div');
-        pill.className = 'welcome-example-pill';
+    function showList() {
+        list.innerHTML = '';
+        examplesOfLanguage(examples, language).forEach(function(entry) {
+            var ex = entry.example, idx = entry.index;
+            var backends = _orderedBackends(ex);
+            if (!backends.length) return;
 
-        var name = document.createElement('span');
-        name.className   = 'welcome-example-name';
-        name.textContent = ex.title;
-        pill.appendChild(name);
+            var pill = document.createElement('div');
+            pill.className = 'welcome-example-pill';
 
-        backends.forEach(function(b) {
-            var seg = document.createElement('button');
-            seg.className   = 'welcome-example-seg';
-            seg.textContent = BACKEND_NAMES[b] || b;
-            seg.onclick     = function() { window.loadExample(idx, b); };
-            pill.appendChild(seg);
+            var name = document.createElement('span');
+            name.className   = 'welcome-example-name';
+            name.textContent = ex.title;
+            pill.appendChild(name);
+
+            backends.forEach(function(b) {
+                var seg = document.createElement('button');
+                seg.className   = 'welcome-example-seg';
+                seg.textContent = BACKEND_NAMES[b] || b;
+                seg.onclick     = function() { window.loadExample(idx, b); };
+                pill.appendChild(seg);
+            });
+            list.appendChild(pill);
         });
-        list.appendChild(pill);
-    });
+        if (control)
+            control.querySelectorAll('button').forEach(function(b) {
+                var selected = b.dataset.language === language;
+                b.classList.toggle('selected', selected);
+                b.setAttribute('aria-selected', selected ? 'true' : 'false');
+            });
+    }
 
+    if (control) {
+        control.innerHTML = '';
+        languages.forEach(function(l) {
+            var b = document.createElement('button');
+            b.className        = 'welcome-language-seg';
+            b.textContent      = LANGUAGE_LABELS[l];
+            b.dataset.language = l;
+            b.setAttribute('role', 'tab');
+            b.onclick = function() {
+                language = l;
+                try { localStorage.setItem('skevu-example-language', l); } catch (e) { /* (no storage) */ }
+                showList();
+            };
+            control.appendChild(b);
+        });
+        control.style.display = languages.length > 1 ? '' : 'none';   // (one language: nothing to choose)
+    }
+
+    showList();
     section.style.display = '';
 }
 

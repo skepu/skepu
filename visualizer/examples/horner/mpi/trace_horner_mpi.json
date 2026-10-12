@@ -4,13 +4,13 @@
             "label": "Coeffs",
             "line": 0,
             "object_id": 1000,
-            "time": 2850,
+            "time": 2530,
             "type": "allocation"
         },
         {
             "elwise_inputs": [],
-            "end": 2862,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "end": 2559,
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "Read coeffs",
             "line": 58,
             "mpi": {
@@ -24,8 +24,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 10592143196905225400,
-                "work_end": 2860,
-                "work_start": 2859
+                "work_end": 2557,
+                "work_start": 2556
             },
             "outputs": [
                 1000
@@ -33,14 +33,14 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 1,
-            "start": 2855,
+            "start": 2555,
             "type": "external"
         },
         {
             "label": "X",
             "line": 0,
             "object_id": 1005,
-            "time": 2891,
+            "time": 2574,
             "type": "allocation"
         },
         {
@@ -49,8 +49,8 @@
                 2048
             ],
             "elwise_inputs": [],
-            "end": 2961,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "end": 2669,
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "gen_even",
             "line": 14,
             "mpi": {
@@ -64,8 +64,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 3168216515977543315,
-                "work_end": 2955,
-                "work_start": 2895
+                "work_end": 2665,
+                "work_start": 2576
             },
             "object_id": 1004,
             "outputs": [
@@ -75,7 +75,7 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 2,
-            "start": 2895,
+            "start": 2576,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -83,7 +83,7 @@
             "bytes_received": 6144,
             "bytes_sent": 0,
             "comm_seq": 1,
-            "end": 3025,
+            "end": 3058,
             "object_ids": [
                 1005
             ],
@@ -92,13 +92,13 @@
             "ranks": 4,
             "reason": "skepu::external: the container is gathered to the process that runs the code",
             "seq": 3,
-            "start": 2986,
+            "start": 2716,
             "type": "communication"
         },
         {
             "elwise_inputs": [],
-            "end": 3537,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/io.hpp",
+            "end": 3507,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
             "mpi": {
@@ -106,14 +106,14 @@
                     "bytes_received": 6144,
                     "bytes_sent": 0,
                     "collectives": 1,
-                    "time_us": 39
+                    "time_us": 342
                 },
                 "local_elements": 0,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 7346190368624812788,
-                "work_end": 3537,
-                "work_start": 3034
+                "work_end": 3506,
+                "work_start": 3064
             },
             "outputs": [],
             "proxy_inputs": [
@@ -121,14 +121,14 @@
             ],
             "scalar_inputs": [],
             "seq": 3,
-            "start": 2986,
+            "start": 2715,
             "type": "external"
         },
         {
             "bytes_received": 0,
             "bytes_sent": 48,
             "comm_seq": 2,
-            "end": 3640,
+            "end": 3566,
             "object_ids": [
                 1000
             ],
@@ -136,43 +136,43 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 3638,
+            "start": 3565,
             "type": "communication"
         },
         {
             "label": "Res",
             "line": 0,
             "object_id": 1012,
-            "time": 3649,
+            "time": 3571,
             "type": "allocation"
         },
         {
             "data_file": "snapshots/Res@1.txt",
-            "end": 3984,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "end": 3876,
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "Res",
             "line": 27,
             "object_id": 1012,
-            "start": 3652,
+            "start": 3574,
             "type": "snapshot"
         },
         {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "Iteration",
             "line": 31,
             "region_depth": 1,
-            "time": 3985,
+            "time": 3877,
             "type": "region"
         },
         {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "index": 2,
             "label": "Coeffs",
             "line": 32,
             "object_id": 1015,
             "region": "Iteration",
             "source": 1000,
-            "time": 3985,
+            "time": 3877,
             "type": "element_access"
         },
         {
@@ -184,8 +184,8 @@
                 1012,
                 1005
             ],
-            "end": 4009,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "end": 3909,
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "muladd",
             "line": 32,
             "mpi": {
@@ -199,8 +199,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 17527840532851208280,
-                "work_end": 4004,
-                "work_start": 3985
+                "work_end": 3905,
+                "work_start": 3878
             },
             "object_id": 1011,
             "outputs": [
@@ -213,7 +213,7 @@
                 1015
             ],
             "seq": 4,
-            "start": 3985,
+            "start": 3877,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -221,7 +221,7 @@
             "bytes_received": 6144,
             "bytes_sent": 6144,
             "comm_seq": 3,
-            "end": 4027,
+            "end": 4011,
             "object_ids": [
                 1012
             ],
@@ -230,37 +230,37 @@
             "reason": "host access: the container is gathered",
             "region": "Iteration",
             "seq": 0,
-            "start": 4014,
+            "start": 3913,
             "type": "communication"
         },
         {
             "data_file": "snapshots/Res@2.txt",
-            "end": 4434,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "end": 4397,
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "Res",
             "line": 33,
             "object_id": 1012,
             "region": "Iteration",
-            "start": 4013,
+            "start": 3912,
             "type": "snapshot"
         },
         {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "Iteration",
             "line": 31,
             "region_depth": 1,
-            "time": 4434,
+            "time": 4398,
             "type": "region"
         },
         {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "index": 1,
             "label": "Coeffs",
             "line": 32,
             "object_id": 1018,
             "region": "Iteration",
             "source": 1000,
-            "time": 4435,
+            "time": 4399,
             "type": "element_access"
         },
         {
@@ -272,8 +272,8 @@
                 1012,
                 1005
             ],
-            "end": 4462,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "end": 4443,
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "muladd",
             "line": 32,
             "mpi": {
@@ -287,8 +287,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 17527840532851208280,
-                "work_end": 4458,
-                "work_start": 4435
+                "work_end": 4440,
+                "work_start": 4399
             },
             "object_id": 1011,
             "outputs": [
@@ -301,7 +301,7 @@
                 1018
             ],
             "seq": 5,
-            "start": 4435,
+            "start": 4399,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -309,7 +309,7 @@
             "bytes_received": 6144,
             "bytes_sent": 6144,
             "comm_seq": 4,
-            "end": 4470,
+            "end": 4452,
             "object_ids": [
                 1012
             ],
@@ -318,37 +318,37 @@
             "reason": "host access: the container is gathered",
             "region": "Iteration",
             "seq": 0,
-            "start": 4465,
+            "start": 4448,
             "type": "communication"
         },
         {
             "data_file": "snapshots/Res@3.txt",
-            "end": 4870,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "end": 4812,
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "Res",
             "line": 33,
             "object_id": 1012,
             "region": "Iteration",
-            "start": 4465,
+            "start": 4447,
             "type": "snapshot"
         },
         {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "Iteration",
             "line": 31,
             "region_depth": 1,
-            "time": 4871,
+            "time": 4813,
             "type": "region"
         },
         {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "index": 0,
             "label": "Coeffs",
             "line": 32,
             "object_id": 1021,
             "region": "Iteration",
             "source": 1000,
-            "time": 4871,
+            "time": 4817,
             "type": "element_access"
         },
         {
@@ -360,8 +360,8 @@
                 1012,
                 1005
             ],
-            "end": 4899,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "end": 4895,
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "muladd",
             "line": 32,
             "mpi": {
@@ -375,8 +375,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 17527840532851208280,
-                "work_end": 4894,
-                "work_start": 4871
+                "work_end": 4892,
+                "work_start": 4817
             },
             "object_id": 1011,
             "outputs": [
@@ -389,7 +389,7 @@
                 1021
             ],
             "seq": 6,
-            "start": 4871,
+            "start": 4817,
             "threads": 2,
             "type": "skeleton_call"
         },
@@ -397,7 +397,7 @@
             "bytes_received": 6144,
             "bytes_sent": 6144,
             "comm_seq": 5,
-            "end": 4910,
+            "end": 4946,
             "object_ids": [
                 1012
             ],
@@ -406,24 +406,24 @@
             "reason": "host access: the container is gathered",
             "region": "Iteration",
             "seq": 0,
-            "start": 4904,
+            "start": 4902,
             "type": "communication"
         },
         {
             "data_file": "snapshots/Res@4.txt",
-            "end": 5337,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/examples/horner.cpp",
+            "end": 5418,
+            "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "Res",
             "line": 33,
             "object_id": 1012,
             "region": "Iteration",
-            "start": 4903,
+            "start": 4901,
             "type": "snapshot"
         },
         {
             "elwise_inputs": [],
-            "end": 5820,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/io.hpp",
+            "end": 5823,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
             "mpi": {
@@ -437,8 +437,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 7346190368624812788,
-                "work_end": 5819,
-                "work_start": 5339
+                "work_end": 5823,
+                "work_start": 5420
             },
             "outputs": [],
             "proxy_inputs": [
@@ -446,49 +446,85 @@
             ],
             "scalar_inputs": [],
             "seq": 7,
-            "start": 5339,
+            "start": 5420,
             "type": "external"
         },
         {
             "label": "Res",
             "line": 0,
             "object_id": 1012,
-            "time": 5886,
+            "time": 5871,
             "type": "deallocation"
         },
         {
             "label": "X",
             "line": 0,
             "object_id": 1005,
-            "time": 5890,
+            "time": 5882,
             "type": "deallocation"
         },
         {
             "label": "Coeffs",
             "line": 0,
             "object_id": 1000,
-            "time": 5892,
+            "time": 5885,
             "type": "deallocation"
         }
     ],
     "header": {
         "clock": {
             "end": {
-                "local_us": 5921,
+                "local_us": 5914,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             },
             "method": "ping-pong",
             "start": {
-                "local_us": 2385,
+                "local_us": 2101,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             }
         },
+        "instances": {
+            "1004": {
+                "instance": {
+                    "end_line": 11,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
+                    "line": 8
+                },
+                "label": "gen_even",
+                "user_functions": [
+                    {
+                        "end_line": 11,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
+                        "kind": "lambda",
+                        "line": 8,
+                        "name": ""
+                    }
+                ]
+            },
+            "1011": {
+                "instance": {
+                    "end_line": 24,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
+                    "line": 21
+                },
+                "label": "muladd",
+                "user_functions": [
+                    {
+                        "end_line": 24,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
+                        "kind": "lambda",
+                        "line": 21,
+                        "name": ""
+                    }
+                ]
+            }
+        },
         "mpi": {
             "detail_rank": 0,
-            "host": "Augusts-Laptop.local",
-            "pid": 34634,
+            "host": "mac.staff.netlogon.liu.se",
+            "pid": 92852,
             "rank": 0,
             "ranks": 4,
             "role": "full"

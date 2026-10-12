@@ -1,18 +1,18 @@
 {
   "counts": {
-    "nodes": 3,
-    "edges": 1,
-    "timeline": 2,
-    "badges": 2,
+    "nodes": 6,
+    "edges": 7,
+    "timeline": 3,
+    "badges": 3,
     "fusion_hints": 0,
-    "events": 7,
+    "events": 9,
     "snapshots": 0
   },
   "hashes": {
-    "nodes": "9b67a45c8a6b113d",
-    "edges": "c682613ef5811f0d",
-    "timeline_nodes": "63c7252dc748f285",
-    "badge_nodes": "3ba948e5c5262b5d",
+    "nodes": "e5a8b1df0681ec17",
+    "edges": "cbfc15f69bc9fe8a",
+    "timeline_nodes": "373ae1f4913d6712",
+    "badge_nodes": "ad27f1a43a9c1dfb",
     "fusion_hints": "4f53cda18c2baa0c",
     "all_region_pids": "4f53cda18c2baa0c"
   }

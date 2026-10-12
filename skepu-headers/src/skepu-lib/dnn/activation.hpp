@@ -182,7 +182,7 @@ namespace skepu::dnn::impl
 		}
 		else if (this->m_act == Act::SoftMax)
 		{
-			Tensor4<T> m_temp_value_max_reduce (inputs->size_i(),inputs->size_j(),inputs->size_k(), 1);
+			Tensor4<T> m_temp_value_max_reduce (inputs->size_i(),inputs->size_j(),inputs->size_k(), 1, this->label() + " SoftMax row max");
 
 			new_softmax_skel_1(m_temp_value_max_reduce, *inputs);
 			new_softmax_skel_2(this->m_temp_vals, *inputs, m_temp_value_max_reduce);
@@ -224,7 +224,7 @@ namespace skepu::dnn::impl
 		{
 			int n_class = this->m_vals.size_l();
 
-			skepu::Tensor3<float> jacobian(inputs->size_i(),n_class, n_class);
+			skepu::Tensor3<float> jacobian(inputs->size_i(),n_class, n_class, this->label() + " SoftMax Jacobian");
 
 			softmax_jacobian(jacobian, this->m_vals);
 			// Output must not alias the incoming gradient: each output element reads the whole input row

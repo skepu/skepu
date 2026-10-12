@@ -1,17 +1,17 @@
 {
     "data": [
         {
-            "label": "Vector #1001",
+            "label": "atoms",
             "line": 0,
             "object_id": 1001,
-            "time": 3566,
+            "time": 4493,
             "type": "allocation"
         },
         {
-            "label": "Matrix #1004",
+            "label": "energy_out",
             "line": 0,
             "object_id": 1004,
-            "time": 3644,
+            "time": 4599,
             "type": "allocation"
         },
         {
@@ -20,7 +20,7 @@
                 300000
             ],
             "elwise_inputs": [],
-            "end": 4154,
+            "end": 5030,
             "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
             "label": "init",
             "line": 88,
@@ -35,8 +35,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 799112393638874305,
-                "work_end": 4141,
-                "work_start": 3646
+                "work_end": 5026,
+                "work_start": 4601
             },
             "object_id": 1007,
             "outputs": [
@@ -47,22 +47,22 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 1,
-            "start": 3646,
-            "threads": 15,
+            "start": 4601,
+            "threads": 2,
             "type": "skeleton_call"
         },
         {
-            "label": "Matrix #1012",
+            "label": "grid_in",
             "line": 0,
             "object_id": 1012,
-            "time": 4160,
+            "time": 5034,
             "type": "allocation"
         },
         {
             "bytes_received": 3600000,
             "bytes_sent": 3600000,
             "comm_seq": 1,
-            "end": 11265,
+            "end": 12674,
             "object_ids": [
                 1001
             ],
@@ -71,7 +71,7 @@
             "ranks": 4,
             "reason": "random access argument: the container is gathered",
             "seq": 2,
-            "start": 4166,
+            "start": 5039,
             "type": "communication"
         },
         {
@@ -82,7 +82,7 @@
             "elwise_inputs": [
                 1012
             ],
-            "end": 17174,
+            "end": 24050,
             "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
             "label": "columbicPotential",
             "line": 106,
@@ -91,14 +91,14 @@
                     "bytes_received": 3600000,
                     "bytes_sent": 3600000,
                     "collectives": 1,
-                    "time_us": 7099
+                    "time_us": 7635
                 },
                 "local_elements": 30,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 2401589220252713033,
-                "work_end": 17169,
-                "work_start": 11275
+                "work_end": 24046,
+                "work_start": 12682
             },
             "object_id": 1000,
             "outputs": [
@@ -110,52 +110,52 @@
             ],
             "scalar_inputs": [],
             "seq": 2,
-            "start": 4162,
-            "threads": 15,
+            "start": 5036,
+            "threads": 2,
             "type": "skeleton_call"
         },
         {
-            "label": "Matrix #1012",
+            "label": "grid_in",
             "line": 0,
             "object_id": 1012,
-            "time": 17178,
+            "time": 24054,
             "type": "deallocation"
         },
         {
             "bytes_received": 280,
-            "bytes_sent": 360,
+            "bytes_sent": 0,
             "comm_seq": 2,
-            "end": 17367,
+            "end": 24089,
             "object_ids": [
                 1004
             ],
-            "operation": "allgather",
+            "operation": "gather",
             "phase": "before",
             "ranks": 4,
-            "reason": "host access: the container is gathered",
+            "reason": "skepu::external: the container is gathered to the process that runs the code",
             "seq": 3,
-            "start": 17202,
+            "start": 24077,
             "type": "communication"
         },
         {
             "elwise_inputs": [],
-            "end": 17412,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/mpi-ws/skepu-headers/src/skepu-lib/io.hpp",
+            "end": 24140,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
             "mpi": {
                 "comm": {
                     "bytes_received": 280,
-                    "bytes_sent": 360,
+                    "bytes_sent": 0,
                     "collectives": 1,
-                    "time_us": 165
+                    "time_us": 12
                 },
                 "local_elements": 0,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 7346190368624812788,
-                "work_end": 17412,
-                "work_start": 17372
+                "work_end": 24140,
+                "work_start": 24094
             },
             "outputs": [],
             "proxy_inputs": [
@@ -163,42 +163,78 @@
             ],
             "scalar_inputs": [],
             "seq": 3,
-            "start": 17200,
+            "start": 24077,
             "type": "external"
         },
         {
-            "label": "Matrix #1004",
+            "label": "energy_out",
             "line": 0,
             "object_id": 1004,
-            "time": 17424,
+            "time": 24156,
             "type": "deallocation"
         },
         {
-            "label": "Vector #1001",
+            "label": "atoms",
             "line": 0,
             "object_id": 1001,
-            "time": 17429,
+            "time": 24158,
             "type": "deallocation"
         }
     ],
     "header": {
         "clock": {
             "end": {
-                "local_us": 17456,
+                "local_us": 24189,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             },
             "method": "ping-pong",
             "start": {
-                "local_us": 3202,
+                "local_us": 4039,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             }
         },
+        "instances": {
+            "1000": {
+                "instance": {
+                    "end_line": 95,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
+                    "line": 95
+                },
+                "label": "columbicPotential",
+                "user_functions": [
+                    {
+                        "end_line": 68,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
+                        "kind": "function",
+                        "line": 48,
+                        "name": "coulombPotential_f"
+                    }
+                ]
+            },
+            "1007": {
+                "instance": {
+                    "end_line": 85,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
+                    "line": 85
+                },
+                "label": "init",
+                "user_functions": [
+                    {
+                        "end_line": 80,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
+                        "kind": "function",
+                        "line": 72,
+                        "name": "random_atom"
+                    }
+                ]
+            }
+        },
         "mpi": {
             "detail_rank": 0,
-            "host": "Augusts-Laptop.local",
-            "pid": 95514,
+            "host": "mac.staff.netlogon.liu.se",
+            "pid": 93089,
             "rank": 0,
             "ranks": 4,
             "role": "full"

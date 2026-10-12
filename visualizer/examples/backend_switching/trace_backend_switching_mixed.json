@@ -1,1226 +1,1368 @@
-[
- {
-  "label": "Signal",
-  "line": 246,
-  "object_id": 1005,
-  "time": 103,
-  "type": "allocation"
- },
- {
-  "label": "Scaled",
-  "line": 246,
-  "object_id": 1006,
-  "time": 105,
-  "type": "allocation"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "Sequential then OpenMP",
-  "line": 23,
-  "region_depth": 1,
-  "time": 114,
-  "type": "region"
- },
- {
-  "backend": "CPU",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [],
-  "end": 5038,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "generate",
-  "line": 15,
-  "object_id": 1000,
-  "outputs": [
-   1005
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Sequential then OpenMP",
-  "scalar_inputs": [],
-  "start": 121,
-  "threads": 1,
-  "type": "skeleton_call"
- },
- {
-  "backend": "OpenMP",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1005
-  ],
-  "end": 6024,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "scale",
-  "line": 16,
-  "object_id": 1001,
-  "outputs": [
-   1006
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Sequential then OpenMP",
-  "scalar_inputs": [],
-  "start": 5046,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "OpenCL back to back",
-  "line": 28,
-  "region_depth": 1,
-  "time": 6032,
-  "type": "region"
- },
- {
-  "label": "Stage",
-  "line": 246,
-  "object_id": 1007,
-  "region": "OpenCL back to back",
-  "time": 6037,
-  "type": "allocation"
- },
- {
-  "label": "Sum",
-  "line": 246,
-  "object_id": 1008,
-  "region": "OpenCL back to back",
-  "time": 6038,
-  "type": "allocation"
- },
- {
-  "backend": "OpenCL",
-  "direction": "host-to-device",
-  "elements": 1048576,
-  "end": 6625,
-  "label": "Scaled",
-  "line": 258,
-  "object_id": 1006,
-  "region": "OpenCL back to back",
-  "start": 6040,
-  "time": 6625,
-  "type": "transfer"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1006
-  ],
-  "end": 6940,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "offset",
-  "line": 17,
-  "object_id": 1002,
-  "outputs": [
-   1007
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "OpenCL back to back",
-  "scalar_inputs": [],
-  "start": 6627,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1007
-  ],
-  "end": 7257,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "square",
-  "line": 18,
-  "object_id": 1003,
-  "outputs": [
-   1007
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "OpenCL back to back",
-  "scalar_inputs": [],
-  "start": 6945,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1007
-  ],
-  "end": 7595,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "scale",
-  "line": 16,
-  "object_id": 1001,
-  "outputs": [
-   1007
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "OpenCL back to back",
-  "scalar_inputs": [],
-  "start": 7259,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "backend": "OpenCL",
-  "direction": "device-to-host",
-  "elements": 1,
-  "end": 7947,
-  "label": "Internal (reduce-temp)",
-  "line": 306,
-  "object_id": 1009,
-  "region": "OpenCL back to back",
-  "start": 7772,
-  "time": 7947,
-  "type": "transfer"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1007
-  ],
-  "end": 7947,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "total",
-  "line": 19,
-  "object_id": 1004,
-  "outputs": [
-   1008
-  ],
-  "pattern": "Reduce",
-  "proxy_inputs": [],
-  "region": "OpenCL back to back",
-  "scalar_inputs": [],
-  "start": 7597,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "elwise_inputs": [
-   1008
-  ],
-  "end": 7969,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "Print",
-  "line": 36,
-  "outputs": [],
-  "proxy_inputs": [],
-  "region": "OpenCL back to back",
-  "scalar_inputs": [],
-  "start": 7954,
-  "type": "external"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "Alternating backends",
-  "line": 42,
-  "region_depth": 1,
-  "time": 7981,
-  "type": "region"
- },
- {
-  "label": "State",
-  "line": 246,
-  "object_id": 1012,
-  "region": "Alternating backends",
-  "time": 7982,
-  "type": "allocation"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "Iteration",
-  "line": 48,
-  "region": "Alternating backends",
-  "region_depth": 2,
-  "time": 7994,
-  "type": "region"
- },
- {
-  "backend": "OpenCL",
-  "direction": "host-to-device",
-  "elements": 1048576,
-  "end": 8563,
-  "label": "State",
-  "line": 258,
-  "object_id": 1012,
-  "region": "Iteration",
-  "start": 7995,
-  "time": 8563,
-  "type": "transfer"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1012
-  ],
-  "end": 8877,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "step_a",
-  "line": 40,
-  "object_id": 1010,
-  "outputs": [
-   1012
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Iteration",
-  "scalar_inputs": [],
-  "start": 8566,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "backend": "OpenCL",
-  "direction": "device-to-host",
-  "elements": 1048576,
-  "end": 9463,
-  "label": "State",
-  "line": 306,
-  "object_id": 1012,
-  "region": "Iteration",
-  "start": 8880,
-  "time": 9463,
-  "type": "transfer"
- },
- {
-  "backend": "OpenMP",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1012
-  ],
-  "end": 10389,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "step_b",
-  "line": 41,
-  "object_id": 1011,
-  "outputs": [
-   1012
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Iteration",
-  "scalar_inputs": [],
-  "start": 9468,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "Iteration",
-  "line": 48,
-  "region": "Alternating backends",
-  "region_depth": 2,
-  "time": 10393,
-  "type": "region"
- },
- {
-  "backend": "OpenCL",
-  "direction": "host-to-device",
-  "elements": 1048576,
-  "end": 10963,
-  "label": "State",
-  "line": 258,
-  "object_id": 1012,
-  "region": "Iteration",
-  "start": 10395,
-  "time": 10963,
-  "type": "transfer"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1012
-  ],
-  "end": 11302,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "step_a",
-  "line": 40,
-  "object_id": 1010,
-  "outputs": [
-   1012
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Iteration",
-  "scalar_inputs": [],
-  "start": 10965,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "backend": "OpenCL",
-  "direction": "device-to-host",
-  "elements": 1048576,
-  "end": 11876,
-  "label": "State",
-  "line": 306,
-  "object_id": 1012,
-  "region": "Iteration",
-  "start": 11305,
-  "time": 11876,
-  "type": "transfer"
- },
- {
-  "backend": "OpenMP",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1012
-  ],
-  "end": 12858,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "step_b",
-  "line": 41,
-  "object_id": 1011,
-  "outputs": [
-   1012
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Iteration",
-  "scalar_inputs": [],
-  "start": 11878,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "Iteration",
-  "line": 48,
-  "region": "Alternating backends",
-  "region_depth": 2,
-  "time": 12862,
-  "type": "region"
- },
- {
-  "backend": "OpenCL",
-  "direction": "host-to-device",
-  "elements": 1048576,
-  "end": 13431,
-  "label": "State",
-  "line": 258,
-  "object_id": 1012,
-  "region": "Iteration",
-  "start": 12864,
-  "time": 13431,
-  "type": "transfer"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1012
-  ],
-  "end": 13778,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "step_a",
-  "line": 40,
-  "object_id": 1010,
-  "outputs": [
-   1012
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Iteration",
-  "scalar_inputs": [],
-  "start": 13436,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "backend": "OpenCL",
-  "direction": "device-to-host",
-  "elements": 1048576,
-  "end": 14341,
-  "label": "State",
-  "line": 306,
-  "object_id": 1012,
-  "region": "Iteration",
-  "start": 13781,
-  "time": 14341,
-  "type": "transfer"
- },
- {
-  "backend": "OpenMP",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1012
-  ],
-  "end": 15331,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "step_b",
-  "line": 41,
-  "object_id": 1011,
-  "outputs": [
-   1012
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Iteration",
-  "scalar_inputs": [],
-  "start": 14346,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "One backend",
-  "line": 54,
-  "region_depth": 1,
-  "time": 15341,
-  "type": "region"
- },
- {
-  "label": "State (OpenCL only)",
-  "line": 246,
-  "object_id": 1013,
-  "region": "One backend",
-  "time": 15344,
-  "type": "allocation"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "Iteration",
-  "line": 59,
-  "region": "One backend",
-  "region_depth": 2,
-  "time": 15351,
-  "type": "region"
- },
- {
-  "backend": "OpenCL",
-  "direction": "host-to-device",
-  "elements": 1048576,
-  "end": 15904,
-  "label": "State (OpenCL only)",
-  "line": 258,
-  "object_id": 1013,
-  "region": "Iteration",
-  "start": 15353,
-  "time": 15904,
-  "type": "transfer"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1013
-  ],
-  "end": 16258,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "step_a",
-  "line": 40,
-  "object_id": 1010,
-  "outputs": [
-   1013
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Iteration",
-  "scalar_inputs": [],
-  "start": 15911,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1013
-  ],
-  "end": 16597,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "step_b",
-  "line": 41,
-  "object_id": 1011,
-  "outputs": [
-   1013
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Iteration",
-  "scalar_inputs": [],
-  "start": 16260,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "Iteration",
-  "line": 59,
-  "region": "One backend",
-  "region_depth": 2,
-  "time": 16608,
-  "type": "region"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1013
-  ],
-  "end": 16965,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "step_a",
-  "line": 40,
-  "object_id": 1010,
-  "outputs": [
-   1013
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Iteration",
-  "scalar_inputs": [],
-  "start": 16613,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1013
-  ],
-  "end": 17303,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "step_b",
-  "line": 41,
-  "object_id": 1011,
-  "outputs": [
-   1013
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Iteration",
-  "scalar_inputs": [],
-  "start": 16972,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "Iteration",
-  "line": 59,
-  "region": "One backend",
-  "region_depth": 2,
-  "time": 17315,
-  "type": "region"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1013
-  ],
-  "end": 17631,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "step_a",
-  "line": 40,
-  "object_id": 1010,
-  "outputs": [
-   1013
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Iteration",
-  "scalar_inputs": [],
-  "start": 17317,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1013
-  ],
-  "end": 17953,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "step_b",
-  "line": 41,
-  "object_id": 1011,
-  "outputs": [
-   1013
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Iteration",
-  "scalar_inputs": [],
-  "start": 17636,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "Host code between kernels",
-  "line": 66,
-  "region_depth": 1,
-  "time": 17961,
-  "type": "region"
- },
- {
-  "label": "Image",
-  "line": 246,
-  "object_id": 1015,
-  "region": "Host code between kernels",
-  "time": 17963,
-  "type": "allocation"
- },
- {
-  "backend": "OpenCL",
-  "direction": "host-to-device",
-  "elements": 1048576,
-  "end": 18554,
-  "label": "Image",
-  "line": 258,
-  "object_id": 1015,
-  "region": "Host code between kernels",
-  "start": 17967,
-  "time": 18554,
-  "type": "transfer"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1015
-  ],
-  "end": 18912,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "blur",
-  "line": 65,
-  "object_id": 1014,
-  "outputs": [
-   1015
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Host code between kernels",
-  "scalar_inputs": [],
-  "start": 18556,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "backend": "OpenCL",
-  "direction": "device-to-host",
-  "elements": 1048576,
-  "end": 19457,
-  "label": "Image",
-  "line": 306,
-  "object_id": 1015,
-  "region": "Host code between kernels",
-  "start": 18915,
-  "time": 19457,
-  "type": "transfer"
- },
- {
-  "elwise_inputs": [
-   1015
-  ],
-  "end": 22061,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "Host filter",
-  "line": 70,
-  "outputs": [
-   1015
-  ],
-  "proxy_inputs": [],
-  "region": "Host code between kernels",
-  "scalar_inputs": [],
-  "start": 19461,
-  "type": "external"
- },
- {
-  "backend": "OpenCL",
-  "direction": "host-to-device",
-  "elements": 1048576,
-  "end": 22639,
-  "label": "Image",
-  "line": 258,
-  "object_id": 1015,
-  "region": "Host code between kernels",
-  "start": 22065,
-  "time": 22639,
-  "type": "transfer"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1015
-  ],
-  "end": 22993,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "blur",
-  "line": 65,
-  "object_id": 1014,
-  "outputs": [
-   1015
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Host code between kernels",
-  "scalar_inputs": [],
-  "start": 22645,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "Single elements",
-  "line": 74,
-  "region_depth": 1,
-  "time": 22997,
-  "type": "region"
- },
- {
-  "label": "Result",
-  "line": 246,
-  "object_id": 1016,
-  "region": "Single elements",
-  "time": 22998,
-  "type": "allocation"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [],
-  "end": 23334,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "generate",
-  "line": 15,
-  "object_id": 1000,
-  "outputs": [
-   1016
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Single elements",
-  "scalar_inputs": [],
-  "start": 23002,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "backend": "OpenCL",
-  "direction": "device-to-host",
-  "elements": 1048576,
-  "end": 23907,
-  "label": "Result",
-  "line": 306,
-  "object_id": 1016,
-  "region": "Single elements",
-  "start": 23335,
-  "time": 23907,
-  "type": "transfer"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "index": 0,
-  "label": "Result",
-  "line": 77,
-  "object_id": 1017,
-  "region": "Single elements",
-  "source": 1016,
-  "time": 23910,
-  "type": "element_access"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1016
-  ],
-  "end": 24254,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "offset",
-  "line": 17,
-  "object_id": 1002,
-  "outputs": [
-   1016
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Single elements",
-  "scalar_inputs": [],
-  "start": 23917,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "backend": "OpenCL",
-  "direction": "device-to-host",
-  "elements": 1048576,
-  "end": 24831,
-  "label": "Result",
-  "line": 306,
-  "object_id": 1016,
-  "region": "Single elements",
-  "start": 24258,
-  "time": 24831,
-  "type": "transfer"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "index": 0,
-  "label": "Result",
-  "line": 79,
-  "object_id": 1018,
-  "region": "Single elements",
-  "source": 1016,
-  "time": 24834,
-  "type": "element_access"
- },
- {
-  "backend": "OpenCL",
-  "direction": "host-to-device",
-  "elements": 1048576,
-  "end": 25412,
-  "label": "Result",
-  "line": 258,
-  "object_id": 1016,
-  "region": "Single elements",
-  "start": 24837,
-  "time": 25412,
-  "type": "transfer"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1016
-  ],
-  "end": 25769,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "offset",
-  "line": 17,
-  "object_id": 1002,
-  "outputs": [
-   1016
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Single elements",
-  "scalar_inputs": [],
-  "start": 25414,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "Copy of a container",
-  "line": 83,
-  "region_depth": 1,
-  "time": 25777,
-  "type": "region"
- },
- {
-  "label": "Field",
-  "line": 246,
-  "object_id": 1019,
-  "region": "Copy of a container",
-  "time": 25779,
-  "type": "allocation"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [],
-  "end": 26099,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "generate",
-  "line": 15,
-  "object_id": 1000,
-  "outputs": [
-   1019
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Copy of a container",
-  "scalar_inputs": [],
-  "start": 25785,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "label": "Vector #1020",
-  "line": 246,
-  "object_id": 1020,
-  "region": "Copy of a container",
-  "time": 26100,
-  "type": "allocation"
- },
- {
-  "backend": "OpenCL",
-  "direction": "device-to-host",
-  "elements": 1048576,
-  "end": 26652,
-  "label": "Field",
-  "line": 306,
-  "object_id": 1019,
-  "region": "Copy of a container",
-  "start": 26103,
-  "time": 26652,
-  "type": "transfer"
- },
- {
-  "elements": 1048576,
-  "end": 27179,
-  "label": "Vector #1020",
-  "object_id": 1020,
-  "region": "Copy of a container",
-  "source": 1019,
-  "start": 26100,
-  "type": "copy"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1019
-  ],
-  "end": 27507,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "offset",
-  "line": 17,
-  "object_id": 1002,
-  "outputs": [
-   1019
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Copy of a container",
-  "scalar_inputs": [],
-  "start": 27186,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "backend": "OpenCL",
-  "direction": "host-to-device",
-  "elements": 1048576,
-  "end": 28069,
-  "label": "Vector #1020",
-  "line": 258,
-  "object_id": 1020,
-  "region": "Copy of a container",
-  "start": 27511,
-  "time": 28069,
-  "type": "transfer"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   1048576
-  ],
-  "elwise_inputs": [
-   1020
-  ],
-  "end": 28388,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "scale",
-  "line": 16,
-  "object_id": 1001,
-  "outputs": [
-   1020
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Copy of a container",
-  "scalar_inputs": [],
-  "start": 28071,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "label": "Vector #1020",
-  "line": 270,
-  "object_id": 1020,
-  "region": "Copy of a container",
-  "time": 28392,
-  "type": "deallocation"
- },
- {
-  "label": "Field",
-  "line": 270,
-  "object_id": 1019,
-  "region": "Copy of a container",
-  "time": 28395,
-  "type": "deallocation"
- },
- {
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "Backend by size",
-  "line": 93,
-  "region_depth": 1,
-  "time": 28400,
-  "type": "region"
- },
- {
-  "label": "Small",
-  "line": 246,
-  "object_id": 1021,
-  "region": "Backend by size",
-  "time": 28404,
-  "type": "allocation"
- },
- {
-  "backend": "CPU",
-  "elements": [
-   1024
-  ],
-  "elwise_inputs": [
-   1021
-  ],
-  "end": 28421,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "scale",
-  "line": 16,
-  "object_id": 1001,
-  "outputs": [
-   1021
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Backend by size",
-  "scalar_inputs": [],
-  "start": 28412,
-  "threads": 1,
-  "type": "skeleton_call"
- },
- {
-  "label": "Medium",
-  "line": 246,
-  "object_id": 1022,
-  "region": "Backend by size",
-  "time": 28427,
-  "type": "allocation"
- },
- {
-  "backend": "OpenMP",
-  "elements": [
-   65536
-  ],
-  "elwise_inputs": [
-   1022
-  ],
-  "end": 28522,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "scale",
-  "line": 16,
-  "object_id": 1001,
-  "outputs": [
-   1022
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Backend by size",
-  "scalar_inputs": [],
-  "start": 28432,
-  "threads": 8,
-  "type": "skeleton_call"
- },
- {
-  "label": "Large",
-  "line": 246,
-  "object_id": 1023,
-  "region": "Backend by size",
-  "time": 28528,
-  "type": "allocation"
- },
- {
-  "backend": "OpenCL",
-  "direction": "host-to-device",
-  "elements": 4194304,
-  "end": 30747,
-  "label": "Large",
-  "line": 258,
-  "object_id": 1023,
-  "region": "Backend by size",
-  "start": 28530,
-  "time": 30747,
-  "type": "transfer"
- },
- {
-  "backend": "OpenCL",
-  "elements": [
-   4194304
-  ],
-  "elwise_inputs": [
-   1023
-  ],
-  "end": 31804,
-  "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
-  "label": "scale",
-  "line": 16,
-  "object_id": 1001,
-  "outputs": [
-   1023
-  ],
-  "pattern": "Map",
-  "proxy_inputs": [],
-  "region": "Backend by size",
-  "scalar_inputs": [],
-  "start": 30750,
-  "threads": 8,
-  "type": "skeleton_call"
+{
+ "data": [
+  {
+   "label": "Signal",
+   "line": 246,
+   "object_id": 1005,
+   "time": 103,
+   "type": "allocation"
+  },
+  {
+   "label": "Scaled",
+   "line": 246,
+   "object_id": 1006,
+   "time": 105,
+   "type": "allocation"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "Sequential then OpenMP",
+   "line": 23,
+   "region_depth": 1,
+   "time": 114,
+   "type": "region"
+  },
+  {
+   "backend": "CPU",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [],
+   "end": 5038,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "generate",
+   "line": 24,
+   "object_id": 1000,
+   "outputs": [
+    1005
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Sequential then OpenMP",
+   "scalar_inputs": [],
+   "start": 121,
+   "threads": 1,
+   "type": "skeleton_call"
+  },
+  {
+   "backend": "OpenMP",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1005
+   ],
+   "end": 6024,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "scale",
+   "line": 25,
+   "object_id": 1001,
+   "outputs": [
+    1006
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Sequential then OpenMP",
+   "scalar_inputs": [],
+   "start": 5046,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "OpenCL back to back",
+   "line": 28,
+   "region_depth": 1,
+   "time": 6032,
+   "type": "region"
+  },
+  {
+   "label": "Stage",
+   "line": 246,
+   "object_id": 1007,
+   "region": "OpenCL back to back",
+   "time": 6037,
+   "type": "allocation"
+  },
+  {
+   "label": "Sum",
+   "line": 246,
+   "object_id": 1008,
+   "region": "OpenCL back to back",
+   "time": 6038,
+   "type": "allocation"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "host-to-device",
+   "elements": 1048576,
+   "end": 6625,
+   "label": "Scaled",
+   "line": 258,
+   "object_id": 1006,
+   "region": "OpenCL back to back",
+   "start": 6040,
+   "time": 6625,
+   "type": "transfer"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1006
+   ],
+   "end": 6940,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "offset",
+   "line": 31,
+   "object_id": 1002,
+   "outputs": [
+    1007
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "OpenCL back to back",
+   "scalar_inputs": [],
+   "start": 6627,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1007
+   ],
+   "end": 7257,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "square",
+   "line": 32,
+   "object_id": 1003,
+   "outputs": [
+    1007
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "OpenCL back to back",
+   "scalar_inputs": [],
+   "start": 6945,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1007
+   ],
+   "end": 7595,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "scale",
+   "line": 33,
+   "object_id": 1001,
+   "outputs": [
+    1007
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "OpenCL back to back",
+   "scalar_inputs": [],
+   "start": 7259,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "device-to-host",
+   "elements": 1,
+   "end": 7947,
+   "label": "Internal (reduce-temp)",
+   "line": 306,
+   "object_id": 1009,
+   "region": "OpenCL back to back",
+   "start": 7772,
+   "time": 7947,
+   "type": "transfer"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1007
+   ],
+   "end": 7947,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "total",
+   "line": 35,
+   "object_id": 1004,
+   "outputs": [
+    1008
+   ],
+   "pattern": "Reduce",
+   "proxy_inputs": [],
+   "region": "OpenCL back to back",
+   "scalar_inputs": [],
+   "start": 7597,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "elwise_inputs": [
+    1008
+   ],
+   "end": 7969,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "Print",
+   "line": 36,
+   "outputs": [],
+   "proxy_inputs": [],
+   "region": "OpenCL back to back",
+   "scalar_inputs": [],
+   "start": 7954,
+   "type": "external"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "Alternating backends",
+   "line": 42,
+   "region_depth": 1,
+   "time": 7981,
+   "type": "region"
+  },
+  {
+   "label": "State",
+   "line": 246,
+   "object_id": 1012,
+   "region": "Alternating backends",
+   "time": 7982,
+   "type": "allocation"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "Iteration",
+   "line": 48,
+   "region": "Alternating backends",
+   "region_depth": 2,
+   "time": 7994,
+   "type": "region"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "host-to-device",
+   "elements": 1048576,
+   "end": 8563,
+   "label": "State",
+   "line": 258,
+   "object_id": 1012,
+   "region": "Iteration",
+   "start": 7995,
+   "time": 8563,
+   "type": "transfer"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1012
+   ],
+   "end": 8877,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "step_a",
+   "line": 49,
+   "object_id": 1010,
+   "outputs": [
+    1012
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Iteration",
+   "scalar_inputs": [],
+   "start": 8566,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "device-to-host",
+   "elements": 1048576,
+   "end": 9463,
+   "label": "State",
+   "line": 306,
+   "object_id": 1012,
+   "region": "Iteration",
+   "start": 8880,
+   "time": 9463,
+   "type": "transfer"
+  },
+  {
+   "backend": "OpenMP",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1012
+   ],
+   "end": 10389,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "step_b",
+   "line": 50,
+   "object_id": 1011,
+   "outputs": [
+    1012
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Iteration",
+   "scalar_inputs": [],
+   "start": 9468,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "Iteration",
+   "line": 48,
+   "region": "Alternating backends",
+   "region_depth": 2,
+   "time": 10393,
+   "type": "region"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "host-to-device",
+   "elements": 1048576,
+   "end": 10963,
+   "label": "State",
+   "line": 258,
+   "object_id": 1012,
+   "region": "Iteration",
+   "start": 10395,
+   "time": 10963,
+   "type": "transfer"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1012
+   ],
+   "end": 11302,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "step_a",
+   "line": 49,
+   "object_id": 1010,
+   "outputs": [
+    1012
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Iteration",
+   "scalar_inputs": [],
+   "start": 10965,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "device-to-host",
+   "elements": 1048576,
+   "end": 11876,
+   "label": "State",
+   "line": 306,
+   "object_id": 1012,
+   "region": "Iteration",
+   "start": 11305,
+   "time": 11876,
+   "type": "transfer"
+  },
+  {
+   "backend": "OpenMP",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1012
+   ],
+   "end": 12858,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "step_b",
+   "line": 50,
+   "object_id": 1011,
+   "outputs": [
+    1012
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Iteration",
+   "scalar_inputs": [],
+   "start": 11878,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "Iteration",
+   "line": 48,
+   "region": "Alternating backends",
+   "region_depth": 2,
+   "time": 12862,
+   "type": "region"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "host-to-device",
+   "elements": 1048576,
+   "end": 13431,
+   "label": "State",
+   "line": 258,
+   "object_id": 1012,
+   "region": "Iteration",
+   "start": 12864,
+   "time": 13431,
+   "type": "transfer"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1012
+   ],
+   "end": 13778,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "step_a",
+   "line": 49,
+   "object_id": 1010,
+   "outputs": [
+    1012
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Iteration",
+   "scalar_inputs": [],
+   "start": 13436,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "device-to-host",
+   "elements": 1048576,
+   "end": 14341,
+   "label": "State",
+   "line": 306,
+   "object_id": 1012,
+   "region": "Iteration",
+   "start": 13781,
+   "time": 14341,
+   "type": "transfer"
+  },
+  {
+   "backend": "OpenMP",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1012
+   ],
+   "end": 15331,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "step_b",
+   "line": 50,
+   "object_id": 1011,
+   "outputs": [
+    1012
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Iteration",
+   "scalar_inputs": [],
+   "start": 14346,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "One backend",
+   "line": 54,
+   "region_depth": 1,
+   "time": 15341,
+   "type": "region"
+  },
+  {
+   "label": "State (OpenCL only)",
+   "line": 246,
+   "object_id": 1013,
+   "region": "One backend",
+   "time": 15344,
+   "type": "allocation"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "Iteration",
+   "line": 59,
+   "region": "One backend",
+   "region_depth": 2,
+   "time": 15351,
+   "type": "region"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "host-to-device",
+   "elements": 1048576,
+   "end": 15904,
+   "label": "State (OpenCL only)",
+   "line": 258,
+   "object_id": 1013,
+   "region": "Iteration",
+   "start": 15353,
+   "time": 15904,
+   "type": "transfer"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1013
+   ],
+   "end": 16258,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "step_a",
+   "line": 60,
+   "object_id": 1010,
+   "outputs": [
+    1013
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Iteration",
+   "scalar_inputs": [],
+   "start": 15911,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1013
+   ],
+   "end": 16597,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "step_b",
+   "line": 61,
+   "object_id": 1011,
+   "outputs": [
+    1013
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Iteration",
+   "scalar_inputs": [],
+   "start": 16260,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "Iteration",
+   "line": 59,
+   "region": "One backend",
+   "region_depth": 2,
+   "time": 16608,
+   "type": "region"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1013
+   ],
+   "end": 16965,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "step_a",
+   "line": 60,
+   "object_id": 1010,
+   "outputs": [
+    1013
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Iteration",
+   "scalar_inputs": [],
+   "start": 16613,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1013
+   ],
+   "end": 17303,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "step_b",
+   "line": 61,
+   "object_id": 1011,
+   "outputs": [
+    1013
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Iteration",
+   "scalar_inputs": [],
+   "start": 16972,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "Iteration",
+   "line": 59,
+   "region": "One backend",
+   "region_depth": 2,
+   "time": 17315,
+   "type": "region"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1013
+   ],
+   "end": 17631,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "step_a",
+   "line": 60,
+   "object_id": 1010,
+   "outputs": [
+    1013
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Iteration",
+   "scalar_inputs": [],
+   "start": 17317,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1013
+   ],
+   "end": 17953,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "step_b",
+   "line": 61,
+   "object_id": 1011,
+   "outputs": [
+    1013
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Iteration",
+   "scalar_inputs": [],
+   "start": 17636,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "Host code between kernels",
+   "line": 66,
+   "region_depth": 1,
+   "time": 17961,
+   "type": "region"
+  },
+  {
+   "label": "Image",
+   "line": 246,
+   "object_id": 1015,
+   "region": "Host code between kernels",
+   "time": 17963,
+   "type": "allocation"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "host-to-device",
+   "elements": 1048576,
+   "end": 18554,
+   "label": "Image",
+   "line": 258,
+   "object_id": 1015,
+   "region": "Host code between kernels",
+   "start": 17967,
+   "time": 18554,
+   "type": "transfer"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1015
+   ],
+   "end": 18912,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "blur",
+   "line": 69,
+   "object_id": 1014,
+   "outputs": [
+    1015
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Host code between kernels",
+   "scalar_inputs": [],
+   "start": 18556,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "device-to-host",
+   "elements": 1048576,
+   "end": 19457,
+   "label": "Image",
+   "line": 306,
+   "object_id": 1015,
+   "region": "Host code between kernels",
+   "start": 18915,
+   "time": 19457,
+   "type": "transfer"
+  },
+  {
+   "elwise_inputs": [
+    1015
+   ],
+   "end": 22061,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "Host filter",
+   "line": 70,
+   "outputs": [
+    1015
+   ],
+   "proxy_inputs": [],
+   "region": "Host code between kernels",
+   "scalar_inputs": [],
+   "start": 19461,
+   "type": "external"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "host-to-device",
+   "elements": 1048576,
+   "end": 22639,
+   "label": "Image",
+   "line": 258,
+   "object_id": 1015,
+   "region": "Host code between kernels",
+   "start": 22065,
+   "time": 22639,
+   "type": "transfer"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1015
+   ],
+   "end": 22993,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "blur",
+   "line": 71,
+   "object_id": 1014,
+   "outputs": [
+    1015
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Host code between kernels",
+   "scalar_inputs": [],
+   "start": 22645,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "Single elements",
+   "line": 74,
+   "region_depth": 1,
+   "time": 22997,
+   "type": "region"
+  },
+  {
+   "label": "Result",
+   "line": 246,
+   "object_id": 1016,
+   "region": "Single elements",
+   "time": 22998,
+   "type": "allocation"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [],
+   "end": 23334,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "generate",
+   "line": 76,
+   "object_id": 1000,
+   "outputs": [
+    1016
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Single elements",
+   "scalar_inputs": [],
+   "start": 23002,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "device-to-host",
+   "elements": 1048576,
+   "end": 23907,
+   "label": "Result",
+   "line": 306,
+   "object_id": 1016,
+   "region": "Single elements",
+   "start": 23335,
+   "time": 23907,
+   "type": "transfer"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "index": 0,
+   "label": "Result",
+   "line": 77,
+   "object_id": 1017,
+   "region": "Single elements",
+   "source": 1016,
+   "time": 23910,
+   "type": "element_access"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1016
+   ],
+   "end": 24254,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "offset",
+   "line": 78,
+   "object_id": 1002,
+   "outputs": [
+    1016
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Single elements",
+   "scalar_inputs": [],
+   "start": 23917,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "device-to-host",
+   "elements": 1048576,
+   "end": 24831,
+   "label": "Result",
+   "line": 306,
+   "object_id": 1016,
+   "region": "Single elements",
+   "start": 24258,
+   "time": 24831,
+   "type": "transfer"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "index": 0,
+   "label": "Result",
+   "line": 79,
+   "object_id": 1018,
+   "region": "Single elements",
+   "source": 1016,
+   "time": 24834,
+   "type": "element_access"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "host-to-device",
+   "elements": 1048576,
+   "end": 25412,
+   "label": "Result",
+   "line": 258,
+   "object_id": 1016,
+   "region": "Single elements",
+   "start": 24837,
+   "time": 25412,
+   "type": "transfer"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1016
+   ],
+   "end": 25769,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "offset",
+   "line": 80,
+   "object_id": 1002,
+   "outputs": [
+    1016
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Single elements",
+   "scalar_inputs": [],
+   "start": 25414,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "Copy of a container",
+   "line": 83,
+   "region_depth": 1,
+   "time": 25777,
+   "type": "region"
+  },
+  {
+   "label": "Field",
+   "line": 246,
+   "object_id": 1019,
+   "region": "Copy of a container",
+   "time": 25779,
+   "type": "allocation"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [],
+   "end": 26099,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "generate",
+   "line": 85,
+   "object_id": 1000,
+   "outputs": [
+    1019
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Copy of a container",
+   "scalar_inputs": [],
+   "start": 25785,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "label": "Vector #1020",
+   "line": 246,
+   "object_id": 1020,
+   "region": "Copy of a container",
+   "time": 26100,
+   "type": "allocation"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "device-to-host",
+   "elements": 1048576,
+   "end": 26652,
+   "label": "Field",
+   "line": 306,
+   "object_id": 1019,
+   "region": "Copy of a container",
+   "start": 26103,
+   "time": 26652,
+   "type": "transfer"
+  },
+  {
+   "elements": 1048576,
+   "end": 27179,
+   "label": "Vector #1020",
+   "object_id": 1020,
+   "region": "Copy of a container",
+   "source": 1019,
+   "start": 26100,
+   "type": "copy"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1019
+   ],
+   "end": 27507,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "offset",
+   "line": 87,
+   "object_id": 1002,
+   "outputs": [
+    1019
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Copy of a container",
+   "scalar_inputs": [],
+   "start": 27186,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "host-to-device",
+   "elements": 1048576,
+   "end": 28069,
+   "label": "Vector #1020",
+   "line": 258,
+   "object_id": 1020,
+   "region": "Copy of a container",
+   "start": 27511,
+   "time": 28069,
+   "type": "transfer"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    1048576
+   ],
+   "elwise_inputs": [
+    1020
+   ],
+   "end": 28388,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "scale",
+   "line": 88,
+   "object_id": 1001,
+   "outputs": [
+    1020
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Copy of a container",
+   "scalar_inputs": [],
+   "start": 28071,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "label": "Vector #1020",
+   "line": 270,
+   "object_id": 1020,
+   "region": "Copy of a container",
+   "time": 28392,
+   "type": "deallocation"
+  },
+  {
+   "label": "Field",
+   "line": 270,
+   "object_id": 1019,
+   "region": "Copy of a container",
+   "time": 28395,
+   "type": "deallocation"
+  },
+  {
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "Backend by size",
+   "line": 93,
+   "region_depth": 1,
+   "time": 28400,
+   "type": "region"
+  },
+  {
+   "label": "Small",
+   "line": 246,
+   "object_id": 1021,
+   "region": "Backend by size",
+   "time": 28404,
+   "type": "allocation"
+  },
+  {
+   "backend": "CPU",
+   "elements": [
+    1024
+   ],
+   "elwise_inputs": [
+    1021
+   ],
+   "end": 28421,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "scale",
+   "line": 96,
+   "object_id": 1001,
+   "outputs": [
+    1021
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Backend by size",
+   "scalar_inputs": [],
+   "start": 28412,
+   "threads": 1,
+   "type": "skeleton_call"
+  },
+  {
+   "label": "Medium",
+   "line": 246,
+   "object_id": 1022,
+   "region": "Backend by size",
+   "time": 28427,
+   "type": "allocation"
+  },
+  {
+   "backend": "OpenMP",
+   "elements": [
+    65536
+   ],
+   "elwise_inputs": [
+    1022
+   ],
+   "end": 28522,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "scale",
+   "line": 99,
+   "object_id": 1001,
+   "outputs": [
+    1022
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Backend by size",
+   "scalar_inputs": [],
+   "start": 28432,
+   "threads": 8,
+   "type": "skeleton_call"
+  },
+  {
+   "label": "Large",
+   "line": 246,
+   "object_id": 1023,
+   "region": "Backend by size",
+   "time": 28528,
+   "type": "allocation"
+  },
+  {
+   "backend": "OpenCL",
+   "direction": "host-to-device",
+   "elements": 4194304,
+   "end": 30747,
+   "label": "Large",
+   "line": 258,
+   "object_id": 1023,
+   "region": "Backend by size",
+   "start": 28530,
+   "time": 30747,
+   "type": "transfer"
+  },
+  {
+   "backend": "OpenCL",
+   "elements": [
+    4194304
+   ],
+   "elwise_inputs": [
+    1023
+   ],
+   "end": 31804,
+   "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+   "label": "scale",
+   "line": 102,
+   "object_id": 1001,
+   "outputs": [
+    1023
+   ],
+   "pattern": "Map",
+   "proxy_inputs": [],
+   "region": "Backend by size",
+   "scalar_inputs": [],
+   "start": 30750,
+   "threads": 8,
+   "type": "skeleton_call"
+  }
+ ],
+ "header": {
+  "instances": {
+   "1000": {
+    "instance": {
+     "end_line": 15,
+     "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+     "line": 15
+    },
+    "label": "generate",
+    "user_functions": [
+     {
+      "end_line": 15,
+      "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+      "kind": "lambda",
+      "line": 15,
+      "name": ""
+     }
+    ]
+   },
+   "1001": {
+    "instance": {
+     "end_line": 16,
+     "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+     "line": 16
+    },
+    "label": "scale",
+    "user_functions": [
+     {
+      "end_line": 16,
+      "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+      "kind": "lambda",
+      "line": 16,
+      "name": ""
+     }
+    ]
+   },
+   "1002": {
+    "instance": {
+     "end_line": 17,
+     "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+     "line": 17
+    },
+    "label": "offset",
+    "user_functions": [
+     {
+      "end_line": 17,
+      "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+      "kind": "lambda",
+      "line": 17,
+      "name": ""
+     }
+    ]
+   },
+   "1003": {
+    "instance": {
+     "end_line": 18,
+     "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+     "line": 18
+    },
+    "label": "square",
+    "user_functions": [
+     {
+      "end_line": 18,
+      "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+      "kind": "lambda",
+      "line": 18,
+      "name": ""
+     }
+    ]
+   },
+   "1004": {
+    "instance": {
+     "end_line": 19,
+     "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+     "line": 19
+    },
+    "label": "total",
+    "user_functions": [
+     {
+      "end_line": 19,
+      "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+      "kind": "lambda",
+      "line": 19,
+      "name": ""
+     }
+    ]
+   },
+   "1010": {
+    "instance": {
+     "end_line": 40,
+     "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+     "line": 40
+    },
+    "label": "step_a",
+    "user_functions": [
+     {
+      "end_line": 40,
+      "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+      "kind": "lambda",
+      "line": 40,
+      "name": ""
+     }
+    ]
+   },
+   "1011": {
+    "instance": {
+     "end_line": 41,
+     "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+     "line": 41
+    },
+    "label": "step_b",
+    "user_functions": [
+     {
+      "end_line": 41,
+      "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+      "kind": "lambda",
+      "line": 41,
+      "name": ""
+     }
+    ]
+   },
+   "1014": {
+    "instance": {
+     "end_line": 65,
+     "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+     "line": 65
+    },
+    "label": "blur",
+    "user_functions": [
+     {
+      "end_line": 65,
+      "file": "/Users/august/Developer/skepu-alpha/examples/backend_switching.cpp",
+      "kind": "lambda",
+      "line": 65,
+      "name": ""
+     }
+    ]
+   }
+  }
  }
-]
+}

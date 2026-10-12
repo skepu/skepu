@@ -151,6 +151,7 @@
   },
   {
     "title": "Cellular Automaton (SkePY, Python)",
+    "language": "python",
     "trace": {
       "openmp": "cellular_automaton_skepy/trace_cellular_automaton_openmp.json",
       "opencl": "cellular_automaton_skepy/trace_cellular_automaton_opencl.json"

@@ -241,8 +241,8 @@ describe('the example of the splash page (Coulombic on 4 MPI processes)', () => 
         expect(io.label).toBe('I/O');
         const comm = sourcesOf(io).find(n => n.type === 'communication');
         expect(comm).toBeDefined();
-        expect(comm.operation).toBe('allgather');
-        expect(comm.reason).toMatch(/host access/);
+        expect(comm.operation).toBe('gather');                      // (to the process that runs the code: the others do not need it)
+        expect(comm.reason).toMatch(/skepu::external/);
         expect(sourcesOf(comm).some(n => n.type === 'skeleton_call' || sourcesOf(n).some(p => p.type === 'skeleton_call'))).toBe(true);
     });
 

@@ -47,17 +47,17 @@ describe('the MCP server', () => {
         const loaded = await s.tool('load_trace', { path: TRACE });
         expect(loaded.isError).toBeUndefined();
         const { handle, events } = loaded.structuredContent;
-        expect(events).toBe(812);
+        expect(events).toBe(1080);
 
         const tr = (await s.tool('transfers', { handle, limit: 3 })).structuredContent;
-        expect(tr.by_kind['reduce-temp'].count).toBe(24);
+        expect(tr.by_kind['reduce-temp'].count).toBe(34);
         expect(tr.longest).toHaveLength(3);
 
         const text = (await s.tool('time_by', { handle, group_by: 'pattern' })).content[0].text;
         expect(JSON.parse(text).rows[0].key).toBe('Map');
 
         const cp = (await s.tool('critical_path', { handle })).structuredContent;
-        expect(cp.work_us).toBe(245525);
+        expect(cp.work_us).toBe(347334);
 
         const fu = (await s.tool('fusion_candidates', { handle })).structuredContent;
         expect(fu.serial_groups).toBeGreaterThan(50);

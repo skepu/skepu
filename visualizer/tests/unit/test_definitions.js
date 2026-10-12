@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { buildDisplayGraph } from '../../script/backend/pipeline.js';
 import { headerInstances } from '../../script/backend/trace.js';
 import { definitionRows } from '../../script/InfoView.js';
+import { collectBadges, definitionMarks, definitionPlace, sitesAt } from '../../script/badges.js';
 import { builder, trace } from '../event_builders.js';
 
 const table = {
@@ -72,5 +73,61 @@ describe('the links in the info pane', () => {
 
     it('are nothing without definitions', () => {
         expect(definitionRows(undefined, () => true)).toBe('');
+    });
+});
+
+describe('the badge nodes and the sites of the definitions', () => {
+    const b = builder();
+    const events = trace([
+        b.alloc(1, 'A'),
+        { ...b.call('dotp', { outs: [1] }), object_id: 7 },
+        { ...b.call('dotp', { ins: [1] }), object_id: 7 },      // (a second call of the instance)
+        { ...b.call('Map@a.cpp:30', { ins: [1] }), object_id: 8 },
+        { ...b.call('other', { ins: [1] }), object_id: 99 },
+    ]);
+    const { graph } = buildDisplayGraph(events, { instances: headerInstances({ instances: table }) });
+    const [, badgeNodes] = graph.toTimelineAndBadges();
+    const calls = badgeNodes.filter(n => n.data.type === 'skeleton_call');
+
+    it('a badge node of a call has the places of its instance and user functions', () => {
+        const dotp = calls.find(n => n.data.definitions?.instance.line === 12);
+        expect(dotp.data.definitions.functions.map(f => f.line)).toEqual([4, 12]);
+        expect(calls.find(n => n.data.definitions === undefined)).toBeDefined();   // the call of the instance without an entry
+    });
+
+    it('the sites are the places, each with the nodes that use it', () => {
+        const { sites } = collectBadges(badgeNodes, []);
+        const at = (role, line) => sites.find(s => s.role === role && s.line === line);
+        expect(sites.map(s => `${s.role}:${s.line}`).sort()).toEqual(['function:12', 'function:2', 'function:4', 'instance:12', 'instance:30']);
+        expect(at('instance', 12).ids).toHaveLength(2);                // (the two calls of the instance dotp: two nodes)
+        expect(at('function', 4)).toMatchObject({ file: '/src/a.cpp', end_line: 6 });
+        expect(at('instance', 30).ids).toHaveLength(1);
+    });
+
+    it('sitesAt finds the sites that cover a line of a file, by the basename', () => {
+        const { sites } = collectBadges(badgeNodes, []);
+        expect(sitesAt(sites, '/other/dir/a.cpp', 5).map(s => `${s.role}:${s.line}`)).toEqual(['function:4']);
+        expect(sitesAt(sites, 'a.cpp', 12).map(s => s.role).sort()).toEqual(['function', 'instance']);   // (a lambda on the line of the instance)
+        expect(sitesAt(sites, 'a.cpp', 20)).toEqual([]);
+        expect(sitesAt(sites, 'b.hpp', 2).map(s => s.role)).toEqual(['function']);
+    });
+});
+
+describe('the marks and the shortcuts of a call', () => {
+    const d = headerInstances({ instances: table }).get(7);
+
+    it('the marks are the lines of the instance and of each user function', () => {
+        expect(definitionMarks(d)).toEqual([
+            { role: 'instance', file: '/src/a.cpp', from: 12, to: 13 },
+            { role: 'function', file: '/src/a.cpp', from: 4, to: 6 },
+            { role: 'function', file: '/src/a.cpp', from: 12, to: 12 }]);
+        expect(definitionMarks(null)).toEqual([]);
+    });
+
+    it('the instance, and the user functions one after the other', () => {
+        expect(definitionPlace(d, 'instance').line).toBe(12);
+        expect([0, 1, 2, 3].map(i => definitionPlace(d, 'function', i).line)).toEqual([4, 12, 4, 12]);   // (it wraps around)
+        expect(definitionPlace({ ...d, user_functions: [] }, 'function')).toBeNull();
+        expect(definitionPlace(undefined, 'instance')).toBeNull();
     });
 });
