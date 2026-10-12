@@ -100,6 +100,7 @@ namespace skepu
 #define SKEPU_TRACE_REGION(...) skepu::tracing::tracer().region(__VA_ARGS__)
 #define SKEPU_TRACE_ALLOCATION(...) skepu::tracing::tracer().allocation(__VA_ARGS__)
 #define SKEPU_TRACE_DEALLOCATION(...) skepu::tracing::tracer().deallocation(__VA_ARGS__)
+#define SKEPU_TRACE_RELABEL(...) skepu::tracing::tracer().relabel(__VA_ARGS__)
 #define SKEPU_TRACE_TRANSFER(...) skepu::tracing::tracer().transfer(__VA_ARGS__)
 #define SKEPU_TRACE_ELEMENT_ACCESS(...) skepu::tracing::tracer().element_access(__VA_ARGS__)
 #define SKEPU_TRACE_COPY(...) skepu::tracing::tracer().copy(__VA_ARGS__)
@@ -122,6 +123,7 @@ namespace skepu
 #define SKEPU_TRACE_REGION(...)
 #define SKEPU_TRACE_ALLOCATION(...)
 #define SKEPU_TRACE_DEALLOCATION(...)
+#define SKEPU_TRACE_RELABEL(...)
 #define SKEPU_TRACE_TRANSFER(...)
 #define SKEPU_TRACE_ELEMENT_ACCESS(...)
 #define SKEPU_TRACE_COPY(...)
@@ -204,6 +206,8 @@ namespace skepu
 
 			void allocation(TraceID id, std::string const& label, int line);
 			void deallocation(TraceID id, std::string const& label, int line);
+			// A container gets its name after it was allocated (see skepu::trace_label): its events so far get it too
+			void relabel(TraceID id, std::string const& label);
 			void transfer(EventHandle &h, TraceID id, std::string const& label, int line, size_t elements, std::string direction, std::string backend);
 			void element_access(TraceID id, TraceID source_id, size_t index, std::string const& label, std::string const& file, int line);
 			// The elements of one container were copied to another (copy constructor and assignment of a container): a

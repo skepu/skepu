@@ -410,6 +410,61 @@ bool SkePUASTVisitor::VisitVarDecl(clang::VarDecl *d)
 	return RecursiveASTVisitor<SkePUASTVisitor>::VisitVarDecl(d);
 }
 
+// Is the type a SkePU container (a vector, matrix or tensor), as written for any element type?
+static bool IsContainerType(clang::QualType type)
+{
+	type = type.getCanonicalType();
+	const clang::TemplateDecl *templateDecl = nullptr;
+	if (auto *specialization = type->getAs<clang::TemplateSpecializationType>())
+		templateDecl = specialization->getTemplateName().getAsTemplateDecl();
+	else if (auto *record = type->getAsCXXRecordDecl())
+		if (auto *instance = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>(record))
+			templateDecl = instance->getSpecializedTemplate();
+	if (!templateDecl)
+		return false;
+
+	const std::string name = templateDecl->getQualifiedNameAsString();
+	return name == "skepu::Vector" || name == "skepu::Matrix" || name == "skepu::Tensor3" || name == "skepu::Tensor4";
+}
+
+// A container variable is named in the traces by its variable name: a call is added after its declaration, on the
+// same line so that the line numbers stay. Only the declarations that are statements of a block are named (not
+// the ones in a condition or a loop header, or in a macro or a header file).
+bool SkePUASTVisitor::VisitCompoundStmt(clang::CompoundStmt *block)
+{
+	#ifndef SKEPU_LSP
+		clang::SourceManager &SM = this->Context->getSourceManager();
+		static std::set<unsigned> labelledStatements;
+
+		for (clang::Stmt *child : block->body())
+		{
+			auto *s = clang::dyn_cast<clang::DeclStmt>(child);
+			if (!s)
+				continue;
+
+			const clang::SourceLocation end = s->getEndLoc();
+			if (end.isInvalid() || end.isMacroID() || s->getBeginLoc().isMacroID() || !SM.isWrittenInMainFile(end))
+				continue;
+
+			std::string calls;
+			for (clang::Decl *decl : s->decls())
+			{
+				auto *d = clang::dyn_cast<clang::VarDecl>(decl);
+				if (d && !d->isInvalidDecl() && !d->getType().isConstQualified() && IsContainerType(d->getType()))
+					calls += " skepu::trace_label(" + d->getNameAsString() + ", \"" + d->getNameAsString() + "\");";
+			}
+
+			// (a block in a function template is visited once, but the same statement can be reached again)
+			if (!calls.empty() && labelledStatements.insert(end.getRawEncoding()).second)
+			{
+				SkePULog() << "Naming containers after their variables:" << calls << "\n";
+				GlobalRewriter.InsertTextAfterToken(end, calls);
+			}
+		}
+	#endif
+	return true;
+}
+
 // The factory call of an anonymous skeleton instance, if the object of a call is one: the factory call itself or
 // a chain of settings (member calls that return the skeleton) on it. Otherwise nullptr.
 static clang::CallExpr *findInlineFactory(clang::Expr *e)

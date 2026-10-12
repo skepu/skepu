@@ -34,6 +34,7 @@ public:
 	bool TraverseLambdaExpr(clang::LambdaExpr *l);
 
 	bool VisitVarDecl(clang::VarDecl *d);
+	bool VisitCompoundStmt(clang::CompoundStmt *block);
 	bool VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr *c);
 
 #ifdef SKEPU_LSP

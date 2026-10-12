@@ -178,6 +178,13 @@ namespace skepu
 		void setLabel(std::string label)
 		{
 			this->m_label = label;
+			SKEPU_TRACE_RELABEL(this->getObjectID(), label);
+		}
+
+		// Has the container a label that was set, by the program or the precompiler (not the default one)?
+		bool hasLabel() const
+		{
+			return this->m_label != "";
 		}
 
 		std::string getLabel() const

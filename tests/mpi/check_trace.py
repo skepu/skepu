@@ -135,6 +135,15 @@ worst = max(spreads) if spreads else 0
 if worst > 20000:
     fail("the collectives end up to %d us apart on the clock of rank 0 (the clocks are not aligned)" % worst)
 
+# the containers are named after their variables (skepu-tool does it for the ones that the program does not name itself),
+# also in the allocation events that came before the name
+names = {e["label"] for e in allocs.values()}
+for name in ("c", "row_totals", "col_totals", "scanned", "smoothed", "pairs_out", "pooled"):
+    if name not in names:
+        fail("no container named %s in the trace (the names: %s)" % (name, sorted(names)))
+if any(label.startswith(("Vector #", "Matrix #")) for label in names):
+    fail("a container has no name: %s" % sorted(names))
+
 # a container that has only its initial value is not gathered (nothing is moved to read what every process knows)
 for e in full:
     if e["type"] == "allocation" and e.get("label") in ("fresh", "fresh_matrix"):

@@ -59,7 +59,14 @@ namespace skepu
 				size_type size() const { return this->m_dist.total(); }
 				bool empty() const { return this->size() == 0; }
 
-				void setLabel(std::string label) { this->m_label = label; }
+				void setLabel(std::string label)
+				{
+					this->m_label = label;
+					if (this->m_identity.live)
+						this->m_identity.name = label; // (the later events of the container, the deallocation)
+					SKEPU_TRACE_RELABEL(this->m_identity.id, label);
+				}
+				bool hasLabel() const { return !this->m_label.empty(); }
 				std::string getLabel() const { return this->m_label; }
 
 				// The id of the container in the traces (it goes with the data when the container is moved)

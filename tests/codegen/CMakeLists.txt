@@ -264,6 +264,14 @@ foreach(_backend cpu openmp opencl)
 		ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_skeletons_${_backend}.json")
 endforeach()
 
+# The containers that are declared as variables are named after the variables in the trace
+skepu_add_executable(tracing_container_labels_test SKEPUSRC tracing_container_labels.cpp)
+target_link_libraries(tracing_container_labels_test PRIVATE catch2_main)
+target_compile_definitions(tracing_container_labels_test PRIVATE SKEPU_TRACING)
+add_test(NAME tracing_container_labels COMMAND tracing_container_labels_test)
+set_tests_properties(tracing_container_labels PROPERTIES
+	ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_container_labels.json")
+
 # ------------------------------------------------
 #   User types in namespaces (OpenCL type names)
 # ------------------------------------------------

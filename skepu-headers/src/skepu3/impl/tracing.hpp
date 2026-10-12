@@ -219,6 +219,25 @@ namespace skepu
 #endif
 		}
 
+		inline void Tracer::relabel(TraceID id, std::string const& label)
+		{
+#ifdef SKEPU_TRACING
+			// (the events are written in order, and a container is named right after its declaration: the
+			// events of the container are the last ones; a Raw capture is also kept in the traces of the other processes of an MPI program)
+			auto capture = [=, this]{
+			for (auto it = this->m_trace_json.rbegin(); it != this->m_trace_json.rend(); ++it)
+			{
+				auto object = it->find(Schema::Keys::OBJECT_ID);
+				if (object == it->end() || *object != id || !it->contains(Schema::Keys::LABEL))
+					continue;
+				(*it)[Schema::Keys::LABEL] = label;
+				if ((*it)[Schema::Keys::TYPE] == Schema::Values::Types::ALLOCATION)
+					break;
+			}
+			}; this->push_capture(std::move(capture), CaptureKind::Raw);
+#endif
+		}
+
 		inline void Tracer::deallocation(TraceID id, std::string const& label, int line)
 		{
 #ifdef SKEPU_TRACING
@@ -748,6 +767,18 @@ namespace skepu
 			tracer().endRegion();
 		}
 	SKEPU_TRACING_VARIANT_END
+	}
+
+	// Names a container in the traces and the debug output, unless the program has named it (a label that the program
+	// gives, in the constructor or with setLabel, is the name). skepu-tool adds a call after each declaration of a container
+	// variable, with the name of the variable. It does nothing if the program is not traced.
+	template<typename Container>
+	void trace_label(Container &container, const char *label)
+	{
+#ifdef SKEPU_TRACING
+		if (!container.hasLabel())
+			container.setLabel(label);
+#endif
 	}
 }
 

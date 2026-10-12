@@ -328,18 +328,18 @@ TEST_CASE("the trace of the lifetime of containers")
 	{
 		bool born_in_assignment = false;
 		for (auto const& e : trace)
-			if (e["type"] == "copy" && e["source"] == id_of("original") && label[e["object_id"].get<int>()] == "Vector #" + std::to_string(e["object_id"].get<int>()))
-				born_in_assignment = true;
+			if (e["type"] == "copy" && e["source"] == id_of("original") && e["object_id"] == id_of("assigned") && allocated[id_of("assigned")] == 1)
+				born_in_assignment = true;    // (the precompiler names it after the variable)
 		CHECK(born_in_assignment);
 	}
 
 	SECTION("memory that a container wraps: it is born, and the end of the container is its death")
 	{
-		int wrapped = 0;
-		for (auto const& e : trace)
-			if (e["type"] == "allocation" && e["label"].get<std::string>().rfind("Vector #", 0) == 0 && e["object_id"].get<int>() != 0)
-				wrapped += (freed[e["object_id"].get<int>()] == 1);
-		CHECK(wrapped >= 2);    // the wrapped vector and the copies
+		for (auto const& name : {"wrapped", "copy"})    // (named after the variables by the precompiler)
+		{
+			CHECK(allocated[id_of(name)] == 1);
+			CHECK(freed[id_of(name)] == 1);
+		}
 	}
 
 	SECTION("a move carries the id: the call reads and writes the memory of the vector that was moved from")
