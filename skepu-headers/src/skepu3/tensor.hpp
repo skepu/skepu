@@ -123,6 +123,14 @@ namespace skepu
 		{
 			this->swap(c);
 		}
+
+		// Move assignment: the tensors exchange their memory, nothing is copied (so that std::swap works)
+		Tensor3& operator=(Tensor3&& other)
+		{
+			if (this != &other)
+				this->swap(other);
+			return *this;
+		}
 			
 		void swap(Tensor3<T>& from)
 		{

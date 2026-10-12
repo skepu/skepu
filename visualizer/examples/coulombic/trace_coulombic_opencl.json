@@ -11,50 +11,50 @@
             "label": "energy_out",
             "line": 292,
             "object_id": 1002,
-            "time": 1,
+            "time": 392,
             "type": "allocation"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1004,
-            "time": 22609,
+            "time": 1128,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1006,
-            "time": 22636,
+            "time": 1153,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
-            "elements": 100,
-            "end": 24627,
+            "elements": 300000,
+            "end": 3994,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1006,
-            "start": 22638,
-            "time": 24627,
+            "start": 1983,
+            "time": 3994,
             "type": "transfer"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1006,
-            "time": 24635,
+            "time": 4003,
             "type": "deallocation"
         },
         {
             "backend": "OpenCL",
             "devices": 1,
             "elements": [
-                100
+                300000
             ],
             "elwise_inputs": [],
-            "end": 25242,
+            "end": 4905,
             "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
             "label": "init",
             "line": 88,
@@ -66,26 +66,26 @@
             "prng": 1004,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 22624,
+            "start": 1141,
             "type": "skeleton_call"
         },
         {
             "label": "grid_in",
             "line": 292,
             "object_id": 1008,
-            "time": 25269,
+            "time": 4936,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 100,
-            "end": 25658,
+            "end": 5532,
             "label": "grid_in",
             "line": 258,
             "object_id": 1008,
-            "start": 25274,
-            "time": 25658,
+            "start": 4942,
+            "time": 5532,
             "type": "transfer"
         },
         {
@@ -97,7 +97,7 @@
             "elwise_inputs": [
                 1008
             ],
-            "end": 25936,
+            "end": 59555,
             "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
             "label": "columbicPotential",
             "line": 106,
@@ -110,31 +110,31 @@
                 1001
             ],
             "scalar_inputs": [],
-            "start": 25274,
+            "start": 4942,
             "type": "skeleton_call"
         },
         {
             "label": "grid_in",
             "line": 322,
             "object_id": 1008,
-            "time": 25954,
+            "time": 59589,
             "type": "deallocation"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 100,
-            "end": 26154,
+            "end": 59787,
             "label": "energy_out",
             "line": 306,
             "object_id": 1002,
-            "start": 25963,
-            "time": 26154,
+            "start": 59598,
+            "time": 59787,
             "type": "transfer"
         },
         {
             "elwise_inputs": [],
-            "end": 26173,
+            "end": 59815,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -143,21 +143,21 @@
                 1002
             ],
             "scalar_inputs": [],
-            "start": 25963,
+            "start": 59598,
             "type": "external"
         },
         {
             "label": "energy_out",
             "line": 322,
             "object_id": 1002,
-            "time": 26178,
+            "time": 59825,
             "type": "deallocation"
         },
         {
             "label": "atoms",
             "line": 282,
             "object_id": 1001,
-            "time": 26182,
+            "time": 59829,
             "type": "deallocation"
         }
     ],

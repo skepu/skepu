@@ -45,7 +45,7 @@ if not calls0:
 
 # nothing of the node-level library on rank 0, and nothing but lean events elsewhere
 for e in full:
-    if e["type"] not in ("allocation", "deallocation", "skeleton_call", "communication", "region", "external", "transfer", "snapshot", "element_access"):
+    if e["type"] not in ("allocation", "deallocation", "skeleton_call", "communication", "region", "external", "transfer", "snapshot", "element_access", "scalar_value"):
         fail("rank 0: unexpected event type " + e["type"])
     if e["type"] == "transfer":
         fail("rank 0: a node-level transfer event (those are not recorded in MPI programs)")
@@ -203,6 +203,23 @@ for e in accesses:
 for k in range(1, P):
     if any(e["type"] == "element_access" for e in files[k]["data"]):
         fail("rank %d has an element_access event" % k)
+
+# the values of the scalars (scalar_value): events of the first process, a number or one of the strings of a number that is not finite, and the value of
+# the output of a call for some of them (the others are scalars that the program or the library made)
+call_outputs = set()
+for c in calls0:
+    call_outputs.update(c.get("outputs", []))
+values = [e for e in full if e["type"] == "scalar_value"]
+if not values:
+    fail("no scalar_value event on rank 0")
+for e in values:
+    if not (isinstance(e["value"], (int, float)) or e["value"] in ("nan", "inf", "-inf")):
+        fail("scalar_value %d has no number: %r" % (e["object_id"], e["value"]))
+for k in range(1, P):
+    if any(e["type"] == "scalar_value" for e in files[k]["data"]):
+        fail("rank %d has a scalar_value event" % k)
+if not any(e["object_id"] in call_outputs for e in values):
+    fail("no scalar_value is the value of the output of a call")
 
 # the snapshots (SKEPU_TRACE_SNAPSHOT of a distributed container): events of the first process, whose files have the whole container
 snapshots = [e for e in full if e["type"] == "snapshot"]

@@ -11,25 +11,25 @@
             "label": "A",
             "line": 292,
             "object_id": 1003,
-            "time": 15,
+            "time": 14,
             "type": "allocation"
         },
         {
             "label": "B",
             "line": 292,
             "object_id": 1004,
-            "time": 63,
+            "time": 64,
             "type": "allocation"
         },
         {
             "label": "Rules",
             "line": 292,
             "object_id": 1005,
-            "time": 110,
+            "time": 129,
             "type": "allocation"
         },
         {
-            "end": 125,
+            "end": 143,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "Domain",
             "line": 93,
@@ -37,7 +37,7 @@
                 1003,
                 1004
             ],
-            "start": 125,
+            "start": 143,
             "type": "virtual_container",
             "virtual_id": 1029
         },
@@ -45,7 +45,7 @@
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1007,
-            "time": 145,
+            "time": 160,
             "type": "allocation"
         },
         {
@@ -54,7 +54,7 @@
                 65536
             ],
             "elwise_inputs": [],
-            "end": 267,
+            "end": 281,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "init_random",
             "line": 102,
@@ -66,7 +66,7 @@
             "prng": 1001,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 128,
+            "start": 146,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -74,17 +74,17 @@
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1007,
-            "time": 338,
+            "time": 345,
             "type": "deallocation"
         },
         {
             "data_file": "snapshots/A@1.txt",
-            "end": 2711,
+            "end": 2418,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 103,
             "object_id": 1003,
-            "start": 338,
+            "start": 345,
             "type": "snapshot"
         },
         {
@@ -92,7 +92,7 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 2717,
+            "time": 2420,
             "type": "region"
         },
         {
@@ -104,7 +104,7 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 2933,
+            "end": 2605,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 108,
@@ -125,7 +125,7 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 2718,
+            "start": 2421,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -138,7 +138,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 3144,
+            "end": 2799,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -159,30 +159,30 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 2944,
+            "start": 2616,
             "threads": 4,
             "type": "skeleton_call"
         },
         {
             "data_file": "snapshots/B@2.txt",
-            "end": 5053,
+            "end": 4770,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "B",
             "line": 110,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 3150,
+            "start": 2805,
             "type": "snapshot"
         },
         {
             "data_file": "snapshots/A@3.txt",
-            "end": 6685,
+            "end": 6503,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 5054,
+            "start": 4770,
             "type": "snapshot"
         },
         {
@@ -190,7 +190,7 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 6686,
+            "time": 6503,
             "type": "region"
         },
         {
@@ -202,7 +202,7 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 6888,
+            "end": 6707,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 108,
@@ -223,7 +223,7 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 6687,
+            "start": 6504,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -236,7 +236,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 7084,
+            "end": 6913,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -257,30 +257,30 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 6893,
+            "start": 6711,
             "threads": 4,
             "type": "skeleton_call"
         },
         {
             "data_file": "snapshots/B@4.txt",
-            "end": 8855,
+            "end": 8600,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "B",
             "line": 110,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 7086,
+            "start": 6915,
             "type": "snapshot"
         },
         {
             "data_file": "snapshots/A@5.txt",
-            "end": 10550,
+            "end": 10074,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 8856,
+            "start": 8600,
             "type": "snapshot"
         },
         {
@@ -288,7 +288,7 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 10551,
+            "time": 10075,
             "type": "region"
         },
         {
@@ -300,7 +300,7 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 10755,
+            "end": 10280,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 108,
@@ -321,7 +321,7 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 10552,
+            "start": 10075,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -334,7 +334,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 10943,
+            "end": 10483,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -355,30 +355,30 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 10758,
+            "start": 10285,
             "threads": 4,
             "type": "skeleton_call"
         },
         {
             "data_file": "snapshots/B@6.txt",
-            "end": 12735,
+            "end": 11722,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "B",
             "line": 110,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 10947,
+            "start": 10486,
             "type": "snapshot"
         },
         {
             "data_file": "snapshots/A@7.txt",
-            "end": 14096,
+            "end": 13178,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 12736,
+            "start": 11722,
             "type": "snapshot"
         },
         {
@@ -386,7 +386,7 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 14097,
+            "time": 13180,
             "type": "region"
         },
         {
@@ -398,7 +398,7 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 14316,
+            "end": 13479,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 108,
@@ -419,7 +419,7 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 14098,
+            "start": 13181,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -432,7 +432,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 14518,
+            "end": 13713,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -453,30 +453,30 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 14321,
+            "start": 13481,
             "threads": 4,
             "type": "skeleton_call"
         },
         {
             "data_file": "snapshots/B@8.txt",
-            "end": 16225,
+            "end": 15484,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "B",
             "line": 110,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 14519,
+            "start": 13716,
             "type": "snapshot"
         },
         {
             "data_file": "snapshots/A@9.txt",
-            "end": 17685,
+            "end": 16844,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 16226,
+            "start": 15484,
             "type": "snapshot"
         },
         {
@@ -484,7 +484,7 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 17687,
+            "time": 16845,
             "type": "region"
         },
         {
@@ -496,7 +496,7 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 17915,
+            "end": 17051,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 108,
@@ -517,7 +517,7 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 17687,
+            "start": 16845,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -530,7 +530,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 18130,
+            "end": 17264,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -551,30 +551,30 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 17917,
+            "start": 17055,
             "threads": 4,
             "type": "skeleton_call"
         },
         {
             "data_file": "snapshots/B@10.txt",
-            "end": 19752,
+            "end": 18750,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "B",
             "line": 110,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 18133,
+            "start": 17266,
             "type": "snapshot"
         },
         {
             "data_file": "snapshots/A@11.txt",
-            "end": 21187,
+            "end": 20148,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 19753,
+            "start": 18750,
             "type": "snapshot"
         },
         {
@@ -582,7 +582,7 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 21188,
+            "time": 20148,
             "type": "region"
         },
         {
@@ -594,7 +594,7 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 21417,
+            "end": 20362,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 108,
@@ -615,7 +615,7 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 21188,
+            "start": 20148,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -628,7 +628,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 21620,
+            "end": 20575,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -649,30 +649,30 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 21419,
+            "start": 20364,
             "threads": 4,
             "type": "skeleton_call"
         },
         {
             "data_file": "snapshots/B@12.txt",
-            "end": 23227,
+            "end": 22226,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "B",
             "line": 110,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 21624,
+            "start": 20579,
             "type": "snapshot"
         },
         {
             "data_file": "snapshots/A@13.txt",
-            "end": 24709,
+            "end": 23811,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 23229,
+            "start": 22227,
             "type": "snapshot"
         },
         {
@@ -680,7 +680,7 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 24709,
+            "time": 23812,
             "type": "region"
         },
         {
@@ -692,7 +692,7 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 24931,
+            "end": 24064,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 108,
@@ -713,7 +713,7 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 24710,
+            "start": 23813,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -726,7 +726,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 25134,
+            "end": 24321,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -747,30 +747,30 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 24932,
+            "start": 24066,
             "threads": 4,
             "type": "skeleton_call"
         },
         {
             "data_file": "snapshots/B@14.txt",
-            "end": 26779,
+            "end": 25769,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "B",
             "line": 110,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 25136,
+            "start": 24322,
             "type": "snapshot"
         },
         {
             "data_file": "snapshots/A@15.txt",
-            "end": 28317,
+            "end": 27196,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 26781,
+            "start": 25769,
             "type": "snapshot"
         },
         {
@@ -778,7 +778,7 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 28318,
+            "time": 27197,
             "type": "region"
         },
         {
@@ -790,7 +790,7 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 28567,
+            "end": 27426,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 108,
@@ -811,7 +811,7 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 28319,
+            "start": 27197,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -824,7 +824,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 28795,
+            "end": 27666,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -845,30 +845,30 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 28569,
+            "start": 27428,
             "threads": 4,
             "type": "skeleton_call"
         },
         {
             "data_file": "snapshots/B@16.txt",
-            "end": 30288,
+            "end": 29207,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "B",
             "line": 110,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 28797,
+            "start": 27669,
             "type": "snapshot"
         },
         {
             "data_file": "snapshots/A@17.txt",
-            "end": 31748,
+            "end": 30650,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 30288,
+            "start": 29208,
             "type": "snapshot"
         },
         {
@@ -876,7 +876,7 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 31748,
+            "time": 30650,
             "type": "region"
         },
         {
@@ -888,7 +888,7 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 31992,
+            "end": 30892,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 108,
@@ -909,7 +909,7 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 31749,
+            "start": 30651,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -922,7 +922,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 32216,
+            "end": 31126,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -943,30 +943,30 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 31993,
+            "start": 30895,
             "threads": 4,
             "type": "skeleton_call"
         },
         {
             "data_file": "snapshots/B@18.txt",
-            "end": 33644,
+            "end": 32574,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "B",
             "line": 110,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 32217,
+            "start": 31128,
             "type": "snapshot"
         },
         {
             "data_file": "snapshots/A@19.txt",
-            "end": 35130,
+            "end": 34015,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 33645,
+            "start": 32574,
             "type": "snapshot"
         },
         {
@@ -974,7 +974,7 @@
             "label": "Double-iteration",
             "line": 107,
             "region_depth": 1,
-            "time": 35130,
+            "time": 34016,
             "type": "region"
         },
         {
@@ -986,7 +986,7 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 35368,
+            "end": 34230,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 108,
@@ -1007,7 +1007,7 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 35130,
+            "start": 34016,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -1020,7 +1020,7 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 35583,
+            "end": 34454,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "update",
             "line": 109,
@@ -1041,35 +1041,35 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 35373,
+            "start": 34234,
             "threads": 4,
             "type": "skeleton_call"
         },
         {
             "data_file": "snapshots/B@20.txt",
-            "end": 36919,
+            "end": 35802,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "B",
             "line": 110,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 35585,
+            "start": 34455,
             "type": "snapshot"
         },
         {
             "data_file": "snapshots/A@21.txt",
-            "end": 38246,
+            "end": 37155,
             "file": "/Users/august/Claude/skepu-alpha/examples/cellular_automaton.cpp",
             "label": "A",
             "line": 111,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 36919,
+            "start": 35803,
             "type": "snapshot"
         },
         {
             "elwise_inputs": [],
-            "end": 40941,
+            "end": 39830,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -1078,28 +1078,28 @@
                 1003
             ],
             "scalar_inputs": [],
-            "start": 38246,
+            "start": 37156,
             "type": "external"
         },
         {
             "label": "Rules",
             "line": 322,
             "object_id": 1005,
-            "time": 40942,
+            "time": 39831,
             "type": "deallocation"
         },
         {
             "label": "B",
             "line": 322,
             "object_id": 1004,
-            "time": 40943,
+            "time": 39832,
             "type": "deallocation"
         },
         {
             "label": "A",
             "line": 322,
             "object_id": 1003,
-            "time": 40948,
+            "time": 39837,
             "type": "deallocation"
         }
     ],

@@ -61,6 +61,7 @@ script/
   LegendView.js         the legend of a graph (node and edge kinds; the spectrum, or the skeletons or backends that the calls are coloured by)
   TimelineView.js       Gantt / timeline canvas chart
   InfoView.js           node info pane
+  scalarplot.js         the plot of the values of a scalar by iteration (info pane)
   SourceCodeView.js     annotated source code browser (line highlighting and smooth scrolling, badges, code paths)
 
   ── Shared by SkeVU and the Designer (designer.html) ────────────────────────
@@ -106,6 +107,15 @@ examples/               built-in example trace files (the trace files of an MPI 
 ```
 
 ---
+
+## The values of scalars
+
+The trace has the value of every scalar that a skeleton returns (the result of a reduction: an error norm, a sum, a residual; `scalar_value` in
+`TRACE_FORMAT.md`), written automatically. A scalar node has the value in its info pane (the **Value** row, and **Result of** names the call).
+When iterations were coalesced into the node, the info pane plots the values by iteration (the x axis): a click on a point selects that iteration,
+the hover shows its value, and a plot of positive numbers over three orders of magnitude or more (a convergence plot) starts with a logarithmic
+y axis (the checkbox switches). The scalars that different calls make, and the results of one call that has several, are separate nodes and
+separate series. (A value that is not finite leaves a gap.) A scalar node is in the graph when **View > Scalars** is on.
 
 ## Where the instances and user functions are defined
 

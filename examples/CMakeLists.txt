@@ -22,6 +22,8 @@ set(_skepu_examples
 	mvmult_row
 	nbody
 	nbody_mappairs
+	ode_fisher
+	ode_lorenz
 	ppmcc
 	psnr
 	riemann_sum

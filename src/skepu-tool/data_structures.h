@@ -243,6 +243,7 @@ public:
 
 	// the places in the body where a user type is named (by a name that needs a qualifier or an alias, see UserFunctionVisitor)
 	std::vector<std::pair<clang::SourceRange, UserType*>> UTReferences{};
+	std::vector<std::pair<clang::SourceRange, std::string>> ConstantReferences{}; // qualified names of user constants, with the plain name
 	std::set<UserType*> ReferencedUTs{};
 	// the aliases (typedef, using) that the body names and that are declared outside the function, with the OpenCL type of each
 	std::map<std::string, std::string> TypeAliases{};

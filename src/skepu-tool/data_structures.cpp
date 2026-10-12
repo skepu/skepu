@@ -170,6 +170,23 @@ public:
 		return true;
 	}
 
+	// A user constant that the body names with a qualifier (a namespace): in OpenCL C the constant is a macro that has its
+	// plain name, so the qualified spelling is replaced there (see ConstantReferences)
+	bool VisitDeclRefExpr(DeclRefExpr *ref)
+	{
+		const VarDecl *var = dyn_cast<VarDecl>(ref->getDecl());
+		if (var && var->hasAttr<SkepuUserConstantAttr>() && ref->hasQualifier() && !ref->getBeginLoc().isMacroID())
+		{
+			const SourceRange range = ref->getSourceRange();
+			// (the visitor may visit a node more than once)
+			for (auto &known : this->ConstantReferences)
+				if (known.first == range)
+					return true;
+			ConstantReferences.emplace_back(range, var->getNameAsString());
+		}
+		return true;
+	}
+
 	bool VisitVarDecl(VarDecl *d)
 	{
 		if (auto *userType = HandleUserType(d->getType().getTypePtr()->getAsCXXRecordDecl()))
@@ -194,6 +211,9 @@ public:
 	// does not resolve there; in OpenCL C, a qualified name is not an identifier at all).
 	std::vector<std::pair<SourceRange, UserType*>> UTReferences{};
 	std::set<UserType*> ReferencedUTs{};
+
+	// The qualified names of user constants in the function, with the plain name of the constant
+	std::vector<std::pair<SourceRange, std::string>> ConstantReferences{};
 
 	std::vector<CXXOperatorCallExpr*> containerSubscripts{}, containerCalls{};
 	std::vector<CXXOperatorCallExpr*> operatorOverloads{};
@@ -936,6 +956,7 @@ UserFunction::UserFunction(clang::FunctionDecl *f)
 
 	this->ReferencedUTs = UFVisitor.ReferencedUTs;
 	this->UTReferences = UFVisitor.UTReferences;
+	this->ConstantReferences = UFVisitor.ConstantReferences;
 	
 	this->ReferencedRets = UFVisitor.ReferencedRets;
 	this->ReferencedGets = UFVisitor.ReferencedGets;

@@ -874,6 +874,38 @@ html.dark-mode .info-link
 }
 
 
+/* ── Values of a scalar by iteration ──────────────────────────────────────── */
+#scalar-plot-container {
+  padding: 0.5em 0.7em 0.3em;
+  border-top: 1px solid #e4e4e4;
+  margin-top: 0.3em;
+}
+#scalar-plot-container:empty { display: none; padding: 0; margin: 0; border: none; }
+.scalar-plot-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #666;
+  margin-bottom: 0.3em;
+}
+.scalar-plot-log { font-weight: 400; letter-spacing: 0; text-transform: none; cursor: pointer; }
+.scalar-plot-log input { vertical-align: middle; margin-right: 0.25em; }
+.scalar-plot-svg { display: block; font-family: sans-serif; }
+.scalar-plot-axis { stroke: #bbb; stroke-width: 1; }
+.scalar-plot-label { fill: #777; font-size: 8px; }
+.scalar-plot-line { fill: none; stroke: var(--highlight); stroke-width: 1.4; }
+.scalar-plot-point { fill: var(--highlight); cursor: pointer; }
+.scalar-plot-point:hover { fill: var(--highlight); stroke: #fff; stroke-width: 1.5; }
+html.dark-mode #scalar-plot-container { border-top-color: #3a3848; }
+html.dark-mode .scalar-plot-title { color: #aaa; }
+html.dark-mode .scalar-plot-axis { stroke: #555; }
+html.dark-mode .scalar-plot-label { fill: #9a9a9a; }
+html.dark-mode .scalar-plot-point:hover { stroke: #222; }
+
 /* ── Content-snapshot heatmap ─────────────────────────────────────────────── */
 #heatmap-container {
   padding: 0.5em 0.7em 0;

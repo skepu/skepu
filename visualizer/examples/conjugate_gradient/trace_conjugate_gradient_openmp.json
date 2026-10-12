@@ -11,35 +11,35 @@
             "label": "R",
             "line": 292,
             "object_id": 1001,
-            "time": 0,
+            "time": 1,
             "type": "allocation"
         },
         {
             "label": "A",
             "line": 292,
             "object_id": 1002,
-            "time": 46,
+            "time": 49,
             "type": "allocation"
         },
         {
             "label": "x",
             "line": 251,
             "object_id": 1003,
-            "time": 91,
+            "time": 98,
             "type": "allocation"
         },
         {
             "label": "[Global PRNG]",
             "line": 139,
             "object_id": 1005,
-            "time": 106,
+            "time": 113,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1007,
-            "time": 122,
+            "time": 133,
             "type": "allocation"
         },
         {
@@ -48,7 +48,7 @@
                 256
             ],
             "elwise_inputs": [],
-            "end": 214,
+            "end": 199,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
             "label": "randomize::uniform",
             "line": 244,
@@ -60,7 +60,7 @@
             "prng": 1005,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 109,
+            "start": 119,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -68,14 +68,14 @@
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1007,
-            "time": 280,
+            "time": 291,
             "type": "deallocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1010,
-            "time": 281,
+            "time": 293,
             "type": "allocation"
         },
         {
@@ -84,7 +84,7 @@
                 65536
             ],
             "elwise_inputs": [],
-            "end": 392,
+            "end": 403,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
             "label": "randomize::uniform",
             "line": 244,
@@ -96,7 +96,7 @@
             "prng": 1005,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 281,
+            "start": 292,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -104,7 +104,7 @@
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1010,
-            "time": 411,
+            "time": 421,
             "type": "deallocation"
         },
         {
@@ -113,7 +113,7 @@
                 65536
             ],
             "elwise_inputs": [],
-            "end": 465,
+            "end": 481,
             "file": "/Users/august/Claude/skepu-alpha/examples/conjugate_gradient.cpp",
             "label": "make_spd",
             "line": 94,
@@ -126,7 +126,7 @@
                 1001
             ],
             "scalar_inputs": [],
-            "start": 411,
+            "start": 422,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -148,7 +148,7 @@
             "label": "Ap",
             "line": 251,
             "object_id": 1015,
-            "time": 501,
+            "time": 500,
             "type": "allocation"
         },
         {
@@ -159,7 +159,7 @@
             "elwise_inputs": [
                 1000
             ],
-            "end": 532,
+            "end": 536,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "COPY",
             "line": 237,
@@ -182,7 +182,7 @@
             "elwise_inputs": [
                 1014
             ],
-            "end": 591,
+            "end": 612,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
@@ -196,7 +196,7 @@
                 1003
             ],
             "scalar_inputs": [],
-            "start": 547,
+            "start": 561,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -208,7 +208,7 @@
             "elwise_inputs": [
                 1014
             ],
-            "end": 634,
+            "end": 657,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "COPY",
             "line": 237,
@@ -219,9 +219,15 @@
             "pattern": "Map",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 603,
+            "start": 625,
             "threads": 4,
             "type": "skeleton_call"
+        },
+        {
+            "object_id": 1024,
+            "time": 704,
+            "type": "scalar_value",
+            "value": 8188.51
         },
         {
             "backend": "OpenMP",
@@ -232,7 +238,7 @@
                 1014,
                 1014
             ],
-            "end": 686,
+            "end": 708,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -243,7 +249,7 @@
             "pattern": "MapReduce",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 648,
+            "start": 672,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -252,7 +258,7 @@
             "label": "Iteration",
             "line": 44,
             "region_depth": 1,
-            "time": 703,
+            "time": 727,
             "type": "region"
         },
         {
@@ -263,7 +269,7 @@
             "elwise_inputs": [
                 1015
             ],
-            "end": 737,
+            "end": 758,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -275,7 +281,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 703,
+            "start": 727,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -287,7 +293,7 @@
             "elwise_inputs": [
                 1015
             ],
-            "end": 800,
+            "end": 821,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
@@ -302,9 +308,16 @@
             ],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 750,
+            "start": 768,
             "threads": 4,
             "type": "skeleton_call"
+        },
+        {
+            "object_id": 1031,
+            "region": "Iteration",
+            "time": 863,
+            "type": "scalar_value",
+            "value": 2874629.5
         },
         {
             "backend": "OpenMP",
@@ -315,7 +328,7 @@
                 1013,
                 1015
             ],
-            "end": 875,
+            "end": 866,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -327,7 +340,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 809,
+            "start": 830,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -340,7 +353,7 @@
                 1013,
                 1003
             ],
-            "end": 945,
+            "end": 912,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -355,7 +368,7 @@
                 1024,
                 1031
             ],
-            "start": 891,
+            "start": 878,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -368,7 +381,7 @@
                 1015,
                 1014
             ],
-            "end": 996,
+            "end": 955,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -383,9 +396,16 @@
                 1024,
                 1031
             ],
-            "start": 962,
+            "start": 922,
             "threads": 4,
             "type": "skeleton_call"
+        },
+        {
+            "object_id": 1038,
+            "region": "Iteration",
+            "time": 991,
+            "type": "scalar_value",
+            "value": 209.5079
         },
         {
             "backend": "OpenMP",
@@ -396,7 +416,7 @@
                 1014,
                 1014
             ],
-            "end": 1050,
+            "end": 992,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -408,7 +428,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1012,
+            "start": 962,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -420,7 +440,7 @@
             "elwise_inputs": [
                 1013
             ],
-            "end": 1114,
+            "end": 1038,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -435,7 +455,7 @@
                 1038,
                 1024
             ],
-            "start": 1064,
+            "start": 1003,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -448,7 +468,7 @@
                 1014,
                 1013
             ],
-            "end": 1159,
+            "end": 1082,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -460,7 +480,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1127,
+            "start": 1048,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -469,7 +489,7 @@
             "label": "Iteration",
             "line": 44,
             "region_depth": 1,
-            "time": 1168,
+            "time": 1089,
             "type": "region"
         },
         {
@@ -480,7 +500,7 @@
             "elwise_inputs": [
                 1015
             ],
-            "end": 1204,
+            "end": 1121,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -492,7 +512,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1169,
+            "start": 1090,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -504,7 +524,7 @@
             "elwise_inputs": [
                 1015
             ],
-            "end": 1255,
+            "end": 1179,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
@@ -519,9 +539,16 @@
             ],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1211,
+            "start": 1127,
             "threads": 4,
             "type": "skeleton_call"
+        },
+        {
+            "object_id": 1049,
+            "region": "Iteration",
+            "time": 1216,
+            "type": "scalar_value",
+            "value": 58717.25
         },
         {
             "backend": "OpenMP",
@@ -532,7 +559,7 @@
                 1013,
                 1015
             ],
-            "end": 1292,
+            "end": 1217,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -544,7 +571,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1263,
+            "start": 1186,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -557,7 +584,7 @@
                 1013,
                 1003
             ],
-            "end": 1335,
+            "end": 1265,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -572,7 +599,7 @@
                 1038,
                 1049
             ],
-            "start": 1305,
+            "start": 1228,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -585,7 +612,7 @@
                 1015,
                 1014
             ],
-            "end": 1371,
+            "end": 1299,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -600,9 +627,16 @@
                 1038,
                 1049
             ],
-            "start": 1342,
+            "start": 1270,
             "threads": 4,
             "type": "skeleton_call"
+        },
+        {
+            "object_id": 1056,
+            "region": "Iteration",
+            "time": 1335,
+            "type": "scalar_value",
+            "value": 0.032864213
         },
         {
             "backend": "OpenMP",
@@ -613,7 +647,7 @@
                 1014,
                 1014
             ],
-            "end": 1406,
+            "end": 1336,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -625,7 +659,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1377,
+            "start": 1305,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -637,7 +671,7 @@
             "elwise_inputs": [
                 1013
             ],
-            "end": 1453,
+            "end": 1373,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -652,7 +686,7 @@
                 1056,
                 1038
             ],
-            "start": 1416,
+            "start": 1345,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -665,7 +699,7 @@
                 1014,
                 1013
             ],
-            "end": 1503,
+            "end": 1408,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -677,7 +711,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1460,
+            "start": 1379,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -686,7 +720,7 @@
             "label": "Iteration",
             "line": 44,
             "region_depth": 1,
-            "time": 1511,
+            "time": 1413,
             "type": "region"
         },
         {
@@ -697,7 +731,7 @@
             "elwise_inputs": [
                 1015
             ],
-            "end": 1542,
+            "end": 1443,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -709,7 +743,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1512,
+            "start": 1413,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -721,7 +755,7 @@
             "elwise_inputs": [
                 1015
             ],
-            "end": 1605,
+            "end": 1491,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
@@ -736,9 +770,16 @@
             ],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1549,
+            "start": 1448,
             "threads": 4,
             "type": "skeleton_call"
+        },
+        {
+            "object_id": 1067,
+            "region": "Iteration",
+            "time": 1528,
+            "type": "scalar_value",
+            "value": 8.40588
         },
         {
             "backend": "OpenMP",
@@ -749,7 +790,7 @@
                 1013,
                 1015
             ],
-            "end": 1638,
+            "end": 1529,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -761,7 +802,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1612,
+            "start": 1497,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -774,7 +815,7 @@
                 1013,
                 1003
             ],
-            "end": 1676,
+            "end": 1565,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -789,7 +830,7 @@
                 1056,
                 1067
             ],
-            "start": 1647,
+            "start": 1538,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -802,7 +843,7 @@
                 1015,
                 1014
             ],
-            "end": 1707,
+            "end": 1602,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -817,9 +858,16 @@
                 1056,
                 1067
             ],
-            "start": 1681,
+            "start": 1570,
             "threads": 4,
             "type": "skeleton_call"
+        },
+        {
+            "object_id": 1074,
+            "region": "Iteration",
+            "time": 1646,
+            "type": "scalar_value",
+            "value": 5.5786286e-06
         },
         {
             "backend": "OpenMP",
@@ -830,7 +878,7 @@
                 1014,
                 1014
             ],
-            "end": 1743,
+            "end": 1649,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -842,7 +890,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1713,
+            "start": 1617,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -854,7 +902,7 @@
             "elwise_inputs": [
                 1013
             ],
-            "end": 1792,
+            "end": 1696,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -869,7 +917,7 @@
                 1074,
                 1056
             ],
-            "start": 1760,
+            "start": 1668,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -882,7 +930,7 @@
                 1014,
                 1013
             ],
-            "end": 1829,
+            "end": 1734,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -894,7 +942,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1799,
+            "start": 1703,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -903,7 +951,7 @@
             "label": "Iteration",
             "line": 44,
             "region_depth": 1,
-            "time": 1836,
+            "time": 1740,
             "type": "region"
         },
         {
@@ -914,7 +962,7 @@
             "elwise_inputs": [
                 1015
             ],
-            "end": 1866,
+            "end": 1769,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -926,7 +974,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1836,
+            "start": 1741,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -938,7 +986,7 @@
             "elwise_inputs": [
                 1015
             ],
-            "end": 1920,
+            "end": 1822,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
@@ -953,9 +1001,16 @@
             ],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1871,
+            "start": 1775,
             "threads": 4,
             "type": "skeleton_call"
+        },
+        {
+            "object_id": 1085,
+            "region": "Iteration",
+            "time": 1860,
+            "type": "scalar_value",
+            "value": 0.0014285286
         },
         {
             "backend": "OpenMP",
@@ -966,7 +1021,7 @@
                 1013,
                 1015
             ],
-            "end": 1956,
+            "end": 1862,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -978,7 +1033,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 1926,
+            "start": 1828,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -991,7 +1046,7 @@
                 1013,
                 1003
             ],
-            "end": 2001,
+            "end": 1903,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -1006,7 +1061,7 @@
                 1074,
                 1085
             ],
-            "start": 1966,
+            "start": 1874,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -1019,7 +1074,7 @@
                 1015,
                 1014
             ],
-            "end": 2040,
+            "end": 1940,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -1034,9 +1089,16 @@
                 1074,
                 1085
             ],
-            "start": 2008,
+            "start": 1909,
             "threads": 4,
             "type": "skeleton_call"
+        },
+        {
+            "object_id": 1092,
+            "region": "Iteration",
+            "time": 1977,
+            "type": "scalar_value",
+            "value": 8.983528e-10
         },
         {
             "backend": "OpenMP",
@@ -1047,7 +1109,7 @@
                 1014,
                 1014
             ],
-            "end": 2077,
+            "end": 1978,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -1059,7 +1121,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 2047,
+            "start": 1945,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -1071,7 +1133,7 @@
             "elwise_inputs": [
                 1013
             ],
-            "end": 2119,
+            "end": 2016,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -1086,7 +1148,7 @@
                 1092,
                 1074
             ],
-            "start": 2089,
+            "start": 1988,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -1099,7 +1161,7 @@
                 1014,
                 1013
             ],
-            "end": 2154,
+            "end": 2053,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -1111,7 +1173,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 2126,
+            "start": 2023,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -1119,28 +1181,28 @@
             "label": "Ap",
             "line": 282,
             "object_id": 1015,
-            "time": 2161,
+            "time": 2059,
             "type": "deallocation"
         },
         {
             "label": "r",
             "line": 282,
             "object_id": 1014,
-            "time": 2161,
+            "time": 2060,
             "type": "deallocation"
         },
         {
             "label": "p",
             "line": 282,
             "object_id": 1013,
-            "time": 2161,
+            "time": 2060,
             "type": "deallocation"
         },
         {
             "label": "r",
             "line": 251,
             "object_id": 1097,
-            "time": 2162,
+            "time": 2060,
             "type": "allocation"
         },
         {
@@ -1151,7 +1213,7 @@
             "elwise_inputs": [
                 1000
             ],
-            "end": 2191,
+            "end": 2090,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "COPY",
             "line": 237,
@@ -1162,7 +1224,7 @@
             "pattern": "Map",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 2162,
+            "start": 2060,
             "threads": 4,
             "type": "skeleton_call"
         },
@@ -1174,7 +1236,7 @@
             "elwise_inputs": [
                 1097
             ],
-            "end": 2243,
+            "end": 2141,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
@@ -1188,9 +1250,15 @@
                 1003
             ],
             "scalar_inputs": [],
-            "start": 2197,
+            "start": 2095,
             "threads": 4,
             "type": "skeleton_call"
+        },
+        {
+            "object_id": 1104,
+            "time": 2177,
+            "type": "scalar_value",
+            "value": 2.0804534e-09
         },
         {
             "backend": "OpenMP",
@@ -1200,7 +1268,7 @@
             "elwise_inputs": [
                 1097
             ],
-            "end": 2280,
+            "end": 2178,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "NRM2",
             "line": 369,
@@ -1211,13 +1279,19 @@
             "pattern": "MapReduce",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 2250,
+            "start": 2148,
             "threads": 4,
             "type": "skeleton_call"
         },
         {
+            "object_id": 1104,
+            "time": 2191,
+            "type": "scalar_value",
+            "value": 4.561199e-05
+        },
+        {
             "elwise_inputs": [],
-            "end": 2374,
+            "end": 2269,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -1226,8 +1300,14 @@
                 1003
             ],
             "scalar_inputs": [],
-            "start": 2316,
+            "start": 2216,
             "type": "external"
+        },
+        {
+            "object_id": 1108,
+            "time": 2298,
+            "type": "scalar_value",
+            "value": 8188.51
         },
         {
             "backend": "OpenMP",
@@ -1237,7 +1317,7 @@
             "elwise_inputs": [
                 1000
             ],
-            "end": 2406,
+            "end": 2299,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "NRM2",
             "line": 369,
@@ -1248,43 +1328,67 @@
             "pattern": "MapReduce",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 2375,
+            "start": 2270,
             "threads": 4,
             "type": "skeleton_call"
+        },
+        {
+            "object_id": 1108,
+            "time": 2309,
+            "type": "scalar_value",
+            "value": 90.49039
+        },
+        {
+            "object_id": 1108,
+            "time": 2309,
+            "type": "scalar_value",
+            "value": 91.49039
+        },
+        {
+            "object_id": 1108,
+            "time": 2310,
+            "type": "scalar_value",
+            "value": 0.09149039
+        },
+        {
+            "object_id": 1108,
+            "time": 2310,
+            "type": "scalar_value",
+            "value": 1
         },
         {
             "label": "r",
             "line": 282,
             "object_id": 1097,
-            "time": 2416,
+            "time": 2311,
             "type": "deallocation"
         },
         {
             "label": "x",
             "line": 282,
             "object_id": 1003,
-            "time": 2416,
+            "time": 2312,
             "type": "deallocation"
         },
         {
             "label": "A",
             "line": 322,
             "object_id": 1002,
-            "time": 2417,
+            "time": 2312,
             "type": "deallocation"
         },
         {
             "label": "R",
             "line": 322,
             "object_id": 1001,
-            "time": 2425,
+            "time": 2319,
             "type": "deallocation"
         },
         {
             "label": "b",
             "line": 282,
             "object_id": 1000,
-            "time": 2425,
+            "time": 2319,
             "type": "deallocation"
         }
     ],

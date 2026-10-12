@@ -571,6 +571,22 @@ namespace skepu
 	/*!
 	 *  Please refer to the documentation of \p std::vector.
 	 */
+	/*!
+	 *  Move assignment: the vectors exchange their memory (as with swap), so that nothing is copied. The identity of the
+	 *  memory in a trace, and its label, go with it. A vector that wraps memory it does not own keeps it, as with copy
+	 *  assignment: the elements are copied into the memory.
+	 */
+	template <typename T>
+	Vector<T>& Vector<T>::operator=(Vector<T>&& other)
+	{
+		if (this == &other)
+			return *this;
+		if (this->m_data && !this->m_deallocEnabled)
+			return *this = static_cast<const Vector<T>&>(other);
+		this->swap(other);
+		return *this;
+	}
+
 	template <typename T>
 	void Vector<T>::swap(Vector<T>& from)
 	{

@@ -466,6 +466,7 @@ namespace skepu
 	public: //-- Operators --//
 
 		Matrix<T>& operator=(const Matrix<T>& other);
+		Matrix<T>& operator=(Matrix<T>&& other); // takes the memory (and the identity in a trace) of the other matrix, which gets ours: std::swap does not copy
 		Matrix<T>& operator=(const T& elem);
 		void set(const size_t & row, const size_t & col, const T & value);
 

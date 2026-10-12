@@ -131,3 +131,45 @@ describe('the marks and the shortcuts of a call', () => {
         expect(definitionPlace(undefined, 'instance')).toBeNull();
     });
 });
+
+// A data node that a call made (a container update, a scalar) has the source line and the definitions of the call in its info, so that selecting it marks the
+// same lines in the source as selecting the call does.
+describe('the info of the data nodes that a call made', () => {
+    const ROOT = new URL('../..', import.meta.url).pathname;
+    const join = (a, b) => a.replace(/\/$/, '') + '/' + b;
+    const replies = {};
+    let seq = 0;
+    const call = async (type, payload = {}) => {
+        const id = String(++seq);
+        await globalThis.self.onmessage({ data: { id, type, ...payload } });
+        if (replies[id].type === 'error') throw new Error(replies[id].error);
+        return replies[id];
+    };
+    const header = { instances: { 7: { label: 'sum', instance: { file: '/p.cpp', line: 12, end_line: 12 }, user_functions: [{ name: 'add', kind: 'function', file: '/p.cpp', line: 4, end_line: 6 }] } } };
+
+    it('are the file, the line and the definitions of the call, for an update and for a scalar', async () => {
+        globalThis.self = { postMessage: m => { replies[m.id] = m; }, location: { href: 'file://' + join(ROOT, 'script/backend/visualizer.js') }, addEventListener() {} };
+        await import(join(ROOT, 'script/backend/visualizer.js?datanodes'));
+        const b = builder();
+        const events = [
+            b.alloc(1, 'v'), b.alloc(2, 'w'),
+            { ...b.call('map', { ins: [1], outs: [2] }), object_id: 7, file: '/p.cpp', line: 30 },
+            { type: 'scalar_value', object_id: 3, value: 4, time: 0 },
+            { ...b.call('sum', { pattern: 'Reduce 1D-Full', ins: [2], outs: [3] }), object_id: 7, file: '/p.cpp', line: 31 },
+        ];
+        await call('load', { traceJson: JSON.stringify({ header, data: events }), traceFilename: 't.json' });
+        const g = await call('graph', { show_regions: false });
+        const infos = {};
+        for (const node of g.nodes) {
+            const data = node.data ?? node;
+            if (data.type === 'container_update' || data.type === 'scalar' || data.type === 'skeleton_call')
+                (infos[data.type] ??= []).push(await call('getData', { nodeId: data.id }));
+        }
+        const scalar = infos.scalar[0];
+        expect(scalar).toMatchObject({ File: '/p.cpp', Line: 31 });
+        expect(scalar.definitions.instance).toEqual({ file: '/p.cpp', line: 12, end_line: 12 });
+        const updates = infos.container_update.filter(i => i.Line != null);
+        expect(updates.map(i => i.Line).sort()).toEqual([30]);            // (the update that the map made; the container v has no call)
+        expect(updates[0].definitions.user_functions[0].name).toBe('add');
+    });
+});

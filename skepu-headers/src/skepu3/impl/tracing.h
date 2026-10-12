@@ -105,6 +105,7 @@ namespace skepu
 #define SKEPU_TRACE_ELEMENT_ACCESS(...) skepu::tracing::tracer().element_access(__VA_ARGS__)
 #define SKEPU_TRACE_COPY(...) skepu::tracing::tracer().copy(__VA_ARGS__)
 #define SKEPU_TRACE_SCALAR_IO(...) skepu::tracing::tracer().scalar_io(__VA_ARGS__)
+#define SKEPU_TRACE_SCALAR_VALUE(...) skepu::tracing::tracer().scalar_value(__VA_ARGS__)
 // (a snapshot writes the contents of a container to a file each time: it is taken only if SKEPU_TRACING_SNAPSHOTS is defined too)
 #ifdef SKEPU_TRACING_SNAPSHOTS
 #define SKEPU_TRACE_SNAPSHOT(...) skepu::tracing::tracer().data_snapshot(__VA_ARGS__)
@@ -128,6 +129,7 @@ namespace skepu
 #define SKEPU_TRACE_ELEMENT_ACCESS(...)
 #define SKEPU_TRACE_COPY(...)
 #define SKEPU_TRACE_SCALAR_IO(...)
+#define SKEPU_TRACE_SCALAR_VALUE(...)
 #define SKEPU_TRACE_SNAPSHOT(...)
 #define SKEPU_TRACE_VIRTUAL_DATASET(...)
 #define SKEPU_TRACE_FLUSH()
@@ -248,6 +250,10 @@ namespace skepu
 			// data dependence that is not a skeleton call. (A move moves the id with the data and has no event.)
 			void copy(EventHandle &h, TraceID source_id, TraceID destination_id, std::string const& label, size_t elements);
 			void scalar_io(std::vector<TraceID> const& ids, std::string const& label, std::string const& file, int line);
+			// The value of a scalar (the result of a reduction, a norm, a container element that the program read), when it is made: a number
+			// for a type of arithmetic (nothing for the others). A scalar that is made from another one has the same id, and then the later value wins.
+			template<typename T>
+			void scalar_value(TraceID id, T value);
 
 			void call(
 				EventHandle &h,

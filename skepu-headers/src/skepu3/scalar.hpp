@@ -18,11 +18,28 @@ public:
 	T m_value;
 	std::vector<ID> m_ids;
 
+private:
+	// The value goes to the trace when the scalar is made: the result of a reduction, a norm of a sum (it has the id of the sum, and its value
+	// is the later one). A scalar of several ids (a combination of scalars) has no event.
+	void trace_value() const
+	{
+		if (this->m_ids.size() == 1)
+		{
+			SKEPU_TRACE_SCALAR_VALUE(this->m_ids[0], this->m_value);
+		}
+	}
+
+public:
+
 	Scalar(T value, ID id): m_value{value}, m_ids{id}
-	{}
+	{
+		this->trace_value();
+	}
 
 	Scalar(T value, std::vector<ID> id): m_value{value}, m_ids{id}
-	{}
+	{
+		this->trace_value();
+	}
 
 	Scalar(T value, std::vector<ID> id1, std::vector<ID> id2): m_value{value}
 	{
@@ -34,7 +51,7 @@ public:
 
 	Scalar(T value): m_value{value}, m_ids{UniqueIdentifier::generate()}
 	{
-
+		this->trace_value();
 	}
 
 	operator T() const

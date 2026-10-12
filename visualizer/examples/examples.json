@@ -108,6 +108,48 @@
     ]
   },
   {
+    "title": "Lorenz Ensemble (RK4)",
+    "trace": {
+      "openmp": "ode_lorenz/trace_ode_lorenz_openmp.json",
+      "opencl": "ode_lorenz/trace_ode_lorenz_opencl.json",
+      "mpi": [
+        "ode_lorenz/mpi/trace_ode_lorenz_mpi.json",
+        "ode_lorenz/mpi/trace_ode_lorenz_mpi.rank1.json",
+        "ode_lorenz/mpi/trace_ode_lorenz_mpi.rank2.json",
+        "ode_lorenz/mpi/trace_ode_lorenz_mpi.rank3.json"
+      ]
+    },
+    "snapshot_archive": {
+      "openmp": "ode_lorenz/snapshots_ode_lorenz_openmp.zip",
+      "opencl": "ode_lorenz/snapshots_ode_lorenz_opencl.zip",
+      "mpi": "ode_lorenz/mpi/snapshots_ode_lorenz_mpi.zip"
+    },
+    "cpp_files": [
+      "ode_lorenz/ode_lorenz.cpp"
+    ]
+  },
+  {
+    "title": "Reaction-Diffusion (adaptive RK23)",
+    "trace": {
+      "openmp": "ode_fisher/trace_ode_fisher_openmp.json",
+      "opencl": "ode_fisher/trace_ode_fisher_opencl.json",
+      "mpi": [
+        "ode_fisher/mpi/trace_ode_fisher_mpi.json",
+        "ode_fisher/mpi/trace_ode_fisher_mpi.rank1.json",
+        "ode_fisher/mpi/trace_ode_fisher_mpi.rank2.json",
+        "ode_fisher/mpi/trace_ode_fisher_mpi.rank3.json"
+      ]
+    },
+    "snapshot_archive": {
+      "openmp": "ode_fisher/snapshots_ode_fisher_openmp.zip",
+      "opencl": "ode_fisher/snapshots_ode_fisher_opencl.zip",
+      "mpi": "ode_fisher/mpi/snapshots_ode_fisher_mpi.zip"
+    },
+    "cpp_files": [
+      "ode_fisher/ode_fisher.cpp"
+    ]
+  },
+  {
     "title": "Conjugate Gradient",
     "trace": {
       "openmp": "conjugate_gradient/trace_conjugate_gradient_openmp.json",

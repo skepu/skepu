@@ -201,6 +201,18 @@ skepu_add_test_case_sequential(template_instances_double)
 skepu_add_test_case_cpu(template_instances_double)
 skepu_add_test_case_openmp(template_instances_double)
 
+# User constants in the user functions of every skeleton, with several types
+skepu_add_test_case_sequential(userconstants)
+skepu_add_test_case_cpu(userconstants)
+skepu_add_test_case_openmp(userconstants)
+skepu_add_test_case_opencl(userconstants)
+skepu_add_test_case_hybrid_opencl(userconstants)
+
+# The same with double precision (OpenCL devices do not all have it)
+skepu_add_test_case_sequential(userconstants_double)
+skepu_add_test_case_cpu(userconstants_double)
+skepu_add_test_case_openmp(userconstants_double)
+
 # Regions of several threads that overlap in time: events belong to the region of their own thread.
 skepu_add_executable(tracing_regions_threads_test SKEPUSRC tracing_regions_threads.cpp)
 target_compile_definitions(tracing_regions_threads_test PRIVATE SKEPU_TRACING)
@@ -287,6 +299,14 @@ target_compile_definitions(tracing_container_labels_test PRIVATE SKEPU_TRACING)
 add_test(NAME tracing_container_labels COMMAND tracing_container_labels_test)
 set_tests_properties(tracing_container_labels PROPERTIES
 	ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_container_labels.json")
+
+# The values of the scalars (results of reductions, norms) are in the trace
+skepu_add_executable(tracing_scalar_values_test SKEPUSRC tracing_scalar_values.cpp)
+target_link_libraries(tracing_scalar_values_test PRIVATE catch2_main)
+target_compile_definitions(tracing_scalar_values_test PRIVATE SKEPU_TRACING)
+add_test(NAME tracing_scalar_values COMMAND tracing_scalar_values_test)
+set_tests_properties(tracing_scalar_values PROPERTIES
+	ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_scalar_values.json")
 
 # ------------------------------------------------
 #   User types in namespaces (OpenCL type names)

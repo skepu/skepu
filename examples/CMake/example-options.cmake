@@ -9,7 +9,7 @@ set(_skepu_examples_no_cuda
 	heat_diffusion) # no red-black update mode in CUDA
 set(_skepu_examples_mpi
 	cellular_automaton cma conjugate_gradient coulombic dotproduct horner mandelbrot maxmin miller_rabin
-	mmmult mmmult_row_col montecarlo mvmult mvmult_row nbody nbody_mappairs ppmcc psnr riemann_sum taylor)
+	mmmult mmmult_row_col montecarlo mvmult mvmult_row nbody nbody_mappairs ode_fisher ode_lorenz ppmcc psnr riemann_sum taylor)
 
 foreach(_example IN LISTS _skepu_examples)
 	string(TOUPPER ${_example} _uc)

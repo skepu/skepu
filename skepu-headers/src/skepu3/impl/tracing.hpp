@@ -114,6 +114,7 @@ namespace skepu
 				static const std::string SOURCE{"source"};
 				static const std::string INDEX{"index"};
 				static const std::string DATA_FILE{"data_file"};
+				static const std::string VALUE{"value"};
 			}
 
 			namespace Values
@@ -129,6 +130,7 @@ namespace skepu
 					static const std::string REGION{"region"};
 					static const std::string EXTERNAL{"external"};
 					static const std::string SNAPSHOT{"snapshot"};
+					static const std::string SCALAR_VALUE{"scalar_value"};
 					static const std::string VIRTUAL_DATASET{"virtual_container"};
 				}
 			}
@@ -278,6 +280,63 @@ namespace skepu
 
 			this->m_trace_json.push_back(entry);
 			}; this->push_capture(std::move(capture), CaptureKind::Region);
+#endif
+		}
+
+#ifdef SKEPU_TRACING
+		// A number for the trace: floating point numbers that are not finite are strings (JSON has no way to write them), a float is the shortest
+		// decimal number that reads back as it
+		template<typename T>
+		inline nlohmann::json scalar_value_json(T value)
+		{
+			if constexpr (std::is_floating_point<T>::value)
+			{
+				if (std::isnan(value))
+					return "nan";
+				if (std::isinf(value))
+					return value > 0 ? "inf" : "-inf";
+				if constexpr (std::is_same<T, float>::value)
+				{
+					char text[32];
+					for (int digits = 6; digits <= 9; ++digits)
+					{
+						std::snprintf(text, sizeof text, "%.*g", digits, (double)value);
+						if (std::strtof(text, nullptr) == value)
+							break;
+					}
+					return std::strtod(text, nullptr);
+				}
+				else
+					return (double)value;
+			}
+			else if constexpr (std::is_signed<T>::value)
+				return (long long)value;
+			else
+				return (unsigned long long)value;
+		}
+#endif
+
+		template<typename T>
+		inline void Tracer::scalar_value(TraceID id, T value)
+		{
+#ifdef SKEPU_TRACING
+			if constexpr (std::is_arithmetic<T>::value)
+			{
+				unsigned long now = timestamp_now();
+				nlohmann::json number = scalar_value_json(value);
+
+				auto capture = [=, this]{
+				nlohmann::json entry;
+				entry[Schema::Keys::OBJECT_ID] = id;
+				entry[Schema::Keys::TYPE]  = Schema::Values::Types::SCALAR_VALUE;
+				entry[Schema::Keys::VALUE] = number;
+				entry[Schema::Keys::TIME]  = now;
+				if (!this->m_regions().empty())
+					entry[Schema::Keys::REGION] = this->m_regions().top();
+
+				this->m_trace_json.push_back(entry);
+				}; this->push_capture(std::move(capture), CaptureKind::Region);
+			}
 #endif
 		}
 

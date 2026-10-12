@@ -193,6 +193,19 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 		}
 	}
 
+	// The user constants that the body names with a qualifier: in OpenCL C they are macros with their plain names
+	if (backend == Backend::OpenCL)
+		if (const Stmt *body = f->getBody())
+		{
+			const SourceManager &SM = GlobalRewriter.getSourceMgr();
+			for (auto &ref : UF.ConstantReferences)
+			{
+				if (SM.isBeforeInTranslationUnit(ref.first.getBegin(), body->getBeginLoc()) || SM.isBeforeInTranslationUnit(body->getEndLoc(), ref.first.getEnd()))
+					continue;
+				R.ReplaceText(ref.first, ref.second);
+			}
+		}
+
 	for (auto subscript : UF.containerSubscripts)
 		R.InsertText(subscript->getCallee()->getBeginLoc(), ".data");
 

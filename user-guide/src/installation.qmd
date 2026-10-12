@@ -301,6 +301,10 @@ The SkePU distribution comes with a selection of example programs:
 
 - **N-body simulation, variant B** (`nbody_mappairs`)
 
+- **Reaction-diffusion equation, adaptive Runge-Kutta** (`ode_fisher`)
+
+- **Lorenz system ensemble, RK4 integration** (`ode_lorenz`)
+
 - **Pearson product-movement coefficient** (`ppmcc`)
 
 - **Peak signal-to-noise ratio** (`psnr`)

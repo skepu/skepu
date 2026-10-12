@@ -18,47 +18,47 @@
             "label": "A",
             "line": 292,
             "object_id": 1002,
-            "time": 43172,
+            "time": 40705,
             "type": "allocation"
         },
         {
             "label": "x",
             "line": 251,
             "object_id": 1003,
-            "time": 43192,
+            "time": 40726,
             "type": "allocation"
         },
         {
             "label": "[Global PRNG]",
             "line": 139,
             "object_id": 1005,
-            "time": 111472,
+            "time": 142175,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1007,
-            "time": 111498,
+            "time": 142201,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 256,
-            "end": 113622,
+            "end": 144586,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1007,
-            "start": 111500,
-            "time": 113622,
+            "start": 142203,
+            "time": 144586,
             "type": "transfer"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1007,
-            "time": 113656,
+            "time": 144614,
             "type": "deallocation"
         },
         {
@@ -68,7 +68,7 @@
                 256
             ],
             "elwise_inputs": [],
-            "end": 114005,
+            "end": 144929,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
             "label": "randomize::uniform",
             "line": 244,
@@ -80,33 +80,33 @@
             "prng": 1005,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 111497,
+            "start": 142201,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1011,
-            "time": 114058,
+            "time": 144968,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 65536,
-            "end": 114435,
+            "end": 145325,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1011,
-            "start": 114177,
-            "time": 114435,
+            "start": 145067,
+            "time": 145325,
             "type": "transfer"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1011,
-            "time": 114442,
+            "time": 145329,
             "type": "deallocation"
         },
         {
@@ -116,7 +116,7 @@
                 65536
             ],
             "elwise_inputs": [],
-            "end": 114698,
+            "end": 145617,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
             "label": "randomize::uniform",
             "line": 244,
@@ -128,7 +128,7 @@
             "prng": 1005,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 114051,
+            "start": 144967,
             "type": "skeleton_call"
         },
         {
@@ -138,7 +138,7 @@
                 65536
             ],
             "elwise_inputs": [],
-            "end": 130480,
+            "end": 146393,
             "file": "/Users/august/Claude/skepu-alpha/examples/conjugate_gradient.cpp",
             "label": "make_spd",
             "line": 94,
@@ -151,28 +151,28 @@
                 1001
             ],
             "scalar_inputs": [],
-            "start": 129739,
+            "start": 146115,
             "type": "skeleton_call"
         },
         {
             "label": "p",
             "line": 251,
             "object_id": 1015,
-            "time": 130518,
+            "time": 146414,
             "type": "allocation"
         },
         {
             "label": "r",
             "line": 251,
             "object_id": 1016,
-            "time": 130518,
+            "time": 146415,
             "type": "allocation"
         },
         {
             "label": "Ap",
             "line": 251,
             "object_id": 1017,
-            "time": 130519,
+            "time": 146415,
             "type": "allocation"
         },
         {
@@ -184,7 +184,7 @@
             "elwise_inputs": [
                 1000
             ],
-            "end": 142571,
+            "end": 147239,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "COPY",
             "line": 237,
@@ -195,19 +195,19 @@
             "pattern": "Map",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 142013,
+            "start": 146983,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 256,
-            "end": 157494,
+            "end": 147740,
             "label": "x",
             "line": 258,
             "object_id": 1003,
-            "start": 156937,
-            "time": 157494,
+            "start": 147517,
+            "time": 147740,
             "type": "transfer"
         },
         {
@@ -219,7 +219,7 @@
             "elwise_inputs": [
                 1016
             ],
-            "end": 157862,
+            "end": 148119,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
@@ -233,7 +233,7 @@
                 1003
             ],
             "scalar_inputs": [],
-            "start": 156936,
+            "start": 147517,
             "type": "skeleton_call"
         },
         {
@@ -245,7 +245,7 @@
             "elwise_inputs": [
                 1016
             ],
-            "end": 158554,
+            "end": 148338,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "COPY",
             "line": 237,
@@ -256,20 +256,26 @@
             "pattern": "Map",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 157879,
+            "start": 148128,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 187219,
+            "end": 149378,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1026,
-            "start": 186463,
-            "time": 187219,
+            "start": 149009,
+            "time": 149378,
             "type": "transfer"
+        },
+        {
+            "object_id": 1029,
+            "time": 149387,
+            "type": "scalar_value",
+            "value": 8188.5103
         },
         {
             "backend": "OpenCL",
@@ -281,7 +287,7 @@
                 1016,
                 1016
             ],
-            "end": 187240,
+            "end": 149390,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -292,7 +298,7 @@
             "pattern": "MapReduce",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 186458,
+            "start": 149002,
             "type": "skeleton_call"
         },
         {
@@ -300,20 +306,20 @@
             "label": "Iteration",
             "line": 44,
             "region_depth": 1,
-            "time": 187260,
+            "time": 149402,
             "type": "region"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 256,
-            "end": 198664,
+            "end": 162013,
             "label": "Ap",
             "line": 258,
             "object_id": 1017,
             "region": "Iteration",
-            "start": 198196,
-            "time": 198664,
+            "start": 161323,
+            "time": 162013,
             "type": "transfer"
         },
         {
@@ -325,7 +331,7 @@
             "elwise_inputs": [
                 1017
             ],
-            "end": 198911,
+            "end": 162275,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -337,7 +343,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 198196,
+            "start": 161323,
             "type": "skeleton_call"
         },
         {
@@ -349,7 +355,7 @@
             "elwise_inputs": [
                 1017
             ],
-            "end": 199768,
+            "end": 162618,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
@@ -364,21 +370,28 @@
             ],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 198923,
+            "start": 162290,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 200458,
+            "end": 162907,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1036,
             "region": "Iteration",
-            "start": 199808,
-            "time": 200458,
+            "start": 162630,
+            "time": 162907,
             "type": "transfer"
+        },
+        {
+            "object_id": 1039,
+            "region": "Iteration",
+            "time": 162914,
+            "type": "scalar_value",
+            "value": 2874629.5
         },
         {
             "backend": "OpenCL",
@@ -390,7 +403,7 @@
                 1015,
                 1017
             ],
-            "end": 200467,
+            "end": 162917,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -402,7 +415,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 199795,
+            "start": 162626,
             "type": "skeleton_call"
         },
         {
@@ -415,7 +428,7 @@
                 1015,
                 1003
             ],
-            "end": 212078,
+            "end": 175073,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -430,7 +443,7 @@
                 1029,
                 1039
             ],
-            "start": 211544,
+            "start": 174323,
             "type": "skeleton_call"
         },
         {
@@ -443,7 +456,7 @@
                 1017,
                 1016
             ],
-            "end": 212334,
+            "end": 175371,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -458,21 +471,28 @@
                 1029,
                 1039
             ],
-            "start": 212095,
+            "start": 175111,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 212619,
+            "end": 175666,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1045,
             "region": "Iteration",
-            "start": 212348,
-            "time": 212619,
+            "start": 175389,
+            "time": 175666,
             "type": "transfer"
+        },
+        {
+            "object_id": 1048,
+            "region": "Iteration",
+            "time": 175671,
+            "type": "scalar_value",
+            "value": 209.50793
         },
         {
             "backend": "OpenCL",
@@ -484,7 +504,7 @@
                 1016,
                 1016
             ],
-            "end": 212624,
+            "end": 175673,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -496,7 +516,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 212344,
+            "start": 175384,
             "type": "skeleton_call"
         },
         {
@@ -508,7 +528,7 @@
             "elwise_inputs": [
                 1015
             ],
-            "end": 212837,
+            "end": 175894,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -523,7 +543,7 @@
                 1048,
                 1029
             ],
-            "start": 212632,
+            "start": 175681,
             "type": "skeleton_call"
         },
         {
@@ -536,7 +556,7 @@
                 1016,
                 1015
             ],
-            "end": 213006,
+            "end": 176148,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -548,7 +568,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 212842,
+            "start": 175900,
             "type": "skeleton_call"
         },
         {
@@ -556,7 +576,7 @@
             "label": "Iteration",
             "line": 44,
             "region_depth": 1,
-            "time": 213011,
+            "time": 176153,
             "type": "region"
         },
         {
@@ -568,7 +588,7 @@
             "elwise_inputs": [
                 1017
             ],
-            "end": 213228,
+            "end": 176396,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -580,7 +600,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 213011,
+            "start": 176153,
             "type": "skeleton_call"
         },
         {
@@ -592,7 +612,7 @@
             "elwise_inputs": [
                 1017
             ],
-            "end": 213569,
+            "end": 176758,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
@@ -607,21 +627,28 @@
             ],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 213233,
+            "start": 176401,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 213839,
+            "end": 177014,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1058,
             "region": "Iteration",
-            "start": 213582,
-            "time": 213839,
+            "start": 176768,
+            "time": 177014,
             "type": "transfer"
+        },
+        {
+            "object_id": 1061,
+            "region": "Iteration",
+            "time": 177017,
+            "type": "scalar_value",
+            "value": 58717.258
         },
         {
             "backend": "OpenCL",
@@ -633,7 +660,7 @@
                 1015,
                 1017
             ],
-            "end": 213843,
+            "end": 177019,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -645,7 +672,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 213578,
+            "start": 176766,
             "type": "skeleton_call"
         },
         {
@@ -658,7 +685,7 @@
                 1015,
                 1003
             ],
-            "end": 214024,
+            "end": 177242,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -673,7 +700,7 @@
                 1048,
                 1061
             ],
-            "start": 213850,
+            "start": 177025,
             "type": "skeleton_call"
         },
         {
@@ -686,7 +713,7 @@
                 1017,
                 1016
             ],
-            "end": 214264,
+            "end": 177459,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -701,21 +728,28 @@
                 1048,
                 1061
             ],
-            "start": 214036,
+            "start": 177247,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 214456,
+            "end": 177717,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1067,
             "region": "Iteration",
-            "start": 214288,
-            "time": 214456,
+            "start": 177470,
+            "time": 177717,
             "type": "transfer"
+        },
+        {
+            "object_id": 1070,
+            "region": "Iteration",
+            "time": 177720,
+            "type": "scalar_value",
+            "value": 0.032864235
         },
         {
             "backend": "OpenCL",
@@ -727,7 +761,7 @@
                 1016,
                 1016
             ],
-            "end": 214461,
+            "end": 177721,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -739,7 +773,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 214277,
+            "start": 177465,
             "type": "skeleton_call"
         },
         {
@@ -751,7 +785,7 @@
             "elwise_inputs": [
                 1015
             ],
-            "end": 214667,
+            "end": 177940,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -766,7 +800,7 @@
                 1070,
                 1048
             ],
-            "start": 214472,
+            "start": 177730,
             "type": "skeleton_call"
         },
         {
@@ -779,7 +813,7 @@
                 1016,
                 1015
             ],
-            "end": 215321,
+            "end": 178140,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -791,7 +825,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 214672,
+            "start": 177944,
             "type": "skeleton_call"
         },
         {
@@ -799,7 +833,7 @@
             "label": "Iteration",
             "line": 44,
             "region_depth": 1,
-            "time": 215327,
+            "time": 178145,
             "type": "region"
         },
         {
@@ -811,7 +845,7 @@
             "elwise_inputs": [
                 1017
             ],
-            "end": 215559,
+            "end": 178335,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -823,7 +857,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 215328,
+            "start": 178145,
             "type": "skeleton_call"
         },
         {
@@ -835,7 +869,7 @@
             "elwise_inputs": [
                 1017
             ],
-            "end": 215905,
+            "end": 178662,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
@@ -850,21 +884,28 @@
             ],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 215565,
+            "start": 178339,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 216172,
+            "end": 178938,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1080,
             "region": "Iteration",
-            "start": 215922,
-            "time": 216172,
+            "start": 178673,
+            "time": 178938,
             "type": "transfer"
+        },
+        {
+            "object_id": 1083,
+            "region": "Iteration",
+            "time": 178941,
+            "type": "scalar_value",
+            "value": 8.405887
         },
         {
             "backend": "OpenCL",
@@ -876,7 +917,7 @@
                 1015,
                 1017
             ],
-            "end": 216175,
+            "end": 178942,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -888,7 +929,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 215916,
+            "start": 178671,
             "type": "skeleton_call"
         },
         {
@@ -901,7 +942,7 @@
                 1015,
                 1003
             ],
-            "end": 216390,
+            "end": 179137,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -916,7 +957,7 @@
                 1070,
                 1083
             ],
-            "start": 216182,
+            "start": 178949,
             "type": "skeleton_call"
         },
         {
@@ -929,7 +970,7 @@
                 1017,
                 1016
             ],
-            "end": 216579,
+            "end": 179344,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -944,21 +985,28 @@
                 1070,
                 1083
             ],
-            "start": 216394,
+            "start": 179142,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 216877,
+            "end": 179627,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1089,
             "region": "Iteration",
-            "start": 216587,
-            "time": 216877,
+            "start": 179352,
+            "time": 179627,
             "type": "transfer"
+        },
+        {
+            "object_id": 1092,
+            "region": "Iteration",
+            "time": 179629,
+            "type": "scalar_value",
+            "value": 5.578641e-06
         },
         {
             "backend": "OpenCL",
@@ -970,7 +1018,7 @@
                 1016,
                 1016
             ],
-            "end": 216881,
+            "end": 179630,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -982,7 +1030,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 216585,
+            "start": 179350,
             "type": "skeleton_call"
         },
         {
@@ -994,7 +1042,7 @@
             "elwise_inputs": [
                 1015
             ],
-            "end": 217098,
+            "end": 179865,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -1009,7 +1057,7 @@
                 1092,
                 1070
             ],
-            "start": 216889,
+            "start": 179637,
             "type": "skeleton_call"
         },
         {
@@ -1022,7 +1070,7 @@
                 1016,
                 1015
             ],
-            "end": 217296,
+            "end": 180108,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -1034,7 +1082,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 217103,
+            "start": 179869,
             "type": "skeleton_call"
         },
         {
@@ -1042,7 +1090,7 @@
             "label": "Iteration",
             "line": 44,
             "region_depth": 1,
-            "time": 217301,
+            "time": 180113,
             "type": "region"
         },
         {
@@ -1054,7 +1102,7 @@
             "elwise_inputs": [
                 1017
             ],
-            "end": 217482,
+            "end": 180298,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -1066,7 +1114,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 217301,
+            "start": 180113,
             "type": "skeleton_call"
         },
         {
@@ -1078,7 +1126,7 @@
             "elwise_inputs": [
                 1017
             ],
-            "end": 217814,
+            "end": 180611,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
@@ -1093,21 +1141,28 @@
             ],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 217486,
+            "start": 180302,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 218041,
+            "end": 180871,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1102,
             "region": "Iteration",
-            "start": 217823,
-            "time": 218041,
+            "start": 180619,
+            "time": 180871,
             "type": "transfer"
+        },
+        {
+            "object_id": 1105,
+            "region": "Iteration",
+            "time": 180874,
+            "type": "scalar_value",
+            "value": 0.0014285316
         },
         {
             "backend": "OpenCL",
@@ -1119,7 +1174,7 @@
                 1015,
                 1017
             ],
-            "end": 218044,
+            "end": 180875,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -1131,7 +1186,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 217821,
+            "start": 180617,
             "type": "skeleton_call"
         },
         {
@@ -1144,7 +1199,7 @@
                 1015,
                 1003
             ],
-            "end": 218222,
+            "end": 181071,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -1159,7 +1214,7 @@
                 1092,
                 1105
             ],
-            "start": 218052,
+            "start": 180882,
             "type": "skeleton_call"
         },
         {
@@ -1172,7 +1227,7 @@
                 1017,
                 1016
             ],
-            "end": 218403,
+            "end": 181244,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -1187,21 +1242,28 @@
                 1092,
                 1105
             ],
-            "start": 218226,
+            "start": 181075,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 218661,
+            "end": 181505,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1111,
             "region": "Iteration",
-            "start": 218411,
-            "time": 218661,
+            "start": 181252,
+            "time": 181505,
             "type": "transfer"
+        },
+        {
+            "object_id": 1114,
+            "region": "Iteration",
+            "time": 181507,
+            "type": "scalar_value",
+            "value": 8.98163e-10
         },
         {
             "backend": "OpenCL",
@@ -1213,7 +1275,7 @@
                 1016,
                 1016
             ],
-            "end": 218665,
+            "end": 181508,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "DOT",
             "line": 296,
@@ -1225,7 +1287,7 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 218409,
+            "start": 181250,
             "type": "skeleton_call"
         },
         {
@@ -1237,7 +1299,7 @@
             "elwise_inputs": [
                 1015
             ],
-            "end": 218858,
+            "end": 181717,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "SCAL",
             "line": 211,
@@ -1252,7 +1314,7 @@
                 1114,
                 1092
             ],
-            "start": 218671,
+            "start": 181515,
             "type": "skeleton_call"
         },
         {
@@ -1265,7 +1327,7 @@
                 1016,
                 1015
             ],
-            "end": 219084,
+            "end": 181930,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "AXPY",
             "line": 264,
@@ -1277,35 +1339,35 @@
             "proxy_inputs": [],
             "region": "Iteration",
             "scalar_inputs": [],
-            "start": 218863,
+            "start": 181722,
             "type": "skeleton_call"
         },
         {
             "label": "Ap",
             "line": 282,
             "object_id": 1017,
-            "time": 219097,
+            "time": 181943,
             "type": "deallocation"
         },
         {
             "label": "r",
             "line": 282,
             "object_id": 1016,
-            "time": 219102,
+            "time": 181947,
             "type": "deallocation"
         },
         {
             "label": "p",
             "line": 282,
             "object_id": 1015,
-            "time": 219105,
+            "time": 181950,
             "type": "deallocation"
         },
         {
             "label": "r",
             "line": 251,
             "object_id": 1119,
-            "time": 219106,
+            "time": 181951,
             "type": "allocation"
         },
         {
@@ -1317,7 +1379,7 @@
             "elwise_inputs": [
                 1000
             ],
-            "end": 219323,
+            "end": 182149,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "COPY",
             "line": 237,
@@ -1328,7 +1390,7 @@
             "pattern": "Map",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 219108,
+            "start": 181953,
             "type": "skeleton_call"
         },
         {
@@ -1340,7 +1402,7 @@
             "elwise_inputs": [
                 1119
             ],
-            "end": 219597,
+            "end": 182431,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "GEMV",
             "line": 620,
@@ -1354,20 +1416,26 @@
                 1003
             ],
             "scalar_inputs": [],
-            "start": 219328,
+            "start": 182153,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 247956,
+            "end": 192647,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1125,
-            "start": 247397,
-            "time": 247956,
+            "start": 191861,
+            "time": 192647,
             "type": "transfer"
+        },
+        {
+            "object_id": 1128,
+            "time": 192673,
+            "type": "scalar_value",
+            "value": 2.1079096e-09
         },
         {
             "backend": "OpenCL",
@@ -1378,7 +1446,7 @@
             "elwise_inputs": [
                 1119
             ],
-            "end": 247961,
+            "end": 192676,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "NRM2",
             "line": 369,
@@ -1389,24 +1457,30 @@
             "pattern": "MapReduce",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 247392,
+            "start": 191857,
             "type": "skeleton_call"
+        },
+        {
+            "object_id": 1128,
+            "time": 192692,
+            "type": "scalar_value",
+            "value": 4.5911976e-05
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 256,
-            "end": 248164,
+            "end": 192948,
             "label": "x",
             "line": 306,
             "object_id": 1003,
-            "start": 247977,
-            "time": 248164,
+            "start": 192707,
+            "time": 192948,
             "type": "transfer"
         },
         {
             "elwise_inputs": [],
-            "end": 248204,
+            "end": 192984,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -1415,20 +1489,26 @@
                 1003
             ],
             "scalar_inputs": [],
-            "start": 247976,
+            "start": 192707,
             "type": "external"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 248696,
+            "end": 193253,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1132,
-            "start": 248209,
-            "time": 248696,
+            "start": 192991,
+            "time": 193253,
             "type": "transfer"
+        },
+        {
+            "object_id": 1135,
+            "time": 193256,
+            "type": "scalar_value",
+            "value": 8188.5103
         },
         {
             "backend": "OpenCL",
@@ -1439,7 +1519,7 @@
             "elwise_inputs": [
                 1000
             ],
-            "end": 248700,
+            "end": 193257,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/blas.hpp",
             "label": "NRM2",
             "line": 369,
@@ -1450,42 +1530,66 @@
             "pattern": "MapReduce",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 248206,
+            "start": 192987,
             "type": "skeleton_call"
+        },
+        {
+            "object_id": 1135,
+            "time": 193264,
+            "type": "scalar_value",
+            "value": 90.49039
+        },
+        {
+            "object_id": 1135,
+            "time": 193265,
+            "type": "scalar_value",
+            "value": 91.49039
+        },
+        {
+            "object_id": 1135,
+            "time": 193265,
+            "type": "scalar_value",
+            "value": 0.09149039
+        },
+        {
+            "object_id": 1135,
+            "time": 193266,
+            "type": "scalar_value",
+            "value": 1
         },
         {
             "label": "r",
             "line": 282,
             "object_id": 1119,
-            "time": 248716,
+            "time": 193273,
             "type": "deallocation"
         },
         {
             "label": "x",
             "line": 282,
             "object_id": 1003,
-            "time": 248720,
+            "time": 193276,
             "type": "deallocation"
         },
         {
             "label": "A",
             "line": 322,
             "object_id": 1002,
-            "time": 248725,
+            "time": 193281,
             "type": "deallocation"
         },
         {
             "label": "R",
             "line": 322,
             "object_id": 1001,
-            "time": 248730,
+            "time": 193285,
             "type": "deallocation"
         },
         {
             "label": "b",
             "line": 282,
             "object_id": 1000,
-            "time": 248734,
+            "time": 193288,
             "type": "deallocation"
         }
     ],

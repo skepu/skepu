@@ -588,6 +588,22 @@ Matrix<T>& Matrix<T>::operator=(const T& elem)
 
 
 /*!
+ * Move assignment: the matrices exchange their memory (as with swap), so that nothing is copied. The identity of the
+ * memory in a trace, and its label, go with it. A matrix that wraps memory it does not own keeps it, as with copy
+ * assignment: the elements are copied into the memory.
+ */
+template <typename T>
+Matrix<T>& Matrix<T>::operator=(Matrix<T>&& other)
+{
+  if (this == &other)
+    return *this;
+  if (this->m_data && !this->m_deallocEnabled)
+    return *this = static_cast<const Matrix<T>&>(other);
+  this->swap(other);
+  return *this;
+}
+
+/*!
  * Updates and invalidate both Matrices before swapping.
  */
 template <typename T>

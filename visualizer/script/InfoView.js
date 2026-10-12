@@ -24,6 +24,7 @@
 
 import { formatDuration } from './format.js';
 import { renderHeatmap } from './heatmap.js';
+import { renderScalarPlot } from './scalarplot.js';
 import { definitionPlace } from './badges.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -59,6 +60,7 @@ const NODE_HEADINGS = {
   'region'          : 'Instrumented Region',
   'fusion'          : 'Suggested Skeleton Call Fusion',
   'external'        : 'External Data Access',
+  'scalar'          : 'Scalar',
 };
 
 // Keys excluded from the info key/value table.
@@ -66,6 +68,7 @@ const HIDDEN_KEYS = new Set([
   'type', 'durations', 'trace_index',
   'content_snapshot', 'content_snapshots',
   'content_snapshot_labels', 'content_snapshot_virtual_label',
+  'scalar_values',
   'definitions',
 ]);
 
@@ -171,10 +174,12 @@ export class InfoView {
     var bodyEl    = document.getElementById('info');
     var heatmapEl = document.getElementById('heatmap-container');
     var plotEl    = document.getElementById('plot');
+    var scalarEl  = document.getElementById('scalar-plot-container');
     if (headingEl) headingEl.textContent = '';
     if (bodyEl)    bodyEl.innerHTML      = '';
     if (heatmapEl) heatmapEl.innerHTML   = '';
     if (plotEl)    plotEl.innerHTML      = '';
+    if (scalarEl)  scalarEl.innerHTML    = '';
   }
 
   // ── Internal render ──────────────────────────────────────────────────────────
@@ -219,6 +224,10 @@ export class InfoView {
         data.content_snapshot_virtual_label  || null
       );
     }
+
+    // ── The values of a scalar over its iterations ───────────────────────────
+    var scalarEl = document.getElementById('scalar-plot-container');
+    if (scalarEl) renderScalarPlot(scalarEl, data.scalar_values || null, { nodeId: nodeId, onSelectIteration: this._onSelectIteration });
 
     // ── Open the pane ─────────────────────────────────────────────────────────
     if (this._onOpen) this._onOpen();

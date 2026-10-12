@@ -164,3 +164,141 @@ TEST_CASE("Tensor4 lifecycle")
 	CHECK(t5(0, 0, 0, 0) == 2.71f);
 	CHECK(t4(0, 0, 0, 0) == 3.142f);
 }
+
+
+// Move construction, move assignment and std::swap exchange the memory of the containers: nothing is copied (the pointer to the
+// elements is the same afterwards). A container that wraps memory it does not own keeps it: the elements are copied into it.
+
+TEST_CASE("Vector lifecycle: move construction, move assignment and std::swap")
+{
+	skepu::Vector<float> a(100, 1.f), b(50, 2.f);
+	float *pa = a.getAddress(), *pb = b.getAddress();
+
+	std::swap(a, b);
+	CHECK(a.size() == 50);
+	CHECK(b.size() == 100);
+	CHECK(a.getAddress() == pb);
+	CHECK(b.getAddress() == pa);
+	CHECK(a(0) == 2.f);
+	CHECK(b(99) == 1.f);
+
+	// Move construction
+	skepu::Vector<float> c(std::move(a));
+	CHECK(c.size() == 50);
+	CHECK(c.getAddress() == pb);
+	CHECK(c(49) == 2.f);
+	CHECK(a.size() == 0);
+
+	// Move assignment
+	skepu::Vector<float> d(7, 5.f);
+	d = std::move(b);
+	CHECK(d.size() == 100);
+	CHECK(d.getAddress() == pa);
+	CHECK(d(0) == 1.f);
+
+	// A vector that wraps memory of the program keeps it
+	float buffer[10] = {};
+	skepu::Vector<float> wrapper(buffer, 10, false);
+	skepu::Vector<float> source(10, 4.f);
+	wrapper = std::move(source);
+	CHECK(wrapper.getAddress() == buffer);
+	CHECK(buffer[0] == 4.f);
+	CHECK(buffer[9] == 4.f);
+}
+
+TEST_CASE("Matrix lifecycle: move construction, move assignment and std::swap")
+{
+	skepu::Matrix<float> a(10, 12, 1.f), b(5, 7, 2.f);
+	float *pa = a.getAddress(), *pb = b.getAddress();
+
+	std::swap(a, b);
+	CHECK(a.size_i() == 5);
+	CHECK(a.size_j() == 7);
+	CHECK(b.size_i() == 10);
+	CHECK(b.size_j() == 12);
+	CHECK(a.getAddress() == pb);
+	CHECK(b.getAddress() == pa);
+	CHECK(a(0, 0) == 2.f);
+	CHECK(b(9, 11) == 1.f);
+
+	// Move construction
+	skepu::Matrix<float> c(std::move(a));
+	CHECK(c.size_i() == 5);
+	CHECK(c.size_j() == 7);
+	CHECK(c.getAddress() == pb);
+	CHECK(a.size() == 0);
+
+	// Move assignment
+	skepu::Matrix<float> d(3, 3, 5.f);
+	d = std::move(b);
+	CHECK(d.size_i() == 10);
+	CHECK(d.size_j() == 12);
+	CHECK(d.getAddress() == pa);
+	CHECK(d(0, 0) == 1.f);
+
+	// A matrix that wraps memory of the program keeps it
+	float buffer[6] = {};
+	skepu::Matrix<float> wrapper(buffer, 2, 3, false);
+	skepu::Matrix<float> source(2, 3, 4.f);
+	wrapper = std::move(source);
+	CHECK(wrapper.getAddress() == buffer);
+	CHECK(buffer[0] == 4.f);
+	CHECK(buffer[5] == 4.f);
+}
+
+TEST_CASE("Tensor3 lifecycle: move construction, move assignment and std::swap")
+{
+	skepu::Tensor3<float> a(4, 5, 6, "", 1.f), b(2, 3, 4, "", 2.f);
+	float *pa = a.getAddress(), *pb = b.getAddress();
+
+	std::swap(a, b);
+	CHECK(a.size_i() == 2);
+	CHECK(a.size_j() == 3);
+	CHECK(a.size_k() == 4);
+	CHECK(b.size_i() == 4);
+	CHECK(b.size_j() == 5);
+	CHECK(b.size_k() == 6);
+	CHECK(a.getAddress() == pb);
+	CHECK(b.getAddress() == pa);
+	CHECK(a(1, 2, 3) == 2.f);
+	CHECK(b(3, 4, 5) == 1.f);
+
+	skepu::Tensor3<float> c(std::move(a));
+	CHECK(c.size() == 2 * 3 * 4);
+	CHECK(c.getAddress() == pb);
+	CHECK(a.size() == 0);
+
+	skepu::Tensor3<float> d(2, 2, 2, "", 5.f);
+	d = std::move(b);
+	CHECK(d.size_i() == 4);
+	CHECK(d.size_k() == 6);
+	CHECK(d.getAddress() == pa);
+	CHECK(d(0, 0, 0) == 1.f);
+}
+
+TEST_CASE("Tensor4 lifecycle: move construction, move assignment and std::swap")
+{
+	skepu::Tensor4<float> a(3, 4, 5, 6, "", 1.f), b(2, 2, 3, 4, "", 2.f);
+	float *pa = a.getAddress(), *pb = b.getAddress();
+
+	std::swap(a, b);
+	CHECK(a.size_i() == 2);
+	CHECK(a.size_l() == 4);
+	CHECK(b.size_i() == 3);
+	CHECK(b.size_l() == 6);
+	CHECK(a.getAddress() == pb);
+	CHECK(b.getAddress() == pa);
+	CHECK(a(1, 1, 2, 3) == 2.f);
+	CHECK(b(2, 3, 4, 5) == 1.f);
+
+	skepu::Tensor4<float> c(std::move(a));
+	CHECK(c.size() == 2 * 2 * 3 * 4);
+	CHECK(c.getAddress() == pb);
+	CHECK(a.size() == 0);
+
+	skepu::Tensor4<float> d(2, 2, 2, 2, "", 5.f);
+	d = std::move(b);
+	CHECK(d.size_j() == 4);
+	CHECK(d.getAddress() == pa);
+	CHECK(d(0, 0, 0, 0) == 1.f);
+}

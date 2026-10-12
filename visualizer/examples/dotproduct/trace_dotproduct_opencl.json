@@ -11,40 +11,40 @@
             "label": "b",
             "line": 251,
             "object_id": 1002,
-            "time": 0,
+            "time": 2,
             "type": "allocation"
         },
         {
             "label": "[Global PRNG]",
             "line": 139,
             "object_id": 1004,
-            "time": 14542,
+            "time": 408,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1006,
-            "time": 14593,
+            "time": 473,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 2048,
-            "end": 16707,
+            "end": 2958,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1006,
-            "start": 14598,
-            "time": 16707,
+            "start": 479,
+            "time": 2958,
             "type": "transfer"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1006,
-            "time": 16717,
+            "time": 2967,
             "type": "deallocation"
         },
         {
@@ -54,7 +54,7 @@
                 2048
             ],
             "elwise_inputs": [],
-            "end": 17452,
+            "end": 3258,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
             "label": "randomize::uniform",
             "line": 244,
@@ -66,33 +66,33 @@
             "prng": 1004,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 14591,
+            "start": 472,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1010,
-            "time": 17493,
+            "time": 3286,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 2048,
-            "end": 18022,
+            "end": 3515,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1010,
-            "start": 17498,
-            "time": 18022,
+            "start": 3291,
+            "time": 3515,
             "type": "transfer"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1010,
-            "time": 18030,
+            "time": 3521,
             "type": "deallocation"
         },
         {
@@ -102,7 +102,7 @@
                 2048
             ],
             "elwise_inputs": [],
-            "end": 18777,
+            "end": 3746,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
             "label": "randomize::uniform",
             "line": 244,
@@ -114,24 +114,24 @@
             "prng": 1004,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 17492,
+            "start": 3286,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 2048,
-            "end": 19013,
+            "end": 3960,
             "label": "a",
             "line": 306,
             "object_id": 1001,
-            "start": 18787,
-            "time": 19013,
+            "start": 3754,
+            "time": 3960,
             "type": "transfer"
         },
         {
             "elwise_inputs": [],
-            "end": 19283,
+            "end": 4292,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -140,24 +140,24 @@
                 1001
             ],
             "scalar_inputs": [],
-            "start": 18787,
+            "start": 3754,
             "type": "external"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 2048,
-            "end": 19771,
+            "end": 4503,
             "label": "b",
             "line": 306,
             "object_id": 1002,
-            "start": 19283,
-            "time": 19771,
+            "start": 4293,
+            "time": 4503,
             "type": "transfer"
         },
         {
             "elwise_inputs": [],
-            "end": 20006,
+            "end": 4801,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -166,20 +166,26 @@
                 1002
             ],
             "scalar_inputs": [],
-            "start": 19283,
+            "start": 4292,
             "type": "external"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 20726,
+            "end": 5196,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1016,
-            "start": 20013,
-            "time": 20726,
+            "start": 4810,
+            "time": 5196,
             "type": "transfer"
+        },
+        {
+            "object_id": 1019,
+            "time": 5201,
+            "type": "scalar_value",
+            "value": 3002.4473
         },
         {
             "backend": "OpenCL",
@@ -191,7 +197,7 @@
                 1001,
                 1002
             ],
-            "end": 20731,
+            "end": 5203,
             "file": "/Users/august/Claude/skepu-alpha/examples/dotproduct.cpp",
             "label": "dotprod",
             "line": 39,
@@ -202,21 +208,21 @@
             "pattern": "MapReduce",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 20008,
+            "start": 4804,
             "type": "skeleton_call"
         },
         {
             "label": "b",
             "line": 282,
             "object_id": 1002,
-            "time": 20745,
+            "time": 5219,
             "type": "deallocation"
         },
         {
             "label": "a",
             "line": 282,
             "object_id": 1001,
-            "time": 20754,
+            "time": 5222,
             "type": "deallocation"
         }
     ],

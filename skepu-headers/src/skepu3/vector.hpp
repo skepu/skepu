@@ -224,6 +224,7 @@ namespace skepu
 		Vec<T> hostProxy() { return this->hostProxy(ProxyTag::Default{}, 0); }
 
 		Vector<T>& operator=(const Vector<T>&);
+		Vector<T>& operator=(Vector<T>&& other); // takes the memory (and the identity in a trace) of the other vector, which gets ours: std::swap does not copy
 
 		bool operator==(const Vector<T>&);
 		bool operator!=(const Vector<T>&);

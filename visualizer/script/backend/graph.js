@@ -57,6 +57,7 @@ export class DirectedGraph {
         this._treeEdges = [];
 
         this._labelByID      = {};
+        this.scalarValues    = new Map();   // object id of a scalar -> its value (a number, or 'nan', 'inf', '-inf')
         this._nodeLabelIndex = {};
         this._nodeIdIndex    = {};
         this._edgeIdIndex    = {};
@@ -579,6 +580,7 @@ export class DirectedGraph {
                 if (node.rankDatas) can.rankDatas.push(...node.rankDatas);
                 if (node.rankSummaries) can.rankSummaries.push(...node.rankSummaries);
                 if (node.snapshotDataFiles) can.snapshotDataFiles.push(...node.snapshotDataFiles);
+                if (node.scalarValues) can.scalarValues.push(...node.scalarValues);
                 if (node instanceof RegionNode) {
                     can.regionIntervals.push(...node.regionIntervals);
                     if (node.regionStart != null) {
@@ -643,6 +645,10 @@ export class DirectedGraph {
     static fromEvents(events, settings = null) {
         const g = new DirectedGraph();
         if (settings !== null) g.settings = settings;
+
+        // The values of the scalars (events before the call that outputs them): the later one is the value of the id
+        for (const ev of events)
+            if (ev.type === 'scalar_value') g.scalarValues.set(ev.object_id, ev.value);
 
         if (g.settings.synthesizeRootRegion) {
             g._rootPhase = true;

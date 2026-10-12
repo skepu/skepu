@@ -224,7 +224,7 @@ export class ComputationNode extends Node {
                                        this.region, this.backend, this.elements));
                 } else {
                     new ScalarEdge(graph, graph.labelForID(id), this,
-                        ScalarNode.fromID(graph, id, this.totalOrder + 1, this.region));
+                        ScalarNode.fromID(graph, id, this.totalOrder + 1, this.region, this, outputs.indexOf(id)));
                 }
             } else {
                 graph.writeToID(id, this, this.hasScalarOutput() ? 'ALL' : this.backend);
@@ -767,6 +767,22 @@ export class DeallocationNode extends DataNode {
 
 // ── UpdateNode ────────────────────────────────────────────────────────────────
 
+/**
+ * What a data node that a skeleton call made shares with the call: its source line and the definitions of its instance and user functions, so
+ * that selecting the node marks the same lines in the source as selecting the call. Null if no call made it (a host write, or an MPI collective).
+ */
+function producerInfo(node) {
+    for (const e of node.getIncomingEdges()) {
+        const call = e.source;
+        if (!(call instanceof ComputationNode) || !call.file || !(e instanceof ElwiseEdge || e instanceof ScalarEdge)) continue;
+        const info = call.infoData();
+        const shared = { File: info.File, Line: info.Line };
+        if (info.definitions) shared.definitions = info.definitions;
+        return shared;
+    }
+    return null;
+}
+
 export class UpdateNode extends DataNode {
     constructor(graph, id, totalOrder, region, backend, elements = null) {
         const label = graph.labelForID(id);
@@ -793,7 +809,7 @@ export class UpdateNode extends DataNode {
         const info = super.infoData();
         info['Version'] = this.version;
         info.internal.is_live = this.isLive;
-        return info;
+        return Object.assign(info, producerInfo(this));
     }
 }
 
@@ -803,6 +819,13 @@ export class ScalarNode extends DataNode {
     constructor(graph, label, totalOrder, region) {
         super(graph, label, totalOrder, region);
         this.type = 'scalar';
+        this.scalarValues = [];   // [total order, value] of each of its iterations (a scalar of one call that is repeated has a node)
+    }
+
+    /** The value of the scalar that the trace has for the id, as [total order, value] (nothing if it has none). */
+    _takeValue(objectId, totalOrder) {
+        const value = this.graph.scalarValues?.get(objectId);
+        if (value !== undefined) this.scalarValues.push([totalOrder, value]);
     }
 
     /** Construct from a raw element_access trace event. */
@@ -810,6 +833,8 @@ export class ScalarNode extends DataNode {
         const label = jsonData.label + '[' + jsonData.index + ']';
         if (graph.settings.scalars) {
             const node = new ScalarNode(graph, label, totalOrder, region);
+            node.keypathDiscriminator = `${jsonData.file ?? ''}:${jsonData.line ?? ''}`;   // (where the program read the element)
+            node._takeValue(jsonData.object_id, totalOrder);
             new ScalarEdge(graph, label, jsonData.source, node, true);   // (the host reads the gathered copy)
             graph.readFromID(jsonData.source, node, 'ALL');
             graph.writeToID(jsonData.object_id, node, 'ALL');
@@ -820,17 +845,34 @@ export class ScalarNode extends DataNode {
         }
     }
 
-    /** Construct a synthetic scalar output node for a Reduce/MapReduce. */
-    static fromID(graph, objectId, totalOrder, region) {
+    /**
+     * Construct a synthetic scalar output node for a Reduce/MapReduce. The scalars of a region are told apart (by the iteration coalescing,
+     * which joins the nodes of one key path) by the call that made them and which of its results they are.
+     */
+    static fromID(graph, objectId, totalOrder, region, producer = null, slot = 0) {
         const label = 'scalar';
         const node  = new ScalarNode(graph, label, totalOrder, region);
+        if (producer) node.keypathDiscriminator = `${producer.label}@${producer.line ?? ''}#${slot}`;
+        node._takeValue(objectId, totalOrder);
         graph.setLabelForID(label, objectId);
         graph.writeToID(objectId, node, 'ALL');
         return node;
     }
 
     // toCytoscape delegates to super intentionally.
-    infoData() { return super.infoData(); }
+
+    /** The values of its iterations in order (numbers, or the strings 'nan', 'inf', '-inf'), and what made the scalar. */
+    infoData() {
+        const info = super.infoData();
+        if (this.scalarValues.length > 0) {
+            const values = [...this.scalarValues].sort((a, b) => a[0] - b[0]).map(v => v[1]);
+            info.scalar_values = values;
+            info['Value'] = values.length === 1 ? values[0] : `${values.length} values (last ${values[values.length - 1]})`;
+        }
+        const source = this._incoming.find(e => e.source && e.source.label);
+        if (source) info['Result of'] = source.source.label;
+        return Object.assign(info, producerInfo(this));
+    }
 }
 
 // ── TransferNode ──────────────────────────────────────────────────────────────

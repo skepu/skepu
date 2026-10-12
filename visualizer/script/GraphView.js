@@ -851,13 +851,12 @@ export class GraphView {
       self._currentLayout = null;
       if (layoutSeq !== self._renderSeq) return;
       if (ev.data.type === 'done') onPositions(ev.data.positions);
-      else { console.error('[GraphView] dagre-worker error:', ev.data.message); self._hideOverlay(); }
+      else self._layoutFailed(layoutSeq, layoutOpts, onPositions, 'dagre-worker error: ' + ev.data.message);
     };
     worker.onerror = function(err) {
       worker.terminate();
       self._currentLayout = null;
-      if (layoutSeq === self._renderSeq) self._hideOverlay();
-      console.error('[GraphView] dagre-worker uncaught error:', err.message || err);
+      self._layoutFailed(layoutSeq, layoutOpts, onPositions, 'dagre-worker uncaught error: ' + (err.message || err));
     };
 
     worker.postMessage({
@@ -924,9 +923,30 @@ export class GraphView {
       .catch(function(err) {
         self._currentLayout = null;
         _sharedElk = null;  // invalidate on error; next render gets a fresh instance
-        if (layoutSeq === self._renderSeq) self._hideOverlay();
-        console.error('[GraphView] ELK layout error:', err);
+        self._layoutFailed(layoutSeq, layoutOpts, onPositions, 'ELK layout error: ' + err);
       });
+  }
+
+  // The layout algorithm failed (a graph with a very long chain of dependences can overflow the stack of its recursion, and a worker has
+  // little of it): the graph is drawn in a simple layout instead of not at all, which a render that is waiting for the layout would never be.
+  _layoutFailed(layoutSeq, layoutOpts, onPositions, reason) {
+    console.error('[GraphView] ' + reason + ' (the nodes are placed in rows by their depth instead)');
+    if (layoutSeq !== this._renderSeq || !this._cy) return;
+    onPositions(this._layerPositions(layoutOpts));
+  }
+
+  // The nodes in rows by their depth in the dependence graph (a row for each level, the nodes of a level side by side)
+  _layerPositions(layoutOpts) {
+    var rows = {}, positions = {};
+    var vertical = layoutOpts.rankDir !== 'LR';
+    this._cy.nodes().not(':parent').forEach(function(n) {
+      var depth  = n.data('dag_depth') || 0;
+      var index  = rows[depth] = (rows[depth] || 0) + 1;
+      var along  = depth * (LAYOUT_RANK_SEP + 40);            // (room for the height of a node, and the distance)
+      var across = (index - 1) * (LAYOUT_NODE_SEP + 100);
+      positions[n.id()] = vertical ? { x: across, y: along } : { x: along, y: across };
+    });
+    return positions;
   }
 
   _applyLayoutPositions(positions) {
