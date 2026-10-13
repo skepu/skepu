@@ -22,6 +22,9 @@ add_clang_executable(skepu-tool
   mappairsreduce_cl.cpp
   mappairsreduce_cu.cpp)
 
+# the hashes of the source files in the traces (the header sha256.hpp of external/hash-library)
+target_include_directories(skepu-tool PRIVATE "${SKEPU_HASH_LIB_DIR}")
+
 clang_target_link_libraries(skepu-tool
 	PRIVATE
 		clangTooling

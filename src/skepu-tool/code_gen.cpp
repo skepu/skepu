@@ -1,6 +1,27 @@
 #include <map>
+#include <fstream>
+#include <sha256.hpp>
 #include "code_gen.h"
 #include "code_gen_cu.h"
+
+// The SHA-256 of the contents of a source file (hex), as the program is compiled: the traces have it for the files of the calls (header.files).
+// Empty if the file cannot be read. Each file is read once.
+std::string sourceFileHash(const std::string &path)
+{
+	static std::map<std::string, std::string> hashes;
+	auto found = hashes.find(path);
+	if (found != hashes.end())
+		return found->second;
+	std::string hash;
+	std::ifstream in(path, std::ios::binary);
+	std::ostringstream contents;
+	if (in && (contents << in.rdbuf()))
+	{
+		skepu::tracing::SHA256 sha256;
+		hash = sha256(contents.str());
+	}
+	return hashes[path] = hash;
+}
 
 using namespace clang;
 
@@ -1026,7 +1047,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 
 		// The source location of the call, as for the call of a skeleton variable
 		std::stringstream SSUse;
-		SSUse << InstanceName << ".setSourceLoc(\"" << inlineInstance->callFile << "\", " << inlineInstance->callLine << ")";
+		SSUse << InstanceName << ".setSourceLoc(\"" << inlineInstance->callFile << "\", \"" << sourceFileHash(inlineInstance->callFile) << "\", " << inlineInstance->callLine << ")";
 		// (the call can span lines, which the replacement does not: the line numbers go on from where it ended)
 		{
 			SourceLocation callEnd = inlineInstance->factoryCall->getSourceRange().getEnd();

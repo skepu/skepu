@@ -585,7 +585,7 @@ bool SkePUASTVisitor::VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr *c)
 						written_name = instance_name;
 
 					std::stringstream ss;
-					ss << "(" << written_name << ".setSourceLoc(\"" << file_name << "\", " << line_nr << ") , ";
+					ss << "(" << written_name << ".setSourceLoc(\"" << file_name << "\", \"" << sourceFileHash(file_name) << "\", " << line_nr << ") , ";
 
 					GlobalRewriter.InsertText(c->getSourceRange().getBegin(), ss.str());
 					GlobalRewriter.InsertTextBefore(c->getSourceRange().getEnd(), ")");

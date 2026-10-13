@@ -49,6 +49,7 @@
 
 #ifdef SKEPU_TRACING
 #include "../../external/nlohmann/json.hpp"
+#include "../../external/hash-library/sha256.hpp"
 #endif
 
 namespace skepu
@@ -342,6 +343,7 @@ namespace skepu
 			std::mutex m_mutex; // guards m_captures
 			nlohmann::json m_trace_json;
 			nlohmann::json m_header = nlohmann::json::object();
+			void collectSourceFiles(); // the files that the events name, with the hashes of their contents, to the header
 			std::map<TraceID, nlohmann::json> m_definitions; // of the instances that have made a call (guarded by m_mutex)
 			bool m_suppress_node = false, m_lean = false;
 			// The events are recorded as closures that run in the order they were recorded when the

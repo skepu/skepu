@@ -433,18 +433,19 @@ namespace skepu
 			return ss.str();
 		}
 
-		void setSourceLoc(std::string&& file_name, int line_nr)
+		void setSourceLoc(std::string&& file_name, std::string&& file_content_hash, int line_nr)
 		{
 #ifdef SKEPU_TRACING
 			this->m_file_name = file_name;
+			this->m_file_content_hash = file_content_hash;
 			this->m_line_nr = line_nr;
 #endif
 		}
 
 #ifdef SKEPU_TRACING
-		std::tuple<std::string&, int> getSourceLoc()
+		std::tuple<std::string&, std::string&, int> getSourceLoc()
 		{
-			return { this->m_file_name, this->m_line_nr };
+			return { this->m_file_name, this->m_file_content_hash, this->m_line_nr };
 		}
 #endif
 
@@ -497,6 +498,7 @@ namespace skepu
 
 		std::string m_label = "";
 		std::string m_file_name;
+		std::string m_file_content_hash;
 		int m_line_nr = -1;
 		PRNG *m_prng = nullptr;
 	};

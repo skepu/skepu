@@ -23,16 +23,15 @@ export function parseTrace(text) {
     return { header, events: data.map((e, i) => ({ ...e, idx: i })) };
 }
 
-// The sections of a trace header that are not source files. The rest of the header maps the path of a
-// source file to the hash of its contents (what the tracer writes, so that SkeVU can tell whether the source it
-// has is the source that was run).
-export const RESERVED_HEADER_KEYS = ['mpi', 'clock', 'instances'];
-
-/** The source files of a header, as { path: hash }. */
+/**
+ * The source files of a header, as { path: hash }: the hash of the contents of each source file that the events name
+ * (what the tracer writes in `files`, so that SkeVU can tell whether the source it has is the source that was run).
+ */
 export function headerSourceFiles(header) {
     const files = {};
-    for (const [k, v] of Object.entries(header ?? {}))
-        if (!RESERVED_HEADER_KEYS.includes(k) && typeof v === 'string') files[k] = v;
+    if (header?.files && typeof header.files === 'object')
+        for (const [path, hash] of Object.entries(header.files))
+            if (typeof hash === 'string') files[path] = hash;
     return files;
 }
 

@@ -111,18 +111,19 @@ namespace skepu
 				return this->m_selected_spec ? std::min(this->m_selected_spec->devices(), available) : available;
 			}
 
-			void setSourceLoc(std::string&& file_name, int line_nr)
+			void setSourceLoc(std::string&& file_name, std::string&& file_content_hash, int line_nr)
 			{
 #ifdef SKEPU_TRACING
 				this->m_file_name = file_name;
+				this->m_file_content_hash = file_content_hash;
 				this->m_line_nr = line_nr;
 #endif
 			}
 
 #ifdef SKEPU_TRACING
-			std::tuple<std::string&, int> getSourceLoc()
+			std::tuple<std::string&, std::string&, int> getSourceLoc()
 			{
-				return { this->m_file_name, this->m_line_nr };
+				return { this->m_file_name, this->m_file_content_hash, this->m_line_nr };
 			}
 #endif
 
@@ -309,6 +310,7 @@ public: // friend the tracer?
 			UniqueIdentifier::ID m_object_id;
 #ifdef SKEPU_TRACING
 			std::string m_file_name;
+			std::string m_file_content_hash;
 			int m_line_nr = -1;
 #endif
 

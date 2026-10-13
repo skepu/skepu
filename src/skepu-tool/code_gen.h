@@ -10,6 +10,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 
 bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceName, std::vector<UserFunction*> FuncArgs, std::vector<size_t> arity, clang::VarDecl *d, const InlineInstance *inlineInstance = nullptr);
 
+std::string sourceFileHash(const std::string &path); // SHA-256 of a source file (empty if unreadable): the traces have it in header.files
 std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::function<std::string(UserFunction&)> nameFunc);
 
 // CUDA generators

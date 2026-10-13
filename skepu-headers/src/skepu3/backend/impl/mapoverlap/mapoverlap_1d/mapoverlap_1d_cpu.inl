@@ -257,7 +257,7 @@ namespace skepu
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
 			SKEPU_TRACE_START_EVENT(trace_handle);
 			
-			int overlap = this->m_overlap[0];
+			const int overlap = this->m_overlap[0];
 			size_t size = arg.size();
 			T start[3*overlap], end[3*overlap];
 			

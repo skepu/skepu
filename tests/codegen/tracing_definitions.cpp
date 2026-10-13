@@ -2,6 +2,7 @@
 // instances (see tracing_definitions in CMakeLists.txt) with the lines of the declaration and of each user function.
 #include "../../external/catch2/catch.hpp"
 #include "../../external/nlohmann/json.hpp"
+#include "../../external/hash-library/sha256.hpp"
 
 #include <fstream>
 #include <skepu>
@@ -144,4 +145,40 @@ TEST_CASE("The trace says where the instances and the user functions are defined
 		for (auto const& [id, e] : table.items())
 			CHECK(e["label"] != "unused");
 	}
+}
+
+// The header has the hash of each source file that the events name (header.files): the precompiler's for the calls of the skeletons
+// (also an anonymous instance, which has code generated for it), the tracer's for the events of the program itself (a region)
+TEST_CASE("The trace has the hash of each source file that its events name")
+{
+	skepu::Vector<float> in(4, 1.f), out(4);
+	named(out, in);
+	skepu::Map<1>(anonymous_f)(out, in);
+	{
+		SKEPU_TRACE_SCOPE("hashed region");
+	}
+
+	SKEPU_TRACE_FLUSH();
+	std::ifstream file(std::getenv("SKEPU_TRACE_FILE"));
+	REQUIRE(file.good());
+	json trace = json::parse(file);
+	REQUIRE(trace["header"].contains("files"));
+
+	size_t named_files = 0;
+	for (json const& event : trace["data"])
+	{
+		if (!event.contains("file") || event["file"] == "")
+			continue;
+		std::string name = event["file"];
+		REQUIRE(trace["header"]["files"].contains(name));
+
+		std::ifstream source(name, std::ios::binary);
+		REQUIRE(source.good());
+		std::ostringstream contents;
+		contents << source.rdbuf();
+		skepu::tracing::SHA256 sha256;
+		CHECK(trace["header"]["files"][name] == sha256(contents.str()));
+		++named_files;
+	}
+	CHECK(named_files >= 3); // two calls and the region
 }

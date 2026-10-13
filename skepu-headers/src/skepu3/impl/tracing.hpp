@@ -169,6 +169,32 @@ namespace skepu
 			this->flush();
 		}
 
+		// The files that the events name, with the hash of the contents of each (SHA-256 of the bytes), in header.files: what a viewer that reads
+		// the sources from somewhere else (an editor) needs to know that it has the same version. A call of a skeleton has its hash from the
+		// precompiler already; the other events (external, regions, snapshots) are hashed here, from the file as it is when the trace is written.
+#ifdef SKEPU_TRACING
+		inline void Tracer::collectSourceFiles()
+		{
+			if (!this->m_trace_json.is_array())
+				return;
+			for (const nlohmann::json &entry : this->m_trace_json)
+			{
+				auto file = entry.find(Schema::Keys::FILE);
+				if (file == entry.end() || !file->is_string() || file->get<std::string>().empty())
+					continue;
+				const std::string name = file->get<std::string>();
+				if (this->m_header["files"].contains(name))
+					continue;
+				std::ifstream in(name, std::ios::binary);
+				std::ostringstream contents;
+				if (!in || !(contents << in.rdbuf()))
+					continue; // not readable from here: no hash
+				SHA256 sha256;
+				this->m_header["files"][name] = sha256(contents.str());
+			}
+		}
+#endif
+
 		inline void Tracer::flush()
 		{
 #ifdef SKEPU_TRACING
@@ -182,6 +208,8 @@ namespace skepu
 				this->m_replaying_thread = capture.thread;
 				capture.work();
 			}
+
+			this->collectSourceFiles();
 
 			std::ofstream ofs;
 			ofs.open(this->m_file_name, std::ofstream::out | std::ofstream::trunc);
@@ -460,7 +488,7 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 			nlohmann::json extra_fields = extra ? extra->values : nlohmann::json::object();
-			std::tuple<std::string, int> source_location = skel_instance->getSourceLoc();
+			std::tuple<std::string, std::string, int> source_location = skel_instance->getSourceLoc();
 			const BackendSpec *backend = skel_instance->m_selected_spec;
 			UniqueIdentifier::ID id = skel_instance->getObjectID();
 			std::string label = skel_instance->getLabel();
@@ -494,7 +522,7 @@ namespace skepu
 			entry[Schema::Keys::END]     = now;
 			entry[Schema::Keys::ELEMENTS] = elements;
 			entry[Schema::Keys::FILE]          = std::get<0>(source_location);
-			entry[Schema::Keys::LINE]          = std::get<1>(source_location);
+			entry[Schema::Keys::LINE]          = std::get<2>(source_location);
 			entry[Schema::Keys::ELWISE_INPUTS] = elwise_inputs;
 			entry[Schema::Keys::PROXY_INPUTS]  = proxy_inputs;
 			entry[Schema::Keys::SCALAR_INPUTS] = scalar_inputs;
@@ -519,6 +547,14 @@ namespace skepu
 					entry[Schema::Keys::THREADS]   = threads;
 				if (type == Backend::Type::OpenCL || type == Backend::Type::CUDA || type == Backend::Type::Hybrid)
 					entry[Schema::Keys::DEVICES]   = devices;
+			}
+
+			// the hash of the source file that the call is in (computed by the precompiler: the program as it was compiled), once per file
+			if (!std::get<0>(source_location).empty() && !std::get<1>(source_location).empty())
+			{
+				std::lock_guard<std::mutex> lock(this->m_mutex);
+				if (!this->m_header["files"].contains(std::get<0>(source_location)))
+					this->m_header["files"][std::get<0>(source_location)] = std::get<1>(source_location);
 			}
 
 			// where the instance and its user functions are defined: once, in the header of the file

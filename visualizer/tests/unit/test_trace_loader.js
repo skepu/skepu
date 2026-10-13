@@ -47,8 +47,8 @@ describe('trace formats', () => {
         expect(() => eventsArrayStart('42')).toThrow(/Not a SkePU trace/);
     });
 
-    it('the source files of a header are not its sections', () => {
-        const header = { '/a.cpp': 'h1', '/b.cpp': 'h2', mpi: { rank: 0 }, clock: { start: {} } };
+    it('the source files of a header are its section "files"', () => {
+        const header = { files: { '/a.cpp': 'h1', '/b.cpp': 'h2' }, mpi: { rank: 0 }, clock: { start: {} } };
         expect(headerSourceFiles(header)).toEqual({ '/a.cpp': 'h1', '/b.cpp': 'h2' });
         const s = summarize(parseTrace(JSON.stringify({ header, data: events })).events, header);
         expect(s.header.files).toBe(2);
@@ -174,7 +174,8 @@ describe('the table of the instances in the header', () => {
     it('is empty without a table, and is not a source file', () => {
         expect(headerInstances(null).size).toBe(0);
         expect(headerInstances({ mpi: {} }).size).toBe(0);
-        expect(headerSourceFiles({ '/a.cpp': 'hash', instances: table })).toEqual({ '/a.cpp': 'hash' });
+        expect(headerSourceFiles({ files: { '/a.cpp': 'hash' }, instances: table })).toEqual({ '/a.cpp': 'hash' });
+        expect(headerSourceFiles({ instances: table, '/a.cpp': 'hash' })).toEqual({});
     });
 
     it('goes through parseTrace as it is', () => {

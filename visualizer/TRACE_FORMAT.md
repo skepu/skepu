@@ -5,9 +5,13 @@ events, in the order in which they were recorded (a trace is written when the pr
 `tests/codegen/tracing_skeletons.cpp` checks the parts of it that are described here, on every backend.
 
 A trace is a JSON array of events, or an object `{ header, data }` whose `data` is that array (the key can be anywhere in the
-object). The header has what is known about the run as a whole. Source files: a key that is the path of a source file with the hash of its
-contents as value (so that SkeVU can tell whether the source it has is the source that was run). The other sections have names that are not
-paths: `instances` (below), `mpi` and `clock` (below). SkeVU reads both forms; a trace that is an array has no header.
+object). The header has what is known about the run as a whole, in sections: `files` (the hash of each source file, below), `instances`
+(below), `mpi` and `clock` (below). SkeVU reads both forms; a trace that is an array has no header.
+
+The section `files` maps the path of each source file that the events name (their `file`) to the SHA-256 of its contents, in hexadecimal, so
+that a viewer that gets the sources from somewhere else (an editor) can tell whether it has the version that was run. The hash of a file with
+a call of a skeleton is made by the precompiler, of the file as it was compiled; the files of the other events (`external`, regions, snapshots)
+are hashed by the tracer when the trace is written, if the file can be read from where the program runs (otherwise it has no entry).
 
 Times are microseconds since the first event of the program. An event that takes time has `start` and `end`; one that
 happens at a moment has `time`. Every event has the `region` it happened in, if any (the innermost

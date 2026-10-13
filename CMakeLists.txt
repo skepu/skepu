@@ -128,6 +128,7 @@ ExternalProject_Add(skepu-tool-llvm
 		-DLLVM_ENABLE_PROJECTS=${SKEPU_LLVM_PROJECTS}
 		-DCMAKE_BUILD_TYPE=Release
 		${SKEPU_STATIC_FLAGS}
+		-DSKEPU_HASH_LIB_DIR=${CMAKE_CURRENT_LIST_DIR}/external/hash-library
 	STEP_TARGETS configure
 	BUILD_COMMAND $(MAKE) ${SKEPU_LLVM_TARGETS}
 	BUILD_ALWAYS ON
@@ -165,8 +166,8 @@ install(PROGRAMS ${SKEPU_TOOL_BINARY_DIR}/skepu-tool
 	DESTINATION bin)
 
 # The tracing support (SKEPU_TRACING) includes ../../external/nlohmann/json.hpp from
-# skepu3/impl/tracing.h, which is include/external/nlohmann in an installation.
-install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/external/nlohmann
+# skepu3/impl/tracing.h, which is include/external/nlohmann in an installation (and the hashes of the source files, external/hash-library).
+install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/external/nlohmann ${CMAKE_CURRENT_LIST_DIR}/external/hash-library
 	DESTINATION include/external)
 
 # And the target exports are also available, so we install them as well for good
