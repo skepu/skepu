@@ -1,10 +1,18 @@
+// Merged from: template_instances_types.cpp, multiple_return_types.cpp, template_instances.cpp, usertype_return.cpp
+// (one program instead of one for each: the build of a test program has a cost of its own; each part is in a namespace, and its test cases have its name as a prefix)
+
 #include "../../external/catch2/catch.hpp"
-
 #include <skepu>
+#include <test_helper_automatic_setup.hpp>
 
+
+// ======== template_instances_types ========
+
+namespace template_instances_types_part
+{
 // Skeleton instances in function templates that are instantiated with different types, so that
-// each instantiation has its own user functions (and kernels). (No double: not all OpenCL devices have
-// it; see template_instances_double.cpp.)
+// each instantiation has its own user functions (and kernels). Double precision too: on an OpenCL device that does
+// not have it, the skeletons with doubles run on another backend (see opencl_double_fallback.cpp).
 
 // ---- Map with a templated user function, element types float, unsigned and int
 
@@ -21,7 +29,7 @@ void axpy(skepu::Vector<T> &x, skepu::Vector<T> &y, T a)
 	skel(y, x, y, a);
 }
 
-TEST_CASE("Map in a function template, three element types")
+TEST_CASE("template_instances_types: Map in a function template, three element types")
 {
 	const size_t size{16};
 	skepu::Vector<float> xf(size, 1.f), yf(size, 2.f);
@@ -62,7 +70,7 @@ T dot(skepu::Vector<T> &x, skepu::Vector<T> &y)
 	return skel(x, y);
 }
 
-TEST_CASE("MapReduce in a function template, two element types")
+TEST_CASE("template_instances_types: MapReduce in a function template, two element types")
 {
 	const size_t size{10};
 	skepu::Vector<float> xf(size, 2.f), yf(size, 3.f);
@@ -87,7 +95,7 @@ void add_n(skepu::Vector<int> &v)
 	skel(v, v);
 }
 
-TEST_CASE("Map in a function template with a non-type parameter")
+TEST_CASE("template_instances_types: Map in a function template with a non-type parameter")
 {
 	skepu::Vector<int> v(8, 0);
 	add_n<1>(v);
@@ -132,7 +140,7 @@ void stencil(skepu::Vector<T> &in, skepu::Vector<T> &out)
 	skel(out, in);
 }
 
-TEST_CASE("Scan and MapOverlap in function templates")
+TEST_CASE("template_instances_types: Scan and MapOverlap in function templates")
 {
 	const size_t size{8};
 	skepu::Vector<float> inf(size, 1.f), outf(size);
@@ -169,7 +177,7 @@ void twice(skepu::Vector<T> &x, skepu::Vector<T> &y, T a)
 	axpy(x, y, a);
 }
 
-TEST_CASE("Nested function templates")
+TEST_CASE("template_instances_types: Nested function templates")
 {
 	skepu::Vector<float> xf(4, 1.f), yf(4, 0.f);
 	skepu::Vector<int> xi(4, 1), yi(4, 0);
@@ -181,4 +189,163 @@ TEST_CASE("Nested function templates")
 		REQUIRE(yf(i) == 4.f);
 		REQUIRE(yi(i) == 6);
 	}
+}
+
+// A second template parameter, defaulted from the first, that is not the element type of the vectors
+template<typename T, typename R = T>
+R dot_default(skepu::Vector<T> &x, skepu::Vector<T> &y)
+{
+	auto skel = skepu::MapReduce<2>(prod_uf<R>, sum_uf<R>);
+	return skel(x, y);
+}
+
+TEST_CASE("template_instances_types: Map in a function template, float and double")
+{
+	const size_t size{16};
+	skepu::Vector<float> xf(size, 1.f), yf(size, 2.f);
+	skepu::Vector<double> xd(size, 1.), yd(size, 2.);
+
+	axpy(xf, yf, 3.f);
+	axpy(xd, yd, 0.5);
+
+	yf.updateHost(); yd.updateHost();
+	for (size_t i = 0; i < size; ++i)
+	{
+		REQUIRE(yf(i) == 5.f);
+		REQUIRE(yd(i) == 2.5);
+	}
+}
+
+TEST_CASE("template_instances_types: MapReduce in a function template, float and double")
+{
+	const size_t size{10};
+	skepu::Vector<float> xf(size, 2.f), yf(size, 3.f);
+	skepu::Vector<double> xd(size, 0.5), yd(size, 4.);
+
+	REQUIRE(dot_default(xf, yf) == 60.f);
+	REQUIRE(dot_default(xd, yd) == 20.);
+}
+}
+
+
+// ======== multiple_return_types ========
+
+namespace multiple_return_types_part
+{
+// User functions that return skepu::multiple of built-in types, which have names of more than one word (signed char, unsigned int, unsigned short) or are
+// not in a namespace. The precompiler made an alias for each of the types with the first letter of its name removed ("using igned char = signed char;"),
+// which does not compile for a name of two words. (No double: not all OpenCL devices have it.)
+
+skepu::multiple<signed char, unsigned int> split(int x)
+{
+	return skepu::ret((signed char)(x % 100 - 50), (unsigned int)(x / 100));
+}
+
+skepu::multiple<unsigned short, unsigned char, float> three(int x)
+{
+	return skepu::ret((unsigned short)(x % 60000), (unsigned char)(x % 256), x * 0.5f);
+}
+
+auto skel_split = skepu::Map<1>(split);
+auto skel_three = skepu::Map<1>(three);
+
+TEST_CASE("multiple_return_types: multiple of built-in types of one or more words")
+{
+	const size_t n{300};
+	skepu::Vector<int> in(n);
+	skepu::Vector<signed char> small(n);
+	skepu::Vector<unsigned int> big(n);
+	for (size_t i = 0; i < n; ++i) in[i] = (int)(i * 7);
+
+	skel_split(small, big, in);
+	small.updateHost(); big.updateHost();
+	for (size_t i = 0; i < n; ++i)
+	{
+		REQUIRE((int)small(i) == (int)(i * 7) % 100 - 50);
+		REQUIRE(big(i) == (unsigned int)((i * 7) / 100));
+	}
+
+	skepu::Vector<unsigned short> wide(n);
+	skepu::Vector<unsigned char> byte(n);
+	skepu::Vector<float> half(n);
+	skel_three(wide, byte, half, in);
+	wide.updateHost(); byte.updateHost(); half.updateHost();
+	for (size_t i = 0; i < n; ++i)
+	{
+		REQUIRE((int)wide(i) == (int)(i * 7) % 60000);
+		REQUIRE((int)byte(i) == (int)(i * 7) % 256);
+		REQUIRE(half(i) == (float)(i * 7) * 0.5f);
+	}
+}
+}
+
+
+// ======== template_instances ========
+
+namespace template_instances_part
+{
+// A function template with a skeleton instance, instantiated twice with the same user
+// function (the template parameter only changes the type of the scalar argument).
+float scale_uf(float x, float factor)
+{
+	return x * factor;
+}
+
+template<typename S>
+void scale(skepu::Vector<float> &v, S factor)
+{
+	auto skel = skepu::Map<1>(scale_uf);
+	skel.setStride(1, 1);
+	skel(v, v, factor);
+}
+
+TEST_CASE("template_instances: Skeleton in a function template, instantiated twice")
+{
+	const size_t size{8};
+	skepu::Vector<float> v(size);
+	for (size_t i = 0; i < size; ++i)
+		v[i] = i + 1;
+
+	scale(v, 2.f);   // S = float
+	scale(v, 3);     // S = int
+
+	v.updateHost();
+	for (size_t i = 0; i < size; ++i)
+		REQUIRE(v(i) == 6.f * (i + 1));
+}
+}
+
+
+// ======== usertype_return ========
+
+namespace usertype_return_part
+{
+// The struct only appears as a return type (no variable or parameter of the type
+// in the user function), so the OpenCL source needs it from the return type.
+struct Pt
+{
+	float x, y;
+};
+
+Pt make_pt(skepu::Index1D index, float scale)
+{
+	return (Pt){ index.i * scale, index.i * scale + 1 };
+}
+
+auto gen = skepu::Map<0>(make_pt);
+
+TEST_CASE("usertype_return: User type only in the return type")
+{
+	const size_t size{10};
+
+	skepu::Vector<Pt> v(size);
+	gen(v, 2.f);
+	v.updateHost();
+
+	for (size_t i = 0; i < size; ++i)
+	{
+		REQUIRE(v(i).x == i * 2.f);
+		REQUIRE(v(i).y == i * 2.f + 1);
+	}
+}
 }

@@ -362,6 +362,7 @@ namespace skepu
 	inline std::string getDataTypeCL();
 
 	template<> inline std::string getDataTypeCL<char>          () { return "char";           }
+	template<> inline std::string getDataTypeCL<signed char>   () { return "signed char";    }
 	template<> inline std::string getDataTypeCL<unsigned char> () { return "unsigned char";  }
 	template<> inline std::string getDataTypeCL<short>         () { return "short";          }
 	template<> inline std::string getDataTypeCL<unsigned short>() { return "unsigned short"; }
@@ -369,6 +370,9 @@ namespace skepu
 	template<> inline std::string getDataTypeCL<unsigned int>  () { return "unsigned int";   }
 	template<> inline std::string getDataTypeCL<long>          () { return "long";           }
 	template<> inline std::string getDataTypeCL<unsigned long> () { return "unsigned long";  }
+	// (OpenCL C has no long long: its long is 64 bits)
+	template<> inline std::string getDataTypeCL<long long>          () { return "long";           }
+	template<> inline std::string getDataTypeCL<unsigned long long> () { return "unsigned long";  }
 	template<> inline std::string getDataTypeCL<float>         () { return "float";          }
 	template<> inline std::string getDataTypeCL<double>        () { return "double";         }
 

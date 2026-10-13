@@ -1,3 +1,4 @@
+#include <cctype>
 #include <sstream>
 #include <unordered_set>
 #include <unordered_map>
@@ -677,10 +678,12 @@ std::string UserFunction::Param::typeNameOpenCL() const
 	
 	// A user type is defined in the kernel under its escaped qualified name (see generateUserTypeCode_CL);
 	// the qualified C++ name (skepu::filter::RGBPixel) is not an identifier in OpenCL C.
-	if (this->type && this->type->getAs<clang::RecordType>())
+	// (the type of a container argument is a record too, MatRow<signed char>, so that the name tells: a name that has no namespace and is not a template
+	// is a type that OpenCL C has, or a user type that is defined under its own name, and is not changed)
+	if (this->type && this->type->getAs<clang::RecordType>() && this->resolvedTypeName.find_first_of(":<") != std::string::npos)
 		return this->escapedTypeName;
 	
-	return this->resolvedTypeName;
+	return openCLBuiltinTypeName(this->resolvedTypeName);
 }
 
 std::string UserFunction::RandomAccessParam::innerTypeNameOpenCL() const
@@ -975,12 +978,35 @@ UserFunction::UserFunction(clang::FunctionDecl *f)
 	SkePULog() << "| " << this->ReferencedGets.size() << " get() expressions (PRNG)\n";
 	SkePULog() << "| " << this->containerCalls.size() << " container indexing calls\n";
 
-	// Set requires double precision (TODO: more cases like parameters etc...)
-	if (this->resolvedReturnTypeName == "double")
-		this->requiresDoublePrecision = true;
+	// Set requires double precision: from the signature, that is the type of the result (or the results of a skepu::multiple) and of every
+	// argument, including the element type of a container or a region (MatRow<double>), from the user types and from the functions that it calls.
+	// (Not from the body: a local variable or a cast to double is not seen, and a kernel with one is not built for a device without double precision.)
+	auto mentionsDouble = [](const clang::QualType &type)
+	{
+		const std::string name = type.getCanonicalType().getAsString();
+		for (size_t at = name.find("double"); at != std::string::npos; at = name.find("double", at + 1))
+		{
+			const bool wordBefore = at > 0 && (std::isalnum((unsigned char)name[at - 1]) || name[at - 1] == '_');
+			const bool wordAfter = at + 6 < name.size() && (std::isalnum((unsigned char)name[at + 6]) || name[at + 6] == '_');
+			if (!wordBefore && !wordAfter)
+				return true;
+		}
+		return false;
+	};
+	if (this->astDeclNode)
+	{
+		if (mentionsDouble(this->astDeclNode->getReturnType()))
+			this->requiresDoublePrecision = true;
+		for (const clang::ParmVarDecl *param : this->astDeclNode->parameters())
+			if (mentionsDouble(param->getType()))
+				this->requiresDoublePrecision = true;
+	}
 
 	for (UserType *UT : this->ReferencedUTs)
 		if (UT->requiresDoublePrecision)
+			this->requiresDoublePrecision = true;
+	for (UserFunction *called : this->ReferencedUFs)
+		if (called->requiresDoublePrecision)
 			this->requiresDoublePrecision = true;
 }
 
@@ -1009,7 +1035,7 @@ std::string UserFunction::returnTypeNameOpenCL()
 			}
 	}
 
-	return this->rawReturnTypeName;
+	return openCLBuiltinTypeName(this->rawReturnTypeName);
 }
 
 std::string UserFunction::multiReturnTypeNameGPU()

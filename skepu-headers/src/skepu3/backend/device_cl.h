@@ -9,6 +9,7 @@
 
 #define CL_SILENCE_DEPRECATION
 
+#include <cstring>
 #include <iostream>
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -157,6 +158,7 @@ namespace skepu
 			
 			size_t m_maxThreads;
 			size_t m_maxBlocks;
+			bool m_supportsDouble = false;
 			
 		public:
 			/*!
@@ -176,6 +178,19 @@ namespace skepu
 					CL_CHECK_ERROR(err, "Error adding OpenCL property value");
 				}
 				
+				// Double precision: the device has a configuration for it (an OpenCL 1.0 device may answer with an error, and say it with the extension instead)
+				cl_device_fp_config doubleConfig = 0;
+				if (clGetDeviceInfo(this->m_device, CL_DEVICE_DOUBLE_FP_CONFIG, sizeof(doubleConfig), &doubleConfig, NULL) != CL_SUCCESS)
+					doubleConfig = 0;
+				this->m_deviceProp.DEVICE_DOUBLE_FP_CONFIG = doubleConfig;
+				this->m_supportsDouble = doubleConfig != 0;
+				if (!this->m_supportsDouble)
+				{
+					char extensions[8192] = "";
+					if (clGetDeviceInfo(this->m_device, CL_DEVICE_EXTENSIONS, sizeof(extensions), extensions, NULL) == CL_SUCCESS)
+						this->m_supportsDouble = strstr(extensions, "cl_khr_fp64") != nullptr || strstr(extensions, "cl_amd_fp64") != nullptr;
+				}
+				
 				this->m_maxThreads = this->getMaxBlockSize() >> 1;
 				this->m_maxBlocks = (size_t)((size_t)1 << (m_deviceProp.DEVICE_ADDRESS_BITS-1)) * 2 - 1;
 				
@@ -191,6 +206,12 @@ namespace skepu
 				clReleaseCommandQueue(m_queue);
 				clReleaseContext(m_context);
 				DEBUG_TEXT_LEVEL1("Released Device_CL");
+			}
+			
+			//! \return Whether the device can run double precision (the kernels that have doubles cannot be built for it if it cannot).
+			bool supportsDouble() const
+			{
+				return m_supportsDouble;
 			}
 			
 			//! \return The maximum block (work group) size.

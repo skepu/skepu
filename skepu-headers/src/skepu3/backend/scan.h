@@ -48,7 +48,7 @@ namespace skepu
 			: SkeletonBase(label), m_cuda_scan_kernel(scan), m_cuda_scan_update_kernel(update), m_cuda_scan_add_kernel(add)
 			{
 #ifdef SKEPU_OPENCL
-				CLKernel::initialize();
+				this->template prepareOpenCL<CLKernel>(any_uf_requires_double<ScanFunc>::value);
 #endif
 			}
 			

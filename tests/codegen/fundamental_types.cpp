@@ -1,9 +1,18 @@
-#include "../../external/catch2/catch.hpp"
+// Merged from: fundamental_types.cpp, builtins.cpp
+// (one program instead of one for each: the build of a test program has a cost of its own; each part is in a namespace, and its test cases have its name as a prefix)
 
+#include "../../external/catch2/catch.hpp"
 #include <skepu>
 #include <test_helper_automatic_setup.hpp>
 #include <test_helper_functions.hpp>
+#include <iostream>
+#include <cmath>
 
+
+// ======== fundamental_types ========
+
+namespace fundamental_types_part
+{
 // see https://en.cppreference.com/w/cpp/language/types.html
 
 int uf_int(int a)
@@ -37,7 +46,7 @@ auto mapDouble = skepu::Map(uf_double);
 auto mapBool = skepu::Map(uf_bool);
 auto mapChar = skepu::Map(uf_char);
 
-TEST_CASE("Basic types")
+TEST_CASE("fundamental_types: Basic types")
 {
     skepu::Vector<int> vInt(1, 1), rInt(1, 0);
     mapInt(rInt, vInt);
@@ -79,7 +88,7 @@ unsigned char uf_unsigned_char(unsigned char a)
 auto mapSignedChar = skepu::Map(uf_signed_char);
 auto mapUnsignedChar = skepu::Map(uf_unsigned_char);
 
-TEST_CASE("Char variants")
+TEST_CASE("fundamental_types: Char variants")
 {
     skepu::Vector<signed char> vSignedChar(1, 'a'), rSignedChar(1, 'b');
     mapSignedChar(rSignedChar, vSignedChar);
@@ -229,7 +238,7 @@ auto mapUnsignedLongLong = skepu::Map(uf_unsigned_long_long);
 auto mapUnsignedLongLongInt = skepu::Map(uf_unsigned_long_long_int);
 
 
-TEST_CASE("Int variants")
+TEST_CASE("fundamental_types: Int variants")
 {
 
     SECTION("Short")
@@ -370,7 +379,7 @@ auto mapLongDouble = skepu::Map(uf_long_double);
 // The compiler should be throwing the following warning: warning #20208-D: 'long double' is treated as 'double' in device code
 // The skeletons above should still be tested for code generation purposes.
 #ifndef SKEPU_CUDA
-TEST_CASE("Long double")
+TEST_CASE("fundamental_types: Long double")
 {
     skepu::Vector<long double> vLongDouble(1, 1.0l), rLongDouble(1, 0.0l);
     mapLongDouble(rLongDouble, vLongDouble);
@@ -378,3 +387,312 @@ TEST_CASE("Long double")
     is_similar(rLongDouble(0), 1.0l);
 }
 #endif //SKEPU_CUDA
+}
+
+
+// ======== builtins ========
+
+namespace builtins_part
+{
+//#define SKEPU_ENABLE_EXCEPTIONS
+
+
+using namespace std;
+
+auto skepu_exp      = skepu::Map<1>([](float f) -> float { return exp(f); });
+auto skepu_exp2     = skepu::Map<1>([](float f) -> float { return exp2(f); });
+auto skepu_sqrt     = skepu::Map<1>([](float f) -> float { return sqrt(f); });
+auto skepu_abs      = skepu::Map<1>([](float f) -> float { return abs((int)f); });
+auto skepu_fabs     = skepu::Map<1>([](float f) -> float { return fabs(f); });
+auto skepu_max      = skepu::Map<1>([](float f, float f2) -> float { return max(f, f2); });
+auto skepu_fmax     = skepu::Map<1>([](float f, float f2) -> float { return fmax(f, f2); });
+auto skepu_pow      = skepu::Map<1>([](float f, int p) -> float { return pow(f, p); });
+auto skepu_log      = skepu::Map<1>([](float f) -> float { return log(f); });
+auto skepu_log2     = skepu::Map<1>([](float f) -> float { return log2(f); });
+auto skepu_log10    = skepu::Map<1>([](float f) -> float { return log10(f); });
+auto skepu_sin      = skepu::Map<1>([](float f) -> float { return sin(f); });
+auto skepu_sinh     = skepu::Map<1>([](float f) -> float { return sinh(f); });
+auto skepu_asin     = skepu::Map<1>([](float f) -> float { return asin(f); });
+auto skepu_asinh    = skepu::Map<1>([](float f) -> float { return asinh(f); });
+auto skepu_cos      = skepu::Map<1>([](float f) -> float { return cos(f); });
+auto skepu_cosh     = skepu::Map<1>([](float f) -> float { return cosh(f); });
+auto skepu_acos     = skepu::Map<1>([](float f) -> float { return acos(f); });
+auto skepu_acosh    = skepu::Map<1>([](float f) -> float { return acosh(f); });
+auto skepu_tan      = skepu::Map<1>([](float f) -> float { return tan(f); });
+auto skepu_tanh     = skepu::Map<1>([](float f) -> float { return tanh(f); });
+auto skepu_atan     = skepu::Map<1>([](float f) -> float { return atan(f); });
+auto skepu_atanh    = skepu::Map<1>([](float f) -> float { return atanh(f); });
+auto skepu_round    = skepu::Map<1>([](float f) -> float { return round(f); });
+auto skepu_ceil     = skepu::Map<1>([](float f) -> float { return ceil(f); });
+auto skepu_floor    = skepu::Map<1>([](float f) -> float { return floor(f); });
+auto skepu_erf      = skepu::Map<1>([](float f) -> float { return erf(f); });
+auto skepu_printf   = skepu::Map<1>([](float f, float val) -> float { printf("Hello, world!"); return val; });
+
+
+TEST_CASE("builtins: Test built-in math functions")
+{
+	size_t constexpr N{1000};
+
+	// Initialize input
+	skepu::Vector<float> in(N), res(N);
+	skepu::external([&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			in(i) = (float)i / 100.0;
+	}, skepu::write(in));
+	
+	
+	
+	
+	// exp
+	REQUIRE_NOTHROW(skepu_exp(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::exp(in(i)));
+	});
+	
+	
+	// exp2
+	REQUIRE_NOTHROW(skepu_exp2(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::exp2(in(i)));
+	});
+	
+	
+	// sqrt
+	REQUIRE_NOTHROW(skepu_sqrt(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::sqrt(in(i)));
+	});
+	
+	
+	// abs
+	REQUIRE_NOTHROW(skepu_abs(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), static_cast<float>(std::abs((int)in(i))));
+	});
+	
+	
+	// fabs
+	REQUIRE_NOTHROW(skepu_fabs(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::fabs(in(i)));
+	});
+	
+	
+	// max
+	REQUIRE_NOTHROW(skepu_max(res, in, (float)0.5));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::max(in(i), (float)0.5));
+	});
+	
+	
+	// fmax
+	REQUIRE_NOTHROW(skepu_fmax(res, in, (float)0.5));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::fmax(in(i), (float)0.5));
+	});
+	
+	
+	// pow
+	REQUIRE_NOTHROW(skepu_pow(res, in, 2));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), static_cast<float>(std::pow(in(i), 2)));
+	});
+	
+	
+	// log
+	REQUIRE_NOTHROW(skepu_log(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::log(in(i)));
+	});
+	
+	
+	// log2
+	REQUIRE_NOTHROW(skepu_log2(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::log2(in(i)));
+	});
+	
+	
+	// log10
+	REQUIRE_NOTHROW(skepu_log10(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::log10(in(i)));
+	});
+	
+	
+	// sin
+	REQUIRE_NOTHROW(skepu_sin(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::sin(in(i)));
+	});
+	
+	
+	// sinh
+	REQUIRE_NOTHROW(skepu_sinh(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::sinh(in(i)));
+	});
+	
+	
+	// asin
+	REQUIRE_NOTHROW(skepu_asin(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::asin(in(i)));
+	});
+	
+	
+	// asinh
+	REQUIRE_NOTHROW(skepu_asinh(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::asinh(in(i)));
+	});
+	
+	
+	// cos
+	REQUIRE_NOTHROW(skepu_cos(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::cos(in(i)));
+	});
+	
+	
+	// cosh
+	REQUIRE_NOTHROW(skepu_cosh(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::cosh(in(i)));
+	});
+	
+	
+	// acos
+	REQUIRE_NOTHROW(skepu_acos(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::acos(in(i)));
+	});
+	
+	
+	// acosh
+	REQUIRE_NOTHROW(skepu_acosh(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::acosh(in(i)));
+	});
+	
+	
+	// tan
+	REQUIRE_NOTHROW(skepu_tan(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::tan(in(i)));
+	});
+	
+	
+	// tanh
+	REQUIRE_NOTHROW(skepu_tanh(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::tanh(in(i)));
+	});
+	
+	
+	// atan
+	REQUIRE_NOTHROW(skepu_atan(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::atan(in(i)));
+	});
+	
+	
+	// atanh
+	REQUIRE_NOTHROW(skepu_atanh(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::atanh(in(i)));
+	});
+	
+	
+	// round
+	REQUIRE_NOTHROW(skepu_round(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::round(in(i)));
+	});
+	
+	
+	// ceil
+	REQUIRE_NOTHROW(skepu_ceil(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::ceil(in(i)));
+	});
+	
+	
+	// floor
+	REQUIRE_NOTHROW(skepu_floor(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::floor(in(i)));
+	});
+	
+	
+	// erf
+	REQUIRE_NOTHROW(skepu_erf(res, in));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), std::erf(in(i)));
+	});
+	
+	
+	// printf
+	REQUIRE_NOTHROW(skepu_printf(res, in, 0));
+	skepu::external(skepu::read(res, in), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+			is_similar(res(i), 0.0f);
+	});
+}
+}

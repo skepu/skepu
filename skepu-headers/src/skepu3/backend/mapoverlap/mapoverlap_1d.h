@@ -42,7 +42,7 @@ namespace skepu
 			: SkeletonBase{label}, m_cuda_kernel(kernel), m_cuda_rowwise_kernel(k2), m_cuda_colwise_kernel(k3), m_cuda_colwise_multi_kernel(k4)
 			{
 #ifdef SKEPU_OPENCL
-				CLKernel::initialize();
+				this->template prepareOpenCL<CLKernel>(any_uf_requires_double<MapOverlapFunc>::value);
 #endif
 			}
 

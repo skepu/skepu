@@ -6,7 +6,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 skepu_add_test_case_sequential(blas)
 # The precompiled build of this test does not compile (blas.hpp: "expected nested-name-specifier before 'complex'"). The tests below
-# (blas_float, blas_level1, blas_level23, blas_complex, blas_mixed_precision) are the precompiled tests of the library.
+# (blas_checked, blas_complex) are the precompiled tests of the library.
 #skepu_add_test_case_cuda(blas)
 #skepu_add_test_case_hybrid_cuda(blas)
 
@@ -23,7 +23,9 @@ skepu_add_test_case_hybrid_opencl(complex)
 skepu_add_test_case_hybrid_cuda(complex)
 
 # ------------------------------------------------
-#   Random fundamentals
+#   Random fundamentals, using namespace and the random fills of skepu-lib/randomize.hpp
+#   (random, using_namespace, randomize: one program, as the build of a test program has a cost of its own; each part is in a namespace of
+#   its own, and its test cases have the name of the file it came from as a prefix)
 # ------------------------------------------------
 
 skepu_add_test_case_sequential(random)
@@ -34,19 +36,6 @@ skepu_add_test_case_opencl(random)
 skepu_add_test_case_hybrid_opencl(random)
 #skepu_add_test_case_hybrid_cuda(random)
 
-# ------------------------------------------------
-#   Random fills (skepu-lib/randomize.hpp)
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(randomize)
-skepu_add_test_case_cpu(randomize)
-skepu_add_test_case_openmp(randomize)
-skepu_add_test_case_opencl(randomize)
-
-# (double precision: not on OpenCL, which the platform may not support)
-skepu_add_test_case_sequential(randomize_double)
-skepu_add_test_case_cpu(randomize_double)
-skepu_add_test_case_openmp(randomize_double)
 
 # ------------------------------------------------
 #   skepu_external
@@ -59,19 +48,6 @@ skepu_add_test_case_opencl(skepu_external)
 skepu_add_test_case_cuda(skepu_external)
 skepu_add_test_case_hybrid_opencl(skepu_external)
 skepu_add_test_case_hybrid_cuda(skepu_external)
-
-# ------------------------------------------------
-#   Standard library namespaces
-# ------------------------------------------------
-
-
-skepu_add_test_case_sequential(using_namespace)
-skepu_add_test_case_cpu(using_namespace)
-skepu_add_test_case_openmp(using_namespace)
-skepu_add_test_case_opencl(using_namespace)
-# skepu_add_test_case_cuda(using_namespace)
-skepu_add_test_case_hybrid_opencl(using_namespace)
-# skepu_add_test_case_hybrid_cuda(using_namespace)
 
 # ------------------------------------------------
 #   DNN library (skepu-lib/dnn)
@@ -100,47 +76,24 @@ add_test(NAME dnn_regression
 	COMMAND ${CMAKE_CURRENT_LIST_DIR}/dnn_regression/run.sh --cxx ${CMAKE_CXX_COMPILER} --tol 1e-2)
 
 # ------------------------------------------------
-#   BLAS library, checked float routines
+#   BLAS library, checked float routines (blas_float, blas_level1, blas_level23: one program)
 # ------------------------------------------------
 
-skepu_add_test_case_sequential(blas_float)
-skepu_add_test_case_cpu(blas_float)
-skepu_add_test_case_openmp(blas_float)
-skepu_add_test_case_opencl(blas_float)
+skepu_add_test_case_sequential(blas_checked)
+skepu_add_test_case_cpu(blas_checked)
+skepu_add_test_case_openmp(blas_checked)
+skepu_add_test_case_opencl(blas_checked)
+
 
 # ------------------------------------------------
-#   BLAS library, checked level 1 routines
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(blas_level1)
-skepu_add_test_case_cpu(blas_level1)
-skepu_add_test_case_openmp(blas_level1)
-skepu_add_test_case_opencl(blas_level1)
-
-# ------------------------------------------------
-#   BLAS library, checked level 2 and 3 routines
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(blas_level23)
-skepu_add_test_case_cpu(blas_level23)
-skepu_add_test_case_openmp(blas_level23)
-skepu_add_test_case_opencl(blas_level23)
-
-# ------------------------------------------------
-#   BLAS library, checked complex routines (OpenCL: complex numbers are not tested there)
+#   BLAS library, checked complex and mixed precision routines (blas_complex, blas_mixed_precision: one program)
+#   (not on OpenCL: the kernels of the complex numbers are not complete there)
 # ------------------------------------------------
 
 skepu_add_test_case_sequential(blas_complex)
 skepu_add_test_case_cpu(blas_complex)
 skepu_add_test_case_openmp(blas_complex)
 
-# ------------------------------------------------
-#   BLAS library, float, double and mixed operands in one program (OpenCL: double precision)
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(blas_mixed_precision)
-skepu_add_test_case_cpu(blas_mixed_precision)
-skepu_add_test_case_openmp(blas_mixed_precision)
 
 # ------------------------------------------------
 #   Image filter library (skepu-lib/filter): user types in a namespace

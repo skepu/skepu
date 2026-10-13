@@ -76,6 +76,15 @@ public:
 
    void finishAll_CL();
    std::vector<Device_CL*> m_devices_CL;
+
+   //! The number of the OpenCL devices that can run double precision
+   size_t numDoubleDevices_CL() const
+   {
+      size_t count = 0;
+      for (const Device_CL *device : this->m_devices_CL)
+         if (device->supportsDouble()) ++count;
+      return count;
+   }
    
 #endif // SKEPU_OPENCL
    

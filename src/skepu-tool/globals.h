@@ -102,6 +102,15 @@ inline std::string templateString(std::string templ, std::vector<std::pair<std::
 	return templ;
 }
 
+// The name of a built-in type in OpenCL C: it has no long long (its long is 64 bits) and no long double
+inline std::string openCLBuiltinTypeName(std::string type)
+{
+	replaceTextInString(type, "long double", "double");       // (as CUDA treats it)
+	replaceTextInString(type, "unsigned long long", "unsigned long");
+	replaceTextInString(type, "long long", "long");
+	return type;
+}
+
 inline std::string transformToCXXIdentifier(std::string &in)
 {
 	std::string out = in;

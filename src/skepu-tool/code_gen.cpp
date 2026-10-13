@@ -19,6 +19,8 @@ std::string removeNamespacesFromTypeName(std::string type)
 {
 	replaceTextInString(type, "struct ", "");
 	auto pos = type.rfind("::");
+	if (pos == std::string::npos)
+		return type;      // (a type without a namespace, as unsigned int or double: nothing to remove)
 	return type.substr(pos+2, type.size() - pos-2);
 }
 
@@ -487,6 +489,9 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 		}
 
 	SSSkepuFunctorStruct << "constexpr static bool prefersMatrix = " << (UF.indexed2D) << ";\n\n";
+
+	// Whether the function needs double precision (a skeleton that has it does not run on an OpenCL device that does not: see SkeletonBase::selectBackend)
+	SSSkepuFunctorStruct << "constexpr static bool requiresDouble = " << (UF.requiresDoublePrecision ? 1 : 0) << ";\n\n";
 
 	// CUDA code
 	if (GenCUDA)

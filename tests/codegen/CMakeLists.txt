@@ -3,17 +3,7 @@
 #   Built-in math functions
 # ------------------------------------------------
 
-skepu_add_test_case_cpu(builtins)
-skepu_add_test_case_openmp(builtins)
-skepu_add_test_case_opencl(builtins)
-skepu_add_test_case_cuda(builtins)
-skepu_add_test_case_hybrid_opencl(builtins)
-skepu_add_test_case_hybrid_cuda(builtins)
-
-# ------------------------------------------------
-#   Fundamental types
-# ------------------------------------------------
-
+# fundamental_types: fundamental_types, builtins (one program)
 skepu_add_test_case_cpu(fundamental_types)
 skepu_add_test_case_openmp(fundamental_types)
 skepu_add_test_case_opencl(fundamental_types)
@@ -21,21 +11,25 @@ skepu_add_test_case_cuda(fundamental_types)
 skepu_add_test_case_hybrid_opencl(fundamental_types)
 skepu_add_test_case_hybrid_cuda(fundamental_types)
 
+
 # ------------------------------------------------
 #   Code on the line of a skeleton instance declaration
 # ------------------------------------------------
 
-skepu_add_test_case_cpu(same_line)
-skepu_add_test_case_openmp(same_line)
-skepu_add_test_case_opencl(same_line)
-skepu_add_test_case_cuda(same_line)
-skepu_add_test_case_hybrid_opencl(same_line)
-skepu_add_test_case_hybrid_cuda(same_line)
+# proxies: proxies, same_line (one program)
+skepu_add_test_case_cpu(proxies)
+skepu_add_test_case_openmp(proxies)
+skepu_add_test_case_opencl(proxies)
+skepu_add_test_case_cuda(proxies)
+skepu_add_test_case_hybrid_opencl(proxies)
+skepu_add_test_case_hybrid_cuda(proxies)
+
 
 # ------------------------------------------------
 #   Anonymous skeleton instances (created and called in one expression, with chained settings)
 # ------------------------------------------------
 
+# inline_skeletons: inline_skeletons, inline_skeletons_all (one program)
 skepu_add_test_case_cpu(inline_skeletons)
 skepu_add_test_case_openmp(inline_skeletons)
 skepu_add_test_case_opencl(inline_skeletons)
@@ -43,12 +37,6 @@ skepu_add_test_case_cuda(inline_skeletons)
 skepu_add_test_case_hybrid_opencl(inline_skeletons)
 skepu_add_test_case_hybrid_cuda(inline_skeletons)
 
-skepu_add_test_case_cpu(inline_skeletons_all)
-skepu_add_test_case_openmp(inline_skeletons_all)
-skepu_add_test_case_opencl(inline_skeletons_all)
-skepu_add_test_case_cuda(inline_skeletons_all)
-skepu_add_test_case_hybrid_opencl(inline_skeletons_all)
-skepu_add_test_case_hybrid_cuda(inline_skeletons_all)
 
 # ------------------------------------------------
 #   Linking multiple precompiled files
@@ -130,12 +118,14 @@ skepu_add_test_case_hybrid_opencl(skeleton_reference)
 #   Namespace in skeleton instances
 # ------------------------------------------------
 
+# namespace: namespace, objectoriented (one program)
 skepu_add_test_case_cpu(namespace)
 skepu_add_test_case_openmp(namespace)
 skepu_add_test_case_opencl(namespace)
 #skepu_add_test_case_cuda(namespace)
 skepu_add_test_case_hybrid_opencl(namespace)
 #skepu_add_test_case_hybrid_cuda(namespace)
+
 
 # ------------------------------------------------
 #   Object-oriented SkePU usage
@@ -146,72 +136,46 @@ skepu_add_test_case_hybrid_opencl(namespace)
 # 2 problems arise from this.
 # 1. The kernel gets included inside the class and a __global__ function cannot be a member function.
 # 2. The kernel calls the function struct::CU but needs to actually call TestClass::struct::CU.
-skepu_add_test_case_cpu(objectoriented)
-skepu_add_test_case_openmp(objectoriented)
-skepu_add_test_case_opencl(objectoriented)
-#skepu_add_test_case_cuda(objectoriented)
-skepu_add_test_case_hybrid_opencl(objectoriented)
-#skepu_add_test_case_hybrid_cuda(objectoriented)
-
-# ------------------------------------------------
-#   Container proxy access
-# ------------------------------------------------
-
-skepu_add_test_case_cpu(proxies)
-skepu_add_test_case_openmp(proxies)
-skepu_add_test_case_opencl(proxies)
-skepu_add_test_case_cuda(proxies)
-skepu_add_test_case_hybrid_opencl(proxies)
-skepu_add_test_case_hybrid_cuda(proxies)
 
 # ------------------------------------------------
 #   User types
 # ------------------------------------------------
 
-skepu_add_test_case_cpu(usertype)
-skepu_add_test_case_openmp(usertype)
-skepu_add_test_case_opencl(usertype)
-skepu_add_test_case_cuda(usertype)
-skepu_add_test_case_hybrid_opencl(usertype)
-skepu_add_test_case_hybrid_cuda(usertype)
+# codegen_types: library_types, usertype, namespaced_types, namespaced_types_same_name (one program)
+skepu_add_test_case_cpu(codegen_types)
+skepu_add_test_case_openmp(codegen_types)
+skepu_add_test_case_opencl(codegen_types)
+skepu_add_test_case_cuda(codegen_types)
+skepu_add_test_case_hybrid_opencl(codegen_types)
+skepu_add_test_case_hybrid_cuda(codegen_types)
+
 # ------------------------------------------------
 #   User type that is only a return type
 # ------------------------------------------------
 
-skepu_add_test_case_cpu(usertype_return)
-skepu_add_test_case_openmp(usertype_return)
-skepu_add_test_case_opencl(usertype_return)
-
-# ------------------------------------------------
-#   Skeleton in a function template, several instantiations
-# ------------------------------------------------
-
-skepu_add_test_case_cpu(template_instances)
-skepu_add_test_case_openmp(template_instances)
-skepu_add_test_case_opencl(template_instances)
-
-# Instantiated with different types (user functions, kernels), non-type parameters, Scan and MapOverlap
+# template_instances_types: template_instances_types, multiple_return_types, template_instances, usertype_return (one program)
 skepu_add_test_case_sequential(template_instances_types)
 skepu_add_test_case_cpu(template_instances_types)
 skepu_add_test_case_openmp(template_instances_types)
 skepu_add_test_case_opencl(template_instances_types)
 
-# The same with double precision (OpenCL devices do not all have it)
-skepu_add_test_case_sequential(template_instances_double)
-skepu_add_test_case_cpu(template_instances_double)
-skepu_add_test_case_openmp(template_instances_double)
+
+# ------------------------------------------------
+#   Skeleton in a function template, several instantiations
+# ------------------------------------------------
+
+
+# Instantiated with different types (user functions, kernels), non-type parameters, Scan and MapOverlap
+
 
 # User constants in the user functions of every skeleton, with several types
-skepu_add_test_case_sequential(userconstants)
-skepu_add_test_case_cpu(userconstants)
-skepu_add_test_case_openmp(userconstants)
-skepu_add_test_case_opencl(userconstants)
-skepu_add_test_case_hybrid_opencl(userconstants)
+# userconstants_element_types: userconstants, element_types (one program)
+skepu_add_test_case_sequential(userconstants_element_types)
+skepu_add_test_case_cpu(userconstants_element_types)
+skepu_add_test_case_openmp(userconstants_element_types)
+skepu_add_test_case_opencl(userconstants_element_types)
+skepu_add_test_case_hybrid_opencl(userconstants_element_types)
 
-# The same with double precision (OpenCL devices do not all have it)
-skepu_add_test_case_sequential(userconstants_double)
-skepu_add_test_case_cpu(userconstants_double)
-skepu_add_test_case_openmp(userconstants_double)
 
 # Regions of several threads that overlap in time: events belong to the region of their own thread.
 skepu_add_executable(tracing_regions_threads_test SKEPUSRC tracing_regions_threads.cpp)
@@ -300,6 +264,13 @@ add_test(NAME tracing_container_labels COMMAND tracing_container_labels_test)
 set_tests_properties(tracing_container_labels PROPERTIES
 	ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_container_labels.json")
 
+# skepu::multiple of built-in types with names of several words (the precompiler removed the first letter of the names of the aliases it makes)
+
+# Skeletons with double precision on OpenCL devices that have it, and on those that do not (they run on another backend, or it is an error in strict mode)
+skepu_add_test_case_opencl(opencl_double_fallback)
+
+# Elements of the types signed char and long long (the OpenCL names of the types), with rows and columns as arguments
+
 # The values of the scalars (results of reductions, norms) are in the trace
 skepu_add_executable(tracing_scalar_values_test SKEPUSRC tracing_scalar_values.cpp)
 target_link_libraries(tracing_scalar_values_test PRIVATE catch2_main)
@@ -308,31 +279,3 @@ add_test(NAME tracing_scalar_values COMMAND tracing_scalar_values_test)
 set_tests_properties(tracing_scalar_values PROPERTIES
 	ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_scalar_values.json")
 
-# ------------------------------------------------
-#   User types in namespaces (OpenCL type names)
-# ------------------------------------------------
-
-skepu_add_test_case_cpu(namespaced_types)
-skepu_add_test_case_openmp(namespaced_types)
-skepu_add_test_case_opencl(namespaced_types)
-skepu_add_test_case_cuda(namespaced_types)
-skepu_add_test_case_hybrid_opencl(namespaced_types)
-skepu_add_test_case_hybrid_cuda(namespaced_types)
-
-skepu_add_test_case_cpu(namespaced_types_same_name)
-skepu_add_test_case_openmp(namespaced_types_same_name)
-skepu_add_test_case_opencl(namespaced_types_same_name)
-skepu_add_test_case_cuda(namespaced_types_same_name)
-skepu_add_test_case_hybrid_opencl(namespaced_types_same_name)
-skepu_add_test_case_hybrid_cuda(namespaced_types_same_name)
-
-# ------------------------------------------------
-#   Types of the standard library (skepu-lib/filter.hpp) in the OpenCL code
-# ------------------------------------------------
-
-skepu_add_test_case_cpu(library_types)
-skepu_add_test_case_openmp(library_types)
-skepu_add_test_case_opencl(library_types)
-skepu_add_test_case_cuda(library_types)
-skepu_add_test_case_hybrid_opencl(library_types)
-skepu_add_test_case_hybrid_cuda(library_types)

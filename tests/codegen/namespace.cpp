@@ -1,8 +1,15 @@
-#include "../../external/catch2/catch.hpp"
+// Merged from: namespace.cpp, objectoriented.cpp
+// (one program instead of one for each: the build of a test program has a cost of its own; each part is in a namespace, and its test cases have its name as a prefix)
 
+#include "../../external/catch2/catch.hpp"
 #include <skepu>
 #include <test_helper_automatic_setup.hpp>
 
+
+// ======== namespace ========
+
+namespace namespace_part
+{
 // Test 1
 namespace ufs1
 {
@@ -48,7 +55,7 @@ namespace skel
 
 
 
-TEST_CASE("Namespaced skeleton instantiations")
+TEST_CASE("namespace: Namespaced skeleton instantiations")
 {
 	const size_t size{100};
 
@@ -65,4 +72,55 @@ TEST_CASE("Namespaced skeleton instantiations")
 	skel::instance3(r, v1, v2);
   r.flush();
   CHECK(r(0) == 21);
+}
+}
+
+
+// ======== objectoriented ========
+
+namespace objectoriented_part
+{
+template<typename T>
+class TestClass
+{
+	T _val;
+	
+public:
+	
+	TestClass(T val): _val{val}
+	{}
+	
+	// Skeletons can be "hidden" inside classes like this.
+	// The skeleton instance can also be declared static.
+	skepu::Vector<T> scale(skepu::Vector<T> &v)
+	{
+		auto skel = skepu::Map<1>([](T e, T scale){ return e * scale; });
+		skepu::Vector<T> res(v.size());
+		return skel(res, v, this->_val);
+	}
+	
+};
+
+
+
+TEST_CASE("objectoriented: Object-oriented SkePU usage")
+{
+	const size_t size{100};
+	
+	skepu::Vector<int> v1(size);
+	
+	v1.flush();
+	for (size_t i = 0; i < size; ++i)
+	{
+		v1(i) = i;
+	}
+	
+	TestClass<int> test(5);
+	
+	auto res = test.scale(v1);
+	
+	res.flush();
+	std::cout << "v1: " << v1 << "\nres: " << res << "\n\n";
+	
+}
 }

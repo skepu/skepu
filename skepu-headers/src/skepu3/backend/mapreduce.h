@@ -34,7 +34,7 @@ namespace skepu
 			: SkeletonBase{label}, m_cuda_kernel(mapreduce), m_cuda_reduce_kernel(reduce)
 			{
 #ifdef SKEPU_OPENCL
-				CLKernel::initialize();
+				this->template prepareOpenCL<CLKernel>(any_uf_requires_double<MapFunc, ReduceFunc>::value);
 #endif
 			}
 

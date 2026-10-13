@@ -1,3 +1,62 @@
+# The MapOverlap and MapPool tests. A test program has a cost of its own to build, so the tests that run on the same backends are in one
+# program (each part is in a namespace of its own, and its test cases have the name of the file it came from as a prefix).
+
+# ------------------------------------------------
+#   Fundamentals of MapOverlap 2D and 4D, with expanding edges, indexed and tuple user functions
+#   (mapoverlap_2d, mapoverlap_2d_expanding, mapoverlap_4d, mapoverlap_4d_expanding, mapoverlap_indexed, mapoverlap_tuple)
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mapoverlap_basic)
+skepu_add_test_case_cpu(mapoverlap_basic)
+skepu_add_test_case_openmp(mapoverlap_basic)
+skepu_add_test_case_opencl(mapoverlap_basic)
+skepu_add_test_case_cuda(mapoverlap_basic)
+skepu_add_test_case_hybrid_opencl(mapoverlap_basic)
+#skepu_add_test_case_hybrid_cuda(mapoverlap_basic)
+
+# ------------------------------------------------
+#   MapOverlap 1D (also rows and columns), 2D, 3D and 4D with the edge modes, the overlaps and the checks of the arguments
+#   (mapoverlap_1d, mapoverlap_1d_rowcol, mapoverlap_2d_new, mapoverlap_3d_new, mapoverlap_4d_new)
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mapoverlap_new)
+skepu_add_test_case_cpu(mapoverlap_new)
+skepu_add_test_case_openmp(mapoverlap_new)
+skepu_add_test_case_opencl(mapoverlap_new)
+skepu_add_test_case_cuda(mapoverlap_new)
+skepu_add_test_case_hybrid_opencl(mapoverlap_new)
+#skepu_add_test_case_hybrid_cuda(mapoverlap_new)
+
+# ------------------------------------------------
+#   The mirror mode (edge mode None, input of the size of the output) of MapOverlap 1D to 4D, the edge modes of 2D, the update modes and the
+#   in place calls
+#   (mapoverlap_1d_mirror, mapoverlap_2d_mirror, mapoverlap_3d_mirror, mapoverlap_4d_mirror, mapoverlap_2d_edge_modes, mapoverlap_in_place,
+#   mapoverlap_updatemode)
+# ------------------------------------------------
+
+# The mirror mode is not implemented for the CUDA and hybrid backends: the call stops with an error. MapOverlap2D is not implemented for the
+# hybrid backend, and the hybrid backends ignore the update modes (the test fails on hybrid OpenCL).
+skepu_add_test_case_sequential(mapoverlap_edges)
+skepu_add_test_case_cpu(mapoverlap_edges)
+skepu_add_test_case_openmp(mapoverlap_edges)
+skepu_add_test_case_opencl(mapoverlap_edges)
+#skepu_add_test_case_cuda(mapoverlap_edges)
+#skepu_add_test_case_hybrid_opencl(mapoverlap_edges)
+#skepu_add_test_case_hybrid_cuda(mapoverlap_edges)
+
+# ------------------------------------------------
+#   MapPool 2D, 3D and 4D, also with small output sizes
+#   (mappool_2d, mappool_3d, mappool_4d, mappool_2d_small_output, mappool_3d_small_output, mappool_4d_small_output)
+# ------------------------------------------------
+
+skepu_add_test_case_sequential(mappool)
+skepu_add_test_case_cpu(mappool)
+skepu_add_test_case_openmp(mappool)
+skepu_add_test_case_opencl(mappool)
+skepu_add_test_case_cuda(mappool)
+skepu_add_test_case_hybrid_opencl(mappool)
+#skepu_add_test_case_hybrid_cuda(mappool)
+
 # ------------------------------------------------
 #   MapOverlap default values
 # ------------------------------------------------
@@ -9,32 +68,6 @@ skepu_add_test_case_opencl(mapoverlap_default_values)
 skepu_add_test_case_cuda(mapoverlap_default_values)
 skepu_add_test_case_hybrid_opencl(mapoverlap_default_values)
 skepu_add_test_case_hybrid_cuda(mapoverlap_default_values)
-
-
-# ------------------------------------------------
-#   MapOverlap 1D fundamentals
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_1d)
-skepu_add_test_case_cpu(mapoverlap_1d)
-skepu_add_test_case_openmp(mapoverlap_1d)
-skepu_add_test_case_opencl(mapoverlap_1d)
-skepu_add_test_case_cuda(mapoverlap_1d)
-skepu_add_test_case_hybrid_opencl(mapoverlap_1d)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_1d)
-
-
-# ------------------------------------------------
-#   MapOverlap 1D rowcol fundamentals
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_1d_rowcol)
-skepu_add_test_case_cpu(mapoverlap_1d_rowcol)
-skepu_add_test_case_openmp(mapoverlap_1d_rowcol)
-skepu_add_test_case_opencl(mapoverlap_1d_rowcol)
-skepu_add_test_case_cuda(mapoverlap_1d_rowcol)
-skepu_add_test_case_hybrid_opencl(mapoverlap_1d_rowcol)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_1d_rowcol)
 
 # ------------------------------------------------
 #   MapOverlap 1D on matrices with rows and columns longer than a thread block
@@ -50,109 +83,7 @@ skepu_add_test_case_cuda(mapoverlap_1d_wide)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_1d_wide)
 
 # ------------------------------------------------
-#   MapOverlap 2D mirror mode (edge mode None, input of the size of the output)
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_2d_mirror)
-skepu_add_test_case_cpu(mapoverlap_2d_mirror)
-skepu_add_test_case_openmp(mapoverlap_2d_mirror)
-skepu_add_test_case_opencl(mapoverlap_2d_mirror)
-# (not implemented for the CUDA and hybrid backends: the call stops with an error)
-#skepu_add_test_case_cuda(mapoverlap_2d_mirror)
-# hybrid OpenCL: MapOverlap2D is not implemented for the hybrid backend
-#skepu_add_test_case_hybrid_opencl(mapoverlap_2d_mirror)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_2d_mirror)
-
-
-# ------------------------------------------------
-#   MapOverlap 1D, 3D and 4D mirror mode (edge mode None, input of the size of the output)
-# ------------------------------------------------
-
-# (not implemented for the CUDA and hybrid backends: the call stops with an error)
-skepu_add_test_case_sequential(mapoverlap_1d_mirror)
-skepu_add_test_case_cpu(mapoverlap_1d_mirror)
-skepu_add_test_case_openmp(mapoverlap_1d_mirror)
-skepu_add_test_case_opencl(mapoverlap_1d_mirror)
-
-skepu_add_test_case_sequential(mapoverlap_3d_mirror)
-skepu_add_test_case_cpu(mapoverlap_3d_mirror)
-skepu_add_test_case_openmp(mapoverlap_3d_mirror)
-skepu_add_test_case_opencl(mapoverlap_3d_mirror)
-
-skepu_add_test_case_sequential(mapoverlap_4d_mirror)
-skepu_add_test_case_cpu(mapoverlap_4d_mirror)
-skepu_add_test_case_openmp(mapoverlap_4d_mirror)
-skepu_add_test_case_opencl(mapoverlap_4d_mirror)
-
-
-# ------------------------------------------------
-#   MapOverlap 2D fundamentals
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_2d)
-skepu_add_test_case_cpu(mapoverlap_2d)
-skepu_add_test_case_openmp(mapoverlap_2d)
-skepu_add_test_case_opencl(mapoverlap_2d)
-skepu_add_test_case_cuda(mapoverlap_2d)
-skepu_add_test_case_hybrid_opencl(mapoverlap_2d)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_2d)
-
-
-
-# ------------------------------------------------
-#   MapOverlap expanding
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_2d_expanding)
-skepu_add_test_case_cpu(mapoverlap_2d_expanding)
-skepu_add_test_case_openmp(mapoverlap_2d_expanding)
-skepu_add_test_case_opencl(mapoverlap_2d_expanding)
-skepu_add_test_case_cuda(mapoverlap_2d_expanding)
-skepu_add_test_case_hybrid_opencl(mapoverlap_2d_expanding)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_2d_expanding)
-
-
-# ------------------------------------------------
-#   MapOverlap 2D fundamentals new
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_2d_new)
-skepu_add_test_case_cpu(mapoverlap_2d_new)
-skepu_add_test_case_openmp(mapoverlap_2d_new)
-skepu_add_test_case_opencl(mapoverlap_2d_new)
-skepu_add_test_case_cuda(mapoverlap_2d_new)
-skepu_add_test_case_hybrid_opencl(mapoverlap_2d_new)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_2d_new)
-
-
-# ------------------------------------------------
-#   MapPool 2D fundamentals
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mappool_2d)
-skepu_add_test_case_cpu(mappool_2d)
-skepu_add_test_case_openmp(mappool_2d)
-skepu_add_test_case_opencl(mappool_2d)
-skepu_add_test_case_cuda(mappool_2d)
-skepu_add_test_case_hybrid_opencl(mappool_2d)
-#skepu_add_test_case_hybrid_cuda(mappool_2d)
-
-
-# ------------------------------------------------
-#   MapPool 2D small output sizes
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mappool_2d_small_output)
-skepu_add_test_case_cpu(mappool_2d_small_output)
-skepu_add_test_case_openmp(mappool_2d_small_output)
-skepu_add_test_case_opencl(mappool_2d_small_output)
-skepu_add_test_case_cuda(mappool_2d_small_output)
-skepu_add_test_case_hybrid_opencl(mappool_2d_small_output)
-#skepu_add_test_case_hybrid_cuda(mappool_2d_small_output)
-
-
-# ------------------------------------------------
-#   MapOverlap 3D fundamentals
+#   MapOverlap 3D fundamentals (a program of its own: it sets SKEPU_DEBUG, which makes the library print what it does)
 # ------------------------------------------------
 
 skepu_add_test_case_sequential(mapoverlap_3d)
@@ -162,168 +93,3 @@ skepu_add_test_case_opencl(mapoverlap_3d)
 skepu_add_test_case_cuda(mapoverlap_3d)
 skepu_add_test_case_hybrid_opencl(mapoverlap_3d)
 #skepu_add_test_case_hybrid_cuda(mapoverlap_3d)
-
-
-# ------------------------------------------------
-#   MapOverlap 3D fundamentals new
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_3d_new)
-skepu_add_test_case_cpu(mapoverlap_3d_new)
-skepu_add_test_case_openmp(mapoverlap_3d_new)
-skepu_add_test_case_opencl(mapoverlap_3d_new)
-skepu_add_test_case_cuda(mapoverlap_3d_new)
-skepu_add_test_case_hybrid_opencl(mapoverlap_3d_new)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_3d_new)
-
-
-# ------------------------------------------------
-#   MapPool 3D fundamentals
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mappool_3d)
-skepu_add_test_case_cpu(mappool_3d)
-skepu_add_test_case_openmp(mappool_3d)
-skepu_add_test_case_opencl(mappool_3d)
-skepu_add_test_case_cuda(mappool_3d)
-skepu_add_test_case_hybrid_opencl(mappool_3d)
-#skepu_add_test_case_hybrid_cuda(mappool_3d)
-
-
-# ------------------------------------------------
-#   MapPool 3D small output sizes
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mappool_3d_small_output)
-skepu_add_test_case_cpu(mappool_3d_small_output)
-skepu_add_test_case_openmp(mappool_3d_small_output)
-skepu_add_test_case_opencl(mappool_3d_small_output)
-skepu_add_test_case_cuda(mappool_3d_small_output)
-skepu_add_test_case_hybrid_opencl(mappool_3d_small_output)
-#skepu_add_test_case_hybrid_cuda(mappool_3d_small_output)
-
-
-# ------------------------------------------------
-#   MapOverlap 4D fundamentals
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_4d)
-skepu_add_test_case_cpu(mapoverlap_4d)
-skepu_add_test_case_openmp(mapoverlap_4d)
-skepu_add_test_case_opencl(mapoverlap_4d)
-skepu_add_test_case_cuda(mapoverlap_4d)
-skepu_add_test_case_hybrid_opencl(mapoverlap_4d)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_4d)
-
-
-# ------------------------------------------------
-#   MapOverlap 4D Expanding
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_4d_expanding)
-skepu_add_test_case_cpu(mapoverlap_4d_expanding)
-skepu_add_test_case_openmp(mapoverlap_4d_expanding)
-skepu_add_test_case_opencl(mapoverlap_4d_expanding)
-skepu_add_test_case_cuda(mapoverlap_4d_expanding)
-skepu_add_test_case_hybrid_opencl(mapoverlap_4d_expanding)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_4d_expanding)
-
-
-# ------------------------------------------------
-#   MapOverlap 4D fundamentals new
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_4d_new)
-skepu_add_test_case_cpu(mapoverlap_4d_new)
-skepu_add_test_case_openmp(mapoverlap_4d_new)
-skepu_add_test_case_opencl(mapoverlap_4d_new)
-skepu_add_test_case_cuda(mapoverlap_4d_new)
-skepu_add_test_case_hybrid_opencl(mapoverlap_4d_new)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_4d_new)
-
-
-# ------------------------------------------------
-#   MapPool 4D fundamentals
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mappool_4d)
-skepu_add_test_case_cpu(mappool_4d)
-skepu_add_test_case_openmp(mappool_4d)
-skepu_add_test_case_opencl(mappool_4d)
-skepu_add_test_case_cuda(mappool_4d)
-skepu_add_test_case_hybrid_opencl(mappool_4d)
-#skepu_add_test_case_hybrid_cuda(mappool_4d)
-
-
-# ------------------------------------------------
-#   MapPool 4D small output sizes
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mappool_4d_small_output)
-skepu_add_test_case_cpu(mappool_4d_small_output)
-skepu_add_test_case_openmp(mappool_4d_small_output)
-skepu_add_test_case_opencl(mappool_4d_small_output)
-skepu_add_test_case_cuda(mappool_4d_small_output)
-skepu_add_test_case_hybrid_opencl(mappool_4d_small_output)
-#skepu_add_test_case_hybrid_cuda(mappool_4d_small_output)
-
-
-# ------------------------------------------------
-#   MapOverlap Indexed
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_indexed)
-skepu_add_test_case_cpu(mapoverlap_indexed)
-skepu_add_test_case_openmp(mapoverlap_indexed)
-skepu_add_test_case_opencl(mapoverlap_indexed)
-skepu_add_test_case_cuda(mapoverlap_indexed)
-skepu_add_test_case_hybrid_opencl(mapoverlap_indexed)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_indexed)
-
-
-# ------------------------------------------------
-#   MapOverlap in place
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_in_place)
-# The hybrid backends ignore the update modes (see mapoverlap_updatemode below): the test fails on hybrid OpenCL.
-skepu_add_test_case_cpu(mapoverlap_in_place)
-skepu_add_test_case_openmp(mapoverlap_in_place)
-skepu_add_test_case_opencl(mapoverlap_in_place)
-#skepu_add_test_case_cuda(mapoverlap_in_place)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_in_place)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_in_place)
-
-# ------------------------------------------------
-#   MapOverlap with variadic return
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_tuple)
-skepu_add_test_case_cpu(mapoverlap_tuple)
-skepu_add_test_case_openmp(mapoverlap_tuple)
-skepu_add_test_case_opencl(mapoverlap_tuple)
-skepu_add_test_case_cuda(mapoverlap_tuple)
-skepu_add_test_case_hybrid_opencl(mapoverlap_tuple)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_tuple)
-
-# ------------------------------------------------
-#   MapOverlap update modes
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_updatemode)
-# The update modes work with the sequential skeleton, CPU, OpenMP and OpenCL in all the variants; the hybrid backends ignore them.
-skepu_add_test_case_cpu(mapoverlap_updatemode)
-skepu_add_test_case_openmp(mapoverlap_updatemode)
-skepu_add_test_case_opencl(mapoverlap_updatemode)
-#skepu_add_test_case_cuda(mapoverlap_updatemode)
-#skepu_add_test_case_hybrid_opencl(mapoverlap_updatemode)
-#skepu_add_test_case_hybrid_cuda(mapoverlap_updatemode)
-
-# ------------------------------------------------
-#   MapOverlap 2D with an edge mode, input and output of the same size
-# ------------------------------------------------
-
-skepu_add_test_case_sequential(mapoverlap_2d_edge_modes)
-skepu_add_test_case_cpu(mapoverlap_2d_edge_modes)
-skepu_add_test_case_openmp(mapoverlap_2d_edge_modes)
-skepu_add_test_case_opencl(mapoverlap_2d_edge_modes)

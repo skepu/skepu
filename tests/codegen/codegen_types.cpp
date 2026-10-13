@@ -1,8 +1,180 @@
+// Merged from: library_types.cpp, usertype.cpp, namespaced_types.cpp, namespaced_types_same_name.cpp
+// (one program instead of one for each: the build of a test program has a cost of its own; each part is in a namespace, and its test cases have its name as a prefix)
+
 #include "../../external/catch2/catch.hpp"
-
 #include <skepu>
+#include <skepu-lib/filter.hpp>
 #include <test_helper_automatic_setup.hpp>
+#include <iostream>
 
+
+// ======== library_types ========
+
+namespace library_types_part
+{
+// Types of the standard library of SkePU (skepu::filter) as elements of containers and parameters of user functions. They are declared in
+// a header, not in the program: the precompiler gives the OpenCL code their names and definitions (the library does not have to).
+
+namespace
+{
+	skepu::filter::RGBPixel brighten(skepu::filter::RGBPixel a, skepu::filter::RGBPixel b)
+	{
+		skepu::filter::RGBPixel r;
+		r.r = (unsigned char)(a.r + b.r);
+		r.g = (unsigned char)(a.g + b.g);
+		r.b = (unsigned char)(a.b + b.b);
+		return r;
+	}
+
+	float luminance(skepu::filter::HSVPixel p)
+	{
+		return p.v * 0.5f + p.s * 0.25f + p.h * 0.125f;
+	}
+}
+
+TEST_CASE("library_types: Library types as elements of containers")
+{
+	const size_t n = 64;
+	skepu::Vector<skepu::filter::RGBPixel> a(n), b(n), out(n);
+	for (size_t i = 0; i < n; ++i)
+	{
+		a(i).r = (unsigned char)i; a(i).g = (unsigned char)(2 * i); a(i).b = 3;
+		b(i).r = 1; b(i).g = 2; b(i).b = (unsigned char)i;
+	}
+
+	auto pixels = skepu::Map<2>(brighten);
+	pixels(out, a, b);
+	out.flush();
+	for (size_t i = 0; i < n; ++i)
+	{
+		REQUIRE(out(i).r == (unsigned char)(i + 1));
+		REQUIRE(out(i).g == (unsigned char)(2 * i + 2));
+		REQUIRE(out(i).b == (unsigned char)(3 + i));
+	}
+
+	skepu::Vector<skepu::filter::HSVPixel> hsv(n);
+	skepu::Vector<float> lum(n);
+	for (size_t i = 0; i < n; ++i)
+	{
+		hsv(i).h = float(i); hsv(i).s = 0.5f; hsv(i).v = 2.0f;
+	}
+	auto light = skepu::Map<1>(luminance);
+	light(lum, hsv);
+	lum.flush();
+	for (size_t i = 0; i < n; ++i)
+		REQUIRE(lum(i) == Approx(1.0f + 0.125f + float(i) * 0.125f));
+}
+}
+
+
+// ======== usertype ========
+
+namespace usertype_part
+{
+struct Complex
+{
+	float re, im;
+};
+
+auto adder = skepu::Map<2>([](Complex lhs, Complex rhs) -> Complex
+{
+	Complex res;
+	res.re = rhs.re + lhs.re;
+	res.im = rhs.im + lhs.im;
+	return res;
+});
+
+auto multer = skepu::Map<2>([](Complex rhs, Complex lhs) -> Complex
+{
+	Complex r;
+	r.re = lhs.re * rhs.re - lhs.im * rhs.im;
+	r.im = lhs.im * rhs.re + lhs.re * rhs.im;
+	return r;
+});
+
+
+Complex add_c(Complex rhs, Complex lhs)
+{
+	Complex res;
+	res.re = rhs.re + lhs.re;
+	res.im = rhs.im + lhs.im;
+	return res;
+}
+
+Complex mul_c(Complex rhs, Complex lhs)
+{
+	Complex r;
+	r.re = lhs.re * rhs.re - lhs.im * rhs.im;
+	r.im = lhs.im * rhs.re + lhs.re * rhs.im;
+	return r;
+}
+
+auto other = skepu::Map<2>([](Complex rhs, Complex lhs) -> Complex
+{
+	Complex r;
+	r = add_c(lhs, rhs);
+	return r;
+});
+
+/* //TODO: struct templates in OpenCL
+template<typename T>
+struct MyType
+{
+	T val;
+};
+
+auto sumthin = skepu::Map<2>([](MyType<float> a, MyType<float> b) -> MyType<float>
+{
+	MyType<float> res;
+	res.val = a.val + b.val;
+	return res;
+});
+*/
+
+[[skepu::userconstant]] constexpr float
+	CENTER_X = -.5f,
+	CENTER_Y = 0.f,
+	SCALE = 2.5f;
+
+[[skepu::userconstant]] constexpr size_t
+	MAX_ITERS = 1000;
+
+size_t mandelbrot_f(skepu::Index2D index, float height, float width)
+{
+	Complex a;
+	a.re = (1.0 / width) * (index.col - (width * 0.5));
+	a.im = (1.0 / height) * (index.row - (height * 0.5));
+	Complex c = a;
+	
+	for (size_t i = 0; i < 1000; ++i)
+	{
+		a = add_c(mul_c(a, a), c);
+		if ((a.re * a.re + a.im * a.im) > 4)
+			return i;
+	}
+	return 1000;
+}
+
+
+auto mandelbroter = skepu::Map<0>(mandelbrot_f);
+
+
+TEST_CASE("usertype: User type")
+{
+	const size_t size{100};
+
+	skepu::Vector<Complex> v1(size), v2(size), r(size);
+
+	multer(r, v1, v2);
+	
+}
+}
+
+
+// ======== namespaced_types ========
+
+namespace namespaced_types_part
+{
 // User types in namespaces, as parameters and results of user functions and as elements of
 // containers. In OpenCL C the qualified C++ name (geometry::Point) is not an identifier: the generated
 // kernel code must refer to the types by names that are defined there, whichever way the user
@@ -129,7 +301,7 @@ static skepu::Vector<geometry::Point> points(size_t size)
 	return v;
 }
 
-TEST_CASE("Map with a namespaced type as element type and uniform")
+TEST_CASE("namespaced_types: Map with a namespaced type as element type and uniform")
 {
 	const size_t size{16};
 	auto a = points(size), b = points(size);
@@ -155,7 +327,7 @@ TEST_CASE("Map with a namespaced type as element type and uniform")
 	}
 }
 
-TEST_CASE("Map from and to namespaced types in different namespaces")
+TEST_CASE("namespaced_types: Map from and to namespaced types in different namespaces")
 {
 	const size_t size{8};
 	auto a = points(size);
@@ -171,7 +343,7 @@ TEST_CASE("Map from and to namespaced types in different namespaces")
 	}
 }
 
-TEST_CASE("Map with several namespaced result types")
+TEST_CASE("namespaced_types: Map with several namespaced result types")
 {
 	const size_t size{8};
 	auto a = points(size);
@@ -193,7 +365,7 @@ TEST_CASE("Map with several namespaced result types")
 
 // (Scan of a struct type does not work in OpenCL, with or without namespaces: its kernel has a literal 0 in
 // the place of the identity)
-TEST_CASE("MapReduce and Reduce of a namespaced type")
+TEST_CASE("namespaced_types: MapReduce and Reduce of a namespaced type")
 {
 	const size_t size{10};
 	auto a = points(size);
@@ -209,7 +381,7 @@ TEST_CASE("MapReduce and Reduce of a namespaced type")
 	CHECK(total.y == 90.f);
 }
 
-TEST_CASE("MapOverlap with regions of a namespaced type and of a typedef")
+TEST_CASE("namespaced_types: MapOverlap with regions of a namespaced type and of a typedef")
 {
 	const size_t size{12};
 	auto a = points(size);
@@ -239,7 +411,7 @@ TEST_CASE("MapOverlap with regions of a namespaced type and of a typedef")
 	}
 }
 
-TEST_CASE("Random access to a container of a namespaced type")
+TEST_CASE("namespaced_types: Random access to a container of a namespaced type")
 {
 	const size_t size{9};
 	auto a = points(size);
@@ -252,7 +424,7 @@ TEST_CASE("Random access to a container of a namespaced type")
 		CHECK(out(i) == float(size - 1 - i));
 }
 
-TEST_CASE("Map with a user function template instantiated with a namespaced type")
+TEST_CASE("namespaced_types: Map with a user function template instantiated with a namespaced type")
 {
 	const size_t size{8};
 	auto a = points(size);
@@ -266,4 +438,69 @@ TEST_CASE("Map with a user function template instantiated with a namespaced type
 		CHECK(out(i).x == -float(i));
 		CHECK(out(i).y == -2.f * i);
 	}
+}
+}
+
+
+// ======== namespaced_types_same_name ========
+
+namespace namespaced_types_same_name_part
+{
+// Two different types with the same name in different namespaces, used in one kernel.
+
+namespace first
+{
+	struct Value
+	{
+		float v;
+	};
+}
+
+namespace second
+{
+	struct Value
+	{
+		int a, b;
+	};
+
+	namespace nested
+	{
+		struct Value
+		{
+			float x, y, z;
+		};
+	}
+}
+
+second::Value combine(first::Value f, second::nested::Value n)
+{
+	second::Value r;
+	r.a = (int)f.v;
+	r.b = (int)(n.x + n.y + n.z);
+	return r;
+}
+
+auto combine_map = skepu::Map<2>(combine);
+
+TEST_CASE("namespaced_types_same_name: Types with the same name in different namespaces")
+{
+	const size_t size{10};
+	skepu::Vector<first::Value> f(size);
+	skepu::Vector<second::nested::Value> n(size);
+	skepu::Vector<second::Value> r(size);
+	for (size_t i = 0; i < size; ++i)
+	{
+		f(i).v = float(i);
+		n(i).x = 1.f; n(i).y = 2.f; n(i).z = float(i);
+	}
+
+	combine_map(r, f, n);
+
+	r.flush();
+	for (size_t i = 0; i < size; ++i)
+	{
+		CHECK(r(i).a == int(i));
+		CHECK(r(i).b == int(3 + i));
+	}
+}
 }

@@ -1,13 +1,21 @@
-#include "../../external/catch2/catch.hpp"
+// Merged from: userconstants.cpp, element_types.cpp
+// (one program instead of one for each: the build of a test program has a cost of its own; each part is in a namespace, and its test cases have its name as a prefix)
 
-#include <algorithm>
+#include "../../external/catch2/catch.hpp"
 #include <skepu>
+#include <algorithm>
+#include <skepu-lib/util.hpp>
 #include <test_helper_automatic_setup.hpp>
 
+
+// ======== userconstants ========
+
+namespace userconstants_part
+{
 // User constants ([[skepu::userconstant]]) in the user functions of every skeleton, with several types, written both ways
 // (before the declaration and after the name), from a namespace, initialized from other constants, used by a function that
 // a user function calls, and by a user function that is a template. The host reads the constants too, to check the results.
-// (Double precision is in userconstants_double.cpp: OpenCL devices do not all have it.)
+// (The double precision ones are at the end: on an OpenCL device that does not have it, those skeletons run on another backend.)
 
 [[skepu::userconstant]] constexpr float
 	SCALE_F = 2.5f,
@@ -63,7 +71,7 @@ auto skel_map_namespaced = skepu::Map<1>(map_namespaced);
 auto skel_map_bool = skepu::Map<1>(map_bool);
 auto skel_map_indirect = skepu::Map<1>(map_indirect);
 
-TEST_CASE("User constants in Map: float, int, unsigned, size_t, bool, derived, in a namespace, indirect")
+TEST_CASE("userconstants: User constants in Map: float, int, unsigned, size_t, bool, derived, in a namespace, indirect")
 {
 	const size_t n{50};
 	skepu::Vector<float> f(n), fr(n);
@@ -105,7 +113,7 @@ TEST_CASE("User constants in Map: float, int, unsigned, size_t, bool, derived, i
 	for (size_t k = 0; k < n; ++k) REQUIRE(fr(k) == (float)k * SCALE_F + OFFSET_F);
 }
 
-TEST_CASE("User constants in a Map that is a template, two element types")
+TEST_CASE("userconstants: User constants in a Map that is a template, two element types")
 {
 	const size_t n{30};
 	skepu::Vector<float> f(n), fr(n);
@@ -131,7 +139,7 @@ auto skel_reduce = skepu::Reduce(clipped_add);
 auto skel_mapreduce = skepu::MapReduce<1>(offset_square, clipped_add);
 auto skel_scan = skepu::Scan(clipped_add);
 
-TEST_CASE("User constants in Reduce, MapReduce and Scan")
+TEST_CASE("userconstants: User constants in Reduce, MapReduce and Scan")
 {
 	const size_t n{40};
 	skepu::Vector<int> v(n), prefix(n);
@@ -161,7 +169,7 @@ int overlap_weighted(skepu::Region1D<int> r) { return r(-1) * STRIDE_S + r(0) + 
 int overlap_weighted_2d(skepu::Region2D<int> r) { return r(-1, 0) + r(1, 0) + r(0, -1) * OFFSET_I + r(0, 1) * (int)STRIDE_S; }
 int pair_combined(int a, int b) { return a * OFFSET_I + b * (int)STRIDE_S; }
 
-TEST_CASE("User constants in MapOverlap (1D and 2D) and MapPairs")
+TEST_CASE("userconstants: User constants in MapOverlap (1D and 2D) and MapPairs")
 {
 	const size_t n{40};
 	skepu::Vector<int> v(n), r(n);
@@ -206,4 +214,145 @@ TEST_CASE("User constants in MapOverlap (1D and 2D) and MapPairs")
 	for (size_t i = 0; i < 7; ++i)
 		for (size_t j = 0; j < 5; ++j)
 			REQUIRE(pr(i, j) == a(i) * OFFSET_I + b(j) * (int)STRIDE_S);
+}
+
+// ---- Double precision
+
+[[skepu::userconstant]] constexpr double
+	GAIN_D = 1.0 / 3.0,
+	SHIFT_D = -2.5;
+
+double map_double(double x) { return x * GAIN_D + SHIFT_D; }
+double square_shifted(double x) { return x * x + SHIFT_D; }
+
+template<typename T>
+T map_template_double(T x) { return x * (T)GAIN_D + (T)SHIFT_D; }
+
+template<typename T>
+void apply_template_double(skepu::Vector<T> &in, skepu::Vector<T> &out)
+{
+	auto skel = skepu::Map<1>(map_template_double<T>);
+	skel(out, in);
+}
+
+auto skel_map = skepu::Map<1>(map_double);
+auto skel_mapreduce_double = skepu::MapReduce<1>(square_shifted, skepu::util::add<double>);
+
+TEST_CASE("userconstants: User constants of type double")
+{
+	const size_t n{50};
+	skepu::Vector<double> x(n), y(n);
+	for (size_t k = 0; k < n; ++k) x[k] = (double)k;
+
+	skel_map(y, x);
+	y.updateHost();
+	for (size_t k = 0; k < n; ++k) REQUIRE(y(k) == (double)k * GAIN_D + SHIFT_D);
+
+	double expected = 0;
+	for (size_t k = 0; k < n; ++k) expected += (double)k * (double)k + SHIFT_D;
+	REQUIRE((double)skel_mapreduce_double(x) == Approx(expected).epsilon(1e-12));
+}
+
+TEST_CASE("userconstants: User constants in a Map that is a template: float and double")
+{
+	const size_t n{20};
+	skepu::Vector<float> f(n), fr(n);
+	skepu::Vector<double> d(n), dr(n);
+	for (size_t k = 0; k < n; ++k) { f[k] = (float)k; d[k] = (double)k; }
+	apply_template_double(f, fr);
+	apply_template_double(d, dr);
+	fr.updateHost(); dr.updateHost();
+	for (size_t k = 0; k < n; ++k)
+	{
+		REQUIRE(fr(k) == (float)k * (float)GAIN_D + (float)SHIFT_D);
+		REQUIRE(dr(k) == (double)k * GAIN_D + SHIFT_D);
+	}
+}
+}
+
+
+// ======== element_types ========
+
+namespace element_types_part
+{
+// Containers of elements of the types that have no obvious name in OpenCL C: signed char (the slices of the Ozaki scheme in examples/ozaki_gemm) and long long
+// (OpenCL C has no long long: its long is 64 bits). Element by element, with a row and a column of the matrices as arguments (what the OpenCL backend
+// transposes a matrix for), and with the product of integers that is exact in a type that is wider than the elements.
+
+int row_times_column(const skepu::MatRow<signed char> row, const skepu::MatCol<signed char> column)
+{
+	int sum = 0;
+	for (size_t k = 0; k < row.cols; ++k)
+		sum += (int)row(k) * (int)column(k);
+	return sum;
+}
+
+long long wide_row_times_column(const skepu::MatRow<long long> row, const skepu::MatCol<long long> column)
+{
+	long long sum = 0;
+	for (size_t k = 0; k < row.cols; ++k)
+		sum += row(k) * column(k);
+	return sum;
+}
+
+long long wide_map(long long x) { return x * 3 + 1; }
+signed char negate_byte(signed char x) { return -x; }
+
+auto product = skepu::Map<0>(row_times_column);
+auto wide_product = skepu::Map<0>(wide_row_times_column);
+auto wide_skeleton = skepu::Map<1>(wide_map);
+auto negate_skeleton = skepu::Map<1>(negate_byte);
+
+TEST_CASE("element_types: Matrices of signed char and long long: elements, rows and columns")
+{
+	const size_t n{12};
+	skepu::Matrix<signed char> a(n, n), b(n, n), negated(n, n);
+	skepu::Matrix<int> c(n, n);
+	for (size_t i = 0; i < n; ++i)
+		for (size_t j = 0; j < n; ++j)
+		{
+			a(i, j) = (signed char)((int)(i * 7 + j * 3) % 127 - 63);
+			b(i, j) = (signed char)((int)(i * 5 + j * 11) % 127 - 63);
+		}
+
+	product(c, a, b);
+	c.updateHost();
+	for (size_t i = 0; i < n; ++i)
+		for (size_t j = 0; j < n; ++j)
+		{
+			int expected = 0;
+			for (size_t k = 0; k < n; ++k) expected += (int)a(i, k) * (int)b(k, j);
+			REQUIRE(c(i, j) == expected);
+		}
+
+	negate_skeleton(negated, a);
+	negated.updateHost();
+	for (size_t i = 0; i < n; ++i)
+		for (size_t j = 0; j < n; ++j)
+			REQUIRE((int)negated(i, j) == -(int)a(i, j));
+
+	skepu::Matrix<long long> wa(n, n), wb(n, n), wc(n, n), tripled(n, n);
+	for (size_t i = 0; i < n; ++i)
+		for (size_t j = 0; j < n; ++j)
+		{
+			wa(i, j) = (long long)(i + 1) * 3000000000LL;           // (beyond 32 bits)
+			wb(i, j) = (long long)(j + 1) - 5;
+		}
+
+	wide_product(wc, wa, wb);
+	wc.updateHost();
+	for (size_t i = 0; i < n; ++i)
+		for (size_t j = 0; j < n; ++j)
+		{
+			long long expected = 0;
+			for (size_t k = 0; k < n; ++k) expected += wa(i, k) * wb(k, j);
+			REQUIRE(wc(i, j) == expected);
+		}
+
+	wide_skeleton(tripled, wa);
+	tripled.updateHost();
+	for (size_t i = 0; i < n; ++i)
+		for (size_t j = 0; j < n; ++j)
+			REQUIRE(tripled(i, j) == wa(i, j) * 3 + 1);
+}
 }

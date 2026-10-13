@@ -1385,6 +1385,23 @@ skepu::restoreDefaultGlobalBackendSpec();
 skel.setBackend(other_spec); // now overrides global specification
 ```
 
+### Double precision on OpenCL devices
+
+Not every OpenCL device can run double precision (the GPUs of Apple do not). The OpenCL environment asks each device when it starts. A skeleton
+instance whose user functions have `double` in their signatures (the result, or the type of an argument or of the elements of a container) is marked
+as needing it, and then:
+
+- if no OpenCL device has double precision, the OpenCL kernels of the instance are not built, and a call that selects the OpenCL backend (or the
+  Hybrid backend) runs on the OpenMP backend instead, or on the CPU backend if OpenMP is not used. A message on `stderr` says so once for each
+  instance;
+- the other instances of the program are not affected, and run on OpenCL as they were told to;
+- if the environment variable `SKEPU_STRICT_BACKEND` is set (to anything but `0`), such a call is an error instead of a change of backend, so that a
+  program or a test can insist on the backend that it asked for.
+
+`skepu::backend::openclSupportsDouble()` tells whether any device has double precision. The trace of a program records the backend that a call
+actually used. Only the signature is looked at: a user function that has a `double` only in its body (a local variable, a cast) is not seen, and
+the kernel of such a function cannot be built for a device without double precision.
+
 ## Tuning of Skeleton Instances
 
 A skeleton instance can be tuned for backend selection by going though a

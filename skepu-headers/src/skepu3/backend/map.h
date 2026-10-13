@@ -60,7 +60,7 @@ namespace skepu
 			Map(std::string label, CUDAKernel kernel): SkeletonBase(label), m_cuda_kernel(kernel)
 			{
 #ifdef SKEPU_OPENCL
-				CLKernel::initialize();
+				this->template prepareOpenCL<CLKernel>(any_uf_requires_double<MapFunc>::value);
 #endif
 			}
 

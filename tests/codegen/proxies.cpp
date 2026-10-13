@@ -1,8 +1,15 @@
-#include "../../external/catch2/catch.hpp"
+// Merged from: proxies.cpp, same_line.cpp
+// (one program instead of one for each: the build of a test program has a cost of its own; each part is in a namespace, and its test cases have its name as a prefix)
 
+#include "../../external/catch2/catch.hpp"
 #include <skepu>
 #include <test_helper_automatic_setup.hpp>
 
+
+// ======== proxies ========
+
+namespace proxies_part
+{
 template<typename T>
 T test1_f(
 	const skepu::Vec<T> v,
@@ -67,7 +74,7 @@ auto skel4_p = skepu::Map(test4_proxy);
 
 
 
-TEST_CASE("Container proxy reads in user function")
+TEST_CASE("proxies: Container proxy reads in user function")
 {
 	size_t size{100};
 	
@@ -87,7 +94,7 @@ TEST_CASE("Container proxy reads in user function")
 	CHECK(r(0) == 1+2+2+2+3+4);
 }
 	
-TEST_CASE("Container proxy sizes in user function")
+TEST_CASE("proxies: Container proxy sizes in user function")
 {	
 	constexpr int A = 903;
 	skepu::Vector<int> dummy(1);
@@ -141,7 +148,7 @@ T mmmult_f(const skepu::MatRow<T> ar, const skepu::MatCol<T> bc)
 }
 auto mmprod = skepu::Map(mmmult_f<float>);
 
-TEST_CASE("MatRow and MatCol index mapping on matrix outputs")
+TEST_CASE("proxies: MatRow and MatCol index mapping on matrix outputs")
 {
 	size_t height = 3;
 	size_t width = 2;
@@ -191,7 +198,7 @@ T row_sum_f(const skepu::MatRow<T> mr)
 auto col_sum = skepu::Map(col_sum_f<float>);
 auto row_sum = skepu::Map(row_sum_f<float>);
 
-TEST_CASE("MatRow and MatCol index mapping on vector outputs")
+TEST_CASE("proxies: MatRow and MatCol index mapping on vector outputs")
 {
 	const size_t rows = 7;
 	const size_t cols = 5;
@@ -226,4 +233,37 @@ TEST_CASE("MatRow and MatCol index mapping on vector outputs")
 			CHECK(sums_per_row(i) == expected);
 		}
 	});
+}
+}
+
+
+// ======== same_line ========
+
+namespace same_line_part
+{
+// The precompiler replaces the declaration of a skeleton instance and must leave the rest of its line alone:
+// other declarations and statements on the same line (and the text after them) are part of the program.
+
+namespace
+{
+	float twice(float x) { return 2 * x; }
+	float inc(float x) { return x + 1; }
+}
+
+auto first = skepu::Map<1>(twice); int after_first = 7; auto second = skepu::Map<1>(inc); int after_second = 8;
+
+TEST_CASE("same_line: Code on the line of a named skeleton instance is kept")
+{
+	skepu::Vector<float> in(4, 1.f), a(4), b(4);
+	auto local = skepu::Map<1>(inc); local(a, in); first(b, a); int trailing = 5; /* a comment */ int more = trailing + 1;
+	second(a, in);
+	a.flush(); b.flush();
+
+	CHECK(after_first == 7);
+	CHECK(after_second == 8);
+	CHECK(trailing == 5);
+	CHECK(more == 6);
+	CHECK(a(0) == 2.f);
+	CHECK(b(0) == 4.f);
+}
 }

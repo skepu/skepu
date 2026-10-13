@@ -594,13 +594,13 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CL(
 		switch (param.containerType)
 		{
 			case ContainerType::Vector:
-				SSKernelParamList << "__global " << param.innerTypeNameOpenCL() << " *" << name << ", size_t skepu_size_" << param.name << ", ";
+				SSKernelParamList << "__global " << param.typeNameOpenCL() << " *" << name << ", size_t skepu_size_" << param.name << ", ";
 				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->size(), ";
 				SSProxyInitializer << param.TypeNameOpenCL() << " " << param.name << " = { .data = " << name << ", .size = skepu_size_" << param.name << " };\n";
 				break;
 			
 			case ContainerType::Matrix:
-				SSKernelParamList << "__global " << param.innerTypeNameOpenCL() << " *" << name << ", size_t skepu_rows_" << param.name << ", size_t skepu_cols_" << param.name << ", ";
+				SSKernelParamList << "__global " << param.typeNameOpenCL() << " *" << name << ", size_t skepu_rows_" << param.name << ", size_t skepu_cols_" << param.name << ", ";
 				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_rows(), std::get<0>(" << name << ")->total_cols(), ";
 				SSProxyInitializer << param.TypeNameOpenCL() << " " << param.name << " = { .data = " << name
 					<< ", .rows = skepu_rows_" << param.name << ", .cols = skepu_cols_" << param.name << " };\n";
@@ -610,7 +610,7 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CL(
 				// (the row of an element: skepu_base is the number of the first element that this kernel launch has, which
 				// is not 0 for a part of the elements, for example on the second device, or for a distributed container)
 				// (and the matrix may be a part of a distributed one, which has an index origin: the number of its first row)
-				SSKernelParamList << "__global " << param.innerTypeNameOpenCL() << " *" << name << ", size_t skepu_cols_" << param.name << ", size_t skepu_row_origin_" << param.name << ", ";
+				SSKernelParamList << "__global " << param.typeNameOpenCL() << " *" << name << ", size_t skepu_cols_" << param.name << ", size_t skepu_row_origin_" << param.name << ", ";
 				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_cols(), std::get<0>(" << name << ")->indexOrigin(), ";
 				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + (((skepu_base + skepu_i) / skepu_w2) - skepu_row_origin_" << param.name << ") * skepu_cols_" << param.name << "), .cols = skepu_cols_" << param.name << " };\n";
 				break;
@@ -618,13 +618,13 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CL(
 			case ContainerType::MatCol:
 				// The column is the output index modulo the number of columns of the matrix (the
 				// output width has to be the same): skepu_w2 is 1 when the output is a vector.
-				SSKernelParamList << "__global " << param.innerTypeNameOpenCL() << " *" << name << ", size_t skepu_rows_" << param.name << ", size_t skepu_cols_" << param.name << ", ";
+				SSKernelParamList << "__global " << param.typeNameOpenCL() << " *" << name << ", size_t skepu_rows_" << param.name << ", size_t skepu_cols_" << param.name << ", ";
 				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), std::get<0>(" << name << ")->total_rows(), std::get<0>(" << name << ")->total_cols(), ";
 				SSProxyInitializerInner << param.TypeNameOpenCL() << " " << param.name << " = { .data = (" << name << " + ((skepu_base + skepu_i) % skepu_cols_" << param.name << ")), .rows = skepu_rows_" << param.name << ", .cols = skepu_cols_" << param.name << " };\n";
 				break;
 			
 			case ContainerType::Tensor3:
-				SSKernelParamList << "__global " << param.innerTypeNameOpenCL() << " *" << name << ", "
+				SSKernelParamList << "__global " << param.typeNameOpenCL() << " *" << name << ", "
 					<< "size_t skepu_size_i_" << param.name << ", size_t skepu_size_j_" << param.name << ", size_t skepu_size_k_" << param.name << ", ";
 				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), "
 					<< "std::get<0>(" << name << ")->size_i(), std::get<0>(" << name << ")->size_j(), std::get<0>(" << name << ")->size_k(), ";
@@ -633,7 +633,7 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CL(
 				break;
 			
 			case ContainerType::Tensor4:
-				SSKernelParamList << "__global " << param.innerTypeNameOpenCL() << " *" << name << ", "
+				SSKernelParamList << "__global " << param.typeNameOpenCL() << " *" << name << ", "
 					<< "size_t skepu_size_i_" << param.name << ", size_t skepu_size_j_" << param.name << ", size_t skepu_size_k_" << param.name << ", size_t skepu_size_l_" << param.name << ", ";
 				SSKernelArgs << "std::get<1>(" << name << ")->getDeviceDataPointer(), "
 					<< "std::get<0>(" << name << ")->size_i(), std::get<0>(" << name << ")->size_j(), std::get<0>(" << name << ")->size_k(), std::get<0>(" << name << ")->size_l(), ";
@@ -643,7 +643,7 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CL(
 			
 			case ContainerType::SparseMatrix:
 				SSKernelParamList
-					<< "__global " << param.innerTypeNameOpenCL() << " *" << name << ", "
+					<< "__global " << param.typeNameOpenCL() << " *" << name << ", "
 					<< "__global size_t *" << param.name << "_row_pointers, "
 					<< "__global size_t *" << param.name << "_col_indices, "
 					<< "size_t skepu_size_" << param.name << ", ";
@@ -776,6 +776,14 @@ void handleUserTypesConstantsAndPrecision_CL(std::vector<UserFunction const*> fu
 
 
 
+// The type of a result of a skepu::multiple in OpenCL C: a user type is defined in the kernel under its escaped qualified name (the qualified name is
+// not an identifier), and a built-in type (signed char, unsigned int, long long) is itself, as for any other type
+static std::string multipleMemberTypeCL(std::string type)
+{
+	replaceTextInString(type, "struct ", "");
+	return type.find_first_of(":<") != std::string::npos ? transformToCXXIdentifier(type) : openCLBuiltinTypeName(type);
+}
+
 std::string handleOutputs_CL(UserFunction &func, std::stringstream &SSHostKernelParamList, std::stringstream &SSKernelParamList, std::stringstream &SSKernelArgs, bool strided, std::string index)
 {
 	if (func.multipleReturnTypes.size() == 0)
@@ -791,9 +799,7 @@ std::string handleOutputs_CL(UserFunction &func, std::stringstream &SSHostKernel
 		size_t outCtr = 0;
 		for (std::string& outputType : func.multipleReturnTypes)
 		{
-			std::string outputTypeCL = outputType;
-			replaceTextInString(outputTypeCL, "struct ", "");
-			outputTypeCL = transformToCXXIdentifier(outputTypeCL);
+			std::string outputTypeCL = multipleMemberTypeCL(outputType);
 			std::stringstream strideinc;
 			if (strided) strideinc << " * skepu_stride_" << outCtr;
 			SSKernelParamList << "__global " << outputTypeCL << "* skepu_output_" << outCtr << ", ";
@@ -821,9 +827,7 @@ std::string handleOutputs_reduceOnly_CL(UserFunction &func, std::stringstream &S
 		size_t outCtr = 0;
 		for (std::string& outputType : func.multipleReturnTypes)
 		{
-			std::string outputTypeCL = outputType;
-			replaceTextInString(outputTypeCL, "struct ", "");
-			outputTypeCL = transformToCXXIdentifier(outputTypeCL);
+			std::string outputTypeCL = multipleMemberTypeCL(outputType);
 			std::stringstream strideinc;
 			if (strided) strideinc << " * skepu_stride_" << outCtr;
 			SSKernelParamList << "__global " << outputTypeCL << "* skepu_output_" << outCtr << ", ";
@@ -1030,11 +1034,12 @@ std::string generateOpenCLMultipleReturn(UserFunction &UF)
 		for (std::string type : UF.multipleReturnTypes)
 		{
 			replaceTextInString(type, "struct ", "");
-			type = transformToCXXIdentifier(type);
+			const std::string memberType = multipleMemberTypeCL(type);
+			type = transformToCXXIdentifier(type);        // (the name of the struct is made of the escaped names)
 			std::string divider = (ctr != UF.multipleReturnTypes.size() - 1) ? ", " : "";
 			SSmultiReturnType << "_" << type;
-			SSmultiReturnTypeDef << type << " e" << ctr << ";\n";
-			SSmultiReturnMakeParams << type << " arg" << ctr << divider;
+			SSmultiReturnTypeDef << memberType << " e" << ctr << ";\n";
+			SSmultiReturnMakeParams << memberType << " arg" << ctr << divider;
 			SSmultiReturnMakeStruct << " .e" << ctr << " = arg" << ctr << divider;
 			ctr++;
 		}

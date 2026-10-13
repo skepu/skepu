@@ -566,6 +566,13 @@ template <typename T>
 			// Builds the code and creates kernel for all devices
 			for (Device_CL *device : this->m_devices_CL)
 			{
+				// A device without double precision cannot build the kernel for doubles (its place in the list stays, which is indexed by the device)
+				if (datatype_CL == "double" && !device->supportsDouble())
+				{
+					this->m_transposeKernels_CL.emplace_back(nullptr, device);
+					continue;
+				}
+
 				cl_int err;
 				cl_program program = cl_helpers::buildProgram(device, totalSource.str(), buildOptions.str());
 				cl_kernel kernel = clCreateKernel(program, kernelName.c_str(), &err);
