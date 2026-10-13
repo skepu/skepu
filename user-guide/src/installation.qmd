@@ -305,6 +305,8 @@ The SkePU distribution comes with a selection of example programs:
 
 - **Lorenz system ensemble, RK4 integration** (`ode_lorenz`)
 
+- **Ozaki scheme, a matrix product of more than double precision from integer products** (`ozaki_gemm`)
+
 - **Pearson product-movement coefficient** (`ppmcc`)
 
 - **Peak signal-to-noise ratio** (`psnr`)

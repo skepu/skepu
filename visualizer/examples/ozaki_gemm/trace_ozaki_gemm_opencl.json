@@ -1,0 +1,5333 @@
+{
+    "data": [
+        {
+            "label": "integers_a",
+            "line": 292,
+            "object_id": 1006,
+            "time": 0,
+            "type": "allocation"
+        },
+        {
+            "label": "integers_b",
+            "line": 292,
+            "object_id": 1007,
+            "time": 6807,
+            "type": "allocation"
+        },
+        {
+            "label": "[Global PRNG]",
+            "line": 139,
+            "object_id": 1009,
+            "time": 92082,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 92103,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+            "label": "randomize::uniform",
+            "line": 226,
+            "object_id": 1008,
+            "outputs": [
+                1006
+            ],
+            "pattern": "Map",
+            "prng": 1009,
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 92083,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 92162,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+            "label": "randomize::uniform",
+            "line": 226,
+            "object_id": 1011,
+            "outputs": [
+                1007
+            ],
+            "pattern": "Map",
+            "prng": 1009,
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 92156,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "a",
+            "line": 292,
+            "object_id": 1013,
+            "time": 92171,
+            "type": "allocation"
+        },
+        {
+            "label": "b",
+            "line": 292,
+            "object_id": 1014,
+            "time": 92178,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1006
+            ],
+            "end": 92180,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "convert",
+            "line": 175,
+            "object_id": 1015,
+            "outputs": [
+                1013
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 92180,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1007
+            ],
+            "end": 92194,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "convert",
+            "line": 176,
+            "object_id": 1015,
+            "outputs": [
+                1014
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 92194,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "exact_hi",
+            "line": 292,
+            "object_id": 1018,
+            "time": 92196,
+            "type": "allocation"
+        },
+        {
+            "label": "exact_lo",
+            "line": 292,
+            "object_id": 1019,
+            "time": 92198,
+            "type": "allocation"
+        },
+        {
+            "elwise_inputs": [],
+            "end": 92535,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "[external]",
+            "line": 180,
+            "outputs": [
+                1018,
+                1019
+            ],
+            "proxy_inputs": [
+                1006,
+                1007
+            ],
+            "scalar_inputs": [],
+            "start": 92200,
+            "type": "external"
+        },
+        {
+            "object_id": 1022,
+            "time": 92543,
+            "type": "scalar_value",
+            "value": 2.610352891049616e+24
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1018
+            ],
+            "end": 92543,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "MapReduce@ozaki_gemm.cpp:193",
+            "line": 193,
+            "object_id": 1000,
+            "outputs": [
+                1022
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 92535,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "row_scales",
+            "line": 251,
+            "object_id": 1023,
+            "time": 92550,
+            "type": "allocation"
+        },
+        {
+            "label": "column_scales",
+            "line": 251,
+            "object_id": 1024,
+            "time": 92550,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                48
+            ],
+            "elwise_inputs": [],
+            "end": 92567,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Map@ozaki_gemm.cpp:197",
+            "line": 197,
+            "object_id": 1001,
+            "outputs": [
+                1023
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1013
+            ],
+            "scalar_inputs": [],
+            "start": 92559,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                48
+            ],
+            "elwise_inputs": [],
+            "end": 92588,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Map@ozaki_gemm.cpp:198",
+            "line": 198,
+            "object_id": 1002,
+            "outputs": [
+                1024
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1014
+            ],
+            "scalar_inputs": [],
+            "start": 92579,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "scales",
+            "line": 292,
+            "object_id": 1027,
+            "time": 92592,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                48,
+                48
+            ],
+            "elwise_inputs": [
+                1023,
+                1024
+            ],
+            "end": 92597,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "MapPairs@ozaki_gemm.cpp:200",
+            "line": 200,
+            "object_id": 1003,
+            "outputs": [
+                1027
+            ],
+            "pattern": "MapPairs",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 92593,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1013
+            ],
+            "end": 92601,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Map@ozaki_gemm.cpp:203",
+            "line": 203,
+            "object_id": 1004,
+            "outputs": [
+                1013
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1023
+            ],
+            "scalar_inputs": [],
+            "start": 92600,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1014
+            ],
+            "end": 92606,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Map@ozaki_gemm.cpp:204",
+            "line": 204,
+            "object_id": 1005,
+            "outputs": [
+                1014
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1024
+            ],
+            "scalar_inputs": [],
+            "start": 92605,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Slice",
+            "line": 147,
+            "region_depth": 1,
+            "time": 92609,
+            "type": "region"
+        },
+        {
+            "label": "A slice 1",
+            "line": 292,
+            "object_id": 1046,
+            "region": "Slice",
+            "time": 92609,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1013
+            ],
+            "end": 99584,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "cut",
+            "line": 149,
+            "object_id": 1045,
+            "outputs": [
+                1046,
+                1013
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Slice",
+            "scalar_inputs": [],
+            "start": 99576,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Slice",
+            "line": 147,
+            "region_depth": 1,
+            "time": 99596,
+            "type": "region"
+        },
+        {
+            "label": "A slice 2",
+            "line": 292,
+            "object_id": 1048,
+            "region": "Slice",
+            "time": 99596,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1013
+            ],
+            "end": 99604,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "cut",
+            "line": 149,
+            "object_id": 1045,
+            "outputs": [
+                1048,
+                1013
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Slice",
+            "scalar_inputs": [],
+            "start": 99596,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Slice",
+            "line": 147,
+            "region_depth": 1,
+            "time": 99605,
+            "type": "region"
+        },
+        {
+            "label": "A slice 3",
+            "line": 292,
+            "object_id": 1050,
+            "region": "Slice",
+            "time": 99605,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1013
+            ],
+            "end": 99613,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "cut",
+            "line": 149,
+            "object_id": 1045,
+            "outputs": [
+                1050,
+                1013
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Slice",
+            "scalar_inputs": [],
+            "start": 99605,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Slice",
+            "line": 147,
+            "region_depth": 1,
+            "time": 99613,
+            "type": "region"
+        },
+        {
+            "label": "A slice 4",
+            "line": 292,
+            "object_id": 1052,
+            "region": "Slice",
+            "time": 99613,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1013
+            ],
+            "end": 99622,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "cut",
+            "line": 149,
+            "object_id": 1045,
+            "outputs": [
+                1052,
+                1013
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Slice",
+            "scalar_inputs": [],
+            "start": 99614,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Slice",
+            "line": 147,
+            "region_depth": 1,
+            "time": 99622,
+            "type": "region"
+        },
+        {
+            "label": "A slice 5",
+            "line": 292,
+            "object_id": 1054,
+            "region": "Slice",
+            "time": 99622,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1013
+            ],
+            "end": 99630,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "cut",
+            "line": 149,
+            "object_id": 1045,
+            "outputs": [
+                1054,
+                1013
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Slice",
+            "scalar_inputs": [],
+            "start": 99622,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Slice",
+            "line": 147,
+            "region_depth": 1,
+            "time": 99630,
+            "type": "region"
+        },
+        {
+            "label": "A slice 6",
+            "line": 292,
+            "object_id": 1056,
+            "region": "Slice",
+            "time": 99631,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1013
+            ],
+            "end": 99639,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "cut",
+            "line": 149,
+            "object_id": 1045,
+            "outputs": [
+                1056,
+                1013
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Slice",
+            "scalar_inputs": [],
+            "start": 99631,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Slice",
+            "line": 147,
+            "region_depth": 1,
+            "time": 99639,
+            "type": "region"
+        },
+        {
+            "label": "A slice 7",
+            "line": 292,
+            "object_id": 1058,
+            "region": "Slice",
+            "time": 99641,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1013
+            ],
+            "end": 99642,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "cut",
+            "line": 149,
+            "object_id": 1045,
+            "outputs": [
+                1058,
+                1013
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Slice",
+            "scalar_inputs": [],
+            "start": 99641,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Slice",
+            "line": 147,
+            "region_depth": 1,
+            "time": 99643,
+            "type": "region"
+        },
+        {
+            "label": "B slice 1",
+            "line": 292,
+            "object_id": 1061,
+            "region": "Slice",
+            "time": 99643,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1014
+            ],
+            "end": 99651,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "cut",
+            "line": 149,
+            "object_id": 1060,
+            "outputs": [
+                1061,
+                1014
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Slice",
+            "scalar_inputs": [],
+            "start": 99643,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Slice",
+            "line": 147,
+            "region_depth": 1,
+            "time": 99656,
+            "type": "region"
+        },
+        {
+            "label": "B slice 2",
+            "line": 292,
+            "object_id": 1063,
+            "region": "Slice",
+            "time": 99656,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1014
+            ],
+            "end": 99664,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "cut",
+            "line": 149,
+            "object_id": 1060,
+            "outputs": [
+                1063,
+                1014
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Slice",
+            "scalar_inputs": [],
+            "start": 99656,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Slice",
+            "line": 147,
+            "region_depth": 1,
+            "time": 99665,
+            "type": "region"
+        },
+        {
+            "label": "B slice 3",
+            "line": 292,
+            "object_id": 1065,
+            "region": "Slice",
+            "time": 99665,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1014
+            ],
+            "end": 99673,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "cut",
+            "line": 149,
+            "object_id": 1060,
+            "outputs": [
+                1065,
+                1014
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Slice",
+            "scalar_inputs": [],
+            "start": 99665,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Slice",
+            "line": 147,
+            "region_depth": 1,
+            "time": 99673,
+            "type": "region"
+        },
+        {
+            "label": "B slice 4",
+            "line": 292,
+            "object_id": 1067,
+            "region": "Slice",
+            "time": 99673,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1014
+            ],
+            "end": 99682,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "cut",
+            "line": 149,
+            "object_id": 1060,
+            "outputs": [
+                1067,
+                1014
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Slice",
+            "scalar_inputs": [],
+            "start": 99673,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Slice",
+            "line": 147,
+            "region_depth": 1,
+            "time": 99682,
+            "type": "region"
+        },
+        {
+            "label": "B slice 5",
+            "line": 292,
+            "object_id": 1069,
+            "region": "Slice",
+            "time": 99682,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1014
+            ],
+            "end": 99690,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "cut",
+            "line": 149,
+            "object_id": 1060,
+            "outputs": [
+                1069,
+                1014
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Slice",
+            "scalar_inputs": [],
+            "start": 99682,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Slice",
+            "line": 147,
+            "region_depth": 1,
+            "time": 99690,
+            "type": "region"
+        },
+        {
+            "label": "B slice 6",
+            "line": 292,
+            "object_id": 1071,
+            "region": "Slice",
+            "time": 99690,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1014
+            ],
+            "end": 99698,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "cut",
+            "line": 149,
+            "object_id": 1060,
+            "outputs": [
+                1071,
+                1014
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Slice",
+            "scalar_inputs": [],
+            "start": 99690,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Slice",
+            "line": 147,
+            "region_depth": 1,
+            "time": 99699,
+            "type": "region"
+        },
+        {
+            "label": "B slice 7",
+            "line": 292,
+            "object_id": 1073,
+            "region": "Slice",
+            "time": 99700,
+            "type": "allocation"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1014
+            ],
+            "end": 99701,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "cut",
+            "line": 149,
+            "object_id": 1060,
+            "outputs": [
+                1073,
+                1014
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Slice",
+            "scalar_inputs": [],
+            "start": 99700,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "slice_products",
+            "line": 292,
+            "object_id": 1078,
+            "time": 114324,
+            "type": "allocation"
+        },
+        {
+            "label": "hi",
+            "line": 292,
+            "object_id": 1079,
+            "time": 114325,
+            "type": "allocation"
+        },
+        {
+            "label": "lo",
+            "line": 292,
+            "object_id": 1080,
+            "time": 114328,
+            "type": "allocation"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Anti-diagonal",
+            "line": 221,
+            "region_depth": 1,
+            "time": 114335,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2304,
+            "end": 116773,
+            "label": "A slice 1",
+            "line": 258,
+            "object_id": 1046,
+            "region": "Anti-diagonal",
+            "start": 114345,
+            "time": 116773,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2304,
+            "end": 117029,
+            "label": "B slice 1",
+            "line": 258,
+            "object_id": 1061,
+            "region": "Anti-diagonal",
+            "start": 116775,
+            "time": 117029,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 117294,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1046,
+                1061
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 114345,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 117504,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 117306,
+            "time": 117504,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 117507,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 117505,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1087,
+            "region": "Anti-diagonal",
+            "time": 117523,
+            "type": "scalar_value",
+            "value": 0.010819413269198887
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1018,
+                1019
+            ],
+            "end": 117523,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "largest_error",
+            "line": 230,
+            "object_id": 1077,
+            "outputs": [
+                1087
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 117513,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Anti-diagonal",
+            "line": 221,
+            "region_depth": 1,
+            "time": 117727,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2304,
+            "end": 117912,
+            "label": "B slice 2",
+            "line": 258,
+            "object_id": 1063,
+            "region": "Anti-diagonal",
+            "start": 117731,
+            "time": 117912,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 118132,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1046,
+                1063
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 117731,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 118365,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 118134,
+            "time": 118365,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 118367,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 118365,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2304,
+            "end": 118555,
+            "label": "A slice 2",
+            "line": 258,
+            "object_id": 1048,
+            "region": "Anti-diagonal",
+            "start": 118373,
+            "time": 118555,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 118778,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1048,
+                1061
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 118373,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 118961,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 118779,
+            "time": 118961,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 118963,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 118961,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1097,
+            "region": "Anti-diagonal",
+            "time": 118975,
+            "type": "scalar_value",
+            "value": 9.229928294632783e-05
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1018,
+                1019
+            ],
+            "end": 118975,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "largest_error",
+            "line": 230,
+            "object_id": 1077,
+            "outputs": [
+                1097
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 118964,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Anti-diagonal",
+            "line": 221,
+            "region_depth": 1,
+            "time": 118978,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2304,
+            "end": 119162,
+            "label": "B slice 3",
+            "line": 258,
+            "object_id": 1065,
+            "region": "Anti-diagonal",
+            "start": 118980,
+            "time": 119162,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 119417,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1046,
+                1065
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 118980,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 119637,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 119419,
+            "time": 119637,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 119639,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 119637,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 120388,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1048,
+                1063
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 119640,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 120933,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 120394,
+            "time": 120933,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 120935,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 120933,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2304,
+            "end": 121203,
+            "label": "A slice 3",
+            "line": 258,
+            "object_id": 1050,
+            "region": "Anti-diagonal",
+            "start": 120942,
+            "time": 121203,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 121454,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1050,
+                1061
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 120941,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 121687,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 121455,
+            "time": 121687,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 121690,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 121687,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1110,
+            "region": "Anti-diagonal",
+            "time": 121702,
+            "type": "scalar_value",
+            "value": 9.177924544441929e-07
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1018,
+                1019
+            ],
+            "end": 121703,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "largest_error",
+            "line": 230,
+            "object_id": 1077,
+            "outputs": [
+                1110
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 121691,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Anti-diagonal",
+            "line": 221,
+            "region_depth": 1,
+            "time": 121706,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2304,
+            "end": 121856,
+            "label": "B slice 4",
+            "line": 258,
+            "object_id": 1067,
+            "region": "Anti-diagonal",
+            "start": 121709,
+            "time": 121856,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 122091,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1046,
+                1067
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 121709,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 122309,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 122092,
+            "time": 122309,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 122311,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 122309,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 122556,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1048,
+                1065
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 122312,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 123220,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 122557,
+            "time": 123220,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 123223,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 123221,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 123474,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1050,
+                1063
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 123224,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 123661,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 123474,
+            "time": 123661,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 123664,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 123662,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2304,
+            "end": 123835,
+            "label": "A slice 4",
+            "line": 258,
+            "object_id": 1052,
+            "region": "Anti-diagonal",
+            "start": 123666,
+            "time": 123835,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 124123,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1052,
+                1061
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 123666,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 124333,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 124124,
+            "time": 124333,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 124336,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 124334,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1126,
+            "region": "Anti-diagonal",
+            "time": 124347,
+            "type": "scalar_value",
+            "value": 7.971356657854367e-09
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1018,
+                1019
+            ],
+            "end": 124348,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "largest_error",
+            "line": 230,
+            "object_id": 1077,
+            "outputs": [
+                1126
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 124336,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Anti-diagonal",
+            "line": 221,
+            "region_depth": 1,
+            "time": 124349,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2304,
+            "end": 124558,
+            "label": "B slice 5",
+            "line": 258,
+            "object_id": 1069,
+            "region": "Anti-diagonal",
+            "start": 124351,
+            "time": 124558,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 124766,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1046,
+                1069
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 124351,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 124934,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 124766,
+            "time": 124934,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 124937,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 124935,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 125169,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1048,
+                1067
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 124937,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 125356,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 125170,
+            "time": 125356,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 125360,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 125358,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 125607,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1050,
+                1065
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 125361,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 125774,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 125608,
+            "time": 125774,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 125776,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 125774,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 125972,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1052,
+                1063
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 125777,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 126169,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 125972,
+            "time": 126169,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 126171,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 126169,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2304,
+            "end": 126350,
+            "label": "A slice 5",
+            "line": 258,
+            "object_id": 1054,
+            "region": "Anti-diagonal",
+            "start": 126173,
+            "time": 126350,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 126555,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1054,
+                1061
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 126173,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 126759,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 126556,
+            "time": 126759,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 126761,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 126759,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1145,
+            "region": "Anti-diagonal",
+            "time": 126774,
+            "type": "scalar_value",
+            "value": 7.562365801447566e-11
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1018,
+                1019
+            ],
+            "end": 126774,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "largest_error",
+            "line": 230,
+            "object_id": 1077,
+            "outputs": [
+                1145
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 126762,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Anti-diagonal",
+            "line": 221,
+            "region_depth": 1,
+            "time": 126776,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2304,
+            "end": 126937,
+            "label": "B slice 6",
+            "line": 258,
+            "object_id": 1071,
+            "region": "Anti-diagonal",
+            "start": 126779,
+            "time": 126937,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 127188,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1046,
+                1071
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 126779,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 127423,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 127188,
+            "time": 127423,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 127425,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 127423,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 127657,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1048,
+                1069
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 127425,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 127852,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 127657,
+            "time": 127852,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 127854,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 127852,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 128517,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1050,
+                1067
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 127854,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 128789,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 128519,
+            "time": 128789,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 128791,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 128789,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 129027,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1052,
+                1065
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 128791,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 129241,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 129027,
+            "time": 129241,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 129243,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 129241,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 129480,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1054,
+                1063
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 129243,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 129671,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 129481,
+            "time": 129671,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 129673,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 129671,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2304,
+            "end": 129860,
+            "label": "A slice 6",
+            "line": 258,
+            "object_id": 1056,
+            "region": "Anti-diagonal",
+            "start": 129676,
+            "time": 129860,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 130096,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1056,
+                1061
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 129675,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 130269,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 130097,
+            "time": 130269,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 130271,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 130269,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1167,
+            "region": "Anti-diagonal",
+            "time": 130285,
+            "type": "scalar_value",
+            "value": 6.173849954302473e-13
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1018,
+                1019
+            ],
+            "end": 130285,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "largest_error",
+            "line": 230,
+            "object_id": 1077,
+            "outputs": [
+                1167
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 130272,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Anti-diagonal",
+            "line": 221,
+            "region_depth": 1,
+            "time": 130287,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2304,
+            "end": 130543,
+            "label": "B slice 7",
+            "line": 258,
+            "object_id": 1073,
+            "region": "Anti-diagonal",
+            "start": 130289,
+            "time": 130543,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 130778,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1046,
+                1073
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 130289,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 130995,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 130779,
+            "time": 130995,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 130997,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 130995,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 131234,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1048,
+                1071
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 130998,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 131444,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 131237,
+            "time": 131444,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 131446,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 131444,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 132326,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1050,
+                1069
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 131446,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 132572,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 132328,
+            "time": 132572,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 132576,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 132574,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 133298,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1052,
+                1067
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 132577,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 133521,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 133300,
+            "time": 133521,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 133523,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 133521,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 133730,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1054,
+                1065
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 133524,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 133906,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 133730,
+            "time": 133906,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 133908,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 133906,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 134123,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1056,
+                1063
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 133909,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 134281,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 134123,
+            "time": 134281,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 134283,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 134281,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2304,
+            "end": 134488,
+            "label": "A slice 7",
+            "line": 258,
+            "object_id": 1058,
+            "region": "Anti-diagonal",
+            "start": 134285,
+            "time": 134488,
+            "type": "transfer"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 134718,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1058,
+                1061
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 134285,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 134870,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 134719,
+            "time": 134870,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 134872,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 134870,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1192,
+            "region": "Anti-diagonal",
+            "time": 134884,
+            "type": "scalar_value",
+            "value": 3.4471803321511003e-15
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1018,
+                1019
+            ],
+            "end": 134884,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "largest_error",
+            "line": 230,
+            "object_id": 1077,
+            "outputs": [
+                1192
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 134873,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Anti-diagonal",
+            "line": 221,
+            "region_depth": 1,
+            "time": 134886,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 135056,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1048,
+                1073
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 134886,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 135284,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 135057,
+            "time": 135284,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 135286,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 135284,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 135495,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1050,
+                1071
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 135286,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 135658,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 135495,
+            "time": 135658,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 135660,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 135658,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 135908,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1052,
+                1069
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 135661,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 136106,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 135909,
+            "time": 136106,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 136108,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 136106,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 136348,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1054,
+                1067
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 136108,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 136561,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 136349,
+            "time": 136561,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 136563,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 136561,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 136826,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1056,
+                1065
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 136564,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 136987,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 136827,
+            "time": 136987,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 136989,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 136987,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 137201,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1058,
+                1063
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 136990,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 137400,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 137201,
+            "time": 137400,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 137402,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 137400,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1212,
+            "region": "Anti-diagonal",
+            "time": 137414,
+            "type": "scalar_value",
+            "value": 2.4742421310717864e-17
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1018,
+                1019
+            ],
+            "end": 137414,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "largest_error",
+            "line": 230,
+            "object_id": 1077,
+            "outputs": [
+                1212
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 137403,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Anti-diagonal",
+            "line": 221,
+            "region_depth": 1,
+            "time": 137415,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 137667,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1050,
+                1073
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 137415,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 137861,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 137668,
+            "time": 137861,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 137863,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 137861,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 138125,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1052,
+                1071
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 137863,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 138336,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 138127,
+            "time": 138336,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 138338,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 138336,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 138630,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1054,
+                1069
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 138339,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 138894,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 138631,
+            "time": 138894,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 138896,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 138894,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 139172,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1056,
+                1067
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 138897,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 139401,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 139172,
+            "time": 139401,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 139403,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 139401,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 139720,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1058,
+                1065
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 139404,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 139944,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 139721,
+            "time": 139944,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 139946,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 139944,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1229,
+            "region": "Anti-diagonal",
+            "time": 139960,
+            "type": "scalar_value",
+            "value": 1.4038791508095545e-19
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1018,
+                1019
+            ],
+            "end": 139960,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "largest_error",
+            "line": 230,
+            "object_id": 1077,
+            "outputs": [
+                1229
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 139948,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Anti-diagonal",
+            "line": 221,
+            "region_depth": 1,
+            "time": 139962,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 140228,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1052,
+                1073
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 139962,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 140451,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 140229,
+            "time": 140451,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 140453,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 140451,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 140735,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1054,
+                1071
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 140453,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 140964,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 140736,
+            "time": 140964,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 140966,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 140964,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 141195,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1056,
+                1069
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 140966,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 141388,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 141196,
+            "time": 141388,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 141390,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 141388,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 141622,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1058,
+                1067
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 141393,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 141826,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 141623,
+            "time": 141826,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 141829,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 141827,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1243,
+            "region": "Anti-diagonal",
+            "time": 141841,
+            "type": "scalar_value",
+            "value": 7.995087588179784e-22
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1018,
+                1019
+            ],
+            "end": 141841,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "largest_error",
+            "line": 230,
+            "object_id": 1077,
+            "outputs": [
+                1243
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 141829,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Anti-diagonal",
+            "line": 221,
+            "region_depth": 1,
+            "time": 141843,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 142056,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1054,
+                1073
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 141843,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 142239,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 142056,
+            "time": 142239,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 142241,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 142239,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 142450,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1056,
+                1071
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 142241,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 142613,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 142450,
+            "time": 142613,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 142615,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 142613,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 142834,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1058,
+                1069
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 142615,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 143018,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 142834,
+            "time": 143018,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 143020,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 143018,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1254,
+            "region": "Anti-diagonal",
+            "time": 143024,
+            "type": "scalar_value",
+            "value": 1e-34
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1018,
+                1019
+            ],
+            "end": 143024,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "largest_error",
+            "line": 230,
+            "object_id": 1077,
+            "outputs": [
+                1254
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 143021,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Anti-diagonal",
+            "line": 221,
+            "region_depth": 1,
+            "time": 143025,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 143232,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1056,
+                1073
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 143025,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 143377,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 143232,
+            "time": 143377,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 143380,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 143378,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 143607,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1058,
+                1071
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 143380,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 143805,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 143608,
+            "time": 143805,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 143807,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 143806,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1262,
+            "region": "Anti-diagonal",
+            "time": 143811,
+            "type": "scalar_value",
+            "value": 1e-34
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1018,
+                1019
+            ],
+            "end": 143811,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "largest_error",
+            "line": 230,
+            "object_id": 1077,
+            "outputs": [
+                1262
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 143808,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "Anti-diagonal",
+            "line": 221,
+            "region_depth": 1,
+            "time": 143812,
+            "type": "region"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [],
+            "end": 144055,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "product",
+            "line": 226,
+            "object_id": 1075,
+            "outputs": [
+                1078
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1058,
+                1073
+            ],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 143813,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2304,
+            "end": 144244,
+            "label": "slice_products",
+            "line": 306,
+            "object_id": 1078,
+            "region": "Anti-diagonal",
+            "start": 144056,
+            "time": 144244,
+            "type": "transfer"
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1078,
+                1027
+            ],
+            "end": 144246,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "add_product",
+            "line": 227,
+            "object_id": 1076,
+            "outputs": [
+                1079,
+                1080
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 144244,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1267,
+            "region": "Anti-diagonal",
+            "time": 144249,
+            "type": "scalar_value",
+            "value": 1e-34
+        },
+        {
+            "backend": "CPU",
+            "elements": [
+                2304
+            ],
+            "elwise_inputs": [
+                1079,
+                1080,
+                1018,
+                1019
+            ],
+            "end": 144249,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+            "label": "largest_error",
+            "line": 230,
+            "object_id": 1077,
+            "outputs": [
+                1267
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Anti-diagonal",
+            "scalar_inputs": [],
+            "start": 144246,
+            "threads": 1,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "lo",
+            "line": 322,
+            "object_id": 1080,
+            "time": 144251,
+            "type": "deallocation"
+        },
+        {
+            "label": "hi",
+            "line": 322,
+            "object_id": 1079,
+            "time": 144251,
+            "type": "deallocation"
+        },
+        {
+            "label": "slice_products",
+            "line": 322,
+            "object_id": 1078,
+            "time": 144261,
+            "type": "deallocation"
+        },
+        {
+            "label": "B slice 1",
+            "line": 322,
+            "object_id": 1061,
+            "time": 144265,
+            "type": "deallocation"
+        },
+        {
+            "label": "B slice 2",
+            "line": 322,
+            "object_id": 1063,
+            "time": 144268,
+            "type": "deallocation"
+        },
+        {
+            "label": "B slice 3",
+            "line": 322,
+            "object_id": 1065,
+            "time": 144270,
+            "type": "deallocation"
+        },
+        {
+            "label": "B slice 4",
+            "line": 322,
+            "object_id": 1067,
+            "time": 144273,
+            "type": "deallocation"
+        },
+        {
+            "label": "B slice 5",
+            "line": 322,
+            "object_id": 1069,
+            "time": 144275,
+            "type": "deallocation"
+        },
+        {
+            "label": "B slice 6",
+            "line": 322,
+            "object_id": 1071,
+            "time": 144278,
+            "type": "deallocation"
+        },
+        {
+            "label": "B slice 7",
+            "line": 322,
+            "object_id": 1073,
+            "time": 144280,
+            "type": "deallocation"
+        },
+        {
+            "label": "A slice 1",
+            "line": 322,
+            "object_id": 1046,
+            "time": 144282,
+            "type": "deallocation"
+        },
+        {
+            "label": "A slice 2",
+            "line": 322,
+            "object_id": 1048,
+            "time": 144285,
+            "type": "deallocation"
+        },
+        {
+            "label": "A slice 3",
+            "line": 322,
+            "object_id": 1050,
+            "time": 144287,
+            "type": "deallocation"
+        },
+        {
+            "label": "A slice 4",
+            "line": 322,
+            "object_id": 1052,
+            "time": 144289,
+            "type": "deallocation"
+        },
+        {
+            "label": "A slice 5",
+            "line": 322,
+            "object_id": 1054,
+            "time": 144291,
+            "type": "deallocation"
+        },
+        {
+            "label": "A slice 6",
+            "line": 322,
+            "object_id": 1056,
+            "time": 144293,
+            "type": "deallocation"
+        },
+        {
+            "label": "A slice 7",
+            "line": 322,
+            "object_id": 1058,
+            "time": 144295,
+            "type": "deallocation"
+        },
+        {
+            "label": "scales",
+            "line": 322,
+            "object_id": 1027,
+            "time": 144295,
+            "type": "deallocation"
+        },
+        {
+            "label": "column_scales",
+            "line": 282,
+            "object_id": 1024,
+            "time": 144295,
+            "type": "deallocation"
+        },
+        {
+            "label": "row_scales",
+            "line": 282,
+            "object_id": 1023,
+            "time": 144296,
+            "type": "deallocation"
+        },
+        {
+            "label": "exact_lo",
+            "line": 322,
+            "object_id": 1019,
+            "time": 144296,
+            "type": "deallocation"
+        },
+        {
+            "label": "exact_hi",
+            "line": 322,
+            "object_id": 1018,
+            "time": 144296,
+            "type": "deallocation"
+        },
+        {
+            "label": "b",
+            "line": 322,
+            "object_id": 1014,
+            "time": 144296,
+            "type": "deallocation"
+        },
+        {
+            "label": "a",
+            "line": 322,
+            "object_id": 1013,
+            "time": 144296,
+            "type": "deallocation"
+        },
+        {
+            "label": "integers_b",
+            "line": 322,
+            "object_id": 1007,
+            "time": 144296,
+            "type": "deallocation"
+        },
+        {
+            "label": "integers_a",
+            "line": 322,
+            "object_id": 1006,
+            "time": 144296,
+            "type": "deallocation"
+        }
+    ],
+    "header": {
+        "instances": {
+            "1000": {
+                "instance": {
+                    "anonymous": true,
+                    "end_line": 193,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                    "line": 193
+                },
+                "label": "MapReduce@ozaki_gemm.cpp:193",
+                "user_functions": [
+                    {
+                        "end_line": 60,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                        "kind": "function",
+                        "line": 57,
+                        "name": "absolute"
+                    },
+                    {
+                        "end_line": 104,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/util.hpp",
+                        "kind": "function",
+                        "line": 101,
+                        "name": "max"
+                    }
+                ]
+            },
+            "1001": {
+                "instance": {
+                    "anonymous": true,
+                    "end_line": 197,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                    "line": 197
+                },
+                "label": "Map@ozaki_gemm.cpp:197",
+                "user_functions": [
+                    {
+                        "end_line": 69,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                        "kind": "function",
+                        "line": 63,
+                        "name": "row_scale"
+                    }
+                ]
+            },
+            "1002": {
+                "instance": {
+                    "anonymous": true,
+                    "end_line": 198,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                    "line": 198
+                },
+                "label": "Map@ozaki_gemm.cpp:198",
+                "user_functions": [
+                    {
+                        "end_line": 77,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                        "kind": "function",
+                        "line": 71,
+                        "name": "column_scale"
+                    }
+                ]
+            },
+            "1003": {
+                "instance": {
+                    "anonymous": true,
+                    "end_line": 200,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                    "line": 200
+                },
+                "label": "MapPairs@ozaki_gemm.cpp:200",
+                "user_functions": [
+                    {
+                        "end_line": 94,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                        "kind": "function",
+                        "line": 91,
+                        "name": "outer_product"
+                    }
+                ]
+            },
+            "1004": {
+                "instance": {
+                    "anonymous": true,
+                    "end_line": 203,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                    "line": 203
+                },
+                "label": "Map@ozaki_gemm.cpp:203",
+                "user_functions": [
+                    {
+                        "end_line": 83,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                        "kind": "function",
+                        "line": 80,
+                        "name": "divide_by_row_scale"
+                    }
+                ]
+            },
+            "1005": {
+                "instance": {
+                    "anonymous": true,
+                    "end_line": 204,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                    "line": 204
+                },
+                "label": "Map@ozaki_gemm.cpp:204",
+                "user_functions": [
+                    {
+                        "end_line": 88,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                        "kind": "function",
+                        "line": 85,
+                        "name": "divide_by_column_scale"
+                    }
+                ]
+            },
+            "1008": {
+                "instance": {
+                    "end_line": 223,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+                    "line": 223
+                },
+                "label": "randomize::uniform",
+                "user_functions": [
+                    {
+                        "end_line": 146,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+                        "kind": "function",
+                        "line": 140,
+                        "name": "uniform_integer_uf"
+                    }
+                ]
+            },
+            "1011": {
+                "instance": {
+                    "end_line": 223,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+                    "line": 223
+                },
+                "label": "randomize::uniform",
+                "user_functions": [
+                    {
+                        "end_line": 146,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+                        "kind": "function",
+                        "line": 140,
+                        "name": "uniform_integer_uf"
+                    }
+                ]
+            },
+            "1015": {
+                "instance": {
+                    "end_line": 174,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                    "line": 174
+                },
+                "label": "convert",
+                "user_functions": [
+                    {
+                        "end_line": 131,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                        "kind": "function",
+                        "line": 128,
+                        "name": "to_double"
+                    }
+                ]
+            },
+            "1045": {
+                "instance": {
+                    "end_line": 144,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                    "line": 144
+                },
+                "label": "cut",
+                "user_functions": [
+                    {
+                        "end_line": 103,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                        "kind": "function",
+                        "line": 98,
+                        "name": "slice"
+                    }
+                ]
+            },
+            "1060": {
+                "instance": {
+                    "end_line": 144,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                    "line": 144
+                },
+                "label": "cut",
+                "user_functions": [
+                    {
+                        "end_line": 103,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                        "kind": "function",
+                        "line": 98,
+                        "name": "slice"
+                    }
+                ]
+            },
+            "1075": {
+                "instance": {
+                    "end_line": 210,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                    "line": 210
+                },
+                "label": "product",
+                "user_functions": [
+                    {
+                        "end_line": 112,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                        "kind": "function",
+                        "line": 106,
+                        "name": "slice_product"
+                    }
+                ]
+            },
+            "1076": {
+                "instance": {
+                    "end_line": 212,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                    "line": 212
+                },
+                "label": "add_product",
+                "user_functions": [
+                    {
+                        "end_line": 125,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                        "kind": "function",
+                        "line": 116,
+                        "name": "accumulate"
+                    }
+                ]
+            },
+            "1077": {
+                "instance": {
+                    "end_line": 213,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                    "line": 213
+                },
+                "label": "largest_error",
+                "user_functions": [
+                    {
+                        "end_line": 139,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/ozaki_gemm.cpp",
+                        "kind": "function",
+                        "line": 134,
+                        "name": "relative_error"
+                    },
+                    {
+                        "end_line": 104,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/util.hpp",
+                        "kind": "function",
+                        "line": 101,
+                        "name": "max"
+                    }
+                ]
+            }
+        }
+    }
+}

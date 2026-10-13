@@ -24,6 +24,7 @@ set(_skepu_examples
 	nbody_mappairs
 	ode_fisher
 	ode_lorenz
+	ozaki_gemm
 	ppmcc
 	psnr
 	riemann_sum

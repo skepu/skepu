@@ -150,6 +150,15 @@
     ]
   },
   {
+    "title": "Ozaki Scheme (GEMM from integer products)",
+    "trace": {
+      "opencl": "ozaki_gemm/trace_ozaki_gemm_opencl.json"
+    },
+    "cpp_files": [
+      "ozaki_gemm/ozaki_gemm.cpp"
+    ]
+  },
+  {
     "title": "Conjugate Gradient",
     "trace": {
       "openmp": "conjugate_gradient/trace_conjugate_gradient_openmp.json",

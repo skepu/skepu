@@ -199,6 +199,7 @@ PROGS += nbody
 PROGS += nbody_mappairs
 PROGS += ode_fisher
 PROGS += ode_lorenz
+PROGS += ozaki_gemm
 PROGS += ppmcc
 PROGS += psnr
 PROGS += riemann_sum
@@ -206,7 +207,7 @@ PROGS += taylor
 
 # The programs that the MPI backend supports (see examples/CMake/example-options.cmake): the others are not built in MPI mode
 MPI_PROGS = cellular_automaton cma conjugate_gradient coulombic dotproduct horner mandelbrot maxmin miller_rabin \
-	mmmult mmmult_row_col montecarlo mvmult mvmult_row nbody nbody_mappairs ode_fisher ode_lorenz ppmcc psnr riemann_sum taylor
+	mmmult mmmult_row_col montecarlo mvmult mvmult_row nbody nbody_mappairs ode_fisher ode_lorenz ozaki_gemm ppmcc psnr riemann_sum taylor
 ifdef MPI_MODE
 PROGS := $(filter $(MPI_PROGS),$(PROGS))
 endif
@@ -236,6 +237,7 @@ lookup.nbody               := 100 100 $(RUN_BACKEND)
 lookup.nbody_mappairs      := 100 100 $(RUN_BACKEND)
 lookup.ode_fisher          := 64 20 $(RUN_BACKEND)
 lookup.ode_lorenz          := $(SIZE_BACKEND) 40 $(RUN_BACKEND)
+lookup.ozaki_gemm          := 48 7 $(RUN_BACKEND)
 lookup.ppmcc               := $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.psnr                := 128 128 $(RUN_BACKEND)
 lookup.riemann_sum         := 0 1 $(SIZE_BACKEND) $(RUN_BACKEND)
