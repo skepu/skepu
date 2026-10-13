@@ -1,0 +1,75 @@
+#gantt-timeline-scale-div {
+	padding: 0.35em 0.75em;
+}
+
+#gantt-timeline-scale-label {
+	font-size: 0.85em;
+	color: #666
+}
+
+#gantt-scale {
+	width: 100%;
+}
+
+#default-spectrum-background {
+	background: linear-gradient(to right,#00ff00,#ff0000);
+}
+
+#viridis-spectrum-background {
+	background: linear-gradient(to right,#440154,#2a788e,#22a884,#fde725);
+}
+
+#plasma-spectrum-background {
+	background: linear-gradient(to right,#0d0887,#b83289,#f48849,#f0f921);
+}
+
+#inferno-spectrum-background {
+	background: linear-gradient(to right,#000004,#57106e,#f98c0a,#fcffa4)
+}
+
+#cividis-spectrum-background {
+	background: linear-gradient(to right,#00224e,#5f5a80,#fde725);
+}
+
+#cool-warm-spectrum-background {
+	background: linear-gradient(to right,#3b4cc0,#ddd,#b40426);
+}
+
+#grayscale-spectrum-background {
+	background: linear-gradient(to right,#f0f0f0,#141414)
+}
+
+#render-indicator-button {
+	display: flex;
+	align-items: center;
+	font-weight: normal;
+	padding-right: 0.6em;
+}
+
+#render-indicator-dropdown-div {
+	right: 0;
+	left: auto;
+	min-width: 170px;
+	padding:0.4em 0;
+}
+
+#welcome-examples-section {
+	display: none;
+}
+
+#cpp-tab-pre {
+	color: #888;
+	padding: 1em;
+}
+
+div {
+	color: black;
+}
+
+span {
+	color: black;
+}
+
+.legend-item-span {
+	color: var(--legend-item-text-color);
+}

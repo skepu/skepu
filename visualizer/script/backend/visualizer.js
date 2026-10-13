@@ -44,8 +44,17 @@ let _graph           = null;   // DirectedGraph from the most recent 'graph' cal
 // Base URL for fetching examples and library files — one level above this
 // script, i.e. the visualizer root.
 const _BASE_URL     = new URL('..', import.meta.url).href;
-const _LIB_ROOT_URL = _BASE_URL + '../static/skepu-lib/';
-const _LIB_DNN_URL  = _BASE_URL + '../static/skepu-lib/dnn/';
+// (the page, or the extension that hosts it, can set where the library headers are)
+let _LIB_ROOT_URL = _BASE_URL + '../static/skepu-lib/';
+let _LIB_DNN_URL  = _BASE_URL + '../static/skepu-lib/dnn/';
+
+export function setLibRootUrl(url) {
+    _LIB_ROOT_URL = url;
+}
+
+export function setLibDNNUrl(url) {
+    _LIB_DNN_URL = url;
+}
 
 // Cached index of available library headers: { root: [...], dnn: [...] }.
 // null = not yet fetched; { root: [], dnn: [] } = fetched but unavailable.
@@ -480,6 +489,10 @@ self.onmessage = async function onMessage(evt) {
     try {
         let result;
         switch (type) {
+            case 'init_vscode_extension':
+                setLibRootUrl(evt.data.skepuLib);
+                setLibDNNUrl(evt.data.skepuDNN);
+                break;
             case 'load':          result = await _handleLoad(payload);        break;
             case 'loadExample':   result = await _handleLoadExample(payload); break;
             case 'loadSnapshots': result = _handleLoadSnapshots(payload);     break;
@@ -492,32 +505,3 @@ self.onmessage = async function onMessage(evt) {
         self.postMessage({ id, type: 'error', error: err.message ?? String(err) });
     }
 };
-
-// ── Convenience: Promise-based RPC helper (importable by the main thread) ─────
-// Usage (main thread):
-//   import { WorkerRPC } from './backend-js/visualizer.js';
-//   const rpc = new WorkerRPC(worker);
-//   const data = await rpc.call('graph', { container_allocations: true, ... });
-
-export class WorkerRPC {
-    constructor(worker) {
-        this._worker  = worker;
-        this._pending = new Map(); // id → { resolve, reject }
-        this._seq     = 0;
-        worker.addEventListener('message', ({ data }) => {
-            const handler = this._pending.get(data.id);
-            if (!handler) return;
-            this._pending.delete(data.id);
-            if (data.type === 'error') handler.reject(new Error(data.error));
-            else handler.resolve(data);
-        });
-    }
-
-    call(type, payload = {}) {
-        return new Promise((resolve, reject) => {
-            const id = String(++this._seq);
-            this._pending.set(id, { resolve, reject });
-            this._worker.postMessage({ id, type, ...payload });
-        });
-    }
-}

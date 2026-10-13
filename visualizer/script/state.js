@@ -6,6 +6,8 @@ export const State = {
   cy:               null,
   daglayout:        null,
 
+  provider: null,
+
   // Render settings — source of truth for all checkbox/select settings.
   settings: {
     // checkboxes

@@ -59,7 +59,7 @@ export function ganttScaleChanged(val) {
   if (State.timelineView) State.timelineView.setScale(State._ganttScale);
 }
 
-function zoomGanttToMeasuredInterval() {
+export function zoomGanttToMeasuredInterval() {
   if (State.timelineView) State.timelineView.zoomToMeasuredInterval();
 }
 
@@ -71,16 +71,21 @@ function initGanttPinchZoom() {
   if (State.timelineView) State.timelineView.initPinchZoom();
 }
 
+export function recenterGraph() {
+  if (State.graphView)
+    State.graphView.relayout();
+}
+
 window.openGanttPane               = openGanttPane;
 window.closeGanttPane              = closeGanttPane;
 window.toggleGanttPane             = toggleGanttPane;
 window.ganttScaleChanged           = ganttScaleChanged;
 window.zoomGanttToMeasuredInterval = zoomGanttToMeasuredInterval;
-window.recenterGraph               = function() { if (State.graphView) State.graphView.relayout(); };
+window.recenterGraph               = recenterGraph;
 
 // ── graph.js exposes render() via State.graphView; this local helper is used
 // by the many call sites in this module that need closePopup() + render together.
-function fetchViewDataAndRender() {
+export function fetchViewDataAndRender() {
   closePopup();
   if (State.graphView) State.graphView.render();
 }
@@ -238,7 +243,7 @@ export function load()
   });
 
 
-  document.addEventListener("keydown", function(event) {
+  window.addEventListener("keydown", function(event) {
     // Don't steal keypresses from inputs, and ignore modifier combos.
     if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
     if (event.altKey || event.ctrlKey || event.metaKey) return;

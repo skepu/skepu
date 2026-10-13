@@ -42,6 +42,7 @@ import { showTooltip, hideTooltip, positionTooltip, nodeTooltipText, edgeTooltip
 import { highlightSelection, bindHover } from './graph_interaction.js';
 import { basePattern } from './TraceDataProvider.js';
 import { badgeNodesToShow } from './badges.js';
+import { globalUtil } from './util.js';
 
 // ── Shared page resources ─────────────────────────────────────────────────────
 // One ELK instance per page is correct: the ELK worker is expensive to spawn. (The tooltip is tooltip.js.)
@@ -108,8 +109,10 @@ export class GraphView {
 
     // Worker URLs for layout engines.
     this._dagreWorkerUrl = options.dagreWorkerUrl
+      || window.skevu?.dagreWorker
       || new URL('./workers/dagre-worker.js', import.meta.url).href;
     this._elkWorkerUrl   = options.elkWorkerUrl
+      || window.skevu?.elkWorker
       || new URL('../static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js', import.meta.url).href;
 
     // Callbacks.
@@ -204,6 +207,10 @@ export class GraphView {
     // initiator that might emit 'clear' in future.
     this._provider.on('clear', function() {
       self.clearSelection();
+
+      window.skevu.vscode?.postMessage({
+          type: 'clear_highlight'
+      });
     });
   }
 
@@ -820,7 +827,7 @@ export class GraphView {
     }
   }
 
-  _startDagreLayout(layoutSeq, layoutOpts, onPositions) {
+  async _startDagreLayout(layoutSeq, layoutOpts, onPositions) {
     var self = this;
     var cy   = this._cy;
 
@@ -843,7 +850,7 @@ export class GraphView {
     var hasCompound = workerNodes.some(function(n) { return n.isParent; });
     var sepScale    = hasCompound ? COMPOUND_SEP_SCALE : 1.0;
 
-    var worker = new Worker(this._dagreWorkerUrl);
+    const worker = await globalUtil.fetchWorker(this._dagreWorkerUrl);
     this._currentLayout = { stop: function() { worker.terminate(); self._currentLayout = null; } };
 
     worker.onmessage = function(ev) {

@@ -29,14 +29,22 @@
     <script>var DAGRE_WORKER_URL = "./script/workers/dagre-worker.js";</script>
     <script>var ELK_WORKER_URL   = "./static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js";</script>
 
-    <!-- TRACE_LINE_RANGES — starts empty; updated after each trace load. -->
-    <script>var TRACE_LINE_RANGES = [];</script>
+    <script>
+      window.skevu = {
+        dagreWorker: './script/workers/dagre-worker.js',
+        elkWorker: './static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js',
+        traceLineRanges: []
+      }
+    </script>
+
+    <script type="module" src="./script/util_web.js"></script>
+    <script type="module" src="./script/graph_web.js"></script>
 
     <!-- Worker-loader module: spawns the visualizer worker, registers it with
          transport.js, and builds the examples menu.  Must appear before ui.js
          so that initWorkerBackend() is called before load() triggers the first
          graph fetch. -->
-    <script type="module" src="./script/workers/worker-loader.js"></script>
+    <script type="module" src="./script/workers/worker-loader-web.js"></script>
 
     <!-- Entry-point ES module. -->
     <script type="module" src="./script/ui.js"></script>
@@ -60,12 +68,12 @@
               <!-- Examples submenu — populated dynamically by worker-loader.js -->
               <div id="examples-submenu-placeholder"></div>
 
-              <!-- File upload form — handled by loadFiles() in worker-loader.js
+              <!-- File upload form — handled by loadFiles(data) in worker-loader.js
                    instead of a traditional form POST. -->
               <div onclick="event.stopPropagation()">
                 <div class="menu-form-row">
                   <label>Trace File</label>
-                  <input id="trace-file-input" type="file" accept=".json">
+                  <input id="trace-file-input" type="file" accept=".json,.skevu">
                 </div>
                 <div class="menu-form-row">
                   <label>Source File(s)</label>
@@ -76,7 +84,7 @@
                   <input id="snapshot-zip-input" type="file" accept=".zip">
                 </div>
                 <div class="menu-form-row">
-                  <button id="load-trace-btn" onclick="loadFiles();menuClose()">Load Trace</button>
+                  <button id="load-trace-btn" onclick="loadFiles(null);menuClose()">Load Trace</button>
                 </div>
               </div>
 

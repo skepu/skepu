@@ -279,7 +279,7 @@ export class SourceCodeView {
 
   /**
    * Replace the tab bar and panes with new content after a trace load.
-   * Resets TRACE_LINE_RANGES and triggers hljs highlighting on the new blocks.
+   * Resets window.skevu.traceLineRanges and triggers hljs highlighting on the new blocks.
    *
    * @param {Object}      cppFiles         { basename → content }
    * @param {string|null} traceJson        Raw trace JSON text, or null
@@ -294,7 +294,7 @@ export class SourceCodeView {
     this._tracePanes         = {};
     this._lastBadgeNodes     = null;
     // Keep the window global in sync for any legacy code that reads it directly.
-    window.TRACE_LINE_RANGES = this._traceLineRanges;
+    (window.skevu ??= {}).traceLineRanges = this._traceLineRanges;
 
     var tabBar   = this._tabBarEl;
     var tabPanes = this._tabPanesEl;

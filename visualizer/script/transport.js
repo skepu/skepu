@@ -28,8 +28,17 @@ let _worker  = null;          // set by initWorkerBackend()
 let _pending = new Map();     // id → { resolve, reject }
 let _seq     = 0;
 
-function _call(type, payload) {
-    if (!_worker) throw new Error('transport: worker not initialised — call initWorkerBackend() first');
+
+let _workerReady;
+let _workerReadyResolve;
+
+_workerReady = new Promise(function(resolve) {
+    _workerReadyResolve = resolve;
+});
+
+async function _call(type, payload) {
+    const worker = await _workerReady;
+    //if (!_worker) throw new Error('transport: worker not initialised — call initWorkerBackend() first');
     return new Promise(function(resolve, reject) {
         var id = String(++_seq);
         _pending.set(id, { resolve: resolve, reject: reject });
@@ -45,7 +54,6 @@ function _call(type, payload) {
  * @param {Worker} worker
  */
 export function initWorkerBackend(worker) {
-    _worker = worker;
     worker.addEventListener('message', function(evt) {
         var data    = evt.data;
         var handler = _pending.get(data.id);
@@ -54,6 +62,8 @@ export function initWorkerBackend(worker) {
         if (data.type === 'error') handler.reject(new Error(data.error));
         else                       handler.resolve(data);
     });
+    _worker = worker;
+    _workerReadyResolve(worker);
 }
 
 /**
@@ -84,6 +94,6 @@ export function fetchGetData(nodeId) {
  * @param {object} [payload]
  * @returns {Promise<object>}
  */
-export function workerCall(type, payload) {
+export async function workerCall(type, payload) {
     return _call(type, payload || {});
 }

@@ -193,8 +193,17 @@ _sourceView.attachProvider(_provider);
 // worker-loader.js button onclicks call switchTab.
 // Badge pills no longer use a global — clicks are handled via event delegation
 // inside each SourceCodeView instance.
-window.switchTab       = function(btn, idx)  { _sourceView.switchTab(btn, idx); };
-window.setHljsTheme    = function(theme)     { _sourceView.setTheme(theme); };
+
+export function switchTab(btn, idx) {
+  _sourceView.switchTab(btn, idx);
+}
+
+export function setHljsTheme(theme) {
+  _sourceView.setTheme(theme); 
+}
+
+window.switchTab       = switchTab;
+window.setHljsTheme    = setHljsTheme;
 window._applyHljsTheme = function(theme)     { _sourceView.restoreTheme(theme); };
 // window.badgeClick is no longer needed: badge clicks are handled via event
 // delegation on the tabPanesEl container inside each SourceCodeView instance.
@@ -206,10 +215,6 @@ var _infoView = new InfoView({
 
   onOpaqueNodes: function(ids) {
     State.opaqueNodes = ids;
-  },
-
-  onHighlightNode: function(data) {
-    if (State.sourceView) State.sourceView.highlightNode(data, undefined, State._selectedRank);
   },
 
   onSelectIteration: function(nodeId, iterIdx) {
@@ -240,6 +245,10 @@ var _infoView = new InfoView({
 });
 
 State.infoView = _infoView;
+
+export function setInfoViewOnHighlightNode(func) {
+  _infoView._onHighlightNode = func;
+}
 
 // ── TimelineView singleton ────────────────────────────────────────────────────
 
@@ -306,7 +315,7 @@ Object.defineProperty(State, '_ganttPaneOpen', {
     // When the pane is being closed by a direct State write (not via close()),
     // collapse it visually immediately — open/close calls handle this themselves.
     if (!val && _timelineView._paneEl)
-      _timelineView._paneEl.style.flex = '0 0 0';
+      _timelineView._paneEl.style.setProperty('--gantt-height', 0);
   },
   configurable: true,
   enumerable:   true,
@@ -380,19 +389,36 @@ _simEngine = new SimulationEngine(_provider, {
 });
 State.simEngine = _simEngine;
 
+export function renderImage() {
+  _view.zoomToFit(id);
+}
+
+export function stopRendering() {
+  hideMenubarIndicator();
+  _view.stop(); 
+}
+
 // ── Global exposure ───────────────────────────────────────────────────────────
 // HTML inline handlers and worker-loader.js reach these as window globals.
 // State.graphView / State.provider / State.simEngine are the canonical references.
 window.fetchViewDataAndRender = function() { closePopup(); _provider.fetch(); };
-window.renderImage            = function() { _view.exportImage(); };
+window.renderImage            = renderImage;
 window.zoomToFit              = function(id)  { _view.zoomToFit(id); };
 window.zoomToFitGroup         = function(ids) { _view.zoomToFitGroup(ids); };
 
 // stopRendering: abort the fetch, cancel the layout, hide the indicator.
-window.stopRendering = function() { hideMenubarIndicator(); _view.stop(); };
+window.stopRendering = stopRendering;
 
 // Simulation controls for HTML inline onclick handlers.
+export function simStop() {
+  _simEngine.simStop();
+}
+
+export function simToggle() {
+  _simEngine.simToggle();
+}
+
 window.simStart  = function() { _simEngine.start(); };
 window.simPause  = function() { _simEngine.pause(); };
-window.simStop   = function() { _simEngine.stop(); };
-window.simToggle = function() { _simEngine.toggle(); };
+window.simStop   = simStop;
+window.simToggle = simToggle;

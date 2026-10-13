@@ -193,7 +193,7 @@ export class TimelineView {
 
   close() {
     this._paneOpen = false;
-    if (this._paneEl) this._paneEl.style.flex = '0 0 0';
+    if (this._paneEl) this._paneEl.style.setProperty('--gantt-height', 0);//flex = '0 0 0';
     if (this._onPaneToggle) this._onPaneToggle();
     if (this._onSettingsChange) this._onSettingsChange();
   }
@@ -440,7 +440,7 @@ export class TimelineView {
     container.innerHTML = '';
     if (!timedBars.length && !timedMarkers.length && !timedRegions.length) {
       var msg = document.createElement('p');
-      msg.style.cssText = 'padding:0.5em;color:#888;font-family:monospace;font-size:0.8em';
+      msg.id = 'timeline-no-events-msg';
       msg.textContent = 'No timed events to display.';
       container.appendChild(msg);
       return;
@@ -636,15 +636,15 @@ export class TimelineView {
           body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr
             + ' data-node-id="' + escAttr(d.id) + '" data-center-x="' + centerX + '" data-interval-idx="' + iidx + '"'
             + ' x="' + x1 + '" y="' + regionBarPad + '" width="' + bw + '" height="' + regionBarH + '" rx="2"'
-            + ' fill="' + fill + '" stroke="' + barStroke + '" stroke-width="0.5" style="cursor:pointer">'
+            + ' fill="' + fill + '" stroke="' + barStroke + '" stroke-width="0.5">'
             + '<title>' + tip + '</title></rect>');
           if (bw > _MIN_LABEL_W) {
             var clipId = 'gantt-rc-' + (regionClipIdx++);
             defs.push('<clipPath id="' + clipId + '"><rect x="' + (x1 + 2) + '" y="' + regionBarPad
               + '" width="' + Math.max(0, bw - 4) + '" height="' + regionBarH + '"/></clipPath>');
-            body.push('<text x="' + (x1 + 4) + '" y="' + (regionBarPad + regionBarH / 2 + 4) + '"'
+            body.push('<text class="pointer-events-none" x="' + (x1 + 4) + '" y="' + (regionBarPad + regionBarH / 2 + 4) + '"'
               + ' fill="' + (dark ? 'rgba(240,200,130,0.90)' : 'rgba(0,70,160,0.80)') + '"' + opacityAttr
-              + ' clip-path="url(#' + clipId + ')" style="pointer-events:none">' + escTxt(d.label) + '</text>');
+              + ' clip-path="url(#' + clipId + ')">' + escTxt(d.label) + '</text>');
           }
         });
       });
@@ -693,27 +693,27 @@ export class TimelineView {
           if (s.plain || (ranks === 0)) {
             body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr + common
               + ' x="' + x1 + '" y="' + y + '" width="' + bw + '" height="' + bh + '" rx="2"'
-              + ' fill="' + fill + '" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer">'
+              + ' fill="' + fill + '" stroke="rgba(0,0,0,0.2)" stroke-width="0.5">'
               + '<title>' + tip + '</title></rect>');
           } else {
             // the interval of the rank, light; and the work of the rank on it
             body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr + common
               + ' x="' + x1 + '" y="' + y + '" width="' + bw + '" height="' + bh + '" rx="2"'
-              + ' fill="' + fill + '" fill-opacity="' + LIGHT + '" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer">'
+              + ' fill="' + fill + '" fill-opacity="' + LIGHT + '" stroke="rgba(0,0,0,0.2)" stroke-width="0.5">'
               + '<title>' + tip + '</title></rect>');
             if (s.workStart != null) {
               var w1 = tx(s.workStart), w2 = tx(s.workEnd);
               body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr + common
                 + ' x="' + w1 + '" y="' + y + '" width="' + Math.max(2, w2 - w1) + '" height="' + bh + '" rx="2"'
-                + ' fill="' + fill + '" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer">'
+                + ' fill="' + fill + '" stroke="rgba(0,0,0,0.2)" stroke-width="0.5">'
                 + '<title>' + tip + '</title></rect>');
             }
           }
           if (bw > _MIN_LABEL_W) {
             var iterSuffix = total > 1 ? ' ' + (iidx + 1) : '';
-            body.push('<text x="' + (x1 + 4) + '" y="' + (y + bh / 2 + 4) + '"' + opacityAttr
+            body.push('<text class="pointer-events-none" x="' + (x1 + 4) + '" y="' + (y + bh / 2 + 4) + '"' + opacityAttr
               + ' fill="' + (ranks > 0 && !s.plain ? (dark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.75)') : 'rgba(255,255,255,0.9)')
-              + '" clip-path="url(#' + clipId + ')" style="pointer-events:none">'
+              + '" clip-path="url(#' + clipId + ')">'
               + escTxt(d.label + iterSuffix) + '</text>');
           }
         });
@@ -743,12 +743,12 @@ export class TimelineView {
           body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr
             + ' data-node-id="' + escAttr(d.id) + '" data-center-x="' + centerX + '" data-interval-idx="' + iidx + '"'
             + ' x="' + x1 + '" y="' + trBarY + '" width="' + bw + '" height="' + trBarH + '" rx="2"'
-            + ' fill="purple" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" style="cursor:pointer">'
+            + ' fill="purple" stroke="rgba(0,0,0,0.2)" stroke-width="0.5">'
             + '<title>' + tip + '</title></rect>');
           if (bw > _MIN_LABEL_W) {
             var iterSuffix = total > 1 ? ' ' + (iidx + 1) : '';
-            body.push('<text x="' + (x1 + 4) + '" y="' + (trBarY + trBarH / 2 + 4) + '"' + opacityAttr
-              + ' fill="rgba(255,255,255,0.9)" clip-path="url(#' + clipId + ')" style="pointer-events:none">'
+            body.push('<text class="pointer-events-none" x="' + (x1 + 4) + '" y="' + (trBarY + trBarH / 2 + 4) + '"' + opacityAttr
+              + ' fill="rgba(255,255,255,0.9)" clip-path="url(#' + clipId + ')">'
               + escTxt(d.label + iterSuffix) + '</text>');
           }
         });
@@ -877,7 +877,7 @@ export class TimelineView {
         body.push('<polygon class="gantt-bar' + selCls + '"' + opacityAttr
           + ' data-node-id="' + escAttr(d.id) + '" data-center-x="' + cx + '"'
           + ' points="' + pts + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + strokeW + '"'
-          + ' style="cursor:pointer"><title>' + tip + '</title></polygon>');
+          + '><title>' + tip + '</title></polygon>');
       });
     }
 
@@ -905,21 +905,21 @@ export class TimelineView {
     var DELTA_Y = H - AH + 22;
 
     body.push(
-      '<g data-gantt-role="hover-g" style="display:none;pointer-events:none">'
+      '<g class="pointer-events-none display-none" data-gantt-role="hover-g">'
       + '<line data-gantt-role="hover-line" y1="0" y2="' + (H - AH) + '" stroke="' + _hoverStroke + '" stroke-width="1"/>'
       + '<rect data-gantt-role="hover-bg" y="' + (H - 16) + '" height="14" rx="2"'
       +   ' fill="' + _hoverBgFill + '" stroke="' + _hoverStroke + '" stroke-width="0.5" opacity="0.92"/>'
       + '<text data-gantt-role="hover-lbl" y="' + (H - 4) + '" text-anchor="middle" fill="' + _hoverLblFill + '"></text>'
       + '</g>',
 
-      '<g data-gantt-role="locked-g" style="display:none;pointer-events:none">'
+      '<g class="pointer-events-none display-none" data-gantt-role="locked-g">'
       + '<line data-gantt-role="locked-line" y1="0" y2="' + (H - AH) + '" stroke="' + _lockStroke + '" stroke-width="1.5"/>'
       + '<rect data-gantt-role="locked-bg" y="' + (H - 16) + '" height="14" rx="2"'
       +   ' fill="' + _lockBgFill + '" stroke="' + _lockBgStroke + '" stroke-width="0.8" opacity="0.95"/>'
       + '<text data-gantt-role="locked-lbl" y="' + (H - 4) + '" text-anchor="middle" fill="' + _lockLblFill + '"></text>'
       + '</g>',
 
-      '<g data-gantt-role="delta-g" style="display:none;pointer-events:none">'
+      '<g class="pointer-events-none display-none" data-gantt-role="delta-g">'
       + '<line data-gantt-role="delta-shaft" y1="' + DELTA_Y + '" y2="' + DELTA_Y + '" stroke="' + _deltaFill + '" stroke-width="1"/>'
       + '<polygon data-gantt-role="delta-arrl" fill="' + _deltaFill + '"/>'
       + '<polygon data-gantt-role="delta-arrr" fill="' + _deltaFill + '"/>'
@@ -933,8 +933,7 @@ export class TimelineView {
     // ── Inject SVG ────────────────────────────────────────────────────────────
     container.innerHTML =
       '<svg width="' + SVG_W + '" height="' + H
-      + '" style="display:block;font-family:monospace;font-size:11px;cursor:default">'
-      + '<defs>' + defs.join('') + '</defs>'
+      + '"><defs>' + defs.join('') + '</defs>'
       + body.join('')
       + '</svg>';
 
@@ -975,11 +974,11 @@ export class TimelineView {
       bg.setAttribute('width', tw + pad * 2);
       line.setAttribute('x1', x);
       line.setAttribute('x2', x);
-      group.style.display = '';
+      group.classList.remove('display-none');
     }
 
     function updateDelta(hoverX) {
-      if (lockedG.style.display === 'none') { deltaG.style.display = 'none'; return; }
+      if (lockedG.classList.contains('display-none')) { deltaG.classList.add('display-none'); return; }
       var lx   = parseFloat(lockedLine.getAttribute('x1'));
       var sign = hoverX >= lx ? '+' : '-';
       var dt   = Math.abs((hoverX - lx) / BW * range);
@@ -1003,7 +1002,7 @@ export class TimelineView {
         deltaShaft.setAttribute('x1', minX); deltaShaft.setAttribute('x2', maxX);
         deltaArrL.setAttribute('points', ''); deltaArrR.setAttribute('points', '');
       }
-      deltaG.style.display = '';
+      deltaG.classList.remove('display-none');
     }
 
     // ── SVG event listeners ───────────────────────────────────────────────────
@@ -1040,7 +1039,7 @@ export class TimelineView {
     svg.addEventListener('mousemove', function(ev) {
       var x = svgXFromEvent(ev);
       if (x < LW || x > LW + BW) {
-        hoverG.style.display = 'none'; deltaG.style.display = 'none';
+        hoverG.classList.add('display-none'); deltaG.classList.add('display-none');
         self._hoverTime = null; _rafPending = false; return;
       }
       self._hoverTime = minT + (x - LW) / BW * range;
@@ -1055,7 +1054,7 @@ export class TimelineView {
     });
 
     svg.addEventListener('mouseleave', function() {
-      hoverG.style.display = 'none'; deltaG.style.display = 'none';
+      hoverG.classList.add('display-none'); deltaG.classList.add('display-none');
       self._hoverTime = null; _rafPending = false;
     });
 
@@ -1068,7 +1067,7 @@ export class TimelineView {
 
     // ── Size the pane ─────────────────────────────────────────────────────────
     // (many ranks make a tall timeline: the pane is not taller than 45% of the window, and scrolls)
-    if (this._paneEl) this._paneEl.style.flex = '0 0 ' + Math.min(H, Math.max(160, Math.round(window.innerHeight * 0.45))) + 'px';
+    if (this._paneEl) this._paneEl.style.setProperty('--gantt-height', Math.min(H, Math.max(160, Math.round(window.innerHeight * 0.45))) + 'px');
 
     // ── Update gantt bar count display ────────────────────────────────────────
     if (this._countEl) {

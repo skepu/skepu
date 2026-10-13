@@ -11,23 +11,10 @@
 // After a successful load (file upload or example selection), the source pane
 // is rebuilt dynamically and a graph render is triggered.
 
-import { initWorkerBackend, workerCall } from '../transport.js';
+import { workerCall } from '../transport.js';
 import { State } from '../state.js';
+import { headerSourceFiles } from '../backend/trace.js';
 import { LANGUAGE_LABELS, exampleLanguages, examplesOfLanguage, initialLanguage } from '../examples_list.js';
-
-// ── 1. Spawn worker ───────────────────────────────────────────────────────────
-
-const _worker = new Worker(
-    // Resolve relative to this script's location: static/script/ → backend-js/
-    new URL('../backend/visualizer.js', import.meta.url),
-    { type: 'module' }
-);
-
-initWorkerBackend(_worker);
-
-// Expose the worker globally so event-handler snippets in the HTML can call
-// loadExample / loadFiles without importing this module.
-window._vizWorker = _worker;
 
 // ── 2. Build examples menu + welcome panel ────────────────────────────────────
 // examples.json is fetched once; both the menubar submenu and the welcome-panel
@@ -237,12 +224,12 @@ window.loadExample = async function loadExample(index, backend) {
  * Handle the file-picker form submission.
  * Called from the static page's "Load Trace" button onclick.
  */
-window.loadFiles = async function loadFiles() {
+export async function loadFiles(data) {
     var traceInput    = document.getElementById('trace-file-input');
     var cppInput      = document.getElementById('cpp-files-input');
     var zipInput      = document.getElementById('snapshot-zip-input');
 
-    var traceFile = traceInput && traceInput.files[0];
+    var traceFile = data ?? traceInput?.files?.[0];
     if (!traceFile) {
         if (typeof showAlert === 'function') showAlert('Please select a trace JSON file.');
         return;
@@ -251,8 +238,19 @@ window.loadFiles = async function loadFiles() {
     _setLoadingState(true);
 
     try {
-        var traceJson = await _readText(traceFile);
+        var traceJson = data ?? await _readText(traceFile);
         var cppFiles  = {};
+
+        if (window.skevu?.vscode && data) {
+            // (the extension has the source files, and checks their hashes against the ones of the trace)
+            const parsed = JSON.parse(data);
+            for (let [fileName, hash] of Object.entries(headerSourceFiles(Array.isArray(parsed) ? null : parsed.header)))
+                window.skevu.vscode.postMessage({
+                    type: 'source_file',
+                    file_name: fileName,
+                    file_content_hash: hash
+                });
+        }
 
         if (cppInput && cppInput.files.length) {
             for (var i = 0; i < cppInput.files.length; i++) {
@@ -277,10 +275,22 @@ window.loadFiles = async function loadFiles() {
 
         var result = await workerCall('load', {
             traceJson:     traceJson,
-            traceFilename: traceFile.name,
+            traceFilename: traceFile.name ?? 'trace.json',
             cppFiles:      cppFiles,
             snapshotFiles: snapshotFiles,
         });
+
+        if (window.skevu?.vscode) {
+            window.skevu.vscode.postMessage({
+                type: 'status_message',
+                text: result
+            });
+
+            window.skevu.vscode.postMessage({
+                type: 'trace_line_ranges',
+                text: result.traceLineRanges
+            });
+        }
 
         _applyLoadResult(result);
     } catch (e) {
@@ -289,6 +299,8 @@ window.loadFiles = async function loadFiles() {
         if (typeof showAlert === 'function') showAlert('Failed to load trace: ' + e.message);
     }
 };
+
+window.loadFiles = loadFiles;
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
@@ -312,7 +324,7 @@ function _applyLoadResult(result) {
     // Mark trace as loaded so the menubar render indicator activates.
     State._traceLoaded = true;
 
-    // SourceCodeView.rebuild() stores traceLineRanges and keeps window.TRACE_LINE_RANGES
+    // SourceCodeView.rebuild() stores traceLineRanges and keeps window.skevu.traceLineRanges
     // in sync, then rebuilds tabs and triggers hljs highlighting.
     if (State.sourceView)
         State.sourceView.rebuild(
@@ -325,7 +337,7 @@ function _applyLoadResult(result) {
         );
     else
         // Fallback: keep the global in sync even when sourceView isn't ready yet.
-        window.TRACE_LINE_RANGES = result.traceLineRanges || [];
+        (window.skevu ??= {}).traceLineRanges = result.traceLineRanges || [];
 
     _setLoadingState(false);
 

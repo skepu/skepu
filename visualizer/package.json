@@ -1,12 +1,45 @@
 {
   "name": "skepu-visualizer",
+  "displayName": "SkeVU",
+  "description": "SkePU visualizer for web and as a VSCode extension",
   "version": "1.0.0",
+  "publisher": "skepu",
   "type": "module",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "main": "./out/extension.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "skepu.skevu",
+        "displayName": "SkeVU Visualizer",
+        "selector": [
+          {
+            "filenamePattern": "*.skevu"
+          }
+        ]
+      }
+    ]
+  },
   "scripts": {
+    "build": "node esbuild.js",
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "lint": "eslint",
+    "watch": "tsc -w -p ./",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@stylistic/eslint-plugin": "^2.9.0",
+    "@types/node": "^22.20.4",
+    "@types/vscode": "^1.100.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.13.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.0",
     "vitest": "^2.0.0"
   }
 }

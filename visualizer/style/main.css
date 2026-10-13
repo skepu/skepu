@@ -566,6 +566,10 @@ html.dark-mode .legend-item-hovered {
   color: #999;
 }
 
+.legend-item-span {
+	color: var(--legend-item-text-color);
+}
+
 #color-bar {
   display: inline-block;
   width: 10.8em;
@@ -585,7 +589,7 @@ html.dark-mode .legend-item-hovered {
 
 #gantt-pane
 {
-  flex: 0 0 0;
+  flex: 0 0 var(--gantt-height, 0px);
   width: 100%;
   overflow: hidden;
   display: flex;
@@ -604,6 +608,33 @@ html.dark-mode .legend-item-hovered {
   overflow-y: auto;
   min-height: 0;
 }
+
+#gantt-svg-container svg {
+  display: block;
+  font-family: monospace;
+  font-size: 11px;
+  cursor: default;
+}
+
+#timeline-no-events-msg {
+  padding: 0.5em;
+  color: #888;
+  font-family: monospace;
+  font-size: 0.8em;
+}
+
+.pointer-events-none {
+  pointer-events: none;
+}
+
+.display-none {
+  display: none;
+}
+
+.gantt-bar {
+  cursor: pointer;
+}
+
 
 .gantt-bar.gantt-selected
 {
@@ -1351,7 +1382,7 @@ html.dark-mode .legend-section-title {
 }
 
 html.dark-mode .legend-spec-end {
-  color: #6a6480;
+  color: var(--legend-spec-end-color)/*#6a6480*/;
 }
 
 /* Split gutter */

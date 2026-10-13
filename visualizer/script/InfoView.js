@@ -237,6 +237,7 @@ export class InfoView {
     // knows which of its own tabs is active.  Pass a copy of data so the
     // traceIdx override does not mutate the cached object.
     if (source !== 'code-listing' && this._onHighlightNode) {
+      data.node_id = nodeId;
       var nodeData = Object.assign({}, data);
       if (traceIdx != null) nodeData.trace_index = traceIdx;
       this._onHighlightNode(nodeData);
