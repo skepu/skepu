@@ -26,7 +26,8 @@
  * { type: 'error', message: <string> }
  */
 
-importScripts('../../static/dagre/dagre.min.js');
+// (the bundle of an editor has dagre in it already, and a worker made of a copy of the script cannot load by a relative URL)
+if (typeof dagre === 'undefined') importScripts('../../static/dagre/dagre.min.js');
 
 // ── Compound-node layout tuning ──────────────────────────────────────────────
 // This flag is intentionally duplicated from main.js so the worker is

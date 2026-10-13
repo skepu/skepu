@@ -14,8 +14,12 @@
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/Lex/HeaderSearch.h"
+#include "clang/Lex/HeaderSearchOptions.h"
+#include "clang/Lex/Preprocessor.h"
 #include "clang/Sema/Sema.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 #include <algorithm>
 #include <array>
 #include <map>
@@ -37,6 +41,9 @@ namespace {
 /// objects that it deletes the next time it runs, for any file.)
 struct SkepuInfo
 {
+	/// The parse of the matcher reported errors and it found nothing: not known to have nothing, so asked again (a few times)
+	bool Failed = false;
+
 	struct Skeleton
 	{
 		std::string variableName, details, description, resolvedReturnType;
@@ -89,15 +96,65 @@ struct CacheEntry
 {
 	FileStamp Stamp;
 	std::shared_ptr<const SkepuInfo> Info;
+	int Attempts = 0;
 };
+
+/// How many times an analysis that failed is made again, before the result of it (nothing) is kept until the file changes
+constexpr int MaxAnalysisAttempts = 3;
 std::map<std::string, CacheEntry> InfoCache;
 
-std::shared_ptr<const SkepuInfo> analyze(llvm::StringRef File)
+/// The flags that say where the headers of the system are for the file that the editor has parsed: the sysroot and the directories of
+/// includes, which are made absolute (the matcher does not run in the directory of the compile command).
+std::vector<std::string> systemFlagsOf(const Preprocessor &PP)
+{
+	std::vector<std::string> Flags;
+	const HeaderSearchOptions &HSO = PP.getHeaderSearchInfo().getHeaderSearchOpts();
+	std::string Cwd;
+	if (auto Dir = PP.getFileManager().getVirtualFileSystem().getCurrentWorkingDirectory())
+		Cwd = *Dir;
+
+	if (!HSO.Sysroot.empty() && HSO.Sysroot != "/")
+	{
+		Flags.push_back("-isysroot");
+		Flags.push_back(HSO.Sysroot);
+	}
+	for (const auto &Entry : HSO.UserEntries)
+	{
+		llvm::SmallString<256> Path(Entry.Path);
+		if (!Cwd.empty() && !llvm::sys::path::is_absolute(Path))
+			llvm::sys::path::make_absolute(Cwd, Path);
+		llvm::sys::path::remove_dots(Path, /*remove_dot_dot=*/true);
+
+		const char *Option = nullptr;
+		switch (Entry.Group)
+		{
+			case frontend::Quoted:    Option = "-iquote"; break;
+			case frontend::Angled:    Option = Entry.IsFramework ? "-F" : "-I"; break;
+			case frontend::System:
+			case frontend::ExternCSystem:
+			case frontend::CSystem:
+			case frontend::CXXSystem:
+			case frontend::ObjCSystem:
+			case frontend::ObjCXXSystem: Option = Entry.IsFramework ? "-iframework" : "-isystem"; break;
+			case frontend::After:     Option = "-idirafter"; break;
+			default: break;
+		}
+		if (Option)
+			Flags.push_back(std::string(Option) + std::string(Path));
+	}
+	return Flags;
+}
+
+std::shared_ptr<const SkepuInfo> analyze(llvm::StringRef File, std::vector<std::string> SystemFlags)
 {
 	auto Info = std::make_shared<SkepuInfo>();
-	SkepuMatcher Matcher{File};
+	SkepuMatcher Matcher{File, std::move(SystemFlags)};
 	if (!Matcher.runMatcher())
+	{
+		Info->Failed = true;
+		log("SkePU: the analysis of {0} could not run", File);
 		return Info;
+	}
 
 	for (const auto *s : Matcher._Skeletons)
 	{
@@ -131,21 +188,30 @@ std::shared_ptr<const SkepuInfo> analyze(llvm::StringRef File)
 		delete s;
 	}
 	Matcher._Skeletons.clear();
+	if (Matcher._ParseFailed && Info->Skeletons.empty())
+	{
+		Info->Failed = true;
+		log("SkePU: the parse of {0} had errors and the analysis found no skeletons", File);
+	}
 	return Info;
 }
 
 /// What is known about File (found when it is first asked for, and again when the file has changed on the disk: the matcher reads the file, not the
 /// buffer of the editor)
-std::shared_ptr<const SkepuInfo> infoFor(llvm::StringRef File)
+/// \p PP is the preprocessor of the file as the editor parsed it: it says where the headers of the system are. An analysis that failed is made
+/// again at the next request, a few times: it is not the same as a file that has nothing.
+std::shared_ptr<const SkepuInfo> infoFor(llvm::StringRef File, const Preprocessor &PP)
 {
 	if (File.empty())
 		return nullptr;
 	std::lock_guard<std::mutex> Lock(InfoMutex);
 	const FileStamp Stamp = stampOf(File);
 	CacheEntry &Entry = InfoCache[File.str()];
-	if (!Entry.Info || !(Entry.Stamp == Stamp))
+	const bool Changed = !Entry.Info || !(Entry.Stamp == Stamp);
+	if (Changed || (Entry.Info->Failed && Entry.Attempts < MaxAnalysisAttempts))
 	{
-		Entry.Info = analyze(File);
+		Entry.Attempts = Changed ? 1 : Entry.Attempts + 1;
+		Entry.Info = analyze(File, systemFlagsOf(PP));
 		Entry.Stamp = Stamp;
 	}
 	return Entry.Info;
@@ -595,7 +661,7 @@ void skepuSignatureHelp(Sema &S, unsigned CurrentArg, CodeCompleteConsumer::Over
 	auto MainFile = SM.getFileEntryRefForID(SM.getMainFileID());
 	if (!MainFile)
 		return;
-	auto Info = infoFor(MainFile->getName());
+	auto Info = infoFor(MainFile->getName(), S.getPreprocessor());
 	if (!Info)
 		return;
 	const auto &SkeletonDescriptions = Info->SkeletonsStandard;
@@ -780,7 +846,7 @@ void skepuSignatureHelp(Sema &S, unsigned CurrentArg, CodeCompleteConsumer::Over
 
 void skepuHover(ParsedAST &AST, const NamedDecl &Decl, const FunctionDecl *Function, HoverInfo &HI)
 {
-	auto Info = infoFor(AST.tuPath());
+	auto Info = infoFor(AST.tuPath(), AST.getPreprocessor());
 	if (!Info)
 		return;
 
@@ -856,7 +922,7 @@ void skepuHover(ParsedAST &AST, const NamedDecl &Decl, const FunctionDecl *Funct
 
 std::vector<DocumentSymbol> skepuDocumentSymbols(ParsedAST &AST, std::vector<DocumentSymbol> Syms)
 {
-	auto Info = infoFor(AST.tuPath());
+	auto Info = infoFor(AST.tuPath(), AST.getPreprocessor());
 	std::vector<DocumentSymbol> newSyms{};
 	static const SkepuInfo None;
 	const SkepuInfo &I = Info ? *Info : None;

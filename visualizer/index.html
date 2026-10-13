@@ -26,10 +26,10 @@
 
     <!-- Worker URLs — injected as classic scripts so ES modules can read them
          as globals.  Paths are relative to this HTML file (frontend/). -->
-    <script>var DAGRE_WORKER_URL = "./script/workers/dagre-worker.js";</script>
-    <script>var ELK_WORKER_URL   = "./static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js";</script>
+    <script data-variant="web">var DAGRE_WORKER_URL = "./script/workers/dagre-worker.js";</script>
+    <script data-variant="web">var ELK_WORKER_URL   = "./static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js";</script>
 
-    <script>
+    <script data-variant="web">
       window.skevu = {
         dagreWorker: './script/workers/dagre-worker.js',
         elkWorker: './static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js',
@@ -37,19 +37,21 @@
       }
     </script>
 
-    <script type="module" src="./script/util_web.js"></script>
-    <script type="module" src="./script/graph_web.js"></script>
+    <script type="module" data-variant="web" src="./script/graph_web.js"></script>
 
     <!-- Worker-loader module: spawns the visualizer worker, registers it with
          transport.js, and builds the examples menu.  Must appear before ui.js
          so that initWorkerBackend() is called before load() triggers the first
          graph fetch. -->
-    <script type="module" src="./script/workers/worker-loader-web.js"></script>
+    <script type="module" data-variant="web" src="./script/workers/worker-loader-web.js"></script>
 
     <!-- Entry-point ES module. -->
-    <script type="module" src="./script/ui.js"></script>
+    <script type="module" data-variant="web" src="./script/ui.js"></script>
+
+    <!-- Binds the controls (data-click) and starts the page. -->
+    <script type="module" data-variant="web" src="./script/main_web.js"></script>
 </head>
-<body class="welcome-mode" onload="load();">
+<body class="welcome-mode">
 
     <div class="outer_container">
       <div id="left_pane">
@@ -70,7 +72,7 @@
 
               <!-- File upload form — handled by loadFiles(data) in worker-loader.js
                    instead of a traditional form POST. -->
-              <div onclick="event.stopPropagation()">
+              <div data-click="stop">
                 <div class="menu-form-row">
                   <label>Trace File</label>
                   <input id="trace-file-input" type="file" accept=".json,.skevu">
@@ -84,7 +86,7 @@
                   <input id="snapshot-zip-input" type="file" accept=".zip">
                 </div>
                 <div class="menu-form-row">
-                  <button id="load-trace-btn" onclick="loadFiles(null);menuClose()">Load Trace</button>
+                  <button id="load-trace-btn" data-click="loadFilesFromForm menuClose">Load Trace</button>
                 </div>
               </div>
 
@@ -98,26 +100,26 @@
                 <div class="submenu">
                     <div class="submenu-title">Graph Mode<span class="menu-arrow">▸</span></div>
                     <div class="dropdown">
-                        <button class="menu-radio" data-ctrl="graph-mode" data-value="dependence-dag"        onclick="menuSelectRadio(this)"><span class="menu-icon">✓</span>Dependence DAG</button>
-                        <button class="menu-radio" data-ctrl="graph-mode" data-value="program-tree"        onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Program Tree</button>
+                        <button class="menu-radio" data-ctrl="graph-mode" data-value="dependence-dag"        data-click="menuSelectRadio"><span class="menu-icon">✓</span>Dependence DAG</button>
+                        <button class="menu-radio" data-ctrl="graph-mode" data-value="program-tree"        data-click="menuSelectRadio"><span class="menu-icon"></span>Program Tree</button>
                     </div>
                 </div>
               <div class="menu-sep"></div>
-              <button class="menu-action" onclick="fetchViewDataAndRender();menuClose()">Apply Settings<span class="menu-key">Space</span></button>
-              <button class="menu-action" onclick="menuRestoreDefaults();fetchViewDataAndRender()">Restore Defaults</button>
-              <button class="menu-action" onclick="recenterGraph();menuClose()">Reset View</button>
-              <button class="menu-action" onclick="renderImage();menuClose()">Save Image</button>
+              <button class="menu-action" data-click="fetchViewDataAndRender menuClose">Apply Settings<span class="menu-key">Space</span></button>
+              <button class="menu-action" data-click="menuRestoreDefaults fetchViewDataAndRender">Restore Defaults</button>
+              <button class="menu-action" data-click="recenterGraph menuClose">Reset View</button>
+              <button class="menu-action" data-click="renderImage menuClose">Save Image</button>
               <div class="menu-sep"></div>
-              <button id="menu-check-legend"   class="menu-check" onclick="toggleLegend();menuClose()"><span class="menu-icon"></span>Legend</button>
-              <button id="menu-check-timeline" class="menu-check" onclick="toggleGanttPane();menuClose()"><span class="menu-icon"></span>Timeline<span class="menu-key">G</span></button>
-              <button id="menu-check-source"     class="menu-check" onclick="toggleSourcePane();menuClose()"><span class="menu-icon"></span>Source Panel<span class="menu-key">S</span></button>
-              <button id="menu-check-code-paths" class="menu-check" onclick="toggleCodePaths();menuClose()"><span class="menu-icon"></span>Code Paths</button>
-              <button id="menu-check-definitions" class="menu-check" onclick="toggleDefinitions();menuClose()" title="Mark where all the skeleton instances and user functions are defined"><span class="menu-icon"></span>Definitions</button>
+              <button id="menu-check-legend"   class="menu-check" data-click="toggleLegend menuClose"><span class="menu-icon"></span>Legend</button>
+              <button id="menu-check-timeline" class="menu-check" data-click="toggleGanttPane menuClose"><span class="menu-icon"></span>Timeline<span class="menu-key">G</span></button>
+              <button id="menu-check-source"     class="menu-check" data-click="toggleSourcePane menuClose"><span class="menu-icon"></span>Source Panel<span class="menu-key">S</span></button>
+              <button id="menu-check-code-paths" class="menu-check" data-click="toggleCodePaths menuClose"><span class="menu-icon"></span>Code Paths</button>
+              <button id="menu-check-definitions" class="menu-check" data-click="toggleDefinitions menuClose" title="Mark where all the skeleton instances and user functions are defined"><span class="menu-icon"></span>Definitions</button>
               <div class="menu-sep"></div>
-              <div class="menu-form-row" onclick="event.stopPropagation()" style="padding:0.35em 0.75em">
+              <div class="menu-form-row" data-click="stop" style="padding:0.35em 0.75em">
                 <label style="font-size:0.85em;color:#666">Timeline Scale: <span id="gantt-scale-label">1×</span></label>
                 <input type="range" id="gantt-scale" min="1" max="20" step="1" value="1"
-                  oninput="ganttScaleChanged(this.value)" style="width:100%">
+                  data-input="ganttScaleChanged" style="width:100%">
               </div>
               <div class="menu-sep"></div>
               <div class="submenu">
@@ -128,7 +130,7 @@
                 <button class="submenu-title menu-action">Color Spectrum<span class="menu-arrow">▶</span></button>
                 <div class="dropdown dropdown-spectrum" id="spectrum-menu"></div>
               </div>
-              <button id="menu-check-dark" class="menu-check" onclick="toggleDarkMode();menuClose()"><span class="menu-icon"></span>Dark mode<span class="menu-key">M</span></button>
+              <button id="menu-check-dark" class="menu-check" data-click="toggleDarkMode menuClose"><span class="menu-icon"></span>Dark mode<span class="menu-key">M</span></button>
             </div>
           </div>
 
@@ -136,46 +138,46 @@
           <div class="menu">
             <button class="menu-title">Nodes</button>
             <div class="dropdown">
-              <button class="menu-check" data-ctrl="container-updates"      onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Updates<span class="menu-key">U</span></button>
-              <button class="menu-check" data-ctrl="container-allocations"  onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Allocations<span class="menu-key">A</span></button>
-              <button class="menu-check" data-ctrl="container-deallocations" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Deallocations<span class="menu-key">D</span></button>
-              <button class="menu-check" data-ctrl="container-transfers"    onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Transfers<span class="menu-key">T</span></button>
-              <button class="menu-check" data-ctrl="communications"         onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Communications</button>
-              <button class="menu-check" data-ctrl="element-accesses"       onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Element Accesses</button>
+              <button class="menu-check" data-ctrl="container-updates"      data-click="menuToggleCheck"><span class="menu-icon"></span>Updates<span class="menu-key">U</span></button>
+              <button class="menu-check" data-ctrl="container-allocations"  data-click="menuToggleCheck"><span class="menu-icon"></span>Allocations<span class="menu-key">A</span></button>
+              <button class="menu-check" data-ctrl="container-deallocations" data-click="menuToggleCheck"><span class="menu-icon"></span>Deallocations<span class="menu-key">D</span></button>
+              <button class="menu-check" data-ctrl="container-transfers"    data-click="menuToggleCheck"><span class="menu-icon"></span>Transfers<span class="menu-key">T</span></button>
+              <button class="menu-check" data-ctrl="communications"         data-click="menuToggleCheck"><span class="menu-icon"></span>Communications</button>
+              <button class="menu-check" data-ctrl="element-accesses"       data-click="menuToggleCheck"><span class="menu-icon"></span>Element Accesses</button>
               <div class="menu-sep"></div>
-              <button class="menu-check" data-ctrl="show_regions"           onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Regions<span class="menu-key">R</span></button>
+              <button class="menu-check" data-ctrl="show_regions"           data-click="menuToggleCheck"><span class="menu-icon"></span>Regions<span class="menu-key">R</span></button>
               <div class="menu-sep"></div>
               <div class="submenu">
                 <div class="submenu-title">Color<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="duration-total"        onclick="menuSelectRadio(this)"><span class="menu-icon">✓</span>Total Time</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="elements"              onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Elements</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="duration-per-element"  onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Time/element</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="iterations"            onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Iterations</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="duration-cv"           onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Duration Variance</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="imbalance"             onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Rank Imbalance (MPI)</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="comm-bytes"            onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Communication Bytes (MPI)</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="dag-depth"             onclick="menuSelectRadio(this)"><span class="menu-icon"></span>DAG Depth</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="nesting-level"         onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Nesting Level</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="fan-in"                onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Fan-In</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="fan-out"               onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Fan-Out</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="total-order"           onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Program Sequence</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="pattern"               onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Pattern</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="backend"               onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Backend</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="duration-total"        data-click="menuSelectRadio"><span class="menu-icon">✓</span>Total Time</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="elements"              data-click="menuSelectRadio"><span class="menu-icon"></span>Elements</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="duration-per-element"  data-click="menuSelectRadio"><span class="menu-icon"></span>Time/element</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="iterations"            data-click="menuSelectRadio"><span class="menu-icon"></span>Iterations</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="duration-cv"           data-click="menuSelectRadio"><span class="menu-icon"></span>Duration Variance</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="imbalance"             data-click="menuSelectRadio"><span class="menu-icon"></span>Rank Imbalance (MPI)</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="comm-bytes"            data-click="menuSelectRadio"><span class="menu-icon"></span>Communication Bytes (MPI)</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="dag-depth"             data-click="menuSelectRadio"><span class="menu-icon"></span>DAG Depth</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="nesting-level"         data-click="menuSelectRadio"><span class="menu-icon"></span>Nesting Level</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="fan-in"                data-click="menuSelectRadio"><span class="menu-icon"></span>Fan-In</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="fan-out"               data-click="menuSelectRadio"><span class="menu-icon"></span>Fan-Out</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="total-order"           data-click="menuSelectRadio"><span class="menu-icon"></span>Program Sequence</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="pattern"               data-click="menuSelectRadio"><span class="menu-icon"></span>Pattern</button>
+                  <button class="menu-radio" data-ctrl="node-color-call" data-value="backend"               data-click="menuSelectRadio"><span class="menu-icon"></span>Backend</button>
                 </div>
               </div>
               <div class="submenu">
                 <div class="submenu-title">Size<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button class="menu-radio" data-ctrl="node-size-call" data-value="fixed"               onclick="menuSelectRadio(this)"><span class="menu-icon">✓</span>Fixed</button>
-                  <button class="menu-radio" data-ctrl="node-size-call" data-value="duration-total"      onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Total Time</button>
-                  <button class="menu-radio" data-ctrl="node-size-call" data-value="elements"            onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Elements</button>
-                  <button class="menu-radio" data-ctrl="node-size-call" data-value="duration-per-element" onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Time/element</button>
-                  <button class="menu-radio" data-ctrl="node-size-call" data-value="iterations"          onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Iterations</button>
-                  <button class="menu-radio" data-ctrl="node-size-call" data-value="duration-cv"         onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Duration Variance</button>
-                  <button class="menu-radio" data-ctrl="node-size-call" data-value="nesting-level"       onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Nesting Level</button>
-                  <button class="menu-radio" data-ctrl="node-size-call" data-value="fan-in"              onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Fan-In</button>
-                  <button class="menu-radio" data-ctrl="node-size-call" data-value="fan-out"             onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Fan-Out</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="fixed"               data-click="menuSelectRadio"><span class="menu-icon">✓</span>Fixed</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="duration-total"      data-click="menuSelectRadio"><span class="menu-icon"></span>Total Time</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="elements"            data-click="menuSelectRadio"><span class="menu-icon"></span>Elements</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="duration-per-element" data-click="menuSelectRadio"><span class="menu-icon"></span>Time/element</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="iterations"          data-click="menuSelectRadio"><span class="menu-icon"></span>Iterations</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="duration-cv"         data-click="menuSelectRadio"><span class="menu-icon"></span>Duration Variance</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="nesting-level"       data-click="menuSelectRadio"><span class="menu-icon"></span>Nesting Level</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="fan-in"              data-click="menuSelectRadio"><span class="menu-icon"></span>Fan-In</button>
+                  <button class="menu-radio" data-ctrl="node-size-call" data-value="fan-out"             data-click="menuSelectRadio"><span class="menu-icon"></span>Fan-Out</button>
                 </div>
               </div>
             </div>
@@ -185,37 +187,37 @@
           <div class="menu">
             <button class="menu-title">Edges</button>
             <div class="dropdown">
-              <button class="menu-check" data-ctrl="anti-deps"           onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Anti-Dependences<span class="menu-key">N</span></button>
-              <button class="menu-check" data-ctrl="virtual-alias-edges" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Virtual Datasets</button>
-              <button class="menu-check" data-ctrl="edge-labels"         onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Labels<span class="menu-key">L</span></button>
+              <button class="menu-check" data-ctrl="anti-deps"           data-click="menuToggleCheck"><span class="menu-icon"></span>Anti-Dependences<span class="menu-key">N</span></button>
+              <button class="menu-check" data-ctrl="virtual-alias-edges" data-click="menuToggleCheck"><span class="menu-icon"></span>Virtual Datasets</button>
+              <button class="menu-check" data-ctrl="edge-labels"         data-click="menuToggleCheck"><span class="menu-icon"></span>Labels<span class="menu-key">L</span></button>
               <div class="menu-sep"></div>
               <div class="submenu">
                 <div class="submenu-title">Direction<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button class="menu-radio" data-ctrl="direction" data-value="vertical"   onclick="menuSelectRadio(this)"><span class="menu-icon">✓</span>Vertical</button>
-                  <button class="menu-radio" data-ctrl="direction" data-value="horizontal" onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Horizontal</button>
+                  <button class="menu-radio" data-ctrl="direction" data-value="vertical"   data-click="menuSelectRadio"><span class="menu-icon">✓</span>Vertical</button>
+                  <button class="menu-radio" data-ctrl="direction" data-value="horizontal" data-click="menuSelectRadio"><span class="menu-icon"></span>Horizontal</button>
                 </div>
               </div>
               <div class="submenu">
                 <div class="submenu-title">Width<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button class="menu-radio" data-ctrl="edge-width" data-value="fixed"          onclick="menuSelectRadio(this)"><span class="menu-icon">✓</span>Fixed</button>
-                  <button class="menu-radio" data-ctrl="edge-width" data-value="elements"       onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Elements</button>
-                  <button class="menu-radio" data-ctrl="edge-width" data-value="iterations"     onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Iterations</button>
-                  <button class="menu-radio" data-ctrl="edge-width" data-value="order-span"     onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Program Order Span</button>
-                  <button class="menu-radio" data-ctrl="edge-width" data-value="critical-path"  onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Critical Path</button>
-                  <button class="menu-radio" data-ctrl="edge-width" data-value="cross-backend"  onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Cross-Backend</button>
+                  <button class="menu-radio" data-ctrl="edge-width" data-value="fixed"          data-click="menuSelectRadio"><span class="menu-icon">✓</span>Fixed</button>
+                  <button class="menu-radio" data-ctrl="edge-width" data-value="elements"       data-click="menuSelectRadio"><span class="menu-icon"></span>Elements</button>
+                  <button class="menu-radio" data-ctrl="edge-width" data-value="iterations"     data-click="menuSelectRadio"><span class="menu-icon"></span>Iterations</button>
+                  <button class="menu-radio" data-ctrl="edge-width" data-value="order-span"     data-click="menuSelectRadio"><span class="menu-icon"></span>Program Order Span</button>
+                  <button class="menu-radio" data-ctrl="edge-width" data-value="critical-path"  data-click="menuSelectRadio"><span class="menu-icon"></span>Critical Path</button>
+                  <button class="menu-radio" data-ctrl="edge-width" data-value="cross-backend"  data-click="menuSelectRadio"><span class="menu-icon"></span>Cross-Backend</button>
                 </div>
               </div>
               <div class="submenu">
                 <div class="submenu-title">Opacity<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="fixed"         onclick="menuSelectRadio(this)"><span class="menu-icon">✓</span>Fixed</button>
-                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="elements"      onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Elements</button>
-                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="iterations"    onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Iterations</button>
-                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="order-span"    onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Program Order Span</button>
-                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="critical-path" onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Critical Path</button>
-                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="cross-backend" onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Cross-Backend</button>
+                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="fixed"         data-click="menuSelectRadio"><span class="menu-icon">✓</span>Fixed</button>
+                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="elements"      data-click="menuSelectRadio"><span class="menu-icon"></span>Elements</button>
+                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="iterations"    data-click="menuSelectRadio"><span class="menu-icon"></span>Iterations</button>
+                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="order-span"    data-click="menuSelectRadio"><span class="menu-icon"></span>Program Order Span</button>
+                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="critical-path" data-click="menuSelectRadio"><span class="menu-icon"></span>Critical Path</button>
+                  <button class="menu-radio" data-ctrl="edge-opacity" data-value="cross-backend" data-click="menuSelectRadio"><span class="menu-icon"></span>Cross-Backend</button>
                 </div>
               </div>
             </div>
@@ -228,36 +230,36 @@
               <div class="submenu">
                 <div class="submenu-title">Simulate<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button id="sim-btn-playpause" class="menu-action" data-needs="trace" onclick="simToggle();menuClose()">Play<span class="menu-key">P</span></button>
-                  <button class="menu-action" data-needs="trace" onclick="simStop();menuClose()">Stop</button>
+                  <button id="sim-btn-playpause" class="menu-action" data-needs="trace" data-click="simToggle menuClose">Play<span class="menu-key">P</span></button>
+                  <button class="menu-action" data-needs="trace" data-click="simStop menuClose">Stop</button>
                 </div>
               </div>
               <div class="menu-sep"></div>
-              <button class="menu-action" data-needs="trace" onclick="zoomGanttToMeasuredInterval();menuClose()">Zoom to Measured Interval<span class="menu-key">Z</span></button>
-              <button class="menu-action" data-needs="tabs" onclick="(function(){var tabs=Array.from(document.querySelectorAll('.cpp-tab'));if(tabs.length>1){var cur=tabs.findIndex(function(t){return t.classList.contains('active');});var next=(cur+1)%tabs.length;switchTab(tabs[next],next);}})();menuClose()">Next Source Tab<span class="menu-key">Tab</span></button>
+              <button class="menu-action" data-needs="trace" data-click="zoomGanttToMeasuredInterval menuClose">Zoom to Measured Interval<span class="menu-key">Z</span></button>
+              <button class="menu-action" data-needs="tabs" data-click="nextSourceFile menuClose">Next Source Tab<span class="menu-key">Tab</span></button>
               <div class="menu-sep"></div>
               <div class="submenu">
                 <div class="submenu-title">Selected Node<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button class="menu-action" data-needs="selection" onclick="collapseSelectedRecursively();menuClose()">Collapse Recursive<span class="menu-key">C</span></button>
-                  <button class="menu-action" data-needs="selection" onclick="expandSelectedRecursively();menuClose()">Expand Recursive<span class="menu-key">E</span></button>
-                  <button class="menu-action" data-needs="selection" onclick="collapseSelected();menuClose()">Collapse Once<span class="menu-key">-</span></button>
-                  <button class="menu-action" data-needs="selection" onclick="expandSelected();menuClose()">Expand Once<span class="menu-key">+</span></button>
+                  <button class="menu-action" data-needs="selection" data-click="collapseSelectedRecursively menuClose">Collapse Recursive<span class="menu-key">C</span></button>
+                  <button class="menu-action" data-needs="selection" data-click="expandSelectedRecursively menuClose">Expand Recursive<span class="menu-key">E</span></button>
+                  <button class="menu-action" data-needs="selection" data-click="collapseSelected menuClose">Collapse Once<span class="menu-key">-</span></button>
+                  <button class="menu-action" data-needs="selection" data-click="expandSelected menuClose">Expand Once<span class="menu-key">+</span></button>
                 </div>
               </div>
               <div class="submenu">
                 <div class="submenu-title">All Regions<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button class="menu-action" data-needs="regions" onclick="collapseAllRegions();menuClose()">Collapse</button>
-                  <button class="menu-action" data-needs="regions" onclick="expandAllRegionsOnce();menuClose()">Expand Once</button>
-                  <button class="menu-action" data-needs="regions" onclick="expandAllRegions();menuClose()">Expand Recursive</button>
+                  <button class="menu-action" data-needs="regions" data-click="collapseAllRegions menuClose">Collapse</button>
+                  <button class="menu-action" data-needs="regions" data-click="expandAllRegionsOnce menuClose">Expand Once</button>
+                  <button class="menu-action" data-needs="regions" data-click="expandAllRegions menuClose">Expand Recursive</button>
                 </div>
               </div>
               <div class="submenu">
                 <div class="submenu-title">All Fusions<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button class="menu-action" data-needs="fusions" onclick="collapseAllFusions();menuClose()">Collapse</button>
-                  <button class="menu-action" data-needs="fusions" onclick="expandAllFusions();menuClose()">Expand</button>
+                  <button class="menu-action" data-needs="fusions" data-click="collapseAllFusions menuClose">Collapse</button>
+                  <button class="menu-action" data-needs="fusions" data-click="expandAllFusions menuClose">Expand</button>
                 </div>
               </div>
             </div>
@@ -267,15 +269,15 @@
           <div class="menu">
             <button class="menu-title">Advanced</button>
             <div class="dropdown">
-              <button class="menu-check" data-ctrl="collapse_iteration" onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Aggregate iteration<span class="menu-key">I</span></button>
+              <button class="menu-check" data-ctrl="collapse_iteration" data-click="menuToggleCheck"><span class="menu-icon"></span>Aggregate iteration<span class="menu-key">I</span></button>
               <div class="submenu">
                 <div class="submenu-title">Aggregate by<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button class="menu-radio" data-ctrl="aggregate_by" data-value="name"          title="Operations of one region with the same name are one, wherever in the source they are called" onclick="menuSelectRadio(this)"><span class="menu-icon">✓</span>Name</button>
-                  <button class="menu-radio" data-ctrl="aggregate_by" data-value="name-location" title="Operations with the same name are one only if they are called from the same line" onclick="menuSelectRadio(this)"><span class="menu-icon"></span>Name and Location</button>
+                  <button class="menu-radio" data-ctrl="aggregate_by" data-value="name"          title="Operations of one region with the same name are one, wherever in the source they are called" data-click="menuSelectRadio"><span class="menu-icon">✓</span>Name</button>
+                  <button class="menu-radio" data-ctrl="aggregate_by" data-value="name-location" title="Operations with the same name are one only if they are called from the same line" data-click="menuSelectRadio"><span class="menu-icon"></span>Name and Location</button>
                 </div>
               </div>
-              <button class="menu-check" data-ctrl="fusion_analysis"    onclick="menuToggleCheck(this)"><span class="menu-icon"></span>Fusion analysis<span class="menu-key">F</span></button>
+              <button class="menu-check" data-ctrl="fusion_analysis"    data-click="menuToggleCheck"><span class="menu-icon"></span>Fusion analysis<span class="menu-key">F</span></button>
             </div>
           </div>
 
@@ -286,7 +288,7 @@
               <span class="render-spinner"></span>Rendering…
             </button>
             <div class="dropdown dropdown-info" style="right:0;left:auto;min-width:170px;padding:0.4em 0">
-              <button class="menu-action" onclick="stopRendering()">Stop rendering</button>
+              <button class="menu-action" data-click="stopRendering">Stop rendering</button>
             </div>
           </div>
 
@@ -309,45 +311,6 @@
 
         </nav>
         <div id="alert-bar"></div>
-
-        <script>
-          // ── Menu helpers ──────────────────────────────────────────────────────
-          function syncExternalMenuIcons() {
-            var lb = document.getElementById('menu-check-legend');
-            if (lb) lb.querySelector('.menu-icon').textContent = State._legendOpen ? '✓' : '';
-            var tb = document.getElementById('menu-check-timeline');
-            if (tb) tb.querySelector('.menu-icon').textContent = State._ganttPaneOpen ? '✓' : '';
-            var sb = document.getElementById('menu-check-source');
-            if (sb) sb.querySelector('.menu-icon').textContent = State._sourcePaneOpen ? '✓' : '';
-            var cp = document.getElementById('menu-check-code-paths');
-            if (cp) cp.querySelector('.menu-icon').textContent = State._codePaths ? '✓' : '';
-            var dfb = document.getElementById('menu-check-definitions');
-            if (dfb) dfb.querySelector('.menu-icon').textContent = State._pinDefinitions ? '✓' : '';
-            var db = document.getElementById('menu-check-dark');
-            if (db) db.querySelector('.menu-icon').textContent = State._darkMode ? '✓' : '';
-            // hljs theme icons are owned by SourceCodeView (window.setHljsTheme /
-            // window._applyHljsTheme wired in graph.js).
-            if (State.sourceView) State.sourceView.syncThemeIcons();
-          }
-
-          function openInfoPane() {
-            var rightEl = document.getElementById('right_pane');
-            if (State._infoPaneRatio > 0 && rightEl) {
-              var h = Math.round(State._infoPaneRatio * rightEl.offsetHeight);
-              document.getElementById('info_window').style.flex = '0 0 ' + h + 'px';
-            } else {
-              document.getElementById('info_window').style.flex = '0 0 10em';
-            }
-          }
-
-          // The menus (opening, closing, the hover from one to the next) are script/menu.js, installed by ui.js.
-          // switchTab / setHljsTheme / _applyHljsTheme / badgeClick are window globals wired by SourceCodeView in graph.js.
-
-          // menuRestoreDefaults needs to call into settings.js — that module
-          // exports it via window in ui.js, but in worker mode we also need it.
-          // It is wired up to window in settings.js → ui.js, so it will be
-          // available after the modules initialise.
-        </script>
 
         <div id="visualization">
           <!-- Welcome panel — visible before the first trace is loaded.
@@ -387,7 +350,7 @@
           </div>
           <div id="cy-layout-overlay">
             <span class="cy-layout-spinner"></span>
-            <button id="cy-stop-btn" onclick="stopRendering()">&#9632; Stop</button>
+            <button id="cy-stop-btn" data-click="stopRendering">&#9632; Stop</button>
           </div>
         </div>
         <div id="legend"></div>

@@ -17,10 +17,18 @@ async function initWorker() {
         skepuDNN: window.skevu.skepuDNN
     });
 
-    window.skevu.vscode.postMessage({
-        type: "status_message",
-        text: "Worker initialized"
+    // The worker cannot fetch the files of the extension itself (see _fetchByPage in visualizer.js): the page does, for it.
+    _worker.addEventListener('message', async function(evt) {
+        if (evt.data.type !== 'fetch') return;
+        const { fetchId, url } = evt.data;
+        try {
+            const r = await fetch(url);
+            _worker.postMessage({ type: 'fetched', fetchId, ok: r.ok, status: r.status, statusText: r.statusText, text: r.ok ? await r.text() : '' });
+        } catch (e) {
+            _worker.postMessage({ type: 'fetched', fetchId, ok: false, status: 0, statusText: String(e), text: '' });
+        }
     });
+
     
     initWorkerBackend(_worker);
     

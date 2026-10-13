@@ -180,6 +180,27 @@ typename value_type<C>::type imag(C z)
   return z.im;
 }
 
+// real and imaginary part of a real number
+template<typename R, typename std::enable_if<!is_skepu_complex<R>::value, bool>::type = 0>
+#ifdef SKEPU_CUDA
+	__host__ __device__
+#endif
+inline
+R real(R x)
+{
+  return x;
+}
+
+template<typename R, typename std::enable_if<!is_skepu_complex<R>::value, bool>::type = 0>
+#ifdef SKEPU_CUDA
+	__host__ __device__
+#endif
+inline
+R imag(R x)
+{
+  return 0;
+}
+
 // 1-norm
 template<typename T>
 T abs1(T x)
@@ -434,10 +455,14 @@ bool operator!=(T lhs, complex<T> rhs)
 
 #ifdef SKEPU_OPENCL
 
+#ifdef SKEPU_MPI
+namespace skepu_node // the type name specializations belong to the node-level library
+#else
 namespace skepu
+#endif
 {
-	template<> inline std::string getDataTypeCL<complex::complex<float>>         () { return "complex_float";          }
-	template<> inline std::string getDataTypeCL<complex::complex<double>>        () { return "complex_double";         }
+	template<> inline std::string getDataTypeCL<skepu::complex::complex<float>>         () { return "complex_float";          }
+	template<> inline std::string getDataTypeCL<skepu::complex::complex<double>>        () { return "complex_double";         }
 }
 
 #endif

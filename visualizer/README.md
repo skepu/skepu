@@ -67,7 +67,7 @@ script/
   ── Shared by SkeVU and the Designer (designer.html) ────────────────────────
   graph_style.js        the Cytoscape style of the graph, and its colours (COLORS, regionColor)
   graph_interaction.js  the selection (what is marked) and the hover of a graph
-  panzoom.js            pan by the wheel, zoom by the pinch, and the smooth pan and zoom to nodes
+  panzoom.js            pan by the wheel or a two-finger swipe, zoom by the pinch (Safari) or Ctrl/Cmd+wheel (also the pinch in Chromium), and the smooth pan and zoom to nodes
   tooltip.js            the tooltip of a node or an edge, and its text
   menu.js               the menus of the menu bar (open, close, hover; items that would do nothing are disabled)
   resizer.js            the bars between panes: pointer and keyboard
@@ -134,6 +134,32 @@ its user functions (see `TRACE_FORMAT.md`). SkeVU shows them for each call:
 
 A lambda is a user function on the line of the instance, and an anonymous skeleton has its instance on the line of the call: the marks and the
 badge of the line are then both there.
+
+## VS Code extension
+
+The viewer also runs in an editor: a custom editor ("SkeVU Visualizer") shows the trace in a tab, and the badges and highlights of its nodes are
+in the source files, which are the ones that are open in the editor. It opens by itself for the files that the tracer names (`skepu_trace*.json`,
+also the files of the processes of an MPI program), for those that the examples' Makefile names (`trace_*.json`) and for `*.skevu`; any other `*.json` file is opened with it by *Open With…*. Each source file
+of the trace is looked for in the workspace and used only if its SHA-256 is the one in `header.files` of the trace (see TRACE_FORMAT.md).
+
+```bash
+npm install
+npm run build      # dist/: the viewer and its two workers, bundled (esbuild.js)
+npm run compile    # out/: the extension (src/, tsc)
+```
+
+To have it in every window, make a package and install it (`@vscode/vsce` is a dev dependency: `npm install` first):
+
+```bash
+make vsix                                              # npm run package, with the library headers in it
+codium --install-extension skepu-visualizer-1.0.0.vsix  # or in the editor: Extensions, the ... menu, Install from VSIX...
+```
+
+To try it without installing, start an editor with it as a development extension (this is a window of its own, and the only one that has the
+extension): `codium --extensionDevelopmentPath=$PWD <folder>`, or *Run Extension* (F5) in this folder. The page of the webview is made from `index.html` (src/webviewHtml.ts): the same markup as the
+browser page, with a content security policy that runs only scripts with a nonce, so the controls are `data-click` / `data-input` (script/actions.js)
+and not inline handlers (tests/unit/test_markup_csp.js checks it). What differs from the browser is in `script/*_vscode.js` and `skevu.js` (the
+messages to and from the extension). The library headers (`static/skepu-lib`) are made by `make`, as for the browser page.
 
 ## Tests
 

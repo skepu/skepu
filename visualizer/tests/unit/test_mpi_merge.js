@@ -214,3 +214,28 @@ describe('an skepu::external call in the merged trace', () => {
         expect(m.divergence).toMatchObject({ kind: 'call', rank: 2, expected: 'external', found: 'Map' });
     });
 });
+
+describe('the source files of the header', () => {
+    const merge = (edits) => mergeMpiTraces(texts.map((f, k) => {
+        const t = JSON.parse(f.text);
+        t.header.files = edits[k];
+        if (edits[k] === undefined) delete t.header.files;
+        return { name: f.name, text: JSON.stringify(t) };
+    }));
+
+    it('are those of the process with the trace, with the files that the other processes name', () => {
+        const m = merge([{ '/a.cpp': 'h1' }, { '/b.cpp': 'h2' }, undefined]);
+        expect(m.header.files).toEqual({ '/a.cpp': 'h1', '/b.cpp': 'h2' });
+        expect(m.warnings.filter(w => /version/.test(w))).toEqual([]);
+    });
+
+    it('keep the hash of the process with the trace, and warn once of another version on another process', () => {
+        const m = merge([{ '/a.cpp': 'h1' }, { '/a.cpp': 'h2' }, { '/a.cpp': 'h3' }]);
+        expect(m.header.files).toEqual({ '/a.cpp': 'h1' });
+        expect(m.warnings.filter(w => /another version of \/a\.cpp/.test(w))).toHaveLength(1);
+    });
+
+    it('are not added to a header that had none', () => {
+        expect(merge([undefined, undefined, undefined]).header.files).toBeUndefined();
+    });
+});

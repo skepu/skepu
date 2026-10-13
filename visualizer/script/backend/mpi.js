@@ -242,8 +242,22 @@ export function mergeMpiTraces(files) {
     if (worstSpread > Math.max(1000, 20 * uncertainty))
         warnings.push(`The collectives end up to ${Math.round(worstSpread)} us apart on the clock of rank ${detail}: the clocks are not well aligned (measured to within ${Math.round(uncertainty)} us)`);
 
+    // The source files of the trace: those of the process with the trace first, and the files that the other processes name (a lean process has
+    // none, one that ran on another machine can have another version of a file: the hashes would not be the ones of the file that the editor has)
+    const sourceFiles = { ...(full.header.files ?? {}) };
+    const differing = new Set();
+    for (const f of [...byRank.values()].sort((a, b) => a.header.mpi.rank - b.header.mpi.rank))
+        for (const [path, hash] of Object.entries(f.header.files ?? {})) {
+            if (!(path in sourceFiles)) sourceFiles[path] = hash;
+            else if (sourceFiles[path] !== hash && !differing.has(path)) {
+                differing.add(path);
+                warnings.push(`Rank ${f.header.mpi.rank} ran another version of ${path} than rank ${detail}: the source shown is the one of rank ${detail}`);
+            }
+        }
+    const header = Object.keys(sourceFiles).length ? { ...full.header, files: sourceFiles } : full.header;
+
     return {
-        header: full.header,
+        header,
         events,
         mpi: { ranks, detail_rank: detail, files: info, missing_ranks: missing, uncertainty_us: uncertainty, collective_end_spread_us: worstSpread },
         warnings,

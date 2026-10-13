@@ -8,6 +8,8 @@ import { saveSettings, loadSettings, applyStoredLayout, toggleSetting } from './
 import { navigateHeatmap } from './heatmap.js';
 import { installMenus, enableMenuItem } from './menu.js';
 import { attachResizer } from './resizer.js';
+import { setPaneOpen } from './panes.js';
+import { reveal } from './reveal.js';
 import { buildThemeMenu, buildSpectrumMenu } from './appearance.js';
 import './graph.js';   // side-effect: creates GraphView, LegendView, SimulationEngine, sets State.*, wires window globals
 
@@ -51,6 +53,7 @@ export function closeGanttPane() {
 }
 
 export function toggleGanttPane() {
+  enablePaneAnimation();
   if (State._ganttPaneOpen) closeGanttPane(); else openGanttPane();
 }
 
@@ -90,24 +93,31 @@ export function fetchViewDataAndRender() {
   if (State.graphView) State.graphView.render();
 }
 
-export function openSourcePane() {
+/** The panes slide when the user opens or closes them, not for the first trace that is drawn (early.js puts the class on, and this takes it away). */
+export function enablePaneAnimation() {
+  document.documentElement.classList.remove('no-pane-anim');
+}
+
+// `animate` (true only): the pane slides. The panes as they were left, and the defaults that are restored, are put in place at once.
+export function openSourcePane(animate) {
   State._sourcePaneOpen = true;
-  document.getElementById('right_pane').style.display  = '';
-  document.getElementById('split-gutter').style.display = '';
+  setPaneOpen(document.getElementById('right_pane'),  true, 'width', animate === true);
+  setPaneOpen(document.getElementById('split-gutter'), true, 'width', animate === true);
   if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
   saveSettings();
 }
 
-export function closeSourcePane() {
+export function closeSourcePane(animate) {
   State._sourcePaneOpen = false;
-  document.getElementById('right_pane').style.display  = 'none';
-  document.getElementById('split-gutter').style.display = 'none';
+  setPaneOpen(document.getElementById('right_pane'),  false, 'width', animate === true);
+  setPaneOpen(document.getElementById('split-gutter'), false, 'width', animate === true);
   if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
   saveSettings();
 }
 
 export function toggleSourcePane() {
-  if (State._sourcePaneOpen) closeSourcePane(); else openSourcePane();
+  enablePaneAnimation();
+  if (State._sourcePaneOpen) closeSourcePane(true); else openSourcePane(true);
 }
 
 // To close popup window
@@ -178,10 +188,11 @@ export function toggleDefinitions() {
 
 export function toggleLegend()
 {
+  enablePaneAnimation();
   State._legendOpen = !State._legendOpen;
   var el = document.getElementById('legend');
-  el.style.display = State._legendOpen ? '' : 'none';
-  if (State._legendOpen) renderLegend();
+  if (State._legendOpen) renderLegend();      // (before it slides open: what it slides to is its height with the legend in it)
+  setPaneOpen(el, State._legendOpen, 'height', true);
   if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
   saveSettings();
 }
@@ -199,6 +210,23 @@ export function load()
   // DOM is manipulated below.
   loadSettings();
 
+  // The panes slide from the first trace that has been drawn: it is drawn with the panes in place.
+  if (State.provider) {
+    var panel = document.getElementById('welcome-panel');
+    State.provider.on('rendersettled', function() {
+      // (the page makes a render before there is a trace: that is not the first trace that is drawn)
+      if (!State._traceLoaded) return;
+      var go = function() {
+        reveal(document.documentElement, panel);       // (the splash fades out: reveal.js; nothing if it is not held)
+        requestAnimationFrame(enablePaneAnimation);    // (after the frame that has the panes in place: nothing that is pending slides)
+      };
+      // (the badges of the source pane are put in a little after the render: they would come in while the splash is half gone)
+      if (State.sourceView) State.sourceView.whenPlaced(go); else go();
+    });
+    // (a first trace that fails to be drawn is no reason to keep the splash)
+    State.provider.on('error', function() { reveal(document.documentElement, panel); });
+  }
+
   // ── The gutter between the graph and the right pane (script/resizer.js, as in the designer) ─────────
   var gutter  = document.getElementById('split-gutter');
   var rightEl = document.getElementById('right_pane');
@@ -213,7 +241,7 @@ export function load()
   applyStoredLayout();
   initGanttPinchZoom();
   // Apply legend visibility now that #legend is in the DOM (_legendOpen was set by loadSettings).
-  document.getElementById('legend').style.display = State._legendOpen ? '' : 'none';
+  setPaneOpen(document.getElementById('legend'), State._legendOpen, 'height', false);
   syncSpectrumMenuIcons();   // paint the legend gradient bar with the restored spectrum
   if (!State._sourcePaneOpen) closeSourcePane();
   if (State._ganttPaneOpen) openGanttPane();
@@ -403,9 +431,40 @@ export function expandAllRegionsOnce()        { _expandAllRegionsOnce(); }
 export function collapseAllFusions()          { _setAllFusions(true); }
 export function expandAllFusions()            { _setAllFusions(false); }
 
+// ── Menu icons and the info pane (called by the other modules through window) ────
+
+/** Show in the menu which of the panes and modes are on. */
+export function syncExternalMenuIcons() {
+  function mark(id, on) {
+    var b = document.getElementById(id);
+    if (b) b.querySelector('.menu-icon').textContent = on ? '✓' : '';
+  }
+  mark('menu-check-legend',      State._legendOpen);
+  mark('menu-check-timeline',    State._ganttPaneOpen);
+  mark('menu-check-source',      State._sourcePaneOpen);
+  mark('menu-check-code-paths',  State._codePaths);
+  mark('menu-check-definitions', State._pinDefinitions);
+  mark('menu-check-dark',        State._darkMode);
+  // hljs theme icons are owned by SourceCodeView (window.setHljsTheme / window._applyHljsTheme wired in graph.js).
+  if (State.sourceView) State.sourceView.syncThemeIcons();
+}
+
+/** Open the info pane to the height that was remembered, or a default one. */
+export function openInfoPane() {
+  var rightEl = document.getElementById('right_pane');
+  var infoEl  = document.getElementById('info_window');
+  if (State._infoPaneRatio > 0 && rightEl)
+    infoEl.style.flex = '0 0 ' + Math.round(State._infoPaneRatio * rightEl.offsetHeight) + 'px';
+  else
+    infoEl.style.flex = '0 0 10em';
+}
+
 // ── Global exposure ───────────────────────────────────────────────────────────
-// Functions called from HTML body onload, onclick attributes, and inline scripts.
+// Functions that the other modules and the controls of the markup (data-click, see actions.js) call by their names.
+window.syncExternalMenuIcons       = syncExternalMenuIcons;
+window.openInfoPane                = openInfoPane;
 window.load                        = load;
+window.enablePaneAnimation         = enablePaneAnimation;
 window.openSourcePane              = openSourcePane;
 window.closeSourcePane             = closeSourcePane;
 window.toggleSourcePane            = toggleSourcePane;

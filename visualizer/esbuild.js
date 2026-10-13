@@ -14,7 +14,7 @@ async function build() {
 			format: 'iife',
 			outfile: 'dist/dagre-worker.js',
 			banner: {
-				js: `${readFileSync('script/static/dagre/dagre.min.js', 'utf8')}`
+				js: `${readFileSync('static/dagre/dagre.min.js', 'utf8')}`
 			}
 		}),
 
@@ -22,14 +22,18 @@ async function build() {
 			entryPoints: ['script/backend/visualizer.js'],
 			bundle: true,
 			format: 'iife',
-			outfile: 'dist/visualizer.js'
+			outfile: 'dist/visualizer.js',
+			// (the worker is given the URLs it needs: the ones from import.meta are the defaults of the page)
+			logOverride: { 'empty-import-meta': 'silent' }
 		}),
 
 		esbuild.build({
 			entryPoints: ['skevu.js'],
 			bundle: true,
 			format: 'iife',
-			outfile: 'dist/skevu.js'
+			outfile: 'dist/skevu.js',
+			// (the URLs that use import.meta are the defaults of the page: the extension gives its own, in window.skevu)
+			logOverride: { 'empty-import-meta': 'silent' }
 		})
 	])
 }

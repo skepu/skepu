@@ -7,11 +7,15 @@
 #                    same level as this one (../skepu-headers/).
 #
 #   clean-skepu-lib  Remove the generated static/skepu-lib/ directory.
+#
+#   vsix             Build the VS Code extension as skepu-visualizer-<version>.vsix (npm run package, which builds the bundles and
+#                    compiles the extension), with the library headers in it. Needs npm install first (@vscode/vsce is a dev dependency).
+#                    Install it with: codium --install-extension skepu-visualizer-<version>.vsix  (or code --install-extension ...)
 
 SKEPU_LIB_SRC := ../skepu-headers/src/skepu-lib
 SKEPU_LIB_DST := static/skepu-lib
 
-.PHONY: skepu-lib clean-skepu-lib
+.PHONY: skepu-lib clean-skepu-lib vsix
 
 ## ── skepu-lib ────────────────────────────────────────────────────────────────
 ## Copies every .hpp/.h file from $(SKEPU_LIB_SRC) and its dnn/ subdirectory
@@ -44,3 +48,8 @@ $(SKEPU_LIB_DST)/index.json: $(wildcard $(SKEPU_LIB_SRC)/*.hpp) \
 clean-skepu-lib:
 	rm -rf $(SKEPU_LIB_DST)
 	@echo "skepu-lib: removed $(SKEPU_LIB_DST)"
+
+## ── The extension for VS Code ────────────────────────────────────────────────
+
+vsix: skepu-lib
+	npm run package

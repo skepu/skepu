@@ -1,6 +1,11 @@
 import * as vscode from 'vscode';
-import { getHtmlForWebview, hashContent } from './util.js';
+import { basename } from 'node:path';
+import { getHtmlForWebview, hashContent, hashFile } from './util.js';
+import { linesOfNode, pathEndsWith, traceSuffix, NodeData } from './nodeLines.js';
 
+
+/** What the extension did with the source files of a trace (View > Output > SkeVU): which were found, which were not, and the badges made. */
+const output = vscode.window.createOutputChannel('SkeVU');
 
 interface TextBadge {
 	nodeID: string,
@@ -12,7 +17,7 @@ interface TextBadge {
 class TraceCodeLensProvider implements vscode.CodeLensProvider {
 
 	badges: Array<TextBadge> = [];
-	constructor(badges: Array<TextBadge>) {
+	constructor(badges: Array<TextBadge>, private readonly sessionId: number) {
 		this.badges = badges;
 	}
 
@@ -25,7 +30,7 @@ class TraceCodeLensProvider implements vscode.CodeLensProvider {
 			lenses.push(new vscode.CodeLens(range, {
 				title: `${badge.count} | Highlight Node`,
 				command: 'skevu.highlightNode',
-				arguments: [badge.nodeID, document.fileName]
+				arguments: [badge.nodeID, document.fileName, this.sessionId]
 			}))
 		}
 
@@ -50,44 +55,42 @@ interface SkePUStuff {
 	instance?: SkePUTextDocument;
 }
 
-export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
+/** One open editor: a trace, the source files that it names, and what is highlighted and badged in them. Editors do not share any of it. */
+class SkevuSession {
+
 
 	textDocuments: Map<string, SkePUTextDocument> = new Map();
 	relevantTextDocuments: Map<string, SkePUTextDocumentData> = new Map();
 	cppFileContent: string = "";
+	/** The file of the trace that the editor shows: it has the lines of the events, which the nodes highlight. */
+	traceFileName: string = "";
 	traceLineRanges: Array<Array<number>> = [];
+	/** The graph that the viewer drew last (what the badges are made of). */
+	private lastGraph: any = undefined;
 	private readonly highlightDecoration = vscode.window.createTextEditorDecorationType({
 		backgroundColor: new vscode.ThemeColor("editor.selectionHighlightBackground"), // See https://code.visualstudio.com/api/references/theme-color for options
 		isWholeLine: true
 	});
 
-	public static register(context: vscode.ExtensionContext): vscode.Disposable {
-		const provider = new SkevuEditorProvider(context);
-		const providerRegistration = vscode.window.registerCustomEditorProvider(SkevuEditorProvider.viewType, provider);
-		return providerRegistration;
-	}
-
-	private static readonly viewType = 'skepu.skevu';
+	private panel?: vscode.WebviewPanel;
 
 	constructor(
-		private readonly context: vscode.ExtensionContext
+		private readonly context: vscode.ExtensionContext,
+		private readonly id: number
 	) { }
 
-	/**
-	 * Called when our custom editor is opened.
-	 * 
-	 * 
-	 */
-	public async resolveCustomTextEditor(
+	/** Show the trace that is the text of the document, in the panel. */
+	public async open(
 		document: vscode.TextDocument,
-		webviewPanel: vscode.WebviewPanel,
-		_token: vscode.CancellationToken
+		webviewPanel: vscode.WebviewPanel
 	): Promise<void> {
+		this.panel = webviewPanel;
 		// Setup initial content for the webview
 		webviewPanel.webview.options = {
 			enableScripts: true,
 		};
 		webviewPanel.webview.html = getHtmlForWebview(this.context, webviewPanel.webview);
+		this.traceFileName = document.fileName;
 
 		function updateWebview() {
 			webviewPanel.webview.postMessage({
@@ -129,29 +132,13 @@ export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
 
 		//vscode.window.onDidChangeVisibleTextEditors
 
-		this.context.subscriptions.push(this.highlightDecoration);
-
-
-		const skepuShowTraceCommand = 
-			vscode.commands.registerCommand(
-				'skevu.highlightNode',
-				(nodeID, fileName) => {
-					console.log(`Clicked ${nodeID} from ${fileName}`);
-					webviewPanel.webview.postMessage({
-						type: 'highlight_node',
-						node_id: nodeID
-					});
-					this.highlightOtherEditors(fileName, nodeID);
-				}
-			);
-
 
 		// Make sure we get rid of the listener when our editor is closed.
 		webviewPanel.onDidDispose(() => {
 			changeDocumentSubscription.dispose();
 			this.clearHighlights();
 			changeActiveTextEditorSubscription.dispose();
-			skepuShowTraceCommand.dispose();
+			this.highlightDecoration.dispose();
 			this.textDocuments.forEach(document => {
 				document.badges?.dispose();
 			})
@@ -161,30 +148,14 @@ export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
 		webviewPanel.webview.onDidReceiveMessage(async e => {
 			switch (e.type) {
 				case 'status_message':
-					console.log(e.text);
 					return;
 
 				case 'source_file':
-					const textDocument = this.addTextDocumentToHighlight(e.file_name);
-					textDocument.hash = e.file_content_hash;
-					const uri = vscode.Uri.file(e.file_name);
-					const cppMtime = (await vscode.workspace.fs.stat(uri)).mtime;
-					const traceCtime = (await vscode.workspace.fs.stat(document.uri)).ctime;
-					if (cppMtime > traceCtime) {
-						for (const editor of vscode.window.visibleTextEditors) {
-							if (editor.document.fileName == e.file_name) {
-								this.validateFile(editor.document);
-							}
-						}
-					}
-					for (let [key, value] of this.relevantTextDocuments.entries()) {
-						console.log(`${key} : ${value}`);
-					}
+					await this.registerSourceFile(e.file_name, e.file_content_hash);
 					return;
-				
+
 				case 'trace_line_ranges':
 					this.traceLineRanges = e.text;
-					console.log(this.traceLineRanges);
 					return;
 
 				case 'highlight_trace_file':
@@ -200,6 +171,7 @@ export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
 					return;
 
 				case 'build_documents':
+					this.lastGraph = e.rawData;
 					this.buildDocuments(e.rawData);
 					return;
 
@@ -214,17 +186,67 @@ export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
 		this.addTextDocumentToHighlight(document.fileName);
 	}
 
+	/** A node was chosen in a source file (by a badge): the viewer selects it, and the other files that have it highlight it. */
+	public highlightNode(nodeID: string, fileName: string) {
+		this.panel?.webview.postMessage({
+			type: 'highlight_node',
+			node_id: nodeID
+		});
+		this.highlightOtherEditors(fileName, nodeID);
+	}
+
+	/** Whether the file at the path is the source file of the trace: there, and (for a trace that has the hash) with the contents of that hash. */
+	private async isSourceFile(path: string, hash?: string): Promise<boolean> {
+		try {
+			if (hash) return await hashFile(path) === hash;
+			await vscode.workspace.fs.stat(vscode.Uri.file(path));
+			return true;
+		} catch {
+			return false; // (not there)
+		}
+	}
+
+	/**
+	 * The source file of the trace that has this hash. The path in the trace is where the program was compiled: it is the file if it is there with
+	 * that hash. Only if it is not (the trace is from another machine, or the file moved) is the workspace searched, by the name of the file: a big
+	 * workspace takes seconds to search, which a file at its path does not have to wait for. A trace without a hash takes the file at the path.
+	 * Nothing is highlighted in a file that has changed since the trace was made.
+	 */
+	private async registerSourceFile(fileName: string, hash?: string) {
+		const found: string[] = [];
+		if (await this.isSourceFile(fileName, hash)) {
+			found.push(fileName);
+		} else {
+			// (the files of the workspace that are the file: with the hash, and the ones that have the path of the trace at their end come first and
+			// are all used, as a header can be in the workspace twice, as a copy, and the nodes are of the file that has the path)
+			const suffix = traceSuffix(fileName);
+			const same: string[] = [], others: string[] = [];
+			for (const uri of await vscode.workspace.findFiles(`**/${basename(fileName)}`, '**/node_modules/**', 20))
+				if (await this.isSourceFile(uri.fsPath, hash))
+					(pathEndsWith(uri.fsPath, suffix) ? same : others).push(uri.fsPath);
+			found.push(...(same.length ? same : others.slice(0, 1)));
+		}
+		if (!found.length) {
+			output.appendLine(`source file ${fileName}: no file with ${hash ? 'the hash ' + hash.slice(0, 12) : 'that path'} (not at its path, and not in the workspace under that name): no badges`);
+			return;
+		}
+		for (const path of found) {
+			output.appendLine(`source file ${fileName}: ${path === fileName ? 'at its path' : 'found at ' + path}${hash ? ' (hash ' + hash.slice(0, 12) + ' matches)' : ''}`);
+			this.addTextDocumentToHighlight(path).hash = hash;
+		}
+		// (the badges of the graph that is shown were made without this file, if the graph came first)
+		if (this.lastGraph) this.buildDocuments(this.lastGraph);
+	}
+
 	private async validateFile(document: vscode.TextDocument) {
 		if (document.fileName.endsWith(".cpp")
 			|| document.fileName.endsWith(".hpp")
 			|| document.fileName.endsWith(".cc")
 			|| document.fileName.endsWith(".h")) {
 			let fileHash = hashContent(document.getText());
-			console.log(`${document.fileName} hash: ${fileHash}`);
 			const originalHash = this.relevantTextDocuments.get(document.fileName)?.hash;
 			if (!originalHash) return;
 			if (fileHash != originalHash) {
-				console.log(`${fileHash} != ${originalHash}`);
 				this.removeTextDocumentToHighlight(document.fileName);
 			} else {
 				this.addTextDocumentToHighlight(document.fileName);
@@ -244,7 +266,7 @@ export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
 				if (relevantTextDocument.badges) {
 					textDocument.badges = vscode.languages.registerCodeLensProvider(
 						{pattern: fileName},
-						new TraceCodeLensProvider(relevantTextDocument.badges)
+						new TraceCodeLensProvider(relevantTextDocument.badges, this.id)
 					);
 				}
 			} else {
@@ -272,8 +294,8 @@ export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
 	}
 
 	private highlightTraceFile(nodeID: string) {
-		const traceFile = [...this.textDocuments.keys()].find(file => file.endsWith(".skevu"));
-		if (!traceFile) return;
+		const traceFile = this.traceFileName;
+		if (!this.textDocuments.has(traceFile)) return;
 
 		const editors = vscode.window.visibleTextEditors.filter(editor => traceFile === editor.document.fileName);
 		if (!editors) return;
@@ -294,7 +316,6 @@ export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
 	}
 
 	private highlightSourceFile(sourceFileEnd: string, nodeID: string) {
-		console.log(`Requested to highlight ${sourceFileEnd} at ${nodeID}`);
 		const sourceFile = [...this.textDocuments.keys()].find(file => file.endsWith(sourceFileEnd));
 		if (!sourceFile) return;
 
@@ -378,37 +399,23 @@ export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
 			documentData.highlightableRanges.clear();
 			const badges: Array<TextBadge> = [];
 			for (const node of rawData.nodes) {
-				const data = node.data;
-				
-				if (fileName.endsWith(".skevu")) {
-					documentData.highlightableRanges.set(data.id, new vscode.Range(
-							this.traceLineRanges[data.trace_index][0] - 1, 0,
-							this.traceLineRanges[data.trace_index][1] - 1, 0));
-					badges.push({
-						nodeID: data.id,
-						line: this.traceLineRanges[data.trace_index][0] - 1,
-						count: data.iteration_count,
-						type: data.type
-					});
-				}
-				else if ((data.type == "skeleton_call" || data.type == "external") && fileName.endsWith(data.file)) {
-					documentData.highlightableRanges.set(data.id, new vscode.Range(
-						data.line - 1, 0,
-						data.line - 1, 0
-					));
-					badges.push({
-						nodeID: data.id,
-						line: data.line - 1,
-						count: data.iteration_count,
-						type: data.type
-					})
-				}
+				const data: NodeData = node.data;
+				const lines = linesOfNode(data, fileName, fileName === this.traceFileName, this.traceLineRanges);
+				if (!lines) continue;
+				documentData.highlightableRanges.set(data.id, new vscode.Range(lines[0], 0, lines[1], 0));
+				badges.push({
+					nodeID: data.id,
+					line: lines[0],
+					count: data.iteration_count ?? 0,
+					type: data.type
+				});
 			}
+			output.appendLine(`badges in ${fileName}: ${badges.length} (from ${rawData.nodes?.length ?? 0} nodes)`);
 			document.badges?.dispose();
 			documentData.badges = badges;
 			document.badges = vscode.languages.registerCodeLensProvider(
 				{pattern: fileName},
-				new TraceCodeLensProvider(badges)
+				new TraceCodeLensProvider(badges, this.id)
 			);
 		});
 	}
@@ -417,4 +424,38 @@ export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
 	 * Get the static html used for the editor webviews.
 	 */
 	
+}
+
+/** The editors of SkeVU: a session for each trace that is open (any number of them), and the command of the badges, which is for all of them. */
+export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
+
+	private readonly sessions = new Map<number, SkevuSession>();
+	private nextId = 1;
+
+	/** The editor is opened by default for the files that the tracer names (skepu_trace*.json) and *.skevu, and by Open With for any other JSON file. */
+	public static register(context: vscode.ExtensionContext): vscode.Disposable[] {
+		const provider = new SkevuEditorProvider(context);
+		return [
+			...SkevuEditorProvider.viewTypes.map(viewType => vscode.window.registerCustomEditorProvider(viewType, provider)),
+			// (a badge in a source file has the session that made it: a command is registered once, not for each editor)
+			vscode.commands.registerCommand('skevu.highlightNode', (nodeID: string, fileName: string, sessionId: number) =>
+				provider.sessions.get(sessionId)?.highlightNode(nodeID, fileName)),
+		];
+	}
+
+	private static readonly viewTypes = ['skepu.skevu', 'skepu.skevu.any'];
+
+	constructor(private readonly context: vscode.ExtensionContext) { }
+
+	public async resolveCustomTextEditor(
+		document: vscode.TextDocument,
+		webviewPanel: vscode.WebviewPanel,
+		_token: vscode.CancellationToken
+	): Promise<void> {
+		const id = this.nextId++;
+		const session = new SkevuSession(this.context, id);
+		this.sessions.set(id, session);
+		webviewPanel.onDidDispose(() => this.sessions.delete(id));
+		await session.open(document, webviewPanel);
+	}
 }

@@ -169,9 +169,14 @@ namespace library_markers
 class SkepuMatcher
 {
 public:
-    SkepuMatcher(llvm::StringRef File);    
+    /// \p SystemFlags: the flags that say where the headers of the system are for the file (-isysroot, -isystem, -I, ...), as the editor has them
+    /// for it. Without them the parse has only what the driver finds from the environment (SDKROOT, say), which an editor may not have.
+    SkepuMatcher(llvm::StringRef File, std::vector<std::string> SystemFlags = {});
 
     bool runMatcher();
+
+    /// Whether the parse of the file reported errors (a header that was not found, say): what it found can be less than what is there
+    bool _ParseFailed = false;
 
     std::vector<Skeleton*> _Skeletons;
     std::vector<UserFunction*> _Userfunctions;
@@ -185,5 +190,6 @@ public:
 
 private:
     llvm::StringRef File;
+    std::vector<std::string> SystemFlags;
 };
 #endif

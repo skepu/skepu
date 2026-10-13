@@ -2,6 +2,7 @@
 // Reads/writes State.settings instead of hidden DOM form controls.
 import { knownTheme, SETTINGS_KEY } from './appearance.js';
 import { State } from './state.js';
+import { setPaneOpen } from './panes.js';
 
 var STORAGE_KEY = SETTINGS_KEY;
 
@@ -35,6 +36,15 @@ var DEFAULTS = {
   },
 };
 
+/**
+ * The width that the source pane has, or is sliding to: its flex-basis, which is set inline (a drag of the gutter, the stored width). Its
+ * offsetWidth is the width at this moment, which is not what is wanted while the pane slides open (it is 0 at the start).
+ */
+function paneWidth(el) {
+  var m = /(\d+(?:\.\d+)?)px\s*$/.exec(el.style.flex || '');
+  return m ? Math.round(+m[1]) : el.offsetWidth;
+}
+
 export function saveSettings(layoutOverrides) {
   var s = { checkboxes: {}, selects: {}, layout: {} };
   SETTING_CHECKBOXES.forEach(function(id) { s.checkboxes[id] = State.settings[id]; });
@@ -43,7 +53,7 @@ export function saveSettings(layoutOverrides) {
   // (welcome mode hides #right_pane via CSS so offsetWidth would be 0).
   if (State._sourcePaneOpen && State._traceLoaded) {
     var rightEl = document.getElementById('right_pane');
-    if (rightEl) s.layout['right-pane-width'] = rightEl.offsetWidth;
+    if (rightEl) s.layout['right-pane-width'] = paneWidth(rightEl);
   } else {
     var prev = {};
     try { prev = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) {}
@@ -74,6 +84,16 @@ export function saveSettings(layoutOverrides) {
   s.layout['code-paths']     = State._codePaths;
   s.layout['pin-definitions'] = State._pinDefinitions;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+}
+
+/**
+ * The options of the source view that are kept in State. The view is made when the page is (with the defaults), before the settings are read,
+ * so it has to be told what was read, or it shows what the menu does not say: code paths drawn while the menu says they are off.
+ */
+function applyToSourceView() {
+  if (!State.sourceView) return;
+  State.sourceView.setCodePaths(State._codePaths);
+  State.sourceView.setPinDefinitions(State._pinDefinitions);
 }
 
 export function loadSettings() {
@@ -128,6 +148,7 @@ export function loadSettings() {
       State._pinDefinitions = s.layout['pin-definitions'];
     }
   }
+  applyToSourceView();
   if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
   if (typeof syncSpectrumMenuIcons === 'function') syncSpectrumMenuIcons();
 }
@@ -192,8 +213,11 @@ export function menuRestoreDefaults() {
   State._ganttPaneOpen  = DEFAULTS.layout['gantt-open'];
   State._legendOpen     = DEFAULTS.layout['legend-open'];
   State._colorSpectrum  = DEFAULTS.layout['color-spectrum'];
+  State._codePaths      = DEFAULTS.layout['code-paths'];
+  State._pinDefinitions = DEFAULTS.layout['pin-definitions'];
+  applyToSourceView();
   document.getElementById('info_window').style.flex = '0 0 0em';
-  document.getElementById('legend').style.display = State._legendOpen ? '' : 'none';
+  setPaneOpen(document.getElementById('legend'), State._legendOpen, 'height', false);
   if (typeof setHljsTheme === 'function') setHljsTheme(DEFAULTS.layout['hljs-theme']);
   if (State._sourcePaneOpen) { if (typeof openSourcePane === 'function') openSourcePane(); }
   else { if (typeof closeSourcePane === 'function') closeSourcePane(); }

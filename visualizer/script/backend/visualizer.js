@@ -43,7 +43,8 @@ let _graph           = null;   // DirectedGraph from the most recent 'graph' cal
 
 // Base URL for fetching examples and library files — one level above this
 // script, i.e. the visualizer root.
-const _BASE_URL     = new URL('..', import.meta.url).href;
+// (the bundle that an editor runs as a worker has no import.meta: no base, and it is given the URLs it needs)
+const _BASE_URL     = import.meta.url ? new URL('..', import.meta.url).href : '';
 // (the page, or the extension that hosts it, can set where the library headers are)
 let _LIB_ROOT_URL = _BASE_URL + '../static/skepu-lib/';
 let _LIB_DNN_URL  = _BASE_URL + '../static/skepu-lib/dnn/';
@@ -54,6 +55,22 @@ export function setLibRootUrl(url) {
 
 export function setLibDNNUrl(url) {
     _LIB_DNN_URL = url;
+}
+
+// ── How the worker gets a file by its URL ─────────────────────────────────────
+// By fetch, in a browser. A worker in the webview of an editor cannot: it is made of a copy of this script (a blob), and the requests of such a
+// worker are not served by the webview, they wait for 30 seconds and fail (408). There the page fetches, for the worker: the request goes to the
+// page as a message { type: 'fetch', fetchId, url }, and the reply is { type: 'fetched', fetchId, ok, status, statusText, text }.
+let _fetch = url => fetch(url);
+const _fetchesOfPage = new Map();   // fetchId → resolve
+let _fetchSeq = 0;
+
+function _fetchByPage() {
+    _fetch = url => new Promise(resolve => {
+        const fetchId = ++_fetchSeq;
+        _fetchesOfPage.set(fetchId, resolve);
+        self.postMessage({ type: 'fetch', fetchId, url });
+    }).then(r => ({ ok: r.ok, status: r.status, statusText: r.statusText, text: async () => r.text, json: async () => JSON.parse(r.text) }));
 }
 
 // Cached index of available library headers: { root: [...], dnn: [...] }.
@@ -75,7 +92,7 @@ let _libIndex = null;
 async function _ensureLibIndex() {
     if (_libIndex !== null) return;
     try {
-        const r = await fetch(_LIB_ROOT_URL + 'index.json');
+        const r = await _fetch(_LIB_ROOT_URL + 'index.json');
         _libIndex = r.ok ? await r.json() : { root: [], dnn: [] };
     } catch {
         _libIndex = { root: [], dnn: [] };
@@ -99,7 +116,7 @@ async function _fetchLibraryFiles() {
     for (const name of _libIndex.root) {
         if (referenced.has(name) && !(name in _cppFiles)) {
             fetches.push(
-                fetch(_LIB_ROOT_URL + name)
+                _fetch(_LIB_ROOT_URL + name)
                     .then(r => r.ok ? r.text() : null)
                     .then(text => { if (text !== null) _cppFiles[name] = text; })
                     .catch(() => {})
@@ -110,7 +127,7 @@ async function _fetchLibraryFiles() {
     for (const name of _libIndex.dnn) {
         if (referenced.has(name) && !(name in _cppFiles)) {
             fetches.push(
-                fetch(_LIB_DNN_URL + name)
+                _fetch(_LIB_DNN_URL + name)
                     .then(r => r.ok ? r.text() : null)
                     .then(text => { if (text !== null) _cppFiles[name] = text; })
                     .catch(() => {})
@@ -211,7 +228,7 @@ async function _handleLoad({ traceJson, traceFilename = 'trace.json', traceFiles
 
 async function _handleLoadExample({ index, backend }) {
     const exUrl   = new URL('../examples/examples.json', _BASE_URL).href;
-    const examples = await fetch(exUrl).then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); });
+    const examples = await _fetch(exUrl).then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); });
 
     if (index < 0 || index >= examples.length)
         throw new RangeError('Example index out of range: ' + index);
@@ -226,7 +243,7 @@ async function _handleLoadExample({ index, backend }) {
     const traceRelPaths = [].concat(traceDict[chosen]);
     const traceFiles = await Promise.all(traceRelPaths.map(async rel => {
         const url = new URL('../examples/' + rel, _BASE_URL).href;
-        const text = await fetch(url).then(r => { if (!r.ok) throw new Error(r.statusText); return r.text(); });
+        const text = await _fetch(url).then(r => { if (!r.ok) throw new Error(r.statusText); return r.text(); });
         return { name: rel.split('/').pop(), text };
     }));
     _installTraces(traceFiles);
@@ -239,7 +256,7 @@ async function _handleLoadExample({ index, backend }) {
     for (const relPath of cppList) {
         const url = new URL('../examples/' + relPath, _BASE_URL).href;
         try {
-            const content = await fetch(url).then(r => r.ok ? r.text() : Promise.reject(r.statusText));
+            const content = await _fetch(url).then(r => r.ok ? r.text() : Promise.reject(r.statusText));
             _cppFiles[relPath.split('/').pop()] = content;
         } catch { /* missing file — skip silently */ }
     }
@@ -485,11 +502,19 @@ function _handleGetData({ id, nodeId }) {
 // ── Message dispatch ──────────────────────────────────────────────────────────
 
 self.onmessage = async function onMessage(evt) {
+    // the page's reply to a fetch of the worker (see _fetchByPage)
+    if (evt.data.type === 'fetched') {
+        const resolve = _fetchesOfPage.get(evt.data.fetchId);
+        _fetchesOfPage.delete(evt.data.fetchId);
+        if (resolve) resolve(evt.data);
+        return;
+    }
     const { id, type, ...payload } = evt.data;
     try {
         let result;
         switch (type) {
             case 'init_vscode_extension':
+                _fetchByPage();
                 setLibRootUrl(evt.data.skepuLib);
                 setLibDNNUrl(evt.data.skepuDNN);
                 break;

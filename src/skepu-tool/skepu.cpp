@@ -338,8 +338,8 @@ private:
 };
 
 #ifdef SKEPU_LSP
-SkepuMatcher::SkepuMatcher(llvm::StringRef File)
-: File(File)
+SkepuMatcher::SkepuMatcher(llvm::StringRef File, std::vector<std::string> SystemFlags)
+: File(File), SystemFlags(std::move(SystemFlags))
 {}
 
 bool SkepuMatcher::runMatcher()
@@ -382,17 +382,21 @@ bool SkepuMatcher::runMatcher()
 	std::string argIncludeSkepu = "-include" + skepuSrcPath + "/skepu";
 	std::string argSkepu ="-I" + skepuSrcPath;
 		
-	clang::tooling::FixedCompilationDatabase Compilations(
-		".",
-		{
-			"-std=c++20",
-			"-Wno-expansion-to-defined",
-			"-I ",
-			headerPath,
-			argIncludeSkepu,
-			argSkepu
-		}
-	);
+	std::vector<std::string> flags = {
+		"-std=c++20",
+		"-Wno-expansion-to-defined",
+		"-I ",
+		headerPath,
+		argIncludeSkepu,
+		argSkepu
+	};
+
+	// Where the headers of the system are (the standard library: <memory> is in skepu). The editor knows, from the compile command of the file;
+	// the matcher does not look for them itself, as a parse that cannot find <memory> stops and finds nothing (an editor started from a desktop
+	// does not have the environment of a terminal, SDKROOT for one).
+	flags.insert(flags.end(), SystemFlags.begin(), SystemFlags.end());
+
+	clang::tooling::FixedCompilationDatabase Compilations(".", flags);
 
 	std::vector<std::string> Sources = {
 		filePath
@@ -404,7 +408,7 @@ bool SkepuMatcher::runMatcher()
 
 	// This might be inefficient, it could be better to integrate SkePUFrontendAction
 	// or the SkePUASTConsumer into 
-	Tool.run(clang::tooling::newFrontendActionFactory<SkePUFrontendAction>().get());
+	this->_ParseFailed = Tool.run(clang::tooling::newFrontendActionFactory<SkePUFrontendAction>().get()) != 0;
 
 	this->_Skeletons = std::move(Skeletons);
 	this->_Containers = std::move(Containers);

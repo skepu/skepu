@@ -13,6 +13,8 @@
 
 import { workerCall } from '../transport.js';
 import { State } from '../state.js';
+import { bindActions } from '../actions.js';
+import { holdForReveal } from '../reveal.js';
 import { headerSourceFiles } from '../backend/trace.js';
 import { LANGUAGE_LABELS, exampleLanguages, examplesOfLanguage, initialLanguage } from '../examples_list.js';
 
@@ -59,12 +61,10 @@ function _buildExamplesMenu(examples) {
         var backends = _orderedBackends(ex);
         if (!backends.length) return;
 
-        // Use single-quoted JS strings inside the double-quoted HTML attribute.
-        // JSON.stringify would produce double quotes, breaking the attribute boundary.
         if (backends.length === 1) {
             var bName = BACKEND_NAMES[backends[0]] || backends[0];
             html += '<button class="menu-action"'
-                 +  ' onclick="loadExample(' + idx + ',\'' + _jsStr(backends[0]) + '\');menuClose()">'
+                 +  ' data-click="loadExample menuClose" data-example="' + idx + '" data-backend="' + _esc(backends[0]) + '">'
                  +  _esc(ex.title) + ' (' + _esc(bName) + ')'
                  +  '</button>';
         } else {
@@ -75,7 +75,7 @@ function _buildExamplesMenu(examples) {
             backends.forEach(function(b) {
                 var bName = BACKEND_NAMES[b] || b;
                 html += '<button class="menu-action"'
-                     +  ' onclick="loadExample(' + idx + ',\'' + _jsStr(b) + '\');menuClose()">'
+                     +  ' data-click="loadExample menuClose" data-example="' + idx + '" data-backend="' + _esc(b) + '">'
                      +  _esc(bName) + '</button>';
             });
             html += '</div></div>';
@@ -85,6 +85,7 @@ function _buildExamplesMenu(examples) {
     html += '</div></div>';
     html += '<div class="menu-sep"></div>';
     placeholder.outerHTML = html;
+    bindActions(document.getElementById('menubar'));
 }
 
 /**
@@ -163,15 +164,6 @@ function _esc(s) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
-}
-
-/**
- * Escape a string for use as a single-quoted JS string literal inside an
- * HTML attribute.  Escapes backslashes and single quotes only — the result
- * is intended to appear inside onclick="...loadExample(0,'<result>')...".
- */
-function _jsStr(s) {
-    return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
 // Run after the DOM is ready (this module is deferred like all ES modules).
@@ -317,9 +309,13 @@ function _applyLoadResult(result) {
     // Exit welcome mode: hide the welcome panel and restore the source pane.
     // Removing 'welcome-mode' lets the user's stored preference (applied as an
     // inline style by ui.js:load()) take over without any extra JS.
-    document.body.classList.remove('welcome-mode');
+    // The first trace: the welcome panel becomes an overlay (with the place and size that it has now: before the panes take their places) and
+    // stays until the graph has been drawn, and then it and the panes cross-fade (reveal.js; ui.js reveals). A later trace has no welcome panel
+    // to keep.
     var wp = document.getElementById('welcome-panel');
-    if (wp) wp.classList.add('hidden');
+    var held = holdForReveal(document.documentElement, wp, document.body);
+    document.body.classList.remove('welcome-mode');
+    if (!held && wp) wp.classList.add('hidden');
 
     // Mark trace as loaded so the menubar render indicator activates.
     State._traceLoaded = true;

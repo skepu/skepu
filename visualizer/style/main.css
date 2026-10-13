@@ -587,6 +587,38 @@ html.dark-mode .legend-item-hovered {
   background: white;   /* opaque base so the snapshot overlay (background:inherit) is solid */
 }
 
+/* The panes that open and close slide the same way: the timeline by its height (the transition is always there), the legend and the source pane
+   by panes.js (the class pane-sliding is on a pane only while it slides). */
+:root { --pane-slide: 0.15s ease; --reveal-fade: 0.3s ease; }
+
+.pane-closed { display: none !important; }
+
+.pane-sliding
+{
+  overflow: hidden;
+  transition: max-height var(--pane-slide), max-width var(--pane-slide), padding var(--pane-slide), border-width var(--pane-slide);
+}
+
+/* Not on the first load of a trace: the panes are in place before the graph is seen (early.js sets the class, ui.js takes it away) */
+html.no-pane-anim #gantt-pane { transition: none; }
+
+@media (prefers-reduced-motion: reduce)
+{
+  #gantt-pane { transition: none; }
+  :root { --reveal-fade: 0.01s; }
+}
+
+/* From the splash to the viewer (reveal.js): a curtain. While the first trace is drawn the panes are in their places under the splash, which is
+   opaque and the only thing that changes: it fades out, and what is under it is as it will be. (Fading the panes in as well would let the page
+   behind them show through both while they cross.) */
+#welcome-panel { transition: opacity var(--reveal-fade); }
+#welcome-panel.fading { opacity: 0; pointer-events: none; }
+/* The splash that is held while the first trace is drawn: out of the layout (reveal.js gives it the pixels of the place and size that it had),
+   above the panes. Its background goes on to the bottom of the window, over the legend and the timeline that are under the place that it had. */
+#welcome-panel.welcome-overlay { position: fixed; inset: auto; z-index: 500; overflow: visible; box-sizing: border-box; pointer-events: none; }
+#welcome-panel.welcome-overlay::before { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 100vh; background: inherit; }
+#welcome-panel.fading { opacity: 0; pointer-events: none; }
+
 #gantt-pane
 {
   flex: 0 0 var(--gantt-height, 0px);
@@ -597,7 +629,7 @@ html.dark-mode .legend-item-hovered {
   background: white;
   border-top: 2px solid #aaa;
   min-height: 0;
-  transition: flex-basis 0.15s ease;
+  transition: flex-basis var(--pane-slide);
 }
 
 
@@ -1144,6 +1176,14 @@ body.hljs-theme-dark .hljs-ln tr:hover
   background-color: rgba(255,255,255,0.07);
 }
 
+
+/* The badges of the graph before the one that is being drawn: they stay until the new ones can replace them at once, dimmed if it takes a while */
+#cpp_tab_panes.badges-stale .badge
+{
+  opacity: 0.45;
+  pointer-events: none;
+  transition: opacity 0.15s ease 0.4s;
+}
 
 /* A badge must not change the height of its source line (the lines were taller where a badge was, and jumped when the badges came and
    went): its box is smaller than the line, centred on it, with margins that take no height from the line box, and it is drawn larger

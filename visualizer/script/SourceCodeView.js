@@ -64,6 +64,10 @@ export class SourceCodeView {
     this._viewRank        = null;   // the rank whose trace file the trace pane shows
     this._tracePanes      = {};     // rank → the pane of its trace file (the one that is not shown is out of the DOM)
     this._lastBadgeNodes  = null;
+    this._badgeSeq        = 0;      // of the last placement asked for: an older one that is still waiting is not made
+    this._panesPending    = true;   // the panes were just made, and their line numbers (the places of the badges) come a little later
+    this._placing         = false;  // a placement of the badges waits for them (whenPlaced)
+    this._placedWaiters   = [];
     this._badgeCycleIndex = {};
     this._definitionSites = [];     // where the instances and user functions of the calls are defined (collectBadges: sites)
     this._siteCycle       = {};     // site key -> which of its calls the last click on its lines selected
@@ -105,8 +109,9 @@ export class SourceCodeView {
    * Register this view as a listener on a TraceDataProvider so that it
    * clears and repaints automatically on every render cycle:
    *
-   *   'fetchstart'  →  clearHighlight() + clearBadges()
-   *   'renderend'   →  clearBadges()   + placeBadges(stats.badgeNodes)
+   *   'fetchstart'  →  clearHighlight(); the badges stay, dimmed after a moment (a quick render is not seen to change them)
+   *   'renderend'   →  placeBadges(stats.badgeNodes): the old badges are replaced by the new ones in one step
+   *   'error'       →  the badges are not dimmed
    *
    * Safe to call more than once — the previous attachment is removed first.
    * The SourceCodeView does not need to be rebuilt separately; call rebuild()
@@ -122,13 +127,14 @@ export class SourceCodeView {
     this._boundFetchStart = function() {
       self.clearHighlight();
       self.clearDefinitions();
-      self.clearBadges();
+      // (the badges are not taken away before the new ones are ready: that is a flash, whatever the size of the trace)
+      self._markBadgesStale(true);
     };
     this._boundRenderEnd = function(stats) {
-      self.clearBadges();
       self._lastBadgeNodes = stats.badgeNodes;
       self.placeBadges(stats.badgeNodes);
     };
+    this._boundFetchError = function() { self._markBadgesStale(false); };
     // Incoming selection from another view — highlight the node in the source pane.
     // Skip when source === 'code-listing' to avoid echo-back for our own badge clicks.
     this._boundOnSelect = function(ev) {
@@ -150,6 +156,7 @@ export class SourceCodeView {
 
     provider.on('fetchstart', this._boundFetchStart);
     provider.on('renderend',  this._boundRenderEnd);
+    provider.on('error',      this._boundFetchError);
     provider.on('select',     this._boundOnSelect);
     provider.on('clear',      this._boundOnClear);
     this._attachedProvider = provider;
@@ -166,11 +173,13 @@ export class SourceCodeView {
     if (this._attachedProvider) {
       this._attachedProvider.off('fetchstart', this._boundFetchStart);
       this._attachedProvider.off('renderend',  this._boundRenderEnd);
+      this._attachedProvider.off('error',      this._boundFetchError);
       this._attachedProvider.off('select',     this._boundOnSelect);
       this._attachedProvider.off('clear',      this._boundOnClear);
       this._attachedProvider = null;
       this._boundFetchStart  = null;
       this._boundRenderEnd   = null;
+      this._boundFetchError  = null;
       this._boundOnSelect    = null;
       this._boundOnClear     = null;
     }
@@ -293,6 +302,8 @@ export class SourceCodeView {
     this._viewRank           = this._detailRank;
     this._tracePanes         = {};
     this._lastBadgeNodes     = null;
+    this._panesPending       = true;
+    this._badgeSeq++;                  // (a placement that waits is for the old panes)
     // Keep the window global in sync for any legacy code that reads it directly.
     (window.skevu ??= {}).traceLineRanges = this._traceLineRanges;
 
@@ -438,7 +449,7 @@ export class SourceCodeView {
     if (traceBtn) traceBtn.textContent = pane.dataset.filename;
     this.highlightAllBlocks(this._tabPanesEl);
     // (the badges are those of the file that is shown)
-    if (this._lastBadgeNodes) { this.clearBadges(); this.placeBadges(this._lastBadgeNodes); }
+    if (this._lastBadgeNodes) { this._panesPending = true; this.placeBadges(this._lastBadgeNodes); }
   }
 
   // ── Syntax highlighting ──────────────────────────────────────────────────────
@@ -726,23 +737,45 @@ export class SourceCodeView {
   }
 
   /**
-   * Compute badge data from badgeNodes and defer DOM insertion by
-   * BADGE_PLACEMENT_DELAY_MS (giving the pane time to render first).
+   * Puts the badges of badgeNodes in the source panes, replacing the old ones in one step (the old badges are there until then, so that there is no
+   * time when the gutter has none: that was a flash). If the panes were just made, the placement waits BADGE_PLACEMENT_DELAY_MS for their line
+   * numbers. (The badges of one render are not skipped when they look like those of the one before: they have the ids of the nodes of their
+   * graph, which are new for each render, and a click uses them.)
    *
    * @param {Array} badgeNodes  [{data:{type, file, line, id, ...}}] from /graph.
    */
   placeBadges(badgeNodes) {
     var c = collectBadges(badgeNodes, this._viewRanges());
-    var badges = c.badges, traceBadges = c.traceBadges, orderMap = c.orders;
-    this._definitionSites = c.sites;
-
+    var seq = ++this._badgeSeq;
     var self = this;
-    setTimeout(function() {
+
+    function place() {
+      if (seq !== self._badgeSeq) return;     // (a later placement, or other panes)
+      self._panesPending = false;
+      self._placing = false;
+      self._definitionSites = c.sites;
       self.resetBadgeCycleIndex();
-      self._placeBadgesInDOM(badges, traceBadges, orderMap);
+      self._placeBadgesInDOM(c.badges, c.traceBadges, c.orders);
       self._markSites();
       self._markPinned();
-    }, SourceCodeView.BADGE_PLACEMENT_DELAY_MS);
+      self._markBadgesStale(false);
+      var waiters = self._placedWaiters.splice(0);
+      waiters.forEach(function(f) { f(); });
+    }
+
+    if (this._panesPending) { this._placing = true; setTimeout(place, SourceCodeView.BADGE_PLACEMENT_DELAY_MS); }
+    else place();
+  }
+
+  /** Calls `callback` when the badges are in the source panes: at once, or after the placement that waits for the line numbers of new panes. */
+  whenPlaced(callback) {
+    if (this._placing) this._placedWaiters.push(callback);
+    else callback();
+  }
+
+  /** The badges are of the graph before the one that is being drawn: dimmed (after a moment, so that a quick render is not seen) and not clickable. */
+  _markBadgesStale(stale) {
+    this._tabPanesEl.classList.toggle('badges-stale', stale);
   }
 
   // ── Definitions of the instances and user functions ──────────────────────────
@@ -914,6 +947,9 @@ export class SourceCodeView {
   _placeBadgesInDOM(badges, traceBadges, orderMap) {
     var self = this;
     orderMap = orderMap || {};
+
+    // The old badges go in the same step as the new ones come (nothing is drawn in between).
+    self.clearBadges();
 
     // Build pane lookup once — O(panes) instead of O(badges × panes).
     var paneByFile = {};

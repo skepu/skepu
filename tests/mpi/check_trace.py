@@ -7,7 +7,7 @@ local elements of a call add up to the elements of the call; that the bytes sent
 received; that the number of events is the same for every call (O(P), nothing that grows with the problem); that the ids of a call
 are of containers that were allocated; and that, on the clock of rank 0, a collective ends at about the same time everywhere.
 """
-import json, os, sys
+import hashlib, json, os, sys
 
 def load(path):
     with open(path) as f:
@@ -146,6 +146,15 @@ for e in instances.values():
 for t in files[1:]:
     if "instances" in t["header"]:
         fail("a rank that is not the first has a table of the instances")
+
+# the source files of the trace: rank 0 has the SHA-256 of each file that its events name (the file of a call is hashed by the precompiler, as compiled)
+hashes = files[0]["header"].get("files", {})
+named = set(e["file"] for e in files[0]["data"] if e.get("file"))
+if named != set(hashes):
+    fail("header.files has %s, the events name %s" % (sorted(hashes), sorted(named)))
+for path, h in hashes.items():
+    if h != hashlib.sha256(open(path, "rb").read()).hexdigest():
+        fail("the hash of %s in the header is not the one of the file" % path)
 
 # the containers are named after their variables (skepu-tool does it for the ones that the program does not name itself),
 # also in the allocation events that came before the name

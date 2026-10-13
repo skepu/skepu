@@ -213,14 +213,14 @@ export class TraceDataProvider {
     this._lastNodeCount     = 0;
 
     // Event listener registry.
-    this._listeners = { fetchstart: [], data: [], renderend: [], select: [], clear: [], error: [] };
+    this._listeners = { fetchstart: [], data: [], renderend: [], rendersettled: [], select: [], clear: [], error: [] };
   }
 
   // ── Event emitter ────────────────────────────────────────────────────────────
 
   /**
    * Register a listener for an event.
-   * @param {'fetchstart'|'data'|'renderend'|'select'|'clear'|'error'} event
+   * @param {'fetchstart'|'data'|'renderend'|'rendersettled'|'select'|'clear'|'error'} event   (an event that is not one of these is ignored)
    * @param {Function} handler
    * @returns {TraceDataProvider}  this (chainable)
    */

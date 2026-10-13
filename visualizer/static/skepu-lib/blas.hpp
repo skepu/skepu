@@ -58,6 +58,16 @@ namespace blas {
 #define SKEPU_BLAS_STRIDE_TYPE_UF int
 #define SKEPU_BLAS_SIZE_TYPE_UF size_t
 
+	// the plain type of a scalar argument that may be a Scalar<T> (the result of dot, ...)
+	template< typename T >
+	struct unwrap_scalar { using type = typename std::decay<T>::type; };
+
+	template< typename T >
+	struct unwrap_scalar< skepu::Scalar<T> > { using type = T; };
+
+	template< typename T >
+	using unwrap_scalar_t = typename unwrap_scalar< typename std::decay<T>::type >::type;
+
 	// for zero types
 	template< typename... Types >
 	struct scalar_type_traits;
@@ -194,7 +204,8 @@ void scal(
 	stride_type                      incx
 )
 {
-	auto skel = Map<1>(scal_uf<TX, TS>);
+	// (the user function is the same for a plain and a Scalar<> alpha, so those instantiations share a kernel)
+	auto skel = Map<1>(scal_uf<TX, scalar_type<TX, unwrap_scalar_t<TS>>>);
 	skel.setStride(incx, incx);
 	skel.setLabel("SCAL");
 	skel(x, x, alpha);
@@ -330,8 +341,22 @@ T nrm2_uf_2(T lhs, T rhs)
 	return lhs + rhs;
 }
 
+// The square root, on the host, of the result of a reduction, as a Scalar that has the ids of what it came from (the result of a
+// reduction is a plain value when the program is not traced)
+template<typename R>
+Scalar<R> sqrt_scalar(Scalar<R> sum)
+{
+	return Scalar<R>(sqrt((R)sum), sum.m_ids);
+}
+
+template<typename R>
+Scalar<R> sqrt_scalar(R sum)
+{
+	return Scalar<R>(sqrt(sum));
+}
+
 template<typename T>
-real_type<T> nrm2(
+Scalar<real_type<T>> nrm2(
 	size_type                        n,
 	Vector<T> BLAS_CONST&            x,
 	stride_type                      incx
@@ -340,7 +365,8 @@ real_type<T> nrm2(
 	auto skel = MapReduce<1>(nrm2_uf_1<T>, nrm2_uf_2<real_type<T>>);
 	skel.setStride(incx);
 	skel.setLabel("NRM2");
-	return sqrt(skel(x)); // TODO: Scalar<T>
+	// (the square root of the sum is done on the host: the result is a Scalar with the ids of the sum, so that the trace knows what it came from)
+	return sqrt_scalar(skel(x));
 }
 
 
@@ -373,7 +399,7 @@ Scalar<real_type<T>> asum(
 // ----------------------------------------------------------
 
 template<typename T, typename R = real_type<T>, typename H = iamax_type<R>>
-H iamax_uf_1(Index1D index, T xi)
+H iamax_uf_1(skepu::Index1D index, T xi)
 {
 	H tmp;
 	tmp.val = abs1(xi);
@@ -397,7 +423,8 @@ size_type iamax(
 	auto skel = MapReduce<1>(iamax_uf_1<T>, iamax_uf_2<iamax_type<real_type<T>>>);
 	skel.setStride(incx);
 	skel.setLabel("IAMAX");
-	return skel(x).index;
+	iamax_type<real_type<T>> res = skel(x);
+	return res.index;
 }
 
 
@@ -521,33 +548,34 @@ enum class Diag   : char { NonUnit  = 'N', Unit     = 'U' };
 enum class Side   : char { Left     = 'L', Right    = 'R' };
 
 
+// y := y + alpha * A * x, one row of A (n elements) per output element
 template<typename TA , typename TX , typename TY, typename TS = scalar_type<TA, TX, TY>>
-TY gemv_uf_notrans_noconj(TY y, MatRow<TA> Arow, Vec<TX> x, stride_type incx, TS alpha, size_type m) // TODO: reference for proxies
+TY gemv_uf_notrans_noconj(TY y, MatRow<TA> Arow, Vec<TX> x, stride_type incx, TS alpha, size_type n) // TODO: reference for proxies
 {
 	TS tmp = 0;
-	for (SKEPU_BLAS_SIZE_TYPE_UF i = 0; i < m; ++i)
-		y += x(i * incx) * Arow(i); // TODO negative incx
+	for (SKEPU_BLAS_SIZE_TYPE_UF i = 0; i < n; ++i)
+		tmp += x(i * incx) * Arow(i); // TODO negative incx
 	return y + alpha * tmp;
 }
 
+// y := y + alpha * A^T * x, one column of A (m elements) per output element
 template<typename TA , typename TX , typename TY, typename TS = scalar_type<TA, TX, TY>>
-TY gemv_uf_trans_noconj(Index1D index, TY y, MatCol<TA> Acol, Vec<TX> x, stride_type incx, TS alpha, size_type m) // TODO: reference for proxies
+TY gemv_uf_trans_noconj(TY y, MatCol<TA> Acol, Vec<TX> x, stride_type incx, TS alpha, size_type m) // TODO: reference for proxies
 {
-	SKEPU_BLAS_SIZE_TYPE_UF j = index.i;
-	TS tmp = alpha * x(j * incx); // TODO negative incx
+	TS tmp = 0;
 	for (SKEPU_BLAS_SIZE_TYPE_UF i = 0; i < m; ++i)
-		y += tmp * Acol(i);
-	return y;
+		tmp += x(i * incx) * Acol(i); // TODO negative incx
+	return y + alpha * tmp;
 }
 
+// y := y + alpha * A^H * x
 template<typename TA , typename TX , typename TY, typename TS = scalar_type<TA, TX, TY>>
-TY gemv_uf_trans_conj(Index1D index, TY y, MatCol<TA> Acol, Vec<TX> x, stride_type incx, TS alpha, size_type m) // TODO: reference for proxies
+TY gemv_uf_trans_conj(TY y, MatCol<TA> Acol, Vec<TX> x, stride_type incx, TS alpha, size_type m) // TODO: reference for proxies
 {
-	SKEPU_BLAS_SIZE_TYPE_UF j = index.i;
-	TS tmp = alpha * x(j * incx); // TODO negative incx
+	TS tmp = 0;
 	for (SKEPU_BLAS_SIZE_TYPE_UF i = 0; i < m; ++i)
-		y += tmp * skepu::complex::conj(Acol(i));
-	return y;
+		tmp += x(i * incx) * skepu::complex::conj(Acol(i)); // TODO negative incx
+	return y + alpha * tmp;
 }
 
 
@@ -589,7 +617,7 @@ void gemv(
     auto skel = Map<1>(gemv_uf_notrans_noconj<TA, TX, TY>);
 		skel.setStride(incy, incy);
 		skel.setLabel("GEMV");
-		skel(y, y, A, x, incx, alpha, m);
+		skel(y, y, A, x, incx, alpha, n);
   }
   else if (trans == Op::Trans)
 	{
@@ -612,6 +640,12 @@ void gemv(
 //   GER
 // ----------------------------------------------------------
 
+template<typename TA>
+TA ger_add_uf(TA a, TA b)
+{
+	return a + b;
+}
+
 template<typename TX, typename TY, typename TA, typename TS = scalar_type<TA, TX, TY>>
 TA ger_uf(TX x, TY y, TS alpha)
 {
@@ -631,11 +665,17 @@ void ger(
 	stride_type                       lda
 )
 {
+	// (MapPairs' in place mode, adding the result to the old element, is not implemented by
+	// the CUDA backend: the outer product goes to a temporary, which is then added)
+	Matrix<TA> outer(A.size_i(), A.size_j());
 	auto skel = skepu::MapPairs<1, 1>(ger_uf<TX, TY, TA>);
 	// skel.setStride(incx, incy); // TODO implement
-	skel.setInPlace(true);
 	skel.setLabel("GER");
-	skel(A, x, y, alpha);
+	skel(outer, x, y, alpha);
+
+	auto add = skepu::Map<2>(ger_add_uf<TA>);
+	add.setLabel("GER add");
+	add(A, A, outer);
 }
 
 
@@ -662,11 +702,17 @@ void geru(
 	stride_type                       lda
 )
 {
+	// (MapPairs' in place mode, adding the result to the old element, is not implemented by
+	// the CUDA backend: the outer product goes to a temporary, which is then added)
+	Matrix<TA> outer(A.size_i(), A.size_j());
 	auto skel = skepu::MapPairs<1, 1>(geru_uf<TX, TY, TA>);
 	// skel.setStride(incx, incy); // TODO implement
-	skel.setInPlace(true);
 	skel.setLabel("GERU");
-	skel(A, x, y, alpha);
+	skel(outer, x, y, alpha);
+
+	auto add = skepu::Map<2>(ger_add_uf<TA>);
+	add.setLabel("GERU add");
+	add(A, A, outer);
 }
 
 
@@ -690,89 +736,24 @@ T1 gemm_uf_matrix_scale(T1 x, T2 beta)
 	return x * beta;
 }
 
+// C(i, j) := alpha * sum_l op(A)(i, l) * op(B)(l, j) + beta * C(i, j)
+// op is 0 (no transpose), 1 (transpose) or 2 (conjugate transpose); the elements of A and B
+// are read through random access proxies since a row of a transposed matrix is not the
+// row (or column) that goes with the output element.
 template<typename TA, typename TB, typename TC, typename TS = scalar_type<TA, TB, TC>>
-TC gemm_uf_notransa_notransb(TC c, const skepu::MatRow<TA> Arow, const skepu::MatCol<TB> Bcol, TS alpha, TS beta)
+TC gemm_uf(skepu::Index2D index, TC c, const skepu::Mat<TA> A, const skepu::Mat<TB> B, size_type k, int opa, int opb, TS alpha, TS beta)
 {
 	TC res = 0;
-	for (SKEPU_BLAS_SIZE_TYPE_UF k = 0; k < Arow.cols; ++k)
-		res += Arow(k) * Bcol(k);
+	for (SKEPU_BLAS_SIZE_TYPE_UF l = 0; l < k; ++l)
+	{
+		TA a = (opa == 0) ? A(index.row, l) : A(l, index.row);
+		TB b = (opb == 0) ? B(l, index.col) : B(index.col, l);
+		if (opa == 2) a = skepu::complex::conj(a);
+		if (opb == 2) b = skepu::complex::conj(b);
+		res += a * b;
+	}
 	return alpha * res + beta * c;
 }
-
-template<typename TA, typename TB, typename TC, typename TS = scalar_type<TA, TB, TC>>
-TC gemm_uf_notransa_transb(TC c, const skepu::MatRow<TA> Arow, const skepu::MatRow<TB> Brow, TS alpha, TS beta)
-{
-	TC res = 0;
-	for (SKEPU_BLAS_SIZE_TYPE_UF k = 0; k < Arow.cols; ++k)
-		res += Arow(k) * Brow(k);
-	return alpha * res + beta * c;
-}
-
-template<typename TA, typename TB, typename TC, typename TS = scalar_type<TA, TB, TC>>
-TC gemm_uf_notransa_transconjb(TC c, const skepu::MatRow<TA> Arow, const skepu::MatRow<TB> Brow, TS alpha, TS beta)
-{
-	TC res = 0;
-	for (SKEPU_BLAS_SIZE_TYPE_UF k = 0; k < Arow.cols; ++k)
-		res += Arow(k) * conj(Brow(k));
-	return alpha * res + beta * c;
-}
-
-
-template<typename TA, typename TB, typename TC, typename TS = scalar_type<TA, TB, TC>>
-TC gemm_uf_transa_notransb(TC c, const skepu::MatCol<TA> Acol, const skepu::MatCol<TB> Bcol, TS alpha, TS beta)
-{
-	TC res = 0;
-	for (SKEPU_BLAS_SIZE_TYPE_UF k = 0; k < Acol.rows; ++k)
-		res += Acol(k) * Bcol(k);
-	return alpha * res + beta * c;
-}
-
-template<typename TA, typename TB, typename TC, typename TS = scalar_type<TA, TB, TC>>
-TC gemm_uf_transa_transb(TC c, const skepu::MatCol<TA> Acol, const skepu::MatRow<TB> Brow, TS alpha, TS beta)
-{
-	TC res = 0;
-	for (SKEPU_BLAS_SIZE_TYPE_UF k = 0; k < Acol.rows; ++k)
-		res += Acol(k) * Brow(k);
-	return alpha * res + beta * c;
-}
-
-template<typename TA, typename TB, typename TC, typename TS = scalar_type<TA, TB, TC>>
-TC gemm_uf_transa_transconjb(TC c, const skepu::MatCol<TA> Acol, const skepu::MatCol<TB> Brow, TS alpha, TS beta)
-{
-	TC res = 0;
-	for (SKEPU_BLAS_SIZE_TYPE_UF k = 0; k < Acol.rows; ++k)
-		res += Acol(k) * conj(Brow(k));
-	return alpha * res + beta * c;
-}
-
-
-template<typename TA, typename TB, typename TC, typename TS = scalar_type<TA, TB, TC>>
-TC gemm_uf_transconja_notransb(TC c, const skepu::MatCol<TA> Acol, const skepu::MatCol<TB> Bcol, TS alpha, TS beta)
-{
-	TC res = 0;
-	for (SKEPU_BLAS_SIZE_TYPE_UF k = 0; k < Acol.rows; ++k)
-		res += conj(Acol(k)) * Bcol(k);
-	return alpha * res + beta * c;
-}
-
-template<typename TA, typename TB, typename TC, typename TS = scalar_type<TA, TB, TC>>
-TC gemm_uf_transconja_transb(TC c, const skepu::MatCol<TA> Acol, const skepu::MatRow<TB> Brow, TS alpha, TS beta)
-{
-	TC res = 0;
-	for (SKEPU_BLAS_SIZE_TYPE_UF k = 0; k < Acol.rows; ++k)
-		res += conj(Acol(k)) * Brow(k);
-	return alpha * res + beta * c;
-}
-
-template<typename TA, typename TB, typename TC, typename TS = scalar_type<TA, TB, TC>>
-TC gemm_uf_transconja_transconjb(TC c, const skepu::MatCol<TA> Acol, const skepu::MatRow<TB> Brow, TS alpha, TS beta)
-{
-	TC res = 0;
-	for (SKEPU_BLAS_SIZE_TYPE_UF k = 0; k < Acol.rows; ++k)
-		res += conj(Acol(k)) * conj(Brow(k));
-	return alpha * res + beta * c;
-}
-
 
 
 template<typename TA, typename TB, typename TC>
@@ -815,69 +796,11 @@ void gemm(
   }
 
   // alpha != zero
-  if (transA == Op::NoTrans)
-	{
-    if (transB == Op::NoTrans)
-		{
-			auto skel = skepu::Map<1>(gemm_uf_notransa_notransb<TA, TB, TC>);
-			skel.setLabel("GEMM");
-			skel(C, C, A, B, alpha, beta);
-    }
-    else if (transB == Op::Trans)
-		{
-			auto skel = skepu::Map<1>(gemm_uf_notransa_transb<TA, TB, TC>);
-			skel.setLabel("GEMM");
-			skel(C, C, A, B, alpha, beta);
-    }
-    else
-		{ // transB == Op::ConjTrans
-			auto skel = skepu::Map<1>(gemm_uf_notransa_transconjb<TA, TB, TC>);
-			skel.setLabel("GEMM");
-			skel(C, C, A, B, alpha, beta);
-    }
-  }
-  else if (transA == Op::Trans)
-	{
-    if (transB == Op::NoTrans)
-		{
-			auto skel = skepu::Map<1>(gemm_uf_transa_notransb<TA, TB, TC>);
-			skel.setLabel("GEMM");
-			skel(C, C, A, B, alpha, beta);
-    }
-    else if (transB == Op::Trans)
-		{
-			auto skel = skepu::Map<1>(gemm_uf_transa_transb<TA, TB, TC>);
-			skel.setLabel("GEMM");
-			skel(C, C, A, B, alpha, beta);
-    }
-    else
-		{ // transB == Op::ConjTrans
-			auto skel = skepu::Map<1>(gemm_uf_transa_transconjb<TA, TB, TC>);
-			skel.setLabel("GEMM");
-			skel(C, C, A, B, alpha, beta);
-    }
-  }
-  else
-	{ // transA == Op::ConjTrans
-    if (transB == Op::NoTrans)
-		{
-			auto skel = skepu::Map<1>(gemm_uf_transconja_notransb<TA, TB, TC>);
-			skel.setLabel("GEMM");
-			skel(C, C, A, B, alpha, beta);
-    }
-    else if (transB == Op::Trans)
-		{
-			auto skel = skepu::Map<1>(gemm_uf_transconja_transb<TA, TB, TC>);
-			skel.setLabel("GEMM");
-			skel(C, C, A, B, alpha, beta);
-    }
-    else
-		{ // transB == Op::ConjTrans
-			auto skel = skepu::Map<1>(gemm_uf_transconja_transconjb<TA, TB, TC>);
-			skel.setLabel("GEMM");
-			skel(C, C, A, B, alpha, beta);
-    }
-  }
+	auto skel = skepu::Map<1>(gemm_uf<TA, TB, TC>);
+	skel.setLabel("GEMM");
+	const int opa = (transA == Op::NoTrans) ? 0 : (transA == Op::Trans ? 1 : 2);
+	const int opb = (transB == Op::NoTrans) ? 0 : (transB == Op::Trans ? 1 : 2);
+	skel(C, C, A, B, k, opa, opb, alpha, beta);
 }
 /*
 

@@ -131,7 +131,7 @@ export function buildGraphStyle(self, minmax) {
         'content': function(ele) {
           if (!node_labels) return '';
           return ele.data('iteration_count') > 1
-            ? ele.data('label') + ' x' + ele.data('iteration_count')
+            ? ele.data('label') + ' ×' + ele.data('iteration_count')
             : ele.data('label') + (ele.data('version_count') > 1 ? toSubscript(ele.data('version')) : '');   // (no subscript for the only version)
         },
         'text-valign':      'center',
@@ -164,7 +164,7 @@ export function buildGraphStyle(self, minmax) {
         'content': function(ele) {
           if (!node_labels) return '';
           return ele.data('iteration_count') > 1
-            ? ele.data('label') + ' x' + ele.data('iteration_count')
+            ? ele.data('label') + ' ×' + ele.data('iteration_count')
             : ele.data('label');
         },
         'shape':      'ellipse',
@@ -200,7 +200,7 @@ export function buildGraphStyle(self, minmax) {
         'content': function(ele) {
           if (!node_labels) return '';
           return ele.data('iteration_count') > 1
-            ? ele.data('label') + ' x' + ele.data('iteration_count')
+            ? ele.data('label') + ' ×' + ele.data('iteration_count')
             : ele.data('label');
         },
         'border-color':     function() { return dark() ? '#170D00' : '#006770'; },
@@ -232,7 +232,7 @@ export function buildGraphStyle(self, minmax) {
         'content': function(ele) {
           if (!node_labels) return '';
           return ele.data('iteration_count') > 1
-            ? ele.data('label') + ' x' + ele.data('iteration_count')
+            ? ele.data('label') + ' ×' + ele.data('iteration_count')
             : ele.data('label');
         },
         'shape':            'round-rectangle',

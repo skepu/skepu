@@ -1,0 +1,27 @@
+# What goes into the .vsix of the extension (npm run package): only what the extension and its webview read. Everything is excluded first, then
+# what is needed is let back in (a name that is let back in is in the package, whatever the lines after it say: so the lines are narrow).
+**
+**/.DS_Store
+
+!package.json
+!README.md
+
+# the extension (npm run compile) and the bundles of the viewer and its workers (npm run build)
+!out/**/*.js
+!dist/*.js
+
+# the page of the webview is made from index.html; it loads these (see src/webviewHtml.ts)
+!index.html
+!style/*.css
+!script/early.js
+!SkeVU logo*.png
+!SkeVU logo*.svg
+!static/cytoscape/**
+!static/cytoscape-dagre/**
+!static/dagre/**
+!static/highlight/**
+!static/highlight-line-numbers/**
+!static/skepu-lib/**
+# (of ELK its bundle and its license, not its repository files)
+!static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js
+!static/cytoscape.js-elk-2.3.0/LICENSE

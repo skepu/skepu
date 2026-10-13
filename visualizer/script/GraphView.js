@@ -37,7 +37,7 @@
 'use strict';
 
 import { buildGraphStyle } from './graph_style.js';
-import { PAN_ZOOM_OPTIONS, bindPanZoom, ZOOM_FIT_PAD, roomAround, animateFit } from './panzoom.js';
+import { PAN_ZOOM_OPTIONS, bindPanZoom, ZOOM_FIT_PAD, roomAround, animateFit, animateFitUnlessInView, FitKeeper } from './panzoom.js';
 import { showTooltip, hideTooltip, positionTooltip, nodeTooltipText, edgeTooltipText } from './tooltip.js';
 import { highlightSelection, bindHover } from './graph_interaction.js';
 import { basePattern } from './TraceDataProvider.js';
@@ -54,7 +54,7 @@ var _sharedElkUrl    = null;
 function _getElk(workerUrl) {
   if (!_sharedElk || workerUrl !== _sharedElkUrl) {
     _sharedElkUrl = workerUrl;
-    _sharedElk    = new ELK({ workerUrl: workerUrl });  // ELK loaded as <script>
+    _sharedElk    = new ELK(globalUtil.elkOptions(workerUrl));  // ELK loaded as <script>
   }
   return _sharedElk;
 }
@@ -158,6 +158,8 @@ export class GraphView {
 
     this._cyEl = document.createElement('div');
     this._cyEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
+    // (what the layout fits the graph to is the size of this element then: the legend and the timeline that come after change it)
+    this._fit = new FitKeeper(this._cyEl, LAYOUT_FIT_PAD);
 
     this._overlayEl = document.createElement('div');
     this._overlayEl.style.cssText =
@@ -265,7 +267,7 @@ export class GraphView {
     if (zoom && eles.length > 0) {
       var focusEle = opts.focusId ? this._resolveVisible(opts.focusId) : null;
       if (!focusEle || !focusEle.length) focusEle = eles;
-      animateFit(this._cy, focusEle, roomAround(this._cy));
+      animateFitUnlessInView(this._cy, focusEle, roomAround(this._cy));
     }
   }
 
@@ -376,6 +378,7 @@ export class GraphView {
   destroy() {
     if (this._currentLayout) { try { this._currentLayout.stop(); } catch (e) {} }
     if (this._cy)            { this._cy.destroy(); this._cy = null; }
+    this._fit.destroy();
   }
 
   /**
@@ -383,7 +386,7 @@ export class GraphView {
    * view such as a Gantt chart, source pane, or info pane.
    *
    * nodeId:      Graph node UUID.
-   * opts.zoom:   Animate-zoom to the node (default true).
+   * opts.zoom:   Animate-zoom to the node (default true), unless it is clearly in view already (panzoom.js: animateFitUnlessInView).
    * opts.source: Originating view name — if 'graph' the zoom is skipped (the
    *              user already sees it) matching the existing app behaviour.
    */
@@ -396,7 +399,7 @@ export class GraphView {
     highlightSelection(this._cy, (ele && ele.length > 0) ? ele : this._cy.collection(), this._cy.collection());
     if (ele && ele.length > 0) {
       if (zoom) {
-        animateFit(this._cy, ele, this._focusPadding(ele));
+        animateFitUnlessInView(this._cy, ele, this._focusPadding(ele));
       }
     }
   }
@@ -552,6 +555,7 @@ export class GraphView {
         style:  self._buildStyle(minmax, rawData),
         layout: { name: 'null' },
       });
+      self._fit.attach(self._cy);
 
       // Mark region nodes as phantoms when region display is off — they stay
       // in the graph for ELK's hierarchical layout but are invisible.
@@ -575,16 +579,25 @@ export class GraphView {
           self._applyLayoutPositions(positions);
           self._cy.once('render', function() {
             if (mySeq !== self._renderSeq) return;
-            // Remove the snapshot canvas before fading the overlay so the
-            // new Cytoscape canvas is already visible when the fade begins.
-            var snap = self._overlayEl.querySelector('.gv-snap');
-            if (snap) snap.remove();
-            self._hideOverlay();
             stats.renderingMs = Date.now() - renderStart;
+            // The legend comes in now (and the timeline, if it is still opening): they change the size of this element, and the layout was
+            // fitted to the size before.
             if (self._onRenderEnd) self._onRenderEnd(stats);
             // Notify listeners (e.g. SourceCodeView) that the layout and first
             // Cytoscape frame are complete.
             self._provider._emit('renderend', stats);
+            // The overlay stays, with the snapshot of the graph before, until the size of the element is still: the graph is then fitted to the
+            // size that it keeps, and is seen only then (a fit after the overlay has faded is seen as the graph that jumps).
+            self._fit.whenSettled(function() {
+              if (mySeq !== self._renderSeq) return;
+              // Remove the snapshot canvas before fading the overlay so the
+              // new Cytoscape canvas is already visible when the fade begins.
+              var snap = self._overlayEl.querySelector('.gv-snap');
+              if (snap) snap.remove();
+              self._hideOverlay();
+              // The graph is fitted to the size that it keeps and is in view (ui.js: the panes slide from the first one on).
+              self._provider._emit('rendersettled', stats);
+            });
           });
         });
       });
@@ -791,7 +804,7 @@ export class GraphView {
       var rep = grp.find(function(e) { return e.data('is_critical_path'); }) || grp[0];
       if (rep.scratch('_origLabel') === undefined)
         rep.scratch('_origLabel', rep.data('label') !== undefined ? rep.data('label') : '');
-      rep.data('label', 'x' + grp.length);
+      rep.data('label', '×' + grp.length);
       reps.add(rep.id());
       grp.forEach(function(e) {
         if (e.id() !== rep.id()) { e.addClass('grouped-hidden'); hidden.add(e.id()); }
@@ -960,7 +973,7 @@ export class GraphView {
     this._cy.nodes().not(':parent').positions(function(n) {
       return positions[n.id()] || n.position();
     });
-    this._cy.fit(undefined, LAYOUT_FIT_PAD);
+    this._fit.fit();
   }
 
   // ── Overlay (loading transition) ─────────────────────────────────────────────
