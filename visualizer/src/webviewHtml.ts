@@ -39,7 +39,7 @@ function withoutBrowserParts(html: string): string {
 
 export function buildWebviewHtml(indexHtml: string, page: WebviewPage): string {
 	const { baseUri, cspSource, nonce } = page;
-	let html = withoutBrowserParts(indexHtml);
+	let html = withoutBrowserParts(indexHtml).replace(/<html\b/, '<html class="editor"');
 
 	// the scripts that are left are the libraries and early.js: classic scripts of the extension, which the nonce lets run
 	html = html.replace(/<script\b(?![^>]*\bnonce=)/g, `<script nonce="${nonce}"`);

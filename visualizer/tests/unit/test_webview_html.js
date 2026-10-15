@@ -34,6 +34,19 @@ describe('the page of the webview', () => {
         expect(html.match(/\son[a-z]+\s*=\s*["']/gi) ?? []).toEqual([]);
     });
 
+    it('marks the page as the editor\'s, which has no source pane, no Files menu and an Info Panel item instead of Source Panel', () => {
+        expect(html).toMatch(/<html class="editor"/);
+        expect(index).not.toMatch(/<html class="editor"/);
+        const only = (variant) => [...index.matchAll(new RegExp(`data-only="${variant}"[^>]*>([^<]*)`, 'g'))];
+        expect(index).toMatch(/<div class="menu" data-only="web">\s*<button class="menu-title">Files</);
+        expect(index).toMatch(/id="menu-check-source"[^>]*data-only="web"/);
+        expect(index).toMatch(/id="menu-check-info"[^>]*data-only="editor"/);
+        expect(only('web').length).toBeGreaterThanOrEqual(6);
+        const css = readFileSync(join(ROOT, 'style/main.css'), 'utf8');
+        expect(css).toContain('html.editor #cpp_container');
+        expect(css).toContain('html.editor [data-only="web"]');
+    });
+
     it('has none of the parts for a browser, and the script of the viewer last', () => {
         expect(html).not.toContain('data-variant="web"');
         expect(html).not.toContain('worker-loader-web');

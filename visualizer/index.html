@@ -63,7 +63,7 @@
           </a></div>
 
           <!-- File menu -->
-          <div class="menu">
+          <div class="menu" data-only="web">
             <button class="menu-title">Files</button>
             <div class="dropdown">
 
@@ -112,10 +112,11 @@
               <div class="menu-sep"></div>
               <button id="menu-check-legend"   class="menu-check" data-click="toggleLegend menuClose"><span class="menu-icon"></span>Legend</button>
               <button id="menu-check-timeline" class="menu-check" data-click="toggleGanttPane menuClose"><span class="menu-icon"></span>Timeline<span class="menu-key">G</span></button>
-              <button id="menu-check-source"     class="menu-check" data-click="toggleSourcePane menuClose"><span class="menu-icon"></span>Source Panel<span class="menu-key">S</span></button>
+              <button id="menu-check-source"     class="menu-check" data-only="web" data-click="toggleSourcePane menuClose"><span class="menu-icon"></span>Source Panel<span class="menu-key">S</span></button>
+              <button id="menu-check-info"     class="menu-check" data-only="editor" data-click="toggleSourcePane menuClose"><span class="menu-icon"></span>Info Panel<span class="menu-key">S</span></button>
               <button id="menu-check-progress" class="menu-check" data-click="toggleProgressBar menuClose" title="Where the selected node, or the simulation, is in the run"><span class="menu-icon"></span>Progress Bar</button>
-              <button id="menu-check-code-paths" class="menu-check" data-click="toggleCodePaths menuClose"><span class="menu-icon"></span>Code Paths</button>
-              <button id="menu-check-definitions" class="menu-check" data-click="toggleDefinitions menuClose" title="Mark where all the skeleton instances and user functions are defined"><span class="menu-icon"></span>Definitions</button>
+              <button id="menu-check-code-paths" class="menu-check" data-only="web" data-click="toggleCodePaths menuClose"><span class="menu-icon"></span>Code Paths</button>
+              <button id="menu-check-definitions" class="menu-check" data-only="web" data-click="toggleDefinitions menuClose" title="Mark where all the skeleton instances and user functions are defined"><span class="menu-icon"></span>Definitions</button>
               <div class="menu-sep"></div>
               <div class="menu-form-row" data-click="stop" style="padding:0.35em 0.75em">
                 <label style="font-size:0.85em;color:#666">Timeline Scale: <span id="gantt-scale-label">1×</span></label>
@@ -123,7 +124,7 @@
                   data-input="ganttScaleChanged" style="width:100%">
               </div>
               <div class="menu-sep"></div>
-              <div class="submenu">
+              <div class="submenu" data-only="web">
                 <button class="submenu-title menu-action">Source Code Theme<span class="menu-arrow">▶</span></button>
                 <div class="dropdown" id="hljs-theme-menu"></div>
               </div>
@@ -131,7 +132,7 @@
                 <button class="submenu-title menu-action">Color Spectrum<span class="menu-arrow">▶</span></button>
                 <div class="dropdown dropdown-spectrum" id="spectrum-menu"></div>
               </div>
-              <button id="menu-check-dark" class="menu-check" data-click="toggleDarkMode menuClose"><span class="menu-icon"></span>Dark mode<span class="menu-key">M</span></button>
+              <button id="menu-check-dark" class="menu-check" data-only="web" data-click="toggleDarkMode menuClose"><span class="menu-icon"></span>Dark mode<span class="menu-key">M</span></button>
             </div>
           </div>
 
@@ -232,7 +233,7 @@
               <button id="sim-btn-playpause" class="menu-action" data-needs="trace" data-click="simToggle menuClose" title="Play the run as an animation, node by node (the arrow keys step)">Simulate<span class="menu-key">P</span></button>
               <div class="menu-sep"></div>
               <button class="menu-action" data-needs="trace" data-click="zoomGanttToMeasuredInterval menuClose">Zoom to Measured Interval<span class="menu-key">Z</span></button>
-              <button class="menu-action" data-needs="tabs" data-click="nextSourceFile menuClose">Next Source Tab<span class="menu-key">Tab</span></button>
+              <button class="menu-action" data-only="web" data-needs="tabs" data-click="nextSourceFile menuClose">Next Source Tab<span class="menu-key">Tab</span></button>
               <div class="menu-sep"></div>
               <div class="submenu">
                 <div class="submenu-title">Selected Node<span class="menu-arrow">▸</span></div>

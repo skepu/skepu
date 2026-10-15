@@ -1,12 +1,7 @@
-import { setInfoViewOnHighlightNode } from './graph.js'
+import { setInfoViewOnHighlightNode, setInfoViewOnShowSource, setInfoViewCanShowSource } from './graph.js'
 
 function highlightVSCodeText(data) {
   if (!data) return;
-
-  window.skevu.vscode.postMessage({
-      type: 'status_message',
-      text: data
-  });
 
   var idx = (data.trace_indices && data.trace_indices.length)
     ? data.trace_indices[0]
@@ -31,3 +26,20 @@ function highlightVSCodeText(data) {
 }
 
 setInfoViewOnHighlightNode(highlightVSCodeText);
+
+// the links to the definitions of a call (and Shift- and Alt-click on a node): the lines are shown in the editor, not in a source pane
+setInfoViewOnShowSource(function(place) {
+  window.skevu.vscode.postMessage({
+    type: 'reveal_source',
+    source_file: place.file,
+    line: place.line,
+    end_line: place.end_line
+  });
+});
+
+// a link is for a file that the extension has found (with the hash of the trace): its names come as 'source_files' messages (skevu.js)
+setInfoViewCanShowSource(function(file) {
+  var names = window.skevu.sourceFiles;
+  return !!names && !!file && names.has(String(file).split('/').pop().split('\\').pop());
+});
+

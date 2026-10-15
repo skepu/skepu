@@ -8,6 +8,7 @@ import { load } from './script/ui.js';
 import { bindActions } from './script/actions.js';
 import { loadFiles } from './script/workers/worker-loader.js';
 import { State } from './script/state.js';
+import { followEditorTheme } from './script/theme_vscode.js';
 
 // The API to post messages to the extension.
 // @ts-ignore
@@ -16,6 +17,7 @@ window.skevu = Object.assign(window.skevu || {}, { vscode });
 
 bindActions();
 load();
+followEditorTheme();
 
 // A click in the viewer brings the viewer forward among the editors.
 document.addEventListener('click', () => {
@@ -39,6 +41,11 @@ window.addEventListener('message', event => {
 			updateContent(message.text);
 			// (the state is what a webview that is made again when it is shown again gets back)
 			vscode.setState({ text: message.text });
+			return;
+
+		case 'source_files':
+			// (the names of the source files that the extension has found: the links of the info pane are for those)
+			window.skevu.sourceFiles = new Set(message.files.map((f) => String(f).split('/').pop().split('\\').pop()));
 			return;
 
 		case 'highlight_node':

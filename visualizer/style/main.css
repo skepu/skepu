@@ -1784,3 +1784,7 @@ body.welcome-mode #split-gutter { display: none !important; }
   padding: 0 2px;
   align-self: center;
 }
+
+/* The editor (VS Code) shows the source in its own editors: the webview has no source pane, and what is for the browser is left out. */
+html.editor [data-only="web"], html:not(.editor) [data-only="editor"] { display: none !important; }
+html.editor #cpp_container, html.editor #info-resizer { display: none; }

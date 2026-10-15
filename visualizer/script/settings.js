@@ -36,13 +36,20 @@ var DEFAULTS = {
   },
 };
 
+// In an editor (VS Code) the source is in the editor's own files: the right pane (the info pane) opens with a selection, and the timeline and
+// the legend start open. The dark mode is the editor's theme (theme_vscode.js).
+if (typeof document !== 'undefined' && document.documentElement.classList.contains('editor'))
+  Object.assign(DEFAULTS.layout, { 'source-open': false, 'gantt-open': true, 'legend-open': true });
+
+
 /**
  * The width that the source pane has, or is sliding to: its flex-basis, which is set inline (a drag of the gutter, the stored width). Its
  * offsetWidth is the width at this moment, which is not what is wanted while the pane slides open (it is 0 at the start).
  */
 function paneWidth(el) {
   var m = /(\d+(?:\.\d+)?)px\s*$/.exec(el.style.flex || '');
-  return m ? Math.round(+m[1]) : el.offsetWidth;
+  var w = m ? Math.round(+m[1]) : el.offsetWidth;
+  return w > 0 ? w : DEFAULTS.layout['right-pane-width'];   // (a pane that is not shown has no width: that is not a width to keep)
 }
 
 export function saveSettings(layoutOverrides) {
@@ -57,7 +64,7 @@ export function saveSettings(layoutOverrides) {
   } else {
     var prev = {};
     try { prev = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) {}
-    s.layout['right-pane-width'] = (prev.layout && prev.layout['right-pane-width'] != null)
+    s.layout['right-pane-width'] = (prev.layout && prev.layout['right-pane-width'] > 0)
       ? prev.layout['right-pane-width'] : DEFAULTS.layout['right-pane-width'];
   }
   s.layout['source-open'] = State._sourcePaneOpen;
@@ -161,7 +168,7 @@ export function applyStoredLayout() {
   var s;
   try { s = JSON.parse(stored); } catch(e) { return; }
   if (!s.layout) return;
-  if (s.layout['right-pane-width'] != null) {
+  if (s.layout['right-pane-width'] > 0) {
     var rightEl = document.getElementById('right_pane');
     if (rightEl) rightEl.style.flex = '0 0 ' + s.layout['right-pane-width'] + 'px';
   }

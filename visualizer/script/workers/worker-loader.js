@@ -70,8 +70,9 @@ var _exampleNamed = /[#&]example=/.test(window.location.hash) || /[?&]example=/.
 
 /** Puts the example (null: a trace of files) in the address, without a history entry. */
 function _setLink(slug, backend) {
+    if (window.skevu?.vscode || typeof acquireVsCodeApi === 'function') return;   // (an editor's page has no address of its own: replaceState throws there)
     var hash = encodePermalink({ slug: slug, backend: backend });
-    history.replaceState(null, '', window.location.pathname + window.location.search + hash);
+    try { history.replaceState(null, '', window.location.pathname + window.location.search + hash); } catch (e) { /* (a page that may not change its address) */ }
 }
 
 function _openFromHash() {

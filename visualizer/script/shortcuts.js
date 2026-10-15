@@ -7,7 +7,7 @@ export const EXTRA_SHORTCUTS = [
   { group: 'General', keys: '?', label: 'This list', handles: ['?'] },
   { group: 'General', keys: 'Esc', label: 'Close this list, or a pop-up', handles: ['Escape'] },
   { group: 'General', keys: 'X', label: 'Close a pop-up', handles: ['x'] },
-  { group: 'Actions', keys: 'Shift+Tab', label: 'Previous source tab', handles: [] },
+  { group: 'Actions', keys: 'Shift+Tab', label: 'Previous source tab', handles: [], only: 'web' },
   { group: 'Actions', keys: '←, →', label: 'The previous or next step of a simulation (from the selected node, if there is no simulation), or iteration of a heat map', handles: ['ArrowLeft', 'ArrowRight'] },
   { group: 'Mouse and trackpad', keys: 'Scroll, swipe', label: 'Pan the graph' },
   { group: 'Mouse and trackpad', keys: 'Shift+scroll', label: 'Pan sideways' },
@@ -33,16 +33,19 @@ function text(el) {
 }
 
 /** The shortcuts of the menus of the page (a menu is a group), and the extra ones. */
-export function collectShortcuts(root) {
+export function collectShortcuts(root, editor) {
+  const variant = (editor === undefined ? document.documentElement.classList.contains('editor') : editor) ? 'editor' : 'web';
   const items = [];
   (root || document).querySelectorAll('.menu-key').forEach(function(key) {
     const button = key.closest('button');
     const menu = key.closest('.menu');
     const title = menu && menu.querySelector(':scope > .menu-title');
     if (!button || !title) return;
+    const only = button.closest('[data-only]');   // (an item for the browser, or for the editor, only)
+    if (only && only.dataset.only !== variant) return;
     items.push({ group: text(title), keys: key.textContent.trim(), label: text(button) });
   });
-  return groupShortcuts(items.concat(EXTRA_SHORTCUTS));
+  return groupShortcuts(items.concat(EXTRA_SHORTCUTS.filter(function(e) { return !e.only || e.only === variant; })));
 }
 
 // ── The dialog ────────────────────────────────────────────────────────────────

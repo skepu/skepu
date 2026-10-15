@@ -77,7 +77,7 @@ export const STEPS = [
     text: 'A selected node lights up in every view: the info pane, the timeline, and the lines of the program that it came from.',
     task: { text: 'Try it: click a node', listen: onSelect('graph') },
     prepare: async function() { ensureSource(); clearSelection(); await wait(250); } },
-  { id: 'source', target: '#right_pane', title: 'The same node in the source', side: 'left',
+  { id: 'source', target: '#right_pane', title: 'The same node in the source', side: 'left', when: ctx => !ctx.vscode,
     text: 'Its lines are marked, with a badge in the gutter. Click a badge to select that node instead; the graph and the timeline follow.',
     task: { text: 'Try it: click a badge in the gutter', listen: onSelect('code-listing') },
     prepare: async function() {

@@ -245,6 +245,16 @@ export function setInfoViewOnHighlightNode(func) {
   _infoView._onHighlightNode = func;
 }
 
+/** Which source files the links of the info pane can show (the editor: the ones that it has found). */
+export function setInfoViewCanShowSource(func) {
+  _infoView._canShowSource = func;
+}
+
+/** The editor shows the lines of a definition in its own file: what the links of the info pane do. */
+export function setInfoViewOnShowSource(func) {
+  _infoView._onShowSource = func;
+}
+
 // ── TimelineView singleton ────────────────────────────────────────────────────
 
 var _timelineView = new TimelineView(

@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 
 import { buildDisplayGraph } from '../../script/backend/pipeline.js';
 import { headerInstances } from '../../script/backend/trace.js';
-import { definitionRows } from '../../script/InfoView.js';
+import { definitionRows, fileLink } from '../../script/InfoView.js';
 import { collectBadges, definitionMarks, definitionPlace, sitesAt } from '../../script/badges.js';
 import { builder, trace } from '../event_builders.js';
 
@@ -171,5 +171,20 @@ describe('the info of the data nodes that a call made', () => {
         const updates = infos.container_update.filter(i => i.Line != null);
         expect(updates.map(i => i.Line).sort()).toEqual([30]);            // (the update that the map made; the container v has no call)
         expect(updates[0].definitions.user_functions[0].name).toBe('add');
+    });
+});
+
+describe('the file of a node in the info pane', () => {
+    it('is a link to its line when the file can be shown', () => {
+        const html = fileLink('/src/a.cpp', 12, () => true);
+        expect(html).toContain('class="info-link"');
+        expect(html).toContain('data-file="/src/a.cpp"');
+        expect(html).toContain('data-line="12"');
+    });
+
+    it('is plain text when the file cannot be shown, or the node has no line', () => {
+        expect(fileLink('/src/a.cpp', 12, () => false)).toBe('/src/a.cpp');
+        expect(fileLink('/src/a.cpp', 0, () => true)).toBe('/src/a.cpp');
+        expect(fileLink('', undefined)).toBe('');
     });
 });

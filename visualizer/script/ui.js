@@ -100,6 +100,9 @@ export function enablePaneAnimation() {
   document.documentElement.classList.remove('no-pane-anim');
 }
 
+/** The page of an editor (VS Code): the source is in the editor's own files, so the right pane is only the info pane. */
+export const inEditor = () => document.documentElement.classList.contains('editor');
+
 // `animate` (true only): the pane slides. The panes as they were left, and the defaults that are restored, are put in place at once.
 export function openSourcePane(animate) {
   State._sourcePaneOpen = true;
@@ -126,7 +129,12 @@ export function toggleSourcePane() {
 export function closePopup()
 {
   document.getElementById('info_window').style.flex = '0 0 0em';
+  if (inEditor()) {   // (the right pane is only the info pane there: it closes, unless a selection that follows at once opens it again)
+    clearTimeout(_closeInfoTimer);
+    _closeInfoTimer = setTimeout(function() { if (State._sourcePaneOpen) closeSourcePane(true); }, 120);
+  }
 }
+let _closeInfoTimer = null;
 
 export function showAlert(msg) {
   var bar = document.getElementById('alert-bar');
@@ -163,7 +171,14 @@ export function settingChanged() {
 }
 
 export function toggleDarkMode() {
-  State._darkMode = !State._darkMode;
+  if (inEditor()) return;   // (the theme of the editor decides: theme_vscode.js)
+  setDarkMode(!State._darkMode);
+}
+
+/** Dark mode on or off, with what depends on it (the timeline, the legend, the code theme). */
+export function setDarkMode(on) {
+  if (State._darkMode === on) return;
+  State._darkMode = on;
   document.documentElement.classList.toggle('dark-mode', State._darkMode);
   if (State._ganttPaneOpen && State._lastGraphNodes.length) reRenderGanttPreservingScroll();
   renderLegend();
@@ -258,6 +273,7 @@ export function load()
   // Apply legend visibility now that #legend is in the DOM (_legendOpen was set by loadSettings).
   setPaneOpen(document.getElementById('legend'), State._legendOpen, 'height', false);
   syncSpectrumMenuIcons();   // paint the legend gradient bar with the restored spectrum
+  if (inEditor()) State._sourcePaneOpen = false;   // (it opens with the first selection: openInfoPane)
   if (!State._sourcePaneOpen) closeSourcePane();
   if (State._ganttPaneOpen) openGanttPane();
 
@@ -319,7 +335,7 @@ export function load()
     else if (event.key === "Tab") {
       // Tab / Shift+Tab — cycle forward / backward through source-code tabs.
       var tabs = Array.from(document.querySelectorAll('.cpp-tab'));
-      if (tabs.length > 1) {
+      if (tabs.length > 1 && !inEditor()) {
         event.preventDefault();
         var cur  = tabs.findIndex(function(t) { return t.classList.contains('active'); });
         var next = event.shiftKey
@@ -462,6 +478,7 @@ export function syncExternalMenuIcons() {
   mark('menu-check-legend',      State._legendOpen);
   mark('menu-check-timeline',    State._ganttPaneOpen);
   mark('menu-check-source',      State._sourcePaneOpen);
+  mark('menu-check-info',        State._sourcePaneOpen);
   mark('menu-check-progress',    State._progressBar);
   mark('menu-check-code-paths',  State._codePaths);
   mark('menu-check-definitions', State._pinDefinitions);
@@ -474,6 +491,12 @@ export function syncExternalMenuIcons() {
 export function openInfoPane() {
   var rightEl = document.getElementById('right_pane');
   var infoEl  = document.getElementById('info_window');
+  if (inEditor()) {   // (the right pane is the info pane: it opens with the first selection and has the whole pane)
+    clearTimeout(_closeInfoTimer);
+    if (!State._sourcePaneOpen) openSourcePane(true);
+    infoEl.style.flex = '1 1 auto';
+    return;
+  }
   if (State._infoPaneRatio > 0 && rightEl)
     infoEl.style.flex = '0 0 ' + Math.round(State._infoPaneRatio * rightEl.offsetHeight) + 'px';
   else

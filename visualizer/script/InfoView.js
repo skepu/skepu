@@ -86,6 +86,12 @@ function _basename(path) { return String(path).split('\\').pop().split('/').pop(
  * data: { instance, user_functions }): each is a link that shows the lines in the source, unless the file is not there.
  * `canShow(file)` says whether it is.
  */
+/** The file of a node as a link to its line (as the links of the definitions), if the file can be shown; else as it is. */
+export function fileLink(file, line, canShow) {
+  if (!(line > 0) || (canShow && !canShow(file))) return _escapeHtml(String(file));
+  return '<a href="#" class="info-link" data-file="' + _escapeHtml(String(file)) + '" data-line="' + line + '" data-end-line="' + line + '">' + _escapeHtml(String(file)) + '</a>';
+}
+
 export function definitionRows(definitions, canShow) {
   if (!definitions) return '';
   var rows = [];
@@ -200,6 +206,7 @@ export class InfoView {
         var value = data[key];
         if (key === 'file')     value = String(value).split('\\').pop().split('/').pop();
         if (key === 'Duration') value = formatDuration(parseInt(value)) || value;
+        if (key === 'File' && this._onShowSource) value = fileLink(value, data.Line, this._canShowSource);
         html += '<div class="info-row"><span class="info-key">' + key +
                 '</span><span class="info-value">' + value + '</span></div>';
       }

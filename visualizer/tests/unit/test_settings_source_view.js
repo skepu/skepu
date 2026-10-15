@@ -13,7 +13,7 @@ globalThis.window = globalThis;
 globalThis.localStorage = { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } };
 globalThis.document = {
     querySelector: () => null, querySelectorAll: () => [], getElementById: id => elements[id] ?? element(),
-    documentElement: { classList: { toggle() {} } },
+    documentElement: { classList: { toggle() {}, contains: () => false } },
 };
 
 const { State } = await import('../../script/state.js');

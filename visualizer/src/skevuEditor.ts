@@ -164,6 +164,10 @@ class SkevuSession {
 					this.highlightSourceFile(e.source_file, e.node_id);
 					return;
 
+				case 'reveal_source':
+					await this.revealSource(e.source_file, e.line, e.end_line);
+					return;
+
 				case 'clear_highlight':
 					this.clearHighlights();
 					return;
@@ -183,6 +187,9 @@ class SkevuSession {
 
 		this.addTextDocumentToHighlight(document.fileName);
 	}
+
+	/** The files of the trace (as it names them) that were found, for the links of the info pane. */
+	private readonly sourceFiles = new Set<string>();
 
 	/** The place of each lens in the nodes that it selects (the click goes on to the next of them). */
 	private readonly lensNode = new Map<string, number>();
@@ -235,6 +242,8 @@ class SkevuSession {
 			output.appendLine(`source file ${fileName}: no file with ${hash ? 'the hash ' + hash.slice(0, 12) : 'that path'} (not at its path, and not in the workspace under that name): no badges`);
 			return;
 		}
+		this.sourceFiles.add(fileName);
+		this.panel?.webview.postMessage({ type: 'source_files', files: [...this.sourceFiles] });
 		for (const path of found) {
 			output.appendLine(`source file ${fileName}: ${path === fileName ? 'at its path' : 'found at ' + path}${hash ? ' (hash ' + hash.slice(0, 12) + ' matches)' : ''}`);
 			this.addTextDocumentToHighlight(path).hash = hash;
@@ -318,6 +327,21 @@ class SkevuSession {
 		relevantTextDocument.currentHighlight = [highlightRange];
 
 		this.highlightRelevantEditors(editors);
+	}
+
+	/** A link to a definition was followed in the viewer: the lines are shown in the editor of the file (beside the viewer if it is not open). */
+	private async revealSource(sourceFile: string, line: number, endLine?: number) {
+		const suffix = traceSuffix(sourceFile);
+		const fileName = [...this.textDocuments.keys()].find(file => pathEndsWith(file, suffix));
+		if (!fileName || !(line >= 1)) return;
+		const last = Math.max(line, endLine ?? line);
+		const range = new vscode.Range(line - 1, 0, last - 1, 0);
+		const open = vscode.window.visibleTextEditors.find(editor => editor.document.fileName === fileName);
+		await vscode.window.showTextDocument(vscode.Uri.file(fileName), {
+			viewColumn: open?.viewColumn ?? vscode.ViewColumn.Beside,
+			selection: new vscode.Range(range.start, range.start),
+			preserveFocus: true,
+		}).then(editor => editor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport));
 	}
 
 	private highlightSourceFile(sourceFileEnd: string, nodeID: string) {
