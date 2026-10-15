@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { basename } from 'node:path';
 import { getHtmlForWebview, hashContent, hashFile } from './util.js';
-import { linesOfNode, pathEndsWith, traceSuffix, NodeData } from './nodeLines.js';
+import { linesOfNode, pathEndsWith, traceSuffix, lensesOfBadges, lensTitle, nextNodeIndex, NodeData } from './nodeLines.js';
 
 
 /** What the extension did with the source files of a trace (View > Output > SkeVU): which were found, which were not, and the badges made. */
@@ -24,14 +24,12 @@ class TraceCodeLensProvider implements vscode.CodeLensProvider {
     provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
 		const lenses: Array<vscode.CodeLens> = [];
 
-		for (const badge of this.badges) {
-			const range = new vscode.Range(badge.line, 0, badge.line, 0);
-
-			lenses.push(new vscode.CodeLens(range, {
-				title: `${badge.count} | Highlight Node`,
+		for (const lens of lensesOfBadges(this.badges)) {
+			lenses.push(new vscode.CodeLens(new vscode.Range(lens.line, 0, lens.line, 0), {
+				title: lensTitle(lens),
 				command: 'skevu.highlightNode',
-				arguments: [badge.nodeID, document.fileName, this.sessionId]
-			}))
+				arguments: [document.fileName, lens.line, lens.nodeIDs, this.sessionId]
+			}));
 		}
 
 		return lenses;
@@ -186,8 +184,15 @@ class SkevuSession {
 		this.addTextDocumentToHighlight(document.fileName);
 	}
 
-	/** A node was chosen in a source file (by a badge): the viewer selects it, and the other files that have it highlight it. */
-	public highlightNode(nodeID: string, fileName: string) {
+	/** The place of each lens in the nodes that it selects (the click goes on to the next of them). */
+	private readonly lensNode = new Map<string, number>();
+
+	/** A lens was clicked in a source file: the viewer selects the next node of the line, and the other files that have it highlight it. */
+	public highlightNode(fileName: string, line: number, nodeIDs: string[]) {
+		const place = `${fileName}:${line}`;
+		const index = nextNodeIndex(this.lensNode.get(place), nodeIDs.length);
+		this.lensNode.set(place, index);
+		const nodeID = nodeIDs[index];
 		this.panel?.webview.postMessage({
 			type: 'highlight_node',
 			node_id: nodeID
@@ -438,8 +443,8 @@ export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
 		return [
 			...SkevuEditorProvider.viewTypes.map(viewType => vscode.window.registerCustomEditorProvider(viewType, provider)),
 			// (a badge in a source file has the session that made it: a command is registered once, not for each editor)
-			vscode.commands.registerCommand('skevu.highlightNode', (nodeID: string, fileName: string, sessionId: number) =>
-				provider.sessions.get(sessionId)?.highlightNode(nodeID, fileName)),
+			vscode.commands.registerCommand('skevu.highlightNode', (fileName: string, line: number, nodeIDs: string[], sessionId: number) =>
+				provider.sessions.get(sessionId)?.highlightNode(fileName, line, nodeIDs)),
 		];
 	}
 

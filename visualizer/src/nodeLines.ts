@@ -53,3 +53,39 @@ export function linesOfNode(data: NodeData, fileName: string, isTraceFile: boole
 	if (!Number.isInteger(data.line) || (data.line as number) < 1) return null;
 	return [(data.line as number) - 1, (data.line as number) - 1];
 }
+
+
+/** A node marked at a line of a file. */
+export interface LineBadge {
+	nodeID: string;
+	line: number;
+	count: number;
+}
+
+/** What a lens at a line shows and selects: the nodes that are marked there, in the order of the graph. */
+export interface LineLens {
+	line: number;
+	nodeIDs: string[];
+	count: number;
+}
+
+/** One lens for each line that has badges: it selects the nodes of the line one after the other. `count` is the iteration count of a single node. */
+export function lensesOfBadges(badges: LineBadge[]): LineLens[] {
+	const lenses = new Map<number, LineLens>();
+	for (const badge of badges) {
+		const lens = lenses.get(badge.line);
+		if (lens) lens.nodeIDs.push(badge.nodeID);
+		else lenses.set(badge.line, { line: badge.line, nodeIDs: [badge.nodeID], count: badge.count });
+	}
+	return [...lenses.values()];
+}
+
+/** The title of a lens: the iteration count for one node, the number of nodes for several. */
+export function lensTitle(lens: LineLens): string {
+	return lens.nodeIDs.length === 1 ? `${lens.count} | Highlight Node` : `${lens.nodeIDs.length} nodes | Highlight Next`;
+}
+
+/** The index of the node that a click on a lens selects, after `previous` (undefined: the first click). */
+export function nextNodeIndex(previous: number | undefined, count: number): number {
+	return previous === undefined ? 0 : (previous + 1) % count;
+}
