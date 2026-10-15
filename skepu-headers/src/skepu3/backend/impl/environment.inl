@@ -574,7 +574,7 @@ template <typename T>
 				}
 
 				cl_int err;
-				cl_program program = cl_helpers::buildProgram(device, totalSource.str(), buildOptions.str());
+				cl_program program = cl_helpers::buildProgram(device, totalSource.str(), buildOptions.str(), 0, "matrix transpose");
 				cl_kernel kernel = clCreateKernel(program, kernelName.c_str(), &err);
 				CL_CHECK_ERROR(err, "Error creating kernel '" << kernelName);//, "':" << err);
 				this->m_transposeKernels_CL.emplace_back(kernel, device);

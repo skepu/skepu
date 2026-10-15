@@ -55,6 +55,7 @@ const NODE_HEADINGS = {
   'allocation'      : 'Container Allocation',
   'deallocation'    : 'Container Deallocation',
   'transfer'        : 'Data Transfer',
+  'compile'         : 'Kernel Build (OpenCL)',
   'communication'   : 'Communication (MPI)',
   'container_update': 'Container Write',
   'region'          : 'Instrumented Region',

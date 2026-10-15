@@ -116,6 +116,18 @@ that the info pane plots by iteration (one value for each result of a call that 
 `external` (`label`, `file`, `line`, `start`, `end`, `outputs`, and the containers it reads as `proxy_inputs`): `skepu::external`, the output of a
 scalar, and the operations above that write a container. `snapshot` (`data_file`), `region` (`region_depth`) and `virtual_container` (`object_ids`) are as the macros of the same name.
 
+## Kernel builds (OpenCL)
+
+`kernel_compile` (`object_id` of the skeleton instance, `label` its name, `qualifier` which of its kernels if it has several, `backend`: `OpenCL`,
+`device`, `options`, `source_bytes`, `ok`, `error` (the build log, if the build failed), `start`, `end`): the build of an OpenCL kernel for a device.
+An instance builds its kernels when it is made, once for each device, and only the first instance of a kernel does (the others use it). The
+`object_id` is the one of the instance's calls (`skeleton_call`). A kernel of the library (the transpose of a matrix) has no instance: no `object_id`,
+and its name in `label`. The interval is from the creation of the program to the creation of the kernel object (on some platforms the program is
+compiled there, not in `clBuildProgram`), up to the next build of the instance. A failed build is recorded before the program stops.
+
+SkeVU shows a build as a node (Nodes > Kernel Builds) with a *setup* edge to the first call of its instance, a row of the timeline, and a bar in it.
+A setup edge is not a flow of data: the call needs the kernel.
+
 ## MPI programs (a pilot: allocation, `Map`, communication)
 
 A program built with the MPI backend (`skepu-tool -mpi`) writes one file for each process. File names: `skepu_trace.json` for the first

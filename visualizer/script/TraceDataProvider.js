@@ -304,6 +304,7 @@ export class TraceDataProvider {
       container_allocations:   this.settings['container-allocations'],
       container_deallocations: this.settings['container-deallocations'],
       container_transfers:     this.settings['container-transfers'],
+      kernel_compiles:         this.settings['kernel-compiles'],
       show_communications:     this.settings['communications'],
       show_scalars:            this.settings['element-accesses'],
       anti_deps:               this.settings['anti-deps'],

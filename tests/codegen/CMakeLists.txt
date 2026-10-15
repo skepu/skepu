@@ -271,6 +271,16 @@ skepu_add_test_case_opencl(opencl_double_fallback)
 
 # Elements of the types signed char and long long (the OpenCL names of the types), with rows and columns as arguments
 
+# The builds of the OpenCL kernels are events of their skeleton instances
+if(SKEPU_OPENCL)
+	skepu_add_executable(tracing_compile_test OpenCL SKEPUSRC tracing_compile.cpp)
+	target_link_libraries(tracing_compile_test PRIVATE catch2_main)
+	target_compile_definitions(tracing_compile_test PRIVATE SKEPU_TRACING)
+	add_test(NAME tracing_compile COMMAND tracing_compile_test)
+	set_tests_properties(tracing_compile PROPERTIES
+		ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_compile.json")
+endif()
+
 # The values of the scalars (results of reductions, norms) are in the trace
 skepu_add_executable(tracing_scalar_values_test SKEPUSRC tracing_scalar_values.cpp)
 target_link_libraries(tracing_scalar_values_test PRIVATE catch2_main)

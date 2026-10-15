@@ -10,6 +10,8 @@ import { installMenus, enableMenuItem } from './menu.js';
 import { attachResizer } from './resizer.js';
 import { setPaneOpen } from './panes.js';
 import { reveal } from './reveal.js';
+import { installShortcuts, shortcutsOpen, toggleShortcuts } from './shortcuts.js';
+import { installTour } from './tour.js';
 import { buildThemeMenu, buildSpectrumMenu } from './appearance.js';
 import './graph.js';   // side-effect: creates GraphView, LegendView, SimulationEngine, sets State.*, wires window globals
 
@@ -186,6 +188,16 @@ export function toggleDefinitions() {
   saveSettings();
 }
 
+/** Show or hide the progress bar of the simulation (View > Progress Bar; it is turned on when a simulation starts). */
+export function setProgressBar(on) {
+  State._progressBar = !!on;
+  if (State.simEngine) State.simEngine.setProgressBarEnabled(State._progressBar);
+  if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
+  saveSettings();
+}
+
+export function toggleProgressBar() { setProgressBar(!State._progressBar); }
+
 export function toggleLegend()
 {
   enablePaneAnimation();
@@ -202,6 +214,8 @@ export function load()
 {
   // The menus (script/menu.js), and the two that are the same in the designer (script/appearance.js).
   installMenus();
+  installShortcuts();
+  installTour();
   document.getElementById('menu-actions').addEventListener('menuopen', updateActionsMenu);
   buildThemeMenu(document.getElementById('hljs-theme-menu'), function(theme) { window.setHljsTheme(theme); });
   buildSpectrumMenu(document.getElementById('spectrum-menu'), function(name) { colorSpectrumChanged(name); });
@@ -209,6 +223,7 @@ export function load()
   // Load persisted settings first so all State.* values are set before the
   // DOM is manipulated below.
   loadSettings();
+  if (State.simEngine) State.simEngine.setProgressBarEnabled(State._progressBar);
 
   // The panes slide from the first trace that has been drawn: it is drawn with the panes in place.
   if (State.provider) {
@@ -275,8 +290,11 @@ export function load()
     // Don't steal keypresses from inputs, and ignore modifier combos.
     if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
     if (event.altKey || event.ctrlKey || event.metaKey) return;
+    // (while the shortcuts are shown the keys are not for the viewer: ? closes them, Esc is shortcuts.js)
+    if (shortcutsOpen()) { if (event.key === "?") toggleShortcuts(); return; }
 
-    if (event.key === " ") {
+    if (event.key === "?") { toggleShortcuts(); }
+    else if (event.key === " ") {
       event.preventDefault();   // prevent page scroll
       fetchViewDataAndRender();
     }
@@ -313,10 +331,12 @@ export function load()
     else if (event.key === "ArrowLeft") {
       if (State.simEngine && State.simEngine.isActive) { State.simEngine.step(-1); event.preventDefault(); }
       else if (navigateHeatmap(-1)) event.preventDefault();
+      else if (State.simEngine && State.simEngine.stepFromSelection(-1)) event.preventDefault();
     }
     else if (event.key === "ArrowRight") {
       if (State.simEngine && State.simEngine.isActive) { State.simEngine.step(+1); event.preventDefault(); }
       else if (navigateHeatmap(1)) event.preventDefault();
+      else if (State.simEngine && State.simEngine.stepFromSelection(+1)) event.preventDefault();
     }
     else if (event.key === "x" || event.key === "Escape") {
       closePopup();
@@ -442,6 +462,7 @@ export function syncExternalMenuIcons() {
   mark('menu-check-legend',      State._legendOpen);
   mark('menu-check-timeline',    State._ganttPaneOpen);
   mark('menu-check-source',      State._sourcePaneOpen);
+  mark('menu-check-progress',    State._progressBar);
   mark('menu-check-code-paths',  State._codePaths);
   mark('menu-check-definitions', State._pinDefinitions);
   mark('menu-check-dark',        State._darkMode);
@@ -471,6 +492,8 @@ window.toggleSourcePane            = toggleSourcePane;
 window.toggleCodePaths             = toggleCodePaths;
 window.toggleDefinitions           = toggleDefinitions;
 window.toggleLegend                = toggleLegend;
+window.toggleProgressBar           = toggleProgressBar;
+window.setProgressBar              = setProgressBar;
 window.closePopup                  = closePopup;
 window.showAlert                   = showAlert;
 window.clearAlert                  = clearAlert;

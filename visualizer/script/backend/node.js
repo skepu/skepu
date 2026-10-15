@@ -3,7 +3,7 @@
 'use strict';
 
 import {
-    ElwiseEdge, ProxyEdge, ScalarEdge, AntiDepEdge, PrngEdge, VirtualAliasEdge,
+    ElwiseEdge, ProxyEdge, ScalarEdge, AntiDepEdge, PrngEdge, SetupEdge, VirtualAliasEdge,
 } from './edge.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -971,5 +971,78 @@ export class TransferNode extends DataNode {
             Duration:  this.duration,
             Backend:   this.backend,
         };
+    }
+}
+
+// ── CompileNode ───────────────────────────────────────────────────────────────
+
+/** The text of a build: of the instance ("dotprod"), and which of its kernels if it has several. */
+export function compileLabel(ev) {
+    return 'build: ' + ev.label + (ev.qualifier ? ' ' + ev.qualifier : '');
+}
+
+/**
+ * The build of an OpenCL kernel for a device (a kernel_compile event). It has the id of the skeleton instance whose kernel it is, and is the
+ * source of a setup edge to the first call of the instance (the kernels of the library have no instance, and no edge).
+ */
+export class CompileNode extends DataNode {
+    constructor(graph, jsonData, totalOrder) {
+        super(graph, compileLabel(jsonData), totalOrder, jsonData.region);
+
+        if (!graph.settings.compiles) {
+            graph._removeNode(this);
+            return;
+        }
+
+        this.type       = 'compile';
+        this.instanceId = jsonData.object_id ?? null;
+        this.device     = jsonData.device ?? null;
+        this.ok         = jsonData.ok !== false;
+        this.error      = jsonData.error ?? null;
+        this.options    = jsonData.options ?? null;
+        this.sourceBytes = jsonData.source_bytes ?? null;
+        this.start      = jsonData.start;
+        this.end        = jsonData.end;
+        this.duration   = this.end - this.start;
+        this.intervals  = [[this.start, this.end]];
+        this.timestamp  = jsonData.time ?? null;
+        this.backend    = jsonData.backend ?? 'OpenCL';
+        this.keypathDiscriminator = this.device ?? '';
+    }
+
+    toCytoscape() {
+        return {
+            ...super.toCytoscape(),
+            device:    this.device,
+            ok:        this.ok,
+            timestamp: this.timestamp,
+            start:     this.start,
+            end:       this.end,
+            duration:  this.duration,
+            intervals: this.intervals,
+        };
+    }
+
+    toTimeline() {
+        return {
+            id:              this.id,
+            label:           this.label,
+            type:            this.type,
+            start:           this.start,
+            end:             this.end,
+            intervals:       this.intervals,
+            device:          this.device,
+            ok:              this.ok,
+            nesting_level:   this.nestingLevel,
+            iteration_count: this.iterationCount,
+        };
+    }
+
+    infoData() {
+        const info = { ...super.infoData(), Backend: this.backend, Device: this.device, Duration: this.duration };
+        if (!this.ok) info['Build failed'] = this.error || 'yes';
+        if (this.sourceBytes != null) info['Size (bytes)'] = this.sourceBytes;
+        if (this.options) info['Build options'] = this.options;
+        return info;
     }
 }

@@ -63,6 +63,8 @@ namespace skepu
 	{
 	SKEPU_TRACING_VARIANT_BEGIN
 		using TraceID = UniqueIdentifier::ID;
+		// (microseconds since the first event, defined in tracing.hpp: the backends read the clock too)
+		inline unsigned long timestamp_now();
 		static const std::string defaultTraceFilename = "skepu_trace.json";
 		static const std::string defaultSnapshotDir = "./";
 
@@ -103,6 +105,7 @@ namespace skepu
 #define SKEPU_TRACE_DEALLOCATION(...) skepu::tracing::tracer().deallocation(__VA_ARGS__)
 #define SKEPU_TRACE_RELABEL(...) skepu::tracing::tracer().relabel(__VA_ARGS__)
 #define SKEPU_TRACE_TRANSFER(...) skepu::tracing::tracer().transfer(__VA_ARGS__)
+#define SKEPU_TRACE_COMPILE(...) skepu::tracing::tracer().compile(__VA_ARGS__)
 #define SKEPU_TRACE_ELEMENT_ACCESS(...) skepu::tracing::tracer().element_access(__VA_ARGS__)
 #define SKEPU_TRACE_COPY(...) skepu::tracing::tracer().copy(__VA_ARGS__)
 #define SKEPU_TRACE_SCALAR_IO(...) skepu::tracing::tracer().scalar_io(__VA_ARGS__)
@@ -127,6 +130,7 @@ namespace skepu
 #define SKEPU_TRACE_DEALLOCATION(...)
 #define SKEPU_TRACE_RELABEL(...)
 #define SKEPU_TRACE_TRANSFER(...)
+#define SKEPU_TRACE_COMPILE(...)
 #define SKEPU_TRACE_ELEMENT_ACCESS(...)
 #define SKEPU_TRACE_COPY(...)
 #define SKEPU_TRACE_SCALAR_IO(...)
@@ -232,6 +236,39 @@ namespace skepu
 			~AllowScope();
 		};
 
+		// The skeleton instance whose OpenCL kernels are being built, for the events of the builds (SkeletonBase::prepareOpenCL has one while
+		// the kernels are built): without one a build is the library's own.
+		// A build runs from the start of its program to the start of the next one, or to the end of the scope: the kernel object is made after the
+		// build (on some platforms the program is not compiled before that), and the time of it is the time of the build. The events are made
+		// when the scope ends (finish() does it earlier, for a build that ends the program).
+		struct CompileScope
+		{
+			CompileScope(TraceID instance, std::string const& label)
+#ifdef SKEPU_TRACING
+				: m_instance{instance}, m_label{label}, m_outer{current()} { current() = this; }
+			~CompileScope() { finish(); current() = m_outer; }
+			static CompileScope *&current() { static thread_local CompileScope *scope = nullptr; return scope; }
+
+			struct Build
+			{
+				unsigned long start;
+				std::string qualifier, device, options;
+				size_t source_bytes;
+				bool ok;
+				std::string error;
+			};
+			void add(Build &&build) { this->m_builds.push_back(std::move(build)); }
+			void finish();
+
+			TraceID m_instance;
+			std::string m_label;
+			CompileScope *m_outer;
+			std::vector<Build> m_builds;
+#else
+				{ (void)instance; (void)label; }
+#endif
+		};
+
 		struct Tracer
 		{
 
@@ -245,6 +282,10 @@ namespace skepu
 			void deallocation(TraceID id, std::string const& label, int line);
 			// A container gets its name after it was allocated (see skepu::trace_label): its events so far get it too
 			void relabel(TraceID id, std::string const& label);
+			// The build of an OpenCL kernel for a device: `instance` and `label` are the skeleton instance whose kernel it is (null and a name of
+			// its own for a kernel of the library), `qualifier` says which one of its kernels (empty if it has one). A failed build is recorded too.
+			void compile(unsigned long start, unsigned long end, TraceID instance, std::string const& label, std::string const& qualifier, std::string const& device,
+				std::string const& options, size_t source_bytes, bool ok, std::string const& error);
 			void transfer(EventHandle &h, TraceID id, std::string const& label, int line, size_t elements, std::string direction, std::string backend);
 			void element_access(TraceID id, TraceID source_id, size_t index, std::string const& label, std::string const& file, int line);
 			// The elements of one container were copied to another (copy constructor and assignment of a container): a

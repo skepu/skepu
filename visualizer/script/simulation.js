@@ -15,8 +15,10 @@
 //     playPauseEl: document.getElementById('sim-btn-playpause'),
 //   });
 //
-//   engine.start();   engine.pause();   engine.stop();
+//   engine.start();   engine.pause();   engine.stop();   (a click in the canvas, outside of every item, stops: the provider's 'clear' with background)
 //   engine.toggle();  engine.step(+1);  engine.ganttClick(nodeId, iterIdx);
+//   engine.stepFromSelection(+1)   (arrow key with a node selected, no simulation: starts one, paused, one step from the selection)
+//   engine.setProgressBarEnabled(on)   (the progress bar of the sequence is shown or not; opts.onActivate is called when a simulation starts)
 //   engine.isActive   engine.isDragging
 //
 'use strict';
@@ -38,6 +40,7 @@ export class SimulationEngine {
   // opts.handleEl    — #sim-progress-handle element (optional)
   // opts.ticksEl     — #sim-ticks element (optional)
   // opts.playPauseEl — play/pause button element (optional)
+  // opts.onActivate  — called when the simulation starts (the page shows the progress bar then)
   constructor(provider, opts) {
     opts = opts || {};
     this._provider    = provider;
@@ -46,6 +49,9 @@ export class SimulationEngine {
     this._handleEl    = opts.handleEl    || null;
     this._ticksEl     = opts.ticksEl     || null;
     this._playPauseEl = opts.playPauseEl || null;
+    this._onActivate  = opts.onActivate  || null;
+    this._barEnabled  = false;  // the progress bar is shown (a setting of the page; the bar says where the selected node, or the simulation, is in the sequence)
+    this._preview     = null;   // without a simulation: [position, length] of the selected node in the sequence, if it is unique
 
     this._running  = false;   // timer is active and stepping
     this._paused   = false;   // paused mid-sequence (index preserved)
@@ -54,10 +60,35 @@ export class SimulationEngine {
     this._entries  = [];      // flat sequence of {id, iterIdx, order, traceIdx}
     this._index    = 0;       // next entry to visit
 
+    // What the user has selected in any view (the last 'select' of the provider), to start from: { id, iterIdx, ambiguous }.
+    // A new graph has new node ids, so a selection does not outlive the graph that it was made in.
+    this._selection = null;
+    var self = this;
+    provider.on('select', function(ev) {
+      self._selection = {
+        id:        ev.focusId != null ? ev.focusId : ev.nodeId,
+        iterIdx:   ev.iterIdx,                                    // (undefined: the node as a whole, as a click in the graph says)
+        ambiguous: !!(ev.allIds && ev.allIds.length > 1),         // (a gutter badge of several nodes)
+      };
+      self._refreshPreview();
+    });
+    // (a click in the canvas, outside of every item, deselects: that also ends a simulation, which is the way to stop it)
+    provider.on('clear',      function(ev) {
+      self._selection = null;
+      if (ev && ev.background && self.isActive) self.stop(); else self._refreshPreview();
+    });
+    provider.on('fetchstart', function() { self._selection = null; self._preview = null; self._updateProgress(); });
+
     this._initScrubber();
   }
 
   // ── Public read-only state ──────────────────────────────────────────────────
+
+  // Show or hide the progress bar (a setting; it is on when a simulation has started, until the user turns it off).
+  setProgressBarEnabled(on) {
+    this._barEnabled = !!on;
+    this._refreshPreview();
+  }
 
   // True when playing or paused mid-sequence.
   get isActive()   { return this._running || this._paused; }
@@ -67,7 +98,7 @@ export class SimulationEngine {
 
   // ── Public playback controls ────────────────────────────────────────────────
 
-  // Start playback from the beginning, or resume after a pause.
+  // Start playback from the selected node (if it is unique) or from the beginning, or resume after a pause.
   start() {
     if (this._running) return;
     if (this._paused) {
@@ -75,11 +106,14 @@ export class SimulationEngine {
       this._running = true;
     } else {
       this._buildNodeList();
-      this._index   = 0;
+      // From the selected node, if there is one and it is unique (and not the last): its next one is the first step; otherwise from the beginning
+      var at = this._selection && !this._selection.ambiguous ? this._uniqueEntry(this._selection) : -1;
+      this._index   = at >= 0 && at + 1 < this._entries.length ? at + 1 : 0;
       this._running = true;
       this._paused  = false;
       if (!this._entries.length) { this._running = false; this._syncMenuIcons(); return; }
     }
+    this._activated();
     this._syncMenuIcons();
     this._step();
   }
@@ -102,6 +136,7 @@ export class SimulationEngine {
     this._paused  = false;
     this._entries = [];
     this._index   = 0;
+    this._refreshPreview();   // (the bar then says where the selected node is, if there is one)
     this._syncMenuIcons();
   }
 
@@ -122,6 +157,24 @@ export class SimulationEngine {
     this._jumpToDisplay(target);
   }
 
+  // The arrow keys with a node selected and no simulation: the simulation starts, paused, at the selected point and takes one step from it (delta = +1
+  // the next one, -1 the previous one), as the arrow keys do while it plays. The point has to be unique: the selection of one node with one entry in
+  // the sequence (a node of iterations that was clicked in the graph, a badge of several nodes, a node that is not drawn: none, and nothing is done).
+  // Returns whether it did something (the caller then stops the key).
+  stepFromSelection(delta) {
+    if (this.isActive || !this._selection || this._selection.ambiguous) return false;
+    this._buildNodeList();
+    var at = this._uniqueEntry(this._selection);
+    var target = at + delta;
+    if (at < 0 || target < 0 || target >= this._entries.length) { this._entries = []; return false; }
+    this._index   = at + 1;   // (the selection is the one that is shown)
+    this._paused  = true;
+    this._activated();
+    this._syncMenuIcons();
+    this._jumpToDisplay(target);
+    return true;
+  }
+
   // Called by the Gantt bar click handler when the simulation is active.
   // Finds the matching entry, pauses if playing, and jumps to that point.
   // Returns true when the click was handled (caller should skip normal selection).
@@ -138,6 +191,36 @@ export class SimulationEngine {
   }
 
   // ── Private machinery ───────────────────────────────────────────────────────
+
+  // The simulation has started: the page shows the progress bar.
+  _activated() {
+    if (this._onActivate) this._onActivate();
+  }
+
+  // The place of the selected node in the sequence, when there is no simulation: the progress bar says it, if the node is unique in the sequence
+  // (the same rule as for the arrow keys). Otherwise the bar is left as it is, empty if there is no selection.
+  _refreshPreview() {
+    if (this.isActive) { this._updateProgress(); return; }
+    var sel = this._selection;
+    if (!sel) { this._preview = null; this._updateProgress(); return; }
+    if (!sel.ambiguous) {
+      this._buildNodeList();
+      var at = this._uniqueEntry(sel);
+      if (at >= 0) this._preview = [at + 1, this._entries.length];
+      this._entries = [];
+    }
+    this._updateProgress();
+  }
+
+  // The index of the entry of the selection if there is exactly one, else -1.
+  _uniqueEntry(sel) {
+    var at = -1, found = 0;
+    for (var i = 0; i < this._entries.length; i++) {
+      var e = this._entries[i];
+      if (e.id === sel.id && (sel.iterIdx == null || e.iterIdx === sel.iterIdx)) { at = i; found++; }
+    }
+    return found === 1 ? at : -1;
+  }
 
   // Build a flat, total_order-sorted sequence from the provider's current graph.
   // Aggregated nodes (total_orders array) are expanded into one entry per
@@ -196,8 +279,13 @@ export class SimulationEngine {
     var handle = this._handleEl;
     if (!bar || !fill) return;
     var active = this._running || this._paused;
-    bar.style.display = active ? 'block' : 'none';
-    var pct = (active && this._entries.length > 0) ? (this._index / this._entries.length * 100) : 0;
+    bar.style.display = this._barEnabled ? 'block' : 'none';
+    var pct = 0;
+    if (active) {
+      if (this._entries.length > 0) pct = this._index / this._entries.length * 100;
+    } else if (this._preview) {
+      pct = this._preview[0] / this._preview[1] * 100;
+    }
     fill.style.width = pct + '%';
     if (handle) handle.style.left = pct + '%';
   }
@@ -222,7 +310,7 @@ export class SimulationEngine {
 
   _syncMenuIcons() {
     var btn = this._playPauseEl;
-    if (btn) btn.firstChild.textContent = this._running ? 'Pause' : 'Play';
+    if (btn) btn.firstChild.textContent = this._running ? 'Pause' : 'Simulate';
     this._updateProgress();
   }
 
@@ -233,7 +321,15 @@ export class SimulationEngine {
     var self = this;
 
     bar.addEventListener('mousedown', function(e) {
-      if (!self.isActive) return;
+      if (!self.isActive) {
+        // (the bar is shown without a simulation, with the selected node on it: a click or a drag on it starts one, paused)
+        self._buildNodeList();
+        if (!self._entries.length) return;
+        self._index  = 0;
+        self._paused = true;
+        self._activated();
+        self._syncMenuIcons();
+      }
       e.preventDefault();
 
       var startX   = e.clientX;

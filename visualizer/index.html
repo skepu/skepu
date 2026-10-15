@@ -113,6 +113,7 @@
               <button id="menu-check-legend"   class="menu-check" data-click="toggleLegend menuClose"><span class="menu-icon"></span>Legend</button>
               <button id="menu-check-timeline" class="menu-check" data-click="toggleGanttPane menuClose"><span class="menu-icon"></span>Timeline<span class="menu-key">G</span></button>
               <button id="menu-check-source"     class="menu-check" data-click="toggleSourcePane menuClose"><span class="menu-icon"></span>Source Panel<span class="menu-key">S</span></button>
+              <button id="menu-check-progress" class="menu-check" data-click="toggleProgressBar menuClose" title="Where the selected node, or the simulation, is in the run"><span class="menu-icon"></span>Progress Bar</button>
               <button id="menu-check-code-paths" class="menu-check" data-click="toggleCodePaths menuClose"><span class="menu-icon"></span>Code Paths</button>
               <button id="menu-check-definitions" class="menu-check" data-click="toggleDefinitions menuClose" title="Mark where all the skeleton instances and user functions are defined"><span class="menu-icon"></span>Definitions</button>
               <div class="menu-sep"></div>
@@ -142,6 +143,7 @@
               <button class="menu-check" data-ctrl="container-allocations"  data-click="menuToggleCheck"><span class="menu-icon"></span>Allocations<span class="menu-key">A</span></button>
               <button class="menu-check" data-ctrl="container-deallocations" data-click="menuToggleCheck"><span class="menu-icon"></span>Deallocations<span class="menu-key">D</span></button>
               <button class="menu-check" data-ctrl="container-transfers"    data-click="menuToggleCheck"><span class="menu-icon"></span>Transfers<span class="menu-key">T</span></button>
+              <button class="menu-check" data-ctrl="kernel-compiles"        data-click="menuToggleCheck"><span class="menu-icon"></span>Kernel Builds</button>
               <button class="menu-check" data-ctrl="communications"         data-click="menuToggleCheck"><span class="menu-icon"></span>Communications</button>
               <button class="menu-check" data-ctrl="element-accesses"       data-click="menuToggleCheck"><span class="menu-icon"></span>Element Accesses</button>
               <div class="menu-sep"></div>
@@ -227,13 +229,7 @@
           <div class="menu" id="menu-actions">
             <button class="menu-title">Actions</button>
             <div class="dropdown">
-              <div class="submenu">
-                <div class="submenu-title">Simulate<span class="menu-arrow">▸</span></div>
-                <div class="dropdown">
-                  <button id="sim-btn-playpause" class="menu-action" data-needs="trace" data-click="simToggle menuClose">Play<span class="menu-key">P</span></button>
-                  <button class="menu-action" data-needs="trace" data-click="simStop menuClose">Stop</button>
-                </div>
-              </div>
+              <button id="sim-btn-playpause" class="menu-action" data-needs="trace" data-click="simToggle menuClose" title="Play the run as an animation, node by node (the arrow keys step)">Simulate<span class="menu-key">P</span></button>
               <div class="menu-sep"></div>
               <button class="menu-action" data-needs="trace" data-click="zoomGanttToMeasuredInterval menuClose">Zoom to Measured Interval<span class="menu-key">Z</span></button>
               <button class="menu-action" data-needs="tabs" data-click="nextSourceFile menuClose">Next Source Tab<span class="menu-key">Tab</span></button>
@@ -292,6 +288,11 @@
             </div>
           </div>
 
+          <!-- Keyboard shortcuts (script/shortcuts.js) -->
+          <div class="menu menu-help-btn">
+            <button class="menu-title menu-help-title" data-click="showShortcuts" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
+          </div>
+
           <!-- Info button -->
           <div class="menu menu-info-btn">
             <button class="menu-title menu-info-title" title="Trace statistics">ⓘ</button>
@@ -312,6 +313,18 @@
         </nav>
         <div id="alert-bar"></div>
 
+        <!-- The keyboard shortcuts (the dialog is made from the menus when it opens: script/shortcuts.js) -->
+        <div id="shortcuts-modal" class="shortcuts-modal" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title" hidden>
+          <div class="shortcuts-card">
+            <div class="shortcuts-head">
+              <h2 id="shortcuts-title">Keyboard shortcuts</h2>
+              <button class="shortcuts-close" data-click="hideShortcuts" aria-label="Close">✕</button>
+            </div>
+            <div class="shortcuts-body"></div>
+            <div class="shortcuts-foot"><button class="shortcuts-tour" data-click="startTour">Take the guided tour</button></div>
+          </div>
+        </div>
+
         <div id="visualization">
           <!-- Welcome panel — visible before the first trace is loaded.
                Hidden by worker-loader.js after a successful load. -->
@@ -321,6 +334,7 @@
               <img src="./SkeVU logo-white.svg" alt="SkePU logo" class="logo welcome-logo logo-dark">
               <h1>SkeVU — SkePU Visualizer</h1>
               <p class="welcome-subtitle">Performance visualizer for <a href="https://skepu.github.io" target="_blank">SkePU</a> programs</p>
+              <p class="welcome-hint"><button class="welcome-tour-btn" data-click="startTour">New here? Take a one-minute tour</button></p>
 
               <h3>Load your own trace</h3>
               <ol>

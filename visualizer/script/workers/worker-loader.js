@@ -16,6 +16,8 @@ import { State } from '../state.js';
 import { bindActions } from '../actions.js';
 import { holdForReveal } from '../reveal.js';
 import { headerSourceFiles } from '../backend/trace.js';
+import { createSessionStore, sessionId } from '../session_store.js';
+import { exampleSlug, findExample, encodePermalink, decodePermalink } from '../permalink.js';
 import { LANGUAGE_LABELS, exampleLanguages, examplesOfLanguage, initialLanguage } from '../examples_list.js';
 
 // ── 2. Build examples menu + welcome panel ────────────────────────────────────
@@ -37,15 +39,49 @@ async function _buildExamplesUI() {
     var resp;
     try {
         resp = await fetch(new URL('../../examples/examples.json', import.meta.url));
-    } catch (e) { return; }   // no examples available (offline, missing file, etc.)
-    if (!resp.ok) return;
+    } catch (e) { if (_exampleNamed) _showSplash(); return; }   // no examples available (offline, missing file, etc.)
+    if (!resp.ok) { if (_exampleNamed) _showSplash(); return; }
 
     var examples;
-    try { examples = await resp.json(); } catch (e) { return; }
-    if (!examples || !examples.length) return;
+    try { examples = await resp.json(); } catch (e) { if (_exampleNamed) _showSplash(); return; }
+    if (!examples || !examples.length) { if (_exampleNamed) _showSplash(); return; }
 
+    _examples = examples;
     _buildExamplesMenu(examples);
     _buildWelcomeExamples(examples);
+    _openFromHash();
+}
+
+// ── The link of an example (permalink.js) ─────────────────────────────────────
+// The address says which example and backend are shown (#example=horner&backend=openmp), so that it can be kept and sent. It is not the
+// state of the view: the settings are the reader's own. A page opened on a link loads the example the way a click on it does.
+
+var _examples    = null;
+
+/** The splash is for a blank session (early.js keeps it away where a trace is on its way): when the trace does not come, it is shown. */
+function _showSplash() {
+    if (window.skevu?.vscode || typeof acquireVsCodeApi === 'function') return;   // (an editor has never a blank session: no splash)
+    document.documentElement.classList.remove('no-splash');
+    try { sessionStorage.removeItem('skevu-upload-kept'); } catch (e) { /* (no storage) */ }
+}
+var _initialHash = window.location.hash;
+// A link named an example: if it cannot be loaded there is a splash after all (a page that is restoring files has no link)
+var _exampleNamed = /[#&]example=/.test(window.location.hash) || /[?&]example=/.test(window.location.search);
+
+/** Puts the example (null: a trace of files) in the address, without a history entry. */
+function _setLink(slug, backend) {
+    var hash = encodePermalink({ slug: slug, backend: backend });
+    history.replaceState(null, '', window.location.pathname + window.location.search + hash);
+}
+
+function _openFromHash() {
+    var state = decodePermalink(_initialHash);
+    if (!state) return;   // (no link, or the old kind: loaded below)
+    var idx = findExample(_examples, state.slug);
+    if (idx < 0) { _showSplash(); return; }   // (a link to an example that is not there)
+    // After the page has made itself, as a click would be.
+    var open = function() { setTimeout(function() { window.loadExample(idx, state.backend); }, 0); };
+    if (document.readyState === 'complete') open(); else window.addEventListener('load', open, { once: true });
 }
 
 /** Populate the menubar Examples submenu. */
@@ -186,6 +222,38 @@ _buildExamplesUI();
     window.loadExample(parseInt(exIdx, 10), backend);
 })();
 
+// ── The files of this tab (session_store.js) ──────────────────────────────────
+// What was uploaded is kept in the browser for the tab, and is loaded again when the tab is reloaded, unless the address names an example.
+
+var _sessionStore = null;
+try {
+    if (!window.skevu?.vscode && typeof indexedDB !== 'undefined')
+        _sessionStore = createSessionStore(indexedDB, sessionId(sessionStorage, function() { return crypto.randomUUID(); }));
+} catch (e) { /* (no storage: no session) */ }
+
+// (whether files are kept is in sessionStorage too, where early.js can read it before the page is painted: IndexedDB cannot be)
+function _keepUploads(files) {
+    if (!_sessionStore) return;
+    _sessionStore.save(files).then(function(failed) {
+        if (failed === null) return;
+        try { sessionStorage.setItem('skevu-upload-kept', '1'); } catch (e) { /* (no storage) */ }
+    });
+}
+function _forgetUploads() {
+    try { sessionStorage.removeItem('skevu-upload-kept'); } catch (e) { /* (no storage) */ }
+    if (_sessionStore) _sessionStore.forget();
+}
+
+(async function _restoreUploads() {
+    if (decodePermalink(_initialHash) || new URLSearchParams(window.location.search).has('example')) return;   // (an example is on its way)
+    if (!_sessionStore) { _showSplash(); return; }
+    var saved = await _sessionStore.restore();
+    if (!saved || !saved.trace) { _showSplash(); return; }
+    // After the page has made itself (as for a link).
+    var open = function() { setTimeout(function() { window.loadFiles(null, saved); }, 0); };
+    if (document.readyState === 'complete') open(); else window.addEventListener('load', open, { once: true });
+})();
+
 // ── 3. Public loader API ──────────────────────────────────────────────────────
 // These functions are called from the static page's event handlers.
 
@@ -198,6 +266,8 @@ window.loadExample = async function loadExample(index, backend) {
     try {
         var result = await workerCall('loadExample', { index: index, backend: backend });
         _applyLoadResult(result);
+        _forgetUploads();
+        if (_examples && _examples[index]) _setLink(exampleSlug(_examples[index].title), backend);
 
         if (result.snapshotArchiveUrl) {
             // Fetch, extract, and forward snapshot files to the worker.
@@ -208,20 +278,48 @@ window.loadExample = async function loadExample(index, backend) {
     } catch (e) {
         _setLoadingState(false);
         console.error('[worker-loader] loadExample failed:', e);
+        _showSplash();
         if (typeof showAlert === 'function') showAlert('Failed to load example: ' + e.message);
     }
+};
+
+/**
+ * For the guided tour (tour.js) when there is no trace: loads an example (Horner, OpenMP) and waits until it is drawn. Returns whether there is a trace.
+ */
+window.loadTourExample = async function loadTourExample() {
+    if (!_examples) return false;
+    var idx = findExample(_examples, 'horner');
+    if (idx < 0) idx = 0;
+    var backends = Object.keys(_examples[idx].trace || {});
+    var backend = backends.indexOf('openmp') >= 0 ? 'openmp' : backends[0];
+    var drawn = new Promise(function(resolve) {
+        var done = function() {
+            if (!State._traceLoaded) return;   // (the empty render that the page makes before any trace is not it)
+            State.provider.off('rendersettled', done);
+            resolve();
+        };
+        State.provider.on('rendersettled', done);
+        setTimeout(function() { State.provider.off('rendersettled', done); resolve(); }, 10000);
+    });
+    await window.loadExample(idx, backend);
+    if (!State._traceLoaded) return false;
+    await drawn;
+    await new Promise(function(r) { setTimeout(r, 500); });   // (the splash fades out)
+    return true;
 };
 
 /**
  * Handle the file-picker form submission.
  * Called from the static page's "Load Trace" button onclick.
  */
-export async function loadFiles(data) {
+export async function loadFiles(data, saved) {
     var traceInput    = document.getElementById('trace-file-input');
     var cppInput      = document.getElementById('cpp-files-input');
     var zipInput      = document.getElementById('snapshot-zip-input');
 
-    var traceFile = data ?? traceInput?.files?.[0];
+    // The files of the form, or the ones that this tab had before it was reloaded (see the session store, below).
+    var picked = saved ?? { trace: traceInput?.files?.[0], cpp: cppInput ? Array.from(cppInput.files) : [], zip: zipInput?.files?.[0] };
+    var traceFile = data ?? picked.trace;
     if (!traceFile) {
         if (typeof showAlert === 'function') showAlert('Please select a trace JSON file.');
         return;
@@ -244,18 +342,14 @@ export async function loadFiles(data) {
                 });
         }
 
-        if (cppInput && cppInput.files.length) {
-            for (var i = 0; i < cppInput.files.length; i++) {
-                var f = cppInput.files[i];
-                cppFiles[f.name] = await _readText(f);
-            }
-        }
+        for (var f of picked.cpp ?? [])
+            cppFiles[f.name] = await _readText(f);
 
         // Pre-extract the snapshot zip (if provided) so we can send it in
         // the same load call.  The worker merges it into _snapshotFiles and
         // it is immediately available for the first getData call.
         var snapshotFiles = {};
-        var zipFile = zipInput && zipInput.files[0];
+        var zipFile = picked.zip;
         if (zipFile) {
             try {
                 var buf = await _readBinary(zipFile);
@@ -285,8 +379,11 @@ export async function loadFiles(data) {
         }
 
         _applyLoadResult(result);
+        _setLink(null);
+        if (!data && !saved) _keepUploads(picked);
     } catch (e) {
         _setLoadingState(false);
+        if (saved) { _forgetUploads(); _showSplash(); }   // (what is kept does not load: it is not tried again at each reload)
         console.error('[worker-loader] loadFiles failed:', e);
         if (typeof showAlert === 'function') showAlert('Failed to load trace: ' + e.message);
     }

@@ -14,6 +14,7 @@ export const COLORS = {
   allocation:   { fill: 'white',     stroke: '#333' },
   deallocation: { fill: 'black',     stroke: '#ddd' },
   transfer:     { fill: 'purple',    stroke: '#6a006a' },
+  compile:      { fill: '#f0b44c',   stroke: '#a86b00' },       // the build of an OpenCL kernel (an amber cut rectangle), and the setup edge from it to the first call
   communication:{ fill: '#17a2b8',   stroke: '#0e6676' },       // a collective operation of an MPI program (a teal hexagon)
   fusion:       { fill: '#88f' },
   prng:         { fill: ['#e2d2f2', '#4b3a63'], stroke: ['#8e44ad', '#bb8fce'] },     // [light, dark]: the allocation of a random stream (a violet hexagon)
@@ -112,6 +113,17 @@ export function buildGraphStyle(self, minmax) {
         'background-color': COLORS.transfer.fill,
         'border-width':     3,
         'border-color':     COLORS.transfer.stroke,
+      }
+    },
+    {
+      selector: 'node[type="compile"]',
+      style: {
+        'content':          function(ele) { return node_labels ? ele.data('label') : ''; },
+        'text-valign':      'center',
+        'shape':            'cut-rectangle',
+        'background-color': COLORS.compile.fill,
+        'border-width':     3,
+        'border-color':     function(ele) { return ele.data('ok') === false ? 'red' : COLORS.compile.stroke; },
       }
     },
     {
@@ -349,6 +361,16 @@ export function buildGraphStyle(self, minmax) {
         'source-arrow-shape': 'none',
         'width':              1.5,
         'opacity':            0.65,
+      }
+    },
+    {
+      selector: 'edge[type="setup-dep"]',
+      style: {
+        'line-color':         COLORS.compile.stroke,
+        'target-arrow-color': COLORS.compile.stroke,
+        'line-style':         'dashed',
+        'line-dash-pattern':  [10, 3, 2, 3],
+        'opacity':            0.8,
       }
     },
     {

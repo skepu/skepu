@@ -4,7 +4,7 @@
 // the top level: each rank has a header and a row for each backend, so that the timeline looks like the hardware does. What
 // happens between the ranks, the collective operations, has a row of its own, as it does not belong to a rank.
 //
-//   regions | rank 0: header, backend rows | rank 1: ... | transfers | communication | events | axis
+//   regions | rank 0: header, backend rows | rank 1: ... | transfers | kernel builds | communication | events | axis
 'use strict';
 
 /** The number of ranks that the timeline nodes (the data of the timed calls) have data of: 0 if they are not from an MPI program. */
@@ -19,11 +19,11 @@ export function rankCount(nodes) {
 
 /**
  * The y of the rows. For a trace that is not from an MPI program (ranks = 0) there is one group of backend rows and no header.
- * heights: { regionH, rowH, headerH, transferH, commH, eventH, axisH } (a row that is not there has the height 0).
+ * heights: { regionH, rowH, headerH, transferH, compileH, commH, eventH, axisH } (a row that is not there has the height 0).
  * With rankComm (the collectives expanded) every rank also has a row for what it did in them: rowY.commY of its group.
- * Returns { groups: [{ rank, headerY, headerH, rowY: { backend: y }, commY }], transferY, commY, eventY, axisY, height }.
+ * Returns { groups: [{ rank, headerY, headerH, rowY: { backend: y }, commY }], transferY, compileY, commY, eventY, axisY, height }.
  */
-export function layoutRows({ ranks, backends, regionH, rowH, headerH, transferH, commH, eventH, axisH, rankComm = false }) {
+export function layoutRows({ ranks, backends, regionH, rowH, headerH, transferH, compileH = 0, commH, eventH, axisH, rankComm = false }) {
     const groups = [];
     let y = regionH;
     const groupCount = ranks > 0 ? ranks : 1;
@@ -35,9 +35,10 @@ export function layoutRows({ ranks, backends, regionH, rowH, headerH, transferH,
         groups.push(g);
     }
     const transferY = y; y += transferH;
+    const compileY  = y; y += compileH;
     const commY     = y; y += commH;
     const eventY    = y; y += eventH;
-    return { groups, transferY, commY, eventY, axisY: y, height: y + axisH };
+    return { groups, transferY, compileY, commY, eventY, axisY: y, height: y + axisH };
 }
 
 /**

@@ -8,7 +8,7 @@ var STORAGE_KEY = SETTINGS_KEY;
 
 var SETTING_CHECKBOXES = [
   'container-updates', 'container-allocations', 'container-deallocations',
-  'container-transfers', 'communications', 'element-accesses', 'anti-deps', 'virtual-alias-edges',
+  'container-transfers', 'kernel-compiles', 'communications', 'element-accesses', 'anti-deps', 'virtual-alias-edges',
   'edge-labels', 'node-labels', 'show_regions', 'collapse_iteration', 'fusion_analysis',
 ];
 var SETTING_SELECTS = [
@@ -19,7 +19,7 @@ var SETTING_SELECTS = [
 var DEFAULTS = {
   checkboxes: {
     'container-updates': false, 'container-allocations': false,
-    'container-deallocations': false, 'container-transfers': false, 'communications': true,
+    'container-deallocations': false, 'container-transfers': false, 'kernel-compiles': false, 'communications': true,
     'element-accesses': false, 'anti-deps': false, 'virtual-alias-edges': false,
     'edge-labels': false, 'node-labels': true, 'show_regions': false,
     'collapse_iteration': false, 'fusion_analysis': false,
@@ -32,7 +32,7 @@ var DEFAULTS = {
     'right-pane-width': 500, 'source-open': true, 'info-pane-ratio': 0,
     'gantt-open': false, 'gantt-scale': 1, 'legend-open': false,
     'color-spectrum': 'default', 'dark-mode': false, 'hljs-theme': 'default',
-    'code-paths': true, 'pin-definitions': false,
+    'code-paths': true, 'pin-definitions': false, 'progress-bar': false,
   },
 };
 
@@ -83,6 +83,7 @@ export function saveSettings(layoutOverrides) {
   s.layout['hljs-theme']     = State._hljsTheme;
   s.layout['code-paths']     = State._codePaths;
   s.layout['pin-definitions'] = State._pinDefinitions;
+  s.layout['progress-bar']    = State._progressBar;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
 }
 
@@ -144,6 +145,7 @@ export function loadSettings() {
     if (s.layout['code-paths'] != null) {
       State._codePaths = s.layout['code-paths'];
     }
+    if (s.layout['progress-bar'] != null) State._progressBar = s.layout['progress-bar'];
     if (s.layout['pin-definitions'] != null) {
       State._pinDefinitions = s.layout['pin-definitions'];
     }
@@ -215,6 +217,8 @@ export function menuRestoreDefaults() {
   State._colorSpectrum  = DEFAULTS.layout['color-spectrum'];
   State._codePaths      = DEFAULTS.layout['code-paths'];
   State._pinDefinitions = DEFAULTS.layout['pin-definitions'];
+  State._progressBar    = DEFAULTS.layout['progress-bar'];
+  if (State.simEngine) State.simEngine.setProgressBarEnabled(State._progressBar);
   applyToSourceView();
   document.getElementById('info_window').style.flex = '0 0 0em';
   setPaneOpen(document.getElementById('legend'), State._legendOpen, 'height', false);

@@ -73,6 +73,7 @@ namespace skepu
 			{
 #ifdef SKEPU_TRACING
 				this->m_label = label;
+				SKEPU_TRACE_RELABEL(this->m_object_id, this->m_label);   // (the events of the instance so far, the builds of its kernels, have the name)
 #endif
 			}
 
@@ -83,6 +84,16 @@ namespace skepu
 					return this->m_label;
 #endif
 				return skepu::debug.getObjectName(this, "Skeleton #" + std::to_string(this->m_object_id));
+			}
+
+			// The id of the instance in the traces (null without tracing)
+			tracing::TraceID getObjectIDForTrace()
+			{
+#ifdef SKEPU_TRACING
+				return this->m_object_id;
+#else
+				return UniqueIdentifier::null();
+#endif
 			}
 
 #ifdef SKEPU_TRACING
@@ -166,7 +177,11 @@ namespace skepu
 #ifdef SKEPU_OPENCL
 				this->m_needs_double = needsDouble;
 				if (!needsDouble || this->m_environment->numDoubleDevices_CL() > 0)
+				{
+					// (with tracing, the builds are events of this instance)
+					tracing::CompileScope compile_scope(this->getObjectIDForTrace(), this->getLabel());
 					CLKernel::initialize();
+				}
 #endif
 			}
 

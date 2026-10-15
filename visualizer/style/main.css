@@ -321,6 +321,111 @@ html.dark-mode .menu-field input { border-color: #4a4660; }
   margin-left: auto;
 }
 
+/* The ? button is right-aligned with the ⓘ after it (which then has no margin of its own) */
+.menu-help-btn { margin-left: auto; }
+.menu-help-btn + .menu-info-btn { margin-left: 0; }
+.menu-help-title { font-size: 1.1em; padding: 0.2em 0.7em; }
+
+/* The dialog of the keyboard shortcuts */
+.shortcuts-modal {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+}
+.shortcuts-modal[hidden] { display: none; }
+.shortcuts-card {
+  background: white; color: #222;
+  border-radius: 8px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 48px);
+  display: flex; flex-direction: column;
+}
+.shortcuts-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.7em 1em; border-bottom: 1px solid #ddd;
+}
+.shortcuts-head h2 { margin: 0; font-size: 1.1em; }
+.shortcuts-close { background: none; border: none; font-size: 1.1em; cursor: pointer; color: inherit; padding: 0.2em 0.5em; border-radius: 4px; }
+.shortcuts-close:hover { background: #bbb; }
+.shortcuts-body { overflow-y: auto; padding: 0.6em 1em 1em; columns: 2 280px; column-gap: 2em; }
+.shortcuts-body section { break-inside: avoid; margin-bottom: 0.8em; }
+.shortcuts-body h3 { margin: 0.6em 0 0.3em; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.05em; color: #777; }
+.shortcuts-body dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0.25em 1em; align-items: baseline; }
+.shortcuts-body dt { text-align: right; white-space: nowrap; }
+.shortcuts-body dd { margin: 0; }
+.shortcuts-body kbd {
+  display: inline-block; min-width: 1.4em; text-align: center;
+  padding: 0.05em 0.45em; border: 1px solid #bbb; border-bottom-width: 2px; border-radius: 4px;
+  background: #f4f4f4; font-family: inherit; font-size: 0.85em;
+}
+.shortcuts-foot { padding: 0.6em 1em; border-top: 1px solid #ddd; text-align: right; }
+.shortcuts-tour, .welcome-tour-btn {
+  background: none; border: 1px solid #888; border-radius: 4px; padding: 0.3em 0.8em; cursor: pointer; font: inherit; color: inherit;
+}
+.shortcuts-tour:hover, .welcome-tour-btn:hover { background: #bbb; }
+.welcome-tour-btn { border-color: transparent; text-decoration: underline; padding-left: 0; }
+html.dark-mode .shortcuts-foot { border-color: #3a3848; }
+html.dark-mode .shortcuts-tour:hover, html.dark-mode .welcome-tour-btn:hover { background: #464359; }
+
+/* The guided tour (script/tour.js): a layer over the page, a hole of light where the step is, and the text */
+/* (the layer is not in the way: the light is a hole in the dimmed page, and what is in it can be used; the dimmed page and the text are not) */
+.tour-layer { position: fixed; inset: 0; z-index: 2000; pointer-events: none; }
+.tour-layer.tour-dim { background: rgba(0, 0, 0, 0.55); pointer-events: auto; }
+.tour-spot {
+  position: absolute; border-radius: 6px; pointer-events: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+  transition: left 0.2s ease, top 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+.tour-dimmer { position: absolute; background: rgba(0, 0, 0, 0.55); pointer-events: auto; transition: left 0.2s ease, top 0.2s ease, width 0.2s ease, height 0.2s ease; }
+.tour-dimmer[hidden] { display: none; }
+.tour-spot[hidden] { display: none; }
+.tour-card {
+  position: absolute; width: min(320px, calc(100vw - 24px)); box-sizing: border-box;
+  background: white; color: #222; border-radius: 8px; padding: 0.9em 1em 0.7em;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: opacity 0.13s ease;
+}
+.tour-card { pointer-events: auto; }
+.tour-card.tour-swapping { opacity: 0; pointer-events: none; }
+.tour-card .tour-task { margin: 0 0 0.8em; padding: 0.4em 0.6em; border-radius: 4px; background: #eef3ff; color: #0b3d91; font-size: 0.9em; }
+.tour-card .tour-task[hidden] { display: none; }
+.tour-card .tour-task-done { background: #e6f5e6; color: #1d6b1d; }
+.tour-foot .tour-next.tour-ready { box-shadow: 0 0 0 3px rgba(0, 85, 204, 0.35); }
+.tour-card h3 { margin: 0 0 0.3em; font-size: 1.05em; }
+.tour-card p { margin: 0 0 0.8em; line-height: 1.4; }
+.tour-foot { display: flex; align-items: center; gap: 0.5em; }
+.tour-count { margin-right: auto; color: #777; font-size: 0.85em; }
+.tour-foot button { font: inherit; border: 1px solid #888; border-radius: 4px; background: none; padding: 0.25em 0.8em; cursor: pointer; color: inherit; }
+.tour-foot button:disabled { opacity: 0.4; cursor: default; }
+.tour-foot .tour-skip { border-color: transparent; color: #777; }
+.tour-foot .tour-next { background: #0055cc; border-color: #0055cc; color: white; }
+.tour-foot button:not(:disabled):not(.tour-next):hover { background: #bbb; }
+html.dark-mode .tour-card { background: #2c283c; color: #d8d4e2; }
+html.dark-mode .tour-count, html.dark-mode .tour-foot .tour-skip { color: #9a96aa; }
+html.dark-mode .tour-card .tour-task { background: #34304a; color: #bcd0ff; }
+html.dark-mode .tour-card .tour-task-done { background: #26382a; color: #9fdc9f; }
+html.dark-mode .tour-foot .tour-next.tour-ready { box-shadow: 0 0 0 3px rgba(232, 114, 12, 0.4); }
+html.dark-mode .tour-foot .tour-next { background: #e8720c; border-color: #e8720c; color: #1a1018; }
+html.dark-mode .tour-foot button:not(:disabled):not(.tour-next):hover { background: #464359; }
+@media (prefers-reduced-motion: reduce) { .tour-spot, .tour-dimmer { transition: none; } }
+
+/* The offer of the tour, once */
+.tour-offer {
+  position: fixed; right: 16px; bottom: 16px; z-index: 900; max-width: 340px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.6em;
+  background: white; color: #222; border-radius: 8px; padding: 0.8em 1em; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+.tour-offer-text { flex-basis: 100%; }
+.tour-offer button { font: inherit; border: 1px solid #888; border-radius: 4px; background: none; padding: 0.25em 0.8em; cursor: pointer; color: inherit; }
+.tour-offer .tour-offer-yes { background: #0055cc; border-color: #0055cc; color: white; }
+html.dark-mode .tour-offer { background: #2c283c; color: #d8d4e2; }
+html.dark-mode .tour-offer .tour-offer-yes { background: #e8720c; border-color: #e8720c; color: #1a1018; }
+
+html.dark-mode .shortcuts-card { background: #2c283c; color: #d8d4e2; }
+html.dark-mode .shortcuts-head { border-color: #3a3848; }
+html.dark-mode .shortcuts-close:hover { background: #464359; }
+html.dark-mode .shortcuts-body h3 { color: #9a96aa; }
+html.dark-mode .shortcuts-body kbd { background: #1e1c28; border-color: #4a4660; color: #e0d8f0; }
+
 .menu-info-title
 {
   font-size: 1.1em;
@@ -615,6 +720,8 @@ html.no-pane-anim #gantt-pane { transition: none; }
 #welcome-panel.fading { opacity: 0; pointer-events: none; }
 /* The splash that is held while the first trace is drawn: out of the layout (reveal.js gives it the pixels of the place and size that it had),
    above the panes. Its background goes on to the bottom of the window, over the legend and the timeline that are under the place that it had. */
+/* (no splash: where a trace is on its way, or in an editor: the panel is a plain curtain, see early.js) */
+html.no-splash .welcome-card { visibility: hidden; }
 #welcome-panel.welcome-overlay { position: fixed; inset: auto; z-index: 500; overflow: visible; box-sizing: border-box; pointer-events: none; }
 #welcome-panel.welcome-overlay::before { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 100vh; background: inherit; }
 #welcome-panel.fading { opacity: 0; pointer-events: none; }

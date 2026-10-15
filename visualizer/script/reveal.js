@@ -47,6 +47,11 @@ export function reveal(html, panel) {
   _timer = null;
   if (!panel || !html.classList.contains('reveal-pending')) return;
   html.classList.remove('reveal-pending');
+  // A page that has no splash (a reload that restores a trace, an editor: early.js) has a blank curtain, and nothing to cross-fade: it just goes.
+  if (html.classList.contains('no-splash')) {
+    panel.classList.add('hidden');
+    return;
+  }
   panel.classList.add('fading');
 
   var finished = false, fallback = null;

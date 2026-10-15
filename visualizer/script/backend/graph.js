@@ -4,9 +4,9 @@
 
 import {
     Node, ComputationNode, CallNode, ExternalNode, RegionNode, FusedNode,
-    AllocationNode, DeallocationNode, UpdateNode, ScalarNode, TransferNode, CommunicationNode,
+    AllocationNode, DeallocationNode, UpdateNode, ScalarNode, TransferNode, CommunicationNode, CompileNode,
 } from './node.js';
-import { ElwiseEdge, ProxyEdge, VirtualAliasEdge } from './edge.js';
+import { ElwiseEdge, ProxyEdge, SetupEdge, VirtualAliasEdge } from './edge.js';
 
 // ── Backend → memory-space map ────────────────────────────────────────────────
 
@@ -36,6 +36,7 @@ export class GraphSettings {
     constructor() {
         this.updates       = true;
         this.transfers     = true;
+        this.compiles      = true;   // the builds of OpenCL kernels (kernel_compile events), and their setup edges to the calls
         this.communications = true;   // the collective operations of an MPI program
         this.antideps      = true;
         this.allocations   = true;
@@ -683,6 +684,12 @@ export class DirectedGraph {
             if (!g.settings.updates)
                 for (const id of ev.outputs ?? []) g.writeToID(id, comm, 'ALL');
         };
+        // The builds of the kernels of an instance (before its first call: they are made when the instance is) are what the call needs first
+        const builds = new Map();   // id of the instance -> [build nodes that have no call yet]
+        const setUp = (call, ev) => {
+            for (const b of builds.get(ev.object_id) ?? []) new SetupEdge(g, b.label, b, call);
+            builds.delete(ev.object_id);
+        };
         const callMade = (node, ev, order) => {
             if (ev.seq == null) return;
             for (const c of before.get(ev.seq) ?? []) link(c, node);
@@ -714,7 +721,7 @@ export class DirectedGraph {
                 }
             }
             // (an skepu::external call is a call too, and gives its containers back to their owners after it)
-            else if (t === 'skeleton_call')     callMade(new CallNode(g, ev, order), ev, order);
+            else if (t === 'skeleton_call')     { const call = new CallNode(g, ev, order); setUp(call, ev); callMade(call, ev, order); }
             else if (t === 'external')          callMade(new ExternalNode(g, ev, order), ev, order);
             else if (t === 'allocation')        new AllocationNode(g, ev, order);
             else if (t === 'deallocation')      new DeallocationNode(g, ev, order);
@@ -723,6 +730,13 @@ export class DirectedGraph {
             else if (t === 'copy')              new ExternalNode(g, { ...ev, type: 'external', label: `copy of ${g.labelForID(ev.source)}`,
                                                     elwise_inputs: [ev.source], proxy_inputs: [], scalar_inputs: [], outputs: [ev.object_id], file: '', line: 0 }, order);
             else if (t === 'transfer')          new TransferNode(g, ev, order);
+            else if (t === 'kernel_compile') {
+                const build = new CompileNode(g, ev, order);
+                if (build.type === 'compile' && ev.object_id != null) {
+                    if (!builds.has(ev.object_id)) builds.set(ev.object_id, []);
+                    builds.get(ev.object_id).push(build);
+                }
+            }
             else if (t === 'region')            new RegionNode(g, ev, order);
             else if (t === 'snapshot')          g.attachSnapshot(ev.object_id, ev.data_file, order);
             else if (t === 'virtual_container') g.registerVirtualContainer(ev.virtual_id, ev.label, ev.object_ids);

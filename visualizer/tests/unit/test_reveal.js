@@ -133,3 +133,14 @@ describe('a later trace, without the splash', () => {
         expect(has(html, 'reveal-pending')).toEqual([false]);
     });
 });
+
+describe('a page that has no splash (a reload that restores a trace, an editor)', () => {
+    it('lifts the blank curtain at once, with no fade', () => {
+        html = element(['no-splash']);
+        holdForReveal(html, panel, body);
+        reveal(html, panel);
+        expect(has(html, 'reveal-pending')).toEqual([false]);
+        expect(has(panel, 'hidden', 'fading')).toEqual([true, false]);
+        expect(panel.listeners.size).toBe(0);
+    });
+});

@@ -24,7 +24,8 @@ export function menuToggle(event, btn) {
 
 /** Make the menus of the page work: the titles (`.menu-title`) that are there now, and the closing by a click elsewhere. Also `window.menuToggle` and `window.menuClose` for the handlers in markup. */
 export function installMenus() {
-  document.querySelectorAll('.menu-title').forEach(function(btn) {
+  // (a title that has an action of its own, such as the ? of the shortcuts, opens no menu)
+  document.querySelectorAll('.menu-title:not([data-click])').forEach(function(btn) {
     btn.addEventListener('click', function(event) { menuToggle(event, btn); });
     btn.addEventListener('mouseenter', function() {
       if (document.querySelector('.menu.open')) { menuClose(); menuOpen(btn.closest('.menu')); }

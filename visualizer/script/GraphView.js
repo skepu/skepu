@@ -75,6 +75,7 @@ const DEFAULT_SETTINGS = {
   'container-allocations':   false,
   'container-deallocations': false,
   'container-transfers':     false,
+  'kernel-compiles':         false,
   'communications':          true,
   'element-accesses':        false,
   'anti-deps':               false,
@@ -631,8 +632,10 @@ export class GraphView {
     var cy   = this._cy;
 
     // ── Background click: broadcast 'clear' to all attached views ───────────
-    cy.on('click', function() {
-      self._provider._emit('clear');
+    // (a click on a node or an edge reaches this too, before its own handler: `background` says that it was the canvas that was clicked, which also
+    // ends a simulation)
+    cy.on('click', function(event) {
+      self._provider._emit('clear', { background: event.target === cy });
     });
 
     // ── Node click ───────────────────────────────────────────────────────────
@@ -815,7 +818,7 @@ export class GraphView {
     var bidirs = this._bidirEdgeReps;
     Object.keys(groups).forEach(function(key) {
       var parts  = key.split('\x00');
-      if (parts[2] === 'virtual-alias' || parts[2] === 'prng-dep') return;
+      if (parts[2] === 'virtual-alias' || parts[2] === 'prng-dep' || parts[2] === 'setup-dep') return;
       var revKey = parts[1] + '\x00' + parts[0] + '\x00' + parts[2] + '\x00' + parts[3];
       if (key >= revKey || !groups[revKey]) return;
       var fwdGrp = groups[key];

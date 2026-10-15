@@ -8,8 +8,8 @@ export function builder() {
     return {
         alloc:   (id, label) => ({ type: 'allocation', label, object_id: id, time: t }),
         dealloc: (id, label) => ({ type: 'deallocation', label, object_id: id, time: t }),
-        call: (label, { pattern = 'Map', n = 100, elements, ins = [], proxy = [], scalars = [], outs = [], backend = 'OpenMP', prng, params, dur = 100 } = {}) => ({
-            type: 'skeleton_call', label, pattern, elements: elements ?? [n], elwise_inputs: ins, proxy_inputs: proxy, scalar_inputs: scalars,
+        call: (label, { pattern = 'Map', n = 100, elements, ins = [], proxy = [], scalars = [], outs = [], backend = 'OpenMP', prng, params, dur = 100, instance } = {}) => ({
+            type: 'skeleton_call', label, ...(instance != null ? { object_id: instance } : {}), pattern, elements: elements ?? [n], elwise_inputs: ins, proxy_inputs: proxy, scalar_inputs: scalars,
             outputs: outs, backend, ...(prng != null ? { prng } : {}), ...(params ? { parameters: params } : {}), ...span(dur), file: 'x.cpp', line: 1,
         }),
         external: (label, { scalars = [], ins = [] } = {}) => ({
@@ -23,6 +23,10 @@ export function builder() {
         comm:     (ids, { operation = 'allgather', reason = 'host access: the container is gathered', seq = 0, phase, comm_seq = 1 } = {}) => ({
             type: 'communication', operation, reason, object_ids: ids, seq, comm_seq, ...(phase ? { phase } : {}),
             bytes_sent: 64, bytes_received: 32, ranks: 4, ...span(4) }),
+        // the build of an OpenCL kernel of the skeleton instance `id` (null: a kernel of the library)
+        compile:  (id, label = 'k', { qualifier, device = 'GPU 0', ok = true, dur = 5 } = {}) => ({
+            type: 'kernel_compile', label, ...(id != null ? { object_id: id } : {}), ...(qualifier ? { qualifier } : {}), backend: 'OpenCL', device,
+            source_bytes: 100, ok, ...(ok ? {} : { error: 'syntax error' }), ...span(dur), time: t }),
         transfer: (id, label = 'T', direction = 'device-to-host', backend = 'OpenCL') => ({ type: 'transfer', label, object_id: id, direction, backend, elements: 100, ...span(5) }),
     };
 }

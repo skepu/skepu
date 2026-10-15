@@ -23,6 +23,7 @@
 //   src.clearBadges();
 //   src.placeBadges(badgeNodes);
 
+import { smoothScrollTo, cancelScroll, linesInView } from './smooth_scroll.js';
 import { collectBadges, definitionMarks, sitesAt } from './badges.js';
 import { isDarkTheme } from './appearance.js';
 
@@ -192,7 +193,10 @@ export class SourceCodeView {
     this._tabBarEl.querySelectorAll('.cpp-tab').forEach(function(t) {
       t.classList.remove('active');
     });
+    // A pane that is not shown (display: none) loses its scroll position, so each pane keeps its own: a smooth scroll to a line (highlightLines) then starts
+    // where the pane was left, not at the top.
     this._tabPanesEl.querySelectorAll('.cpp-tab-pane').forEach(function(p) {
+      if (p.classList.contains('active')) p._scrollTop = p.scrollTop;
       p.classList.remove('active');
     });
     if (btn) {
@@ -200,7 +204,10 @@ export class SourceCodeView {
       btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
     }
     var panes = this._tabPanesEl.querySelectorAll('.cpp-tab-pane');
-    if (panes[index]) panes[index].classList.add('active');
+    if (panes[index]) {
+      panes[index].classList.add('active');
+      if (panes[index]._scrollTop) panes[index].scrollTop = panes[index]._scrollTop;
+    }
 
     // Redraw arrows for the newly active pane (hidden panes can't be measured).
     var self = this;
@@ -565,8 +572,15 @@ export class SourceCodeView {
     });
     if (!options.scroll || !found.size) return;
     var first = (options.target != null && found.get(options.target)) || found.get(Math.min.apply(null, Array.from(found.keys())));
+    // A line that is in view stays where it is (selecting it again, or a line that was in sight, does not move the code)
+    var rect = function(el) { var r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; };
+    var paneRect = pane.getBoundingClientRect();
+    if (linesInView(Array.from(found.values()).map(rect), rect(first), { top: paneRect.top, bottom: paneRect.bottom })) {
+      cancelScroll(pane);   // (a scroll that is going on to somewhere else is not wanted any more)
+      return;
+    }
     var top = pane.scrollTop + first.getBoundingClientRect().top - pane.getBoundingClientRect().top - 5;
-    pane.scrollTo({ top: Math.max(0, top), behavior: options.animate === false ? 'auto' : 'smooth' });
+    smoothScrollTo(pane, top, { animate: options.animate });
   }
 
   clearHighlight() {

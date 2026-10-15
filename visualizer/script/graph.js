@@ -386,6 +386,8 @@ _simEngine = new SimulationEngine(_provider, {
   handleEl:    document.getElementById('sim-progress-handle'),
   ticksEl:     document.getElementById('sim-ticks'),
   playPauseEl: document.getElementById('sim-btn-playpause'),
+  // (the progress bar is shown when a simulation starts: the page has the setting and the menu item)
+  onActivate:  function() { if (!State._progressBar && typeof window.setProgressBar === 'function') window.setProgressBar(true); },
 });
 State.simEngine = _simEngine;
 
@@ -410,15 +412,10 @@ window.zoomToFitGroup         = function(ids) { _view.zoomToFitGroup(ids); };
 window.stopRendering = stopRendering;
 
 // Simulation controls for HTML inline onclick handlers.
-export function simStop() {
-  _simEngine.simStop();
-}
-
 export function simToggle() {
-  _simEngine.simToggle();
+  _simEngine.toggle();
 }
 
 window.simStart  = function() { _simEngine.start(); };
 window.simPause  = function() { _simEngine.pause(); };
-window.simStop   = simStop;
 window.simToggle = simToggle;

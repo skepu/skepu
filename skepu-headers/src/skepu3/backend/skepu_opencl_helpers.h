@@ -371,7 +371,9 @@ namespace skepu
 			}
 			
 			
-			inline cl_program buildProgram(Device_CL *device, const std::string &source, const std::string &options = "", size_t deviceID = 0)
+			// Builds an OpenCL program for a device. With tracing the build is an event: of the skeleton instance that SkeletonBase::prepareOpenCL
+			// is building the kernels of (a library kernel has none), and `qualifier` says which one of its kernels it is (empty if it has one).
+			inline cl_program buildProgram(Device_CL *device, const std::string &source, const std::string &options = "", size_t deviceID = 0, const std::string &qualifier = "")
 			{
 				cl_int err;
 				std::stringstream allOptionsStream;
@@ -380,12 +382,41 @@ namespace skepu
 				
 				const char *src = source.c_str();
 				const char *opt = allOptions.c_str();
+#ifdef SKEPU_TRACING
+				const unsigned long trace_start = tracing::timestamp_now();
+#endif
 				cl_program program = clCreateProgramWithSource(device->getContext(), 1, &src, NULL, &err);
 				CL_CHECK_ERROR(err, "Error creating OpenCL program");    
 				
 				err = clBuildProgram(program, 0, NULL, opt, NULL, NULL);
+#ifdef SKEPU_TRACING
+				// (the build log of a failed build is what the event says)
+				std::string buildLog;
 				if (err != CL_SUCCESS)
 				{
+					size_t log_size = 0;
+					clGetProgramBuildInfo(program, device->getDeviceID(), CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+					buildLog.assign(log_size, '\0');
+					clGetProgramBuildInfo(program, device->getDeviceID(), CL_PROGRAM_BUILD_LOG, log_size, &buildLog[0], NULL);
+				}
+				{
+					char name[256] = "";
+					clGetDeviceInfo(device->getDeviceID(), CL_DEVICE_NAME, sizeof(name), name, NULL);
+					tracing::CompileScope *scope = tracing::CompileScope::current();
+					if (scope)
+						scope->add({trace_start, qualifier, name, options, source.size(), err == CL_SUCCESS, buildLog});
+					else
+						SKEPU_TRACE_COMPILE(trace_start, tracing::timestamp_now(), UniqueIdentifier::null(),
+							qualifier.empty() ? std::string("OpenCL kernel") : qualifier, std::string(), name, options, source.size(), err == CL_SUCCESS, buildLog);
+				}
+#endif
+				if (err != CL_SUCCESS)
+				{
+#ifdef SKEPU_TRACING
+					// (the build is an error that ends the program: the events are written first)
+					if (tracing::CompileScope *scope = tracing::CompileScope::current()) scope->finish();
+					SKEPU_TRACE_FLUSH();
+#endif
 #if true
 					cl_build_status build_status;
 					clGetProgramBuildInfo(program, device->getDeviceID(), CL_PROGRAM_BUILD_STATUS, sizeof(cl_build_status), &build_status, NULL);

@@ -424,6 +424,10 @@ export class TimelineView {
       return n.data.type === 'transfer' &&
         n.data.start != null && n.data.end != null;
     });
+    var timedCompiles = cyNodes.filter(function(n) {
+      return n.data.type === 'compile' &&
+        n.data.start != null && n.data.end != null;
+    });
     var timedComms = cyNodes.filter(function(n) {
       return n.data.type === 'communication' &&
         n.data.start != null && n.data.end != null;
@@ -453,6 +457,10 @@ export class TimelineView {
       ivs.forEach(function(iv) { minT = Math.min(minT, iv[0]); maxT = Math.max(maxT, iv[1]); });
     });
     timedTransfers.forEach(function(n) {
+      var ivs = n.data.intervals || [[n.data.start, n.data.end]];
+      ivs.forEach(function(iv) { minT = Math.min(minT, iv[0]); maxT = Math.max(maxT, iv[1]); });
+    });
+    timedCompiles.forEach(function(n) {
       var ivs = n.data.intervals || [[n.data.start, n.data.end]];
       ivs.forEach(function(iv) { minT = Math.min(minT, iv[0]); maxT = Math.max(maxT, iv[1]); });
     });
@@ -491,13 +499,14 @@ export class TimelineView {
     var LW = _LW, AH = _AXIS_H, RH = _ROW_H, RP = _ROW_PAD, PAD_RIGHT = _PAD_RIGHT;
     var REGION_RH   = timedRegions.length   > 0 ? AH : 0;
     var TRANSFER_RH = timedTransfers.length > 0 ? RH : 0;
+    var COMPILE_RH  = timedCompiles.length  > 0 ? RH : 0;
     var COMM_RH     = timedComms.length     > 0 ? RH : 0;
     var EVENT_RH    = timedMarkers.length   > 0 ? RH : 0;
     var SVG_W = Math.max(container.clientWidth || 400, 200) * this._scale;
     // (the collectives can be opened up: every rank then has a row for what it did in them: click on "Comm.")
     var rankComm = ranks > 0 && COMM_RH > 0 && !!this._commExpanded;
     var L = layoutRows({ ranks: ranks, backends: backends, regionH: REGION_RH, rowH: RH, headerH: _HEADER_H,
-      transferH: TRANSFER_RH, commH: COMM_RH, eventH: EVENT_RH, axisH: AH, rankComm: rankComm });
+      transferH: TRANSFER_RH, compileH: COMPILE_RH, commH: COMM_RH, eventH: EVENT_RH, axisH: AH, rankComm: rankComm });
     var H     = L.height;
     var BW    = Math.max(1, SVG_W - LW - PAD_RIGHT);
 
@@ -508,6 +517,7 @@ export class TimelineView {
     var _rowBgOdd  = dark ? '#201e2c' : '#f8f8f8';
     var _rowBgRank = dark ? '#26233a' : '#e4eefb';
     var _rowBgTr   = dark ? '#221e2e' : '#f8f4ff';
+    var _rowBgCp   = dark ? '#2e2a1e' : '#fff9ef';
     var _rowBgCm   = dark ? '#182529' : '#f0fafb';
     var _rowBgEv   = dark ? '#1e1c28' : '#fff8f5';
     var _labelFill = dark ? '#a09ab8' : '#555';
@@ -578,6 +588,11 @@ export class TimelineView {
       var trRowY = L.transferY;
       body.push('<rect x="0" y="' + trRowY + '" width="' + SVG_W + '" height="' + TRANSFER_RH + '" fill="' + _rowBgTr + '"/>');
       body.push('<text x="' + (LW - 6) + '" y="' + (trRowY + TRANSFER_RH / 2 + 4) + '" text-anchor="end" fill="' + _labelFill + '">Transfers</text>');
+    }
+    if (COMPILE_RH > 0) {
+      var cpRowY = L.compileY;
+      body.push('<rect x="0" y="' + cpRowY + '" width="' + SVG_W + '" height="' + COMPILE_RH + '" fill="' + _rowBgCp + '"/>');
+      body.push('<text x="' + (LW - 6) + '" y="' + (cpRowY + COMPILE_RH / 2 + 4) + '" text-anchor="end" fill="' + _labelFill + '">Builds</text>');
     }
     if (COMM_RH > 0) {
       var cmRowY = L.commY;
@@ -750,6 +765,39 @@ export class TimelineView {
             body.push('<text class="pointer-events-none" x="' + (x1 + 4) + '" y="' + (trBarY + trBarH / 2 + 4) + '"' + opacityAttr
               + ' fill="rgba(255,255,255,0.9)" clip-path="url(#' + clipId + ')">'
               + escTxt(d.label + iterSuffix) + '</text>');
+          }
+        });
+      });
+    }
+
+    // ── Kernel builds (OpenCL): a row of their own, the bar of a failed build is red ──────
+    if (COMPILE_RH > 0) {
+      var cpBarY   = L.compileY + RP;
+      var cpBarH   = COMPILE_RH - RP * 2;
+      var cpBarIdx = 0;
+      timedCompiles.forEach(function(n) {
+        var d     = n.data;
+        var ivs   = d.intervals || [[d.start, d.end]];
+        var total = ivs.length;
+        var opacityAttr = d.hidden ? ' opacity="0.3"' : '';
+        ivs.forEach(function(iv, iidx) {
+          var x1 = tx(iv[0]), x2 = tx(iv[1]);
+          var bw = Math.max(2, x2 - x1);
+          var centerX = x1 + bw / 2;
+          var clipId  = 'gantt-cp-' + (cpBarIdx++);
+          var selCls  = d.id === selectedId ? ' gantt-selected' : '';
+          var iterLabel = total > 1 ? ' [' + (iidx + 1) + '/' + total + ']' : '';
+          var tip = escTxt(d.label + iterLabel + '\n' + (d.device || 'OpenCL') + (d.ok === false ? '\nthe build failed' : '') + '\n' + fmtDt(iv[1] - iv[0]));
+          defs.push('<clipPath id="' + clipId + '"><rect x="' + (x1 + 2) + '" y="' + cpBarY
+            + '" width="' + Math.max(0, bw - 4) + '" height="' + cpBarH + '"/></clipPath>');
+          body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr
+            + ' data-node-id="' + escAttr(d.id) + '" data-center-x="' + centerX + '" data-interval-idx="' + iidx + '"'
+            + ' x="' + x1 + '" y="' + cpBarY + '" width="' + bw + '" height="' + cpBarH + '" rx="2"'
+            + ' fill="' + (d.ok === false ? '#d9534f' : '#f0b44c') + '" stroke="rgba(0,0,0,0.25)" stroke-width="0.5">'
+            + '<title>' + tip + '</title></rect>');
+          if (bw > _MIN_LABEL_W) {
+            body.push('<text class="pointer-events-none" x="' + (x1 + 4) + '" y="' + (cpBarY + cpBarH / 2 + 4) + '"' + opacityAttr
+              + ' fill="rgba(0,0,0,0.8)" clip-path="url(#' + clipId + ')">' + escTxt(d.label) + '</text>');
           }
         });
       });
@@ -1076,6 +1124,9 @@ export class TimelineView {
         ganttBarCount += (n.data.intervals || [[n.data.start, n.data.end]]).length;
       });
       timedTransfers.forEach(function(n) {
+        ganttBarCount += (n.data.intervals || [[n.data.start, n.data.end]]).length;
+      });
+      timedCompiles.forEach(function(n) {
         ganttBarCount += (n.data.intervals || [[n.data.start, n.data.end]]).length;
       });
       timedComms.forEach(function(n) {

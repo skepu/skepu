@@ -71,6 +71,7 @@ export function edgeTooltipText(d) {
                 : d.type === 'anti-dep'      ? 'Anti-dependence'
                 : d.type === 'virtual-alias' ? 'Virtual alias: ' + (d.virtual_label || '')
                 : d.type === 'prng-dep'      ? 'PRNG dep: '      + (d.prng_label   || '')
+                : d.type === 'setup-dep'     ? 'Setup: the kernel is built before the first call'
                 : d.type || 'Edge';
   var lines = [typeLabel];
   if (d.label)       lines.push(d.label);

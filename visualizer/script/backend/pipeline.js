@@ -12,7 +12,7 @@ import { preprocessFilePaths } from './trace.js';
 /**
  * The settings of a graph from the options of the views (the names are those of the query
  * string of the original Flask server):
- *   mode, container_allocations, container_deallocations, container_transfers, show_scalars,
+ *   mode, container_allocations, container_deallocations, container_transfers, kernel_compiles, show_scalars,
  *   anti_deps, data_as_edges, show_regions
  */
 export function graphSettings({
@@ -20,6 +20,7 @@ export function graphSettings({
     container_allocations   = false,
     container_deallocations = false,
     container_transfers     = false,
+    kernel_compiles         = false,
     show_communications     = true,
     show_scalars            = false,
     anti_deps               = false,
@@ -32,6 +33,7 @@ export function graphSettings({
     settings.allocations   = container_allocations;
     settings.deallocations = container_deallocations;
     settings.transfers     = container_transfers;
+    settings.compiles      = kernel_compiles;
     settings.communications = show_communications;
     settings.updates       = !data_as_edges;        // data_as_edges=true → updates=false (edges only)
     settings.scalars       = show_scalars;

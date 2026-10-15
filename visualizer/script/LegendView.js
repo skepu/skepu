@@ -87,6 +87,9 @@ export class LegendView {
     if (inGraph('node[type="transfer"]'))
       nodeEntries.push([nodeIcon('<polygon points="10,1 19,10 10,19 1,10" fill="purple" stroke="#6a006a" stroke-width="1.5"/>'),
        'Transfer', 'transfer']);
+    if (inGraph('node[type="compile"]'))
+      nodeEntries.push([nodeIcon('<polygon points="5,2 15,2 19,6 19,14 15,18 5,18 1,14 1,6" fill="' + COLORS.compile.fill + '" stroke="' + COLORS.compile.stroke + '" stroke-width="1.5"/>'),
+       'Kernel Build', 'compile']);
     if (inGraph('node[type="communication"]'))
       nodeEntries.push([nodeIcon('<polygon points="5,2 15,2 19,10 15,18 5,18 1,10" fill="' + COLORS.communication.fill + '" stroke="' + COLORS.communication.stroke + '" stroke-width="1.5"/>'),
        'Communication', 'communication']);
@@ -131,6 +134,8 @@ export class LegendView {
       edgeEntries.push([edgeIcon('', COLORS.antiDep), 'Anti',          'anti-dep']);
     if (inGraph('edge[type="virtual-alias"]'))
       edgeEntries.push([aliasIcon,           'Virtual Dataset','virtual-alias']);
+    if (inGraph('edge[type="setup-dep"]'))
+      edgeEntries.push([edgeIcon('10 3 2 3', COLORS.compile.stroke), 'Setup', 'setup-dep']);
     if (inGraph('edge[type="prng-dep"]')) {
       var prngIcon =
         '<svg viewBox="0 0 44 12" width="40" height="12">' +
@@ -199,6 +204,7 @@ export class LegendView {
         'external':         'external',
         'scalar':           'scalar-node',
         'transfer':         'transfer',
+        'compile':          'compile',
         'communication':    'communication',
         'container_update': 'container_update',
         'allocation':       'allocation',
@@ -210,6 +216,7 @@ export class LegendView {
     if (d.type === 'anti-dep')      return 'anti-dep';
     if (d.type === 'virtual-alias') return 'virtual-alias';
     if (d.type === 'prng-dep')      return 'prng-dep';
+    if (d.type === 'setup-dep')     return 'setup-dep';
     if (d.access_mode === 'elwise') return 'elwise';
     if (d.access_mode === 'scalar') return 'scalar';
     if (d.type === 'forward-dep')   return 'proxy';

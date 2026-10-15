@@ -132,6 +132,21 @@ export class PrngEdge extends Edge {
     }
 }
 
+/**
+ * A setup dependence: a skeleton instance cannot be called before its kernel is built (a kernel_compile event), which is a need of the call
+ * and not a flow of data, so it is an edge type of its own. It goes from the build to the first call of the instance.
+ */
+export class SetupEdge extends Edge {
+    constructor(graph, label, source, target) {
+        super(graph, source, target);
+        this.label = label;
+    }
+
+    toCytoscape() {
+        return { ...super.toCytoscape(), access_mode: 'setup', type: 'setup-dep', cross_backend: false };
+    }
+}
+
 // ── Decorative (not part of the dependency graph) ─────────────────────────────
 
 /**

@@ -115,6 +115,12 @@ namespace skepu
 				static const std::string INDEX{"index"};
 				static const std::string DATA_FILE{"data_file"};
 				static const std::string VALUE{"value"};
+				static const std::string QUALIFIER{"qualifier"};
+				static const std::string DEVICE{"device"};
+				static const std::string OPTIONS{"options"};
+				static const std::string SOURCE_BYTES{"source_bytes"};
+				static const std::string OK{"ok"};
+				static const std::string ERROR{"error"};
 			}
 
 			namespace Values
@@ -132,6 +138,7 @@ namespace skepu
 					static const std::string SNAPSHOT{"snapshot"};
 					static const std::string SCALAR_VALUE{"scalar_value"};
 					static const std::string VIRTUAL_DATASET{"virtual_container"};
+					static const std::string COMPILE{"kernel_compile"};
 				}
 			}
 		}
@@ -267,6 +274,59 @@ namespace skepu
 			}; this->push_capture(std::move(capture), CaptureKind::Raw);
 #endif
 		}
+
+		inline void Tracer::compile(
+			unsigned long start,
+			unsigned long end,
+			TraceID instance,
+			std::string const& label,
+			std::string const& qualifier,
+			std::string const& device,
+			std::string const& options,
+			size_t source_bytes,
+			bool ok,
+			std::string const& error)
+		{
+#ifdef SKEPU_TRACING
+			auto capture = [=, this]{
+			nlohmann::json entry;
+			if (instance != UniqueIdentifier::null())
+				entry[Schema::Keys::OBJECT_ID] = instance;
+			entry[Schema::Keys::TYPE]    = Schema::Values::Types::COMPILE;
+			entry[Schema::Keys::LABEL]   = label;
+			if (!qualifier.empty())
+				entry[Schema::Keys::QUALIFIER] = qualifier;
+			entry[Schema::Keys::BACKEND] = "OpenCL";
+			entry[Schema::Keys::DEVICE]  = device;
+			if (!options.empty())
+				entry[Schema::Keys::OPTIONS] = options;
+			entry[Schema::Keys::SOURCE_BYTES] = source_bytes;
+			entry[Schema::Keys::OK]      = ok;
+			if (!ok)
+				entry[Schema::Keys::ERROR] = error;
+			entry[Schema::Keys::START]   = start;
+			entry[Schema::Keys::END]     = end;
+			entry[Schema::Keys::TIME]    = end;
+			if (!this->m_regions().empty())
+				entry[Schema::Keys::REGION] = this->m_regions().top();
+
+			this->m_trace_json.push_back(entry);
+			}; this->push_capture(std::move(capture));
+#endif
+		}
+
+#ifdef SKEPU_TRACING
+		inline void CompileScope::finish()
+		{
+			for (size_t i = 0; i < this->m_builds.size(); ++i)
+			{
+				Build const& b = this->m_builds[i];
+				const unsigned long end = i + 1 < this->m_builds.size() ? this->m_builds[i + 1].start : timestamp_now();
+				tracer().compile(b.start, end, this->m_instance, this->m_label, b.qualifier, b.device, b.options, b.source_bytes, b.ok, b.error);
+			}
+			this->m_builds.clear();
+		}
+#endif
 
 		inline void Tracer::deallocation(TraceID id, std::string const& label, int line)
 		{
