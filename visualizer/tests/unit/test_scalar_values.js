@@ -143,8 +143,7 @@ describe('the plot of the values', () => {
     });
 });
 
-// The log scale checkbox, which toggled the scale once and then stopped: the title row was made once, with the state that the plot started in, so a redraw
-// put back the checkbox of that state. A page is simulated with an element that has the HTML and the checkbox in it.
+// A redraw of the plot keeps the checkbox in the state of the plot. A page is simulated with an element that has the HTML and the checkbox in it.
 describe('the log scale checkbox', () => {
     it('is in the state of the plot in every redraw', () => {
         const values = [1, 0.1, 0.01, 0.001, 0.0001];

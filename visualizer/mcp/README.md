@@ -24,7 +24,7 @@ All times are microseconds. Load a trace first and use the returned handle.
 | `transfers(handle, kind?, limit?)` | Transfers by kind, the library's internal ones attributed to the skeleton call that causes them, containers that move a lot or ping-pong |
 | `find_events(handle, filters...)` | Events by type, label, file, line, region, backend, pattern, duration; paged |
 | `containers(handle, top?)` | Allocations, transfers and the number of reads and writes of each container |
-| `fusion_candidates(handle, ...)` | Calls that could be fused serially (producer and consumer) or in parallel (independent siblings), the intermediates avoided, and why other pairs cannot be fused; rules and audit in [FUSION.md](FUSION.md) |
+| `fusion_candidates(handle, ...)` | Calls that could be fused serially (producer and consumer) or in parallel (independent siblings), the intermediates avoided, and why other pairs cannot be fused; rules in [FUSION.md](FUSION.md) |
 | `critical_path(handle)` | The longest path in time through the dependences, the work and the parallelism |
 | `source_context(handle, file, line)` | The events of a source line and the source text around it |
 
@@ -45,7 +45,7 @@ pins the worker's output on the shipped traces. Nodes have a key (`e<n>`, `e<n>.
 the same whenever a graph is built from the same events; the ids of nodes are random UUIDs.
 
 Fusion candidates are decided by `script/backend/fusion.js` from the events and the containers they
-read and write (rules, assumptions and the audit of the graph view's heuristic in [FUSION.md](FUSION.md)).
+read and write (rules and assumptions in [FUSION.md](FUSION.md)).
 They are candidates: that fusing can be done does not say that it pays, and the pattern tables are
 assumptions about what SkePU can fuse.
 

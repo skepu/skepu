@@ -403,12 +403,8 @@ function _setLoadingState(active) {
  * and trigger a graph render.
  */
 function _applyLoadResult(result) {
-    // Exit welcome mode: hide the welcome panel and restore the source pane.
-    // Removing 'welcome-mode' lets the user's stored preference (applied as an
-    // inline style by ui.js:load()) take over without any extra JS.
-    // The first trace: the welcome panel becomes an overlay (with the place and size that it has now: before the panes take their places) and
-    // stays until the graph has been drawn, and then it and the panes cross-fade (reveal.js; ui.js reveals). A later trace has no welcome panel
-    // to keep.
+    // Exit welcome mode. The first trace: the welcome panel becomes an overlay (with its present place and size) that stays until the graph
+    // is drawn, then cross-fades with the panes (reveal.js). A later trace has no welcome panel to keep.
     var wp = document.getElementById('welcome-panel');
     var held = holdForReveal(document.documentElement, wp, document.body);
     document.body.classList.remove('welcome-mode');

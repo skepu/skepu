@@ -1,10 +1,9 @@
-// tour.js — the guided tour: a spotlight on one part of the viewer at a time, with a short text, Back / Next / Skip. The steps are data (STEPS): what
-// to show (a selector or a function), the text, and how to put the viewer in the state that the step shows (`prepare`). The tour makes no lasting
-// change: the settings that are saved are put back when it ends, and so are the panes that it opened. What is lit can be used: the spotlight is a
-// hole in the dimmed page, and a step may ask the user to try what it shows (`task`), and says when it has been done.
+// tour.js — the guided tour: a spotlight on one part of the viewer at a time, with a short text and Back / Next / Skip. The steps are data
+// (STEPS): what to show, the text, and `prepare`, which puts the viewer in the state of the step. The tour makes no lasting change: saved
+// settings and opened panes are put back when it ends. What is lit can be used: a step may ask the user to try it (`task`).
 //
-// It starts from the ? dialog or the welcome panel, and is offered once after the first trace has been drawn. Where there is no trace it loads an
-// example (web only: window.loadTourExample).
+// It starts from the ? dialog or the welcome panel, and is offered once after the first trace is drawn. Without a trace it loads an example
+// (web only: window.loadTourExample).
 import { State } from './state.js';
 import { SETTINGS_KEY } from './appearance.js';
 import { hideShortcuts } from './shortcuts.js';

@@ -1,8 +1,6 @@
-// smooth_scroll.js — the scroll of a pane to a line that is selected: from where the pane is now to the new place, whatever the direction and the
-// distance, in a time that grows a little with the distance. It is made here (the frames set the position) and not left to the browser's smooth
-// scroll, which starts from wherever the pane is when it begins: a pane whose position was reset by a layout change or a tab switch just before
-// would be seen to go to the top first. A new scroll takes over from the position that the pane has at that moment; the user's own wheel, touch
-// or keys end it.
+// smooth_scroll.js — scrolls a pane to a selected line from where the pane is now, whatever the direction and distance. It is done here
+// (frames set the position) and not by the browser's smooth scroll, which can start from a position that a layout change or tab switch
+// just reset. A new scroll takes over from the current position; the user's wheel, touch or keys end it.
 'use strict';
 
 export const MIN_MS = 140, MAX_MS = 420;

@@ -1,7 +1,6 @@
-// session_store.js — the files that were uploaded in this tab, kept in IndexedDB so that a reload of the tab (or a debugging session) has them
-// again. The key is an id that sessionStorage keeps: it is the tab's (a reload and a duplicated tab have it, a new tab does not), so the
-// files go with the tab and need no way to be forgotten; what is older than a day is removed when the store is opened. The files stay in the
-// browser: nothing is sent. Without IndexedDB (a private window, blocked storage) there is nothing kept, and nothing fails.
+// session_store.js — the files uploaded in this tab, kept in IndexedDB so that a reload has them again. The key is an id in sessionStorage
+// (a reload and a duplicated tab have it, a new tab does not); entries older than a day are removed when the store is opened. Nothing leaves
+// the browser. Without IndexedDB (private window, blocked storage) nothing is kept and nothing fails.
 'use strict';
 
 export const DB_NAME = 'skevu-session';

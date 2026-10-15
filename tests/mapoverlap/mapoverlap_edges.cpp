@@ -1,5 +1,4 @@
-// Merged from: mapoverlap_2d_mirror.cpp, mapoverlap_in_place.cpp, mapoverlap_updatemode.cpp, mapoverlap_1d_mirror.cpp, mapoverlap_2d_edge_modes.cpp, mapoverlap_3d_mirror.cpp, mapoverlap_4d_mirror.cpp
-// (one program instead of one for each: the build of a test program has a cost of its own; each part is in a namespace, and its test cases have its name as a prefix)
+// Each part is in its own namespace; its test cases are prefixed with its name.
 #define SKEPU_ENABLE_EXCEPTIONS
 
 #include "../../external/catch2/catch.hpp"
@@ -16,8 +15,7 @@
 
 namespace mapoverlap_2d_mirror_part
 {
-// "Mirror mode": the edge mode None with an input that has the size of the output. Only the interior of the output
-// (the elements that have the whole overlap in the input) is computed; the other elements keep their values.
+// Mirror mode (edge mode None, input of the size of the output): only the interior is computed; the other elements keep their values.
 int cross(skepu::Region2D<int> r) { return r(-1, 0) + 2 * r(1, 0) - r(0, -1) + r(0, 1) + 3 * r(0, 0) + r(-2, 1) - r(2, -2); }
 int cross_indexed(skepu::Index2D i, skepu::Region2D<int> r) { return r(-1, -1) + r(1, 1) + (int)(i.row) * 100 + (int)(i.col); }
 skepu::multiple<int, int> cross_two(skepu::Region2D<int> r) { return skepu::ret(r(-1, 0) + r(1, 0), r(0, -1) - r(0, 1)); }
@@ -551,8 +549,7 @@ TEST_CASE("mapoverlap_updatemode: MapOverlap update modes with random numbers fa
 
 namespace mapoverlap_1d_mirror_part
 {
-// "Mirror mode": the edge mode None with an input that has the size of the output. Only the interior of the output
-// (the elements that have the whole overlap in the input) is computed; the other elements keep their values.
+// Mirror mode (edge mode None, input of the size of the output): only the interior is computed; the other elements keep their values.
 // Vectors, and matrices row-wise and column-wise.
 int cross(skepu::Region1D<int> r) { return r(-2) + 3 * r(-1) + 5 * r(0) - 7 * r(1) + 11 * r(2); }
 int cross_indexed(skepu::Index1D i, skepu::Region1D<int> r) { return r(-1) + r(1) + (int)(i.i) * 100; }
@@ -784,8 +781,7 @@ TEST_CASE("mapoverlap_2d_edge_modes: MapOverlap 2D, edge modes with input and ou
 
 namespace mapoverlap_3d_mirror_part
 {
-// "Mirror mode": the edge mode None with an input that has the size of the output. Only the interior of the output
-// (the elements that have the whole overlap in the input) is computed; the other elements keep their values.
+// Mirror mode (edge mode None, input of the size of the output): only the interior is computed; the other elements keep their values.
 int cross(skepu::Region3D<int> r) { return r(-1, 0, 0) + 2 * r(1, 0, 0) + r(0, -1, 0) + 2 * r(0, 1, 0) + r(0, 0, -1) + 2 * r(0, 0, 1) + 3 * r(0, 0, 0); }
 int cross_indexed(skepu::Index3D i, skepu::Region3D<int> r) { return r(-1, -1, -1) + r(1, 1, 1) + (int)(i.i + i.j + i.k) * 100; }
 skepu::multiple<int, int> cross_two(skepu::Region3D<int> r) { return skepu::ret(r(-1, 0, 0) + r(1, 0, 0), r(0, 0, -1) - r(0, 0, 1)); }
@@ -901,8 +897,7 @@ TEST_CASE("mapoverlap_3d_mirror: MapOverlap 3D, mirror mode and a dimension that
 
 namespace mapoverlap_4d_mirror_part
 {
-// "Mirror mode": the edge mode None with an input that has the size of the output. Only the interior of the output
-// (the elements that have the whole overlap in the input) is computed; the other elements keep their values.
+// Mirror mode (edge mode None, input of the size of the output): only the interior is computed; the other elements keep their values.
 int cross(skepu::Region4D<int> r) { return r(-1, 0, 0, 0) + 2 * r(1, 0, 0, 0) + r(0, -1, 0, 0) + 2 * r(0, 1, 0, 0) + r(0, 0, -1, 0) + 2 * r(0, 0, 1, 0) + r(0, 0, 0, -1) + 2 * r(0, 0, 0, 1) + 3 * r(0, 0, 0, 0); }
 int cross_indexed(skepu::Index4D i, skepu::Region4D<int> r) { return r(-1, -1, -1, -1) + r(1, 1, 1, 1) + (int)(i.i + i.j + i.k + i.l) * 100; }
 skepu::multiple<int, int> cross_two(skepu::Region4D<int> r) { return skepu::ret(r(-1, 0, 0, 0) + r(1, 0, 0, 0), r(0, 0, 0, -1) - r(0, 0, 0, 1)); }

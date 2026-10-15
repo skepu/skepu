@@ -1,5 +1,4 @@
-// Merged from: mapoverlap_2d.cpp, mapoverlap_2d_expanding.cpp, mapoverlap_4d.cpp, mapoverlap_4d_expanding.cpp, mapoverlap_indexed.cpp, mapoverlap_tuple.cpp
-// (one program instead of one for each: the build of a test program has a cost of its own; each part is in a namespace, and its test cases have its name as a prefix)
+// Each part is in its own namespace; its test cases are prefixed with its name.
 
 #include "../../external/catch2/catch.hpp"
 #include <skepu>

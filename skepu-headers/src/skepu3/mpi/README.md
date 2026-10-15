@@ -2,7 +2,7 @@
 
 Distributed containers over the node-level SkePU backends, with MPI-3.1 for the communication. The goal is the
 single-source model of SkePU: a program written for one node gives the same result on any number of processes.
-It replaces the earlier StarPU-MPI backend, which has been removed (it is in the history of the repository).
+It replaces the StarPU-MPI backend.
 
 ## Using it
 
@@ -45,8 +45,7 @@ of processes.
 An MPI program includes the node-level SkePU under the name `skepu_node` (`<skepu>` defines `skepu` as `skepu_node`
 while it includes it), and `namespace skepu` has everything of it through a using-directive, except what the
 backend replaces. A qualified name `skepu::X` is therefore the backend's if it has one. A `using namespace skepu;`
-makes the name `Vector` ambiguous. This is a prototype device that goes away if `Vector` itself gets a
-distribution.
+makes the name `Vector` ambiguous. 
 
 ## State
 
@@ -81,14 +80,9 @@ single-node library.
 A container that has only the value it was created with (`Vector(n)`, `Matrix(r, c, 7)`, `init(...)`) is not gathered to be read on the host or
 to be listed in `skepu::external`: every process knows what is in it, and makes its copy without communication, until something writes it.
 
-What an `skepu::external` call writes is not moved when the call ends. The data stays on the first process (which ran the code) until it is
-needed: a skeleton gets the tiles (a scatter), the host a copy of the whole container (a broadcast). As in a single node, the data goes
-where the computation needs it, when it does. (Making the tiles is a collective operation: a skeleton asks for the tiles of its arguments on
-every process, also one that has no elements.)
-
-An `skepu::external` call gets the containers that it reads to the first process only (a gather: the code runs there and nothing else needs
-them). A host read on all the processes then gets the first process's copy to the others (a broadcast), and a skeleton uses the tiles, which
-are still valid.
+An `skepu::external` call gets the containers that it reads to the first process only (a gather), and what it writes stays there until it is
+needed: a skeleton gets the tiles (a scatter), the host a copy of the whole container (a broadcast). Making the tiles is a collective
+operation: a skeleton asks for the tiles of its arguments on every process, also one that has no elements.
 
 ### Tracing (container allocation, all skeletons, `skepu::external` and the communication)
 

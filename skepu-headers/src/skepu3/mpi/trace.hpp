@@ -1,6 +1,6 @@
 #pragma once
 
-// Tracing in the MPI backend (a pilot: container allocation, Map, communication). Every process has a tracer, as in a
+// Tracing in the MPI backend. Every process has a tracer, as in a
 // single node program, and writes a trace file of its own, but the files are not alike:
 //
 //  * The first process (rank 0) writes the trace of the program: the events of a single node program (allocations, skeleton

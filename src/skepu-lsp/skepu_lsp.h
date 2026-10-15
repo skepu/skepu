@@ -1,16 +1,12 @@
 //===--- skepu_lsp.h - The SkePU additions to clangd ------------------------===//
 //
-// The SkePU language server is clangd with these additions. They are in the files of SkePU (this one and
-// skepu_lsp.cpp, linked into clang-tools-extra/clangd by the build of SkePU), and clangd.patch only calls them
-// from the places in clangd that the results are shown from:
+// The SkePU language server is clangd with these additions. clangd.patch only calls them, from:
 //
 //   Hover.cpp          getHover():               skepuHover()
 //   FindSymbols.cpp    collectDocSymbols():      skepuDocumentSymbols()
 //   CodeComplete.cpp   SignatureHelpCollector:   skepuSignatureHelp()
 //
-// What they know about a file is found by the matcher of skepu-tool (SkepuMatcher), which runs when it is first needed
-// and when the file has changed on the disk. The result is kept by file name (SkepuInfo): it is a copy of what
-// is needed, not pointers into the data of the matcher, that the next run of the matcher deletes.
+// They use what the matcher of skepu-tool (SkepuMatcher) finds in a file, kept by file name as a copy (SkepuInfo).
 //
 //===------------------------------------------------------------------------===//
 #pragma once

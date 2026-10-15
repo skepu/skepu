@@ -1,9 +1,7 @@
-# The MapOverlap and MapPool tests. A test program has a cost of its own to build, so the tests that run on the same backends are in one
-# program (each part is in a namespace of its own, and its test cases have the name of the file it came from as a prefix).
+# The MapOverlap and MapPool tests; tests that run on the same backends share a program.
 
 # ------------------------------------------------
 #   Fundamentals of MapOverlap 2D and 4D, with expanding edges, indexed and tuple user functions
-#   (mapoverlap_2d, mapoverlap_2d_expanding, mapoverlap_4d, mapoverlap_4d_expanding, mapoverlap_indexed, mapoverlap_tuple)
 # ------------------------------------------------
 
 skepu_add_test_case_sequential(mapoverlap_basic)
@@ -16,7 +14,6 @@ skepu_add_test_case_hybrid_opencl(mapoverlap_basic)
 
 # ------------------------------------------------
 #   MapOverlap 1D (also rows and columns), 2D, 3D and 4D with the edge modes, the overlaps and the checks of the arguments
-#   (mapoverlap_1d, mapoverlap_1d_rowcol, mapoverlap_2d_new, mapoverlap_3d_new, mapoverlap_4d_new)
 # ------------------------------------------------
 
 skepu_add_test_case_sequential(mapoverlap_new)
@@ -30,8 +27,6 @@ skepu_add_test_case_hybrid_opencl(mapoverlap_new)
 # ------------------------------------------------
 #   The mirror mode (edge mode None, input of the size of the output) of MapOverlap 1D to 4D, the edge modes of 2D, the update modes and the
 #   in place calls
-#   (mapoverlap_1d_mirror, mapoverlap_2d_mirror, mapoverlap_3d_mirror, mapoverlap_4d_mirror, mapoverlap_2d_edge_modes, mapoverlap_in_place,
-#   mapoverlap_updatemode)
 # ------------------------------------------------
 
 # The mirror mode is not implemented for the CUDA and hybrid backends: the call stops with an error. MapOverlap2D is not implemented for the
@@ -46,7 +41,6 @@ skepu_add_test_case_opencl(mapoverlap_edges)
 
 # ------------------------------------------------
 #   MapPool 2D, 3D and 4D, also with small output sizes
-#   (mappool_2d, mappool_3d, mappool_4d, mappool_2d_small_output, mappool_3d_small_output, mappool_4d_small_output)
 # ------------------------------------------------
 
 skepu_add_test_case_sequential(mappool)

@@ -191,9 +191,6 @@ _sourceView.attachProvider(_provider);
 // ── Global exposure for inline onclick handlers ───────────────────────────────
 // index.html menu buttons call setHljsTheme / _applyHljsTheme as window globals;
 // worker-loader.js button onclicks call switchTab.
-// Badge pills no longer use a global — clicks are handled via event delegation
-// inside each SourceCodeView instance.
-
 export function switchTab(btn, idx) {
   _sourceView.switchTab(btn, idx);
 }
@@ -205,8 +202,6 @@ export function setHljsTheme(theme) {
 window.switchTab       = switchTab;
 window.setHljsTheme    = setHljsTheme;
 window._applyHljsTheme = function(theme)     { _sourceView.restoreTheme(theme); };
-// window.badgeClick is no longer needed: badge clicks are handled via event
-// delegation on the tabPanesEl container inside each SourceCodeView instance.
 
 // ── InfoView singleton ────────────────────────────────────────────────────────
 

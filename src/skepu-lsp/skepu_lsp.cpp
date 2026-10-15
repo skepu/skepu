@@ -33,12 +33,9 @@ namespace clangd {
 
 namespace {
 
-// ------------------------------------------------------------------------------
 // What is known about a file
-// ------------------------------------------------------------------------------
 
-/// A copy of what SkepuMatcher found in a file, of the parts that the features use. (The matcher gives pointers to
-/// objects that it deletes the next time it runs, for any file.)
+/// A copy of the parts of what SkepuMatcher found in a file that the features use (the matcher deletes its objects on its next run).
 struct SkepuInfo
 {
 	/// The parse of the matcher reported errors and it found nothing: not known to have nothing, so asked again (a few times)
@@ -217,9 +214,7 @@ std::shared_ptr<const SkepuInfo> infoFor(llvm::StringRef File, const Preprocesso
 	return Entry.Info;
 }
 
-// ------------------------------------------------------------------------------
 // Signature help
-// ------------------------------------------------------------------------------
 
 
 void remove(std::string& str, char c)
@@ -840,9 +835,7 @@ void skepuSignatureHelp(Sema &S, unsigned CurrentArg, CodeCompleteConsumer::Over
 	}
 }
 
-// ------------------------------------------------------------------------------
 // Hover
-// ------------------------------------------------------------------------------
 
 void skepuHover(ParsedAST &AST, const NamedDecl &Decl, const FunctionDecl *Function, HoverInfo &HI)
 {
@@ -916,9 +909,7 @@ void skepuHover(ParsedAST &AST, const NamedDecl &Decl, const FunctionDecl *Funct
 	}
 }
 
-// ------------------------------------------------------------------------------
 // Document symbols
-// ------------------------------------------------------------------------------
 
 std::vector<DocumentSymbol> skepuDocumentSymbols(ParsedAST &AST, std::vector<DocumentSymbol> Syms)
 {

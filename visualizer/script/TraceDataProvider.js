@@ -53,10 +53,13 @@
 //                           Each view ignores events where source matches its
 //                           own identity, preventing echo-back to the originator.
 //
-//   'clear'                 Emitted by GraphView when the user clicks empty
-//                           canvas space (background click).  Each attached
-//                           view clears its own visual selection state when it
-//                           receives this event.
+//   'rendersettled' (stats) Emitted by a GraphView when the layout and the
+//                           size of the graph have settled after a render.
+//
+//   'clear' ({background})  Emitted by GraphView on a click that selects
+//                           nothing; `background` is true when the canvas
+//                           itself was clicked (that also stops a simulation).
+//                           Each attached view clears its selection.
 //
 //   'error' (err)           Emitted on non-abort failures.  AbortErrors from
 //                           cancelled requests are silently dropped.

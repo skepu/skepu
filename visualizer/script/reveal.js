@@ -1,13 +1,8 @@
-// reveal.js — the way from the splash (the welcome panel) to the viewer with a trace in it: they cross-fade, the splash out and the panes in.
+// reveal.js — from the splash (the welcome panel) to the viewer with a trace in it: the splash fades out over the panes.
 //
-// While the first trace is drawn, the panes are in their places (so that the graph is fitted to the size that it keeps), under the welcome
-// panel, which stays (the class reveal-pending on the page); when the first render has settled, the welcome panel fades out, like a curtain,
-// and is then hidden. Only the splash changes: it is opaque and covers the panes, so nothing shows through two layers that cross. Without the
-// splash (a second trace) nothing is held and nothing is done.
-//
-// The welcome panel is a part of the layout of the page (it fills the graph area), and the panes that take their places would make that area
-// smaller, and the splash with it. So the splash is taken out of the layout when it is held: it is moved to the body as an overlay (fixed) that
-// has the place and the size that it had.
+// While the first trace is drawn the panes are in their places, under the splash (class reveal-pending), so the graph is fitted to its final
+// size. The splash is moved to the body as a fixed overlay with its old place and size, since the panes would shrink its area. When the
+// first render has settled it fades out and is hidden. Without a splash (a second trace) nothing is held.
 
 export const REVEAL_FADE_MS     = 300;    // as --reveal-fade in main.css
 /** The splash does not stay for ever if the first render never settles (a trace that takes very long, or fails). */
@@ -24,7 +19,7 @@ var _timer = null;
  */
 export function holdForReveal(html, panel, body) {
   if (!panel || panel.classList.contains('hidden')) return false;
-  // (the place and size of the splash now, as pixels: the overlay does not follow the layout that is to change)
+  // (pixels: the overlay does not follow the layout that is to change)
   var box = panel.getBoundingClientRect();
   panel.style.top    = box.top    + 'px';
   panel.style.left   = box.left   + 'px';
@@ -47,7 +42,7 @@ export function reveal(html, panel) {
   _timer = null;
   if (!panel || !html.classList.contains('reveal-pending')) return;
   html.classList.remove('reveal-pending');
-  // A page that has no splash (a reload that restores a trace, an editor: early.js) has a blank curtain, and nothing to cross-fade: it just goes.
+  // No splash (a reload that restores a trace, an editor: early.js): nothing to cross-fade.
   if (html.classList.contains('no-splash')) {
     panel.classList.add('hidden');
     return;

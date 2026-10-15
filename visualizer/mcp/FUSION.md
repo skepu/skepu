@@ -1,9 +1,8 @@
-# Fusion analysis: rules and audit
+# Fusion analysis: rules
 
 `script/backend/fusion.js` finds the skeleton calls of a trace that could be fused into one call
 (serial: producer and consumer; parallel: independent siblings), and reports why other pairs could not.
-It replaces the heuristic that the graph view used (`findSerialFusions`, `findParallelFusions` in `graph.js`,
-see the audit below): the analysis server and the views (View > Fusion analysis) now use this detector.
+The analysis server and the views (View > Fusion analysis) use this detector.
 
 ## Rules
 
@@ -72,25 +71,6 @@ entry with their number.
 * Fusing *can* be done does not say it *pays*: the time of the calls and the saved traffic are reported,
   not a prediction.
 
-## Audit of the earlier heuristic of the graph view
-
-Found by running it on small traces (`tests/unit/test_fusion.js` has the new behaviour of each case):
-
-| Case | Graph view | Now |
-|---|---|---|
-| Producer's input is overwritten before the consumer (write after read) | fused | fused only by moving the consumer up; blocked if neither can move. The graph has no edges for write-after-read |
-| Element counts differ | fused | blocked (`size-mismatch`) |
-| Backends differ | not fused, by accident (no edge across memory spaces) | blocked (`backend-mismatch`) |
-| Map into Scan | fused | blocked (`pattern`), table is settable |
-| MapOverlap into Map | fused, as a chain with the stencil | blocked (`pattern`), table is settable |
-| Both calls draw from one PRNG stream | fused | blocked (`shared-prng`) |
-| The producer's two outputs go to two consumers | two overlapping groups with the producer in both | one group |
-| Intermediate never freed (live-out) | not told | reported, saves only the read |
-| Reasons for not fusing | none | per pair, with counts |
-| Parallel fusion | never runs (`findFusions` does not compute the equivalence classes first) | runs |
-| Parallel fusion when run by hand | fuses different element counts, different backends and a call that overwrites the other's input | checked |
-| Fusion changes the graph that the analysis reads | yes (nodes are regrouped) | no, works on the events |
-
 ## In the views
 
 With Fusion analysis on, each group is a compound 'fusion' node (the 'Fusion Suggestion' of the legend) around
@@ -100,6 +80,3 @@ a call that could not be fused with a consumer of its output says why ('Not fuse
 different regions is not drawn, because that would take them out of their regions (the analysis server lists it).
 With iterations coalesced, the groups of a loop are one node with the repeat count. `pipeline.js` (`applyFusion`)
 does this.
-
-`findFusions` and the functions it calls in `graph.js` are no longer used by the views; they are kept, with
-their tests (`test_serial_fusion.js`), until it is decided to remove them.

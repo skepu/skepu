@@ -1099,16 +1099,8 @@ export class SourceCodeView {
     defs.appendChild(marker);
     svg.appendChild(defs);
 
-    // Anchor the SVG inside the <code> element.  The <code> is in the <pre>'s
-    // scroll content (not a scroll container itself), so it moves with every
-    // scroll direction — horizontal (pre scrolls) and vertical (pane scrolls) —
-    // carrying the absolutely-positioned SVG with it.
-    //
-    // Why NOT <pre>: <pre> is the horizontal scroll container (UA overflow:auto).
-    // position:absolute inside a scroll container is pinned to the container's
-    // viewport edge, not its content, causing the paths to stay fixed while the
-    // badges scroll away.
-    //
+    // Anchor the SVG inside <code>, which scrolls with the content in both directions. <pre> is the horizontal scroll container, and an
+    // absolutely positioned child of it stays at the viewport edge while the badges scroll away.
     // Fallback chain: code → pre → pane.
     var container = pane.querySelector('code') ||
                     pane.querySelector('pre')  ||

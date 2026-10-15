@@ -1,5 +1,4 @@
-// Merged from: template_instances_types.cpp, multiple_return_types.cpp, template_instances.cpp, usertype_return.cpp
-// (one program instead of one for each: the build of a test program has a cost of its own; each part is in a namespace, and its test cases have its name as a prefix)
+// Each part is in its own namespace; its test cases are prefixed with its name.
 
 #include "../../external/catch2/catch.hpp"
 #include <skepu>
@@ -233,8 +232,7 @@ TEST_CASE("template_instances_types: MapReduce in a function template, float and
 namespace multiple_return_types_part
 {
 // User functions that return skepu::multiple of built-in types, which have names of more than one word (signed char, unsigned int, unsigned short) or are
-// not in a namespace. The precompiler made an alias for each of the types with the first letter of its name removed ("using igned char = signed char;"),
-// which does not compile for a name of two words. (No double: not all OpenCL devices have it.)
+// not in a namespace. (No double: not all OpenCL devices have it.)
 
 skepu::multiple<signed char, unsigned int> split(int x)
 {

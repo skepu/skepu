@@ -24,8 +24,6 @@ skepu_add_test_case_hybrid_cuda(complex)
 
 # ------------------------------------------------
 #   Random fundamentals, using namespace and the random fills of skepu-lib/randomize.hpp
-#   (random, using_namespace, randomize: one program, as the build of a test program has a cost of its own; each part is in a namespace of
-#   its own, and its test cases have the name of the file it came from as a prefix)
 # ------------------------------------------------
 
 skepu_add_test_case_sequential(random)

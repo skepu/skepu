@@ -1,6 +1,5 @@
 // test_settings_source_view.js — the options of the source view that are kept in State (Code Paths, Definitions) are given to the view when the
-// settings are loaded and when the defaults are restored. The view is made with the defaults before the settings are read, and was never told:
-// after a reload the menu said "Code Paths" was off and the panes drew the arrows.
+// settings are loaded and when the defaults are restored.
 import { describe, it, expect, beforeEach } from 'vitest';
 
 const store = {};

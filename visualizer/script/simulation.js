@@ -15,10 +15,10 @@
 //     playPauseEl: document.getElementById('sim-btn-playpause'),
 //   });
 //
-//   engine.start();   engine.pause();   engine.stop();   (a click in the canvas, outside of every item, stops: the provider's 'clear' with background)
+//   engine.start();   engine.pause();   engine.stop();   (a click in the canvas outside every item stops: 'clear' with background)
 //   engine.toggle();  engine.step(+1);  engine.ganttClick(nodeId, iterIdx);
-//   engine.stepFromSelection(+1)   (arrow key with a node selected, no simulation: starts one, paused, one step from the selection)
-//   engine.setProgressBarEnabled(on)   (the progress bar of the sequence is shown or not; opts.onActivate is called when a simulation starts)
+//   engine.stepFromSelection(+1)   (arrow key with a unique selection and no simulation: starts one, paused, one step on)
+//   engine.setProgressBarEnabled(on)   (opts.onActivate is called when a simulation starts)
 //   engine.isActive   engine.isDragging
 //
 'use strict';
@@ -157,10 +157,8 @@ export class SimulationEngine {
     this._jumpToDisplay(target);
   }
 
-  // The arrow keys with a node selected and no simulation: the simulation starts, paused, at the selected point and takes one step from it (delta = +1
-  // the next one, -1 the previous one), as the arrow keys do while it plays. The point has to be unique: the selection of one node with one entry in
-  // the sequence (a node of iterations that was clicked in the graph, a badge of several nodes, a node that is not drawn: none, and nothing is done).
-  // Returns whether it did something (the caller then stops the key).
+  // Arrow keys with no simulation: starts one, paused, at the selected point and steps from it (+1 next, -1 previous). The point must be
+  // unique (one node with one entry in the sequence); otherwise nothing is done. Returns whether it did something.
   stepFromSelection(delta) {
     if (this.isActive || !this._selection || this._selection.ambiguous) return false;
     this._buildNodeList();

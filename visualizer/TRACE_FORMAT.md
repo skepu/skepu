@@ -32,7 +32,7 @@ A container whose life starts when it gets memory in an assignment (an empty one
 memory it was given (`Vector(ptr, size)`), is allocated there; one that wraps memory ends with a `deallocation` like the others.
 
 `copy` (`source`, `object_id` of the new or assigned container, `label` of it, `elements`, `start`, `end`): the copy constructor and the
-assignment of a Vector, Matrix or Tensor (the elements are copied; they were once shared by two matrices). It reads the source
+assignment of a Vector, Matrix or Tensor (the elements are copied). It reads the source
 (which is brought to the host first: a `transfer` inside the interval) and writes the destination. It has no `file` and `line`: the
 constructor and the assignment operator have no place for them. A *move* has no event: the id goes with the data, so the call that
 reads the moved container reads the id of the container that was moved from. `Vector::randomize`, `Matrix::randomize`, `randomizeReal`, a fill
@@ -128,7 +128,7 @@ compiled there, not in `clBuildProgram`), up to the next build of the instance. 
 SkeVU shows a build as a node (Nodes > Kernel Builds) with a *setup* edge to the first call of its instance, a row of the timeline, and a bar in it.
 A setup edge is not a flow of data: the call needs the kernel.
 
-## MPI programs (a pilot: allocation, `Map`, communication)
+## MPI programs
 
 A program built with the MPI backend (`skepu-tool -mpi`) writes one file for each process. File names: `skepu_trace.json` for the first
 process (rank 0) and `skepu_trace.rank<k>.json` for the others (`%r` in `SKEPU_TRACE_FILE` is the rank). The files are
@@ -152,8 +152,7 @@ rows that a MatRow argument needs, the layout of a call, the halo of an overlap)
 **The other processes** have lean events only: `rank_call` (`seq`, `pattern`, `signature`, `start`, `end`, `work_start`, `work_end`,
 `local_elements`, `comm`) and `rank_communication` (`comm_seq`, `seq`, `phase`, `operation`, `reason`, `start`, `end`, `bytes_sent`,
 `bytes_received`), with no ids. Events of the same `seq` or `comm_seq` in the files are the same call or the same collective. The events
-of the node-level library (the calls on the parts of the containers, the transfers of the parts) are not recorded, and skeletons
-other than `Map` are not traced yet.
+of the node-level library (the calls on the parts of the containers, the transfers of the parts) are not recorded.
 
 A merged trace has the number of events of one process plus a constant number of events for each other process and each call:
 nothing in it depends on the size of the problem. `tests/mpi/check_trace.py` checks what is said here.

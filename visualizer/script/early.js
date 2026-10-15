@@ -3,9 +3,9 @@
 (function() {
   // (the panes are put in place without sliding until the first trace has been drawn: ui.js takes the class away)
   document.documentElement.classList.add('no-pane-anim');
-  // The splash (the welcome panel) is for a blank session, a new tab. Where a trace is on its way (a link to an example, files kept for this tab) or
-  // the editor has its own (a VS Code webview, which has acquireVsCodeApi), there is no splash: the panel is blank until the first trace has been drawn
-  // (the card is hidden: main.css), and fades out then as it would (reveal.js). worker-loader.js takes the class away if the trace does not come.
+  // The splash is for a blank session (a new tab). With a trace on its way (a link to an example, files kept for this tab) or in an editor
+  // (VS Code webview) there is none: the panel stays blank until the first trace is drawn, then fades (reveal.js). worker-loader.js
+  // removes the class if no trace comes.
   try {
     if (typeof acquireVsCodeApi === 'function' || /[#&]example=/.test(location.hash) || /[?&]example=/.test(location.search)
         || sessionStorage.getItem('skevu-upload-kept') === '1')

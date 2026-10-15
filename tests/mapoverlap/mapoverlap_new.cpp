@@ -1,5 +1,4 @@
-// Merged from: mapoverlap_1d.cpp, mapoverlap_1d_rowcol.cpp, mapoverlap_2d_new.cpp, mapoverlap_3d_new.cpp, mapoverlap_4d_new.cpp
-// (one program instead of one for each: the build of a test program has a cost of its own; each part is in a namespace, and its test cases have its name as a prefix)
+// Each part is in its own namespace; its test cases are prefixed with its name.
 #define SKEPU_ENABLE_EXCEPTIONS
 
 #include "../../external/catch2/catch.hpp"

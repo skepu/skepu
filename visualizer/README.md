@@ -4,7 +4,7 @@ Browser-based DAG visualizer for SkePU trace files.
 Renders task graphs, Gantt timelines, and annotated source views from a JSON
 trace produced by an instrumented SkePU program.
 
-See **[USER_MANUAL.md](USER_MANUAL.md)** for the full interface guide.
+The interface is explained by the guided tour (Help menu) and the shortcuts dialog (`?`).
 
 ---
 
@@ -16,7 +16,7 @@ Install test dependencies (only needed to run the test suite):
 npm install
 ```
 
-No build step is required — the app runs directly from source.
+No build step is needed for the web page; the VS Code extension has one (below).
 
 ## Running
 
@@ -52,8 +52,8 @@ from the **Files** menu.
 ## File structure
 
 ```
-index.html              upload / landing page
-main.html               visualizer UI
+index.html              the viewer
+designer.html           the Designer
 
 script/
   ── View layer ──────────────────────────────────────────────────────────────
@@ -163,33 +163,12 @@ messages to and from the extension). The library headers (`static/skepu-lib`) ar
 
 ## Tests
 
-Tests use **[Vitest](https://vitest.dev)** and cover the JS backend modules.
+Tests use [Vitest](https://vitest.dev), in `tests/unit/`.
 
 ```bash
 npm test            # run all tests once
 npm run test:watch  # re-run on file changes
 ```
-
-### What each module covers
-
-**`test_construction.js`** — Verifies that `DirectedGraph.fromEvents()` correctly
-parses every event type into the right node and edge objects, that edges are
-wired bidirectionally, and that `GraphSettings` flags (updates, allocations,
-deallocations, …) gate the correct node types.  Also runs the full pipeline
-(depths → critical path → `toCytoscape`) over every shipped example trace as a
-smoke test.
-
-**`test_serial_fusion.js`** — Targets `findSerialFusions()`, the greedy
-backward traversal that identifies chains of skeletons whose intermediate
-results have a single consumer.  Tests cover the happy path (3-Map chain
-producing two fusion pairs sharing one `FusedNode`), fan-out blocking (shared
-intermediate prevents fusion), cross-pattern detection (Map→Reduce), and the
-structural reason the second seeding pass is needed for reduction sinks.
-
-**`test_cytoscape.js`** — Schema regression tests for every node and edge type.
-Pins the exact set of keys emitted by `toCytoscape()` and `infoData()` so that
-a renamed field, dropped `super()` call, or missing type-specific key surfaces
-as an explicit failure rather than silent frontend breakage.
 
 ---
 

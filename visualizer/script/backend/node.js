@@ -509,7 +509,7 @@ export class RegionNode extends Node {
 
         this.treeParents = (this.region) ? [this.region] : [];
 
-        // Apply parent region nesting (super() used null; do it manually now).
+        // Parent region nesting (the super() call is given null).
         const parentLabel = jsonData.region ?? null;
         if (parentLabel) {
             const parentRegion = graph.getNodeByLabel(parentLabel);

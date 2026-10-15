@@ -1,6 +1,5 @@
-// test_provider_events.js — the events of the TraceDataProvider. It keeps listeners only for the events it knows, and ignores `on` and `_emit` of any
-// other: an event that is emitted or listened to under a name that it does not know does nothing and says nothing (rendersettled was one, for
-// a while). This looks at every event that the scripts use and checks that the provider has it.
+// test_provider_events.js — the events of the TraceDataProvider. It ignores `on` and `_emit` of an event it does not know, so every event that
+// the scripts use is checked to be one the provider has.
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';

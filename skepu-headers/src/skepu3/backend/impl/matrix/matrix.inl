@@ -347,7 +347,7 @@ Matrix<T>& Matrix<T>::operator=(const Matrix<T>& other)
    other.updateHost();
    invalidateDeviceData();
 
-   // (the memory is copied, as for a vector; it was the pointer that was copied, so that two matrices had one memory)
+   // (the memory is copied, as for a vector)
    if (!m_data || m_rows * m_cols != other.m_rows * other.m_cols)
    {
       const bool first = !m_data;

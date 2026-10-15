@@ -4,8 +4,7 @@
 #include "code_gen.h"
 #include "code_gen_cu.h"
 
-// The SHA-256 of the contents of a source file (hex), as the program is compiled: the traces have it for the files of the calls (header.files).
-// Empty if the file cannot be read. Each file is read once.
+// The SHA-256 (hex) of a source file for header.files of the traces; empty if it cannot be read. Each file is read once.
 std::string sourceFileHash(const std::string &path)
 {
 	static std::map<std::string, std::string> hashes;
@@ -330,9 +329,8 @@ bool testAndSet(bool &arg, bool newVal = true)
 
 static std::set<std::string> generatedStructs;
 
-// Where a skeleton instance and one of its user functions are defined in the source, as JSON: the struct of the user function
-// has it for the tracer (see Tracer::call), which writes it once for each instance. The lines are those of the declaration
-// or the function (a lambda: its expression), and a lambda user function or an anonymous instance is called so.
+// Where an instance and its user functions are defined, as JSON for the tracer (see Tracer::call): the lines of the declaration
+// or function (a lambda: its expression).
 static std::string jsonQuoted(const std::string &s)
 {
 	std::string result = "\"";
@@ -345,8 +343,7 @@ static std::string jsonQuoted(const std::string &s)
 	return result + "\"";
 }
 
-// (the place that a #line directive says, if the source has one: the code that another program generates, such as SkePY, says
-// where it is in its own source)
+// (the place that a #line directive gives, if there is one)
 static std::string sourceRangeJSON(clang::SourceRange range)
 {
 	clang::SourceManager &SM = GlobalRewriter.getSourceMgr();
