@@ -4,12 +4,7 @@
 # ------------------------------------------------
 
 # fundamental_types: fundamental_types, builtins (one program)
-skepu_add_test_case_cpu(fundamental_types)
-skepu_add_test_case_openmp(fundamental_types)
-skepu_add_test_case_opencl(fundamental_types)
-skepu_add_test_case_cuda(fundamental_types)
-skepu_add_test_case_hybrid_opencl(fundamental_types)
-skepu_add_test_case_hybrid_cuda(fundamental_types)
+skepu_add_test(fundamental_types EXCLUDE sequential)
 
 
 # ------------------------------------------------
@@ -17,12 +12,7 @@ skepu_add_test_case_hybrid_cuda(fundamental_types)
 # ------------------------------------------------
 
 # proxies: proxies, same_line (one program)
-skepu_add_test_case_cpu(proxies)
-skepu_add_test_case_openmp(proxies)
-skepu_add_test_case_opencl(proxies)
-skepu_add_test_case_cuda(proxies)
-skepu_add_test_case_hybrid_opencl(proxies)
-skepu_add_test_case_hybrid_cuda(proxies)
+skepu_add_test(proxies EXCLUDE sequential)
 
 
 # ------------------------------------------------
@@ -30,12 +20,7 @@ skepu_add_test_case_hybrid_cuda(proxies)
 # ------------------------------------------------
 
 # inline_skeletons: inline_skeletons, inline_skeletons_all (one program)
-skepu_add_test_case_cpu(inline_skeletons)
-skepu_add_test_case_openmp(inline_skeletons)
-skepu_add_test_case_opencl(inline_skeletons)
-skepu_add_test_case_cuda(inline_skeletons)
-skepu_add_test_case_hybrid_opencl(inline_skeletons)
-skepu_add_test_case_hybrid_cuda(inline_skeletons)
+skepu_add_test(inline_skeletons EXCLUDE sequential)
 
 
 # ------------------------------------------------
@@ -95,36 +80,20 @@ add_test(included_uf included_uf_cpu_test)
 #   Lambda expressions in skeleton instances
 # ------------------------------------------------
 
-skepu_add_test_case_cpu(lambda)
-skepu_add_test_case_openmp(lambda)
-skepu_add_test_case_opencl(lambda)
-skepu_add_test_case_cuda(lambda)
-skepu_add_test_case_hybrid_opencl(lambda)
-#skepu_add_test_case_hybrid_cuda(lambda)
+skepu_add_test(lambda EXCLUDE sequential hybrid_cuda)
 
 # ------------------------------------------------
 #   Skeleton instances passed by reference to function templates
 # ------------------------------------------------
 
-skepu_add_test_case_sequential(skeleton_reference)
-skepu_add_test_case_cpu(skeleton_reference)
-skepu_add_test_case_openmp(skeleton_reference)
-skepu_add_test_case_opencl(skeleton_reference)
-#skepu_add_test_case_cuda(skeleton_reference) # (not run: no CUDA here)
-skepu_add_test_case_hybrid_opencl(skeleton_reference)
-#skepu_add_test_case_hybrid_cuda(skeleton_reference)
+skepu_add_test(skeleton_reference EXCLUDE cuda hybrid_cuda)  # (not run: no CUDA here)
 
 # ------------------------------------------------
 #   Namespace in skeleton instances
 # ------------------------------------------------
 
 # namespace: namespace, objectoriented (one program)
-skepu_add_test_case_cpu(namespace)
-skepu_add_test_case_openmp(namespace)
-skepu_add_test_case_opencl(namespace)
-#skepu_add_test_case_cuda(namespace)
-skepu_add_test_case_hybrid_opencl(namespace)
-#skepu_add_test_case_hybrid_cuda(namespace)
+skepu_add_test(namespace EXCLUDE sequential cuda hybrid_cuda)
 
 
 # ------------------------------------------------
@@ -142,22 +111,14 @@ skepu_add_test_case_hybrid_opencl(namespace)
 # ------------------------------------------------
 
 # codegen_types: library_types, usertype, namespaced_types, namespaced_types_same_name (one program)
-skepu_add_test_case_cpu(codegen_types)
-skepu_add_test_case_openmp(codegen_types)
-skepu_add_test_case_opencl(codegen_types)
-skepu_add_test_case_cuda(codegen_types)
-skepu_add_test_case_hybrid_opencl(codegen_types)
-skepu_add_test_case_hybrid_cuda(codegen_types)
+skepu_add_test(codegen_types EXCLUDE sequential)
 
 # ------------------------------------------------
 #   User type that is only a return type
 # ------------------------------------------------
 
 # template_instances_types: template_instances_types, multiple_return_types, template_instances, usertype_return (one program)
-skepu_add_test_case_sequential(template_instances_types)
-skepu_add_test_case_cpu(template_instances_types)
-skepu_add_test_case_openmp(template_instances_types)
-skepu_add_test_case_opencl(template_instances_types)
+skepu_add_test(template_instances_types EXCLUDE cuda hybrid_opencl hybrid_cuda)
 
 
 # ------------------------------------------------
@@ -170,11 +131,7 @@ skepu_add_test_case_opencl(template_instances_types)
 
 # User constants in the user functions of every skeleton, with several types
 # userconstants_element_types: userconstants, element_types (one program)
-skepu_add_test_case_sequential(userconstants_element_types)
-skepu_add_test_case_cpu(userconstants_element_types)
-skepu_add_test_case_openmp(userconstants_element_types)
-skepu_add_test_case_opencl(userconstants_element_types)
-skepu_add_test_case_hybrid_opencl(userconstants_element_types)
+skepu_add_test(userconstants_element_types EXCLUDE cuda hybrid_cuda)
 
 
 # Regions of several threads that overlap in time: events belong to the region of their own thread.
@@ -267,7 +224,7 @@ set_tests_properties(tracing_container_labels PROPERTIES
 # skepu::multiple of built-in types with names of several words (the precompiler removed the first letter of the names of the aliases it makes)
 
 # Skeletons with double precision on OpenCL devices that have it, and on those that do not (they run on another backend, or it is an error in strict mode)
-skepu_add_test_case_opencl(opencl_double_fallback)
+skepu_add_test(opencl_double_fallback BACKENDS opencl)
 
 # Elements of the types signed char and long long (the OpenCL names of the types), with rows and columns as arguments
 

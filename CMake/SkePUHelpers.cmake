@@ -351,3 +351,46 @@ macro(skepu_add_test_case_hybrid_cuda name)
 		add_test(${name}_hybrid_cuda ${name}_hybrid_cuda_test)
 	endif()
 endmacro()
+
+
+# skepu_add_test(<name> [BACKENDS b1 [b2 ...]] [EXCLUDE b1 [b2 ...]] [ALSO b1 [b2 ...]])
+#
+# Registers the Catch2 test program <name>.cpp for a set of backends, with one of the skepu_add_test_case_<backend> macros above for each:
+#     skepu_add_test(map)                                   all the default backends
+#     skepu_add_test(mappool EXCLUDE hybrid_cuda)           all the default backends but those
+#     skepu_add_test(mapoverlap_edges BACKENDS sequential cpu openmp opencl)    only those
+#     skepu_add_test(map ALSO opencl_multi)                 the default backends and those
+# The backends are sequential, cpu, openmp, opencl, cuda, hybrid_opencl and hybrid_cuda (the default set, SKEPU_TEST_DEFAULT_BACKENDS),
+# and opencl_multi (OpenCL with simulated multiple devices; only with ALSO or BACKENDS). A backend that the build does not have (SKEPU_CUDA
+# off, no OpenMP, ...) is skipped by its macro, so a test that lists CUDA is not an error in a build without it. Comment why a backend is excluded.
+set(SKEPU_TEST_DEFAULT_BACKENDS sequential cpu openmp opencl cuda hybrid_opencl hybrid_cuda)
+set(SKEPU_TEST_ALL_BACKENDS ${SKEPU_TEST_DEFAULT_BACKENDS} opencl_multi)
+
+function(skepu_add_test name)
+	cmake_parse_arguments(_t "" "" "BACKENDS;EXCLUDE;ALSO" ${ARGN})
+	if(_t_UNPARSED_ARGUMENTS)
+		message(FATAL_ERROR "skepu_add_test(${name}): unknown arguments: ${_t_UNPARSED_ARGUMENTS}")
+	endif()
+	if(_t_BACKENDS AND (_t_EXCLUDE OR _t_ALSO))
+		message(FATAL_ERROR "skepu_add_test(${name}): BACKENDS is the whole set, it cannot be combined with EXCLUDE or ALSO")
+	endif()
+
+	if(_t_BACKENDS)
+		set(_backends ${_t_BACKENDS})
+	else()
+		set(_backends ${SKEPU_TEST_DEFAULT_BACKENDS} ${_t_ALSO})
+		foreach(_b IN LISTS _t_EXCLUDE)
+			list(REMOVE_ITEM _backends ${_b})
+		endforeach()
+	endif()
+
+	foreach(_b IN LISTS _t_BACKENDS _t_EXCLUDE _t_ALSO)
+		if(NOT _b IN_LIST SKEPU_TEST_ALL_BACKENDS)
+			message(FATAL_ERROR "skepu_add_test(${name}): unknown backend '${_b}' (backends: ${SKEPU_TEST_ALL_BACKENDS})")
+		endif()
+	endforeach()
+
+	foreach(_b IN LISTS _backends)
+		cmake_language(CALL skepu_add_test_case_${_b} ${name})
+	endforeach()
+endfunction()
