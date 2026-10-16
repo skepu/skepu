@@ -161,6 +161,14 @@ browser page, with a content security policy that runs only scripts with a nonce
 and not inline handlers (tests/unit/test_markup_csp.js checks it). What differs from the browser is in `script/*_vscode.js` and `skevu.js` (the
 messages to and from the extension). The library headers (`static/skepu-lib`) are made by `make`, as for the browser page.
 
+## The user guide in the extension
+
+`make vsix` also builds the user guide, in its simple edition (`../user-guide`, `make simple`: no panels or WebAssembly), and puts it into the package. It
+needs Quarto: without it, or if the build fails, there is a warning and the extension is built without the guide (the extension says so when it is asked
+for the guide). `GUIDE=0` leaves it out on purpose, and `QUARTO=/path/to/quarto` names Quarto. Nothing that the guide is built in is left behind;
+`make guide` builds it into `guide/` for trying the extension from here. The hover of a skeleton, a `vscode://skepu.skepu-visualizer/guide?anchor=map` link and
+the commands *SkeVU: Open the User Guide* open it in a panel; the anchors and the sections that they are in are in `src/guideLinks.ts`.
+
 ## Tests
 
 Tests use [Vitest](https://vitest.dev), in `tests/unit/`.

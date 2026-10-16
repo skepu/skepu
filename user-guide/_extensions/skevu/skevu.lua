@@ -28,6 +28,10 @@
 
   The runtime is skevu.js; the panels load the visualizer from the viz/ directory of the
   book (installed by scripts/install_viz.py).
+
+  In the "simple" edition of the book (the profile `simple`, see _quarto-simple.yml) there are no
+  panels: a trace-embed is a note that says what is left out, and a trace-wasm keeps the listing
+  of its program (code="true") with such a note.
 --]]
 
 local OPT_SETTINGS = {
@@ -67,6 +71,23 @@ local function read_file(path)
   fh:close()
   return text
 end
+
+-- The simple edition of the book (the profile `simple`): no panels, no scripts, no WebAssembly.
+local function simple_edition()
+  for _, profile in ipairs(quarto.project.profile or {}) do
+    if profile == "simple" then return true end
+  end
+  return false
+end
+
+-- What stands where a panel would be in the simple edition.
+local function omitted(kwargs)
+  local label = param(kwargs, "label", nil)
+  local text = "An interactive trace view is part of the full edition of this guide"
+  if label then text = text .. " (" .. label .. ")" end
+  return pandoc.Div({ pandoc.Para({ pandoc.Emph({ pandoc.Str(text .. ".") }) }) }, pandoc.Attr("", { "te-omitted" }))
+end
+
 
 -- Parameters common to both shortcodes.
 local function common(kwargs)
@@ -150,6 +171,7 @@ end
 return {
   ["trace-embed"] = function(args, kwargs)
     if not quarto.doc.is_format("html") then return {} end
+    if simple_edition() then return omitted(kwargs) end
     add_dependency()
     local c = common(kwargs)
     counter = counter + 1
@@ -165,13 +187,22 @@ return {
 
   ["trace-wasm"] = function(args, kwargs)
     if not quarto.doc.is_format("html") then return {} end
-    add_dependency()
+    local simple = simple_edition()
+    if not simple then add_dependency() end
     local c = common(kwargs)
     counter = counter + 1
     local id = "te-" .. counter
 
     local src_path = param(kwargs, "src", nil)
     local source = src_path and (read_file(src_path) or ("// source file not found: " .. src_path))
+    if simple then
+      local blocks = {}
+      if source and param(kwargs, "code", "false") == "true" then
+        table.insert(blocks, pandoc.CodeBlock(source, pandoc.Attr("", { "cpp" })))
+      end
+      table.insert(blocks, omitted(kwargs))
+      return blocks
+    end
     local blocks = { pandoc.RawBlock("html", label_html(c)) }
     -- A real code block, so that Quarto highlights it.
     if source and param(kwargs, "code", "false") == "true" then

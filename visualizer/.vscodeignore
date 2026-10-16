@@ -10,6 +10,9 @@
 !out/**/*.js
 !dist/*.js
 
+# the user guide: the simple edition of ../user-guide, put in guide/ by `make vsix` while it packages (a build without Quarto has none); shown in a panel (src/guide.ts)
+!guide/**
+
 # the page of the webview is made from index.html; it loads these (see src/webviewHtml.ts)
 !index.html
 !style/*.css

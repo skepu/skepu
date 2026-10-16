@@ -1,5 +1,6 @@
 # Quarto build outputs
 _book/
+_book-simple/
 _pdf/
 /.quarto/
 **/*.quarto_ipynb

@@ -9,13 +9,24 @@
 #   clean-skepu-lib  Remove the generated static/skepu-lib/ directory.
 #
 #   vsix             Build the VS Code extension as skepu-visualizer-<version>.vsix (npm run package, which builds the bundles and
-#                    compiles the extension), with the library headers in it. Needs npm install first (@vscode/vsce is a dev dependency).
+#                    compiles the extension), with the library headers in it, and the user guide: the simple edition of ../user-guide, which
+#                    needs Quarto. Without Quarto, or if the guide cannot be built, a warning is printed and the extension is built without
+#                    the guide; GUIDE=0 leaves it out on purpose, QUARTO=/path/to/quarto names Quarto. What the guide is built in is removed
+#                    afterwards. Needs npm install first (@vscode/vsce is a dev dependency).
 #                    Install it with: codium --install-extension skepu-visualizer-<version>.vsix  (or code --install-extension ...)
+#
+#   guide            The simple edition of the user guide, in guide/ (what `make vsix` does first; for trying the extension from this directory).
+#
+#   clean-guide      Remove guide/ and what the guide was built in.
 
 SKEPU_LIB_SRC := ../skepu-headers/src/skepu-lib
 SKEPU_LIB_DST := static/skepu-lib
 
-.PHONY: skepu-lib clean-skepu-lib vsix
+GUIDE_SRC := ../user-guide
+GUIDE_DIR := guide
+QUARTO    ?= quarto
+
+.PHONY: skepu-lib clean-skepu-lib vsix guide clean-guide
 
 ## ── skepu-lib ────────────────────────────────────────────────────────────────
 ## Copies every .hpp/.h file from $(SKEPU_LIB_SRC) and its dnn/ subdirectory
@@ -51,5 +62,32 @@ clean-skepu-lib:
 
 ## ── The extension for VS Code ────────────────────────────────────────────────
 
+# The user guide is the simple edition of ../user-guide (make simple there: the profile `simple`, in _book-simple/), copied to guide/, which the package has
+# (.vscodeignore). If Quarto is not there or the build fails there is a warning, and no guide in the package: the extension says so when it is asked for the guide.
+guide:
+	@rm -rf $(GUIDE_DIR)
+	@if ! command -v $(QUARTO) >/dev/null 2>&1; then \
+	    echo ""; \
+	    echo "WARNING: '$(QUARTO)' (Quarto) was not found, so the user guide cannot be built: the extension will be built WITHOUT the user guide."; \
+	    echo "         Install Quarto (https://quarto.org), or name it with QUARTO=/path/to/quarto, and build again."; \
+	    echo ""; \
+	elif $(MAKE) --no-print-directory -C $(GUIDE_SRC) simple QUARTO=$(QUARTO) && cp -R $(GUIDE_SRC)/_book-simple $(GUIDE_DIR); then \
+	    echo "guide: the simple edition of $(GUIDE_SRC) is in $(GUIDE_DIR)/"; \
+	else \
+	    rm -rf $(GUIDE_DIR); \
+	    echo ""; \
+	    echo "WARNING: the user guide could not be built (the output of Quarto is above): the extension will be built WITHOUT the user guide."; \
+	    echo ""; \
+	fi
+
+clean-guide:
+	rm -rf $(GUIDE_DIR) $(GUIDE_SRC)/_book-simple
+
+# (the guide is built for the package only: guide/, the book that it is made in and Quarto's cache, if there was none before, are removed after it)
 vsix: skepu-lib
-	npm run package
+	@had_cache=0; test -d $(GUIDE_SRC)/.quarto && had_cache=1; \
+	if [ "$(GUIDE)" = 0 ]; then echo "guide: GUIDE=0: the extension is built without the user guide"; rm -rf $(GUIDE_DIR); else $(MAKE) --no-print-directory guide; fi; \
+	npm run package; status=$$?; \
+	rm -rf $(GUIDE_DIR) $(GUIDE_SRC)/_book-simple; \
+	[ $$had_cache = 1 ] || rm -rf $(GUIDE_SRC)/.quarto; \
+	exit $$status

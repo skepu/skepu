@@ -1,0 +1,8 @@
+# The simple edition of the user guide (profile `simple`: `make simple`, or QUARTO_PROFILE=simple quarto render): the HTML book without what needs a web
+# server and scripts of its own: no SkeVU panels, no WebAssembly programs, no copy of the visualizer (see _extensions/skevu/skevu.lua and
+# scripts/install_viz.py). The widgets that show how the skeletons access their operands stay. It is the book that the SkeVU extension for VS Code includes.
+project:
+  output-dir: _book-simple
+
+filters:
+  - scripts/web_figures.lua

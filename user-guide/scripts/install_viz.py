@@ -20,6 +20,12 @@ if not OUTPUT.is_absolute():
 	OUTPUT = PROJECT / OUTPUT
 VISUALIZER = PROJECT.parent / "visualizer"
 
+# The simple edition of the book (the profile `simple`) has no panels: no copy of the visualizer, and no WebAssembly programs either (resources: demos/).
+if "simple" in os.environ.get("QUARTO_PROFILE", "").split(","):
+	shutil.rmtree(OUTPUT / "demos", ignore_errors=True)
+	print(f"install_viz: simple edition: no viz/, no demos/ in {OUTPUT}")
+	sys.exit(0)
+
 # Only the HTML book has panels; Quarto lists the files of this render when it runs us.
 rendered = os.environ.get("QUARTO_PROJECT_OUTPUT_FILES")
 if rendered is not None and not any(f.endswith(".html") for f in rendered.split()):

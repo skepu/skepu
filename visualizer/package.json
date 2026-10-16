@@ -37,6 +37,16 @@
           }
         ]
       }
+    ],
+    "commands": [
+      {
+        "command": "skevu.openGuide",
+        "title": "SkeVU: Open the User Guide"
+      },
+      {
+        "command": "skevu.openGuideInWindow",
+        "title": "SkeVU: Open the User Guide in a New Window"
+      }
     ]
   },
   "scripts": {
@@ -65,5 +75,10 @@
     "type": "git",
     "url": "https://github.com/skepu/skepu.git",
     "directory": "visualizer"
-  }
+  },
+  "activationEvents": [
+    "onUri",
+    "onLanguage:cpp",
+    "onLanguage:cuda-cpp"
+  ]
 }

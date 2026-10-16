@@ -316,3 +316,6 @@ main.content {
 .sk-btn:hover:not(.active) { background: rgba(55, 138, 221, 0.08); }
 .sk-btn.active { background: #378ADD; color: #fff; border-color: #185FA5; }
 
+
+/* What stands where an interactive panel is in the simple edition of the book (_quarto-simple.yml) */
+.te-omitted { margin: 1em 0; padding: 0.5em 1em; border-left: 3px solid #aab; opacity: 0.75; }

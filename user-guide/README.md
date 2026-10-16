@@ -7,6 +7,7 @@ illustrations, SkeVU trace panels and runnable WebAssembly examples).
 make          # render the book to _book/
 make preview  # live-reloading server (`quarto preview`)
 make viz      # (re)install the visualizer into _book/viz/ without rendering
+make simple   # the simple edition in _book-simple/: no SkeVU panels, no WebAssembly, no copy of the visualizer (what the SkeVU extension includes)
 make pdf      # PDF of the book in _pdf/ (needs LaTeX; the interactive parts are left out)
 make demos    # rebuild the WebAssembly demos (needs Emscripten)
 make clean
