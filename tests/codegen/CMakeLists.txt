@@ -86,7 +86,8 @@ skepu_add_test(lambda EXCLUDE sequential hybrid_cuda)
 #   Skeleton instances passed by reference to function templates
 # ------------------------------------------------
 
-skepu_add_test(skeleton_reference EXCLUDE cuda hybrid_cuda)  # (not run: no CUDA here)
+# CUDA: stops with the error that MapOverlap 1D in mirror mode is not implemented for CUDA.
+skepu_add_test(skeleton_reference EXCLUDE cuda hybrid_cuda)
 
 # ------------------------------------------------
 #   Namespace in skeleton instances
@@ -118,7 +119,7 @@ skepu_add_test(codegen_types EXCLUDE sequential)
 # ------------------------------------------------
 
 # template_instances_types: template_instances_types, multiple_return_types, template_instances, usertype_return (one program)
-skepu_add_test(template_instances_types EXCLUDE cuda hybrid_opencl hybrid_cuda)
+skepu_add_test(template_instances_types EXCLUDE hybrid_opencl hybrid_cuda)
 
 
 # ------------------------------------------------
@@ -131,6 +132,7 @@ skepu_add_test(template_instances_types EXCLUDE cuda hybrid_opencl hybrid_cuda)
 
 # User constants in the user functions of every skeleton, with several types
 # userconstants_element_types: userconstants, element_types (one program)
+# CUDA: one case fails, "Matrices of signed char and long long: elements, rows and columns" (wrong values); the rest passes.
 skepu_add_test(userconstants_element_types EXCLUDE cuda hybrid_cuda)
 
 

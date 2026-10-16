@@ -2,9 +2,6 @@
 #   MapPairs fundamentals
 # ------------------------------------------------
 
-# Unclear why this works in OpenCL but not CUDA. The calls look similar in both.
-# The problem is that only the CPU part of the call gets produced in the output container,
-# the rest of the data is either 0 or rubbish.
 skepu_add_test(mappairs EXCLUDE hybrid_cuda)
 
 
@@ -18,4 +15,5 @@ skepu_add_test(mappairs_tuple)
 #   MapPairs in place mode
 # ------------------------------------------------
 
+# CUDA: MapPairs in place mode is not implemented (mappairs_cu.inl stops with an error).
 skepu_add_test(mappairs_in_place EXCLUDE cuda hybrid_opencl hybrid_cuda)

@@ -159,12 +159,11 @@ std::string generateCUDAMultipleReturn(UserFunction &UF)
 	if (UF.multipleReturnTypes.size() > 0)
 	{
 		std::stringstream SSmultiReturnType, SSmultiReturnTypeDef, SSmultiReturnMakeStruct, SSmultiReturnMakeParams;
-		SSmultiReturnType << "skepu_multiple";
+		SSmultiReturnType << UF.multiReturnTypeNameGPU();
 		size_t ctr = 0;
 		for (std::string &type : UF.multipleReturnTypes)
 		{
 			std::string divider = (ctr != UF.multipleReturnTypes.size() - 1) ? ", " : "";
-			SSmultiReturnType << "_" << transformToCXXIdentifier(type);
 			SSmultiReturnTypeDef << type << " e" << ctr << ";\n";
 			SSmultiReturnMakeParams << type << " arg" << ctr << divider;
 			SSmultiReturnMakeStruct << "arg" << ctr << divider;

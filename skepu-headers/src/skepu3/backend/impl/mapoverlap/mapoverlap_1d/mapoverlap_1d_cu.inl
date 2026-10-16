@@ -364,44 +364,19 @@ namespace skepu
 			const size_t overlap = (size_t)this->m_overlap[0];
 			const size_t colWidth = arg.total_rows();
 			const size_t numCols = arg.total_cols();
-			size_t numThreads = this->m_selected_spec->GPUThreads();
-			size_t trdsize = colWidth;
-			size_t blocksPerCol = 1;
+			// Every column is cut into tiles of numThreads output elements, one block for each tile (the kernel loops if there are more tiles than blocks)
+			if (this->m_edge == Edge::None && colWidth <= 2 * overlap)
+				return; // (no output)
+			const size_t outColWidth = (this->m_edge == Edge::None) ? colWidth - 2 * overlap : colWidth;
+			size_t numThreads = std::min<size_t>(this->m_selected_spec->GPUThreads(), outColWidth);
+			if (!sharedMemAvailable_CU<T>(numThreads, deviceID) && numThreads < 1)
+				SKEPU_ERROR("CUDA MapOverlap: Cannot execute overlap with current overlap width.");
+			const size_t blocksPerCol = (outColWidth + numThreads - 1) / numThreads;
 			
-			if (colWidth > numThreads)
-			{
-				size_t tmp = getThreadNumber_CU<T>(colWidth, numThreads, deviceID);
-				
-				if (tmp < 1 || tmp * numCols > this->m_selected_spec->GPUBlocks())
-					SKEPU_ERROR("CUDA MapOverlap: Operation is larger than maximum block size! colWidth: " << colWidth << ", numThreads: " << numThreads);
-				blocksPerCol = tmp;
-				trdsize = colWidth / blocksPerCol;
-				
-				if (trdsize < overlap)
-					SKEPU_ERROR("CUDA MapOverlap: Cannot execute overlap with current overlap width.");
-			}
-			
-			std::vector<T> wrap(2 * overlap * numCols);
+			// Allocate wrap vector to device (the kernel does not use it)
+			std::vector<T> wrap(2 * overlap * numCols + 1);
 			DeviceMemPointer_CU<T> wrap_mem_p(&wrap[0], wrap.size(), this->m_environment->m_devices_CU.at(deviceID));
 			
-			if (this->m_edge == Edge::Cyclic)
-			{
-				arg.updateHost();
-				auto inputBeginTemp = arg.begin();
-				
-				for (size_t col = 0; col < numCols; col++, inputBeginTemp++)
-				{
-					auto inputEndMinusOverlap = inputBeginTemp + numCols * (colWidth - 1) - (overlap - 1) * numCols;
-					for (size_t i = 0; i < overlap; ++i)
-					{
-						wrap[i + col * 2 * overlap] = inputEndMinusOverlap(i * numCols);
-						wrap[overlap + i + col * 2 * overlap] = inputBeginTemp(i * numCols);
-					}
-				}
-				wrap_mem_p.copyHostToDevice();
-			}
-			
-			numThreads = trdsize; //std::min(maxThreads, rowWidth);
 			size_t numBlocks = std::max<size_t>(1, std::min(blocksPerCol * numCols, this->m_selected_spec->GPUBlocks()));
 			size_t sharedMemSize = sizeof(T) * (numThreads + 2 * overlap);
 			
@@ -661,47 +636,20 @@ namespace skepu
 			const size_t rowWidth = arg.total_cols();
 			const size_t n = rowWidth*numrows;
 			const size_t out_numelements = res.total_rows() * res.total_cols();
-			size_t trdsize = rowWidth;
-			size_t blocksPerRow = 1;
 			
-			if (rowWidth > maxThreads)
-			{
-				size_t tmp = getThreadNumber_CU<T>(rowWidth, maxThreads, deviceID);
-				if (tmp < 1 || tmp * numrows > maxBlocks)
-					SKEPU_ERROR("CUDA MapOverlap: Row width is larger than maximum thread size: " << rowWidth << " " << maxThreads);
-				blocksPerRow = tmp;
-				trdsize = rowWidth / blocksPerRow;
-				
-				if (trdsize < overlap)
-					SKEPU_ERROR("CUDA MapOverlap: Cannot execute overlap with current overlap width");
-			}
+			// Every row is cut into tiles of numThreads output elements, one block for each tile (the kernel loops if there are more tiles than blocks)
+			if (this->m_edge == Edge::None && rowWidth <= 2 * overlap)
+				return; // (no output)
+			const size_t outRowWidth = (this->m_edge == Edge::None) ? rowWidth - 2 * overlap : rowWidth;
+			size_t numThreads = std::min(maxThreads, outRowWidth);
+			if (!sharedMemAvailable_CU<T>(numThreads, deviceID) && numThreads < 1)
+				SKEPU_ERROR("CUDA MapOverlap: Cannot execute overlap with current overlap width");
+			const size_t blocksPerRow = (outRowWidth + numThreads - 1) / numThreads;
 			
-			// Allocate wrap vector to device.
-			std::vector<T> wrap(2 * overlap * numrows);
+			// Allocate wrap vector to device (the kernel does not use it)
+			std::vector<T> wrap(2 * overlap * numrows + 1);
 			DeviceMemPointer_CU<T> wrap_mem_p(&wrap[0], wrap.size(), this->m_environment->m_devices_CU[deviceID]);
 			
-			if (this->m_edge == Edge::Cyclic)
-			{
-				// Just update here to get latest values back.
-				arg.updateHost();
-				auto inputBeginTemp = arg.begin();
-				
-				for (size_t row = 0; row < numrows; row++)
-				{
-					auto inputEndTemp = inputBeginTemp+rowWidth;
-					
-					for (size_t i = 0; i < overlap; ++i)
-					{
-						wrap[i + row * 2 * overlap] = inputEndTemp(i - overlap);// inputEndMinusOverlap(i);
-						wrap[overlap + i + row * 2 * overlap] = inputBeginTemp(i);
-					}
-					inputBeginTemp += rowWidth;
-				}
-				// Copy wrap vector only if it is a CYCLIC overlap policy.
-				wrap_mem_p.copyHostToDevice();
-			}
-			
-			const size_t numThreads = trdsize; //std::min(maxThreads, rowWidth);
 			const size_t numBlocks = std::max<size_t>(1, std::min(blocksPerRow * numrows, maxBlocks));
 			const size_t sharedMemSize = sizeof(T) * (numThreads + 2 * overlap);
 			

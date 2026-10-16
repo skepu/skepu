@@ -38,7 +38,7 @@ namespace skepu
 			cudaSetDevice(deviceID);
 			
 			auto in_mem_p = arg.updateDevice_CU(arg.getAddress(), in_size_i * in_size_j * in_size_k * in_size_l, deviceID, AccessMode::Read, true);
-			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_size_i * out_size_j * out_size_k * out_size_l, deviceID, AccessMode::Write, true)...);
+			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_size_i * out_size_j * out_size_k * out_size_l, deviceID, this->m_mirror_mode ? AccessMode::ReadWrite : AccessMode::Write, true)...); // (in mirror mode some elements are not computed: the output keeps their values)
 			
 			dim3 numBlocks, numThreads;
 
@@ -82,8 +82,12 @@ namespace skepu
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).cudaProxy(deviceID, MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])...);
 		
 			// PRNG support
-			size_t prng_threads = std::min<size_t>(out_size_i * out_size_j * out_size_k * out_size_l, numBlocks.x * numBlocks.y * numBlocks.z * numThreads.x * numThreads.y * numThreads.z);
-			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(out_size_i * out_size_j * out_size_k * out_size_l, prng_threads);
+			// (in mirror mode only the inner elements are computed, they get the numbers one after the other; the stream is advanced over all the elements)
+			const size_t computed = this->m_mirror_mode ? (out_size_i - 2 * this->m_overlap[0]) * (out_size_j - 2 * this->m_overlap[1]) * (out_size_k - 2 * this->m_overlap[2]) * (out_size_l - 2 * this->m_overlap[3]) : out_size_i * out_size_j * out_size_k * out_size_l;
+			size_t prng_threads = std::min<size_t>(computed, numBlocks.x * numBlocks.y * numBlocks.z * numThreads.x * numThreads.y * numThreads.z);
+			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(computed, prng_threads);
+			if (this->m_mirror_mode)
+				this->template prepareRandom<MapOverlapFunc::randomCount>(out_size_i * out_size_j * out_size_k * out_size_l - computed);
 			auto randomMemP = random.updateDevice_CU(random.getAddress(), prng_threads, deviceID, AccessMode::ReadWrite);
 			
 			
@@ -245,6 +249,9 @@ namespace skepu
 				<< ", maxBlocks = " << this->m_selected_spec->GPUBlocks() << ", maxThreads = " << this->m_selected_spec->GPUThreads());
 			
 			const size_t numDevices = std::min(this->m_selected_spec->devices(), this->m_environment->m_devices_CU.size());
+			
+			if (numDevices > 1 && this->m_mirror_mode)
+				SKEPU_ERROR("MapOverlap 4D with the edge mode None and an input of the size of the output (mirror mode) does not work on multiple CUDA devices; use one device");
 			
 #ifndef SKEPU_DEBUG_FORCE_MULTI_GPU_IMPL
 			if (numDevices <= 1)

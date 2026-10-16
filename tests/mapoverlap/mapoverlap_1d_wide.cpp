@@ -53,7 +53,7 @@ TEST_CASE("MapOverlap 1D on matrices with rows and columns longer than a thread 
 	window.setOverlap(overlap);
 	window.setPad(pad);
 
-	for (auto size : {std::pair<size_t, size_t>{6, 600}, {600, 6}, {4, 1000}, {7, 513}, {300, 300}})
+	for (auto size : std::initializer_list<std::pair<size_t, size_t>>{{6, 600}, {600, 6}, {4, 1000}, {7, 513}, {300, 300}})
 	{
 		const size_t rows = size.first, cols = size.second;
 		skepu::Matrix<int> in(rows, cols);

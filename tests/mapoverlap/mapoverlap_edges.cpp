@@ -28,7 +28,7 @@ static int input_value(size_t i, size_t j) { return (int)((i * 7 + j * 3) % 13) 
 
 TEST_CASE("mapoverlap_2d_mirror: MapOverlap 2D, mirror mode (edge mode None, input of the size of the output)")
 {
-	for (auto size : {std::pair<size_t, size_t>{9, 7}, {40, 40}, {100, 70}, {17, 300}, {300, 300}})
+	for (auto size : std::initializer_list<std::pair<size_t, size_t>>{{9, 7}, {40, 40}, {100, 70}, {17, 300}, {300, 300}})
 	{
 		const size_t rows = size.first, cols = size.second;
 		skepu::Matrix<int> in(rows, cols), out(rows, cols), out_a(rows, cols), out_b(rows, cols), out_i(rows, cols);
@@ -609,7 +609,7 @@ TEST_CASE("mapoverlap_1d_mirror: MapOverlap 1D, mirror mode on vectors")
 
 TEST_CASE("mapoverlap_1d_mirror: MapOverlap 1D, mirror mode on matrices, row-wise and column-wise")
 {
-	for (auto size : {std::pair<size_t, size_t>{9, 7}, {40, 40}, {100, 70}, {17, 300}, {300, 17}})
+	for (auto size : std::initializer_list<std::pair<size_t, size_t>>{{9, 7}, {40, 40}, {100, 70}, {17, 300}, {300, 17}})
 		for (auto overlapMode : {skepu::Overlap::RowWise, skepu::Overlap::ColWise})
 		{
 			const size_t rows = size.first, cols = size.second;

@@ -18,6 +18,8 @@ skepu_add_test(complex)
 #   Random fundamentals, using namespace and the random fills of skepu-lib/randomize.hpp
 # ------------------------------------------------
 
+# CUDA: three cases fail: MapOverlap 1D in mirror mode (not implemented for CUDA, with a large vector too), and MapPairs + MapPairsReduce
+# (wrong results, see mappairsreduce). The rest passes.
 skepu_add_test(random EXCLUDE cuda hybrid_cuda)
 
 

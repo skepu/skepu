@@ -558,6 +558,7 @@ namespace skepu
 			MatCol<T> proxy;
 			proxy.data = devptr->getDeviceDataPointer() + col.i;
 			proxy.rows = this->m_rows;
+			proxy.cols = this->m_cols;
 			return {devptr, proxy};
 		}
 	#endif

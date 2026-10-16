@@ -25,4 +25,4 @@ skepu_add_test(map_stride EXCLUDE hybrid_cuda)
 #   Index of a strided Map
 # ------------------------------------------------
 
-skepu_add_test(map_stride_index EXCLUDE cuda hybrid_opencl hybrid_cuda)
+skepu_add_test(map_stride_index EXCLUDE hybrid_opencl hybrid_cuda)

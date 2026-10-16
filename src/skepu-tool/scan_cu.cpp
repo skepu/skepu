@@ -9,7 +9,7 @@ using namespace clang;
 const std::string ScanKernel_CU = R"~~~(
 __global__ void {{KERNEL_NAME}}_ScanKernel({{SCAN_TYPE}}* skepu_input, {{SCAN_TYPE}}* skepu_output, {{SCAN_TYPE}}* blockSums, size_t skepu_n, size_t skepu_numElements)
 {
-	extern __shared__ {{SCAN_TYPE}} skepu_sdata[];
+	extern __shared__ {{SCAN_TYPE}} {{SHARED_BUFFER}}[];
 
 	size_t skepu_tid = threadIdx.x;
 	unsigned int skepu_pout = 0;
@@ -21,7 +21,7 @@ __global__ void {{KERNEL_NAME}}_ScanKernel({{SCAN_TYPE}}* skepu_input, {{SCAN_TY
 
 	for (size_t blockNr = blockIdx.x; blockNr < numBlocks; blockNr += gridDim.x)
 	{
-		skepu_sdata[skepu_pout * skepu_n + skepu_tid] = (skepu_mem < skepu_numElements) ? skepu_input[skepu_mem] : 0;
+		{{SHARED_BUFFER}}[skepu_pout * skepu_n + skepu_tid] = (skepu_mem < skepu_numElements) ? skepu_input[skepu_mem] : 0;
 
 		__syncthreads();
 
@@ -30,18 +30,18 @@ __global__ void {{KERNEL_NAME}}_ScanKernel({{SCAN_TYPE}}* skepu_input, {{SCAN_TY
 			skepu_pout = 1 - skepu_pout;
 			skepu_pin = 1 - skepu_pout;
 			if (skepu_tid >= skepu_offset)
-				skepu_sdata[skepu_pout * skepu_n + skepu_tid] = {{FUNCTION_NAME_SCAN}}(skepu_sdata[skepu_pin * skepu_n + skepu_tid], skepu_sdata[skepu_pin * skepu_n + skepu_tid - skepu_offset]);
+				{{SHARED_BUFFER}}[skepu_pout * skepu_n + skepu_tid] = {{FUNCTION_NAME_SCAN}}({{SHARED_BUFFER}}[skepu_pin * skepu_n + skepu_tid], {{SHARED_BUFFER}}[skepu_pin * skepu_n + skepu_tid - skepu_offset]);
 			else
-				skepu_sdata[skepu_pout * skepu_n + skepu_tid] = skepu_sdata[skepu_pin * skepu_n + skepu_tid];
+				{{SHARED_BUFFER}}[skepu_pout * skepu_n + skepu_tid] = {{SHARED_BUFFER}}[skepu_pin * skepu_n + skepu_tid];
 
 			__syncthreads();
 		}
 
 		if (skepu_tid == blockDim.x - 1)
-			blockSums[blockNr] = skepu_sdata[skepu_pout * skepu_n + blockDim.x-1];
+			blockSums[blockNr] = {{SHARED_BUFFER}}[skepu_pout * skepu_n + blockDim.x-1];
 
 		if (skepu_mem < skepu_numElements)
-			skepu_output[skepu_mem] = skepu_sdata[skepu_pout * skepu_n + skepu_tid];
+			skepu_output[skepu_mem] = {{SHARED_BUFFER}}[skepu_pout * skepu_n + skepu_tid];
 
 		skepu_mem += gridSize;
 
@@ -53,7 +53,7 @@ __global__ void {{KERNEL_NAME}}_ScanKernel({{SCAN_TYPE}}* skepu_input, {{SCAN_TY
 const std::string ScanUpdate_CU = R"~~~(
 __global__ void {{KERNEL_NAME}}_ScanUpdate({{SCAN_TYPE}} *data, {{SCAN_TYPE}} *sums, int isInclusive, {{SCAN_TYPE}} skepu_init, size_t skepu_n, {{SCAN_TYPE}} *skepu_ret)
 {
-	extern __shared__ {{SCAN_TYPE}} skepu_sdata[];
+	extern __shared__ {{SCAN_TYPE}} {{SHARED_BUFFER}}[];
 
 	__shared__ {{SCAN_TYPE}} skepu_offset;
 	__shared__ {{SCAN_TYPE}} inc_offset;
@@ -88,12 +88,12 @@ __global__ void {{KERNEL_NAME}}_ScanUpdate({{SCAN_TYPE}} *data, {{SCAN_TYPE}} *s
 		if (isInclusive == 1)
 		{
 			if (blockNr > 0)
-				skepu_sdata[skepu_tid] = (skepu_mem < skepu_n) ? {{FUNCTION_NAME_SCAN}}(skepu_offset, data[skepu_mem]) : 0;
+				{{SHARED_BUFFER}}[skepu_tid] = (skepu_mem < skepu_n) ? {{FUNCTION_NAME_SCAN}}(skepu_offset, data[skepu_mem]) : 0;
 			else
-				skepu_sdata[skepu_tid] = (skepu_mem < skepu_n) ? data[skepu_mem] : 0;
+				{{SHARED_BUFFER}}[skepu_tid] = (skepu_mem < skepu_n) ? data[skepu_mem] : 0;
 
 			if (skepu_mem == skepu_n - 1)
-				*skepu_ret = skepu_sdata[skepu_tid];
+				*skepu_ret = {{SHARED_BUFFER}}[skepu_tid];
 		}
 		else
 		{
@@ -101,15 +101,15 @@ __global__ void {{KERNEL_NAME}}_ScanUpdate({{SCAN_TYPE}} *data, {{SCAN_TYPE}} *s
 				*skepu_ret = {{FUNCTION_NAME_SCAN}}(inc_offset, data[skepu_mem]);
 
 			if (skepu_tid == 0)
-				skepu_sdata[skepu_tid] = skepu_offset;
+				{{SHARED_BUFFER}}[skepu_tid] = skepu_offset;
 			else
-				skepu_sdata[skepu_tid] = (skepu_mem-1 < skepu_n) ? {{FUNCTION_NAME_SCAN}}(skepu_offset, data[skepu_mem - 1]) : 0;
+				{{SHARED_BUFFER}}[skepu_tid] = (skepu_mem-1 < skepu_n) ? {{FUNCTION_NAME_SCAN}}(skepu_offset, data[skepu_mem - 1]) : 0;
 		}
 
 		__syncthreads();
 
 		if (skepu_mem < skepu_n)
-			data[skepu_mem] = skepu_sdata[skepu_tid];
+			data[skepu_mem] = {{SHARED_BUFFER}}[skepu_tid];
 
 		skepu_mem += gridSize;
 
@@ -136,13 +136,14 @@ __global__ void {{KERNEL_NAME}}_ScanAdd({{SCAN_TYPE}} *data, {{SCAN_TYPE}} sum, 
 
 std::string createScanKernelProgram_CU(SkeletonInstance &instance, UserFunction &scanFunc, std::string dir)
 {
-	const std::string kernelName = transformToCXXIdentifier(ResultName) + "_Scan_" + scanFunc.uniqueName;
+	const std::string kernelName = instance + "_" + transformToCXXIdentifier(ResultName) + "_Scan_" + scanFunc.uniqueName;
 	std::ofstream FSOutFile {dir + "/" + kernelName + ".cu"};
 	FSOutFile << templateString(ScanKernel_CU + ScanUpdate_CU + ScanAdd_CU,
 	{
 		{"{{SCAN_TYPE}}",          scanFunc.resolvedReturnTypeName},
 		{"{{KERNEL_NAME}}",        kernelName},
-		{"{{FUNCTION_NAME_SCAN}}", scanFunc.funcNameCUDA()}
+		{"{{FUNCTION_NAME_SCAN}}", scanFunc.funcNameCUDA()},
+		{"{{SHARED_BUFFER}}",      "skepu_sdata_" + instance}
 	});
 	return kernelName;
 }

@@ -421,7 +421,7 @@ std::string UserFunction::Param::templateInstantiationType() const
 {
 	auto *type = this->astDeclNode->getOriginalType().getTypePtr();
     const auto *templateType = dyn_cast<TemplateSpecializationType>(type);
-    return templateType->template_arguments()[0].getAsType().getAsString();
+    return templateType->template_arguments()[0].getAsType().getCanonicalType().getAsString();
 }
 
 
