@@ -73,7 +73,7 @@ namespace skepu
 			{
 #ifdef SKEPU_TRACING
 				this->m_label = label;
-				SKEPU_TRACE_RELABEL(this->m_object_id, this->m_label);   // (the events of the instance so far, the builds of its kernels, have the name)
+				SKEPU_TRACE_RELABEL(this->m_object_id, this->m_label, true);   // (the builds of its kernels, before its first call, have the name; its calls keep theirs)
 #endif
 			}
 

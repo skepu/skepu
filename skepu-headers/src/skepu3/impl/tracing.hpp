@@ -256,17 +256,21 @@ namespace skepu
 #endif
 		}
 
-		inline void Tracer::relabel(TraceID id, std::string const& label)
+		inline void Tracer::relabel(TraceID id, std::string const& label, bool instance)
 		{
 #ifdef SKEPU_TRACING
 			// (the events are written in order, and a container is named right after its declaration: the
-			// events of the container are the last ones; a Raw capture is also kept in the traces of the other processes of an MPI program)
+			// events of the container are the last ones; a Raw capture is also kept in the traces of the other processes of an MPI program.
+			// A skeleton instance can be named again and again, for example by the layers of a network that share one: only the events
+			// before its first call, the builds of its kernels, get the name; its calls keep the name that it had at the call)
 			auto capture = [=, this]{
 			for (auto it = this->m_trace_json.rbegin(); it != this->m_trace_json.rend(); ++it)
 			{
 				auto object = it->find(Schema::Keys::OBJECT_ID);
 				if (object == it->end() || *object != id || !it->contains(Schema::Keys::LABEL))
 					continue;
+				if (instance && (*it)[Schema::Keys::TYPE] == Schema::Values::Types::CALL)
+					break;
 				(*it)[Schema::Keys::LABEL] = label;
 				if ((*it)[Schema::Keys::TYPE] == Schema::Values::Types::ALLOCATION)
 					break;

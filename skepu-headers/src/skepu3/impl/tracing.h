@@ -280,8 +280,9 @@ namespace skepu
 
 			void allocation(TraceID id, std::string const& label, int line);
 			void deallocation(TraceID id, std::string const& label, int line);
-			// A container gets its name after it was allocated (see skepu::trace_label): its events so far get it too
-			void relabel(TraceID id, std::string const& label);
+			// A container gets its name after it was allocated (see skepu::trace_label): its events so far get it too. With `instance`, a skeleton
+			// instance is named: only its events before its first call (the builds of its kernels) get it
+			void relabel(TraceID id, std::string const& label, bool instance = false);
 			// The build of an OpenCL kernel for a device: `instance` and `label` are the skeleton instance whose kernel it is (null and a name of
 			// its own for a kernel of the library), `qualifier` says which one of its kernels (empty if it has one). A failed build is recorded too.
 			void compile(unsigned long start, unsigned long end, TraceID instance, std::string const& label, std::string const& qualifier, std::string const& device,

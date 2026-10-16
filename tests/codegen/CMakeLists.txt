@@ -213,6 +213,14 @@ add_test(NAME tracing_definitions_line COMMAND tracing_definitions_line_test)
 set_tests_properties(tracing_definitions_line PROPERTIES
 	ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_definitions_line.json")
 
+# A skeleton instance that is named again keeps the names of its earlier calls
+skepu_add_executable(tracing_instance_labels_test SKEPUSRC tracing_instance_labels.cpp)
+target_link_libraries(tracing_instance_labels_test PRIVATE catch2_main)
+target_compile_definitions(tracing_instance_labels_test PRIVATE SKEPU_TRACING)
+add_test(NAME tracing_instance_labels COMMAND tracing_instance_labels_test)
+set_tests_properties(tracing_instance_labels PROPERTIES
+	ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_instance_labels.json")
+
 # The containers that are declared as variables are named after the variables in the trace
 skepu_add_executable(tracing_container_labels_test SKEPUSRC tracing_container_labels.cpp)
 target_link_libraries(tracing_container_labels_test PRIVATE catch2_main)
