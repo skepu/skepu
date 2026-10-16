@@ -160,6 +160,8 @@ add_executable(skepu-tool IMPORTED GLOBAL)
 add_dependencies(skepu-tool skepu-tool-llvm)
 add_executable(SkePU::skepu-tool IMPORTED GLOBAL)
 add_dependencies(SkePU::skepu-tool skepu-tool-llvm)
+# (the program is built by the external project: the targets are there for the order of the build, and a location is what CMP0111 wants)
+set_target_properties(skepu-tool SkePU::skepu-tool PROPERTIES IMPORTED_LOCATION ${SKEPU_EXECUTABLE})
 # We don't have a native skepu-tool target, but the binary position is known,
 # so we install it as a program.
 install(PROGRAMS ${SKEPU_TOOL_BINARY_DIR}/skepu-tool
