@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { basename } from 'node:path';
 import { getHtmlForWebview, hashContent, hashFile } from './util.js';
+import { callsOfInstance, CallData } from './traceFacts.js';
 import { linesOfNode, pathEndsWith, traceSuffix, lensesOfBadges, lensTitle, nextNodeIndex, NodeData } from './nodeLines.js';
 
 
@@ -65,6 +66,12 @@ class SkevuSession {
 	traceLineRanges: Array<Array<number>> = [];
 	/** The graph that the viewer drew last (what the badges are made of). */
 	private lastGraph: any = undefined;
+
+	/** The call nodes of the instance with this name, if the file is a source file of this trace (found, with its hash). */
+	public callsOfInstance(fileName: string, name: string): CallData[] {
+		if (!this.lastGraph || !this.textDocuments.has(fileName)) return [];
+		return callsOfInstance((this.lastGraph.nodes ?? []).map((node: { data: CallData }) => node.data), name);
+	}
 	private readonly highlightDecoration = vscode.window.createTextEditorDecorationType({
 		backgroundColor: new vscode.ThemeColor("editor.selectionHighlightBackground"), // See https://code.visualstudio.com/api/references/theme-color for options
 		isWholeLine: true
@@ -74,7 +81,7 @@ class SkevuSession {
 
 	constructor(
 		private readonly context: vscode.ExtensionContext,
-		private readonly id: number
+		public readonly id: number
 	) { }
 
 	/** Show the trace that is the text of the document, in the panel. */
@@ -459,11 +466,21 @@ class SkevuSession {
 export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
 
 	private readonly sessions = new Map<number, SkevuSession>();
+	/** The provider of this window (the hover of a skeleton asks it for what the open traces say about an instance). */
+	public static current?: SkevuEditorProvider;
+
+	/** The calls of the instance with this name, in each open trace that has the file as its source. */
+	public callsOfInstance(fileName: string, name: string): { sessionId: number; calls: CallData[] }[] {
+		return [...this.sessions.values()]
+			.map(session => ({ sessionId: session.id, calls: session.callsOfInstance(fileName, name) }))
+			.filter(found => found.calls.length > 0);
+	}
 	private nextId = 1;
 
 	/** The editor is opened by default for the files that the tracer names (skepu_trace*.json) and *.skevu, and by Open With for any other JSON file. */
 	public static register(context: vscode.ExtensionContext): vscode.Disposable[] {
 		const provider = new SkevuEditorProvider(context);
+		SkevuEditorProvider.current = provider;
 		return [
 			...SkevuEditorProvider.viewTypes.map(viewType => vscode.window.registerCustomEditorProvider(viewType, provider)),
 			// (a badge in a source file has the session that made it: a command is registered once, not for each editor)
