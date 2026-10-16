@@ -11,12 +11,12 @@
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1003,
-            "time": 20,
+            "time": 15,
             "type": "allocation"
         },
         {
             "object_id": 1004,
-            "time": 100,
+            "time": 447,
             "type": "scalar_value",
             "value": 2
         },
@@ -26,7 +26,7 @@
                 6
             ],
             "elwise_inputs": [],
-            "end": 102,
+            "end": 466,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -38,34 +38,34 @@
             "prng": 1001,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 4,
-            "threads": 4,
+            "start": 3,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1003,
-            "time": 151,
+            "time": 510,
             "type": "deallocation"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1006,
-            "time": 182,
+            "time": 531,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1008,
-            "time": 183,
+            "time": 532,
             "type": "allocation"
         },
         {
             "object_id": 1009,
-            "time": 232,
+            "time": 660,
             "type": "scalar_value",
             "value": 23
         },
@@ -75,7 +75,7 @@
                 96
             ],
             "elwise_inputs": [],
-            "end": 233,
+            "end": 662,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -87,34 +87,34 @@
             "prng": 1006,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 183,
-            "threads": 4,
+            "start": 532,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1008,
-            "time": 258,
+            "time": 684,
             "type": "deallocation"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1011,
-            "time": 259,
+            "time": 686,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1013,
-            "time": 260,
+            "time": 687,
             "type": "allocation"
         },
         {
             "object_id": 1014,
-            "time": 333,
+            "time": 819,
             "type": "scalar_value",
             "value": 166
         },
@@ -124,7 +124,7 @@
                 996
             ],
             "elwise_inputs": [],
-            "end": 333,
+            "end": 821,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -136,34 +136,34 @@
             "prng": 1011,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 260,
-            "threads": 4,
+            "start": 687,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1013,
-            "time": 350,
+            "time": 843,
             "type": "deallocation"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1016,
-            "time": 351,
+            "time": 845,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1018,
-            "time": 352,
+            "time": 846,
             "type": "allocation"
         },
         {
             "object_id": 1019,
-            "time": 773,
+            "time": 1118,
             "type": "scalar_value",
             "value": 1227
         },
@@ -173,7 +173,7 @@
                 9996
             ],
             "elwise_inputs": [],
-            "end": 774,
+            "end": 1119,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -185,34 +185,34 @@
             "prng": 1016,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 352,
-            "threads": 4,
+            "start": 845,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1018,
-            "time": 787,
+            "time": 1135,
             "type": "deallocation"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1021,
-            "time": 788,
+            "time": 1136,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1023,
-            "time": 789,
+            "time": 1136,
             "type": "allocation"
         },
         {
             "object_id": 1024,
-            "time": 5012,
+            "time": 2579,
             "type": "scalar_value",
             "value": 9590
         },
@@ -222,7 +222,7 @@
                 99996
             ],
             "elwise_inputs": [],
-            "end": 5014,
+            "end": 2581,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -234,34 +234,34 @@
             "prng": 1021,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 788,
-            "threads": 4,
+            "start": 1136,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1023,
-            "time": 5039,
+            "time": 2612,
             "type": "deallocation"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1026,
-            "time": 5041,
+            "time": 2612,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1028,
-            "time": 5042,
+            "time": 2613,
             "type": "allocation"
         },
         {
             "object_id": 1029,
-            "time": 43860,
+            "time": 18841,
             "type": "scalar_value",
             "value": 78496
         },
@@ -271,7 +271,7 @@
                 999996
             ],
             "elwise_inputs": [],
-            "end": 43861,
+            "end": 18842,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -283,34 +283,34 @@
             "prng": 1026,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 5041,
-            "threads": 4,
+            "start": 2613,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1028,
-            "time": 43881,
+            "time": 18859,
             "type": "deallocation"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1031,
-            "time": 43882,
+            "time": 18860,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1033,
-            "time": 43883,
+            "time": 18860,
             "type": "allocation"
         },
         {
             "object_id": 1034,
-            "time": 391271,
+            "time": 156730,
             "type": "scalar_value",
             "value": 664577
         },
@@ -320,7 +320,7 @@
                 9999996
             ],
             "elwise_inputs": [],
-            "end": 391272,
+            "end": 156731,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -332,19 +332,22 @@
             "prng": 1031,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 43883,
-            "threads": 4,
+            "start": 18860,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1033,
-            "time": 391288,
+            "time": 156745,
             "type": "deallocation"
         }
     ],
     "header": {
+        "files": {
+            "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp": "939d27b756ef266cfdca3663935b8faa2c6eaf7bdddb18c0a2efeac71ba171d0"
+        },
         "instances": {
             "1000": {
                 "instance": {

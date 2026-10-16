@@ -11,28 +11,28 @@
             "label": "y",
             "line": 251,
             "object_id": 1002,
-            "time": 0,
+            "time": 1,
             "type": "allocation"
         },
         {
             "label": "z",
             "line": 251,
             "object_id": 1003,
-            "time": 0,
+            "time": 1,
             "type": "allocation"
         },
         {
             "label": "[Global PRNG]",
             "line": 139,
             "object_id": 1005,
-            "time": 1,
+            "time": 3,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1007,
-            "time": 19,
+            "time": 23,
             "type": "allocation"
         },
         {
@@ -41,7 +41,7 @@
                 256
             ],
             "elwise_inputs": [],
-            "end": 72,
+            "end": 303,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
             "label": "randomize::normal",
             "line": 259,
@@ -53,22 +53,22 @@
             "prng": 1005,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 11,
-            "threads": 4,
+            "start": 5,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1007,
-            "time": 110,
+            "time": 380,
             "type": "deallocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1010,
-            "time": 110,
+            "time": 381,
             "type": "allocation"
         },
         {
@@ -77,7 +77,7 @@
                 256
             ],
             "elwise_inputs": [],
-            "end": 131,
+            "end": 549,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
             "label": "randomize::normal",
             "line": 259,
@@ -89,22 +89,22 @@
             "prng": 1005,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 110,
-            "threads": 4,
+            "start": 381,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1010,
-            "time": 142,
+            "time": 566,
             "type": "deallocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1013,
-            "time": 144,
+            "time": 571,
             "type": "allocation"
         },
         {
@@ -113,7 +113,7 @@
                 256
             ],
             "elwise_inputs": [],
-            "end": 165,
+            "end": 707,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
             "label": "randomize::normal",
             "line": 259,
@@ -125,15 +125,15 @@
             "prng": 1005,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 144,
-            "threads": 4,
+            "start": 571,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1013,
-            "time": 172,
+            "time": 732,
             "type": "deallocation"
         },
         {
@@ -141,15 +141,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 325,
+            "time": 766,
             "type": "region"
         },
         {
             "object_id": 1017,
             "region": "Round",
-            "time": 345,
+            "time": 914,
             "type": "scalar_value",
-            "value": 256.00012
+            "value": 256.0001
         },
         {
             "backend": "OpenMP",
@@ -159,7 +159,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 349,
+            "end": 918,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -171,23 +171,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 326,
-            "threads": 4,
+            "start": 768,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1017,
             "region": "Round",
-            "time": 361,
+            "time": 930,
             "type": "scalar_value",
-            "value": 1.0000005
+            "value": 1.0000004
         },
         {
             "object_id": 1019,
             "region": "Round",
-            "time": 380,
+            "time": 1052,
             "type": "scalar_value",
-            "value": 0.00025400514
+            "value": 0.00025400516
         },
         {
             "backend": "OpenMP",
@@ -197,7 +197,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 382,
+            "end": 1056,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -209,395 +209,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 362,
-            "threads": 4,
+            "start": 933,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1019,
             "region": "Round",
-            "time": 390,
+            "time": 1085,
             "type": "scalar_value",
-            "value": 9.922076e-07
+            "value": 9.922077e-07
         },
         {
-            "data_file": "snapshots/x@1.txt",
-            "end": 731,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 557,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 824,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 735,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 835,
-            "type": "region"
-        },
-        {
-            "object_id": 1024,
-            "region": "Round",
-            "time": 859,
-            "type": "scalar_value",
-            "value": -2400.9297
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 861,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1021,
-            "outputs": [
-                1024
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 835,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1024,
-            "region": "Round",
-            "time": 866,
-            "type": "scalar_value",
-            "value": -9.378632
-        },
-        {
-            "object_id": 1026,
-            "region": "Round",
-            "time": 887,
-            "type": "scalar_value",
-            "value": 0.000117908145
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 889,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1022,
-            "outputs": [
-                1026
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 866,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1026,
-            "region": "Round",
-            "time": 896,
-            "type": "scalar_value",
-            "value": 4.605787e-07
-        },
-        {
-            "data_file": "snapshots/x@2.txt",
-            "end": 980,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 897,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 1069,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 980,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 1070,
-            "type": "region"
-        },
-        {
-            "object_id": 1031,
-            "region": "Round",
-            "time": 1088,
-            "type": "scalar_value",
-            "value": -2092.3965
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 1090,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1028,
-            "outputs": [
-                1031
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 1071,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1031,
-            "region": "Round",
-            "time": 1096,
-            "type": "scalar_value",
-            "value": -8.173424
-        },
-        {
-            "object_id": 1033,
-            "region": "Round",
-            "time": 1116,
-            "type": "scalar_value",
-            "value": 0.00020214812
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 1117,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1029,
-            "outputs": [
-                1033
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 1096,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1033,
-            "region": "Round",
-            "time": 1128,
-            "type": "scalar_value",
-            "value": 7.896411e-07
-        },
-        {
-            "data_file": "snapshots/x@3.txt",
-            "end": 1221,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 1130,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 1302,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 1222,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 1303,
-            "type": "region"
-        },
-        {
-            "object_id": 1038,
-            "region": "Round",
-            "time": 1322,
-            "type": "scalar_value",
-            "value": -1908.9127
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
+            "data_file": "snap/x@1.txt",
             "end": 1323,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1035,
-            "outputs": [
-                1038
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 1304,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1038,
-            "region": "Round",
-            "time": 1329,
-            "type": "scalar_value",
-            "value": -7.4566903
-        },
-        {
-            "object_id": 1040,
-            "region": "Round",
-            "time": 1348,
-            "type": "scalar_value",
-            "value": 0.00016629868
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 1349,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1036,
-            "outputs": [
-                1040
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 1330,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1040,
-            "region": "Round",
-            "time": 1357,
-            "type": "scalar_value",
-            "value": 6.496042e-07
-        },
-        {
-            "data_file": "snapshots/x@4.txt",
-            "end": 1449,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 1359,
+            "start": 1093,
             "type": "snapshot"
         },
         {
@@ -610,7 +241,7 @@
                 1002,
                 1003
             ],
-            "end": 1530,
+            "end": 1488,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -624,8 +255,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 1450,
-            "threads": 4,
+            "start": 1324,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -633,53 +264,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 1530,
+            "time": 1497,
             "type": "region"
         },
         {
-            "object_id": 1045,
+            "object_id": 1024,
             "region": "Round",
-            "time": 1549,
+            "time": 1570,
             "type": "scalar_value",
-            "value": -2583.2163
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 1550,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1042,
-            "outputs": [
-                1045
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 1531,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1045,
-            "region": "Round",
-            "time": 1555,
-            "type": "scalar_value",
-            "value": -10.090689
-        },
-        {
-            "object_id": 1047,
-            "region": "Round",
-            "time": 1571,
-            "type": "scalar_value",
-            "value": 8.6887536e-05
+            "value": -2400.9294
         },
         {
             "backend": "OpenMP",
@@ -691,36 +284,74 @@
             ],
             "end": 1572,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1021,
+            "outputs": [
+                1024
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 1499,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1024,
+            "region": "Round",
+            "time": 1579,
+            "type": "scalar_value",
+            "value": -9.378631
+        },
+        {
+            "object_id": 1026,
+            "region": "Round",
+            "time": 1652,
+            "type": "scalar_value",
+            "value": 0.000117908225
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 1655,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
-            "object_id": 1043,
+            "object_id": 1022,
             "outputs": [
-                1047
+                1026
             ],
             "pattern": "MapReduce",
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 1555,
-            "threads": 4,
+            "start": 1580,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
-            "object_id": 1047,
+            "object_id": 1026,
             "region": "Round",
-            "time": 1579,
+            "time": 1663,
             "type": "scalar_value",
-            "value": 3.3940444e-07
+            "value": 4.60579e-07
         },
         {
-            "data_file": "snapshots/x@5.txt",
-            "end": 1652,
+            "data_file": "snap/x@2.txt",
+            "end": 1775,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 1580,
+            "start": 1665,
             "type": "snapshot"
         },
         {
@@ -733,7 +364,7 @@
                 1002,
                 1003
             ],
-            "end": 1733,
+            "end": 1878,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -747,8 +378,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 1653,
-            "threads": 4,
+            "start": 1776,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -756,13 +387,382 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 1735,
+            "time": 1879,
+            "type": "region"
+        },
+        {
+            "object_id": 1031,
+            "region": "Round",
+            "time": 1948,
+            "type": "scalar_value",
+            "value": -2092.3965
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 1950,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1028,
+            "outputs": [
+                1031
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 1880,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1031,
+            "region": "Round",
+            "time": 1958,
+            "type": "scalar_value",
+            "value": -8.173424
+        },
+        {
+            "object_id": 1033,
+            "region": "Round",
+            "time": 2029,
+            "type": "scalar_value",
+            "value": 0.00020214816
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 2030,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1029,
+            "outputs": [
+                1033
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 1959,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1033,
+            "region": "Round",
+            "time": 2042,
+            "type": "scalar_value",
+            "value": 7.8964126e-07
+        },
+        {
+            "data_file": "snap/x@3.txt",
+            "end": 2173,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 2044,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 2274,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 2174,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 2275,
+            "type": "region"
+        },
+        {
+            "object_id": 1038,
+            "region": "Round",
+            "time": 2346,
+            "type": "scalar_value",
+            "value": -1908.9125
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 2347,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1035,
+            "outputs": [
+                1038
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 2276,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1038,
+            "region": "Round",
+            "time": 2352,
+            "type": "scalar_value",
+            "value": -7.4566894
+        },
+        {
+            "object_id": 1040,
+            "region": "Round",
+            "time": 2451,
+            "type": "scalar_value",
+            "value": 0.00016629853
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 2452,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1036,
+            "outputs": [
+                1040
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 2352,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1040,
+            "region": "Round",
+            "time": 2458,
+            "type": "scalar_value",
+            "value": 6.4960363e-07
+        },
+        {
+            "data_file": "snap/x@4.txt",
+            "end": 2550,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 2460,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 2666,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 2550,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 2667,
+            "type": "region"
+        },
+        {
+            "object_id": 1045,
+            "region": "Round",
+            "time": 2751,
+            "type": "scalar_value",
+            "value": -2583.2168
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 2752,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1042,
+            "outputs": [
+                1045
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 2668,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1045,
+            "region": "Round",
+            "time": 2757,
+            "type": "scalar_value",
+            "value": -10.090691
+        },
+        {
+            "object_id": 1047,
+            "region": "Round",
+            "time": 2834,
+            "type": "scalar_value",
+            "value": 8.6887085e-05
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 2836,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1043,
+            "outputs": [
+                1047
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 2758,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1047,
+            "region": "Round",
+            "time": 2846,
+            "type": "scalar_value",
+            "value": 3.3940267e-07
+        },
+        {
+            "data_file": "snap/x@5.txt",
+            "end": 2938,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 2851,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 3051,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 2938,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 3051,
             "type": "region"
         },
         {
             "object_id": 1052,
             "region": "Round",
-            "time": 1756,
+            "time": 3126,
             "type": "scalar_value",
             "value": -1667.07
         },
@@ -774,7 +774,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 1757,
+            "end": 3126,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -786,23 +786,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 1735,
-            "threads": 4,
+            "start": 3052,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1052,
             "region": "Round",
-            "time": 1762,
+            "time": 3131,
             "type": "scalar_value",
             "value": -6.511992
         },
         {
             "object_id": 1054,
             "region": "Round",
-            "time": 1782,
+            "time": 3196,
             "type": "scalar_value",
-            "value": 0.00013340575
+            "value": 0.00013340577
         },
         {
             "backend": "OpenMP",
@@ -812,7 +812,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 1783,
+            "end": 3197,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -824,26 +824,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 1763,
-            "threads": 4,
+            "start": 3132,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1054,
             "region": "Round",
-            "time": 1792,
+            "time": 3203,
             "type": "scalar_value",
-            "value": 5.211162e-07
+            "value": 5.211163e-07
         },
         {
-            "data_file": "snapshots/x@6.txt",
-            "end": 1875,
+            "data_file": "snap/x@6.txt",
+            "end": 3296,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 1793,
+            "start": 3204,
             "type": "snapshot"
         },
         {
@@ -856,7 +856,7 @@
                 1002,
                 1003
             ],
-            "end": 1970,
+            "end": 3400,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -870,8 +870,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 1876,
-            "threads": 4,
+            "start": 3296,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -879,15 +879,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 1971,
+            "time": 3401,
             "type": "region"
         },
         {
             "object_id": 1059,
             "region": "Round",
-            "time": 1988,
+            "time": 3482,
             "type": "scalar_value",
-            "value": -2494.058
+            "value": -2494.0576
         },
         {
             "backend": "OpenMP",
@@ -897,7 +897,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 1989,
+            "end": 3482,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -909,23 +909,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 1972,
-            "threads": 4,
+            "start": 3402,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1059,
             "region": "Round",
-            "time": 1994,
+            "time": 3486,
             "type": "scalar_value",
-            "value": -9.742414
+            "value": -9.742413
         },
         {
             "object_id": 1061,
             "region": "Round",
-            "time": 2016,
+            "time": 3563,
             "type": "scalar_value",
-            "value": 0.00066888524
+            "value": 0.0006688843
         },
         {
             "backend": "OpenMP",
@@ -935,7 +935,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 2017,
+            "end": 3565,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -947,26 +947,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 1994,
-            "threads": 4,
+            "start": 3486,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1061,
             "region": "Round",
-            "time": 2024,
+            "time": 3574,
             "type": "scalar_value",
-            "value": 2.612833e-06
+            "value": 2.6128293e-06
         },
         {
-            "data_file": "snapshots/x@7.txt",
-            "end": 2099,
+            "data_file": "snap/x@7.txt",
+            "end": 3701,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 2025,
+            "start": 3577,
             "type": "snapshot"
         },
         {
@@ -979,7 +979,7 @@
                 1002,
                 1003
             ],
-            "end": 2188,
+            "end": 3808,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -993,8 +993,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 2099,
-            "threads": 4,
+            "start": 3705,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -1002,15 +1002,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 2189,
+            "time": 3809,
             "type": "region"
         },
         {
             "object_id": 1066,
             "region": "Round",
-            "time": 2208,
+            "time": 3900,
             "type": "scalar_value",
-            "value": -1962.0142
+            "value": -1962.0146
         },
         {
             "backend": "OpenMP",
@@ -1020,7 +1020,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 2209,
+            "end": 3901,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -1032,23 +1032,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 2189,
-            "threads": 4,
+            "start": 3809,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1066,
             "region": "Round",
-            "time": 2214,
+            "time": 3904,
             "type": "scalar_value",
-            "value": -7.664118
+            "value": -7.6641197
         },
         {
             "object_id": 1068,
             "region": "Round",
-            "time": 2232,
+            "time": 3980,
             "type": "scalar_value",
-            "value": 0.0009841431999999999
+            "value": 0.000984143
         },
         {
             "backend": "OpenMP",
@@ -1058,7 +1058,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 2233,
+            "end": 3981,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -1070,26 +1070,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 2214,
-            "threads": 4,
+            "start": 3905,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1068,
             "region": "Round",
-            "time": 2242,
+            "time": 3989,
             "type": "scalar_value",
-            "value": 3.8443095e-06
+            "value": 3.8443086e-06
         },
         {
-            "data_file": "snapshots/x@8.txt",
-            "end": 2343,
+            "data_file": "snap/x@8.txt",
+            "end": 4090,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 2244,
+            "start": 3990,
             "type": "snapshot"
         },
         {
@@ -1102,7 +1102,7 @@
                 1002,
                 1003
             ],
-            "end": 2435,
+            "end": 4194,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -1116,8 +1116,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 2344,
-            "threads": 4,
+            "start": 4096,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -1125,15 +1125,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 2435,
+            "time": 4195,
             "type": "region"
         },
         {
             "object_id": 1073,
             "region": "Round",
-            "time": 2456,
+            "time": 4274,
             "type": "scalar_value",
-            "value": -1795.2922
+            "value": -1795.2921
         },
         {
             "backend": "OpenMP",
@@ -1143,7 +1143,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 2457,
+            "end": 4275,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -1155,23 +1155,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 2436,
-            "threads": 4,
+            "start": 4196,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1073,
             "region": "Round",
-            "time": 2462,
+            "time": 4280,
             "type": "scalar_value",
-            "value": -7.0128603
+            "value": -7.01286
         },
         {
             "object_id": 1075,
             "region": "Round",
-            "time": 2481,
+            "time": 4357,
             "type": "scalar_value",
-            "value": 0.00082029175
+            "value": 0.0008202918
         },
         {
             "backend": "OpenMP",
@@ -1181,7 +1181,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 2482,
+            "end": 4358,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -1193,26 +1193,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 2463,
-            "threads": 4,
+            "start": 4280,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1075,
             "region": "Round",
-            "time": 2489,
+            "time": 4365,
             "type": "scalar_value",
-            "value": 3.2042647e-06
+            "value": 3.2042649e-06
         },
         {
-            "data_file": "snapshots/x@9.txt",
-            "end": 2563,
+            "data_file": "snap/x@9.txt",
+            "end": 4455,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 2490,
+            "start": 4366,
             "type": "snapshot"
         },
         {
@@ -1225,7 +1225,7 @@
                 1002,
                 1003
             ],
-            "end": 2657,
+            "end": 4573,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -1239,8 +1239,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 2563,
-            "threads": 4,
+            "start": 4456,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -1248,15 +1248,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 2658,
+            "time": 4574,
             "type": "region"
         },
         {
             "object_id": 1080,
             "region": "Round",
-            "time": 2677,
+            "time": 4649,
             "type": "scalar_value",
-            "value": -2555.1877
+            "value": -2555.1875
         },
         {
             "backend": "OpenMP",
@@ -1266,7 +1266,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 2678,
+            "end": 4651,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -1278,23 +1278,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 2658,
-            "threads": 4,
+            "start": 4575,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1080,
             "region": "Round",
-            "time": 2682,
+            "time": 4656,
             "type": "scalar_value",
-            "value": -9.981202
+            "value": -9.981201
         },
         {
             "object_id": 1082,
             "region": "Round",
-            "time": 2703,
+            "time": 4730,
             "type": "scalar_value",
-            "value": 0.0023920033
+            "value": 0.002392003
         },
         {
             "backend": "OpenMP",
@@ -1304,7 +1304,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 2704,
+            "end": 4731,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -1316,26 +1316,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 2683,
-            "threads": 4,
+            "start": 4657,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1082,
             "region": "Round",
-            "time": 2712,
+            "time": 4738,
             "type": "scalar_value",
-            "value": 9.343763e-06
+            "value": 9.343762e-06
         },
         {
-            "data_file": "snapshots/x@10.txt",
-            "end": 2795,
+            "data_file": "snap/x@10.txt",
+            "end": 4845,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 2713,
+            "start": 4739,
             "type": "snapshot"
         },
         {
@@ -1348,7 +1348,7 @@
                 1002,
                 1003
             ],
-            "end": 2891,
+            "end": 4947,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -1362,8 +1362,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 2796,
-            "threads": 4,
+            "start": 4846,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -1371,13 +1371,13 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 2892,
+            "time": 4951,
             "type": "region"
         },
         {
             "object_id": 1087,
             "region": "Round",
-            "time": 2916,
+            "time": 5035,
             "type": "scalar_value",
             "value": -1255.1263
         },
@@ -1389,7 +1389,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 2917,
+            "end": 5036,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -1401,21 +1401,21 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 2892,
-            "threads": 4,
+            "start": 4951,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1087,
             "region": "Round",
-            "time": 2921,
+            "time": 5041,
             "type": "scalar_value",
             "value": -4.9028373
         },
         {
             "object_id": 1089,
             "region": "Round",
-            "time": 2942,
+            "time": 5123,
             "type": "scalar_value",
             "value": 0.00013358882
         },
@@ -1427,7 +1427,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 2943,
+            "end": 5124,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -1439,26 +1439,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 2921,
-            "threads": 4,
+            "start": 5042,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1089,
             "region": "Round",
-            "time": 2949,
+            "time": 5129,
             "type": "scalar_value",
             "value": 5.2183134e-07
         },
         {
-            "data_file": "snapshots/x@11.txt",
-            "end": 3021,
+            "data_file": "snap/x@11.txt",
+            "end": 5221,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 2950,
+            "start": 5131,
             "type": "snapshot"
         },
         {
@@ -1471,7 +1471,7 @@
                 1002,
                 1003
             ],
-            "end": 3119,
+            "end": 5321,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -1485,8 +1485,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 3021,
-            "threads": 4,
+            "start": 5222,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -1494,15 +1494,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 3121,
+            "time": 5323,
             "type": "region"
         },
         {
             "object_id": 1094,
             "region": "Round",
-            "time": 3147,
+            "time": 5388,
             "type": "scalar_value",
-            "value": -2985.567
+            "value": -2985.5667
         },
         {
             "backend": "OpenMP",
@@ -1512,7 +1512,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 3148,
+            "end": 5389,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -1524,23 +1524,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 3122,
-            "threads": 4,
+            "start": 5323,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1094,
             "region": "Round",
-            "time": 3154,
+            "time": 5394,
             "type": "scalar_value",
-            "value": -11.662371
+            "value": -11.66237
         },
         {
             "object_id": 1096,
             "region": "Round",
-            "time": 3180,
+            "time": 5475,
             "type": "scalar_value",
-            "value": 0.0073874057
+            "value": 0.0073874067
         },
         {
             "backend": "OpenMP",
@@ -1550,7 +1550,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 3182,
+            "end": 5477,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -1562,26 +1562,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 3155,
-            "threads": 4,
+            "start": 5395,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1096,
             "region": "Round",
-            "time": 3195,
+            "time": 5491,
             "type": "scalar_value",
-            "value": 2.8857054e-05
+            "value": 2.8857057e-05
         },
         {
-            "data_file": "snapshots/x@12.txt",
-            "end": 3313,
+            "data_file": "snap/x@12.txt",
+            "end": 5652,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 3197,
+            "start": 5496,
             "type": "snapshot"
         },
         {
@@ -1594,7 +1594,7 @@
                 1002,
                 1003
             ],
-            "end": 3408,
+            "end": 5778,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -1608,8 +1608,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 3315,
-            "threads": 4,
+            "start": 5653,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -1617,15 +1617,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 3409,
+            "time": 5779,
             "type": "region"
         },
         {
             "object_id": 1101,
             "region": "Round",
-            "time": 3428,
+            "time": 5854,
             "type": "scalar_value",
-            "value": -855.96594
+            "value": -855.9659
         },
         {
             "backend": "OpenMP",
@@ -1635,7 +1635,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 3429,
+            "end": 5855,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -1647,21 +1647,21 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 3409,
-            "threads": 4,
+            "start": 5779,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1101,
             "region": "Round",
-            "time": 3433,
+            "time": 5859,
             "type": "scalar_value",
-            "value": -3.343617
+            "value": -3.3436167
         },
         {
             "object_id": 1103,
             "region": "Round",
-            "time": 3452,
+            "time": 5944,
             "type": "scalar_value",
             "value": 0.00034015713
         },
@@ -1673,7 +1673,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 3453,
+            "end": 5945,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -1685,26 +1685,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 3434,
-            "threads": 4,
+            "start": 5859,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1103,
             "region": "Round",
-            "time": 3460,
+            "time": 5951,
             "type": "scalar_value",
             "value": 1.3287388e-06
         },
         {
-            "data_file": "snapshots/x@13.txt",
-            "end": 3540,
+            "data_file": "snap/x@13.txt",
+            "end": 6049,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 3461,
+            "start": 5953,
             "type": "snapshot"
         },
         {
@@ -1717,7 +1717,7 @@
                 1002,
                 1003
             ],
-            "end": 3625,
+            "end": 6156,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -1731,8 +1731,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 3540,
-            "threads": 4,
+            "start": 6050,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -1740,15 +1740,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 3625,
+            "time": 6157,
             "type": "region"
         },
         {
             "object_id": 1108,
             "region": "Round",
-            "time": 3643,
+            "time": 6246,
             "type": "scalar_value",
-            "value": -1467.596
+            "value": -1467.5961
         },
         {
             "backend": "OpenMP",
@@ -1758,7 +1758,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 3644,
+            "end": 6247,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -1770,21 +1770,21 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 3625,
-            "threads": 4,
+            "start": 6157,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1108,
             "region": "Round",
-            "time": 3649,
+            "time": 6251,
             "type": "scalar_value",
-            "value": -5.7327967
+            "value": -5.732797
         },
         {
             "object_id": 1110,
             "region": "Round",
-            "time": 3673,
+            "time": 6330,
             "type": "scalar_value",
             "value": 0.27210492
         },
@@ -1796,7 +1796,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 3674,
+            "end": 6331,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -1808,1502 +1808,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 3650,
-            "threads": 4,
+            "start": 6252,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1110,
             "region": "Round",
-            "time": 3680,
+            "time": 6337,
             "type": "scalar_value",
             "value": 0.0010629098
         },
         {
-            "data_file": "snapshots/x@14.txt",
-            "end": 3747,
+            "data_file": "snap/x@14.txt",
+            "end": 6428,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 3681,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 3831,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 3748,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 3832,
-            "type": "region"
-        },
-        {
-            "object_id": 1115,
-            "region": "Round",
-            "time": 3852,
-            "type": "scalar_value",
-            "value": 2240.107
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 3853,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1112,
-            "outputs": [
-                1115
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 3832,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1115,
-            "region": "Round",
-            "time": 3856,
-            "type": "scalar_value",
-            "value": 8.750418
-        },
-        {
-            "object_id": 1117,
-            "region": "Round",
-            "time": 3875,
-            "type": "scalar_value",
-            "value": 16.57351
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 3876,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1113,
-            "outputs": [
-                1117
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 3857,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1117,
-            "region": "Round",
-            "time": 3882,
-            "type": "scalar_value",
-            "value": 0.06474027
-        },
-        {
-            "data_file": "snapshots/x@15.txt",
-            "end": 3959,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 3883,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 4042,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 3959,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 4043,
-            "type": "region"
-        },
-        {
-            "object_id": 1122,
-            "region": "Round",
-            "time": 4061,
-            "type": "scalar_value",
-            "value": -1122.738
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 4061,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1119,
-            "outputs": [
-                1122
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 4043,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1122,
-            "region": "Round",
-            "time": 4065,
-            "type": "scalar_value",
-            "value": -4.3856955
-        },
-        {
-            "object_id": 1124,
-            "region": "Round",
-            "time": 4083,
-            "type": "scalar_value",
-            "value": 2.0982397
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 4083,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1120,
-            "outputs": [
-                1124
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 4065,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1124,
-            "region": "Round",
-            "time": 4089,
-            "type": "scalar_value",
-            "value": 0.008196249
-        },
-        {
-            "data_file": "snapshots/x@16.txt",
-            "end": 4158,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 4090,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 4240,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 4158,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 4240,
-            "type": "region"
-        },
-        {
-            "object_id": 1129,
-            "region": "Round",
-            "time": 4258,
-            "type": "scalar_value",
-            "value": -1681.7861
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 4259,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1126,
-            "outputs": [
-                1129
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 4241,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1129,
-            "region": "Round",
-            "time": 4262,
-            "type": "scalar_value",
-            "value": -6.569477
-        },
-        {
-            "object_id": 1131,
-            "region": "Round",
-            "time": 4280,
-            "type": "scalar_value",
-            "value": 10.543194
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 4281,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1127,
-            "outputs": [
-                1131
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 4263,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1131,
-            "region": "Round",
-            "time": 4292,
-            "type": "scalar_value",
-            "value": 0.04118435
-        },
-        {
-            "data_file": "snapshots/x@17.txt",
-            "end": 4371,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 4293,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 4456,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 4372,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 4457,
-            "type": "region"
-        },
-        {
-            "object_id": 1136,
-            "region": "Round",
-            "time": 4481,
-            "type": "scalar_value",
-            "value": -3879.9724
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 4482,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1133,
-            "outputs": [
-                1136
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 4457,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1136,
-            "region": "Round",
-            "time": 4486,
-            "type": "scalar_value",
-            "value": -15.156142
-        },
-        {
-            "object_id": 1138,
-            "region": "Round",
-            "time": 4508,
-            "type": "scalar_value",
-            "value": 141.00415
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 4509,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1134,
-            "outputs": [
-                1138
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 4486,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1138,
-            "region": "Round",
-            "time": 4515,
-            "type": "scalar_value",
-            "value": 0.55079746
-        },
-        {
-            "data_file": "snapshots/x@18.txt",
-            "end": 4600,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 4517,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 4685,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 4600,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 4686,
-            "type": "region"
-        },
-        {
-            "object_id": 1143,
-            "region": "Round",
-            "time": 4704,
-            "type": "scalar_value",
-            "value": 230.505
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 4705,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1140,
-            "outputs": [
-                1143
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 4686,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1143,
-            "region": "Round",
-            "time": 4708,
-            "type": "scalar_value",
-            "value": 0.9004102
-        },
-        {
-            "object_id": 1145,
-            "region": "Round",
-            "time": 4726,
-            "type": "scalar_value",
-            "value": 54.88105
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 4727,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1141,
-            "outputs": [
-                1145
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 4709,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1145,
-            "region": "Round",
-            "time": 4733,
-            "type": "scalar_value",
-            "value": 0.2143791
-        },
-        {
-            "data_file": "snapshots/x@19.txt",
-            "end": 4815,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 4734,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 4902,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 4815,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 4902,
-            "type": "region"
-        },
-        {
-            "object_id": 1150,
-            "region": "Round",
-            "time": 4920,
-            "type": "scalar_value",
-            "value": 236.87799
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 4921,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1147,
-            "outputs": [
-                1150
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 4902,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1150,
-            "region": "Round",
-            "time": 4924,
-            "type": "scalar_value",
-            "value": 0.92530465
-        },
-        {
-            "object_id": 1152,
-            "region": "Round",
-            "time": 4943,
-            "type": "scalar_value",
-            "value": 2945.9868
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 4944,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1148,
-            "outputs": [
-                1152
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 4925,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1152,
-            "region": "Round",
-            "time": 4950,
-            "type": "scalar_value",
-            "value": 11.507761
-        },
-        {
-            "data_file": "snapshots/x@20.txt",
-            "end": 5026,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 4951,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 5107,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 5026,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 5110,
-            "type": "region"
-        },
-        {
-            "object_id": 1157,
-            "region": "Round",
-            "time": 5131,
-            "type": "scalar_value",
-            "value": 249.06668
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 5132,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1154,
-            "outputs": [
-                1157
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 5111,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1157,
-            "region": "Round",
-            "time": 5136,
-            "type": "scalar_value",
-            "value": 0.9729167
-        },
-        {
-            "object_id": 1159,
-            "region": "Round",
-            "time": 5155,
-            "type": "scalar_value",
-            "value": 38775.105
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 5156,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1155,
-            "outputs": [
-                1159
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 5136,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1159,
-            "region": "Round",
-            "time": 5164,
-            "type": "scalar_value",
-            "value": 151.46526
-        },
-        {
-            "data_file": "snapshots/x@21.txt",
-            "end": 5249,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 5165,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 5334,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 5250,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 5335,
-            "type": "region"
-        },
-        {
-            "object_id": 1164,
-            "region": "Round",
-            "time": 5353,
-            "type": "scalar_value",
-            "value": -269.78024
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 5354,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1161,
-            "outputs": [
-                1164
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 5336,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1164,
-            "region": "Round",
-            "time": 5358,
-            "type": "scalar_value",
-            "value": -1.0538291
-        },
-        {
-            "object_id": 1166,
-            "region": "Round",
-            "time": 5379,
-            "type": "scalar_value",
-            "value": 10737.772
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 5380,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1162,
-            "outputs": [
-                1166
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 5359,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1166,
-            "region": "Round",
-            "time": 5386,
-            "type": "scalar_value",
-            "value": 41.944424
-        },
-        {
-            "data_file": "snapshots/x@22.txt",
-            "end": 5468,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 5387,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 5550,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 5469,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 5550,
-            "type": "region"
-        },
-        {
-            "object_id": 1171,
-            "region": "Round",
-            "time": 5569,
-            "type": "scalar_value",
-            "value": -74.68112
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 5569,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1168,
-            "outputs": [
-                1171
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 5551,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1171,
-            "region": "Round",
-            "time": 5573,
-            "type": "scalar_value",
-            "value": -0.29172313
-        },
-        {
-            "object_id": 1173,
-            "region": "Round",
-            "time": 5592,
-            "type": "scalar_value",
-            "value": 6378.4316
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 5593,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1169,
-            "outputs": [
-                1173
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 5574,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1173,
-            "region": "Round",
-            "time": 5600,
-            "type": "scalar_value",
-            "value": 24.915749
-        },
-        {
-            "data_file": "snapshots/x@23.txt",
-            "end": 5696,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 5601,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 5843,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 5697,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 5844,
-            "type": "region"
-        },
-        {
-            "object_id": 1178,
-            "region": "Round",
-            "time": 5863,
-            "type": "scalar_value",
-            "value": -19.844418
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 5864,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1175,
-            "outputs": [
-                1178
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 5844,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1178,
-            "region": "Round",
-            "time": 5870,
-            "type": "scalar_value",
-            "value": -0.077517256
-        },
-        {
-            "object_id": 1180,
-            "region": "Round",
-            "time": 5890,
-            "type": "scalar_value",
-            "value": 27861.766
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 5891,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1176,
-            "outputs": [
-                1180
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 5871,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1180,
-            "region": "Round",
-            "time": 5898,
-            "type": "scalar_value",
-            "value": 108.83502
-        },
-        {
-            "data_file": "snapshots/x@24.txt",
-            "end": 6003,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 5900,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 6090,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 6003,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 6090,
-            "type": "region"
-        },
-        {
-            "object_id": 1185,
-            "region": "Round",
-            "time": 6110,
-            "type": "scalar_value",
-            "value": -5.704426
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 6111,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1182,
-            "outputs": [
-                1185
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 6093,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1185,
-            "region": "Round",
-            "time": 6115,
-            "type": "scalar_value",
-            "value": -0.022282913
-        },
-        {
-            "object_id": 1187,
-            "region": "Round",
-            "time": 6134,
-            "type": "scalar_value",
-            "value": 15787.344
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 6135,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1183,
-            "outputs": [
-                1187
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 6116,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1187,
-            "region": "Round",
-            "time": 6141,
-            "type": "scalar_value",
-            "value": 61.66931
-        },
-        {
-            "data_file": "snapshots/x@25.txt",
-            "end": 6227,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 6143,
-            "type": "snapshot"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "end": 6308,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "RK4",
-            "line": 125,
-            "object_id": 1000,
-            "outputs": [
-                1001,
-                1002,
-                1003
-            ],
-            "pattern": "Map",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 6227,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "Round",
-            "line": 118,
-            "region_depth": 1,
-            "time": 6308,
-            "type": "region"
-        },
-        {
-            "object_id": 1192,
-            "region": "Round",
-            "time": 6327,
-            "type": "scalar_value",
-            "value": 132.0971
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 6328,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum",
-            "line": 99,
-            "object_id": 1189,
-            "outputs": [
-                1192
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 6309,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1192,
-            "region": "Round",
-            "time": 6335,
-            "type": "scalar_value",
-            "value": 0.5160043
-        },
-        {
-            "object_id": 1194,
-            "region": "Round",
-            "time": 6359,
-            "type": "scalar_value",
-            "value": 8468.542
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                256
-            ],
-            "elwise_inputs": [
-                1001
-            ],
-            "end": 6360,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "sum of squared deviations",
-            "line": 100,
-            "object_id": 1190,
-            "outputs": [
-                1194
-            ],
-            "pattern": "MapReduce",
-            "proxy_inputs": [],
-            "region": "Round",
-            "scalar_inputs": [],
-            "start": 6336,
-            "threads": 4,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1194,
-            "region": "Round",
-            "time": 6367,
-            "type": "scalar_value",
-            "value": 33.080242
-        },
-        {
-            "data_file": "snapshots/x@26.txt",
-            "end": 6450,
-            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
-            "label": "x",
-            "line": 122,
-            "object_id": 1001,
-            "region": "Round",
-            "start": 6368,
+            "start": 6338,
             "type": "snapshot"
         },
         {
@@ -3330,8 +1854,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 6450,
-            "threads": 4,
+            "start": 6428,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -3339,15 +1863,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 6534,
+            "time": 6535,
             "type": "region"
         },
         {
-            "object_id": 1199,
+            "object_id": 1115,
             "region": "Round",
-            "time": 6557,
+            "time": 6607,
             "type": "scalar_value",
-            "value": 93.84813
+            "value": 2240.1074
         },
         {
             "backend": "OpenMP",
@@ -3357,7 +1881,1483 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 6557,
+            "end": 6608,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1112,
+            "outputs": [
+                1115
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 6535,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1115,
+            "region": "Round",
+            "time": 6612,
+            "type": "scalar_value",
+            "value": 8.75042
+        },
+        {
+            "object_id": 1117,
+            "region": "Round",
+            "time": 6684,
+            "type": "scalar_value",
+            "value": 16.573511
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 6685,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1113,
+            "outputs": [
+                1117
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 6612,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1117,
+            "region": "Round",
+            "time": 6691,
+            "type": "scalar_value",
+            "value": 0.06474028
+        },
+        {
+            "data_file": "snap/x@15.txt",
+            "end": 6773,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 6692,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 6885,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 6773,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 6885,
+            "type": "region"
+        },
+        {
+            "object_id": 1122,
+            "region": "Round",
+            "time": 6970,
+            "type": "scalar_value",
+            "value": -1122.738
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 6971,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1119,
+            "outputs": [
+                1122
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 6886,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1122,
+            "region": "Round",
+            "time": 6975,
+            "type": "scalar_value",
+            "value": -4.3856955
+        },
+        {
+            "object_id": 1124,
+            "region": "Round",
+            "time": 7044,
+            "type": "scalar_value",
+            "value": 2.0982397
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 7045,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1120,
+            "outputs": [
+                1124
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 6976,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1124,
+            "region": "Round",
+            "time": 7050,
+            "type": "scalar_value",
+            "value": 0.008196249
+        },
+        {
+            "data_file": "snap/x@16.txt",
+            "end": 7134,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 7051,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 7235,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 7134,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 7236,
+            "type": "region"
+        },
+        {
+            "object_id": 1129,
+            "region": "Round",
+            "time": 7300,
+            "type": "scalar_value",
+            "value": -1681.7861
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 7301,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1126,
+            "outputs": [
+                1129
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 7236,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1129,
+            "region": "Round",
+            "time": 7309,
+            "type": "scalar_value",
+            "value": -6.569477
+        },
+        {
+            "object_id": 1131,
+            "region": "Round",
+            "time": 7390,
+            "type": "scalar_value",
+            "value": 10.543193
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 7390,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1127,
+            "outputs": [
+                1131
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 7309,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1131,
+            "region": "Round",
+            "time": 7397,
+            "type": "scalar_value",
+            "value": 0.041184347
+        },
+        {
+            "data_file": "snap/x@17.txt",
+            "end": 7483,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 7398,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 7607,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 7486,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 7608,
+            "type": "region"
+        },
+        {
+            "object_id": 1136,
+            "region": "Round",
+            "time": 7694,
+            "type": "scalar_value",
+            "value": -3879.9724
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 7695,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1133,
+            "outputs": [
+                1136
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 7608,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1136,
+            "region": "Round",
+            "time": 7698,
+            "type": "scalar_value",
+            "value": -15.156142
+        },
+        {
+            "object_id": 1138,
+            "region": "Round",
+            "time": 7786,
+            "type": "scalar_value",
+            "value": 141.00415
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 7787,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1134,
+            "outputs": [
+                1138
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 7699,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1138,
+            "region": "Round",
+            "time": 7794,
+            "type": "scalar_value",
+            "value": 0.55079746
+        },
+        {
+            "data_file": "snap/x@18.txt",
+            "end": 7877,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 7795,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 7996,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 7877,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 7997,
+            "type": "region"
+        },
+        {
+            "object_id": 1143,
+            "region": "Round",
+            "time": 8077,
+            "type": "scalar_value",
+            "value": 230.50499
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 8078,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1140,
+            "outputs": [
+                1143
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 7997,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1143,
+            "region": "Round",
+            "time": 8084,
+            "type": "scalar_value",
+            "value": 0.9004101
+        },
+        {
+            "object_id": 1145,
+            "region": "Round",
+            "time": 8166,
+            "type": "scalar_value",
+            "value": 54.881054
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 8167,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1141,
+            "outputs": [
+                1145
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 8084,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1145,
+            "region": "Round",
+            "time": 8177,
+            "type": "scalar_value",
+            "value": 0.21437912
+        },
+        {
+            "data_file": "snap/x@19.txt",
+            "end": 8266,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 8179,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 8377,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 8266,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 8378,
+            "type": "region"
+        },
+        {
+            "object_id": 1150,
+            "region": "Round",
+            "time": 8462,
+            "type": "scalar_value",
+            "value": 236.87802
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 8463,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1147,
+            "outputs": [
+                1150
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 8379,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1150,
+            "region": "Round",
+            "time": 8467,
+            "type": "scalar_value",
+            "value": 0.9253048
+        },
+        {
+            "object_id": 1152,
+            "region": "Round",
+            "time": 8542,
+            "type": "scalar_value",
+            "value": 2945.9868
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 8542,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1148,
+            "outputs": [
+                1152
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 8467,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1152,
+            "region": "Round",
+            "time": 8548,
+            "type": "scalar_value",
+            "value": 11.507761
+        },
+        {
+            "data_file": "snap/x@20.txt",
+            "end": 8628,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 8550,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 8744,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 8629,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 8744,
+            "type": "region"
+        },
+        {
+            "object_id": 1157,
+            "region": "Round",
+            "time": 8826,
+            "type": "scalar_value",
+            "value": 249.06668
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 8827,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1154,
+            "outputs": [
+                1157
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 8745,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1157,
+            "region": "Round",
+            "time": 8830,
+            "type": "scalar_value",
+            "value": 0.9729167
+        },
+        {
+            "object_id": 1159,
+            "region": "Round",
+            "time": 8915,
+            "type": "scalar_value",
+            "value": 38775.11
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 8916,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1155,
+            "outputs": [
+                1159
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 8831,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1159,
+            "region": "Round",
+            "time": 8922,
+            "type": "scalar_value",
+            "value": 151.46527
+        },
+        {
+            "data_file": "snap/x@21.txt",
+            "end": 8997,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 8923,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 9112,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 8998,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 9113,
+            "type": "region"
+        },
+        {
+            "object_id": 1164,
+            "region": "Round",
+            "time": 9192,
+            "type": "scalar_value",
+            "value": -269.78024
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 9193,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1161,
+            "outputs": [
+                1164
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 9115,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1164,
+            "region": "Round",
+            "time": 9196,
+            "type": "scalar_value",
+            "value": -1.0538291
+        },
+        {
+            "object_id": 1166,
+            "region": "Round",
+            "time": 9289,
+            "type": "scalar_value",
+            "value": 10737.773
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 9292,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1162,
+            "outputs": [
+                1166
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 9197,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1166,
+            "region": "Round",
+            "time": 9298,
+            "type": "scalar_value",
+            "value": 41.944427
+        },
+        {
+            "data_file": "snap/x@22.txt",
+            "end": 9392,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 9299,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 9507,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 9392,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 9508,
+            "type": "region"
+        },
+        {
+            "object_id": 1171,
+            "region": "Round",
+            "time": 9580,
+            "type": "scalar_value",
+            "value": -74.68112
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 9581,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1168,
+            "outputs": [
+                1171
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 9508,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1171,
+            "region": "Round",
+            "time": 9585,
+            "type": "scalar_value",
+            "value": -0.29172313
+        },
+        {
+            "object_id": 1173,
+            "region": "Round",
+            "time": 9668,
+            "type": "scalar_value",
+            "value": 6378.4316
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 9669,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1169,
+            "outputs": [
+                1173
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 9586,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1173,
+            "region": "Round",
+            "time": 9675,
+            "type": "scalar_value",
+            "value": 24.915749
+        },
+        {
+            "data_file": "snap/x@23.txt",
+            "end": 9765,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 9676,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 9887,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 9766,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 9888,
+            "type": "region"
+        },
+        {
+            "object_id": 1178,
+            "region": "Round",
+            "time": 9970,
+            "type": "scalar_value",
+            "value": -19.84441
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 9971,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1175,
+            "outputs": [
+                1178
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 9888,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1178,
+            "region": "Round",
+            "time": 9975,
+            "type": "scalar_value",
+            "value": -0.07751723
+        },
+        {
+            "object_id": 1180,
+            "region": "Round",
+            "time": 10048,
+            "type": "scalar_value",
+            "value": 27861.764
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 10049,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1176,
+            "outputs": [
+                1180
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 9975,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1180,
+            "region": "Round",
+            "time": 10055,
+            "type": "scalar_value",
+            "value": 108.835014
+        },
+        {
+            "data_file": "snap/x@24.txt",
+            "end": 10140,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 10056,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 10244,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 10141,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 10244,
+            "type": "region"
+        },
+        {
+            "object_id": 1185,
+            "region": "Round",
+            "time": 10305,
+            "type": "scalar_value",
+            "value": -5.704434
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 10306,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1182,
+            "outputs": [
+                1185
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 10245,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1185,
+            "region": "Round",
+            "time": 10310,
+            "type": "scalar_value",
+            "value": -0.022282945
+        },
+        {
+            "object_id": 1187,
+            "region": "Round",
+            "time": 10412,
+            "type": "scalar_value",
+            "value": 15787.342
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 10413,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1183,
+            "outputs": [
+                1187
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 10310,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1187,
+            "region": "Round",
+            "time": 10423,
+            "type": "scalar_value",
+            "value": 61.669304
+        },
+        {
+            "data_file": "snap/x@25.txt",
+            "end": 10507,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 10424,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 10608,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 10510,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 10609,
+            "type": "region"
+        },
+        {
+            "object_id": 1192,
+            "region": "Round",
+            "time": 10679,
+            "type": "scalar_value",
+            "value": 132.0971
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 10680,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum",
+            "line": 99,
+            "object_id": 1189,
+            "outputs": [
+                1192
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 10609,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1192,
+            "region": "Round",
+            "time": 10686,
+            "type": "scalar_value",
+            "value": 0.5160043
+        },
+        {
+            "object_id": 1194,
+            "region": "Round",
+            "time": 10753,
+            "type": "scalar_value",
+            "value": 8468.543
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 10754,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "sum of squared deviations",
+            "line": 100,
+            "object_id": 1190,
+            "outputs": [
+                1194
+            ],
+            "pattern": "MapReduce",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 10687,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1194,
+            "region": "Round",
+            "time": 10760,
+            "type": "scalar_value",
+            "value": 33.080246
+        },
+        {
+            "data_file": "snap/x@26.txt",
+            "end": 10852,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "x",
+            "line": 122,
+            "object_id": 1001,
+            "region": "Round",
+            "start": 10761,
+            "type": "snapshot"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "end": 10970,
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "RK4",
+            "line": 125,
+            "object_id": 1000,
+            "outputs": [
+                1001,
+                1002,
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "region": "Round",
+            "scalar_inputs": [],
+            "start": 10855,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
+            "label": "Round",
+            "line": 118,
+            "region_depth": 1,
+            "time": 10971,
+            "type": "region"
+        },
+        {
+            "object_id": 1199,
+            "region": "Round",
+            "time": 11057,
+            "type": "scalar_value",
+            "value": 93.848145
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                256
+            ],
+            "elwise_inputs": [
+                1001
+            ],
+            "end": 11058,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -3369,23 +3369,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 6535,
-            "threads": 4,
+            "start": 10972,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1199,
             "region": "Round",
-            "time": 6561,
+            "time": 11062,
             "type": "scalar_value",
-            "value": 0.36659425
+            "value": 0.3665943
         },
         {
             "object_id": 1201,
             "region": "Round",
-            "time": 6581,
+            "time": 11131,
             "type": "scalar_value",
-            "value": 20162.973
+            "value": 20162.97
         },
         {
             "backend": "OpenMP",
@@ -3395,7 +3395,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 6582,
+            "end": 11132,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -3407,26 +3407,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 6562,
-            "threads": 4,
+            "start": 11063,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1201,
             "region": "Round",
-            "time": 6588,
+            "time": 11138,
             "type": "scalar_value",
-            "value": 78.76161
+            "value": 78.761604
         },
         {
-            "data_file": "snapshots/x@27.txt",
-            "end": 6682,
+            "data_file": "snap/x@27.txt",
+            "end": 11228,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 6589,
+            "start": 11142,
             "type": "snapshot"
         },
         {
@@ -3439,7 +3439,7 @@
                 1002,
                 1003
             ],
-            "end": 6765,
+            "end": 11329,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -3453,8 +3453,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 6682,
-            "threads": 4,
+            "start": 11229,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -3462,15 +3462,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 6766,
+            "time": 11329,
             "type": "region"
         },
         {
             "object_id": 1206,
             "region": "Round",
-            "time": 6788,
+            "time": 11398,
             "type": "scalar_value",
-            "value": 16.838963
+            "value": 16.838943
         },
         {
             "backend": "OpenMP",
@@ -3480,7 +3480,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 6788,
+            "end": 11399,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -3492,23 +3492,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 6766,
-            "threads": 4,
+            "start": 11330,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1206,
             "region": "Round",
-            "time": 6792,
+            "time": 11403,
             "type": "scalar_value",
-            "value": 0.0657772
+            "value": 0.06577712
         },
         {
             "object_id": 1208,
             "region": "Round",
-            "time": 6812,
+            "time": 11476,
             "type": "scalar_value",
-            "value": 17908.414
+            "value": 17908.416
         },
         {
             "backend": "OpenMP",
@@ -3518,7 +3518,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 6812,
+            "end": 11477,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -3530,26 +3530,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 6793,
-            "threads": 4,
+            "start": 11404,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1208,
             "region": "Round",
-            "time": 6819,
+            "time": 11484,
             "type": "scalar_value",
-            "value": 69.95474
+            "value": 69.95475
         },
         {
-            "data_file": "snapshots/x@28.txt",
-            "end": 6895,
+            "data_file": "snap/x@28.txt",
+            "end": 11597,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 6820,
+            "start": 11491,
             "type": "snapshot"
         },
         {
@@ -3562,7 +3562,7 @@
                 1002,
                 1003
             ],
-            "end": 6979,
+            "end": 11703,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -3576,8 +3576,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 6895,
-            "threads": 4,
+            "start": 11601,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -3585,15 +3585,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 6979,
+            "time": 11704,
             "type": "region"
         },
         {
             "object_id": 1213,
             "region": "Round",
-            "time": 6997,
+            "time": 11791,
             "type": "scalar_value",
-            "value": 4.3110065
+            "value": 4.3110075
         },
         {
             "backend": "OpenMP",
@@ -3603,7 +3603,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 6997,
+            "end": 11792,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -3615,21 +3615,21 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 6979,
-            "threads": 4,
+            "start": 11704,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1213,
             "region": "Round",
-            "time": 7005,
+            "time": 11795,
             "type": "scalar_value",
-            "value": 0.01683987
+            "value": 0.016839873
         },
         {
             "object_id": 1215,
             "region": "Round",
-            "time": 7023,
+            "time": 11875,
             "type": "scalar_value",
             "value": 9356.975
         },
@@ -3641,7 +3641,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 7024,
+            "end": 11876,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -3653,26 +3653,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 7006,
-            "threads": 4,
+            "start": 11796,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1215,
             "region": "Round",
-            "time": 7030,
+            "time": 11882,
             "type": "scalar_value",
             "value": 36.550682
         },
         {
-            "data_file": "snapshots/x@29.txt",
-            "end": 7108,
+            "data_file": "snap/x@29.txt",
+            "end": 11961,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 7031,
+            "start": 11883,
             "type": "snapshot"
         },
         {
@@ -3685,7 +3685,7 @@
                 1002,
                 1003
             ],
-            "end": 7191,
+            "end": 12062,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -3699,8 +3699,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 7109,
-            "threads": 4,
+            "start": 11962,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -3708,13 +3708,13 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 7191,
+            "time": 12063,
             "type": "region"
         },
         {
             "object_id": 1220,
             "region": "Round",
-            "time": 7209,
+            "time": 12154,
             "type": "scalar_value",
             "value": 80.19389
         },
@@ -3726,7 +3726,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 7210,
+            "end": 12154,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -3738,23 +3738,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 7191,
-            "threads": 4,
+            "start": 12064,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1220,
             "region": "Round",
-            "time": 7216,
+            "time": 12162,
             "type": "scalar_value",
             "value": 0.3132574
         },
         {
             "object_id": 1222,
             "region": "Round",
-            "time": 7234,
+            "time": 12245,
             "type": "scalar_value",
-            "value": 20630.459
+            "value": 20630.46
         },
         {
             "backend": "OpenMP",
@@ -3764,7 +3764,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 7235,
+            "end": 12246,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -3776,26 +3776,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 7216,
-            "threads": 4,
+            "start": 12162,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1222,
             "region": "Round",
-            "time": 7241,
+            "time": 12253,
             "type": "scalar_value",
-            "value": 80.58773
+            "value": 80.58774
         },
         {
-            "data_file": "snapshots/x@30.txt",
-            "end": 7316,
+            "data_file": "snap/x@30.txt",
+            "end": 12345,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 7242,
+            "start": 12254,
             "type": "snapshot"
         },
         {
@@ -3808,7 +3808,7 @@
                 1002,
                 1003
             ],
-            "end": 7403,
+            "end": 12453,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -3822,8 +3822,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 7316,
-            "threads": 4,
+            "start": 12346,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -3831,15 +3831,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 7404,
+            "time": 12453,
             "type": "region"
         },
         {
             "object_id": 1227,
             "region": "Round",
-            "time": 7422,
+            "time": 12530,
             "type": "scalar_value",
-            "value": 61.702812
+            "value": 61.70279
         },
         {
             "backend": "OpenMP",
@@ -3849,7 +3849,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 7422,
+            "end": 12531,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -3861,23 +3861,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 7404,
-            "threads": 4,
+            "start": 12454,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1227,
             "region": "Round",
-            "time": 7426,
+            "time": 12536,
             "type": "scalar_value",
-            "value": 0.24102661
+            "value": 0.24102652
         },
         {
             "object_id": 1229,
             "region": "Round",
-            "time": 7444,
+            "time": 12609,
             "type": "scalar_value",
-            "value": 17744.16
+            "value": 17744.156
         },
         {
             "backend": "OpenMP",
@@ -3887,7 +3887,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 7444,
+            "end": 12610,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -3899,26 +3899,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 7426,
-            "threads": 4,
+            "start": 12537,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1229,
             "region": "Round",
-            "time": 7452,
+            "time": 12616,
             "type": "scalar_value",
-            "value": 69.313126
+            "value": 69.31311
         },
         {
-            "data_file": "snapshots/x@31.txt",
-            "end": 7526,
+            "data_file": "snap/x@31.txt",
+            "end": 12700,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 7453,
+            "start": 12618,
             "type": "snapshot"
         },
         {
@@ -3931,7 +3931,7 @@
                 1002,
                 1003
             ],
-            "end": 7610,
+            "end": 12808,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -3945,8 +3945,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 7526,
-            "threads": 4,
+            "start": 12701,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -3954,15 +3954,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 7611,
+            "time": 12809,
             "type": "region"
         },
         {
             "object_id": 1234,
             "region": "Round",
-            "time": 7629,
+            "time": 12888,
             "type": "scalar_value",
-            "value": 15.51305
+            "value": 15.513064
         },
         {
             "backend": "OpenMP",
@@ -3972,7 +3972,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 7630,
+            "end": 12889,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -3984,21 +3984,21 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 7611,
-            "threads": 4,
+            "start": 12809,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1234,
             "region": "Round",
-            "time": 7633,
+            "time": 12893,
             "type": "scalar_value",
-            "value": 0.060597852
+            "value": 0.060597908
         },
         {
             "object_id": 1236,
             "region": "Round",
-            "time": 7651,
+            "time": 12966,
             "type": "scalar_value",
             "value": 9800.381
         },
@@ -4010,7 +4010,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 7652,
+            "end": 12967,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -4022,26 +4022,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 7634,
-            "threads": 4,
+            "start": 12893,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1236,
             "region": "Round",
-            "time": 7658,
+            "time": 12974,
             "type": "scalar_value",
             "value": 38.282738
         },
         {
-            "data_file": "snapshots/x@32.txt",
-            "end": 7729,
+            "data_file": "snap/x@32.txt",
+            "end": 13066,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 7659,
+            "start": 12976,
             "type": "snapshot"
         },
         {
@@ -4054,7 +4054,7 @@
                 1002,
                 1003
             ],
-            "end": 7813,
+            "end": 13153,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -4068,8 +4068,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 7729,
-            "threads": 4,
+            "start": 13066,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -4077,15 +4077,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 7813,
+            "time": 13154,
             "type": "region"
         },
         {
             "object_id": 1241,
             "region": "Round",
-            "time": 7833,
+            "time": 13227,
             "type": "scalar_value",
-            "value": 29.456688
+            "value": 29.45668
         },
         {
             "backend": "OpenMP",
@@ -4095,7 +4095,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 7834,
+            "end": 13228,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -4107,21 +4107,21 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 7814,
-            "threads": 4,
+            "start": 13155,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1241,
             "region": "Round",
-            "time": 7838,
+            "time": 13233,
             "type": "scalar_value",
-            "value": 0.11506519
+            "value": 0.11506516
         },
         {
             "object_id": 1243,
             "region": "Round",
-            "time": 7858,
+            "time": 13308,
             "type": "scalar_value",
             "value": 18082.473
         },
@@ -4133,7 +4133,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 7859,
+            "end": 13309,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -4145,26 +4145,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 7838,
-            "threads": 4,
+            "start": 13233,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1243,
             "region": "Round",
-            "time": 7865,
+            "time": 13316,
             "type": "scalar_value",
             "value": 70.63466
         },
         {
-            "data_file": "snapshots/x@33.txt",
-            "end": 7939,
+            "data_file": "snap/x@33.txt",
+            "end": 13400,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 7866,
+            "start": 13321,
             "type": "snapshot"
         },
         {
@@ -4177,7 +4177,7 @@
                 1002,
                 1003
             ],
-            "end": 8023,
+            "end": 13485,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -4191,8 +4191,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 7940,
-            "threads": 4,
+            "start": 13403,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -4200,13 +4200,13 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 8023,
+            "time": 13486,
             "type": "region"
         },
         {
             "object_id": 1248,
             "region": "Round",
-            "time": 8042,
+            "time": 13567,
             "type": "scalar_value",
             "value": -126.777054
         },
@@ -4218,7 +4218,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 8043,
+            "end": 13568,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -4230,23 +4230,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 8024,
-            "threads": 4,
+            "start": 13486,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1248,
             "region": "Round",
-            "time": 8046,
+            "time": 13572,
             "type": "scalar_value",
             "value": -0.49522287
         },
         {
             "object_id": 1250,
             "region": "Round",
-            "time": 8065,
+            "time": 13649,
             "type": "scalar_value",
-            "value": 19362.914
+            "value": 19362.918
         },
         {
             "backend": "OpenMP",
@@ -4256,7 +4256,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 8066,
+            "end": 13650,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -4268,26 +4268,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 8047,
-            "threads": 4,
+            "start": 13572,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1250,
             "region": "Round",
-            "time": 8073,
+            "time": 13657,
             "type": "scalar_value",
-            "value": 75.63638
+            "value": 75.6364
         },
         {
-            "data_file": "snapshots/x@34.txt",
-            "end": 8165,
+            "data_file": "snap/x@34.txt",
+            "end": 13770,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 8074,
+            "start": 13661,
             "type": "snapshot"
         },
         {
@@ -4300,7 +4300,7 @@
                 1002,
                 1003
             ],
-            "end": 8249,
+            "end": 13886,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -4314,8 +4314,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 8165,
-            "threads": 4,
+            "start": 13771,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -4323,15 +4323,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 8249,
+            "time": 13887,
             "type": "region"
         },
         {
             "object_id": 1255,
             "region": "Round",
-            "time": 8268,
+            "time": 13977,
             "type": "scalar_value",
-            "value": 11.057289
+            "value": 11.05733
         },
         {
             "backend": "OpenMP",
@@ -4341,7 +4341,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 8268,
+            "end": 13978,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -4353,23 +4353,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 8249,
-            "threads": 4,
+            "start": 13888,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1255,
             "region": "Round",
-            "time": 8272,
+            "time": 13983,
             "type": "scalar_value",
-            "value": 0.043192536
+            "value": 0.043192696
         },
         {
             "object_id": 1257,
             "region": "Round",
-            "time": 8290,
+            "time": 14056,
             "type": "scalar_value",
-            "value": 13231.168
+            "value": 13231.163
         },
         {
             "backend": "OpenMP",
@@ -4379,7 +4379,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 8291,
+            "end": 14056,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -4391,26 +4391,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 8272,
-            "threads": 4,
+            "start": 13984,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1257,
             "region": "Round",
-            "time": 8297,
+            "time": 14062,
             "type": "scalar_value",
-            "value": 51.68425
+            "value": 51.68423
         },
         {
-            "data_file": "snapshots/x@35.txt",
-            "end": 8371,
+            "data_file": "snap/x@35.txt",
+            "end": 14148,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 8298,
+            "start": 14063,
             "type": "snapshot"
         },
         {
@@ -4423,7 +4423,7 @@
                 1002,
                 1003
             ],
-            "end": 8457,
+            "end": 14259,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -4437,8 +4437,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 8371,
-            "threads": 4,
+            "start": 14148,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -4446,15 +4446,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 8457,
+            "time": 14259,
             "type": "region"
         },
         {
             "object_id": 1262,
             "region": "Round",
-            "time": 8477,
+            "time": 14335,
             "type": "scalar_value",
-            "value": 88.36313
+            "value": 88.363144
         },
         {
             "backend": "OpenMP",
@@ -4464,7 +4464,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 8478,
+            "end": 14336,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -4476,23 +4476,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 8457,
-            "threads": 4,
+            "start": 14260,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1262,
             "region": "Round",
-            "time": 8481,
+            "time": 14340,
             "type": "scalar_value",
-            "value": 0.34516847
+            "value": 0.34516853
         },
         {
             "object_id": 1264,
             "region": "Round",
-            "time": 8500,
+            "time": 14410,
             "type": "scalar_value",
-            "value": 16932.092
+            "value": 16932.09
         },
         {
             "backend": "OpenMP",
@@ -4502,7 +4502,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 8501,
+            "end": 14411,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -4514,26 +4514,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 8482,
-            "threads": 4,
+            "start": 14342,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1264,
             "region": "Round",
-            "time": 8509,
+            "time": 14417,
             "type": "scalar_value",
-            "value": 66.14098
+            "value": 66.140976
         },
         {
-            "data_file": "snapshots/x@36.txt",
-            "end": 8592,
+            "data_file": "snap/x@36.txt",
+            "end": 14507,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 8510,
+            "start": 14418,
             "type": "snapshot"
         },
         {
@@ -4546,7 +4546,7 @@
                 1002,
                 1003
             ],
-            "end": 8677,
+            "end": 14605,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -4560,8 +4560,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 8592,
-            "threads": 4,
+            "start": 14507,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -4569,15 +4569,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 8677,
+            "time": 14606,
             "type": "region"
         },
         {
             "object_id": 1269,
             "region": "Round",
-            "time": 8696,
+            "time": 14680,
             "type": "scalar_value",
-            "value": -77.59167
+            "value": -77.59166
         },
         {
             "backend": "OpenMP",
@@ -4587,7 +4587,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 8696,
+            "end": 14681,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -4599,21 +4599,21 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 8678,
-            "threads": 4,
+            "start": 14606,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1269,
             "region": "Round",
-            "time": 8700,
+            "time": 14684,
             "type": "scalar_value",
-            "value": -0.30309245
+            "value": -0.30309242
         },
         {
             "object_id": 1271,
             "region": "Round",
-            "time": 8718,
+            "time": 14757,
             "type": "scalar_value",
             "value": 17671.457
         },
@@ -4625,7 +4625,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 8719,
+            "end": 14758,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -4637,26 +4637,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 8701,
-            "threads": 4,
+            "start": 14685,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1271,
             "region": "Round",
-            "time": 8725,
+            "time": 14764,
             "type": "scalar_value",
             "value": 69.02913
         },
         {
-            "data_file": "snapshots/x@37.txt",
-            "end": 8804,
+            "data_file": "snap/x@37.txt",
+            "end": 14848,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 8725,
+            "start": 14765,
             "type": "snapshot"
         },
         {
@@ -4669,7 +4669,7 @@
                 1002,
                 1003
             ],
-            "end": 8888,
+            "end": 14969,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -4683,8 +4683,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 8805,
-            "threads": 4,
+            "start": 14849,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -4692,15 +4692,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 8889,
+            "time": 14970,
             "type": "region"
         },
         {
             "object_id": 1276,
             "region": "Round",
-            "time": 8907,
+            "time": 15037,
             "type": "scalar_value",
-            "value": -43.794575
+            "value": -43.794563
         },
         {
             "backend": "OpenMP",
@@ -4710,7 +4710,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 8907,
+            "end": 15038,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -4722,23 +4722,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 8889,
-            "threads": 4,
+            "start": 14970,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1276,
             "region": "Round",
-            "time": 8911,
+            "time": 15043,
             "type": "scalar_value",
-            "value": -0.17107256
+            "value": -0.17107251
         },
         {
             "object_id": 1278,
             "region": "Round",
-            "time": 8930,
+            "time": 15118,
             "type": "scalar_value",
-            "value": 14317.395
+            "value": 14317.396
         },
         {
             "backend": "OpenMP",
@@ -4748,7 +4748,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 8930,
+            "end": 15119,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -4760,26 +4760,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 8911,
-            "threads": 4,
+            "start": 15044,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1278,
             "region": "Round",
-            "time": 8937,
+            "time": 15125,
             "type": "scalar_value",
-            "value": 55.927322
+            "value": 55.92733
         },
         {
-            "data_file": "snapshots/x@38.txt",
-            "end": 9012,
+            "data_file": "snap/x@38.txt",
+            "end": 15214,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 8938,
+            "start": 15126,
             "type": "snapshot"
         },
         {
@@ -4792,7 +4792,7 @@
                 1002,
                 1003
             ],
-            "end": 9097,
+            "end": 15302,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -4806,8 +4806,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 9013,
-            "threads": 4,
+            "start": 15217,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -4815,13 +4815,13 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 9097,
+            "time": 15303,
             "type": "region"
         },
         {
             "object_id": 1283,
             "region": "Round",
-            "time": 9116,
+            "time": 15381,
             "type": "scalar_value",
             "value": 31.76575
         },
@@ -4833,7 +4833,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 9117,
+            "end": 15381,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -4845,23 +4845,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 9097,
-            "threads": 4,
+            "start": 15303,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1283,
             "region": "Round",
-            "time": 9120,
+            "time": 15386,
             "type": "scalar_value",
             "value": 0.124084964
         },
         {
             "object_id": 1285,
             "region": "Round",
-            "time": 9143,
+            "time": 15462,
             "type": "scalar_value",
-            "value": 16857.377
+            "value": 16857.375
         },
         {
             "backend": "OpenMP",
@@ -4871,7 +4871,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 9144,
+            "end": 15463,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -4883,26 +4883,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 9121,
-            "threads": 4,
+            "start": 15387,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1285,
             "region": "Round",
-            "time": 9150,
+            "time": 15472,
             "type": "scalar_value",
-            "value": 65.84913
+            "value": 65.84912
         },
         {
-            "data_file": "snapshots/x@39.txt",
-            "end": 9222,
+            "data_file": "snap/x@39.txt",
+            "end": 15556,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 9151,
+            "start": 15473,
             "type": "snapshot"
         },
         {
@@ -4915,7 +4915,7 @@
                 1002,
                 1003
             ],
-            "end": 9307,
+            "end": 15662,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -4929,8 +4929,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 9223,
-            "threads": 4,
+            "start": 15559,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -4938,15 +4938,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 9307,
+            "time": 15663,
             "type": "region"
         },
         {
             "object_id": 1290,
             "region": "Round",
-            "time": 9327,
+            "time": 15730,
             "type": "scalar_value",
-            "value": 120.161804
+            "value": 120.16181
         },
         {
             "backend": "OpenMP",
@@ -4956,7 +4956,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 9328,
+            "end": 15731,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -4968,21 +4968,21 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 9308,
-            "threads": 4,
+            "start": 15664,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1290,
             "region": "Round",
-            "time": 9331,
+            "time": 15736,
             "type": "scalar_value",
-            "value": 0.46938205
+            "value": 0.46938208
         },
         {
             "object_id": 1292,
             "region": "Round",
-            "time": 9351,
+            "time": 15799,
             "type": "scalar_value",
             "value": 18338.912
         },
@@ -4994,7 +4994,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 9352,
+            "end": 15800,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -5006,26 +5006,26 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 9333,
-            "threads": 4,
+            "start": 15737,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1292,
             "region": "Round",
-            "time": 9358,
+            "time": 15807,
             "type": "scalar_value",
             "value": 71.636375
         },
         {
-            "data_file": "snapshots/x@40.txt",
-            "end": 9439,
+            "data_file": "snap/x@40.txt",
+            "end": 15897,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 9360,
+            "start": 15809,
             "type": "snapshot"
         },
         {
@@ -5038,7 +5038,7 @@
                 1002,
                 1003
             ],
-            "end": 9522,
+            "end": 15991,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "RK4",
             "line": 125,
@@ -5052,8 +5052,8 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 9439,
-            "threads": 4,
+            "start": 15897,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
@@ -5061,15 +5061,15 @@
             "label": "Round",
             "line": 118,
             "region_depth": 1,
-            "time": 9523,
+            "time": 15992,
             "type": "region"
         },
         {
             "object_id": 1297,
             "region": "Round",
-            "time": 9541,
+            "time": 16066,
             "type": "scalar_value",
-            "value": -123.19897
+            "value": -123.198975
         },
         {
             "backend": "OpenMP",
@@ -5079,7 +5079,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 9542,
+            "end": 16067,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum",
             "line": 99,
@@ -5091,23 +5091,23 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 9523,
-            "threads": 4,
+            "start": 15992,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1297,
             "region": "Round",
-            "time": 9547,
+            "time": 16071,
             "type": "scalar_value",
-            "value": -0.48124596
+            "value": -0.481246
         },
         {
             "object_id": 1299,
             "region": "Round",
-            "time": 9565,
+            "time": 16129,
             "type": "scalar_value",
-            "value": 13967.76
+            "value": 13967.761
         },
         {
             "backend": "OpenMP",
@@ -5117,7 +5117,7 @@
             "elwise_inputs": [
                 1001
             ],
-            "end": 9566,
+            "end": 16130,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "sum of squared deviations",
             "line": 100,
@@ -5129,51 +5129,55 @@
             "proxy_inputs": [],
             "region": "Round",
             "scalar_inputs": [],
-            "start": 9547,
-            "threads": 4,
+            "start": 16071,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1299,
             "region": "Round",
-            "time": 9571,
+            "time": 16136,
             "type": "scalar_value",
-            "value": 54.56156
+            "value": 54.561565
         },
         {
-            "data_file": "snapshots/x@41.txt",
-            "end": 9646,
+            "data_file": "snap/x@41.txt",
+            "end": 16219,
             "file": "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp",
             "label": "x",
             "line": 122,
             "object_id": 1001,
             "region": "Round",
-            "start": 9572,
+            "start": 16137,
             "type": "snapshot"
         },
         {
             "label": "z",
             "line": 282,
             "object_id": 1003,
-            "time": 9646,
+            "time": 16219,
             "type": "deallocation"
         },
         {
             "label": "y",
             "line": 282,
             "object_id": 1002,
-            "time": 9646,
+            "time": 16220,
             "type": "deallocation"
         },
         {
             "label": "x",
             "line": 282,
             "object_id": 1001,
-            "time": 9646,
+            "time": 16220,
             "type": "deallocation"
         }
     ],
     "header": {
+        "files": {
+            "/Users/august/Claude/skepu-alpha/examples/ode_lorenz.cpp": "f4b23c714e10b9463de026d1356d05a5abae749cd9ed286e5a0c52088e2e862d",
+            "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp": "b803d9f3fea3c6df2ddd684bcbb58c2481801e29c40a3c365b994713fc420f45"
+        },
         "instances": {
             "1000": {
                 "instance": {

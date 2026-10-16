@@ -11,6 +11,7 @@ files in this script, so the source view and the trace agree. Run it again after
 
     python3 examples/synthetic_traces.py
 """
+import hashlib
 import json
 import os
 import random
@@ -30,6 +31,7 @@ class Prog:
         self._rec = self._play = None
         self.indent = 0
         self.state = {}                # container id -> dict(label, n, host, dev)
+        self.built = set()             # the instances that have built their OpenCL kernels
         self.file = f'{SRC_DIR}/{name}.cpp'
         self.src(header)
 
@@ -155,6 +157,14 @@ class Prog:
         if size is None:
             for x in elements: cost_n *= x
         cl = backend == 'OpenCL'
+        if cl and sk['id'] not in self.built:       # the kernels of an instance are built once, at its first call on the device
+            self.built.add(sk['id'])
+            self.gap(1, 3)
+            build = int(self.rng.uniform(3000, 9000))
+            self.emit({'type': 'kernel_compile', 'backend': 'OpenCL', 'device': 'Apple M5 Pro', 'label': sk['label'], 'object_id': sk['id'],
+                       'ok': True, 'options': '', 'source_bytes': int(self.rng.uniform(2500, 6500)), 'start': self.t, 'end': self.t + build,
+                       'time': self.t + build})
+            self.t += build
         for c in [*ins, *proxy]:
             (self._to_device if cl else self._to_host)(c)
         for c in scalars:
@@ -219,12 +229,14 @@ class Prog:
         if write: self.state[cid]['dev'] = False
 
     def write(self, path):
-        with open(os.path.join(HERE, path), 'w') as f:
-            trace = {'header': {'instances': self.instances}, 'data': self.events} if self.instances else self.events
-            json.dump(trace, f, indent=1, sort_keys=True)
-            f.write('\n')
+        source = '\n'.join(self.lines) + '\n'
         with open(os.path.join(HERE, self.name.split('/')[0], self.name.split('/')[-1] + '.cpp'), 'w') as f:
-            f.write('\n'.join(self.lines) + '\n')
+            f.write(source)
+        # (the header has the SHA-256 of the source file, which a viewer checks against the file it has)
+        header = {'files': {self.file: hashlib.sha256(source.encode()).hexdigest()}, 'instances': self.instances}
+        with open(os.path.join(HERE, path), 'w') as f:
+            json.dump({'header': header, 'data': self.events}, f, indent=1, sort_keys=True)
+            f.write('\n')
 
 
 # ═════════════════════════════════════════════════════════════════════════════

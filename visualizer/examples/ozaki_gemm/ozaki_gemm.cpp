@@ -6,11 +6,9 @@
 //
 //   C = diag(ra) ( sum_s sum_t (Ahat_s Bhat_t) 2^(-7 (s+t)) ) diag(rb)
 //
-// and every product Ahat_s Bhat_t is a product of integer matrices: the sum of n products of two numbers of 7 bits is an integer of
-// 14 + log2(n) bits, so it is exact in 32 bits, the whole way. This is what an accelerator that multiplies 8-bit integers is good at (a tensor
-// core), and what the scheme uses it for. The exact products are then added, with their weights, in a high precision: here a double-double
-// number (the sum of two doubles that is exact up to 106 bits) for each element, so that the result has more digits than a double has.
-// The precision is chosen by the number of slices, 7 bits for each.
+// and every product Ahat_s Bhat_t is a product of integer matrices: a sum of n products of 7-bit numbers has 14 + log2(n) bits, so it is
+// exact in 32 bits. This is what an accelerator for 8-bit integers (a tensor core) is good at. The exact products are added, with their
+// weights, in a double-double number (exact up to 106 bits) for each element. The precision is chosen by the number of slices.
 //
 // The pieces, with their skeletons:
 //   * the power of two of each row of A and each column of B     Map with a MatRow or a MatCol
@@ -20,14 +18,13 @@
 //   * the sum of the products, in double-double                  Map
 //   * the error, in the program's own check                      MapReduce
 //
-// The products of the slices are the only part that is run on the backend that the program is given; the rest, which is in double precision,
-// is run on the CPU backend. (The program can be built for OpenCL and run on a device that has no double precision, as the GPUs of Apple: the
-// skeletons with doubles in their signatures are not built for the device and use another backend, see "Double precision on OpenCL devices" in the user guide.)
+// Only the products of the slices run on the backend that the program is given; the double precision rest runs on the CPU backend (on a
+// device without double precision, skeletons with doubles in their signatures use another backend: see "Double precision on OpenCL
+// devices" in the user guide).
 //
-// The check: the elements of A and B are random integers of 40 bits, so the exact product is an integer of at most 88 bits that the host has in an
-// __int128. After the products of each anti-diagonal of slice pairs (s + t = w) the program prints the largest error of the elements, relative to
-// the largest element: it goes down by a factor of 2^7 for each anti-diagonal, and is zero (written as the smallest number that it prints, 1e-34) once
-// the slices have all of the bits of the matrices: 6 slices have the 40 bits, and the anti-diagonal 12 has the products of the last of them.
+// The check: A and B have random integers of 40 bits, so the exact product (at most 88 bits) is computed on the host in an __int128.
+// After each anti-diagonal of slice pairs (s + t = w) the program prints the largest error relative to the largest element. It goes down
+// by 2^7 per anti-diagonal and is zero (printed as 1e-34) once the slices hold all the bits: 6 slices have the 40 bits.
 //
 //   Usage: ozaki_gemm n slices backend
 

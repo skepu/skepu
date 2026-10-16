@@ -11,21 +11,21 @@
             "label": "b",
             "line": 251,
             "object_id": 1002,
-            "time": 5,
+            "time": 2,
             "type": "allocation"
         },
         {
             "label": "[Global PRNG]",
             "line": 139,
             "object_id": 1004,
-            "time": 6,
+            "time": 21,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1006,
-            "time": 24,
+            "time": 37,
             "type": "allocation"
         },
         {
@@ -34,7 +34,7 @@
                 2048
             ],
             "elwise_inputs": [],
-            "end": 107,
+            "end": 314,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
             "label": "randomize::uniform",
             "line": 244,
@@ -46,22 +46,22 @@
             "prng": 1004,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 9,
-            "threads": 4,
+            "start": 23,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1006,
-            "time": 157,
+            "time": 377,
             "type": "deallocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1009,
-            "time": 158,
+            "time": 379,
             "type": "allocation"
         },
         {
@@ -70,7 +70,7 @@
                 2048
             ],
             "elwise_inputs": [],
-            "end": 199,
+            "end": 496,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
             "label": "randomize::uniform",
             "line": 244,
@@ -82,20 +82,20 @@
             "prng": 1004,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 158,
-            "threads": 4,
+            "start": 379,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1009,
-            "time": 211,
+            "time": 517,
             "type": "deallocation"
         },
         {
             "elwise_inputs": [],
-            "end": 717,
+            "end": 1028,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -104,12 +104,12 @@
                 1001
             ],
             "scalar_inputs": [],
-            "start": 211,
+            "start": 517,
             "type": "external"
         },
         {
             "elwise_inputs": [],
-            "end": 1168,
+            "end": 1502,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -118,14 +118,14 @@
                 1002
             ],
             "scalar_inputs": [],
-            "start": 717,
+            "start": 1029,
             "type": "external"
         },
         {
             "object_id": 1013,
-            "time": 1210,
+            "time": 1635,
             "type": "scalar_value",
-            "value": 3002.4478
+            "value": 3002.4473
         },
         {
             "backend": "OpenMP",
@@ -136,7 +136,7 @@
                 1001,
                 1002
             ],
-            "end": 1215,
+            "end": 1638,
             "file": "/Users/august/Claude/skepu-alpha/examples/dotproduct.cpp",
             "label": "dotprod",
             "line": 39,
@@ -147,26 +147,31 @@
             "pattern": "MapReduce",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 1169,
-            "threads": 4,
+            "start": 1505,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "b",
             "line": 282,
             "object_id": 1002,
-            "time": 1246,
+            "time": 1661,
             "type": "deallocation"
         },
         {
             "label": "a",
             "line": 282,
             "object_id": 1001,
-            "time": 1246,
+            "time": 1665,
             "type": "deallocation"
         }
     ],
     "header": {
+        "files": {
+            "/Users/august/Claude/skepu-alpha/examples/dotproduct.cpp": "d023d00908e1f40ebd23ad25321cae4388d2ac818d799d72f1cd2f1240857d8b",
+            "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp": "59bba1ce9470fe1a3e7c6c752d325355a5a7bb8e729ee74f8cfbec58a0b27e35",
+            "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp": "b803d9f3fea3c6df2ddd684bcbb58c2481801e29c40a3c365b994713fc420f45"
+        },
         "instances": {
             "1000": {
                 "instance": {

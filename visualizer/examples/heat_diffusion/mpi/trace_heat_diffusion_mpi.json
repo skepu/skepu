@@ -4,12 +4,12 @@
             "label": "Domain",
             "line": 0,
             "object_id": 1002,
-            "time": 3849,
+            "time": 3365,
             "type": "allocation"
         },
         {
             "elwise_inputs": [],
-            "end": 3898,
+            "end": 3428,
             "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
             "label": "[external]",
             "line": 161,
@@ -24,8 +24,8 @@
                 "rank": 0,
                 "ranks": 4,
                 "signature": 10206839627986143913,
-                "work_end": 3881,
-                "work_start": 3880
+                "work_end": 3415,
+                "work_start": 3415
             },
             "outputs": [
                 1002
@@ -33,21 +33,21 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 1,
-            "start": 3877,
+            "start": 3411,
             "type": "external"
         },
         {
             "label": "Change",
             "line": 0,
             "object_id": 1006,
-            "time": 3910,
+            "time": 3444,
             "type": "allocation"
         },
         {
             "bytes_received": 0,
             "bytes_sent": 12288,
             "comm_seq": 1,
-            "end": 3933,
+            "end": 3468,
             "object_ids": [
                 1002
             ],
@@ -55,18 +55,18 @@
             "ranks": 4,
             "reason": "the container is given to its owners",
             "seq": 0,
-            "start": 3912,
+            "start": 3446,
             "type": "communication"
         },
         {
             "label": "Domain B",
             "line": 0,
             "object_id": 1009,
-            "time": 3938,
+            "time": 3474,
             "type": "allocation"
         },
         {
-            "end": 3941,
+            "end": 3476,
             "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
             "label": "Domain",
             "line": 91,
@@ -74,7 +74,7 @@
                 1002,
                 1009
             ],
-            "start": 3941,
+            "start": 3476,
             "type": "virtual_container",
             "virtual_id": 1167
         },
@@ -82,7 +82,7 @@
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 2,
-            "end": 3972,
+            "end": 3534,
             "object_ids": [
                 1002
             ],
@@ -91,7 +91,7 @@
             "ranks": 4,
             "reason": "halo exchange",
             "seq": 2,
-            "start": 3968,
+            "start": 3528,
             "type": "communication"
         },
         {
@@ -103,7 +103,7 @@
             "elwise_inputs": [
                 1002
             ],
-            "end": 4106,
+            "end": 4061,
             "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 107,
@@ -112,14 +112,14 @@
                     "bytes_received": 256,
                     "bytes_sent": 256,
                     "collectives": 1,
-                    "time_us": 4
+                    "time_us": 6
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 4102,
-                "work_start": 3981
+                "work_end": 4050,
+                "work_start": 3549
             },
             "object_id": 1000,
             "outputs": [
@@ -137,13 +137,13 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 2,
-            "start": 3964,
-            "threads": 2,
+            "start": 3524,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1022,
-            "time": 4147,
+            "time": 4350,
             "type": "scalar_value",
             "value": 0.5
         },
@@ -151,19 +151,19 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 3,
-            "end": 4161,
+            "end": 4393,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 3,
-            "start": 4157,
+            "start": 4381,
             "type": "communication"
         },
         {
             "object_id": 1023,
-            "time": 4166,
+            "time": 4404,
             "type": "scalar_value",
             "value": 1.75
         },
@@ -175,7 +175,7 @@
             "elwise_inputs": [
                 1006
             ],
-            "end": 4170,
+            "end": 4410,
             "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
             "label": "max_change",
             "line": 114,
@@ -184,14 +184,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 4
+                    "time_us": 12
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 7100335632446919737,
-                "work_end": 4157,
-                "work_start": 4112
+                "work_end": 4380,
+                "work_start": 4067
             },
             "object_id": 1001,
             "outputs": [
@@ -201,15 +201,15 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 3,
-            "start": 4112,
-            "threads": 2,
+            "start": 4067,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 12288,
             "bytes_sent": 12288,
             "comm_seq": 4,
-            "end": 4194,
+            "end": 4437,
             "object_ids": [
                 1009
             ],
@@ -217,24 +217,24 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 4187,
+            "start": 4428,
             "type": "communication"
         },
         {
-            "data_file": "snapshots/Domain B@1.txt",
-            "end": 4576,
+            "data_file": "snap/Domain B@1.txt",
+            "end": 4902,
             "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
             "label": "Domain B",
             "line": 118,
             "object_id": 1009,
-            "start": 4184,
+            "start": 4425,
             "type": "snapshot"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 5,
-            "end": 4597,
+            "end": 4907,
             "object_ids": [
                 1009
             ],
@@ -243,7 +243,7 @@
             "ranks": 4,
             "reason": "halo exchange",
             "seq": 4,
-            "start": 4580,
+            "start": 4905,
             "type": "communication"
         },
         {
@@ -255,7 +255,7 @@
             "elwise_inputs": [
                 1009
             ],
-            "end": 4667,
+            "end": 5107,
             "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 107,
@@ -264,14 +264,14 @@
                     "bytes_received": 256,
                     "bytes_sent": 256,
                     "collectives": 1,
-                    "time_us": 17
+                    "time_us": 2
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 4663,
-                "work_start": 4606
+                "work_end": 5099,
+                "work_start": 4920
             },
             "object_id": 1000,
             "outputs": [
@@ -289,15 +289,15 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 4,
-            "start": 4579,
-            "threads": 2,
+            "start": 4903,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 6,
-            "end": 4673,
+            "end": 5117,
             "object_ids": [
                 1002
             ],
@@ -306,7 +306,7 @@
             "ranks": 4,
             "reason": "halo exchange",
             "seq": 5,
-            "start": 4671,
+            "start": 5113,
             "type": "communication"
         },
         {
@@ -318,7 +318,7 @@
             "elwise_inputs": [
                 1002
             ],
-            "end": 4768,
+            "end": 5329,
             "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 107,
@@ -327,14 +327,14 @@
                     "bytes_received": 256,
                     "bytes_sent": 256,
                     "collectives": 1,
-                    "time_us": 2
+                    "time_us": 4
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 4755,
-                "work_start": 4681
+                "work_end": 5324,
+                "work_start": 5128
             },
             "object_id": 1000,
             "outputs": [
@@ -352,15 +352,15 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 5,
-            "start": 4670,
-            "threads": 2,
+            "start": 5112,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 7,
-            "end": 4785,
+            "end": 5381,
             "object_ids": [
                 1009
             ],
@@ -369,7 +369,7 @@
             "ranks": 4,
             "reason": "halo exchange",
             "seq": 6,
-            "start": 4784,
+            "start": 5335,
             "type": "communication"
         },
         {
@@ -381,7 +381,7 @@
             "elwise_inputs": [
                 1009
             ],
-            "end": 4852,
+            "end": 5632,
             "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 107,
@@ -390,14 +390,14 @@
                     "bytes_received": 256,
                     "bytes_sent": 256,
                     "collectives": 1,
-                    "time_us": 1
+                    "time_us": 46
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 4846,
-                "work_start": 4793
+                "work_end": 5628,
+                "work_start": 5391
             },
             "object_id": 1000,
             "outputs": [
@@ -415,15 +415,15 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 6,
-            "start": 4782,
-            "threads": 2,
+            "start": 5334,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 8,
-            "end": 4879,
+            "end": 5648,
             "object_ids": [
                 1002
             ],
@@ -432,7 +432,7 @@
             "ranks": 4,
             "reason": "halo exchange",
             "seq": 7,
-            "start": 4856,
+            "start": 5636,
             "type": "communication"
         },
         {
@@ -444,7 +444,7 @@
             "elwise_inputs": [
                 1002
             ],
-            "end": 4934,
+            "end": 5937,
             "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 107,
@@ -453,14 +453,14 @@
                     "bytes_received": 256,
                     "bytes_sent": 256,
                     "collectives": 1,
-                    "time_us": 23
+                    "time_us": 12
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 4929,
-                "work_start": 4888
+                "work_end": 5931,
+                "work_start": 5657
             },
             "object_id": 1000,
             "outputs": [
@@ -478,15 +478,15 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 7,
-            "start": 4855,
-            "threads": 2,
+            "start": 5636,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 9,
-            "end": 4951,
+            "end": 5945,
             "object_ids": [
                 1009
             ],
@@ -495,7 +495,7 @@
             "ranks": 4,
             "reason": "halo exchange",
             "seq": 8,
-            "start": 4938,
+            "start": 5943,
             "type": "communication"
         },
         {
@@ -507,7 +507,7 @@
             "elwise_inputs": [
                 1009
             ],
-            "end": 5006,
+            "end": 6257,
             "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 107,
@@ -516,14 +516,14 @@
                     "bytes_received": 256,
                     "bytes_sent": 256,
                     "collectives": 1,
-                    "time_us": 13
+                    "time_us": 2
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 5001,
-                "work_start": 4961
+                "work_end": 6251,
+                "work_start": 5955
             },
             "object_id": 1000,
             "outputs": [
@@ -541,15 +541,15 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 8,
-            "start": 4937,
-            "threads": 2,
+            "start": 5942,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
             "comm_seq": 10,
-            "end": 5032,
+            "end": 6269,
             "object_ids": [
                 1002
             ],
@@ -558,7 +558,7 @@
             "ranks": 4,
             "reason": "halo exchange",
             "seq": 9,
-            "start": 5011,
+            "start": 6264,
             "type": "communication"
         },
         {
@@ -570,7 +570,7 @@
             "elwise_inputs": [
                 1002
             ],
-            "end": 5093,
+            "end": 6576,
             "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 107,
@@ -579,858 +579,13 @@
                     "bytes_received": 256,
                     "bytes_sent": 256,
                     "collectives": 1,
-                    "time_us": 21
+                    "time_us": 5
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 5089,
-                "work_start": 5041
-            },
-            "object_id": 1000,
-            "outputs": [
-                1009,
-                1006
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 9,
-            "start": 5010,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 11,
-            "end": 5101,
-            "object_ids": [
-                1009
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 10,
-            "start": 5099,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1009
-            ],
-            "end": 5154,
-            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 107,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 2
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 5150,
-                "work_start": 5112
-            },
-            "object_id": 1000,
-            "outputs": [
-                1002,
-                1006
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 10,
-            "start": 5099,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 12,
-            "end": 5159,
-            "object_ids": [
-                1002
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 11,
-            "start": 5158,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1002
-            ],
-            "end": 5257,
-            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 107,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 1
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 5253,
-                "work_start": 5168
-            },
-            "object_id": 1000,
-            "outputs": [
-                1009,
-                1006
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 11,
-            "start": 5157,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 13,
-            "end": 5262,
-            "object_ids": [
-                1009
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 12,
-            "start": 5261,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1009
-            ],
-            "end": 5319,
-            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 107,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 1
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 5315,
-                "work_start": 5270
-            },
-            "object_id": 1000,
-            "outputs": [
-                1002,
-                1006
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 12,
-            "start": 5260,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "object_id": 1090,
-            "time": 5370,
-            "type": "scalar_value",
-            "value": 0.04805374
-        },
-        {
-            "bytes_received": 15,
-            "bytes_sent": 15,
-            "comm_seq": 14,
-            "end": 5373,
-            "object_ids": [],
-            "operation": "allgather",
-            "phase": "after",
-            "ranks": 4,
-            "reason": "the partial results of the processes are combined",
-            "seq": 13,
-            "start": 5372,
-            "type": "communication"
-        },
-        {
-            "object_id": 1091,
-            "time": 5377,
-            "type": "scalar_value",
-            "value": 0.12994766
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                4096
-            ],
-            "elwise_inputs": [
-                1006
-            ],
-            "end": 5380,
-            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
-            "label": "max_change",
-            "line": 114,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 15,
-                    "bytes_sent": 15,
-                    "collectives": 1,
-                    "time_us": 1
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 7100335632446919737,
-                "work_end": 5372,
-                "work_start": 5322
-            },
-            "object_id": 1001,
-            "outputs": [
-                1091
-            ],
-            "pattern": "Reduce 1D-Full",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 13,
-            "start": 5322,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 12288,
-            "bytes_sent": 12288,
-            "comm_seq": 15,
-            "end": 5398,
-            "object_ids": [
-                1002
-            ],
-            "operation": "allgather",
-            "ranks": 4,
-            "reason": "host access: the container is gathered",
-            "seq": 0,
-            "start": 5387,
-            "type": "communication"
-        },
-        {
-            "data_file": "snapshots/Domain@2.txt",
-            "end": 5822,
-            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
-            "label": "Domain",
-            "line": 118,
-            "object_id": 1002,
-            "start": 5386,
-            "type": "snapshot"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 16,
-            "end": 5824,
-            "object_ids": [
-                1002
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 14,
-            "start": 5823,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1002
-            ],
-            "end": 5856,
-            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 107,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 1
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 5852,
-                "work_start": 5832
-            },
-            "object_id": 1000,
-            "outputs": [
-                1009,
-                1006
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 14,
-            "start": 5822,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 17,
-            "end": 5860,
-            "object_ids": [
-                1009
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 15,
-            "start": 5859,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1009
-            ],
-            "end": 5904,
-            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 107,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 1
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 5900,
-                "work_start": 5867
-            },
-            "object_id": 1000,
-            "outputs": [
-                1002,
-                1006
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 15,
-            "start": 5858,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 18,
-            "end": 5909,
-            "object_ids": [
-                1002
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 16,
-            "start": 5907,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1002
-            ],
-            "end": 5958,
-            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 107,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 2
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 5954,
-                "work_start": 5916
-            },
-            "object_id": 1000,
-            "outputs": [
-                1009,
-                1006
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 16,
-            "start": 5907,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 19,
-            "end": 5962,
-            "object_ids": [
-                1009
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 17,
-            "start": 5961,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1009
-            ],
-            "end": 6006,
-            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 107,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 1
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 6002,
-                "work_start": 5970
-            },
-            "object_id": 1000,
-            "outputs": [
-                1002,
-                1006
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 17,
-            "start": 5961,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 20,
-            "end": 6019,
-            "object_ids": [
-                1002
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 18,
-            "start": 6011,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1002
-            ],
-            "end": 6069,
-            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 107,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 8
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 6066,
-                "work_start": 6026
-            },
-            "object_id": 1000,
-            "outputs": [
-                1009,
-                1006
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 18,
-            "start": 6010,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 21,
-            "end": 6074,
-            "object_ids": [
-                1009
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 19,
-            "start": 6073,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1009
-            ],
-            "end": 6114,
-            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 107,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 1
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 6110,
-                "work_start": 6081
-            },
-            "object_id": 1000,
-            "outputs": [
-                1002,
-                1006
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 19,
-            "start": 6072,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 22,
-            "end": 6161,
-            "object_ids": [
-                1002
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 20,
-            "start": 6118,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1002
-            ],
-            "end": 6200,
-            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 107,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 43
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 6197,
-                "work_start": 6168
-            },
-            "object_id": 1000,
-            "outputs": [
-                1009,
-                1006
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 20,
-            "start": 6117,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 23,
-            "end": 6218,
-            "object_ids": [
-                1009
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 21,
-            "start": 6203,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1009
-            ],
-            "end": 6268,
-            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 107,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 15
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 6264,
-                "work_start": 6226
-            },
-            "object_id": 1000,
-            "outputs": [
-                1002,
-                1006
-            ],
-            "parameters": {
-                "edge": "None",
-                "overlap": [
-                    1,
-                    1
-                ]
-            },
-            "pattern": "MapOverlap 2D",
-            "proxy_inputs": [],
-            "scalar_inputs": [],
-            "seq": 21,
-            "start": 6203,
-            "threads": 2,
-            "type": "skeleton_call"
-        },
-        {
-            "bytes_received": 256,
-            "bytes_sent": 256,
-            "comm_seq": 24,
-            "end": 6273,
-            "object_ids": [
-                1002
-            ],
-            "operation": "alltoallv",
-            "phase": "before",
-            "ranks": 4,
-            "reason": "halo exchange",
-            "seq": 22,
-            "start": 6271,
-            "type": "communication"
-        },
-        {
-            "backend": "OpenMP",
-            "elements": [
-                64,
-                64
-            ],
-            "elwise_inputs": [
-                1002
-            ],
-            "end": 6315,
-            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
-            "label": "update",
-            "line": 107,
-            "mpi": {
-                "comm": {
-                    "bytes_received": 256,
-                    "bytes_sent": 256,
-                    "collectives": 1,
-                    "time_us": 2
-                },
-                "local_elements": 1024,
-                "rank": 0,
-                "ranks": 4,
-                "signature": 513804264234665518,
-                "work_end": 6312,
+                "work_end": 6571,
                 "work_start": 6280
             },
             "object_id": 1000,
@@ -1448,16 +603,16 @@
             "pattern": "MapOverlap 2D",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "seq": 22,
-            "start": 6271,
-            "threads": 2,
+            "seq": 9,
+            "start": 6263,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 256,
             "bytes_sent": 256,
-            "comm_seq": 25,
-            "end": 6331,
+            "comm_seq": 11,
+            "end": 6585,
             "object_ids": [
                 1009
             ],
@@ -1465,8 +620,8 @@
             "phase": "before",
             "ranks": 4,
             "reason": "halo exchange",
-            "seq": 23,
-            "start": 6317,
+            "seq": 10,
+            "start": 6582,
             "type": "communication"
         },
         {
@@ -1478,7 +633,7 @@
             "elwise_inputs": [
                 1009
             ],
-            "end": 6378,
+            "end": 6848,
             "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
             "label": "update",
             "line": 107,
@@ -1487,14 +642,859 @@
                     "bytes_received": 256,
                     "bytes_sent": 256,
                     "collectives": 1,
-                    "time_us": 14
+                    "time_us": 3
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 513804264234665518,
-                "work_end": 6375,
-                "work_start": 6337
+                "work_end": 6843,
+                "work_start": 6596
+            },
+            "object_id": 1000,
+            "outputs": [
+                1002,
+                1006
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 10,
+            "start": 6581,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 12,
+            "end": 6875,
+            "object_ids": [
+                1002
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 11,
+            "start": 6853,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1002
+            ],
+            "end": 7128,
+            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 107,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 22
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 7120,
+                "work_start": 6885
+            },
+            "object_id": 1000,
+            "outputs": [
+                1009,
+                1006
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 11,
+            "start": 6851,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 13,
+            "end": 7192,
+            "object_ids": [
+                1009
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 12,
+            "start": 7135,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1009
+            ],
+            "end": 7482,
+            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 107,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 57
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 7478,
+                "work_start": 7205
+            },
+            "object_id": 1000,
+            "outputs": [
+                1002,
+                1006
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 12,
+            "start": 7133,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1090,
+            "time": 7711,
+            "type": "scalar_value",
+            "value": 0.04805374
+        },
+        {
+            "bytes_received": 15,
+            "bytes_sent": 15,
+            "comm_seq": 14,
+            "end": 7804,
+            "object_ids": [],
+            "operation": "allgather",
+            "phase": "after",
+            "ranks": 4,
+            "reason": "the partial results of the processes are combined",
+            "seq": 13,
+            "start": 7714,
+            "type": "communication"
+        },
+        {
+            "object_id": 1091,
+            "time": 7809,
+            "type": "scalar_value",
+            "value": 0.12994766
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                4096
+            ],
+            "elwise_inputs": [
+                1006
+            ],
+            "end": 7814,
+            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
+            "label": "max_change",
+            "line": 114,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 15,
+                    "bytes_sent": 15,
+                    "collectives": 1,
+                    "time_us": 90
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 7100335632446919737,
+                "work_end": 7714,
+                "work_start": 7486
+            },
+            "object_id": 1001,
+            "outputs": [
+                1091
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 13,
+            "start": 7486,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 12288,
+            "bytes_sent": 12288,
+            "comm_seq": 15,
+            "end": 7830,
+            "object_ids": [
+                1002
+            ],
+            "operation": "allgather",
+            "ranks": 4,
+            "reason": "host access: the container is gathered",
+            "seq": 0,
+            "start": 7823,
+            "type": "communication"
+        },
+        {
+            "data_file": "snap/Domain@2.txt",
+            "end": 8371,
+            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
+            "label": "Domain",
+            "line": 118,
+            "object_id": 1002,
+            "start": 7822,
+            "type": "snapshot"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 16,
+            "end": 8379,
+            "object_ids": [
+                1002
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 14,
+            "start": 8377,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1002
+            ],
+            "end": 8550,
+            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 107,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 2
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 8544,
+                "work_start": 8390
+            },
+            "object_id": 1000,
+            "outputs": [
+                1009,
+                1006
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 14,
+            "start": 8374,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 17,
+            "end": 8558,
+            "object_ids": [
+                1009
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 15,
+            "start": 8556,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1009
+            ],
+            "end": 8817,
+            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 107,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 2
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 8807,
+                "work_start": 8570
+            },
+            "object_id": 1000,
+            "outputs": [
+                1002,
+                1006
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 15,
+            "start": 8554,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 18,
+            "end": 8837,
+            "object_ids": [
+                1002
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 16,
+            "start": 8836,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1002
+            ],
+            "end": 9069,
+            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 107,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 1
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 9064,
+                "work_start": 8848
+            },
+            "object_id": 1000,
+            "outputs": [
+                1009,
+                1006
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 16,
+            "start": 8823,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 19,
+            "end": 9080,
+            "object_ids": [
+                1009
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 17,
+            "start": 9077,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1009
+            ],
+            "end": 9354,
+            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 107,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 3
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 9350,
+                "work_start": 9090
+            },
+            "object_id": 1000,
+            "outputs": [
+                1002,
+                1006
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 17,
+            "start": 9075,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 20,
+            "end": 9374,
+            "object_ids": [
+                1002
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 18,
+            "start": 9359,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1002
+            ],
+            "end": 9693,
+            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 107,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 15
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 9689,
+                "work_start": 9384
+            },
+            "object_id": 1000,
+            "outputs": [
+                1009,
+                1006
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 18,
+            "start": 9358,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 21,
+            "end": 9699,
+            "object_ids": [
+                1009
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 19,
+            "start": 9698,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1009
+            ],
+            "end": 10013,
+            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 107,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 1
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 9983,
+                "work_start": 9708
+            },
+            "object_id": 1000,
+            "outputs": [
+                1002,
+                1006
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 19,
+            "start": 9697,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 22,
+            "end": 10019,
+            "object_ids": [
+                1002
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 20,
+            "start": 10018,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1002
+            ],
+            "end": 10302,
+            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 107,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 1
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 10297,
+                "work_start": 10028
+            },
+            "object_id": 1000,
+            "outputs": [
+                1009,
+                1006
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 20,
+            "start": 10017,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 23,
+            "end": 10313,
+            "object_ids": [
+                1009
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 21,
+            "start": 10308,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1009
+            ],
+            "end": 10589,
+            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 107,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 5
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 10586,
+                "work_start": 10322
+            },
+            "object_id": 1000,
+            "outputs": [
+                1002,
+                1006
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 21,
+            "start": 10307,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 24,
+            "end": 10614,
+            "object_ids": [
+                1002
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 22,
+            "start": 10594,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1002
+            ],
+            "end": 10876,
+            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 107,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 20
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 10870,
+                "work_start": 10622
+            },
+            "object_id": 1000,
+            "outputs": [
+                1009,
+                1006
+            ],
+            "parameters": {
+                "edge": "None",
+                "overlap": [
+                    1,
+                    1
+                ]
+            },
+            "pattern": "MapOverlap 2D",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "seq": 22,
+            "start": 10593,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "bytes_received": 256,
+            "bytes_sent": 256,
+            "comm_seq": 25,
+            "end": 10914,
+            "object_ids": [
+                1009
+            ],
+            "operation": "alltoallv",
+            "phase": "before",
+            "ranks": 4,
+            "reason": "halo exchange",
+            "seq": 23,
+            "start": 10895,
+            "type": "communication"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                64,
+                64
+            ],
+            "elwise_inputs": [
+                1009
+            ],
+            "end": 11188,
+            "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
+            "label": "update",
+            "line": 107,
+            "mpi": {
+                "comm": {
+                    "bytes_received": 256,
+                    "bytes_sent": 256,
+                    "collectives": 1,
+                    "time_us": 19
+                },
+                "local_elements": 1024,
+                "rank": 0,
+                "ranks": 4,
+                "signature": 513804264234665518,
+                "work_end": 11183,
+                "work_start": 10924
             },
             "object_id": 1000,
             "outputs": [
@@ -1512,13 +1512,13 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 23,
-            "start": 6317,
-            "threads": 2,
+            "start": 10893,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1165,
-            "time": 6411,
+            "time": 11415,
             "type": "scalar_value",
             "value": 0.024210513
         },
@@ -1526,19 +1526,19 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 26,
-            "end": 6415,
+            "end": 11534,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 24,
-            "start": 6413,
+            "start": 11418,
             "type": "communication"
         },
         {
             "object_id": 1166,
-            "time": 6419,
+            "time": 11539,
             "type": "scalar_value",
             "value": 0.065944195
         },
@@ -1550,7 +1550,7 @@
             "elwise_inputs": [
                 1006
             ],
-            "end": 6422,
+            "end": 11543,
             "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
             "label": "max_change",
             "line": 114,
@@ -1559,14 +1559,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 2
+                    "time_us": 116
                 },
                 "local_elements": 1024,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 7100335632446919737,
-                "work_end": 6413,
-                "work_start": 6381
+                "work_end": 11418,
+                "work_start": 11192
             },
             "object_id": 1001,
             "outputs": [
@@ -1576,15 +1576,15 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 24,
-            "start": 6381,
-            "threads": 2,
+            "start": 11192,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "bytes_received": 12288,
             "bytes_sent": 12288,
             "comm_seq": 27,
-            "end": 6436,
+            "end": 11562,
             "object_ids": [
                 1002
             ],
@@ -1592,54 +1592,57 @@
             "ranks": 4,
             "reason": "host access: the container is gathered",
             "seq": 0,
-            "start": 6431,
+            "start": 11554,
             "type": "communication"
         },
         {
-            "data_file": "snapshots/Domain@3.txt",
-            "end": 7084,
+            "data_file": "snap/Domain@3.txt",
+            "end": 12174,
             "file": "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp",
             "label": "Domain",
             "line": 118,
             "object_id": 1002,
-            "start": 6430,
+            "start": 11553,
             "type": "snapshot"
         },
         {
             "label": "Domain B",
             "line": 0,
             "object_id": 1009,
-            "time": 7098,
+            "time": 12181,
             "type": "deallocation"
         },
         {
             "label": "Change",
             "line": 0,
             "object_id": 1006,
-            "time": 7101,
+            "time": 12184,
             "type": "deallocation"
         },
         {
             "label": "Domain",
             "line": 0,
             "object_id": 1002,
-            "time": 7102,
+            "time": 12186,
             "type": "deallocation"
         }
     ],
     "header": {
         "clock": {
             "end": {
-                "local_us": 7137,
+                "local_us": 12215,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             },
             "method": "ping-pong",
             "start": {
-                "local_us": 3442,
+                "local_us": 2941,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             }
+        },
+        "files": {
+            "/Users/august/Claude/skepu-alpha/examples/heat_diffusion.cpp": "0232987028d575e0af340e4bf1d27b0996897bf99b149c1aed0325bc5c8c2433"
         },
         "instances": {
             "1000": {
@@ -1679,8 +1682,8 @@
         },
         "mpi": {
             "detail_rank": 0,
-            "host": "Augusts-Laptop.local",
-            "pid": 89216,
+            "host": "mac.staff.netlogon.liu.se",
+            "pid": 69479,
             "rank": 0,
             "ranks": 4,
             "role": "full"

@@ -1,46 +1,70 @@
 {
     "data": [
         {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 24898,
+            "label": "matrix transpose",
+            "ok": true,
+            "options": "-DTYPE=\"int\" -DTILE_DIM=16",
+            "source_bytes": 802,
+            "start": 0,
+            "time": 24898,
+            "type": "kernel_compile"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 36095,
+            "label": "prime_counter",
+            "object_id": 1000,
+            "ok": true,
+            "source_bytes": 12558,
+            "start": 25112,
+            "time": 36095,
+            "type": "kernel_compile"
+        },
+        {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1001,
-            "time": 0,
+            "time": 36095,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1003,
-            "time": 21,
+            "time": 36108,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 6,
-            "end": 2439,
+            "end": 38585,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1003,
-            "start": 23,
-            "time": 2439,
+            "start": 36110,
+            "time": 38585,
             "type": "transfer"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 2951,
+            "end": 39156,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1002,
-            "start": 2451,
-            "time": 2951,
+            "start": 38609,
+            "time": 39156,
             "type": "transfer"
         },
         {
             "object_id": 1007,
-            "time": 2966,
+            "time": 39172,
             "type": "scalar_value",
             "value": 2
         },
@@ -51,7 +75,7 @@
                 6
             ],
             "elwise_inputs": [],
-            "end": 2978,
+            "end": 39172,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -63,57 +87,57 @@
             "prng": 1001,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 2442,
+            "start": 38596,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1003,
-            "time": 3010,
+            "time": 39196,
             "type": "deallocation"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1009,
-            "time": 3017,
+            "time": 39205,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1011,
-            "time": 3021,
+            "time": 39208,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 96,
-            "end": 3285,
+            "end": 39428,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1011,
-            "start": 3023,
-            "time": 3285,
+            "start": 39209,
+            "time": 39428,
             "type": "transfer"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 3722,
+            "end": 39826,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1010,
-            "start": 3289,
-            "time": 3722,
+            "start": 39436,
+            "time": 39826,
             "type": "transfer"
         },
         {
             "object_id": 1015,
-            "time": 3728,
+            "time": 39830,
             "type": "scalar_value",
             "value": 23
         },
@@ -124,7 +148,7 @@
                 96
             ],
             "elwise_inputs": [],
-            "end": 3728,
+            "end": 39830,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -136,57 +160,57 @@
             "prng": 1009,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 3285,
+            "start": 39429,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1011,
-            "time": 3748,
+            "time": 39845,
             "type": "deallocation"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1017,
-            "time": 3749,
+            "time": 39846,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1019,
-            "time": 3752,
+            "time": 39848,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 768,
-            "end": 3993,
+            "end": 40102,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1019,
-            "start": 3755,
-            "time": 3993,
+            "start": 39850,
+            "time": 40102,
             "type": "transfer"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 4796,
+            "end": 40970,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1018,
-            "start": 3997,
-            "time": 4796,
+            "start": 40109,
+            "time": 40970,
             "type": "transfer"
         },
         {
             "object_id": 1023,
-            "time": 4814,
+            "time": 40982,
             "type": "scalar_value",
             "value": 166
         },
@@ -197,7 +221,7 @@
                 996
             ],
             "elwise_inputs": [],
-            "end": 4815,
+            "end": 40983,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -209,57 +233,57 @@
             "prng": 1017,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 3994,
+            "start": 40104,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1019,
-            "time": 4838,
+            "time": 41016,
             "type": "deallocation"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1025,
-            "time": 4839,
+            "time": 41019,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1027,
-            "time": 4842,
+            "time": 41023,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 9984,
-            "end": 5112,
+            "end": 41266,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1027,
-            "start": 4866,
-            "time": 5112,
+            "start": 41044,
+            "time": 41266,
             "type": "transfer"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 6435,
+            "end": 42580,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1026,
-            "start": 5116,
-            "time": 6435,
+            "start": 41270,
+            "time": 42580,
             "type": "transfer"
         },
         {
             "object_id": 1031,
-            "time": 6450,
+            "time": 42596,
             "type": "scalar_value",
             "value": 1227
         },
@@ -270,7 +294,7 @@
                 9996
             ],
             "elwise_inputs": [],
-            "end": 6451,
+            "end": 42597,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -282,57 +306,57 @@
             "prng": 1025,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 5112,
+            "start": 41267,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1027,
-            "time": 6475,
+            "time": 42613,
             "type": "deallocation"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1033,
-            "time": 6475,
+            "time": 42614,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1035,
-            "time": 6478,
+            "time": 42623,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 99840,
-            "end": 7012,
+            "end": 43083,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1035,
-            "start": 6727,
-            "time": 7012,
+            "start": 42804,
+            "time": 43083,
             "type": "transfer"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 16108,
+            "end": 52075,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1034,
-            "start": 7016,
-            "time": 16108,
+            "start": 43087,
+            "time": 52075,
             "type": "transfer"
         },
         {
             "object_id": 1039,
-            "time": 16115,
+            "time": 52086,
             "type": "scalar_value",
             "value": 9590
         },
@@ -343,7 +367,7 @@
                 99996
             ],
             "elwise_inputs": [],
-            "end": 16119,
+            "end": 52086,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -355,57 +379,57 @@
             "prng": 1033,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 7012,
+            "start": 43084,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1035,
-            "time": 16150,
+            "time": 52120,
             "type": "deallocation"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1041,
-            "time": 16151,
+            "time": 52120,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1043,
-            "time": 16157,
+            "time": 52126,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 999936,
-            "end": 19973,
+            "end": 55473,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1043,
-            "start": 19248,
-            "time": 19973,
+            "start": 54490,
+            "time": 55473,
             "type": "transfer"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 52732,
+            "end": 83133,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1042,
-            "start": 19981,
-            "time": 52732,
+            "start": 55502,
+            "time": 83133,
             "type": "transfer"
         },
         {
             "object_id": 1047,
-            "time": 52740,
+            "time": 83156,
             "type": "scalar_value",
             "value": 78496
         },
@@ -416,7 +440,7 @@
                 999996
             ],
             "elwise_inputs": [],
-            "end": 52740,
+            "end": 83157,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -428,57 +452,57 @@
             "prng": 1041,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 19973,
+            "start": 55476,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1043,
-            "time": 52770,
+            "time": 83181,
             "type": "deallocation"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1049,
-            "time": 52772,
+            "time": 83182,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1051,
-            "time": 52777,
+            "time": 83188,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 9999872,
-            "end": 84662,
+            "end": 108163,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1051,
-            "start": 80779,
-            "time": 84662,
+            "start": 104715,
+            "time": 108163,
             "type": "transfer"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 431138,
+            "end": 452529,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1050,
-            "start": 84669,
-            "time": 431138,
+            "start": 108180,
+            "time": 452529,
             "type": "transfer"
         },
         {
             "object_id": 1055,
-            "time": 431153,
+            "time": 452542,
             "type": "scalar_value",
             "value": 664577
         },
@@ -489,7 +513,7 @@
                 9999996
             ],
             "elwise_inputs": [],
-            "end": 431154,
+            "end": 452543,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -501,18 +525,21 @@
             "prng": 1049,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 84662,
+            "start": 108164,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1051,
-            "time": 431177,
+            "time": 452568,
             "type": "deallocation"
         }
     ],
     "header": {
+        "files": {
+            "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp": "939d27b756ef266cfdca3663935b8faa2c6eaf7bdddb18c0a2efeac71ba171d0"
+        },
         "instances": {
             "1000": {
                 "instance": {

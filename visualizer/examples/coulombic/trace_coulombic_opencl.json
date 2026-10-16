@@ -1,50 +1,98 @@
 {
     "data": [
         {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 24517,
+            "label": "matrix transpose",
+            "ok": true,
+            "options": "-DTYPE=\"int\" -DTILE_DIM=16",
+            "source_bytes": 802,
+            "start": 0,
+            "time": 24517,
+            "type": "kernel_compile"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 39472,
+            "label": "columbicPotential",
+            "object_id": 1000,
+            "ok": true,
+            "source_bytes": 5888,
+            "start": 24725,
+            "time": 39472,
+            "type": "kernel_compile"
+        },
+        {
             "label": "atoms",
             "line": 251,
             "object_id": 1001,
-            "time": 0,
+            "time": 39754,
             "type": "allocation"
         },
         {
             "label": "energy_out",
             "line": 292,
             "object_id": 1002,
-            "time": 392,
+            "time": 40074,
             "type": "allocation"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 46231,
+            "label": "matrix transpose",
+            "ok": true,
+            "options": "-DTYPE=\"float\" -DTILE_DIM=16",
+            "source_bytes": 802,
+            "start": 40080,
+            "time": 46231,
+            "type": "kernel_compile"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 50550,
+            "label": "init",
+            "object_id": 1003,
+            "ok": true,
+            "source_bytes": 5678,
+            "start": 46393,
+            "time": 50550,
+            "type": "kernel_compile"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1004,
-            "time": 1128,
+            "time": 50551,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1006,
-            "time": 1153,
+            "time": 50567,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 300000,
-            "end": 3994,
+            "end": 53816,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1006,
-            "start": 1983,
-            "time": 3994,
+            "start": 51288,
+            "time": 53816,
             "type": "transfer"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1006,
-            "time": 4003,
+            "time": 53832,
             "type": "deallocation"
         },
         {
@@ -54,7 +102,7 @@
                 300000
             ],
             "elwise_inputs": [],
-            "end": 4905,
+            "end": 54336,
             "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
             "label": "init",
             "line": 88,
@@ -66,26 +114,26 @@
             "prng": 1004,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 1141,
+            "start": 50564,
             "type": "skeleton_call"
         },
         {
             "label": "grid_in",
             "line": 292,
             "object_id": 1008,
-            "time": 4936,
+            "time": 54354,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 100,
-            "end": 5532,
+            "end": 54632,
             "label": "grid_in",
             "line": 258,
             "object_id": 1008,
-            "start": 4942,
-            "time": 5532,
+            "start": 54359,
+            "time": 54632,
             "type": "transfer"
         },
         {
@@ -97,7 +145,7 @@
             "elwise_inputs": [
                 1008
             ],
-            "end": 59555,
+            "end": 104466,
             "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
             "label": "columbicPotential",
             "line": 106,
@@ -110,31 +158,31 @@
                 1001
             ],
             "scalar_inputs": [],
-            "start": 4942,
+            "start": 54359,
             "type": "skeleton_call"
         },
         {
             "label": "grid_in",
             "line": 322,
             "object_id": 1008,
-            "time": 59589,
+            "time": 104484,
             "type": "deallocation"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 100,
-            "end": 59787,
+            "end": 104791,
             "label": "energy_out",
             "line": 306,
             "object_id": 1002,
-            "start": 59598,
-            "time": 59787,
+            "start": 104489,
+            "time": 104791,
             "type": "transfer"
         },
         {
             "elwise_inputs": [],
-            "end": 59815,
+            "end": 104810,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -143,25 +191,29 @@
                 1002
             ],
             "scalar_inputs": [],
-            "start": 59598,
+            "start": 104489,
             "type": "external"
         },
         {
             "label": "energy_out",
             "line": 322,
             "object_id": 1002,
-            "time": 59825,
+            "time": 104817,
             "type": "deallocation"
         },
         {
             "label": "atoms",
             "line": 282,
             "object_id": 1001,
-            "time": 59829,
+            "time": 104822,
             "type": "deallocation"
         }
     ],
     "header": {
+        "files": {
+            "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp": "ba5b8349d226dfd20a674b29f7fb254df2c7eec4200881d96b097383d1b4f53b",
+            "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp": "59bba1ce9470fe1a3e7c6c752d325355a5a7bb8e729ee74f8cfbec58a0b27e35"
+        },
         "instances": {
             "1000": {
                 "instance": {

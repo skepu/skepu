@@ -1,50 +1,86 @@
 {
     "data": [
         {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 24633,
+            "label": "matrix transpose",
+            "ok": true,
+            "options": "-DTYPE=\"int\" -DTILE_DIM=16",
+            "source_bytes": 802,
+            "start": 0,
+            "time": 24633,
+            "type": "kernel_compile"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 33253,
+            "label": "dotprod",
+            "object_id": 1000,
+            "ok": true,
+            "source_bytes": 10522,
+            "start": 24851,
+            "time": 33253,
+            "type": "kernel_compile"
+        },
+        {
             "label": "a",
             "line": 251,
             "object_id": 1001,
-            "time": 0,
+            "time": 33256,
             "type": "allocation"
         },
         {
             "label": "b",
             "line": 251,
             "object_id": 1002,
-            "time": 2,
+            "time": 33258,
             "type": "allocation"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 38264,
+            "label": "randomize::uniform",
+            "object_id": 1003,
+            "ok": true,
+            "source_bytes": 6003,
+            "start": 33267,
+            "time": 38264,
+            "type": "kernel_compile"
         },
         {
             "label": "[Global PRNG]",
             "line": 139,
             "object_id": 1004,
-            "time": 408,
+            "time": 38264,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1006,
-            "time": 473,
+            "time": 38276,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 2048,
-            "end": 2958,
+            "end": 40154,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1006,
-            "start": 479,
-            "time": 2958,
+            "start": 38281,
+            "time": 40154,
             "type": "transfer"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1006,
-            "time": 2967,
+            "time": 40163,
             "type": "deallocation"
         },
         {
@@ -54,7 +90,7 @@
                 2048
             ],
             "elwise_inputs": [],
-            "end": 3258,
+            "end": 40417,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
             "label": "randomize::uniform",
             "line": 244,
@@ -66,33 +102,33 @@
             "prng": 1004,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 472,
+            "start": 38276,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1010,
-            "time": 3286,
+            "time": 40438,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 2048,
-            "end": 3515,
+            "end": 40669,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1010,
-            "start": 3291,
-            "time": 3515,
+            "start": 40442,
+            "time": 40669,
             "type": "transfer"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1010,
-            "time": 3521,
+            "time": 40674,
             "type": "deallocation"
         },
         {
@@ -102,7 +138,7 @@
                 2048
             ],
             "elwise_inputs": [],
-            "end": 3746,
+            "end": 40880,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
             "label": "randomize::uniform",
             "line": 244,
@@ -114,24 +150,24 @@
             "prng": 1004,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 3286,
+            "start": 40438,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 2048,
-            "end": 3960,
+            "end": 41100,
             "label": "a",
             "line": 306,
             "object_id": 1001,
-            "start": 3754,
-            "time": 3960,
+            "start": 40887,
+            "time": 41100,
             "type": "transfer"
         },
         {
             "elwise_inputs": [],
-            "end": 4292,
+            "end": 41352,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -140,24 +176,24 @@
                 1001
             ],
             "scalar_inputs": [],
-            "start": 3754,
+            "start": 40886,
             "type": "external"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 2048,
-            "end": 4503,
+            "end": 41589,
             "label": "b",
             "line": 306,
             "object_id": 1002,
-            "start": 4293,
-            "time": 4503,
+            "start": 41353,
+            "time": 41589,
             "type": "transfer"
         },
         {
             "elwise_inputs": [],
-            "end": 4801,
+            "end": 41830,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -166,24 +202,24 @@
                 1002
             ],
             "scalar_inputs": [],
-            "start": 4292,
+            "start": 41353,
             "type": "external"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 1,
-            "end": 5196,
+            "end": 42233,
             "label": "Internal (reduce-temp)",
             "line": 306,
             "object_id": 1016,
-            "start": 4810,
-            "time": 5196,
+            "start": 41838,
+            "time": 42233,
             "type": "transfer"
         },
         {
             "object_id": 1019,
-            "time": 5201,
+            "time": 42241,
             "type": "scalar_value",
             "value": 3002.4473
         },
@@ -197,7 +233,7 @@
                 1001,
                 1002
             ],
-            "end": 5203,
+            "end": 42243,
             "file": "/Users/august/Claude/skepu-alpha/examples/dotproduct.cpp",
             "label": "dotprod",
             "line": 39,
@@ -208,25 +244,30 @@
             "pattern": "MapReduce",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 4804,
+            "start": 41833,
             "type": "skeleton_call"
         },
         {
             "label": "b",
             "line": 282,
             "object_id": 1002,
-            "time": 5219,
+            "time": 42259,
             "type": "deallocation"
         },
         {
             "label": "a",
             "line": 282,
             "object_id": 1001,
-            "time": 5222,
+            "time": 42262,
             "type": "deallocation"
         }
     ],
     "header": {
+        "files": {
+            "/Users/august/Claude/skepu-alpha/examples/dotproduct.cpp": "d023d00908e1f40ebd23ad25321cae4388d2ac818d799d72f1cd2f1240857d8b",
+            "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp": "59bba1ce9470fe1a3e7c6c752d325355a5a7bb8e729ee74f8cfbec58a0b27e35",
+            "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp": "b803d9f3fea3c6df2ddd684bcbb58c2481801e29c40a3c365b994713fc420f45"
+        },
         "instances": {
             "1000": {
                 "instance": {

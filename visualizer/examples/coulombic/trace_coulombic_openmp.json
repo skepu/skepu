@@ -11,21 +11,21 @@
             "label": "energy_out",
             "line": 292,
             "object_id": 1002,
-            "time": 352,
+            "time": 524,
             "type": "allocation"
         },
         {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1004,
-            "time": 353,
+            "time": 539,
             "type": "allocation"
         },
         {
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1006,
-            "time": 366,
+            "time": 556,
             "type": "allocation"
         },
         {
@@ -34,7 +34,7 @@
                 300000
             ],
             "elwise_inputs": [],
-            "end": 883,
+            "end": 1116,
             "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
             "label": "init",
             "line": 88,
@@ -46,22 +46,22 @@
             "prng": 1004,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 355,
-            "threads": 4,
+            "start": 543,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1006,
-            "time": 918,
+            "time": 1177,
             "type": "deallocation"
         },
         {
             "label": "grid_in",
             "line": 292,
             "object_id": 1007,
-            "time": 919,
+            "time": 1178,
             "type": "allocation"
         },
         {
@@ -72,7 +72,7 @@
             "elwise_inputs": [
                 1007
             ],
-            "end": 20342,
+            "end": 8971,
             "file": "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp",
             "label": "columbicPotential",
             "line": 106,
@@ -85,20 +85,20 @@
                 1001
             ],
             "scalar_inputs": [],
-            "start": 921,
-            "threads": 4,
+            "start": 1179,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "label": "grid_in",
             "line": 322,
             "object_id": 1007,
-            "time": 20356,
+            "time": 8992,
             "type": "deallocation"
         },
         {
             "elwise_inputs": [],
-            "end": 20395,
+            "end": 9046,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -107,25 +107,29 @@
                 1002
             ],
             "scalar_inputs": [],
-            "start": 20374,
+            "start": 9016,
             "type": "external"
         },
         {
             "label": "energy_out",
             "line": 322,
             "object_id": 1002,
-            "time": 20395,
+            "time": 9046,
             "type": "deallocation"
         },
         {
             "label": "atoms",
             "line": 282,
             "object_id": 1001,
-            "time": 20399,
+            "time": 9048,
             "type": "deallocation"
         }
     ],
     "header": {
+        "files": {
+            "/Users/august/Claude/skepu-alpha/examples/coulombic.cpp": "ba5b8349d226dfd20a674b29f7fb254df2c7eec4200881d96b097383d1b4f53b",
+            "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp": "59bba1ce9470fe1a3e7c6c752d325355a5a7bb8e729ee74f8cfbec58a0b27e35"
+        },
         "instances": {
             "1000": {
                 "instance": {

@@ -1,37 +1,85 @@
 {
     "data": [
         {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 5571,
+            "label": "matrix transpose",
+            "ok": true,
+            "options": "-DTYPE=\"int\" -DTILE_DIM=16",
+            "source_bytes": 802,
+            "start": 0,
+            "time": 5571,
+            "type": "kernel_compile"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 35871,
+            "label": "init_random",
+            "object_id": 1000,
+            "ok": true,
+            "source_bytes": 5759,
+            "start": 5796,
+            "time": 35871,
+            "type": "kernel_compile"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 49601,
+            "label": "update",
+            "object_id": 1001,
+            "ok": true,
+            "source_bytes": 10701,
+            "start": 35890,
+            "time": 49601,
+            "type": "kernel_compile"
+        },
+        {
             "label": "PRNG stream",
             "line": 139,
             "object_id": 1002,
-            "time": 0,
+            "time": 49604,
             "type": "allocation"
         },
         {
             "label": "domain_a",
             "line": 292,
             "object_id": 1003,
-            "time": 9,
+            "time": 49619,
             "type": "allocation"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 49763,
+            "label": "matrix transpose",
+            "ok": true,
+            "options": "-DTYPE=\"long\" -DTILE_DIM=16",
+            "source_bytes": 802,
+            "start": 49625,
+            "time": 49763,
+            "type": "kernel_compile"
         },
         {
             "label": "domain_b",
             "line": 292,
             "object_id": 1004,
-            "time": 264,
+            "time": 49965,
             "type": "allocation"
         },
         {
             "label": "rules",
             "line": 292,
             "object_id": 1005,
-            "time": 264,
+            "time": 49965,
             "type": "allocation"
         },
         {
             "elwise_inputs": [],
-            "end": 266,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 49975,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "[external]",
             "line": 72,
             "outputs": [
@@ -39,19 +87,19 @@
             ],
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 265,
+            "start": 49966,
             "type": "external"
         },
         {
-            "end": 266,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 49976,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "Domain",
             "line": 78,
             "object_ids": [
                 1003,
                 1004
             ],
-            "start": 266,
+            "start": 49976,
             "type": "virtual_container",
             "virtual_id": 1046
         },
@@ -59,26 +107,26 @@
             "label": "[Internal PRNG]",
             "line": 251,
             "object_id": 1009,
-            "time": 283,
+            "time": 49992,
             "type": "allocation"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 144,
-            "end": 2178,
+            "end": 52228,
             "label": "[Internal PRNG]",
             "line": 258,
             "object_id": 1009,
-            "start": 285,
-            "time": 2178,
+            "start": 49994,
+            "time": 52228,
             "type": "transfer"
         },
         {
             "label": "[Internal PRNG]",
             "line": 282,
             "object_id": 1009,
-            "time": 2187,
+            "time": 52235,
             "type": "deallocation"
         },
         {
@@ -88,8 +136,8 @@
                 144
             ],
             "elwise_inputs": [],
-            "end": 2820,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 52463,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "init_random",
             "line": 80,
             "object_id": 1000,
@@ -100,63 +148,63 @@
             "prng": 1002,
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 283,
+            "start": 49992,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 144,
-            "end": 3497,
+            "end": 52743,
             "label": "domain_a",
             "line": 306,
             "object_id": 1003,
-            "start": 2965,
-            "time": 3497,
+            "start": 52563,
+            "time": 52743,
             "type": "transfer"
         },
         {
             "data_file": ".//domain_a@1.txt",
-            "end": 3577,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 52778,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "domain_a",
             "line": 81,
             "object_id": 1003,
-            "start": 2867,
+            "start": 52500,
             "type": "snapshot"
         },
         {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "Double-iteration",
             "line": 83,
             "region_depth": 1,
-            "time": 3579,
+            "time": 52779,
             "type": "region"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 18,
-            "end": 3823,
+            "end": 52945,
             "label": "rules",
             "line": 258,
             "object_id": 1005,
             "region": "Double-iteration",
-            "start": 3587,
-            "time": 3823,
+            "start": 52786,
+            "time": 52945,
             "type": "transfer"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 1,
-            "end": 4032,
+            "end": 53134,
             "label": "Internal (overlap-wrap)",
             "line": 258,
             "object_id": 1013,
             "region": "Double-iteration",
-            "start": 3828,
-            "time": 4032,
+            "start": 52947,
+            "time": 53134,
             "type": "transfer"
         },
         {
@@ -169,8 +217,8 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 4383,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 53484,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "update",
             "line": 84,
             "object_id": 1001,
@@ -190,20 +238,20 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 4033,
+            "start": 53134,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 1,
-            "end": 4604,
+            "end": 53733,
             "label": "Internal (overlap-wrap)",
             "line": 258,
             "object_id": 1016,
             "region": "Double-iteration",
-            "start": 4402,
-            "time": 4604,
+            "start": 53502,
+            "time": 53733,
             "type": "transfer"
         },
         {
@@ -216,8 +264,8 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 4820,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 53947,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "update",
             "line": 85,
             "object_id": 1001,
@@ -237,76 +285,76 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 4604,
+            "start": 53733,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 144,
-            "end": 5238,
+            "end": 54145,
             "label": "domain_b",
             "line": 306,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 4921,
-            "time": 5238,
+            "start": 53990,
+            "time": 54145,
             "type": "transfer"
         },
         {
             "data_file": ".//domain_b@2.txt",
-            "end": 5274,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 54168,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "domain_b",
             "line": 86,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 4866,
+            "start": 53954,
             "type": "snapshot"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 144,
-            "end": 5498,
+            "end": 54374,
             "label": "domain_a",
             "line": 306,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 5313,
-            "time": 5498,
+            "start": 54215,
+            "time": 54374,
             "type": "transfer"
         },
         {
             "data_file": ".//domain_a@3.txt",
-            "end": 5525,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 54404,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "domain_a",
             "line": 87,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 5275,
+            "start": 54168,
             "type": "snapshot"
         },
         {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "Double-iteration",
             "line": 83,
             "region_depth": 1,
-            "time": 5526,
+            "time": 54405,
             "type": "region"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 1,
-            "end": 5729,
+            "end": 54581,
             "label": "Internal (overlap-wrap)",
             "line": 258,
             "object_id": 1021,
             "region": "Double-iteration",
-            "start": 5529,
-            "time": 5729,
+            "start": 54407,
+            "time": 54581,
             "type": "transfer"
         },
         {
@@ -319,8 +367,8 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 5938,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 54779,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "update",
             "line": 84,
             "object_id": 1001,
@@ -340,20 +388,20 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 5729,
+            "start": 54581,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 1,
-            "end": 6152,
+            "end": 54971,
             "label": "Internal (overlap-wrap)",
             "line": 258,
             "object_id": 1024,
             "region": "Double-iteration",
-            "start": 5946,
-            "time": 6152,
+            "start": 54788,
+            "time": 54971,
             "type": "transfer"
         },
         {
@@ -366,8 +414,8 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 6427,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 55170,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "update",
             "line": 85,
             "object_id": 1001,
@@ -387,76 +435,76 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 6152,
+            "start": 54972,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 144,
-            "end": 7068,
+            "end": 55409,
             "label": "domain_b",
             "line": 306,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 6496,
-            "time": 7068,
+            "start": 55229,
+            "time": 55409,
             "type": "transfer"
         },
         {
             "data_file": ".//domain_b@4.txt",
-            "end": 7106,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 55436,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "domain_b",
             "line": 86,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 6436,
+            "start": 55176,
             "type": "snapshot"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 144,
-            "end": 7619,
+            "end": 55632,
             "label": "domain_a",
             "line": 306,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 7155,
-            "time": 7619,
+            "start": 55470,
+            "time": 55632,
             "type": "transfer"
         },
         {
             "data_file": ".//domain_a@5.txt",
-            "end": 7643,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 55652,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "domain_a",
             "line": 87,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 7106,
+            "start": 55436,
             "type": "snapshot"
         },
         {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "Double-iteration",
             "line": 83,
             "region_depth": 1,
-            "time": 7647,
+            "time": 55653,
             "type": "region"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 1,
-            "end": 8238,
+            "end": 55841,
             "label": "Internal (overlap-wrap)",
             "line": 258,
             "object_id": 1029,
             "region": "Double-iteration",
-            "start": 7651,
-            "time": 8238,
+            "start": 55654,
+            "time": 55841,
             "type": "transfer"
         },
         {
@@ -469,8 +517,8 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 8534,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 56104,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "update",
             "line": 84,
             "object_id": 1001,
@@ -490,20 +538,20 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 8239,
+            "start": 55841,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 1,
-            "end": 8715,
+            "end": 56274,
             "label": "Internal (overlap-wrap)",
             "line": 258,
             "object_id": 1032,
             "region": "Double-iteration",
-            "start": 8541,
-            "time": 8715,
+            "start": 56112,
+            "time": 56274,
             "type": "transfer"
         },
         {
@@ -516,8 +564,8 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 8948,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 56469,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "update",
             "line": 85,
             "object_id": 1001,
@@ -537,76 +585,76 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 8715,
+            "start": 56275,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 144,
-            "end": 9173,
+            "end": 56684,
             "label": "domain_b",
             "line": 306,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 8996,
-            "time": 9173,
+            "start": 56517,
+            "time": 56684,
             "type": "transfer"
         },
         {
             "data_file": ".//domain_b@6.txt",
-            "end": 9201,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 56703,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "domain_b",
             "line": 86,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 8955,
+            "start": 56475,
             "type": "snapshot"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 144,
-            "end": 9429,
+            "end": 56900,
             "label": "domain_a",
             "line": 306,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 9244,
-            "time": 9429,
+            "start": 56745,
+            "time": 56900,
             "type": "transfer"
         },
         {
             "data_file": ".//domain_a@7.txt",
-            "end": 9450,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 56921,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "domain_a",
             "line": 87,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 9202,
+            "start": 56704,
             "type": "snapshot"
         },
         {
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "Double-iteration",
             "line": 83,
             "region_depth": 1,
-            "time": 9450,
+            "time": 56921,
             "type": "region"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 1,
-            "end": 9644,
+            "end": 57110,
             "label": "Internal (overlap-wrap)",
             "line": 258,
             "object_id": 1037,
             "region": "Double-iteration",
-            "start": 9452,
-            "time": 9644,
+            "start": 56923,
+            "time": 57110,
             "type": "transfer"
         },
         {
@@ -619,8 +667,8 @@
             "elwise_inputs": [
                 1003
             ],
-            "end": 9917,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 57301,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "update",
             "line": 84,
             "object_id": 1001,
@@ -640,20 +688,20 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 9644,
+            "start": 57110,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "host-to-device",
             "elements": 1,
-            "end": 10109,
+            "end": 57473,
             "label": "Internal (overlap-wrap)",
             "line": 258,
             "object_id": 1040,
             "region": "Double-iteration",
-            "start": 9925,
-            "time": 10109,
+            "start": 57308,
+            "time": 57473,
             "type": "transfer"
         },
         {
@@ -666,8 +714,8 @@
             "elwise_inputs": [
                 1004
             ],
-            "end": 10322,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 57659,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "update",
             "line": 85,
             "object_id": 1001,
@@ -687,61 +735,61 @@
             ],
             "region": "Double-iteration",
             "scalar_inputs": [],
-            "start": 10109,
+            "start": 57474,
             "type": "skeleton_call"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 144,
-            "end": 10551,
+            "end": 57888,
             "label": "domain_b",
             "line": 306,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 10364,
-            "time": 10551,
+            "start": 57698,
+            "time": 57888,
             "type": "transfer"
         },
         {
             "data_file": ".//domain_b@8.txt",
-            "end": 10571,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 57920,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "domain_b",
             "line": 86,
             "object_id": 1004,
             "region": "Double-iteration",
-            "start": 10331,
+            "start": 57665,
             "type": "snapshot"
         },
         {
             "backend": "OpenCL",
             "direction": "device-to-host",
             "elements": 144,
-            "end": 10807,
+            "end": 58157,
             "label": "domain_a",
             "line": 306,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 10612,
-            "time": 10807,
+            "start": 57971,
+            "time": 58157,
             "type": "transfer"
         },
         {
             "data_file": ".//domain_a@9.txt",
-            "end": 10830,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 58184,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "domain_a",
             "line": 87,
             "object_id": 1003,
             "region": "Double-iteration",
-            "start": 10571,
+            "start": 57921,
             "type": "snapshot"
         },
         {
             "elwise_inputs": [],
-            "end": 10831,
-            "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+            "end": 58184,
+            "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
             "label": "I/O",
             "line": 88,
             "outputs": [],
@@ -749,44 +797,47 @@
                 1003
             ],
             "scalar_inputs": [],
-            "start": 10831,
+            "start": 58184,
             "type": "external"
         },
         {
             "label": "rules",
             "line": 322,
             "object_id": 1005,
-            "time": 10851,
+            "time": 58203,
             "type": "deallocation"
         },
         {
             "label": "domain_b",
             "line": 322,
             "object_id": 1004,
-            "time": 10854,
+            "time": 58205,
             "type": "deallocation"
         },
         {
             "label": "domain_a",
             "line": 322,
             "object_id": 1003,
-            "time": 11402,
+            "time": 58729,
             "type": "deallocation"
         }
     ],
     "header": {
+        "files": {
+            "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py": "2fddd45527b6bbc6e972d37ca311fa4280b88815039a400313e5332a4e6251ae"
+        },
         "instances": {
             "1000": {
                 "instance": {
                     "end_line": 62,
-                    "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+                    "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
                     "line": 62
                 },
                 "label": "init_random",
                 "user_functions": [
                     {
                         "end_line": 13,
-                        "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+                        "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
                         "kind": "function",
                         "line": 9,
                         "name": "init_random_f"
@@ -796,14 +847,14 @@
             "1001": {
                 "instance": {
                     "end_line": 64,
-                    "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+                    "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
                     "line": 64
                 },
                 "label": "update",
                 "user_functions": [
                     {
                         "end_line": 34,
-                        "file": "/private/tmp/claude-501/-Users-august-Claude-skepu-alpha/fa6a242a-9864-47e3-a810-a58dd040c197/scratchpad/py-cl/cellular_automaton.py",
+                        "file": "/Users/august/Claude/skepu-alpha/shedskin/examples/skepu/cellular_automaton.py",
                         "kind": "function",
                         "line": 25,
                         "name": "automaton2d"

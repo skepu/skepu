@@ -1,88 +1,252 @@
-[
-    {
-        "label": "0x7fa5941c0800",
-        "line": 239,
-        "object_id": 1002,
-        "time": 0,
-        "type": "allocation"
-    },
-    {
-        "label": "0x7fa5941c2800",
-        "line": 239,
-        "object_id": 1003,
-        "time": 11,
-        "type": "allocation"
-    },
-    {
-        "backend": "OpenCL",
-        "direction": "host-to-device",
-        "elements": 2048,
-        "end": 1598,
-        "label": "0x7fa5941c0800",
-        "line": 258,
-        "object_id": 1002,
-        "start": 79,
-        "time": 1598,
-        "type": "transfer"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            2048
-        ],
-        "elwise_inputs": [
-            1002
-        ],
-        "end": 1660,
-        "file": "/Users/august/Developer/skepu-alpha/examples/cma.cpp",
-        "label": "prefix_sum",
-        "line": 17,
-        "object_id": 1000,
-        "outputs": [
-            1002
-        ],
-        "pattern": "Scan",
-        "proxy_inputs": [],
-        "scalar_inputs": [],
-        "start": 1610,
-        "threads": 8,
-        "type": "skeleton_call"
-    },
-    {
-        "backend": "OpenCL",
-        "elements": [
-            2048
-        ],
-        "elwise_inputs": [
-            1002
-        ],
-        "end": 1711,
-        "file": "/Users/august/Developer/skepu-alpha/examples/cma.cpp",
-        "label": "average",
-        "line": 18,
-        "object_id": 1001,
-        "outputs": [
-            1003
-        ],
-        "pattern": "Map",
-        "proxy_inputs": [],
-        "scalar_inputs": [],
-        "start": 1706,
-        "threads": 8,
-        "type": "skeleton_call"
-    },
-    {
-        "label": "0x7fa5941c2800",
-        "line": 270,
-        "object_id": 1003,
-        "time": 3797,
-        "type": "deallocation"
-    },
-    {
-        "label": "0x7fa5941c0800",
-        "line": 270,
-        "object_id": 1002,
-        "time": 3817,
-        "type": "deallocation"
+{
+    "data": [
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 24887,
+            "label": "matrix transpose",
+            "ok": true,
+            "options": "-DTYPE=\"int\" -DTILE_DIM=16",
+            "source_bytes": 802,
+            "start": 0,
+            "time": 24887,
+            "type": "kernel_compile"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 31872,
+            "label": "prefix_sum",
+            "object_id": 1000,
+            "ok": true,
+            "source_bytes": 4805,
+            "start": 25096,
+            "time": 31872,
+            "type": "kernel_compile"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 35543,
+            "label": "average",
+            "object_id": 1001,
+            "ok": true,
+            "source_bytes": 4761,
+            "start": 31880,
+            "time": 35543,
+            "type": "kernel_compile"
+        },
+        {
+            "label": "in",
+            "line": 251,
+            "object_id": 1002,
+            "time": 35806,
+            "type": "allocation"
+        },
+        {
+            "label": "out",
+            "line": 251,
+            "object_id": 1003,
+            "time": 35807,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 40216,
+            "label": "randomize::uniform",
+            "object_id": 1004,
+            "ok": true,
+            "source_bytes": 5749,
+            "start": 35815,
+            "time": 40216,
+            "type": "kernel_compile"
+        },
+        {
+            "label": "[Global PRNG]",
+            "line": 139,
+            "object_id": 1005,
+            "time": 40219,
+            "type": "allocation"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 251,
+            "object_id": 1007,
+            "time": 40231,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "host-to-device",
+            "elements": 2048,
+            "end": 42105,
+            "label": "[Internal PRNG]",
+            "line": 258,
+            "object_id": 1007,
+            "start": 40238,
+            "time": 42105,
+            "type": "transfer"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 282,
+            "object_id": 1007,
+            "time": 42115,
+            "type": "deallocation"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2048
+            ],
+            "elwise_inputs": [],
+            "end": 42455,
+            "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+            "label": "randomize::uniform",
+            "line": 226,
+            "object_id": 1004,
+            "outputs": [
+                1002
+            ],
+            "pattern": "Map",
+            "prng": 1005,
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 40230,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2048
+            ],
+            "elwise_inputs": [
+                1002
+            ],
+            "end": 42912,
+            "file": "/Users/august/Claude/skepu-alpha/examples/cma.cpp",
+            "label": "prefix_sum",
+            "line": 18,
+            "object_id": 1000,
+            "outputs": [
+                1002
+            ],
+            "pattern": "Scan",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 42475,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "devices": 1,
+            "elements": [
+                2048
+            ],
+            "elwise_inputs": [
+                1002
+            ],
+            "end": 43186,
+            "file": "/Users/august/Claude/skepu-alpha/examples/cma.cpp",
+            "label": "average",
+            "line": 19,
+            "object_id": 1001,
+            "outputs": [
+                1003
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 42926,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "direction": "device-to-host",
+            "elements": 2048,
+            "end": 43435,
+            "label": "out",
+            "line": 306,
+            "object_id": 1003,
+            "start": 43198,
+            "time": 43435,
+            "type": "transfer"
+        },
+        {
+            "label": "out",
+            "line": 282,
+            "object_id": 1003,
+            "time": 43448,
+            "type": "deallocation"
+        },
+        {
+            "label": "in",
+            "line": 282,
+            "object_id": 1002,
+            "time": 43451,
+            "type": "deallocation"
+        }
+    ],
+    "header": {
+        "files": {
+            "/Users/august/Claude/skepu-alpha/examples/cma.cpp": "1bd667746d7f335d32f16607457fc268fc3da198f2f35c41459877334a8cfbae",
+            "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp": "b803d9f3fea3c6df2ddd684bcbb58c2481801e29c40a3c365b994713fc420f45"
+        },
+        "instances": {
+            "1000": {
+                "instance": {
+                    "end_line": 13,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/cma.cpp",
+                    "line": 13
+                },
+                "label": "prefix_sum",
+                "user_functions": [
+                    {
+                        "end_line": 19,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/util.hpp",
+                        "kind": "function",
+                        "line": 16,
+                        "name": "add"
+                    }
+                ]
+            },
+            "1001": {
+                "instance": {
+                    "end_line": 14,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/cma.cpp",
+                    "line": 14
+                },
+                "label": "average",
+                "user_functions": [
+                    {
+                        "end_line": 10,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/cma.cpp",
+                        "kind": "function",
+                        "line": 7,
+                        "name": "avg"
+                    }
+                ]
+            },
+            "1004": {
+                "instance": {
+                    "end_line": 223,
+                    "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+                    "line": 223
+                },
+                "label": "randomize::uniform",
+                "user_functions": [
+                    {
+                        "end_line": 146,
+                        "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/randomize.hpp",
+                        "kind": "function",
+                        "line": 140,
+                        "name": "uniform_integer_uf"
+                    }
+                ]
+            }
+        }
     }
-]
+}

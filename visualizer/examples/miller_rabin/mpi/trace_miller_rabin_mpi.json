@@ -2,7 +2,7 @@
     "data": [
         {
             "object_id": 1005,
-            "time": 2700,
+            "time": 3923,
             "type": "scalar_value",
             "value": 1
         },
@@ -10,19 +10,19 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 1,
-            "end": 2723,
+            "end": 3983,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 1,
-            "start": 2719,
+            "start": 3976,
             "type": "communication"
         },
         {
             "object_id": 1006,
-            "time": 2731,
+            "time": 3990,
             "type": "scalar_value",
             "value": 2
         },
@@ -32,7 +32,7 @@
                 6
             ],
             "elwise_inputs": [],
-            "end": 2736,
+            "end": 3995,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -41,14 +41,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 4
+                    "time_us": 7
                 },
                 "local_elements": 2,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 850697691479707070,
-                "work_end": 2719,
-                "work_start": 2667
+                "work_end": 3976,
+                "work_start": 3461
             },
             "object_id": 1000,
             "outputs": [
@@ -59,13 +59,13 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 1,
-            "start": 2667,
-            "threads": 2,
+            "start": 3460,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1012,
-            "time": 2844,
+            "time": 4293,
             "type": "scalar_value",
             "value": 7
         },
@@ -73,19 +73,19 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 2,
-            "end": 2876,
+            "end": 4361,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 2,
-            "start": 2860,
+            "start": 4312,
             "type": "communication"
         },
         {
             "object_id": 1013,
-            "time": 2884,
+            "time": 4368,
             "type": "scalar_value",
             "value": 23
         },
@@ -95,7 +95,7 @@
                 96
             ],
             "elwise_inputs": [],
-            "end": 2888,
+            "end": 4372,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -104,14 +104,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 16
+                    "time_us": 49
                 },
                 "local_elements": 24,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 850697691479707070,
-                "work_end": 2860,
-                "work_start": 2775
+                "work_end": 4311,
+                "work_start": 4032
             },
             "object_id": 1007,
             "outputs": [
@@ -122,13 +122,13 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 2,
-            "start": 2774,
-            "threads": 2,
+            "start": 4032,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1019,
-            "time": 2974,
+            "time": 4676,
             "type": "scalar_value",
             "value": 52
         },
@@ -136,19 +136,19 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 3,
-            "end": 2998,
+            "end": 4706,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 3,
-            "start": 2989,
+            "start": 4703,
             "type": "communication"
         },
         {
             "object_id": 1020,
-            "time": 3005,
+            "time": 4713,
             "type": "scalar_value",
             "value": 166
         },
@@ -158,7 +158,7 @@
                 996
             ],
             "elwise_inputs": [],
-            "end": 3010,
+            "end": 4717,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -167,14 +167,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 9
+                    "time_us": 3
                 },
                 "local_elements": 249,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 850697691479707070,
-                "work_end": 2989,
-                "work_start": 2899
+                "work_end": 4703,
+                "work_start": 4384
             },
             "object_id": 1014,
             "outputs": [
@@ -185,13 +185,13 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 3,
-            "start": 2898,
-            "threads": 2,
+            "start": 4384,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1026,
-            "time": 3188,
+            "time": 5014,
             "type": "scalar_value",
             "value": 365
         },
@@ -199,19 +199,19 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 4,
-            "end": 3200,
+            "end": 5047,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 4,
-            "start": 3198,
+            "start": 5026,
             "type": "communication"
         },
         {
             "object_id": 1027,
-            "time": 3206,
+            "time": 5055,
             "type": "scalar_value",
             "value": 1227
         },
@@ -221,7 +221,7 @@
                 9996
             ],
             "elwise_inputs": [],
-            "end": 3209,
+            "end": 5059,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -230,14 +230,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 2
+                    "time_us": 21
                 },
                 "local_elements": 2499,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 850697691479707070,
-                "work_end": 3197,
-                "work_start": 3023
+                "work_end": 5025,
+                "work_start": 4729
             },
             "object_id": 1021,
             "outputs": [
@@ -248,13 +248,13 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 4,
-            "start": 3022,
-            "threads": 2,
+            "start": 4728,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1033,
-            "time": 4616,
+            "time": 5993,
             "type": "scalar_value",
             "value": 2760
         },
@@ -262,19 +262,19 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 5,
-            "end": 5008,
+            "end": 6094,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 5,
-            "start": 4638,
+            "start": 6012,
             "type": "communication"
         },
         {
             "object_id": 1034,
-            "time": 5015,
+            "time": 6102,
             "type": "scalar_value",
             "value": 9590
         },
@@ -284,7 +284,7 @@
                 99996
             ],
             "elwise_inputs": [],
-            "end": 5019,
+            "end": 6106,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -293,14 +293,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 370
+                    "time_us": 82
                 },
                 "local_elements": 24999,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 850697691479707070,
-                "work_end": 4638,
-                "work_start": 3216
+                "work_end": 6011,
+                "work_start": 5067
             },
             "object_id": 1028,
             "outputs": [
@@ -311,13 +311,13 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 5,
-            "start": 3215,
-            "threads": 2,
+            "start": 5066,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1040,
-            "time": 19931,
+            "time": 16478,
             "type": "scalar_value",
             "value": 22042
         },
@@ -325,19 +325,19 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 6,
-            "end": 22683,
+            "end": 16509,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 6,
-            "start": 19948,
+            "start": 16507,
             "type": "communication"
         },
         {
             "object_id": 1041,
-            "time": 22690,
+            "time": 16515,
             "type": "scalar_value",
             "value": 78496
         },
@@ -347,7 +347,7 @@
                 999996
             ],
             "elwise_inputs": [],
-            "end": 22693,
+            "end": 16519,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -356,14 +356,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 2735
+                    "time_us": 2
                 },
                 "local_elements": 249999,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 850697691479707070,
-                "work_end": 19948,
-                "work_start": 5030
+                "work_end": 16507,
+                "work_start": 6125
             },
             "object_id": 1035,
             "outputs": [
@@ -374,13 +374,13 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 6,
-            "start": 5029,
-            "threads": 2,
+            "start": 6125,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "object_id": 1047,
-            "time": 187509,
+            "time": 120275,
             "type": "scalar_value",
             "value": 183070
         },
@@ -388,19 +388,19 @@
             "bytes_received": 15,
             "bytes_sent": 15,
             "comm_seq": 7,
-            "end": 210920,
+            "end": 123353,
             "object_ids": [],
             "operation": "allgather",
             "phase": "after",
             "ranks": 4,
             "reason": "the partial results of the processes are combined",
             "seq": 7,
-            "start": 187529,
+            "start": 120294,
             "type": "communication"
         },
         {
             "object_id": 1048,
-            "time": 210927,
+            "time": 123359,
             "type": "scalar_value",
             "value": 664577
         },
@@ -410,7 +410,7 @@
                 9999996
             ],
             "elwise_inputs": [],
-            "end": 210931,
+            "end": 123362,
             "file": "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp",
             "label": "prime_counter",
             "line": 81,
@@ -419,14 +419,14 @@
                     "bytes_received": 15,
                     "bytes_sent": 15,
                     "collectives": 1,
-                    "time_us": 23391
+                    "time_us": 3059
                 },
                 "local_elements": 2499999,
                 "rank": 0,
                 "ranks": 4,
                 "signature": 850697691479707070,
-                "work_end": 187528,
-                "work_start": 22703
+                "work_end": 120294,
+                "work_start": 16529
             },
             "object_id": 1042,
             "outputs": [
@@ -437,24 +437,27 @@
             "proxy_inputs": [],
             "scalar_inputs": [],
             "seq": 7,
-            "start": 22702,
-            "threads": 2,
+            "start": 16528,
+            "threads": 15,
             "type": "skeleton_call"
         }
     ],
     "header": {
         "clock": {
             "end": {
-                "local_us": 210990,
+                "local_us": 123392,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             },
             "method": "ping-pong",
             "start": {
-                "local_us": 2126,
+                "local_us": 3016,
                 "offset_us": 0.0,
                 "uncertainty_us": 0.0
             }
+        },
+        "files": {
+            "/Users/august/Claude/skepu-alpha/examples/miller_rabin.cpp": "939d27b756ef266cfdca3663935b8faa2c6eaf7bdddb18c0a2efeac71ba171d0"
         },
         "instances": {
             "1000": {
@@ -628,8 +631,8 @@
         },
         "mpi": {
             "detail_rank": 0,
-            "host": "Augusts-Laptop.local",
-            "pid": 89150,
+            "host": "mac.staff.netlogon.liu.se",
+            "pid": 69511,
             "rank": 0,
             "ranks": 4,
             "role": "full"

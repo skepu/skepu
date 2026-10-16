@@ -4,12 +4,12 @@
             "label": "Coeffs",
             "line": 251,
             "object_id": 1000,
-            "time": 0,
+            "time": 1,
             "type": "allocation"
         },
         {
             "elwise_inputs": [],
-            "end": 1,
+            "end": 2,
             "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "Read coeffs",
             "line": 58,
@@ -18,7 +18,7 @@
             ],
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 0,
+            "start": 1,
             "type": "external"
         },
         {
@@ -34,7 +34,7 @@
                 2048
             ],
             "elwise_inputs": [],
-            "end": 64,
+            "end": 198,
             "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "gen_even",
             "line": 14,
@@ -45,13 +45,13 @@
             "pattern": "Map",
             "proxy_inputs": [],
             "scalar_inputs": [],
-            "start": 11,
-            "threads": 4,
+            "start": 5,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
             "elwise_inputs": [],
-            "end": 549,
+            "end": 925,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -60,24 +60,24 @@
                 1003
             ],
             "scalar_inputs": [],
-            "start": 120,
+            "start": 466,
             "type": "external"
         },
         {
             "label": "Res",
             "line": 251,
             "object_id": 1007,
-            "time": 555,
+            "time": 934,
             "type": "allocation"
         },
         {
-            "data_file": "snapshots/Res@1.txt",
-            "end": 797,
+            "data_file": "snap/Res@1.txt",
+            "end": 1374,
             "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "Res",
             "line": 27,
             "object_id": 1007,
-            "start": 555,
+            "start": 935,
             "type": "snapshot"
         },
         {
@@ -85,13 +85,13 @@
             "label": "Iteration",
             "line": 31,
             "region_depth": 1,
-            "time": 800,
+            "time": 1375,
             "type": "region"
         },
         {
             "object_id": 1008,
             "region": "Iteration",
-            "time": 801,
+            "time": 1376,
             "type": "scalar_value",
             "value": 2.0
         },
@@ -103,7 +103,7 @@
             "object_id": 1008,
             "region": "Iteration",
             "source": 1000,
-            "time": 802,
+            "time": 1379,
             "type": "element_access"
         },
         {
@@ -115,7 +115,7 @@
                 1007,
                 1003
             ],
-            "end": 828,
+            "end": 1470,
             "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "muladd",
             "line": 32,
@@ -129,19 +129,19 @@
             "scalar_inputs": [
                 1008
             ],
-            "start": 803,
-            "threads": 4,
+            "start": 1379,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
-            "data_file": "snapshots/Res@2.txt",
-            "end": 1170,
+            "data_file": "snap/Res@2.txt",
+            "end": 1834,
             "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "Res",
             "line": 33,
             "object_id": 1007,
             "region": "Iteration",
-            "start": 840,
+            "start": 1483,
             "type": "snapshot"
         },
         {
@@ -149,13 +149,13 @@
             "label": "Iteration",
             "line": 31,
             "region_depth": 1,
-            "time": 1171,
+            "time": 1834,
             "type": "region"
         },
         {
             "object_id": 1010,
             "region": "Iteration",
-            "time": 1171,
+            "time": 1837,
             "type": "scalar_value",
             "value": 3.0
         },
@@ -167,7 +167,7 @@
             "object_id": 1010,
             "region": "Iteration",
             "source": 1000,
-            "time": 1172,
+            "time": 1838,
             "type": "element_access"
         },
         {
@@ -179,7 +179,7 @@
                 1007,
                 1003
             ],
-            "end": 1195,
+            "end": 1943,
             "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "muladd",
             "line": 32,
@@ -193,19 +193,19 @@
             "scalar_inputs": [
                 1010
             ],
-            "start": 1172,
-            "threads": 4,
+            "start": 1838,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
-            "data_file": "snapshots/Res@3.txt",
-            "end": 1475,
+            "data_file": "snap/Res@3.txt",
+            "end": 2238,
             "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "Res",
             "line": 33,
             "object_id": 1007,
             "region": "Iteration",
-            "start": 1197,
+            "start": 1944,
             "type": "snapshot"
         },
         {
@@ -213,13 +213,13 @@
             "label": "Iteration",
             "line": 31,
             "region_depth": 1,
-            "time": 1475,
+            "time": 2238,
             "type": "region"
         },
         {
             "object_id": 1012,
             "region": "Iteration",
-            "time": 1475,
+            "time": 2241,
             "type": "scalar_value",
             "value": 4.0
         },
@@ -231,7 +231,7 @@
             "object_id": 1012,
             "region": "Iteration",
             "source": 1000,
-            "time": 1476,
+            "time": 2242,
             "type": "element_access"
         },
         {
@@ -243,7 +243,7 @@
                 1007,
                 1003
             ],
-            "end": 1515,
+            "end": 2330,
             "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "muladd",
             "line": 32,
@@ -257,24 +257,24 @@
             "scalar_inputs": [
                 1012
             ],
-            "start": 1476,
-            "threads": 4,
+            "start": 2242,
+            "threads": 15,
             "type": "skeleton_call"
         },
         {
-            "data_file": "snapshots/Res@4.txt",
-            "end": 1810,
+            "data_file": "snap/Res@4.txt",
+            "end": 2618,
             "file": "/Users/august/Claude/skepu-alpha/examples/horner.cpp",
             "label": "Res",
             "line": 33,
             "object_id": 1007,
             "region": "Iteration",
-            "start": 1516,
+            "start": 2331,
             "type": "snapshot"
         },
         {
             "elwise_inputs": [],
-            "end": 2044,
+            "end": 2848,
             "file": "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp",
             "label": "I/O",
             "line": 54,
@@ -283,32 +283,36 @@
                 1007
             ],
             "scalar_inputs": [],
-            "start": 1811,
+            "start": 2619,
             "type": "external"
         },
         {
             "label": "Res",
             "line": 282,
             "object_id": 1007,
-            "time": 2044,
+            "time": 2848,
             "type": "deallocation"
         },
         {
             "label": "X",
             "line": 282,
             "object_id": 1003,
-            "time": 2045,
+            "time": 2851,
             "type": "deallocation"
         },
         {
             "label": "Coeffs",
             "line": 282,
             "object_id": 1000,
-            "time": 2045,
+            "time": 2851,
             "type": "deallocation"
         }
     ],
     "header": {
+        "files": {
+            "/Users/august/Claude/skepu-alpha/examples/horner.cpp": "cb1b6c6c0df6b6434cf42fa7cd5c9d4bff0ae725af6f70a07b33eff04f0bbe0b",
+            "/Users/august/Claude/skepu-alpha/skepu-headers/src/skepu-lib/io.hpp": "59bba1ce9470fe1a3e7c6c752d325355a5a7bb8e729ee74f8cfbec58a0b27e35"
+        },
         "instances": {
             "1002": {
                 "instance": {
