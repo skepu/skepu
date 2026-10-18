@@ -16,7 +16,7 @@ far). It is not a submodule: clone it by hand into `shedskin/` (that path is in
 git clone <SkePY repository URL> shedskin
 ```
 
-> The SkePY repository has no published remote yet (branch `skepu-0.9.14-1`, based on Shed Skin v0.9.14-1).
+> The SkePY repository has no published remote yet (branch `main`, based on Shed Skin v0.9.14-1).
 
 ## Requirements
 
@@ -286,3 +286,12 @@ OpenCL C builtins (`half`, `trunc`, ...) do not compile for OpenCL.
 Known, not fixed: `skepu-tool`'s output is not deterministic (the order of the
 generated user-function structs varies between runs); it does not affect the
 results.
+
+## License
+
+SkePY is a fork of [Shed Skin](https://github.com/shedskin/shedskin) and keeps its licenses where it changes its files: the compiler is
+GPL-3.0-only, including our changes to it, which is why SkePY is a separate repository and not part of SkePU (it is not a submodule).
+The SkePU support that is new (the `skepu` module and its C++ wrappers in `shedskin/lib`, the examples and the tests) is under the SkePU license
+(`LICENSES/LicenseRef-SkePU.txt` in the SkePY repository), by Axel Hammarberg, who made the first implementation, and August Ernstsson. The programs
+that SkePY generates contain neither compiler nor GPL code. The SkePU changes needed by SkePY, in this repository, are under SkePU's license.
+
