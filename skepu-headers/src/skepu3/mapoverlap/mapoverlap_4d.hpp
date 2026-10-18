@@ -354,9 +354,10 @@ namespace skepu
 				return *this;
 			}
 
-			// For LSP CodeComplete
+			// For LSP CodeComplete (the return type is not deduced from the body: copying a MapPool tests if it converts to a
+			// std::function, which must not instantiate the body)
 			template<typename... CallArgs>
-			auto operator()(CallArgs&&... args)
+			auto operator()(CallArgs&&... args) -> decltype(MapOverlap4D<Ret, Args...>::operator()(std::forward<CallArgs>(args)...))
 			{
 				return MapOverlap4D<Ret, Args...>::operator()(std::forward<CallArgs>(args)...);
 			}

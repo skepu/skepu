@@ -327,7 +327,7 @@ namespace skepu
 
 			// For LSP CodeComplete
 			template<typename... CallArgs>
-			auto operator()(CallArgs&&... args)
+			auto operator()(CallArgs&&... args) -> decltype(MapOverlap3D<Ret, Args...>::operator()(std::forward<CallArgs>(args)...))
 			{
 				return MapOverlap3D<Ret, Args...>::operator()(std::forward<CallArgs>(args)...);
 			}
