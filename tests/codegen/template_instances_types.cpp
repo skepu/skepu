@@ -346,4 +346,39 @@ TEST_CASE("usertype_return: User type only in the return type")
 		REQUIRE(v(i).y == i * 2.f + 1);
 	}
 }
+
+// ---- A random access container that is subscripted with [] in a templated user function, and cast: the subscript is on the container in
+// the instantiated function too
+
+template<typename T>
+float picked_uf(skepu::Index1D index, skepu::Vec<T> values)
+{
+	return (float)(int)values[(index.i * 3) % 8] + 0.5f;
+}
+
+template<typename T>
+void pick(skepu::Vector<float> &out, skepu::Vector<T> &values)
+{
+	auto skel = skepu::Map<0>(picked_uf<T>);
+	skel(out, values);
+}
+
+TEST_CASE("template_instances_types: subscript on a container in a templated user function, two element types")
+{
+	skepu::Vector<int> ints(8);
+	skepu::Vector<float> floats(8);
+	skepu::Vector<float> out(8, 0.f), out_float(8, 0.f);
+	for (size_t i = 0; i < 8; ++i) { ints(i) = (int)i * 10; floats(i) = (float)i * 10; }
+
+	pick(out, ints);
+	pick(out_float, floats);
+	out.updateHost();
+	out_float.updateHost();
+
+	for (size_t i = 0; i < 8; ++i)
+	{
+		REQUIRE(out(i) == (float)(((i * 3) % 8) * 10) + 0.5f);
+		REQUIRE(out_float(i) == out(i));
+	}
+}
 }

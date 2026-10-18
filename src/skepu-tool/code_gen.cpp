@@ -228,8 +228,9 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 			}
 		}
 
+	// (after the container that is subscripted; the begin of the callee of the operator is not the [ in an instantiated template)
 	for (auto subscript : UF.containerSubscripts)
-		R.InsertText(subscript->getCallee()->getBeginLoc(), ".data");
+		R.InsertText(Lexer::getLocForEndOfToken(subscript->getArg(0)->getEndLoc(), 0, GlobalRewriter.getSourceMgr(), GlobalRewriter.getLangOpts()), ".data");
 
 	if (backend == Backend::OpenCL)
 		for (auto subscript : UF.containerCalls)

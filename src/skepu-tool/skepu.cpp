@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "globals.h"
 #include "visitor.h"
 
@@ -284,7 +285,21 @@ public:
 
 			SkePULog() << "Found " << this->SkeletonInstances.size() << " skeleton instances\n";
 
-			for (clang::VarDecl *d : this->SkeletonInstances)
+			// In the order of the source, not of the addresses of the declarations (which varies from run to run), with the declarations in
+			// the pattern of a function template last: they are rewritten by the instantiations, which have to come first (see HandleSkeletonInstance)
+			std::vector<clang::VarDecl *> instances(this->SkeletonInstances.begin(), this->SkeletonInstances.end());
+			auto inPattern = [](clang::VarDecl *d)
+			{
+				const auto *function = clang::dyn_cast<clang::FunctionDecl>(d->getDeclContext());
+				return function && function->getDescribedFunctionTemplate();
+			};
+			std::stable_sort(instances.begin(), instances.end(), [&](clang::VarDecl *a, clang::VarDecl *b)
+			{
+				if (inPattern(a) != inPattern(b))
+					return inPattern(b);
+				return SM.isBeforeInTranslationUnit(a->getBeginLoc(), b->getBeginLoc());
+			});
+			for (clang::VarDecl *d : instances)
 				HandleSkeletonInstance(d);
 
 			for (const InlineInstance &instance : InlineInstances)
