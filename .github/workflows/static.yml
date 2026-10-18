@@ -19,6 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Copy the SkePU library headers into the visualizer
+        run: make -C visualizer skepu-lib
+
       - name: Stage visualizer for deploy
         run: |
           mkdir -p _stage/visualizer

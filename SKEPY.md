@@ -157,6 +157,47 @@ An extension module built with `--trace` has a tracer of its own: its trace is w
 `visualizer/examples/cellular_automaton_skepy/` is an example. Tests: `tests/skepu/test_trace*.py`,
 `test_release.py`, `test_gc_pressure.py`, `test_ext_trace.py`.
 
+### Random numbers and pooling
+
+* `skepu.randomize` is SkePU's `skepu::randomize`: `set_prng(prng)` (the stream of the fills; `reset_prng()`),
+  `uniform(container, lo, hi)`, `normal(container, mean, deviation)`, `bernoulli(container, p)` and
+  `poisson(container, lambda)`, for vectors, matrices and tensors; the numbers are the same on every backend.
+* `skepu.MapPool(f)` is the pooling skeleton: the user function gets a `Pool2D`, `Pool3D` or `Pool4D` (the window at
+  the element: `pool[i, j]`, `pool.si`, ...), with `set_pool_size(...)`, `set_stride(...)` and
+  `set_pool_size_and_stride(...)`. (1D pooling is not supported by SkePU's own backends.)
+
+### Neural networks: `skepu.dnn`
+
+`skepu.dnn` is SkePU-DNN, the C++ library `skepu-lib/ml.hpp` (every layer, loss and optimizer step is a
+skeleton call), bound as a whole: the layers are plain configuration objects and the model is the C++ one.
+
+```python
+model = skepu.dnn.SequentialModel(batch, 28, 28, 1)          # batch size, height, width, channels
+model.add(skepu.dnn.Flatten())
+model.add(skepu.dnn.Dense(128, skepu.dnn.INIT_He_uniform, skepu.dnn.INIT_Zero, skepu.dnn.ACT_ReLU))
+model.add(skepu.dnn.Dense(10, skepu.dnn.INIT_Xavier_uniform, skepu.dnn.INIT_Zero, skepu.dnn.ACT_SoftMax))
+model.init()
+model.configure(skepu.dnn.LOSS_CategoricalCrossEntropy, skepu.dnn.OPT_SGD)
+model.fit(train_x, train_y, epochs, learning_rate, 0.1)      # validation split 0.1; Tensor4 of floats
+loss, accuracy = model.evaluate(test_x, test_y)              # or evaluate_confusion(x, y, matrix)
+```
+
+* Layers: `Dense`, `Conv2D(filters, kh, kw)`, `Conv1D(filters, k)`, `MaxPooling2D(kh, kw)`, `AvgPooling2D`,
+  `MaxPooling1D(k)`, `AvgPooling1D`, `Flatten`, `Dropout(rate)`; the attributes are the arguments `weights`, `biases`
+  (`INIT_*`) and `activation` (`ACT_*`) of the layer functions. A model also has `predict`, `summary` and `save`.
+* `pretrained="file.csv"` is an argument of `Dense`, `Conv2D` and `Conv1D`; `skepu.dnn.load_model(path, batch)` makes a
+  model from a file written by `model.save(path)` (or described by hand, see `examples/dnn/models/`).
+* Data preparation, all by skeleton calls: `chw_to_hwc(data)`, `channel_stats(images)` (with `.mean()`, `.stddev()`) and
+  `standardize(images, stats)`, and the loaders `cifar10_load(files, max_count)` (the images and the classes)
+  and the MNIST ones below.
+* Data: `one_hot(classes, num_classes, n=0)`, `argmax(scores)`, `take(data, n)`, `as_sequence(images, n=0)`, and the MNIST
+  files, `mnist_images(path, lo, hi)` and `mnist_labels(path)`.
+* The data are `Tensor4` of floats and the model is float-only, so the program is built with `--float32`
+  (a translation without it stops with a message at C++ compile time).
+* The errors of the library are Python `RuntimeError`s with the message of the library.
+* `shedskin/examples/skepu/dnn_mnist10.py` is the translation of `examples/dnn/dnn_mnist10.cpp`; its arguments name the
+  directory of the MNIST files first (`examples/data/mnist`).
+
 ## Status
 
 * Verified with both the sequential backend and the OpenMP backend (CMake route): `Map` (up to 3 inputs, 4+ mixed-type uniforms,

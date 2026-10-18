@@ -3,3 +3,6 @@ out/
 node_modules/
 *.vsix
 guide/
+
+# A copy of skepu-headers/src/skepu-lib made by "make skepu-lib" (by the Pages workflow when it deploys, and for the extension package)
+static/skepu-lib/

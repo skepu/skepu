@@ -201,6 +201,25 @@
     ]
   },
   {
+    "title": "DNN MNIST (small CNN, one epoch on 480 samples)",
+    "trace": {
+      "opencl": "dnn_mnist10/trace_dnn_mnist10_opencl.json"
+    },
+    "cpp_files": [
+      "dnn_mnist10/dnn_mnist10.cpp"
+    ]
+  },
+  {
+    "title": "DNN MNIST (SkePY, Python)",
+    "language": "python",
+    "trace": {
+      "opencl": "dnn_mnist10_skepy/trace_dnn_mnist10_opencl.json"
+    },
+    "cpp_files": [
+      "dnn_mnist10_skepy/dnn_mnist10.py"
+    ]
+  },
+  {
     "title": "Cellular Automaton (SkePY, Python)",
     "language": "python",
     "trace": {
