@@ -20,6 +20,8 @@ An optional, experimental Python frontend (SkePY) is described in [SKEPY.md](SKE
 This repository should be cloned with `git clone --recursive --shallow-submodules $URL` in
 order to also clone the most recent commits of the submodules it links to. Furthermore, `git submodule update --init` can be used to clone submodules to an existing repository.
 
+Note: configuring the build patches files inside the `llvm` submodule, so it always counts as modified. `.gitmodules` therefore sets `ignore = dirty` and `git status` does not list it. Do not commit changes to the submodule.
+
 ### Building skepu-tool
 
 To compile skepu-tool, run the following commands in the project root:
