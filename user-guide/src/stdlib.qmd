@@ -122,8 +122,29 @@ The layers are `Dense`, `Conv2D`, `Conv1D`, `MaxPooling2D`, `AvgPooling2D`, `Max
 The convolution and pooling layers support unit stride (pooling: stride equal to the pool size)
 and "valid" mode; other settings are rejected with an error. `evaluate` gives the loss and accuracy of a data set (optionally with a confusion matrix),
 `predict` the predictions, and `save` and `load_model` write and read a model, with its
-weights, as a plain-text file (`examples/dnn/models/`). Examples, using the MNIST and CIFAR-10 data
-sets and synthetic data, are `examples/dnn/dnn_mnist10.cpp`, `dnn_cifar10.cpp`, `dnn_signals1d.cpp`,
+weights, as a plain-text file (`examples/dnn/models/`).
+
+The labels of a classification are the `n x 1 x 1 x C` tensors of one-hot vectors that the models
+are trained on. `skepu::dnn::one_hot(classes, C)` makes them from a vector (or tensor) of class
+numbers, `one_hot(labels, classes)` fills a tensor that is there (from the first `n` classes), and
+`argmax(scores)` is the inverse: a `skepu::Vector<int>` with the class of each sample, the first of
+its largest scores. They are skeleton calls, so they run on all backends and the host does not touch the
+elements, and `one_hot` stops with an error if a class is not an integer from `0` to `C - 1`.
+
+Because the tensors are ordinary SkePU data-containers and every step of a model is a skeleton call, a
+network combines with other SkePU code ("DNN+X" programs): the pre- and post-processing of the data
+runs on the same containers, on the same backends and without copies to the host in between. In
+`examples/dnn/dnn_cifar10.cpp` the images are standardized per channel by a `MapReduce` and a `Map`, and with
+`--gray` converted to grayscale by a `MapPool` before the network is trained on them; `dnn_binary.cpp` counts and
+filters the classes of a data set, and `dnn_signals1d.cpp` generates its data with `skepu::randomize` and a `Map`.
+
+The preparation of a data set is covered by skeleton calls too: `take(images, n)` (the first `n` samples),
+`as_sequence(images, n)` (images as sequences for the 1D layers), `chw_to_hwc(images)` (the channels-first layout of
+many data sources to that of the layers), and `channel_stats(images)` with `standardize(images, stats)` for the
+per-channel normalization. The statistics are results of reductions, so every process of an MPI program has them.
+
+Examples, using the MNIST and CIFAR-10 data
+sets and synthetic data, are `examples/dnn/dnn_mnist10.cpp`, `dnn_binary.cpp`, `dnn_cifar10.cpp`, `dnn_signals1d.cpp`,
 `dnn_artificial.cpp` and `dnn_model_file.cpp`.
 
 [^13]: This is not a formal standard as decided by a standardization

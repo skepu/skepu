@@ -88,29 +88,3 @@ typename std::vector<T>::iterator load_from_vector(skepu::Tensor4<T> &output, st
 	return it;
 }
 
-
-template<typename T>
-skepu::Tensor4<T> cut_tensor4(skepu::Tensor4<T> &old, size_t size_i)
-{
-	if (size_i > old.size_i()) SKEPU_ERROR("Invalid size for cutting tensor");
-	std::stringstream ss;
-	ss << old.getLabel() << " (cut down)";
-	skepu::Tensor4<T> res(size_i, old.size_j(), old.size_k(), old.size_l(), ss.str());
-
-	old.flush();
-
-	for (size_t i = 0; i < size_i; ++i)
-	{
-		for (size_t j = 0; j < old.size_j(); ++j)
-		{
-			for (size_t k = 0; k < old.size_k(); ++k)
-			{
-				for (size_t l = 0; l < old.size_l(); ++l)
-				{
-					res(i, j, k, l) = old(i, j, k, l);
-				}
-			}
-		}
-	}
-	return res;
-}

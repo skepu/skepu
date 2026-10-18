@@ -464,6 +464,31 @@ TEST_CASE("DNN trains a Conv1D model on synthetic signals")
 }
 
 
+TEST_CASE("DNN trains a model that starts with a Flatten layer (it has no layer before it to give a gradient to)")
+{
+	use_sequential_cpu();
+	const size_t B = 16, classes = 3;
+	skepu::Tensor4<float> train_x(64, 4, 4, 1), train_y(64, 1, 1, classes);
+	skepu::external([&]
+	{
+		for (size_t i = 0; i < 64; ++i)
+		{
+			for (size_t y = 0; y < 4; ++y)
+				for (size_t x = 0; x < 4; ++x)
+					train_x(i, y, x, 0) = ((i % classes) == (x % classes)) ? 1.f : 0.f;
+			for (size_t c = 0; c < classes; ++c)
+				train_y(i, 0, 0, c) = (c == i % classes) ? 1.f : 0.f;
+		}
+	}, skepu::write(train_x, train_y));
+
+	auto model = SequentialModel(Dimensions{B, 4, 4, 1})
+		<< Flatten()
+		<< Dense(classes).weights(Init::Xavier_uniform).biases(Init::Zero).activation(Act::SoftMax);
+	model.init();
+	model.configure(Loss::CategoricalCrossEntropy, Opt::SGD);
+	REQUIRE_NOTHROW(model.fit(train_x, train_y, 2, 0.1f, 0.f, "flatten first", false));
+}
+
 static std::string read_file(const std::string &path)
 {
 	std::ifstream in(path);
@@ -513,6 +538,102 @@ TEST_CASE("DNN model files: save and load round trip")
 
 	std::filesystem::remove(path);
 	std::filesystem::remove(path2);
+}
+
+TEST_CASE("DNN pretrained(csv): Dense parameters are read from a file, weights then biases")
+{
+	use_sequential_cpu();
+	// Dense(2) on 3 inputs: 6 weights (row i = input i, column = output), then 2 biases, one number per line
+	const std::string path = (std::filesystem::temp_directory_path() / "skepu_dnn_test_pretrained.csv").string();
+	{
+		std::ofstream out(path);
+		for (float v : {1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 0.5f, -0.5f}) out << v << "\n";
+	}
+
+	auto model = SequentialModel(Dimensions{2, 1, 1, 3})
+		<< Flatten()
+		<< Dense(2).pretrained(path).activation(Act::ReLU);
+	model.init();
+	model.init_parameters(); // must keep the loaded parameters
+
+	skepu::Tensor4<float> x(2, 1, 1, 3);
+	const float in[2][3] = {{1, 0, 0}, {1, 1, -3}};
+	for (size_t i = 0; i < 2; ++i)
+		for (size_t k = 0; k < 3; ++k)
+			x(i, 0, 0, k) = in[i][k];
+	skepu::Tensor4<float> y = model.predict(x);
+
+	// sample 0: [1*1+0.5, 1*2-0.5] = [1.5, 1.5]; sample 1: [1+3-15+0.5, 2+4-18-0.5] = [-10.5, -12.5] -> ReLU 0
+	REQUIRE(y(0, 0, 0, 0) == Approx(1.5f));
+	REQUIRE(y(0, 0, 0, 1) == Approx(1.5f));
+	REQUIRE(y(1, 0, 0, 0) == 0.f);
+	REQUIRE(y(1, 0, 0, 1) == 0.f);
+	std::filesystem::remove(path);
+}
+
+TEST_CASE("DNN data set preparation: take, as_sequence, chw_to_hwc, channel_stats and standardize")
+{
+	use_sequential_cpu();
+	// 4 images of 2 x 3 pixels with 2 channels, the value is 100 * sample + 10 * channel + 3 * row + column
+	skepu::Tensor4<float> chw(4, 2, 2, 3, "chw");
+	for (size_t i = 0; i < 4; ++i)
+		for (size_t c = 0; c < 2; ++c)
+			for (size_t r = 0; r < 2; ++r)
+				for (size_t col = 0; col < 3; ++col)
+					chw(i, c, r, col) = 100.f * i + 10.f * c + 3.f * r + col;
+
+	auto hwc = skepu::dnn::chw_to_hwc(chw);
+	REQUIRE(hwc.size_i() == 4); REQUIRE(hwc.size_j() == 2); REQUIRE(hwc.size_k() == 3); REQUIRE(hwc.size_l() == 2);
+	hwc.updateHost();
+	for (size_t i = 0; i < 4; ++i)
+		for (size_t r = 0; r < 2; ++r)
+			for (size_t col = 0; col < 3; ++col)
+				for (size_t c = 0; c < 2; ++c)
+					REQUIRE(hwc(i, r, col, c) == chw(i, c, r, col));
+
+	auto first = skepu::dnn::take(hwc, 3);
+	REQUIRE(first.size_i() == 3); REQUIRE(first.size_l() == 2);
+	first.updateHost();
+	REQUIRE(first(2, 1, 2, 1) == hwc(2, 1, 2, 1));
+	REQUIRE_THROWS(skepu::dnn::take(hwc, 5));
+
+	skepu::Tensor4<float> images(5, 3, 4, 1, "images");
+	for (size_t i = 0; i < 5; ++i)
+		for (size_t r = 0; r < 3; ++r)
+			for (size_t col = 0; col < 4; ++col)
+				images(i, r, col, 0) = 100.f * i + 10.f * r + col;
+	auto seq = skepu::dnn::as_sequence(images, 4);
+	REQUIRE(seq.size_i() == 4); REQUIRE(seq.size_j() == 1); REQUIRE(seq.size_k() == 3); REQUIRE(seq.size_l() == 4);
+	seq.updateHost();
+	REQUIRE(seq(3, 0, 2, 1) == images(3, 2, 1, 0));
+	REQUIRE(skepu::dnn::as_sequence(images).size_i() == 5);
+	REQUIRE_THROWS(skepu::dnn::as_sequence(hwc));
+
+	// Statistics: channel 0 is 0..5 (+100 i), channel 1 is 10..15 (+100 i); after standardize each channel has mean 0, deviation 1
+	auto stats = skepu::dnn::channel_stats(hwc);
+	stats.mean.updateHost(); stats.stddev.updateHost();
+	double sum0 = 0, sum1 = 0, sq0 = 0, sq1 = 0;
+	const double count = 4 * 2 * 3;
+	for (size_t i = 0; i < 4; ++i)
+		for (size_t r = 0; r < 2; ++r)
+			for (size_t col = 0; col < 3; ++col)
+			{
+				sum0 += hwc(i, r, col, 0); sum1 += hwc(i, r, col, 1);
+				sq0 += hwc(i, r, col, 0) * (double)hwc(i, r, col, 0); sq1 += hwc(i, r, col, 1) * (double)hwc(i, r, col, 1);
+			}
+	REQUIRE(stats.mean(0) == Approx(sum0 / count));
+	REQUIRE(stats.mean(1) == Approx(sum1 / count));
+	REQUIRE(stats.stddev(0) == Approx(std::sqrt(sq0 / count - (sum0 / count) * (sum0 / count))));
+	REQUIRE(stats.stddev(1) == Approx(std::sqrt(sq1 / count - (sum1 / count) * (sum1 / count))));
+
+	skepu::dnn::standardize(hwc, stats);
+	auto after = skepu::dnn::channel_stats(hwc);
+	after.mean.updateHost(); after.stddev.updateHost();
+	for (size_t c = 0; c < 2; ++c)
+	{
+		REQUIRE(after.mean(c) == Approx(0).margin(1e-4));
+		REQUIRE(after.stddev(c) == Approx(1).epsilon(1e-4));
+	}
 }
 
 TEST_CASE("DNN model files: description without parameters, and errors")
@@ -641,4 +762,108 @@ TEST_CASE("DNN model files: the new activations and average pooling")
 		REQUIRE(out2(0, 0, 0, l) == out(0, 0, 0, l));
 	std::filesystem::remove(path);
 	std::filesystem::remove(path2);
+}
+
+
+// ---------------- labels: one_hot and argmax (on the backend of the test) ----------------
+
+static std::vector<int> read_ints(skepu::Vector<int> &v)
+{
+	std::vector<int> out(v.size());
+	skepu::external(skepu::read(v), [&] { for (size_t i = 0; i < v.size(); ++i) out[i] = v(i); });
+	return out;
+}
+
+TEST_CASE("DNN one_hot: integer and floating-point classes, into a tensor and as a result")
+{
+	use_sequential_cpu();
+	const size_t n = 37, C = 10;
+	skepu::Vector<int> classes(n, "classes");
+	skepu::Tensor4<float> as_floats(n, 1, 1, 1, "float classes");
+	std::vector<int> expected(n);
+	for (size_t i = 0; i < n; ++i) expected[i] = (int)((i * 7 + 3) % C);
+	skepu::external([&] { for (size_t i = 0; i < n; ++i) { classes(i) = expected[i]; as_floats(i, 0, 0, 0) = (float)expected[i]; } }, skepu::write(classes, as_floats));
+
+	auto check = [&](skepu::Tensor4<float> &y, size_t rows)
+	{
+		REQUIRE(y.size_i() == rows);
+		REQUIRE(y.size_j() == 1);
+		REQUIRE(y.size_k() == 1);
+		REQUIRE(y.size_l() == C);
+		skepu::external(skepu::read(y), [&]
+		{
+			for (size_t i = 0; i < rows; ++i)
+				for (size_t c = 0; c < C; ++c)
+					REQUIRE(y(i, 0, 0, c) == ((int)c == expected[i] ? 1.f : 0.f));
+		});
+	};
+
+	skepu::Tensor4<float> from_ints = one_hot(classes, C, "labels from ints");
+	check(from_ints, n);
+	skepu::Tensor4<float> from_floats = one_hot(as_floats, C);
+	check(from_floats, n);
+
+	// Into a tensor that is there, from the first classes of a longer vector
+	skepu::Tensor4<float> first(20, 1, 1, C, "first labels", 7.f);
+	one_hot(first, classes);
+	check(first, 20);
+}
+
+TEST_CASE("DNN one_hot reports a class that is not an integer from 0 to C - 1, and wrong shapes")
+{
+	use_sequential_cpu();
+	skepu::Vector<int> classes(8, "classes");
+	skepu::Vector<float> fractions(8, "fractional classes");
+	skepu::external([&] { for (size_t i = 0; i < 8; ++i) { classes(i) = (int)i % 4; fractions(i) = (float)(i % 4); } }, skepu::write(classes, fractions));
+
+	skepu::Tensor4<float> y(8, 1, 1, 4, "labels", 0.f);
+	REQUIRE_NOTHROW(one_hot(y, classes));
+
+	skepu::external([&] { classes(5) = 4; }, skepu::write(classes));           // too large
+	CHECK_THROWS_WITH(one_hot(y, classes), Catch::Contains("not integers from 0 to 3"));
+	skepu::external([&] { classes(5) = -1; }, skepu::write(classes));          // negative
+	CHECK_THROWS_WITH(one_hot(y, classes), Catch::Contains("not integers from 0 to 3"));
+	skepu::external([&] { fractions(2) = 1.5f; }, skepu::write(fractions));    // not an integer
+	CHECK_THROWS_WITH(one_hot(y, fractions), Catch::Contains("not integers from 0 to 3"));
+
+	skepu::Tensor4<float> too_many(9, 1, 1, 4, "too many labels", 0.f);
+	CHECK_THROWS_WITH(one_hot(too_many, classes), Catch::Contains("8 classes for 9 labels"));
+	skepu::Tensor4<float> not_flat(8, 2, 1, 4, "not n x 1 x 1 x C", 0.f);
+	CHECK_THROWS_WITH(one_hot(not_flat, classes), Catch::Contains("n x 1 x 1 x classes"));
+}
+
+TEST_CASE("DNN argmax: the class of each sample, the first of equal scores, and the inverse of one_hot")
+{
+	use_sequential_cpu();
+	const size_t n = 50, C = 7;
+	skepu::Tensor4<float> scores(n, 1, 1, C, "scores", 0.f);
+	std::vector<int> expected(n);
+	skepu::external([&]
+	{
+		for (size_t i = 0; i < n; ++i)
+		{
+			for (size_t c = 0; c < C; ++c)
+				scores(i, 0, 0, c) = uniform01(rng);
+			if (i % 5 == 0)                                  // a tie: the first one counts
+				scores(i, 0, 0, 5) = scores(i, 0, 0, 2) = 2.f;
+			int best = 0;
+			for (size_t c = 1; c < C; ++c)
+				if (scores(i, 0, 0, c) > scores(i, 0, 0, best)) best = (int)c;
+			expected[i] = best;
+		}
+	}, skepu::write(scores));
+
+	skepu::Vector<int> predicted = argmax(scores);
+	REQUIRE(predicted.size() == n);
+	CHECK(read_ints(predicted) == expected);
+	CHECK(expected[0] == 2);
+
+	skepu::Vector<int> classes(n, "classes");
+	skepu::external([&] { for (size_t i = 0; i < n; ++i) classes(i) = expected[i]; }, skepu::write(classes));
+	skepu::Tensor4<float> labels = one_hot(classes, C);
+	skepu::Vector<int> back = argmax(labels);
+	CHECK(read_ints(back) == expected);
+
+	skepu::Tensor4<float> not_flat(4, 2, 1, 3, "not n x 1 x 1 x C", 0.f);
+	CHECK_THROWS_WITH(argmax(not_flat), Catch::Contains("n x 1 x 1 x classes"));
 }

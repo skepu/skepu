@@ -180,9 +180,13 @@ namespace skepu::dnn::impl
 		if (this->m_pretrained_params != SKEPU_DNN_NO_PRETRAINED_PARAMS)
 		{
 			// Load data from file
-			std::vector<float> temp = deserialize_csv_helper<float>(this->m_pretrained_params);
-			auto it = load_from_vector(this->m_weights, temp, temp.begin());
-			it = load_from_vector(this->m_biases, temp, it);
+			// The elements are written on the host, in an external section (a distributed container is updated from it)
+			skepu::external(this->label() + " load pretrained", [&]
+			{
+				std::vector<float> temp = deserialize_csv_helper<float>(this->m_pretrained_params);
+				auto it = load_from_vector(this->m_weights, temp, temp.begin());
+				it = load_from_vector(this->m_biases, temp, it);
+			}, skepu::write(this->m_weights, this->m_biases));
 		}
 	}
 

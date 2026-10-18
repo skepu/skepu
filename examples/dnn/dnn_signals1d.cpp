@@ -10,7 +10,6 @@
 // Sequential build (no precompiler):
 //   clang++ -std=c++20 -O2 -I ../../skepu-headers/src -Wno-attributes dnn_signals1d.cpp -o dnn_signals1d
 #include <iostream>
-#include <random>
 #include <cmath>
 #include <string>
 
@@ -19,6 +18,7 @@
 #include <skepu>
 #include <skepu-lib/io.hpp>
 #include <skepu-lib/ml.hpp>
+#include <skepu-lib/randomize.hpp>
 
 using namespace skepu::dnn;
 
@@ -26,43 +26,46 @@ constexpr size_t SIGNAL_LENGTH = 64;
 constexpr size_t NUM_CLASSES = 4;
 static const char *class_names[NUM_CLASSES] = {"sine", "square", "sawtooth", "triangle"};
 
-// std::uniform_real_distribution and std::normal_distribution are not specified exactly and give different
-// numbers with different standard libraries, std::mt19937 is. Building the distributions on its raw output
-// makes the data (and the logs of the regression test) the same with every compiler.
-static float uniform01(std::mt19937 &rng) { return (float)(rng() >> 8) * (1.0f / 16777216.0f); } // [0, 1)
-static float uniform(std::mt19937 &rng, float lo, float hi) { return lo + (hi - lo) * uniform01(rng); }
-static float normal(std::mt19937 &rng, float sigma) // Box-Muller
-{
-	const float u1 = 1.0f - uniform01(rng), u2 = uniform01(rng);
-	return sigma * std::sqrt(-2.0f * std::log(u1)) * std::cos(6.28318530718f * u2);
-}
-
-// Fill x (n x 1 x SIGNAL_LENGTH x 1) and one-hot y (n x 1 x 1 x NUM_CLASSES)
-static void generate(skepu::Tensor4<float> &x, skepu::Tensor4<float> &y, std::mt19937 &rng, float noise)
+// The waveform of a sample, at the time t (the index k): the class of a sample is its number modulo the number of classes,
+// and its period, phase and amplitude are random numbers of the sample. The noise is the value that is in the element.
+float waveform(skepu::Index4D idx, float noise, skepu::Vec<float> period, skepu::Vec<float> phase, skepu::Vec<float> amplitude, int classes)
 {
 	const float two_pi = 6.28318530718f;
+	const size_t sample = idx.i;
+	float u = (float)idx.k / period[sample] + phase[sample];
+	u -= floor(u); // position within the period, [0, 1)
+	const int cls = (int)(sample % classes);
+	float v = 0;
+	if (cls == 0)      v = sin(two_pi * u);
+	else if (cls == 1) v = (u < 0.5f) ? 1.f : -1.f;
+	else if (cls == 2) v = 2.f * u - 1.f;
+	else               v = 1.f - 4.f * fabs(u - 0.5f);
+	return amplitude[sample] * v + noise;
+}
 
-	for (size_t i = 0; i < x.size_i(); ++i)
-	{
-		const size_t cls = i % NUM_CLASSES;
-		const float period = uniform(rng, 8.f, 20.f), phase = uniform(rng, 0.f, 1.f), amp = uniform(rng, 0.7f, 1.3f);
-		for (size_t t = 0; t < SIGNAL_LENGTH; ++t)
-		{
-			float u = (float)t / period + phase;
-			u -= std::floor(u); // position within the period, [0, 1)
-			float v = 0;
-			switch (cls)
-			{
-			case 0: v = std::sin(two_pi * u); break;
-			case 1: v = (u < 0.5f) ? 1.f : -1.f; break;
-			case 2: v = 2.f * u - 1.f; break;
-			case 3: v = 1.f - 4.f * std::fabs(u - 0.5f); break;
-			}
-			x(i, 0, t, 0) = amp * v + normal(rng, noise);
-		}
-		for (size_t c = 0; c < NUM_CLASSES; ++c)
-			y(i, 0, 0, c) = (c == cls) ? 1.f : 0.f;
-	}
+// The class of a sample is its number modulo the number of classes
+int sample_class(skepu::Index1D index, int classes)
+{
+	return (int)(index.i % classes);
+}
+
+// Fill x (n x 1 x SIGNAL_LENGTH x 1) and one-hot y (n x 1 x 1 x NUM_CLASSES). The random numbers come from the stream rng
+// (skepu::randomize fills the containers by skeleton calls, so the data are the same with every backend and compiler), and the
+// signals are made by a Map over the elements, in parallel.
+static void generate(skepu::Tensor4<float> &x, skepu::Tensor4<float> &y, skepu::PRNG &rng, float noise)
+{
+	const size_t n = x.size_i();
+	skepu::Vector<float> period(n, "signal periods"), phase(n, "signal phases"), amplitude(n, "signal amplitudes");
+
+	skepu::randomize::Scope stream(rng);
+	skepu::randomize::uniform(period, 8.f, 20.f);
+	skepu::randomize::uniform(phase, 0.f, 1.f);
+	skepu::randomize::uniform(amplitude, 0.7f, 1.3f);
+	skepu::randomize::normal(x, 0.f, noise);                                 // the noise of every element
+	skepu::Map<1>(waveform)(x, x, period, phase, amplitude, (int)NUM_CLASSES); // the waveform of the sample, plus the noise
+	skepu::Vector<int> classes(n, "signal classes");
+	skepu::Map<0>(sample_class)(classes, (int)NUM_CLASSES);
+	skepu::dnn::one_hot(y, classes);
 }
 
 int main(int argc, char *argv[])
@@ -81,7 +84,7 @@ int main(int argc, char *argv[])
 
 	if (argc < 6)
 	{
-		std::cout << "Usage: " << argv[0] << " model(conv1d|mlp) batch_size learning_rate epochs backend [train_samples] [test_samples] [--adam]\n";
+		skepu::io::cout << "Usage: " << argv[0] << " model(conv1d|mlp) batch_size learning_rate epochs backend [train_samples] [test_samples] [--adam]\n";
 		return 1;
 	}
 
@@ -94,7 +97,7 @@ int main(int argc, char *argv[])
 	const size_t n_train = (argc > 6) ? atoi(argv[6]) : 4000;
 	const size_t n_test  = (argc > 7) ? atoi(argv[7]) : 1000;
 
-	std::mt19937 rng(42);
+	skepu::PRNG rng(42); // the stream of the data
 	skepu::Tensor4<float> train_x(n_train, 1, SIGNAL_LENGTH, 1, "train signals"), train_y(n_train, 1, 1, NUM_CLASSES, "train labels");
 	skepu::Tensor4<float> test_x(n_test, 1, SIGNAL_LENGTH, 1, "test signals"), test_y(n_test, 1, 1, NUM_CLASSES, "test labels");
 	generate(train_x, train_y, rng, 0.3f);
@@ -119,15 +122,15 @@ int main(int argc, char *argv[])
 			<< Dense(NUM_CLASSES).weights(Init::Xavier_uniform).biases(Init::Zero).activation(Act::SoftMax);
 	};
 
-	std::cout << "Signals: " << n_train << " train / " << n_test << " test, length " << SIGNAL_LENGTH << ", classes:";
-	for (auto name : class_names) std::cout << " " << name;
-	std::cout << "\n";
+	skepu::io::cout << "Signals: " << n_train << " train / " << n_test << " test, length " << SIGNAL_LENGTH << ", classes:";
+	for (auto name : class_names) skepu::io::cout << " " << name;
+	skepu::io::cout << "\n";
 
 	auto run = [&](auto model)
 	{
 		model.init();
 		model.configure(Loss::CategoricalCrossEntropy, optimizer);
-		std::cout << model.summary();
+		skepu::io::cout << model.summary();
 		model.fit(train_x, train_y, epochs, learning_rate, 0.1, "signals1d", true);
 
 		skepu::Matrix<int> confusion(NUM_CLASSES, NUM_CLASSES, "Confusion Matrix", 0);
@@ -138,6 +141,6 @@ int main(int argc, char *argv[])
 
 	if (model_name == "conv1d") run(build_conv1d());
 	else if (model_name == "mlp") run(build_mlp());
-	else { std::cout << "Unknown model '" << model_name << "'\n"; return 1; }
+	else { skepu::io::cout << "Unknown model '" << model_name << "'\n"; return 1; }
 	return 0;
 }

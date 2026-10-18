@@ -45,7 +45,8 @@ cases=(
 	"mnist_conv1d_adam|dnn_mnist10|mnist|conv1d 32 0.001 1 cpu 3200 330 --adam"
 	"signals_conv1d_adam|dnn_signals1d|-|conv1d 32 0.003 2 cpu 1600 330 --adam"
 	"cifar_small_adam|dnn_cifar10|cifar-10-batches-bin|small 32 0.001 1 cpu 1600 330 --adam"
-	"binary_mnist_sgd|dnn|mnist|16 0.05 2 cpu 1"
+	"cifar_gray_adam|dnn_cifar10|cifar-10-batches-bin|small 32 0.001 1 cpu 1600 330 --adam --gray"
+	"binary_mnist_sgd|dnn_binary|mnist|16 0.05 2 cpu 1"
 )
 
 # Lines of the example output that are compared

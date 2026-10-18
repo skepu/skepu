@@ -323,7 +323,7 @@ The SkePU distribution comes with a selection of example programs:
 
 - **A program of several source files** (`multifile/`)
 
-- **SkePU-DNN** (in `dnn/`: `dnn`, `dnn_mnist10`, `dnn_cifar10`, `dnn_signals1d`, `dnn_artificial`,
+- **SkePU-DNN** (in `dnn/`: `dnn_binary`, `dnn_mnist10`, `dnn_cifar10`, `dnn_signals1d`, `dnn_artificial`,
   `dnn_model_file`), see @sec-stdlib
 
 The directory has further programs (e.g., `fusion` and `sde`) and the data sets that the

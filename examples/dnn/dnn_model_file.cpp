@@ -19,21 +19,10 @@
 
 using namespace skepu::dnn;
 
-static skepu::Tensor4<float> first_n(skepu::Tensor4<float> &src, size_t n)
-{
-	skepu::Tensor4<float> dst(n, src.size_j(), src.size_k(), src.size_l(), "images-subset");
-	for (size_t i = 0; i < n; ++i)
-		for (size_t j = 0; j < src.size_j(); ++j)
-			for (size_t k = 0; k < src.size_k(); ++k)
-				for (size_t l = 0; l < src.size_l(); ++l)
-					dst(i, j, k, l) = src(i, j, k, l);
-	return dst;
-}
-
 static skepu::Tensor4<float> onehot(skepu::Vector<mnist::label_t> &labels, size_t n)
 {
 	skepu::Tensor4<float> y(n, 1, 1, 10, "labels", 0.f);
-	for (size_t i = 0; i < n; ++i) y(i, 0, 0, labels(i)) = 1.f;
+	skepu::dnn::one_hot(y, labels); // (the first n labels)
 	return y;
 }
 
@@ -41,7 +30,7 @@ int main(int argc, char *argv[])
 {
 	if (argc < 6)
 	{
-		std::cout << "Usage: " << argv[0] << " model_file batch_size learning_rate epochs backend [train_samples] [test_samples] [saved_model_file]\n";
+		skepu::io::cout << "Usage: " << argv[0] << " model_file batch_size learning_rate epochs backend [train_samples] [test_samples] [saved_model_file]\n";
 		return 1;
 	}
 	const std::string model_file = argv[1];
@@ -61,12 +50,12 @@ int main(int argc, char *argv[])
 	skepu::Vector<mnist::label_t> test_labels  = mnist::parse_mnist_labels(data_path + "t10k-labels.idx1-ubyte");
 	const size_t n_train = max_train ? std::min<size_t>(max_train, train_images.size_i()) : train_images.size_i();
 	const size_t n_test  = max_test  ? std::min<size_t>(max_test,  test_images.size_i())  : test_images.size_i();
-	skepu::Tensor4<float> train_x = first_n(train_images, n_train), test_x = first_n(test_images, n_test);
+	skepu::Tensor4<float> train_x = skepu::dnn::take(train_images, n_train, "train images"), test_x = skepu::dnn::take(test_images, n_test, "test images");
 	skepu::Tensor4<float> train_y = onehot(train_labels, n_train), test_y = onehot(test_labels, n_test);
 
 	// Build the model from its description
 	auto model = load_model(model_file, batch_size);
-	std::cout << model.summary();
+	skepu::io::cout << model.summary();
 
 	model.configure(Loss::CategoricalCrossEntropy, Opt::SGD);
 	model.fit(train_x, train_y, epochs, learning_rate, 0.1, "model_file", true);

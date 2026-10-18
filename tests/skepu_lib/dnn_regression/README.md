@@ -1,7 +1,7 @@
 # SkePU-DNN regression test
 
 Short, fixed-seed training runs of the DNN examples (`examples/dnn/dnn_mnist10.cpp`, `dnn_signals1d.cpp`,
-`dnn_cifar10.cpp`, `dnn.cpp`) on the sequential (no precompiler) path. The logs of the runs (per-batch and
+`dnn_cifar10.cpp` also with `--gray`, `dnn_binary.cpp`) on the sequential (no precompiler) path. The logs of the runs (per-batch and
 per-epoch loss and accuracy, test result, confusion matrix) are compared with the golden logs in `golden/`.
 It catches changes in the numerical behaviour of the library: layers, losses, optimizers, batching.
 

@@ -26,32 +26,8 @@ static skepu::Tensor4<float>
 labels_to_onehot(skepu::Vector<mnist::label_t> &labels, size_t count, size_t num_classes)
 {
 	skepu::Tensor4<float> result(count, 1, 1, num_classes, "labels-onehot", 0.f);
-	for (size_t i = 0; i < count; ++i)
-		result(i, 0, 0, labels(i)) = 1.f;
+	skepu::dnn::one_hot(result, labels); // (the first count labels)
 	return result;
-}
-
-static skepu::Tensor4<float>
-first_n(skepu::Tensor4<float> &src, size_t n, bool as_rows_sequence = false)
-{
-	// as_rows_sequence: (n, 28, 28, 1) images -> (n, 1, 28, 28) sequences (rows are time steps)
-	if (as_rows_sequence)
-	{
-		skepu::Tensor4<float> dst(n, 1, src.size_j(), src.size_k(), "images-as-sequences");
-		for (size_t i = 0; i < n; ++i)
-			for (size_t j = 0; j < src.size_j(); ++j)
-				for (size_t k = 0; k < src.size_k(); ++k)
-					dst(i, 0, j, k) = src(i, j, k, 0);
-		return dst;
-	}
-
-	skepu::Tensor4<float> dst(n, src.size_j(), src.size_k(), src.size_l(), "images-subset");
-	for (size_t i = 0; i < n; ++i)
-		for (size_t j = 0; j < src.size_j(); ++j)
-			for (size_t k = 0; k < src.size_k(); ++k)
-				for (size_t l = 0; l < src.size_l(); ++l)
-					dst(i, j, k, l) = src(i, j, k, l);
-	return dst;
 }
 
 int main(int argc, char *argv[])
@@ -71,7 +47,7 @@ int main(int argc, char *argv[])
 
 	if (argc < 6)
 	{
-		std::cout << "Usage: " << argv[0] << " model(mlp|cnn|conv1d) batch_size learning_rate epochs backend [train_samples] [test_samples] [--adam]\n";
+		skepu::io::cout << "Usage: " << argv[0] << " model(mlp|cnn|conv1d) batch_size learning_rate epochs backend [train_samples] [test_samples] [--adam]\n";
 		return 1;
 	}
 
@@ -125,18 +101,18 @@ int main(int argc, char *argv[])
 	const size_t n_train = (max_train > 0) ? std::min<size_t>(max_train, train_images.size_i()) : train_images.size_i();
 	const size_t n_test  = (max_test  > 0) ? std::min<size_t>(max_test,  test_images.size_i())  : test_images.size_i();
 
-	skepu::Tensor4<float> train_x = first_n(train_images, n_train, model_name == "conv1d");
-	skepu::Tensor4<float> test_x  = first_n(test_images, n_test, model_name == "conv1d");
+	skepu::Tensor4<float> train_x = (model_name == "conv1d") ? skepu::dnn::as_sequence(train_images, n_train, "train sequences") : skepu::dnn::take(train_images, n_train, "train images");
+	skepu::Tensor4<float> test_x  = (model_name == "conv1d") ? skepu::dnn::as_sequence(test_images, n_test, "test sequences") : skepu::dnn::take(test_images, n_test, "test images");
 	skepu::Tensor4<float> train_y = labels_to_onehot(train_labels_raw, n_train, num_classes);
 	skepu::Tensor4<float> test_y  = labels_to_onehot(test_labels_raw, n_test, num_classes);
 
-	std::cout << "Training on " << n_train << " samples, testing on " << n_test << " samples\n";
+	skepu::io::cout << "Training on " << n_train << " samples, testing on " << n_test << " samples\n";
 
 	auto run = [&](auto model)
 	{
 		model.init();
 		model.configure(Loss::CategoricalCrossEntropy, optimizer);
-		std::cout << model.summary();
+		skepu::io::cout << model.summary();
 
 		model.fit(train_x, train_y, epochs, learning_rate, 0.1, "mnist10", true);
 
@@ -149,6 +125,6 @@ int main(int argc, char *argv[])
 	if (model_name == "mlp") run(build_mlp());
 	else if (model_name == "cnn") run(build_cnn());
 	else if (model_name == "conv1d") run(build_conv1d());
-	else { std::cout << "Unknown model '" << model_name << "'\n"; return 1; }
+	else { skepu::io::cout << "Unknown model '" << model_name << "'\n"; return 1; }
 	return 0;
 }

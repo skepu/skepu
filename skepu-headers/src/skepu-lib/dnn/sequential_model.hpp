@@ -220,12 +220,20 @@ public:
 
 	// Saves the model structure and its parameters to a text file (see load_model() for the format).
 	// The batch size, loss and optimizer are not part of the file.
+	// Under MPI every process makes the call (the parameters of the layers are gathered by skepu::external), and the first
+	// process writes the file; the others write to a stream that discards everything.
 	void save(const std::string &path)
 	{
 		this->init();
-		std::ofstream os(path);
-		if (!os)
-			SKEPU_ERROR("SkePU-DNN: cannot write model file " << path);
+		std::ofstream file;
+		if (skepu::dnn::detail::is_first_process())
+		{
+			file.open(path);
+			if (!file)
+				SKEPU_ERROR("SkePU-DNN: cannot write model file " << path);
+		}
+		std::ostream discard(nullptr);
+		std::ostream &os = skepu::dnn::detail::is_first_process() ? static_cast<std::ostream &>(file) : discard;
 
 		os << "skepu-dnn-model 1\n";
 		os << "input " << std::get<1>(this->m_input_size) << " " << std::get<2>(this->m_input_size) << " " << std::get<3>(this->m_input_size) << "\n";
@@ -501,7 +509,7 @@ public:
 			if (valid_size >= this->m_batch_size)
 				score = this->evaluate(valid_split_x, valid_split_y);
 			else if (epoch == 0 && print_progress)
-				std::cout << "SkePU-DNN: validation set (" << valid_size << " samples) smaller than the batch size, skipping validation\n";
+				skepu::io::cout << "SkePU-DNN: validation set (" << valid_size << " samples) smaller than the batch size, skipping validation\n";
 
 			if (print_progress)
 				skepu::io::cout
@@ -512,33 +520,6 @@ public:
 					<< " Validation Acc: " << std::get<1>(score)
 					<< "\n";
 		}
-	}
-
-	void display_image(skepu::Tensor4<float> &train_images)
-	{
-		int height = train_images.size_j();
-		int width = train_images.size_k();
-		int channel = train_images.size_l();
-
-		for(size_t b =0; b < 5; ++b){
-		for(size_t i =0; i < height; ++i){
-			for(size_t j =0; j < width; ++j){
-			for(size_t c =0; c < channel; ++c){
-				if (train_images(b,i,j,c) > 0.75) {
-					std::cout << "#"; // Dense pixel
-				} else if (train_images(b,i,j,c) > 0.5) {
-					std::cout << "+"; // Medium pixel
-				} else if(train_images(b,i,j,c) >0.25){
-					std::cout << "." ;
-				} else {
-					std::cout << " "; // Sparse pixel
-				}
-			}
-		}
-		std::cout << '\n';
-		}
-		std::cout << '\n';
-	}
 	}
 
 	std::string summary()
@@ -557,7 +538,7 @@ public:
 
 	void setBatchCountOverride(int bc)
 	{
-		std::cout << "Overriding batch count with : " << bc << "\n";
+		skepu::io::cout << "Overriding batch count with : " << bc << "\n";
 		this->m_override_batch_count = bc;
 	}
 
@@ -701,6 +682,8 @@ namespace skepu::dnn
 	// Attributes that are left out get the library defaults. '#' starts a comment.
 	// Without a params section the parameters are initialized according to the layers' `weights` and
 	// `biases` attributes; with one they are loaded and kept by fit().
+	// Under MPI every process reads the file (it only reads, and all of them need the structure of the model); the parameter
+	// values are written to the containers by skepu::external, which distributes them.
 	template <typename T = float>
 	impl::SequentialModel<T> load_model(const std::string &path, size_t batch_size)
 	{

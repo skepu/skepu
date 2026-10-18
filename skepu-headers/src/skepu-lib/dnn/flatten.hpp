@@ -46,6 +46,11 @@ public:
 
 	Tensor4<T> *backward(Tensor4<T> */*inputs*/, Tensor4<T> *gradient, Tensor4<T> */*y*/) override
 	{
+		// (as the first layer it has no layer before it to give the gradient to: m_temp is not made, and a skeleton call on an
+		// empty tensor stops OpenCL)
+		if (this->m_layer_level == Level::Input)
+			return &this->m_temp;
+
 		skel_flatmap.setLabel(this->label() + " Flatten backward");
 		skel_flatmap(this->m_temp, *gradient);
 
