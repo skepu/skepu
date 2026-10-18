@@ -948,6 +948,53 @@ namespace skepu
 		{
 			tracer().endRegion();
 		}
+
+#ifdef SKEPU_TRACING
+		namespace detail
+		{
+			// The labels of the library calls that are in progress on this thread, and the place that a frontend gives the next one
+			inline std::vector<std::string> &api_calls() { static thread_local std::vector<std::string> calls; return calls; }
+			struct CallSiteState { const char *file = nullptr; int line = 0; };
+			inline CallSiteState &call_site() { static thread_local CallSiteState state; return state; }
+		}
+
+		inline ApiScope::ApiScope(std::string const& label, const char *file, int line): m_active(false)
+		{
+			auto &calls = detail::api_calls();
+			if (!calls.empty() && calls.back() == label)
+				return;
+			auto &site = detail::call_site();
+			if (site.file)
+			{
+				file = site.file;
+				line = site.line;
+				site.file = nullptr;   // (the calls inside this one are in the library)
+			}
+			calls.push_back(label);
+			m_active = true;
+			tracer().beginRegion(label, file ? file : "", line);
+		}
+
+		inline ApiScope::~ApiScope()
+		{
+			if (!m_active)
+				return;
+			detail::api_calls().pop_back();
+			tracer().endRegion();
+		}
+
+		inline CallSite::CallSite(const char *file, int line)
+		{
+			auto &site = detail::call_site();
+			site.file = file;
+			site.line = line;
+		}
+
+		inline CallSite::~CallSite()
+		{
+			detail::call_site().file = nullptr;
+		}
+#endif
 	SKEPU_TRACING_VARIANT_END
 	}
 

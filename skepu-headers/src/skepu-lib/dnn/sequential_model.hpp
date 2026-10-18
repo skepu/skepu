@@ -172,9 +172,9 @@ public:
 	}
 
 	// Sets up all layers (allocates their data). Safe to call more than once.
-	void init()
+	void init(SKEPU_CALL_SITE_PARAM_ONLY)
 	{
-		SKEPU_TRACE_SCOPE("Model Init");
+		SKEPU_TRACE_API("Model Init");
 		if (this->m_initialized)
 			return;
 
@@ -211,9 +211,9 @@ public:
 		}
 	}
 
-	void init_parameters()
+	void init_parameters(SKEPU_CALL_SITE_PARAM_ONLY)
 	{
-		SKEPU_TRACE_SCOPE("Model param init");
+		SKEPU_TRACE_API("Model param init");
 		for (auto &current : this->m_layers)
 			current->init_parameters();
 	}
@@ -222,8 +222,9 @@ public:
 	// The batch size, loss and optimizer are not part of the file.
 	// Under MPI every process makes the call (the parameters of the layers are gathered by skepu::external), and the first
 	// process writes the file; the others write to a stream that discards everything.
-	void save(const std::string &path)
+	void save(const std::string &path SKEPU_CALL_SITE_PARAM)
 	{
+		SKEPU_TRACE_API("Model Save");
 		this->init();
 		std::ofstream file;
 		if (skepu::dnn::detail::is_first_process())
@@ -256,9 +257,9 @@ public:
 		}
 	}
 
-	void serialize(std::string base_file_name)
+	void serialize(std::string base_file_name SKEPU_CALL_SITE_PARAM)
 	{
-		SKEPU_TRACE_SCOPE("Serialize model parameters");
+		SKEPU_TRACE_API("Serialize model parameters");
 		for (auto &current : this->m_layers)
 			current->serialize(base_file_name);
 	}
@@ -292,9 +293,9 @@ public:
 
 	// Runs inference on a whole dataset (any number of samples, at least one batch) and returns the
 	// outputs of the last layer, shape (samples, ...).
-	Tensor4<T> predict(Tensor4<T> &x)
+	Tensor4<T> predict(Tensor4<T> &x SKEPU_CALL_SITE_PARAM)
 	{
-		SKEPU_TRACE_SCOPE("Model Predict");
+		SKEPU_TRACE_API("Model Predict");
 		this->init();
 		this->check_dataset_size(x.size_i(), "prediction");
 
@@ -302,8 +303,8 @@ public:
 		Tensor4<T> result(x.size_i(), std::get<1>(out), std::get<2>(out), std::get<3>(out), "Predictions");
 		Tensor4<T> batched_x(this->m_batch_size, std::get<1>(this->m_input_size), std::get<2>(this->m_input_size), std::get<3>(this->m_input_size), "Batch predict data X");
 
-		BatchPlan plan(x.size_i(), this->m_batch_size, -1);
-		for (size_t b = 0; b < plan.used; ++b)
+		BatchPlan plan(x.size_i(), this->m_batch_size);
+		for (size_t b = 0; b < plan.total; ++b)
 		{
 			skel_flatmap.setLabel("Copy batch predict data X");
 			skel_flatmap(batched_x, x.begin() + plan.first_sample(b) * sample_size(x));
@@ -325,10 +326,11 @@ public:
 
 	// Mean loss and accuracy over a dataset; optionally fills a confusion matrix (actual x predicted).
 	// Every sample is counted exactly once.
+	template<typename C = int>
 	std::tuple<skepu::Scalar<float>, skepu::Scalar<float>>
-	evaluate(Tensor4<T> &test_x, Tensor4<T> &test_y, skepu::Matrix<int> *confusion_matrix = nullptr)
+	evaluate(Tensor4<T> &test_x, Tensor4<T> &test_y, skepu::Matrix<C> *confusion_matrix = nullptr SKEPU_CALL_SITE_PARAM)
 	{
-		SKEPU_TRACE_SCOPE("Model Evaluate");
+		SKEPU_TRACE_API("Model Evaluate");
 		this->init();
 		this->require_configured("evaluate");
 
@@ -354,8 +356,8 @@ public:
 		skepu::Scalar<float> sum_loss = 0, sum_correct = 0;
 		size_t counted_samples = 0;
 
-		BatchPlan plan(test_x.size_i(), this->m_batch_size, this->m_override_batch_count);
-		for (size_t mini_batch = 0; mini_batch < plan.used; ++mini_batch)
+		BatchPlan plan(test_x.size_i(), this->m_batch_size);
+		for (size_t mini_batch = 0; mini_batch < plan.total; ++mini_batch)
 		{
 			SKEPU_TRACE_SCOPE("Batch");
 			this->load_batch(test_x, test_y, batched_test_x, batched_test_y, plan.first_sample(mini_batch));
@@ -397,9 +399,9 @@ public:
 	// Trains the model with mini-batch gradient descent. The last validation_split fraction of the data
 	// is held out for validation after every epoch (the data is used in order, it is not shuffled).
 	// `name` is currently unused.
-	void fit(Tensor4<T> &train_x, Tensor4<T> &train_y, int epochs, float learning_rate, float validation_split,  const std::string &/*name*/, bool print_progress=true)
+	void fit(Tensor4<T> &train_x, Tensor4<T> &train_y, int epochs, float learning_rate, float validation_split,  const std::string &/*name*/, bool print_progress=true SKEPU_CALL_SITE_PARAM)
 	{
-		SKEPU_TRACE_SCOPE("Model Fit");
+		SKEPU_TRACE_API("Model Fit");
 		this->require_configured("fit");
 		this->init();
 
@@ -458,14 +460,14 @@ public:
 
 		// When the training size is not a multiple of the batch size, the last batch overlaps the
 		// previous one, so a few samples are trained on twice per epoch
-		BatchPlan plan(train_size, this->m_batch_size, this->m_override_batch_count);
+		BatchPlan plan(train_size, this->m_batch_size);
 
 		for (int epoch = 0; epoch < epochs; ++epoch)
 		{
 			SKEPU_TRACE_SCOPE("Epoch");
 			skepu::Scalar<float> total_train_loss = 0, total_train_accuracy = 0;
 
-			for (size_t mini_batch = 0; mini_batch < plan.used; ++mini_batch)
+			for (size_t mini_batch = 0; mini_batch < plan.total; ++mini_batch)
 			{
 				SKEPU_TRACE_SCOPE("Batch");
 				this->load_batch(train_split_x, train_split_y, batched_train_x, batched_train_y, plan.first_sample(mini_batch));
@@ -514,8 +516,8 @@ public:
 			if (print_progress)
 				skepu::io::cout
 					<< "Epoch " << epoch
-					<< " Train Loss: " << total_train_loss / plan.used
-					<< " Train Acc: " << total_train_accuracy / plan.used
+					<< " Train Loss: " << total_train_loss / plan.total
+					<< " Train Acc: " << total_train_accuracy / plan.total
 					<< " Validation Loss: " << std::get<0>(score)
 					<< " Validation Acc: " << std::get<1>(score)
 					<< "\n";
@@ -536,30 +538,20 @@ public:
 
 	size_t layerCount() const { return this->m_layers.size(); }
 
-	void setBatchCountOverride(int bc)
-	{
-		skepu::io::cout << "Overriding batch count with : " << bc << "\n";
-		this->m_override_batch_count = bc;
-	}
-
 protected:
 	// Splits a dataset of `samples` items into batches of `batch_size`. When `samples` is not a multiple
 	// of the batch size, the last batch overlaps the previous one (it covers the final `batch_size`
 	// samples) so that all batches are full; skip(b) is the number of items of batch b that were
-	// already part of the previous batch. `used` is the number of batches to process
-	// (limited by the batch-count override, if any).
+	// already part of the previous batch.
 	struct BatchPlan
 	{
-		size_t samples, batch_size, total, remainder, used;
+		size_t samples, batch_size, total, remainder;
 
-		BatchPlan(size_t arg_samples, size_t arg_batch_size, int override_count)
+		BatchPlan(size_t arg_samples, size_t arg_batch_size)
 		: samples(arg_samples), batch_size(arg_batch_size),
 		total(arg_samples / arg_batch_size + ((arg_samples % arg_batch_size) > 0 ? 1 : 0)),
-		remainder(arg_samples % arg_batch_size), used(total)
-		{
-			if (override_count >= 0)
-				used = std::min(total, (size_t)override_count);
-		}
+		remainder(arg_samples % arg_batch_size)
+		{}
 
 		bool is_overlapping(size_t b) const { return b == total - 1 && remainder > 0; }
 		size_t first_sample(size_t b) const { return is_overlapping(b) ? samples - batch_size : b * batch_size; }
@@ -591,7 +583,8 @@ protected:
 	}
 
 	// Adds the (actual, predicted) class of the batch items from `skip` on to the confusion matrix
-	void accumulate_confusion(Tensor4<T> &actual, Tensor4<T> &predicted, size_t skip, skepu::Matrix<int> &confusion_matrix)
+	template<typename C>
+	void accumulate_confusion(Tensor4<T> &actual, Tensor4<T> &predicted, size_t skip, skepu::Matrix<C> &confusion_matrix)
 	{
 		skepu::external("Compute Confusion Matrix", skepu::read(actual, predicted), [&]
 		{
@@ -644,7 +637,6 @@ protected:
 	std::unique_ptr<Optimizer<T>> optimizer;
 	bool compiled = false;
 
-	int m_override_batch_count = -1;
 };
 
 
@@ -685,8 +677,9 @@ namespace skepu::dnn
 	// Under MPI every process reads the file (it only reads, and all of them need the structure of the model); the parameter
 	// values are written to the containers by skepu::external, which distributes them.
 	template <typename T = float>
-	impl::SequentialModel<T> load_model(const std::string &path, size_t batch_size)
+	impl::SequentialModel<T> load_model(const std::string &path, size_t batch_size SKEPU_CALL_SITE_PARAM)
 	{
+	SKEPU_TRACE_API("Model Load");
 	std::ifstream in(path);
 	if (!in)
 		SKEPU_ERROR("SkePU-DNN: cannot open model file " << path);

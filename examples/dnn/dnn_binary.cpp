@@ -3,7 +3,8 @@
 // The data preparation is SkePU too: the images of the two classes are counted with a MapReduce (so that every process knows the
 // count) and copied to new tensors in a skepu::external section; the binary labels are 0 for the first class and 1 for the second.
 //
-// Usage: dnn_binary batch_size learning_rate epochs backend run
+// Usage: dnn_binary batch_size learning_rate epochs backend [train_samples] [test_samples]
+//   train_samples / test_samples: use only the first N images of the two classes (0 = all)
 //
 // Sequential build (no precompiler):
 //   clang++ -std=c++20 -O2 -I ../../skepu-headers/src -Wno-attributes dnn_binary.cpp -o dnn_binary
@@ -18,7 +19,7 @@
 #include <skepu-lib/util.hpp>
 #include <skepu-lib/ml.hpp>
 
-#include "skepu-mnist.hpp"
+#include <skepu-lib/dnn/mnist.hpp>
 
 // Is the label one of the two classes?
 int in_the_two_classes(int label, int class_a, int class_b)
@@ -59,7 +60,7 @@ int main(int argc, char *argv[])
 {
 	if (argc < 6)
 	{
-		skepu::io::cout << "Usage: " << argv[0] << " batch_size learning_rate epochs backend run\n";
+		skepu::io::cout << "Usage: " << argv[0] << " batch_size learning_rate epochs backend [train_samples] [test_samples]\n";
 		return 1;
 	}
 
@@ -69,6 +70,8 @@ int main(int argc, char *argv[])
 	auto spec = skepu::BackendSpec{argv[4]};
 	spec.setCPUThreads(8);
 	skepu::setGlobalBackendSpec(spec);
+	const size_t max_train = (argc > 5) ? atoi(argv[5]) : 0;
+	const size_t max_test  = (argc > 6) ? atoi(argv[6]) : 0;
 
 	using namespace skepu::dnn;
 	auto model = SequentialModel(Dimensions{batch_size, 28, 28, 1})
@@ -82,7 +85,6 @@ int main(int argc, char *argv[])
 		<< Dense(1).weights(Init::Xavier_uniform).biases(Init::Zero).activation(Act::Sigmoid);
 
 	model.init();
-	model.setBatchCountOverride(2); // a short run: two batches per epoch
 	skepu::io::cout << model.summary();
 
 	const std::string data_path = "../data/mnist/";
@@ -95,6 +97,20 @@ int main(int argc, char *argv[])
 	skepu::Tensor4<float> *train_images, *train_labels, *test_images, *test_labels;
 	std::tie(train_images, train_labels) = binary_class(train_images_all, train_labels_all, class_a, class_b);
 	std::tie(test_images, test_labels)   = binary_class(test_images_all,  test_labels_all,  class_a, class_b);
+
+	// A shorter run: only the first images of the two classes
+	if (max_train > 0 && max_train < train_images->size_i())
+	{
+		auto *images = new skepu::Tensor4<float>(skepu::dnn::take(*train_images, max_train, "train images"));
+		auto *labels = new skepu::Tensor4<float>(skepu::dnn::take(*train_labels, max_train, "train labels"));
+		train_images = images; train_labels = labels;
+	}
+	if (max_test > 0 && max_test < test_images->size_i())
+	{
+		auto *images = new skepu::Tensor4<float>(skepu::dnn::take(*test_images, max_test, "test images"));
+		auto *labels = new skepu::Tensor4<float>(skepu::dnn::take(*test_labels, max_test, "test labels"));
+		test_images = images; test_labels = labels;
+	}
 
 	skepu::io::cout << "Train images dimensions: "
 		<< train_images->size_i() << " x " << train_images->size_j() << " x "

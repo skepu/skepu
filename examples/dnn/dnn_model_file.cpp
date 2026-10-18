@@ -15,7 +15,7 @@
 #include <skepu-lib/io.hpp>
 #include <skepu-lib/ml.hpp>
 
-#include "skepu-mnist.hpp"
+#include <skepu-lib/dnn/mnist.hpp>
 
 using namespace skepu::dnn;
 

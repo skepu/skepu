@@ -23,7 +23,7 @@
 #include <skepu-lib/benchmark.hpp>
 #include <skepu-lib/ml.hpp>
 
-#include "skepu-cifar10.hpp"
+#include <skepu-lib/dnn/cifar10.hpp>
 
 using namespace skepu::dnn;
 

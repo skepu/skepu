@@ -176,8 +176,10 @@ void swap(
 	stride_type                      incx,
 	Vector<TY> &                     y,
 	stride_type                      incy
+	SKEPU_CALL_SITE_PARAM
 )
 {
+	SKEPU_TRACE_API("blas.swap");
 	// if (incx == incy == 1) AND (TX == TY) then pointer-swap
 	auto skel = Map<2>(swap_uf<TX, TY>);
 	skel.setStride(incx, incy, incx, incy);
@@ -202,8 +204,10 @@ void scal(
 	TS                               alpha,
 	Vector<TX> &                     x,
 	stride_type                      incx
+	SKEPU_CALL_SITE_PARAM
 )
 {
+	SKEPU_TRACE_API("blas.scal");
 	// (the user function is the same for a plain and a Scalar<> alpha, so those instantiations share a kernel)
 	auto skel = Map<1>(scal_uf<TX, scalar_type<TX, unwrap_scalar_t<TS>>>);
 	skel.setStride(incx, incx);
@@ -229,8 +233,10 @@ void copy(
 	stride_type                      incx,
 	Vector<TY> &                     y,
 	stride_type                      incy
+	SKEPU_CALL_SITE_PARAM
 )
 {
+	SKEPU_TRACE_API("blas.copy");
 	auto skel = Map<1>(copy_uf<TX, TY>);
 	skel.setStride(incy, incx);
 	skel.setLabel("COPY");
@@ -256,8 +262,10 @@ void axpy(
 	stride_type                      incx,
 	Vector<TY> &                     y,
 	stride_type                      incy
+	SKEPU_CALL_SITE_PARAM
 )
 {
+	SKEPU_TRACE_API("blas.axpy");
 	auto skel = Map<2>(axpy_uf<TX, TY>);
 	skel.setStride(incy, incx, incy);
 	skel.setLabel("AXPY");
@@ -288,8 +296,10 @@ Scalar<scalar_type<TX, TY>> dot(
 	stride_type                      incx,
 	Vector<TY> BLAS_CONST&           y,
 	stride_type                      incy
+	SKEPU_CALL_SITE_PARAM
 )
 {
+	SKEPU_TRACE_API("blas.dot");
 	auto skel = MapReduce<2>(dot_uf_1<TX, TY>, dot_uf_2<scalar_type<TX, TY>>);
 	skel.setStride(incx, incy);
 	skel.setLabel("DOT");
@@ -315,8 +325,10 @@ Scalar<scalar_type<TX, TY>> dotu(
 	stride_type                      incx,
 	Vector<TY> BLAS_CONST&           y,
 	stride_type                      incy
+	SKEPU_CALL_SITE_PARAM
 )
 {
+	SKEPU_TRACE_API("blas.dotu");
 	auto skel = MapReduce<2>(dotu_uf_1<TX, TY>, dot_uf_2<scalar_type<TX, TY>>); // ???
 	skel.setStride(incx, incy);
 	skel.setLabel("DOTU");
@@ -360,8 +372,10 @@ Scalar<real_type<T>> nrm2(
 	size_type                        n,
 	Vector<T> BLAS_CONST&            x,
 	stride_type                      incx
+	SKEPU_CALL_SITE_PARAM
 )
 {
+	SKEPU_TRACE_API("blas.nrm2");
 	auto skel = MapReduce<1>(nrm2_uf_1<T>, nrm2_uf_2<real_type<T>>);
 	skel.setStride(incx);
 	skel.setLabel("NRM2");
@@ -385,8 +399,10 @@ Scalar<real_type<T>> asum(
 	size_type                        n,
 	Vector<T> BLAS_CONST&            x,
 	stride_type                      incx
+	SKEPU_CALL_SITE_PARAM
 )
 {
+	SKEPU_TRACE_API("blas.asum");
 	auto skel = MapReduce<1>(asum_uf_1<T>, dot_uf_2<real_type<T>>);
 	skel.setStride(incx);
 	skel.setLabel("ASUM");
@@ -418,8 +434,10 @@ size_type iamax(
 	size_type                        n,
 	Vector<T> BLAS_CONST&            x,
 	stride_type                      incx
+	SKEPU_CALL_SITE_PARAM
 )
 {
+	SKEPU_TRACE_API("blas.iamax");
 	auto skel = MapReduce<1>(iamax_uf_1<T>, iamax_uf_2<iamax_type<real_type<T>>>);
 	skel.setStride(incx);
 	skel.setLabel("IAMAX");
@@ -440,8 +458,9 @@ T sign(T a, T b)
 }
 
 template<typename T>
-void rotg(T *a, T *b, T *c, T *s)
+void rotg(T *a, T *b, T *c, T *s SKEPU_CALL_SITE_PARAM)
 {
+	SKEPU_TRACE_API("blas.rotg");
 	const T c_b4 = 1.;
   T d__1, d__2;
   T r, scale, z, roe;
@@ -507,8 +526,10 @@ void rot(
 	stride_type                      incy,
 	TS                               c,
 	TS                               s
+	SKEPU_CALL_SITE_PARAM
 )
 {
+	SKEPU_TRACE_API("blas.rot");
   auto skel = Map<2>(rot_uf<TX, TY>);
 	skel.setStride(incx, incy, incx, incy);
 	skel.setLabel("ROT");
@@ -592,8 +613,10 @@ void gemv(
 	TS                               beta,
 	Vector<TY> &                     y,
 	stride_type                      incy
+	SKEPU_CALL_SITE_PARAM
 )
 {
+	SKEPU_TRACE_API("blas.gemv");
 	const TS zero = 0, one  = 1;
 
   // quick return
@@ -663,8 +686,10 @@ void ger(
 	stride_type                       incy,
 	Matrix<TA>&                       A,
 	stride_type                       lda
+	SKEPU_CALL_SITE_PARAM
 )
 {
+	SKEPU_TRACE_API("blas.ger");
 	// (MapPairs' in place mode, adding the result to the old element, is not implemented by
 	// the CUDA backend: the outer product goes to a temporary, which is then added)
 	Matrix<TA> outer(A.size_i(), A.size_j());
@@ -700,8 +725,10 @@ void geru(
 	stride_type                       incy,
 	Matrix<TA>&                       A,
 	stride_type                       lda
+	SKEPU_CALL_SITE_PARAM
 )
 {
+	SKEPU_TRACE_API("blas.geru");
 	// (MapPairs' in place mode, adding the result to the old element, is not implemented by
 	// the CUDA backend: the outer product goes to a temporary, which is then added)
 	Matrix<TA> outer(A.size_i(), A.size_j());
@@ -771,8 +798,10 @@ void gemm(
 	scalar_type<TA, TB, TC>          beta,
 	Matrix<TC>&                      C,
 	size_type                        ldc
+	SKEPU_CALL_SITE_PARAM
 )
 {
+	SKEPU_TRACE_API("blas.gemm");
 	typedef blas::scalar_type<TA, TB, TC> scalar_t;
 
   // constants

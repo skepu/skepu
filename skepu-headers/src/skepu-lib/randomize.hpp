@@ -216,8 +216,9 @@ namespace randomize {
 
 	// Integral elements, from min to max (both included). The maximum is always given.
 	template<typename C, detail::integral_container<C> Enable = 0>
-	void uniform(C &container, detail::value_of<C> min, detail::value_of<C> max)
+	void uniform(C &container, detail::value_of<C> min, detail::value_of<C> max SKEPU_CALL_SITE_PARAM)
 	{
+		SKEPU_TRACE_API("randomize.uniform");
 		using T = detail::value_of<C>;
 		const size_t span = detail::range_span((long long)min, (long long)max);
 		auto skel = skepu::Map<0>(detail::uniform_integer_uf<T>);
@@ -227,15 +228,17 @@ namespace randomize {
 	}
 
 	template<typename C, detail::integral_container<C> Enable = 0>
-	void uniform(C &container, detail::value_of<C> max)
+	void uniform(C &container, detail::value_of<C> max SKEPU_CALL_SITE_PARAM)
 	{
+		SKEPU_TRACE_API("randomize.uniform");
 		uniform(container, detail::value_of<C>(0), max);
 	}
 
 	// Floating-point elements, from min up to max (0 and 1 by default)
 	template<typename C, detail::floating_container<C> Enable = 0>
-	void uniform(C &container, detail::value_of<C> min = 0, detail::value_of<C> max = 1)
+	void uniform(C &container, detail::value_of<C> min = 0, detail::value_of<C> max = 1 SKEPU_CALL_SITE_PARAM)
 	{
+		SKEPU_TRACE_API("randomize.uniform");
 		using T = detail::value_of<C>;
 		const detail::real_bits<T> bits;
 		auto skel = skepu::Map<0>(detail::uniform_real_uf<T>);
@@ -249,8 +252,9 @@ namespace randomize {
 
 	// Floating-point elements with the normal distribution of the mean and the standard deviation
 	template<typename C, detail::floating_container<C> Enable = 0>
-	void normal(C &container, detail::value_of<C> mean = 0, detail::value_of<C> deviation = 1)
+	void normal(C &container, detail::value_of<C> mean = 0, detail::value_of<C> deviation = 1 SKEPU_CALL_SITE_PARAM)
 	{
+		SKEPU_TRACE_API("randomize.normal");
 		using T = detail::value_of<C>;
 		const detail::real_bits<T> bits;
 		auto skel = skepu::Map<0>(detail::normal_uf<T>);
@@ -264,8 +268,9 @@ namespace randomize {
 
 	// The elements are 1 with the probability p (from 0 to 1), else 0
 	template<typename C, detail::numeric_container<C> Enable = 0>
-	void bernoulli(C &container, double p)
+	void bernoulli(C &container, double p SKEPU_CALL_SITE_PARAM)
 	{
+		SKEPU_TRACE_API("randomize.bernoulli");
 		using T = detail::value_of<C>;
 		if (!(p >= 0 && p <= 1))
 			SKEPU_ERROR("skepu::randomize::bernoulli: the probability is not from 0 to 1");
@@ -278,8 +283,9 @@ namespace randomize {
 
 	// The elements have the Poisson distribution of the mean lambda (from 0 to 50)
 	template<typename C, detail::numeric_container<C> Enable = 0>
-	void poisson(C &container, double lambda)
+	void poisson(C &container, double lambda SKEPU_CALL_SITE_PARAM)
 	{
+		SKEPU_TRACE_API("randomize.poisson");
 		using T = detail::value_of<C>;
 		if (!(lambda >= 0 && lambda <= 50))
 			SKEPU_ERROR("skepu::randomize::poisson: the mean is not from 0 to 50");

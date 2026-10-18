@@ -289,15 +289,16 @@ namespace detail {
 	inline int sum_of_ints(int a, int b) { return a + b; }
 
 	// The first of the largest scores of the sample
-	inline int argmax_of_scores(skepu::Index1D index, skepu::Ten4<float> scores)
+	template<typename R>
+	R argmax_of_scores(skepu::Index1D index, skepu::Ten4<float> scores)
 	{
-		int best = 0;
+		R best = 0;
 		float largest = scores(index.i, 0, 0, 0);
 		for (size_t c = 1; c < scores.size_l; ++c)
 			if (scores(index.i, 0, 0, c) > largest)
 			{
 				largest = scores(index.i, 0, 0, c);
-				best = (int)c;
+				best = (R)c;
 			}
 		return best;
 	}
@@ -305,8 +306,9 @@ namespace detail {
 
 // Fills out (n x 1 x 1 x C) with the one-hot vectors of the first n of the classes
 template<typename T>
-void one_hot(skepu::Tensor4<float> &out, skepu::Vector<T> &classes)
+void one_hot(skepu::Tensor4<float> &out, skepu::Vector<T> &classes SKEPU_CALL_SITE_PARAM)
 {
+	SKEPU_TRACE_API("dnn.one_hot");
 	if (out.size_j() != 1 || out.size_k() != 1)
 		SKEPU_ERROR("skepu::dnn::one_hot: the labels must be n x 1 x 1 x classes, not " << out.size_i() << " x " << out.size_j() << " x " << out.size_k() << " x " << out.size_l());
 	if (classes.size() < out.size_i())
@@ -325,23 +327,25 @@ void one_hot(skepu::Tensor4<float> &out, skepu::Vector<T> &classes)
 
 // The one-hot labels (n x 1 x 1 x num_classes) of the n classes
 template<typename T>
-skepu::Tensor4<float> one_hot(skepu::Vector<T> &classes, size_t num_classes, std::string label = "one-hot labels")
+skepu::Tensor4<float> one_hot(skepu::Vector<T> &classes, size_t num_classes, std::string label = "one-hot labels" SKEPU_CALL_SITE_PARAM)
 {
+	SKEPU_TRACE_API("dnn.one_hot");
 	skepu::Tensor4<float> out(classes.size(), 1, 1, num_classes, label, 0.f);
 	one_hot(out, classes);
 	return out;
 }
 
-static auto skel_argmax = skepu::Map<0>(detail::argmax_of_scores);
-
-// The class of each of the n samples of scores (n x 1 x 1 x C): the index of its first largest score
-inline skepu::Vector<int> argmax(skepu::Tensor4<float> &scores, std::string label = "predicted classes")
+// The class of each of the n samples of scores (n x 1 x 1 x C): the index of its first largest score (the integer type R is int by default)
+template<typename R = int>
+skepu::Vector<R> argmax(skepu::Tensor4<float> &scores, std::string label = "predicted classes" SKEPU_CALL_SITE_PARAM)
 {
+	SKEPU_TRACE_API("dnn.argmax");
 	if (scores.size_j() != 1 || scores.size_k() != 1)
 		SKEPU_ERROR("skepu::dnn::argmax: the scores must be n x 1 x 1 x classes, not " << scores.size_i() << " x " << scores.size_j() << " x " << scores.size_k() << " x " << scores.size_l());
-	skepu::Vector<int> classes(scores.size_i(), label);
-	skel_argmax.setLabel("dnn::argmax");
-	skel_argmax(classes, scores);
+	skepu::Vector<R> classes(scores.size_i(), label);
+	auto skel = skepu::Map<0>(detail::argmax_of_scores<R>);
+	skel.setLabel("dnn::argmax");
+	skel(classes, scores);
 	return classes;
 }
 
@@ -395,8 +399,9 @@ static auto skel_channel_square_sum = skepu::MapReduce<1>(detail::channel_square
 static auto skel_standardize = skepu::Map<1>(detail::standardize_element);
 
 // The first n samples of a data set (a copy)
-inline skepu::Tensor4<float> take(skepu::Tensor4<float> &src, size_t n, std::string label = "subset")
+inline skepu::Tensor4<float> take(skepu::Tensor4<float> &src, size_t n, std::string label = "subset" SKEPU_CALL_SITE_PARAM)
 {
+	SKEPU_TRACE_API("dnn.take");
 	if (n > src.size_i())
 		SKEPU_ERROR("skepu::dnn::take: " << n << " samples requested of " << src.size_i());
 	skepu::Tensor4<float> dst(n, src.size_j(), src.size_k(), src.size_l(), label);
@@ -407,8 +412,9 @@ inline skepu::Tensor4<float> take(skepu::Tensor4<float> &src, size_t n, std::str
 
 // The first n samples (all by default) of a data set of (h, w, 1) images as sequences (1, h, w): the rows are the time steps and the
 // columns the channels, as the 1D layers (Conv1D, MaxPooling1D) take them
-inline skepu::Tensor4<float> as_sequence(skepu::Tensor4<float> &src, size_t n = 0, std::string label = "sequences")
+inline skepu::Tensor4<float> as_sequence(skepu::Tensor4<float> &src, size_t n = 0, std::string label = "sequences" SKEPU_CALL_SITE_PARAM)
 {
+	SKEPU_TRACE_API("dnn.as_sequence");
 	if (src.size_l() != 1)
 		SKEPU_ERROR("skepu::dnn::as_sequence: the images must have one channel, not " << src.size_l());
 	if (n == 0) n = src.size_i();
@@ -422,8 +428,9 @@ inline skepu::Tensor4<float> as_sequence(skepu::Tensor4<float> &src, size_t n = 
 
 // The layout of a data set (n, channels, height, width), which is that of the raw CIFAR-10 files and of many other sources, as
 // (n, height, width, channels), the layout of the layers
-inline skepu::Tensor4<float> chw_to_hwc(skepu::Tensor4<float> &src, std::string label = "images (HWC)")
+inline skepu::Tensor4<float> chw_to_hwc(skepu::Tensor4<float> &src, std::string label = "images (HWC)" SKEPU_CALL_SITE_PARAM)
 {
+	SKEPU_TRACE_API("dnn.chw_to_hwc");
 	skepu::Tensor4<float> dst(src.size_i(), src.size_k(), src.size_l(), src.size_j(), label);
 	skel_chw_to_hwc.setLabel("dnn::chw_to_hwc");
 	skel_chw_to_hwc(dst, src);
@@ -438,8 +445,9 @@ struct ChannelStats
 
 // The statistics are made by skeletons (MapReduce), so every process of an MPI program has them: the code of a skepu::external
 // call runs on one process only, and a value computed in it would not reach the others
-inline ChannelStats channel_stats(skepu::Tensor4<float> &images, std::string label = "channel")
+inline ChannelStats channel_stats(skepu::Tensor4<float> &images, std::string label = "channel" SKEPU_CALL_SITE_PARAM)
 {
+	SKEPU_TRACE_API("dnn.channel_stats");
 	const size_t channels = images.size_l();
 	ChannelStats stats{skepu::Vector<float>(channels, label + " means"), skepu::Vector<float>(channels, label + " deviations")};
 	const double count = (double)images.size_i() * images.size_j() * images.size_k();
@@ -465,8 +473,9 @@ inline ChannelStats channel_stats(skepu::Tensor4<float> &images, std::string lab
 }
 
 // Each channel to zero mean and unit variance with the given statistics (of the training set, for both the training and the test set)
-inline void standardize(skepu::Tensor4<float> &images, ChannelStats &stats)
+inline void standardize(skepu::Tensor4<float> &images, ChannelStats &stats SKEPU_CALL_SITE_PARAM)
 {
+	SKEPU_TRACE_API("dnn.standardize");
 	if (stats.mean.size() != images.size_l())
 		SKEPU_ERROR("skepu::dnn::standardize: " << stats.mean.size() << " channel statistics for " << images.size_l() << " channels");
 	skel_standardize.setLabel("dnn::standardize");

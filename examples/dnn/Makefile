@@ -4,7 +4,7 @@ PROGS = dnn_binary dnn_artificial dnn_cifar10 dnn_mnist10 dnn_model_file dnn_sig
 COMMON_SOURCES =
 
 # Arguments of 'make run/<program>'
-lookup.dnn_binary     = 32 0.05 1 $(RUN_BACKEND) 1
+lookup.dnn_binary     = 32 0.05 1 $(RUN_BACKEND) 640 128
 lookup.dnn_artificial = 32 0.05 2 $(RUN_BACKEND)
 lookup.dnn_cifar10    = small 32 0.001 1 $(RUN_BACKEND) 1600 330 --adam
 lookup.dnn_mnist10    = cnn 32 0.05 1 $(RUN_BACKEND) 1600 330

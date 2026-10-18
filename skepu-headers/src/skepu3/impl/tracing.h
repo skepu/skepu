@@ -2,6 +2,8 @@
 #define TRACING_H
 
 #include <fstream>
+#include <vector>
+#include <string>
 #include <sstream>
 #include <iostream>
 #include <stack>
@@ -98,6 +100,9 @@ namespace skepu
 #define SKEPU_TRACE_CALL(...) skepu::tracing::tracer().call(__VA_ARGS__)
 #define SKEPU_TRACE_EXTERNAL(...) skepu::tracing::tracer().external(__VA_ARGS__)
 #define SKEPU_TRACE_SCOPE(label) skepu::tracing::Scope scope(label)
+#define SKEPU_CALL_SITE_PARAM , const char *skepu_site_file = __builtin_FILE(), int skepu_site_line = __builtin_LINE()
+#define SKEPU_CALL_SITE_PARAM_ONLY const char *skepu_site_file = __builtin_FILE(), int skepu_site_line = __builtin_LINE()
+#define SKEPU_TRACE_API(label) skepu::tracing::ApiScope skepu_api_scope(label, skepu_site_file, skepu_site_line)
 #define SKEPU_TRACE_REGION_BEGIN(...) skepu::tracing::tracer().beginRegion(__VA_ARGS__)
 #define SKEPU_TRACE_REGION_END() skepu::tracing::tracer().endRegion()
 #define SKEPU_TRACE_REGION(...) skepu::tracing::tracer().region(__VA_ARGS__)
@@ -123,6 +128,9 @@ namespace skepu
 #define SKEPU_TRACE_CALL(...)
 #define SKEPU_TRACE_EXTERNAL(...)
 #define SKEPU_TRACE_SCOPE(label)
+#define SKEPU_CALL_SITE_PARAM
+#define SKEPU_CALL_SITE_PARAM_ONLY
+#define SKEPU_TRACE_API(label)
 #define SKEPU_TRACE_REGION_BEGIN(label)
 #define SKEPU_TRACE_REGION_END()
 #define SKEPU_TRACE_REGION(...)
@@ -223,6 +231,32 @@ namespace skepu
 			Scope(std::string const& label SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM);
 			~Scope();
 		};
+
+#ifdef SKEPU_TRACING
+		// The region of a call of a function of the SkePU libraries (skepu-lib: dnn, blas, randomize), at the place of the call in the
+		// program: the library function takes its caller's file and line as default arguments (SKEPU_CALL_SITE_PARAM), and its
+		// first statement is SKEPU_TRACE_API("name"). A call of the library from another library function with the same name (an
+		// overload) is not a region of its own.
+		// A frontend that is not C++ (SkePY) says where the call is in its own source with a CallSite object around the call: the
+		// first ApiScope that begins while it is there takes that place (not the library's callers inside the call).
+		struct ApiScope
+		{
+			ApiScope(std::string const& label, const char *file, int line);
+			~ApiScope();
+			ApiScope(const ApiScope &) = delete;
+			ApiScope &operator=(const ApiScope &) = delete;
+		private:
+			bool m_active;
+		};
+
+		struct CallSite
+		{
+			CallSite(const char *file, int line);
+			~CallSite();
+			CallSite(const CallSite &) = delete;
+			CallSite &operator=(const CallSite &) = delete;
+		};
+#endif
 
 		// What a recorded event is, for a tracer that the MPI backend has configured (see Tracer::configureMPI). Region: what the program
 		// itself marks (regions, snapshots, virtual datasets, the elements it reads)

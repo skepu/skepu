@@ -1,9 +1,23 @@
 Epoch 0 Train Batch 1 - Loss: 0.720685 - Accuracy: 0.5625
 Epoch 0 Train Batch 2 - Loss: 0.67053 - Accuracy: 0.5625
-Epoch 0 Train Loss: 0.695607 Train Acc: 0.5625 Validation Loss: 0.625643 Validation Acc: 0.90625
-Epoch 1 Train Batch 1 - Loss: 0.64994 - Accuracy: 0.625
-Epoch 1 Train Batch 2 - Loss: 0.612942 - Accuracy: 1
-Epoch 1 Train Loss: 0.631441 Train Acc: 0.8125 Validation Loss: 0.563958 Validation Acc: 1
-Test loss: 0.573448 Test accuracy: 1
+Epoch 0 Train Batch 3 - Loss: 0.634278 - Accuracy: 0.9375
+Epoch 0 Train Batch 4 - Loss: 0.613298 - Accuracy: 1
+Epoch 0 Train Batch 5 - Loss: 0.550905 - Accuracy: 1
+Epoch 0 Train Batch 6 - Loss: 0.534734 - Accuracy: 1
+Epoch 0 Train Batch 7 - Loss: 0.499416 - Accuracy: 1
+Epoch 0 Train Batch 8 - Loss: 0.473061 - Accuracy: 1
+Epoch 0 Train Batch 9 - Loss: 0.419361 - Accuracy: 1
+Epoch 0 Train Loss: 0.568474 Train Acc: 0.895833 Validation Loss: 0.394225 Validation Acc: 1
+Epoch 1 Train Batch 1 - Loss: 0.409285 - Accuracy: 0.9375
+Epoch 1 Train Batch 2 - Loss: 0.362814 - Accuracy: 1
+Epoch 1 Train Batch 3 - Loss: 0.291573 - Accuracy: 1
+Epoch 1 Train Batch 4 - Loss: 0.261622 - Accuracy: 1
+Epoch 1 Train Batch 5 - Loss: 0.175492 - Accuracy: 1
+Epoch 1 Train Batch 6 - Loss: 0.175339 - Accuracy: 1
+Epoch 1 Train Batch 7 - Loss: 0.132835 - Accuracy: 1
+Epoch 1 Train Batch 8 - Loss: 0.149017 - Accuracy: 1
+Epoch 1 Train Batch 9 - Loss: 0.10905 - Accuracy: 1
+Epoch 1 Train Loss: 0.22967 Train Acc: 0.993056 Validation Loss: 0.0949697 Validation Acc: 1
+Test loss: 0.0937998 Test accuracy: 1
 12 0 
 0 20 

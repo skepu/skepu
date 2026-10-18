@@ -25,10 +25,10 @@ static const char *class_names[NUM_CLASSES] = {
 	"airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"
 };
 
-// Loads up to max_count images from the given batch files (0 = all). The labels are returned as
-// one-hot vectors (n, 1, 1, 10), made by skepu::dnn::one_hot.
-inline void load(const std::vector<std::string> &files, size_t max_count,
-	skepu::Tensor4<float> *&images, skepu::Tensor4<float> *&labels)
+// Loads up to max_count images from the given batch files (0 = all), and their classes (0 to 9, of the type Label).
+template<typename Label = int>
+inline void load_classes(const std::vector<std::string> &files, size_t max_count,
+	skepu::Tensor4<float> *&images, skepu::Vector<Label> *&classes)
 {
 	std::vector<uint8_t> raw;
 	for (const std::string &file : files)
@@ -52,7 +52,7 @@ inline void load(const std::vector<std::string> &files, size_t max_count,
 	if (max_count > 0 && max_count < n) n = max_count;
 
 	images = new skepu::Tensor4<float>(n, IMAGE_SIZE, IMAGE_SIZE, CHANNELS, "CIFAR-10 images");
-	skepu::Vector<int> classes(n, "CIFAR-10 classes");
+	classes = new skepu::Vector<Label>(n, "CIFAR-10 classes");
 
 	// The host writes the elements of the containers: in skepu::external, which makes the containers
 	// current on the host first and the host's data the current one afterwards (also with a device and
@@ -62,15 +62,23 @@ inline void load(const std::vector<std::string> &files, size_t max_count,
 		for (size_t i = 0; i < n; ++i)
 		{
 			const uint8_t *rec = raw.data() + i * RECORD_SIZE;
-			classes(i) = rec[0];
+			(*classes)(i) = rec[0];
 			for (size_t c = 0; c < CHANNELS; ++c)
 				for (size_t y = 0; y < IMAGE_SIZE; ++y)
 					for (size_t x = 0; x < IMAGE_SIZE; ++x)
 						(*images)(i, y, x, c) = rec[1 + c * IMAGE_SIZE * IMAGE_SIZE + y * IMAGE_SIZE + x] / 255.f;
 		}
-	}, skepu::write(*images, classes));
+	}, skepu::write(*images, *classes));
+}
 
-	labels = new skepu::Tensor4<float>(skepu::dnn::one_hot(classes, NUM_CLASSES, "CIFAR-10 labels"));
+// The same, with the labels as one-hot vectors (n, 1, 1, 10), made by skepu::dnn::one_hot.
+inline void load(const std::vector<std::string> &files, size_t max_count,
+	skepu::Tensor4<float> *&images, skepu::Tensor4<float> *&labels)
+{
+	skepu::Vector<int> *classes = nullptr;
+	load_classes(files, max_count, images, classes);
+	labels = new skepu::Tensor4<float>(skepu::dnn::one_hot(*classes, NUM_CLASSES, "CIFAR-10 labels"));
+	delete classes;
 }
 
 } // namespace cifar10

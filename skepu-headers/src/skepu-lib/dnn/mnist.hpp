@@ -42,7 +42,7 @@ struct mnist_header {
   uint32_t num_cols;
 };
 
-void mnist_error(std::string err)
+inline void mnist_error(std::string err)
 {
 	std::cerr << err << "\n";
 	exit(1);
@@ -94,7 +94,8 @@ inline void parse_mnist_image(
  * @param label_file [in]  filename of database (i.e.train-labels-idx1-ubyte)
  * @param labels     [out] parsed label data
  **/
-inline skepu::Vector<label_t> parse_mnist_labels(const std::string &label_file) {
+template <typename Label = label_t>
+inline skepu::Vector<Label> parse_mnist_labels(const std::string &label_file) {
   std::ifstream ifs(label_file.c_str(), std::ios::in | std::ios::binary);
 
   if (ifs.bad() || ifs.fail())
@@ -113,14 +114,14 @@ inline skepu::Vector<label_t> parse_mnist_labels(const std::string &label_file) 
   if (magic_number != 0x00000801 || num_items <= 0)
     detail::mnist_error("MNIST label-file format error");
 
-	skepu::Vector<label_t> labels(num_items, "MNIST-labels");
+	skepu::Vector<Label> labels(num_items, "MNIST-labels");
 	skepu::external("Parse MNIST labels", [&]
 	{
 	  for (uint32_t i = 0; i < num_items; i++)
 		{
 	    uint8_t label;
 	    ifs.read(reinterpret_cast<char *>(&label), 1);
-	    labels(i) = static_cast<label_t>(label);
+	    labels(i) = static_cast<Label>(label);
 	  }
 	}, skepu::write(labels));
 	return labels;
