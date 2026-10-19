@@ -31,6 +31,13 @@ skepu_add_test(args EXCLUDE cuda hybrid_opencl hybrid_cuda)
 
 
 # ------------------------------------------------
+#   The user functions of examples/perlin.cpp: a Map with a PRNG that fills a grid of structs, and a Map that gathers from the grid
+# ------------------------------------------------
+
+skepu_add_test(perlin EXCLUDE cuda hybrid_cuda)
+
+
+# ------------------------------------------------
 #   skepu_external
 # ------------------------------------------------
 

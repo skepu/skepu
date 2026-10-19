@@ -191,6 +191,59 @@
     ]
   },
   {
+    "title": "Perlin Noise (2D, with snapshots)",
+    "trace": {
+      "openmp": "perlin/trace_perlin_openmp.json",
+      "opencl": "perlin/trace_perlin_opencl.json",
+      "mpi": [
+        "perlin/mpi/trace_perlin_mpi.json",
+        "perlin/mpi/trace_perlin_mpi.rank1.json",
+        "perlin/mpi/trace_perlin_mpi.rank2.json",
+        "perlin/mpi/trace_perlin_mpi.rank3.json"
+      ]
+    },
+    "snapshot_archive": {
+      "openmp": "perlin/snapshots_perlin.zip",
+      "opencl": "perlin/snapshots_perlin.zip",
+      "mpi": "perlin/mpi/snapshots_perlin_mpi.zip"
+    },
+    "cpp_files": [
+      "perlin/perlin.cpp"
+    ]
+  },
+  {
+    "title": "Perlin Noise (3D, 32 frames)",
+    "trace": {
+      "openmp": "perlin_3d/trace_perlin_3d_openmp.json",
+      "opencl": "perlin_3d/trace_perlin_3d_opencl.json",
+      "mpi": [
+        "perlin_3d/mpi/trace_perlin_3d_mpi.json",
+        "perlin_3d/mpi/trace_perlin_3d_mpi.rank1.json",
+        "perlin_3d/mpi/trace_perlin_3d_mpi.rank2.json",
+        "perlin_3d/mpi/trace_perlin_3d_mpi.rank3.json"
+      ]
+    },
+    "cpp_files": [
+      "perlin_3d/perlin.cpp"
+    ]
+  },
+  {
+    "title": "Particle Swarm Optimization (Rastrigin, 50 iterations)",
+    "trace": {
+      "openmp": "pso/trace_pso_openmp.json",
+      "opencl": "pso/trace_pso_opencl.json",
+      "mpi": [
+        "pso/mpi/trace_pso_mpi.json",
+        "pso/mpi/trace_pso_mpi.rank1.json",
+        "pso/mpi/trace_pso_mpi.rank2.json",
+        "pso/mpi/trace_pso_mpi.rank3.json"
+      ]
+    },
+    "cpp_files": [
+      "pso/pso.cpp"
+    ]
+  },
+  {
     "title": "DNN CIFAR-10 (small CNN)",
     "trace": {
       "openmp": "dnn_cifar10/trace_dnn_cifar10_openmp.json",

@@ -307,7 +307,16 @@ The SkePU distribution comes with a selection of example programs:
 
 - **Ozaki scheme, a matrix product of more than double precision from integer products** (`ozaki_gemm`)
 
+- **Perlin noise** (`perlin`): textures, or frames that change smoothly (`--frames N`), of octaves of gradient noise;
+  a `Map` with random numbers fills the grids of gradients and a `Map` reads them to render the noise
+  (`perlin height width persistence octaves base_frequency seed [backend] [--frames N] [--out PREFIX]`, see
+  `--help`; it reads its command line with `skepu-lib/args.hpp`)
+
 - **Pearson product-movement coefficient** (`ppmcc`)
+
+- **Particle swarm optimization** (`pso`): a swarm in a `Matrix`, moved by a `Map` with random numbers, evaluated on a
+  test function by a `Map` with a `MatRow`, with the best particle found by a `Reduce` and a `MapReduce`
+  (`pso particles dimensions iterations [backend] [--function NAME] [--seed N] [--tolerance X]`)
 
 - **Peak signal-to-noise ratio** (`psnr`)
 

@@ -25,7 +25,9 @@ set(_skepu_examples
 	ode_fisher
 	ode_lorenz
 	ozaki_gemm
+	perlin
 	ppmcc
+	pso
 	psnr
 	riemann_sum
 	taylor

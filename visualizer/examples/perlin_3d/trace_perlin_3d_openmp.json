@@ -1,0 +1,995 @@
+{
+    "data": [
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 6127,
+            "label": "matrix transpose",
+            "ok": true,
+            "options": "-DTYPE=\"int\" -DTILE_DIM=16",
+            "source_bytes": 802,
+            "start": 0,
+            "time": 6127,
+            "type": "kernel_compile"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 6675,
+            "label": "gray_level",
+            "object_id": 1000,
+            "ok": true,
+            "source_bytes": 4715,
+            "start": 6377,
+            "time": 6675,
+            "type": "kernel_compile"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 7329,
+            "label": "gradients_3d",
+            "object_id": 1001,
+            "ok": true,
+            "source_bytes": 5699,
+            "start": 7057,
+            "time": 7329,
+            "type": "kernel_compile"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 7673,
+            "label": "render_3d",
+            "object_id": 1002,
+            "ok": true,
+            "source_bytes": 7735,
+            "start": 7343,
+            "time": 7673,
+            "type": "kernel_compile"
+        },
+        {
+            "label": "PRNG stream",
+            "line": 139,
+            "object_id": 1003,
+            "time": 7674,
+            "type": "allocation"
+        },
+        {
+            "label": "noise",
+            "line": 251,
+            "object_id": 1004,
+            "time": 7678,
+            "type": "allocation"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "Octave",
+            "line": 231,
+            "region_depth": 1,
+            "time": 8135,
+            "type": "region"
+        },
+        {
+            "label": "gradients",
+            "line": 251,
+            "object_id": 1005,
+            "region": "Octave",
+            "time": 8136,
+            "type": "allocation"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 251,
+            "object_id": 1007,
+            "region": "Octave",
+            "time": 8158,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                50
+            ],
+            "elwise_inputs": [],
+            "end": 8372,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "gradients_3d",
+            "line": 233,
+            "object_id": 1001,
+            "outputs": [
+                1005
+            ],
+            "pattern": "Map",
+            "prng": 1003,
+            "proxy_inputs": [],
+            "region": "Octave",
+            "scalar_inputs": [],
+            "start": 8139,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 282,
+            "object_id": 1007,
+            "region": "Octave",
+            "time": 8604,
+            "type": "deallocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                2097152
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 10425,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "render_3d",
+            "line": 234,
+            "object_id": 1002,
+            "outputs": [
+                1004
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1005
+            ],
+            "region": "Octave",
+            "scalar_inputs": [],
+            "start": 8619,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "gradients",
+            "line": 282,
+            "object_id": 1005,
+            "region": "Octave",
+            "time": 10435,
+            "type": "deallocation"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "Octave",
+            "line": 231,
+            "region_depth": 1,
+            "time": 10435,
+            "type": "region"
+        },
+        {
+            "label": "gradients",
+            "line": 251,
+            "object_id": 1009,
+            "region": "Octave",
+            "time": 10436,
+            "type": "allocation"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 251,
+            "object_id": 1011,
+            "region": "Octave",
+            "time": 10438,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                162
+            ],
+            "elwise_inputs": [],
+            "end": 10519,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "gradients_3d",
+            "line": 233,
+            "object_id": 1001,
+            "outputs": [
+                1009
+            ],
+            "pattern": "Map",
+            "prng": 1003,
+            "proxy_inputs": [],
+            "region": "Octave",
+            "scalar_inputs": [],
+            "start": 10438,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 282,
+            "object_id": 1011,
+            "region": "Octave",
+            "time": 10521,
+            "type": "deallocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                2097152
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 11937,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "render_3d",
+            "line": 234,
+            "object_id": 1002,
+            "outputs": [
+                1004
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1009
+            ],
+            "region": "Octave",
+            "scalar_inputs": [],
+            "start": 10522,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "gradients",
+            "line": 282,
+            "object_id": 1009,
+            "region": "Octave",
+            "time": 11938,
+            "type": "deallocation"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "Octave",
+            "line": 231,
+            "region_depth": 1,
+            "time": 11938,
+            "type": "region"
+        },
+        {
+            "label": "gradients",
+            "line": 251,
+            "object_id": 1013,
+            "region": "Octave",
+            "time": 11939,
+            "type": "allocation"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 251,
+            "object_id": 1015,
+            "region": "Octave",
+            "time": 11939,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                867
+            ],
+            "elwise_inputs": [],
+            "end": 12018,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "gradients_3d",
+            "line": 233,
+            "object_id": 1001,
+            "outputs": [
+                1013
+            ],
+            "pattern": "Map",
+            "prng": 1003,
+            "proxy_inputs": [],
+            "region": "Octave",
+            "scalar_inputs": [],
+            "start": 11939,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 282,
+            "object_id": 1015,
+            "region": "Octave",
+            "time": 12019,
+            "type": "deallocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                2097152
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 13228,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "render_3d",
+            "line": 234,
+            "object_id": 1002,
+            "outputs": [
+                1004
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1013
+            ],
+            "region": "Octave",
+            "scalar_inputs": [],
+            "start": 12019,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "gradients",
+            "line": 282,
+            "object_id": 1013,
+            "region": "Octave",
+            "time": 13233,
+            "type": "deallocation"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "Octave",
+            "line": 231,
+            "region_depth": 1,
+            "time": 13234,
+            "type": "region"
+        },
+        {
+            "label": "gradients",
+            "line": 251,
+            "object_id": 1017,
+            "region": "Octave",
+            "time": 13256,
+            "type": "allocation"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 251,
+            "object_id": 1019,
+            "region": "Octave",
+            "time": 13265,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                5445
+            ],
+            "elwise_inputs": [],
+            "end": 13378,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "gradients_3d",
+            "line": 233,
+            "object_id": 1001,
+            "outputs": [
+                1017
+            ],
+            "pattern": "Map",
+            "prng": 1003,
+            "proxy_inputs": [],
+            "region": "Octave",
+            "scalar_inputs": [],
+            "start": 13265,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 282,
+            "object_id": 1019,
+            "region": "Octave",
+            "time": 13380,
+            "type": "deallocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                2097152
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 14610,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "render_3d",
+            "line": 234,
+            "object_id": 1002,
+            "outputs": [
+                1004
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1017
+            ],
+            "region": "Octave",
+            "scalar_inputs": [],
+            "start": 13380,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "gradients",
+            "line": 282,
+            "object_id": 1017,
+            "region": "Octave",
+            "time": 14634,
+            "type": "deallocation"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "Octave",
+            "line": 231,
+            "region_depth": 1,
+            "time": 14635,
+            "type": "region"
+        },
+        {
+            "label": "gradients",
+            "line": 251,
+            "object_id": 1021,
+            "region": "Octave",
+            "time": 14636,
+            "type": "allocation"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 251,
+            "object_id": 1023,
+            "region": "Octave",
+            "time": 14648,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                38025
+            ],
+            "elwise_inputs": [],
+            "end": 14778,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "gradients_3d",
+            "line": 233,
+            "object_id": 1001,
+            "outputs": [
+                1021
+            ],
+            "pattern": "Map",
+            "prng": 1003,
+            "proxy_inputs": [],
+            "region": "Octave",
+            "scalar_inputs": [],
+            "start": 14648,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 282,
+            "object_id": 1023,
+            "region": "Octave",
+            "time": 14779,
+            "type": "deallocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                2097152
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 16003,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "render_3d",
+            "line": 234,
+            "object_id": 1002,
+            "outputs": [
+                1004
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1021
+            ],
+            "region": "Octave",
+            "scalar_inputs": [],
+            "start": 14779,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "gradients",
+            "line": 282,
+            "object_id": 1021,
+            "region": "Octave",
+            "time": 16030,
+            "type": "deallocation"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "Octave",
+            "line": 231,
+            "region_depth": 1,
+            "time": 16030,
+            "type": "region"
+        },
+        {
+            "label": "gradients",
+            "line": 251,
+            "object_id": 1025,
+            "region": "Octave",
+            "time": 16033,
+            "type": "allocation"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 251,
+            "object_id": 1027,
+            "region": "Octave",
+            "time": 16312,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                282897
+            ],
+            "elwise_inputs": [],
+            "end": 16687,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "gradients_3d",
+            "line": 233,
+            "object_id": 1001,
+            "outputs": [
+                1025
+            ],
+            "pattern": "Map",
+            "prng": 1003,
+            "proxy_inputs": [],
+            "region": "Octave",
+            "scalar_inputs": [],
+            "start": 16312,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 282,
+            "object_id": 1027,
+            "region": "Octave",
+            "time": 16688,
+            "type": "deallocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                2097152
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 17896,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "render_3d",
+            "line": 234,
+            "object_id": 1002,
+            "outputs": [
+                1004
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1025
+            ],
+            "region": "Octave",
+            "scalar_inputs": [],
+            "start": 16689,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "gradients",
+            "line": 282,
+            "object_id": 1025,
+            "region": "Octave",
+            "time": 17905,
+            "type": "deallocation"
+        },
+        {
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "Octave",
+            "line": 231,
+            "region_depth": 1,
+            "time": 17907,
+            "type": "region"
+        },
+        {
+            "label": "gradients",
+            "line": 251,
+            "object_id": 1029,
+            "region": "Octave",
+            "time": 17910,
+            "type": "allocation"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 251,
+            "object_id": 1031,
+            "region": "Octave",
+            "time": 19966,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                2179617
+            ],
+            "elwise_inputs": [],
+            "end": 22321,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "gradients_3d",
+            "line": 233,
+            "object_id": 1001,
+            "outputs": [
+                1029
+            ],
+            "pattern": "Map",
+            "prng": 1003,
+            "proxy_inputs": [],
+            "region": "Octave",
+            "scalar_inputs": [],
+            "start": 19965,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "[Internal PRNG]",
+            "line": 282,
+            "object_id": 1031,
+            "region": "Octave",
+            "time": 22324,
+            "type": "deallocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                2097152
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 23530,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "render_3d",
+            "line": 234,
+            "object_id": 1002,
+            "outputs": [
+                1004
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [
+                1029
+            ],
+            "region": "Octave",
+            "scalar_inputs": [],
+            "start": 22325,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "label": "gradients",
+            "line": 282,
+            "object_id": 1029,
+            "region": "Octave",
+            "time": 23532,
+            "type": "deallocation"
+        },
+        {
+            "label": "image",
+            "line": 251,
+            "object_id": 1033,
+            "time": 23569,
+            "type": "allocation"
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                2097152
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 23850,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "gray_level",
+            "line": 241,
+            "object_id": 1000,
+            "outputs": [
+                1033
+            ],
+            "pattern": "Map",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 23674,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 24227,
+            "label": "sum",
+            "object_id": 1035,
+            "ok": true,
+            "source_bytes": 3402,
+            "start": 23888,
+            "time": 24227,
+            "type": "kernel_compile"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 24364,
+            "label": "lowest",
+            "object_id": 1036,
+            "ok": true,
+            "source_bytes": 3401,
+            "start": 24230,
+            "time": 24364,
+            "type": "kernel_compile"
+        },
+        {
+            "backend": "OpenCL",
+            "device": "Apple M5 Pro",
+            "end": 24489,
+            "label": "highest",
+            "object_id": 1037,
+            "ok": true,
+            "source_bytes": 3401,
+            "start": 24367,
+            "time": 24489,
+            "type": "kernel_compile"
+        },
+        {
+            "object_id": 1039,
+            "time": 25228,
+            "type": "scalar_value",
+            "value": 2035785.5
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                2097152
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 25232,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "sum",
+            "line": 172,
+            "object_id": 1035,
+            "outputs": [
+                1039
+            ],
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 24490,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1039,
+            "time": 25240,
+            "type": "scalar_value",
+            "value": 0.9707382
+        },
+        {
+            "object_id": 1039,
+            "time": 25240,
+            "type": "scalar_value",
+            "value": 0.48919088
+        },
+        {
+            "object_id": 1041,
+            "time": 25727,
+            "type": "scalar_value",
+            "value": 0.5790931
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                2097152
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 25746,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "lowest",
+            "line": 173,
+            "object_id": 1036,
+            "outputs": [
+                1041
+            ],
+            "parameters": {
+                "start_value": 3.4028234663852886e+38
+            },
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 25243,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1041,
+            "time": 25756,
+            "type": "scalar_value",
+            "value": 0.29182646
+        },
+        {
+            "object_id": 1043,
+            "time": 26249,
+            "type": "scalar_value",
+            "value": 1.3572989
+        },
+        {
+            "backend": "OpenMP",
+            "elements": [
+                2097152
+            ],
+            "elwise_inputs": [
+                1004
+            ],
+            "end": 26250,
+            "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+            "label": "highest",
+            "line": 173,
+            "object_id": 1037,
+            "outputs": [
+                1043
+            ],
+            "parameters": {
+                "start_value": -3.4028234663852886e+38
+            },
+            "pattern": "Reduce 1D-Full",
+            "proxy_inputs": [],
+            "scalar_inputs": [],
+            "start": 25759,
+            "threads": 15,
+            "type": "skeleton_call"
+        },
+        {
+            "object_id": 1043,
+            "time": 26256,
+            "type": "scalar_value",
+            "value": 0.6839931
+        },
+        {
+            "label": "image",
+            "line": 282,
+            "object_id": 1033,
+            "time": 26257,
+            "type": "deallocation"
+        },
+        {
+            "label": "noise",
+            "line": 282,
+            "object_id": 1004,
+            "time": 26258,
+            "type": "deallocation"
+        }
+    ],
+    "header": {
+        "files": {
+            "/Users/august/Claude/skepu-alpha/examples/perlin.cpp": "3fdede021dac488acf4aa5e441fdf9ff3b070c4fe8e96dee4abde781e0ba8b60"
+        },
+        "instances": {
+            "1000": {
+                "instance": {
+                    "end_line": 180,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+                    "line": 180
+                },
+                "label": "gray_level",
+                "user_functions": [
+                    {
+                        "end_line": 150,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+                        "kind": "function",
+                        "line": 146,
+                        "name": "to_gray"
+                    }
+                ]
+            },
+            "1001": {
+                "instance": {
+                    "end_line": 278,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+                    "line": 278
+                },
+                "label": "gradients_3d",
+                "user_functions": [
+                    {
+                        "end_line": 59,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+                        "kind": "function",
+                        "line": 49,
+                        "name": "gradient_3d"
+                    }
+                ]
+            },
+            "1002": {
+                "instance": {
+                    "end_line": 279,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+                    "line": 279
+                },
+                "label": "render_3d",
+                "user_functions": [
+                    {
+                        "end_line": 143,
+                        "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+                        "kind": "function",
+                        "line": 115,
+                        "name": "perlin_3d"
+                    }
+                ]
+            },
+            "1035": {
+                "instance": {
+                    "end_line": 167,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+                    "line": 167
+                },
+                "label": "sum",
+                "user_functions": [
+                    {
+                        "end_line": 19,
+                        "file": ".//..//skepu-headers/src/skepu-lib/util.hpp",
+                        "kind": "function",
+                        "line": 16,
+                        "name": "add"
+                    }
+                ]
+            },
+            "1036": {
+                "instance": {
+                    "end_line": 168,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+                    "line": 168
+                },
+                "label": "lowest",
+                "user_functions": [
+                    {
+                        "end_line": 98,
+                        "file": ".//..//skepu-headers/src/skepu-lib/util.hpp",
+                        "kind": "function",
+                        "line": 95,
+                        "name": "min"
+                    }
+                ]
+            },
+            "1037": {
+                "instance": {
+                    "end_line": 169,
+                    "file": "/Users/august/Claude/skepu-alpha/examples/perlin.cpp",
+                    "line": 169
+                },
+                "label": "highest",
+                "user_functions": [
+                    {
+                        "end_line": 104,
+                        "file": ".//..//skepu-headers/src/skepu-lib/util.hpp",
+                        "kind": "function",
+                        "line": 101,
+                        "name": "max"
+                    }
+                ]
+            }
+        }
+    }
+}
