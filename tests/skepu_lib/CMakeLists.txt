@@ -24,6 +24,13 @@ skepu_add_test(random EXCLUDE cuda hybrid_cuda)
 
 
 # ------------------------------------------------
+#   Argument parser (skepu-lib/args.hpp)
+# ------------------------------------------------
+
+skepu_add_test(args EXCLUDE cuda hybrid_opencl hybrid_cuda)
+
+
+# ------------------------------------------------
 #   skepu_external
 # ------------------------------------------------
 

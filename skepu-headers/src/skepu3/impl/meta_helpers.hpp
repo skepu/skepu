@@ -377,6 +377,15 @@ lambda_cast(F &func)
 }
 
 
+// A function (a pointer to it) to std::function. With this lambda_cast takes every kind of user function, so that a skeleton with
+// more than one (a MapReduce) can have a lambda for one of them and a function for the other
+template<typename Ret, typename... Args>
+std::function<Ret(Args...)> lambda_cast(Ret (*func)(Args...))
+{
+    return func;
+}
+
+
 template<typename T>
 struct memfun_type_sp {};
 

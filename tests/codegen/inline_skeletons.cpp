@@ -159,6 +159,19 @@ TEST_CASE("inline_skeletons: Anonymous Map with a backend setting")
 	for (size_t i = 0; i < size; ++i)
 		CHECK(out(i) == float(i) * i);
 }
+
+TEST_CASE("inline_skeletons: Anonymous MapReduce with a lambda for one of its functions and a function for the other")
+{
+	auto a = iota(10);
+
+	// (the sum of the squares of 0 to 9 is 285)
+	const float lambda_map = skepu::MapReduce<1>([](float x) -> float { return x * x; }, add)(a);
+	const float lambda_reduction = skepu::MapReduce<1>(square, [](float x, float y) -> float { return x + y; })(a);
+	const float both_lambdas = skepu::MapReduce<1>([](float x) -> float { return x * x; }, [](float x, float y) -> float { return x + y; })(a);
+	CHECK(lambda_map == 285.f);
+	CHECK(lambda_reduction == 285.f);
+	CHECK(both_lambdas == 285.f);
+}
 }
 
 

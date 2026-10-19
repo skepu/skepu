@@ -19,6 +19,7 @@ namespace.
 | Time measurement | `<skepu-lib/benchmark.hpp>` | `skepu::benchmark` |
 | Data-container I/O | `<skepu-lib/io.hpp>` | `skepu::io` |
 | Deep neural networks | `<skepu-lib/ml.hpp>` | `skepu::dnn` |
+| Command line arguments | `<skepu-lib/args.hpp>` | `skepu::args` |
 
 ## Deterministic Portable Pseudorandom Number Generation
 
@@ -72,6 +73,35 @@ the user functions to work with them: conversions between RGB(A) and HSV(A), gam
 and compression, extraction and composition of color channels and the intensity of a pixel. They
 are meant as user functions for `Map` and `MapOverlap` over a `skepu::Matrix` of pixels. The
 examples `edgedetect`, `image_manip` and `median` in `examples/` use them.
+
+## Command Line Arguments
+
+`skepu::args::Parser` reads the command line of a program: positional arguments, named options and flags, and the
+backend, which nearly every SkePU program takes. A declaration returns the value at once:
+
+```cpp
+skepu::args::Parser args(argc, argv, "Perlin noise textures");   // the description is printed by --help
+
+size_t height    = args.get<size_t>("height");                   // a positional argument, required
+float persistence = args.get<float>("persistence", 0.5f);        // with a default value: optional
+auto frames      = args.named<size_t>("frames", 0, "the number of frames"); // --frames 6 or --frames=6
+bool adam        = args.flag("adam", "use the Adam optimizer");  // --adam
+
+skepu::BackendSpec spec = args.backend();   // a positional argument or --backend NAME (-b NAME); set as the global backend
+```
+
+Several positional arguments can be declared at once, for structured bindings:
+`auto [rows, cols] = args.get<size_t, size_t>("rows", "cols");`. The positional arguments come first on the command
+line and the options after them. A value is read completely or it is an error (`abc` is not read as 0).
+A name that is declared again is the same argument, and gives the value that was read the first time (also after
+`backend()`), so that a function can take the parser and read the arguments it needs; another type or default value for
+the name is an error.
+
+The parser ends the program when the command line is wrong, with a message and the usage, which is made from the
+declarations, and exits with status 1; `--help` prints the usage and exits with status 0. The unknown options and
+arguments too many are found when the declarations are complete, which is at `backend()` (so it should be the last
+declaration), at `done()` for a program without a backend, or, as a last resort, when the parser is destroyed. The
+messages are printed by the first process of an MPI program only.
 
 ## Time Measurement Utilities
 
