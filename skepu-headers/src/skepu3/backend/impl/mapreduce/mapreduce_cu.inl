@@ -62,17 +62,13 @@ namespace skepu
 				size, startIdx, this->m_strides
 			);
 			
-			size_t threads, blocks;
-			for (size_t s = numBlocks; s > 1; s = (s + threads * 2 - 1) / (threads * 2))
-			{
-				std::tie(threads, blocks) = getNumBlocksAndThreads(s, this->m_selected_spec->GPUBlocks(), this->m_selected_spec->GPUThreads());
-				
 #ifdef USE_PINNED_MEMORY
-				CallReduceKernel_WithStream(m_cuda_reduce_kernel, s, threads, blocks, d_odata, d_odata, device->m_streams[0]);
+			ReducePartialResultsOnDevice(numBlocks, this->m_selected_spec->GPUBlocks(), this->m_selected_spec->GPUThreads(), d_odata, device->m_streams[0],
+				[&](size_t s, size_t t, size_t b, Ret *in, Ret *out) { CallReduceKernel_WithStream(this->m_cuda_reduce_kernel, s, t, b, in, out, device->m_streams[0]); });
 #else
-				CallReduceKernel(this->m_cuda_reduce_kernel, s, threads, blocks, d_odata, d_odata);
+			ReducePartialResultsOnDevice(numBlocks, this->m_selected_spec->GPUBlocks(), this->m_selected_spec->GPUThreads(), d_odata, 0,
+				[&](size_t s, size_t t, size_t b, Ret *in, Ret *out) { CallReduceKernel(this->m_cuda_reduce_kernel, s, t, b, in, out); });
 #endif
-			}
 			
 			// Make sure the data is marked as changed by the device
 			pack_expand((std::get<AI-arity>(anyMemP).first->changeDeviceData(hasWriteAccess(MapFunc::anyAccessMode[AI-arity])), 0)...);
@@ -164,17 +160,13 @@ namespace skepu
 					numElem, baseIndex, this->m_strides
 				);
 				
-				size_t threads, blocks;
-				for (size_t s = numBlocks[i]; s > 1; s = (s + (threads*2-1)) / (threads*2))
-				{
-					std::tie(threads, blocks) = getNumBlocksAndThreads(s, this->m_selected_spec->GPUBlocks(), this->m_selected_spec->GPUThreads());
-
 #ifdef USE_PINNED_MEMORY
-					CallReduceKernel_WithStream(m_cuda_reduce_kernel, s, threads, blocks, deviceOutMemP, deviceOutMemP, stream);
+				ReducePartialResultsOnDevice(numBlocks[i], this->m_selected_spec->GPUBlocks(), this->m_selected_spec->GPUThreads(), deviceOutMemP, stream,
+					[&](size_t s, size_t t, size_t b, Ret *in, Ret *out) { CallReduceKernel_WithStream(m_cuda_reduce_kernel, s, t, b, in, out, stream); });
 #else
-					CallReduceKernel(m_cuda_reduce_kernel, s, threads, blocks, deviceOutMemP, deviceOutMemP);
+				ReducePartialResultsOnDevice(numBlocks[i], this->m_selected_spec->GPUBlocks(), this->m_selected_spec->GPUThreads(), deviceOutMemP, 0,
+					[&](size_t s, size_t t, size_t b, Ret *in, Ret *out) { CallReduceKernel(m_cuda_reduce_kernel, s, t, b, in, out); });
 #endif
-				}
 				
 				// Make sure the data is marked as changed by the device
 				pack_expand((std::get<AI-arity>(anyMemP[i]).first->changeDeviceData(hasWriteAccess(MapFunc::anyAccessMode[AI-arity])), 0)...);
@@ -292,12 +284,8 @@ namespace skepu
 						numElem, baseIndex, this->m_strides
 					);
 					
-					size_t threads, blocks;
-					for (size_t s = numBlocks[i][j]; s > 1; s = (s + (threads*2-1)) / (threads*2))
-					{
-						std::tie(threads, blocks) = getNumBlocksAndThreads(s, maxBlocks, maxThreads);
-						CallReduceKernel_WithStream(m_cuda_reduce_kernel, s, threads, blocks, deviceOutMemP, deviceOutMemP, stream);
-					}
+					ReducePartialResultsOnDevice(numBlocks[i][j], maxBlocks, maxThreads, deviceOutMemP, stream,
+						[&](size_t s, size_t t, size_t b, Ret *in, Ret *out) { CallReduceKernel_WithStream(m_cuda_reduce_kernel, s, t, b, in, out, stream); });
 					
 					// Make sure the data is marked as changed by the device
 					pack_expand((std::get<AI-arity>(anyMemP[i][j]).second->changeDeviceData(hasWriteAccess(MapFunc::anyAccessMode[AI-arity])), 0)...);
@@ -394,17 +382,13 @@ namespace skepu
 					numElem, baseIndex, this->m_strides
 				);
 				
-				size_t threads, blocks;
-				for (size_t s = numBlocks[i]; s > 1; s = (s + threads * 2 - 1) / (threads * 2))
-				{
-					std::tie(threads, blocks) = getNumBlocksAndThreads(s, this->m_selected_spec->GPUBlocks(), this->m_selected_spec->GPUThreads());
-
 #ifdef USE_PINNED_MEMORY
-					CallReduceKernel_WithStream(m_cuda_reduce_kernel, s, threads, blocks, deviceOutMemP, deviceOutMemP, stream);
+				ReducePartialResultsOnDevice(numBlocks[i], this->m_selected_spec->GPUBlocks(), this->m_selected_spec->GPUThreads(), deviceOutMemP, stream,
+					[&](size_t s, size_t t, size_t b, Ret *in, Ret *out) { CallReduceKernel_WithStream(m_cuda_reduce_kernel, s, t, b, in, out, stream); });
 #else
-					CallReduceKernel(m_cuda_reduce_kernel, s, threads, blocks, deviceOutMemP, deviceOutMemP);
+				ReducePartialResultsOnDevice(numBlocks[i], this->m_selected_spec->GPUBlocks(), this->m_selected_spec->GPUThreads(), deviceOutMemP, 0,
+					[&](size_t s, size_t t, size_t b, Ret *in, Ret *out) { CallReduceKernel(m_cuda_reduce_kernel, s, t, b, in, out); });
 #endif
-				}
 				
 				// Make sure the data is marked as changed by the device
 				pack_expand((std::get<AI-arity>(anyMemP[i]).first->changeDeviceData(hasWriteAccess(MapFunc::anyAccessMode[AI-arity])), 0)...);

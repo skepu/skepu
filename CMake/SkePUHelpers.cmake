@@ -105,6 +105,8 @@ macro(skepu_configure)
 		endif()
 		list(APPEND _skepu_backends "-cuda")
 		set(_skepu_ext ".cu")
+		# (nvcc does not call the constexpr host overloads of the standard library, such as fmod(float, float) of libstdc++, from device code without this)
+		list(APPEND _target_cxxflags "$<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>")
 	endif()
 
 	if(_skepu_mpi)

@@ -17,6 +17,9 @@ __global__ void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_w2, size_t skepu_
 	size_t skepu_tid = threadIdx.x;
 	size_t skepu_i = blockIdx.x * skepu_blockSize + skepu_tid;
 	size_t skepu_gridSize = skepu_blockSize * gridDim.x;
+	// (the threads that have a result are the first ones of the block; the others have nothing to combine)
+	size_t skepu_blockStart = blockIdx.x * skepu_blockSize;
+	size_t skepu_valid = (skepu_blockStart < skepu_n) ? ((skepu_n - skepu_blockStart < skepu_blockSize) ? skepu_n - skepu_blockStart : skepu_blockSize) : 0;
 	{{REDUCE_RESULT_TYPE}} skepu_result;
 	{{STRIDE_INIT}}
 
@@ -39,16 +42,16 @@ __global__ void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_w2, size_t skepu_
 	{{SHARED_BUFFER}}[skepu_tid] = skepu_result;
 	__syncthreads();
 
-	if (skepu_blockSize >= 1024) { if (skepu_tid < 512 && skepu_tid + 512 < skepu_n) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid + 512]); } __syncthreads(); }
-	if (skepu_blockSize >=  512) { if (skepu_tid < 256 && skepu_tid + 256 < skepu_n) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid + 256]); } __syncthreads(); }
-	if (skepu_blockSize >=  256) { if (skepu_tid < 128 && skepu_tid + 128 < skepu_n) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid + 128]); } __syncthreads(); }
-	if (skepu_blockSize >=  128) { if (skepu_tid <  64 && skepu_tid +  64 < skepu_n) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid +  64]); } __syncthreads(); }
-	if (skepu_blockSize >=   64) { if (skepu_tid <  32 && skepu_tid +  32 < skepu_n) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid +  32]); } __syncthreads(); }
-	if (skepu_blockSize >=   32) { if (skepu_tid <  16 && skepu_tid +  16 < skepu_n) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid +  16]); } __syncthreads(); }
-	if (skepu_blockSize >=   16) { if (skepu_tid <   8 && skepu_tid +   8 < skepu_n) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid +   8]); } __syncthreads(); }
-	if (skepu_blockSize >=    8) { if (skepu_tid <   4 && skepu_tid +   4 < skepu_n) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid +   4]); } __syncthreads(); }
-	if (skepu_blockSize >=    4) { if (skepu_tid <   2 && skepu_tid +   2 < skepu_n) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid +   2]); } __syncthreads(); }
-	if (skepu_blockSize >=    2) { if (skepu_tid <   1 && skepu_tid +   1 < skepu_n) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid +   1]); } __syncthreads(); }
+	if (skepu_blockSize >= 1024) { if (skepu_tid < 512 && skepu_tid + 512 < skepu_valid) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid + 512]); } __syncthreads(); }
+	if (skepu_blockSize >=  512) { if (skepu_tid < 256 && skepu_tid + 256 < skepu_valid) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid + 256]); } __syncthreads(); }
+	if (skepu_blockSize >=  256) { if (skepu_tid < 128 && skepu_tid + 128 < skepu_valid) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid + 128]); } __syncthreads(); }
+	if (skepu_blockSize >=  128) { if (skepu_tid <  64 && skepu_tid +  64 < skepu_valid) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid +  64]); } __syncthreads(); }
+	if (skepu_blockSize >=   64) { if (skepu_tid <  32 && skepu_tid +  32 < skepu_valid) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid +  32]); } __syncthreads(); }
+	if (skepu_blockSize >=   32) { if (skepu_tid <  16 && skepu_tid +  16 < skepu_valid) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid +  16]); } __syncthreads(); }
+	if (skepu_blockSize >=   16) { if (skepu_tid <   8 && skepu_tid +   8 < skepu_valid) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid +   8]); } __syncthreads(); }
+	if (skepu_blockSize >=    8) { if (skepu_tid <   4 && skepu_tid +   4 < skepu_valid) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid +   4]); } __syncthreads(); }
+	if (skepu_blockSize >=    4) { if (skepu_tid <   2 && skepu_tid +   2 < skepu_valid) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid +   2]); } __syncthreads(); }
+	if (skepu_blockSize >=    2) { if (skepu_tid <   1 && skepu_tid +   1 < skepu_valid) { {{SHARED_BUFFER}}[skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_tid], {{SHARED_BUFFER}}[skepu_tid +   1]); } __syncthreads(); }
 
 	if (skepu_tid == 0)
 		skepu_output[blockIdx.x] = {{SHARED_BUFFER}}[skepu_tid];
@@ -65,6 +68,9 @@ __global__ void {{KERNEL_NAME}}({{REDUCE_RESULT_TYPE}} *skepu_input, {{REDUCE_RE
 	size_t skepu_tid = threadIdx.x;
 	size_t skepu_i = blockIdx.x * skepu_blockSize*2 + threadIdx.x;
 	size_t skepu_gridSize = skepu_blockSize * 2 * gridDim.x;
+	// (the threads that have a result are the first ones of the block; the others have nothing to combine)
+	size_t skepu_blockStart = blockIdx.x * skepu_blockSize * 2;
+	size_t skepu_valid = (skepu_blockStart < skepu_n) ? ((skepu_n - skepu_blockStart < skepu_blockSize) ? skepu_n - skepu_blockStart : skepu_blockSize) : 0;
 	{{REDUCE_RESULT_TYPE}} skepu_result;
 
 	if(skepu_i < skepu_n)
@@ -96,10 +102,10 @@ __global__ void {{KERNEL_NAME}}({{REDUCE_RESULT_TYPE}} *skepu_input, {{REDUCE_RE
 	__syncthreads();
 
 	// do reduction in shared mem
-	if (skepu_blockSize >= 1024) { if (skepu_tid < 512) { {{SHARED_BUFFER}}[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, {{SHARED_BUFFER}}[skepu_tid + 512]); } __syncthreads(); }
-	if (skepu_blockSize >=  512) { if (skepu_tid < 256) { {{SHARED_BUFFER}}[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, {{SHARED_BUFFER}}[skepu_tid + 256]); } __syncthreads(); }
-	if (skepu_blockSize >=  256) { if (skepu_tid < 128) { {{SHARED_BUFFER}}[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, {{SHARED_BUFFER}}[skepu_tid + 128]); } __syncthreads(); }
-	if (skepu_blockSize >=  128) { if (skepu_tid <  64) { {{SHARED_BUFFER}}[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, {{SHARED_BUFFER}}[skepu_tid +  64]); } __syncthreads(); }
+	if (skepu_blockSize >= 1024) { if (skepu_tid < 512 && skepu_tid + 512 < skepu_valid) { {{SHARED_BUFFER}}[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, {{SHARED_BUFFER}}[skepu_tid + 512]); } __syncthreads(); }
+	if (skepu_blockSize >=  512) { if (skepu_tid < 256 && skepu_tid + 256 < skepu_valid) { {{SHARED_BUFFER}}[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, {{SHARED_BUFFER}}[skepu_tid + 256]); } __syncthreads(); }
+	if (skepu_blockSize >=  256) { if (skepu_tid < 128 && skepu_tid + 128 < skepu_valid) { {{SHARED_BUFFER}}[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, {{SHARED_BUFFER}}[skepu_tid + 128]); } __syncthreads(); }
+	if (skepu_blockSize >=  128) { if (skepu_tid <  64 && skepu_tid + 64 < skepu_valid) { {{SHARED_BUFFER}}[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, {{SHARED_BUFFER}}[skepu_tid +  64]); } __syncthreads(); }
 
 	if (skepu_tid < 32)
 	{
@@ -108,12 +114,12 @@ __global__ void {{KERNEL_NAME}}({{REDUCE_RESULT_TYPE}} *skepu_input, {{REDUCE_RE
 		// doesn't reorder stores to it and induce incorrect behavior.
 		// UPDATE: volatile causes issues with custom struct data types; use __syncwarp() instead
 		/*volatile*/ {{REDUCE_RESULT_TYPE}}* skepu_smem = {{SHARED_BUFFER}};
-		if (skepu_blockSize >=  64) { if (skepu_tid < 32) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid + 32]); } __syncwarp(); }
-		if (skepu_blockSize >=  32) { if (skepu_tid < 16) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid + 16]); } __syncwarp(); }
-		if (skepu_blockSize >=  16) { if (skepu_tid <  8) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  8]); } __syncwarp(); }
-		if (skepu_blockSize >=   8) { if (skepu_tid <  4) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  4]); } __syncwarp(); }
-		if (skepu_blockSize >=   4) { if (skepu_tid <  2) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  2]); } __syncwarp(); }
-		if (skepu_blockSize >=   2) { if (skepu_tid <  1) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  1]); } __syncwarp(); }
+		if (skepu_blockSize >=  64) { if (skepu_tid < 32 && skepu_tid + 32 < skepu_valid) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid + 32]); } __syncwarp(); }
+		if (skepu_blockSize >=  32) { if (skepu_tid < 16 && skepu_tid + 16 < skepu_valid) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid + 16]); } __syncwarp(); }
+		if (skepu_blockSize >=  16) { if (skepu_tid <  8 && skepu_tid + 8 < skepu_valid) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  8]); } __syncwarp(); }
+		if (skepu_blockSize >=   8) { if (skepu_tid <  4 && skepu_tid + 4 < skepu_valid) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  4]); } __syncwarp(); }
+		if (skepu_blockSize >=   4) { if (skepu_tid <  2 && skepu_tid + 2 < skepu_valid) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  2]); } __syncwarp(); }
+		if (skepu_blockSize >=   2) { if (skepu_tid <  1 && skepu_tid + 1 < skepu_valid) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  1]); } __syncwarp(); }
 	}
 
 	// write result for this block to global mem

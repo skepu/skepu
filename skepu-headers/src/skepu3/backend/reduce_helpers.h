@@ -78,6 +78,52 @@ inline std::pair<size_t, size_t> getNumBlocksAndThreads(size_t n, size_t maxBloc
 #ifdef SKEPU_CUDA
 
 /*!
+ * Reduces the n partial results in d_data (one for each block of a first reduction kernel) to one, in d_data[0].
+ * A kernel that reduces its input with several blocks must not write the output where it reads the input, as the
+ * blocks are not synchronized: the output element of a block that finishes early may be one that another block
+ * has not read yet. Passes with several blocks therefore go from one buffer to another; a pass with one block
+ * can work in place.
+ *
+ * \param n The number of partial results.
+ * \param launch Launches one pass: launch(size, numThreads, numBlocks, input, output).
+ * \param stream The stream of the launches, for the copy of the result and the synchronization.
+ */
+template <typename T, typename Launch>
+void ReducePartialResultsOnDevice(size_t n, size_t maxBlocks, size_t maxThreads, T *d_data, cudaStream_t stream, Launch launch)
+{
+	T *src = d_data, *tmp = nullptr;
+	size_t threads, blocks;
+	
+	for (size_t s = n; s > 1; s = (s + (threads * 2 - 1)) / (threads * 2))
+	{
+		std::tie(threads, blocks) = getNumBlocksAndThreads(s, maxBlocks, maxThreads);
+		
+		if (blocks == 1)
+			launch(s, threads, blocks, src, src);
+		else
+		{
+			// (the other buffer is the one that this pass does not read: d_data at the first pass, then each in turn)
+			T *dst = (src == d_data) ? tmp : d_data;
+			if (src == d_data && !tmp)
+			{
+				CHECK_CUDA_ERROR(cudaMalloc(&tmp, sizeof(T) * n));
+				dst = tmp;
+			}
+			launch(s, threads, blocks, src, dst);
+			src = dst;
+		}
+	}
+	
+	if (src != d_data)
+		CHECK_CUDA_ERROR(cudaMemcpyAsync(d_data, src, sizeof(T), cudaMemcpyDeviceToDevice, stream));
+	if (tmp)
+	{
+		CHECK_CUDA_ERROR(cudaStreamSynchronize(stream));
+		CHECK_CUDA_ERROR(cudaFree(tmp));
+	}
+}
+
+/*!
  * Helper method used to call the actual CUDA kernel for reduction. Used when PINNED MEMORY is disabled
  *
  *  \param reduceFunc The reduction user function to be used.
@@ -244,21 +290,13 @@ void ExecuteReduceOnADevice(ReduceFunc kernel, size_t  n, size_t  numThreads, si
 #endif
 	
 	// sum partial block sums on GPU
-	size_t s = numBlocks;
-	
-	while(s > 1)
-	{
-		size_t blocks, threads;
-		std::tie(threads, blocks) = getNumBlocksAndThreads(s, maxBlocks, maxThreads);
-		
 #ifdef USE_PINNED_MEMORY
-		CallReduceKernel_WithStream(kernel, s, threads, blocks, d_odata, d_odata, stream, enableIsPow2);
+	ReducePartialResultsOnDevice(numBlocks, maxBlocks, maxThreads, d_odata, stream,
+		[&](size_t s, size_t t, size_t b, T *in, T *out) { CallReduceKernel_WithStream(kernel, s, t, b, in, out, stream, enableIsPow2); });
 #else
-		CallReduceKernel(kernel, s, threads, blocks, d_odata, d_odata, enableIsPow2);
+	ReducePartialResultsOnDevice(numBlocks, maxBlocks, maxThreads, d_odata, 0,
+		[&](size_t s, size_t t, size_t b, T *in, T *out) { CallReduceKernel(kernel, s, t, b, in, out, enableIsPow2); });
 #endif
-		
-		s = (s + (threads*2-1)) / (threads*2);
-	}
 }
 
 #endif

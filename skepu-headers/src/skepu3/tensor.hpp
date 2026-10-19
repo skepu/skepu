@@ -240,11 +240,8 @@ namespace skepu
 		cudaProxy(size_t deviceID, AccessMode accessMode, ProxyTag::Default, Ignore)
 		{
 			device_pointer_type_cu devptr = this->updateDevice_CU(this->m_data, this->size(), deviceID, accessMode);
-			proxy_type proxy;
-			proxy.data = devptr->getDeviceDataPointer();
-			proxy.size_i = this->m_size_i;
-			proxy.size_j = this->m_size_j;
-			proxy.size_k = this->m_size_k;
+			// (the constructor also sets the strides, which the element access uses)
+			proxy_type proxy(devptr->getDeviceDataPointer(), this->m_size_i, this->m_size_j, this->m_size_k);
 			return {devptr, proxy};
 		}
 		
@@ -593,12 +590,8 @@ namespace skepu
 		cudaProxy(size_t deviceID, AccessMode accessMode, ProxyTag::Default, Ignore)
 		{
 			device_pointer_type_cu devptr = this->updateDevice_CU(this->m_data, this->size(), deviceID, accessMode);
-			proxy_type proxy;
-			proxy.data = devptr->getDeviceDataPointer();
-			proxy.size_i = this->m_size_i;
-			proxy.size_j = this->m_size_j;
-			proxy.size_k = this->m_size_k;
-			proxy.size_l = this->m_size_l;
+			// (the constructor also sets the strides, which the element access uses)
+			proxy_type proxy(devptr->getDeviceDataPointer(), this->m_size_i, this->m_size_j, this->m_size_k, this->m_size_l);
 			return {devptr, proxy};
 		}
 		

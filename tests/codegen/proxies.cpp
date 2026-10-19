@@ -73,6 +73,54 @@ auto skel4_p = skepu::Map(test4_proxy);
 
 
 
+// Tensors with different values in all elements: the element access of the proxy must use the strides
+int reversed_planes(skepu::Index3D i, const skepu::Ten3<int> t) { return t(t.size_i - 1 - i.i, i.j, i.k); }
+int reversed_blocks(skepu::Index4D i, const skepu::Ten4<int> t) { return t(t.size_i - 1 - i.i, i.j, i.k, i.l); }
+auto reverse_planes = skepu::Map<0>(reversed_planes);
+auto reverse_blocks = skepu::Map<0>(reversed_blocks);
+
+TEST_CASE("proxies: Tensor3 and Tensor4 proxies read elements by all the indices")
+{
+	{
+		const size_t si = 5, sj = 3, sk = 4;
+		skepu::Tensor3<int> a(si, sj, sk), rev(si, sj, sk);
+		skepu::external([&]
+		{
+			for (size_t i = 0; i < si; ++i)
+				for (size_t j = 0; j < sj; ++j)
+					for (size_t k = 0; k < sk; ++k)
+						a(i, j, k) = (int)(i * 100 + j * 10 + k);
+		}, skepu::write(a));
+		reverse_planes(rev, a);
+		rev.flush();
+		for (size_t i = 0; i < si; ++i)
+			for (size_t j = 0; j < sj; ++j)
+				for (size_t k = 0; k < sk; ++k)
+					CHECK(rev(i, j, k) == (int)((si - 1 - i) * 100 + j * 10 + k));
+	}
+
+	{
+		const size_t si = 4, sj = 3, sk = 2, sl = 5;
+		skepu::Tensor4<int> a(si, sj, sk, sl), rev(si, sj, sk, sl);
+		skepu::external([&]
+		{
+			for (size_t i = 0; i < si; ++i)
+				for (size_t j = 0; j < sj; ++j)
+					for (size_t k = 0; k < sk; ++k)
+						for (size_t l = 0; l < sl; ++l)
+							a(i, j, k, l) = (int)(i * 1000 + j * 100 + k * 10 + l);
+		}, skepu::write(a));
+		reverse_blocks(rev, a);
+		rev.flush();
+		for (size_t i = 0; i < si; ++i)
+			for (size_t j = 0; j < sj; ++j)
+				for (size_t k = 0; k < sk; ++k)
+					for (size_t l = 0; l < sl; ++l)
+						CHECK(rev(i, j, k, l) == (int)((si - 1 - i) * 1000 + j * 100 + k * 10 + l));
+	}
+}
+
+
 TEST_CASE("proxies: Container proxy reads in user function")
 {
 	size_t size{100};

@@ -1,7 +1,15 @@
 #include <iostream>
+#include <cmath>
+#include <algorithm>
 #include <skepu>
 #include <skepu-lib/io.hpp>
 #include <skepu-lib/randomize.hpp>
+
+// The results of a GPU may differ from those of the host in the last digits (for example by fused multiply-add)
+static bool differs(float a, float b)
+{
+	return std::abs(a - b) > 1e-5f * std::max(1.0f, std::max(std::abs(a), std::abs(b)));
+}
 
 
 template<typename T>
@@ -63,7 +71,7 @@ int main(int argc, char *argv[])
 	{
 		for (size_t i = 0; i < height; i++)
 			for (size_t j = 0; j < width; j++)
-				if (res(i, j) != res2(i, j))
+				if (differs(res(i, j), res2(i, j)))
 					std::cout << "Output error at index (" << i << "," << j << "): " << res2(i, j) << " vs " << res(i, j) << "\n";
 	});
 
