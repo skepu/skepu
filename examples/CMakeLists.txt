@@ -50,6 +50,17 @@ endif()
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 add_library(lodepng STATIC lodepng.cpp)
 
+# What a program needs besides SkePU is, by default, a property of the program and not of the backend: the sequential, parallel and MPI versions are built
+# from the same source, so they link the same libraries. The libraries are found from the source (a program that includes lodepng.h links lodepng), and
+# this function is called for each version of each program, so that no backend is forgotten. A library that only some backends need can be added to those
+# targets after the call.
+function(skepu_example_dependencies target example)
+	file(READ ${CMAKE_CURRENT_LIST_DIR}/${example}.cpp _source)
+	if(_source MATCHES "#include[ \t]+[\"<]lodepng\\.h[\">]")
+		target_link_libraries(${target} PRIVATE lodepng)
+	endif()
+endfunction()
+
 set(_trace_dir ${CMAKE_CURRENT_BINARY_DIR}/trace)
 set(_snapshot_dir ${CMAKE_CURRENT_BINARY_DIR}/snapshots)
 if(SKEPU_EXAMPLES_TRACING)
@@ -69,7 +80,7 @@ if(SKEPU_EXAMPLES_SEQ)
 				PROPERTIES
 					RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/sequential
 					RUNTIME_OUTPUT_NAME ${example})
-			target_link_libraries(${example}_seq PRIVATE lodepng)
+			skepu_example_dependencies(${example}_seq ${example})
 			add_dependencies(all-sequential ${example}_seq)
 		endif()
 	endforeach()
@@ -101,7 +112,7 @@ if(SKEPU_EXAMPLES_PAR)
 				PROPERTIES
 					RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/parallel
 					RUNTIME_OUTPUT_NAME ${example})
-			target_link_libraries(${example}_par PRIVATE lodepng)
+			skepu_example_dependencies(${example}_par ${example})
 			if(SKEPU_EXAMPLES_TRACING)
 				target_compile_definitions(${example}_par PRIVATE
 					SKEPU_TRACING
@@ -133,6 +144,7 @@ if(SKEPU_EXAMPLES_MPI)
 				PROPERTIES
 					RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mpi
 					RUNTIME_OUTPUT_NAME ${example})
+			skepu_example_dependencies(${example}_mpi ${example})
 			add_dependencies(all-mpi ${example}_mpi)
 		endif()
 	endforeach()
