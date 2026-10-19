@@ -22,10 +22,23 @@ jobs:
       - name: Copy the SkePU library headers into the visualizer
         run: make -C visualizer skepu-lib
 
-      - name: Stage visualizer for deploy
+      # The user guide is a Quarto book. Quarto is pinned to the version that the book was tested with. The build copies the visualizer into the
+      # book (viz/, for its embedded trace panels), so the headers above have to be there first.
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.10.18
+
+      - name: Build the user guide
+        run: make -C user-guide html
+
+      - name: Stage the visualizer and the user guide for deploy
         run: |
-          mkdir -p _stage/visualizer
+          mkdir -p _stage/visualizer _stage/user-guide
           cp -r visualizer/. _stage/visualizer/
+          cp -r user-guide/_book/. _stage/user-guide/
+          # (the root of the project site, …/skepu/, has no page of its own: it goes to the site above)
+          cp .github/pages/index.html _stage/index.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
