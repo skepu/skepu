@@ -114,7 +114,7 @@ The next example is a complete SkePU program, compiled to WebAssembly so that it
 browser. Press *Run*, and its trace is visualized after the run.
 
 {{< trace-wasm
-    js="../demos/wasm/map_squaring.js"
+    js="demos/wasm/map_squaring.js"
     src="demos/map_squaring.cpp"
     argv="10"
     label="Map: element-wise squaring"

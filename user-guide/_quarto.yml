@@ -22,7 +22,7 @@ book:
     - src/acknowledgements.qmd
 
 bibliography: bibliography.bib
-csl: ieee-access.csl
+csl: ieee.csl
 
 format:
   html:

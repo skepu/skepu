@@ -64,12 +64,21 @@ local function html_escape(s)
   return (s:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub('"', "&quot;"))
 end
 
+-- A path is relative to the project (the directory of _quarto.yml), whichever chapter has the shortcode: the filters of Quarto do not run in it for a chapter in a subdirectory.
 local function read_file(path)
-  local fh = io.open(path, "r")
-  if not fh then return nil end
-  local text = fh:read("*a")
-  fh:close()
-  return text
+  local candidates = { path }
+  if quarto.project.directory then
+    table.insert(candidates, quarto.project.directory .. "/" .. path)
+  end
+  for _, candidate in ipairs(candidates) do
+    local fh = io.open(candidate, "r")
+    if fh then
+      local text = fh:read("*a")
+      fh:close()
+      return text
+    end
+  end
+  return nil
 end
 
 -- The simple edition of the book (the profile `simple`): no panels, no scripts, no WebAssembly.

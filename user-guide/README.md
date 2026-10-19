@@ -22,7 +22,7 @@ block on `file://`.
 
 ```
 index.qmd, src/*.qmd      chapters (list in _quarto.yml)
-bibliography.bib, *.csl   references
+bibliography.bib, ieee.csl references (the citation style is a third-party file, see below)
 theme.scss, custom.css    look and layout
 figures/                  diagrams (PDF for print, PNG)
 visualizers/              skeleton access-pattern widgets, see below
@@ -73,3 +73,11 @@ Chapters are static Quarto Markdown (no code execution). Citations are `[@key]` 
 ## Publishing
 
 Not set up yet: `make` produces the complete site in `_book/`.
+
+## Third-party files
+
+`ieee.csl` is the IEEE citation style from the [Citation Style Language styles](https://github.com/citation-style-language/styles) collection, kept
+unmodified (version of 29 November 2023, authors and contributors in the file). It is licensed under
+[Creative Commons Attribution-ShareAlike 3.0](http://creativecommons.org/licenses/by-sa/3.0/), as the file says, and not under the SkePU license. It is a
+local copy so that the book can be built without a network: a dependent style, such as the IEEE Access one that was used before, makes pandoc
+download its parent from zotero.org on every build.

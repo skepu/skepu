@@ -30,8 +30,7 @@ function loadDeps(vizBase) {
   _deps = (async function () {
     var libs = [   // classic scripts, in dependency order
       'cytoscape/cytoscape.min.js', 'dagre/dagre.min.js', 'cytoscape-dagre/cytoscape-dagre.js',
-      'cytoscape.js-elk-2.3.0/dist/elk.bundled.js', 'jquery/jquery-3.7.1.min.js',
-      'jquery-scrollto/jquery.scrollTo.min.js', 'highlight/highlight.min.js',
+      'cytoscape.js-elk-2.3.0/dist/elk.bundled.js', 'highlight/highlight.min.js',
       'highlight-line-numbers/highlightjs-line-numbers.min.js',
     ];
     for (var lib of libs) await loadScript(vizBase + 'static/' + lib);
