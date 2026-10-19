@@ -13,6 +13,7 @@ export const COLORS = {
   data:         { fill: 'lightgray', stroke: '#979797' },       // a data update, a scalar
   allocation:   { fill: 'white',     stroke: '#333' },
   deallocation: { fill: 'black',     stroke: '#ddd' },
+  snapshot:     { fill: '#ffd43b',   stroke: '#a67c00' },     // a snapshot of a container: a yellow star (a camera flash)
   transfer:     { fill: 'purple',    stroke: '#6a006a' },
   compile:      { fill: '#f0b44c',   stroke: '#a86b00' },       // the build of an OpenCL kernel (an amber cut rectangle), and the setup edge from it to the first call
   communication:{ fill: '#17a2b8',   stroke: '#0e6676' },       // a collective operation of an MPI program (a teal hexagon)
@@ -89,6 +90,17 @@ export function buildGraphStyle(self, minmax) {
         'border-width':     1,
         'background-color': COLORS.deallocation.fill,
         'border-color':     COLORS.deallocation.stroke,
+      }
+    },
+    {
+      selector: 'node[type="snapshot"]',
+      style: {
+        'content':          function(ele) { return node_labels ? ele.data('label') : ''; },
+        'text-valign':      'center',
+        'shape':            'star',
+        'border-width':     1,
+        'background-color': COLORS.snapshot.fill,
+        'border-color':     COLORS.snapshot.stroke,
       }
     },
     {

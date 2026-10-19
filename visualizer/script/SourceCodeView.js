@@ -1015,7 +1015,8 @@ export class SourceCodeView {
         var o = list ? list[entry.iterIdx] : null;
         if (o != null && o < minOrder) minOrder = o;
       });
-      if (isFinite(minOrder)) {
+      // (the arrows follow the calls: a line that only has snapshots is not on the way)
+      if (isFinite(minOrder) && !b.onlySnapshots) {
         if (!paneArrows.has(pane)) paneArrows.set(pane, []);
         paneArrows.get(pane).push({ gutterEl: el, totalOrder: minOrder, nodeIds: nodeIds });
       }

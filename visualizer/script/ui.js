@@ -316,6 +316,7 @@ export function load()
     }
     else if (event.key === "a") { toggleSetting('container-allocations'); }
     else if (event.key === "d") { toggleSetting('container-deallocations'); }
+    else if (event.key === "k") { toggleSetting('container-snapshots'); }
     else if (event.key === "n") { toggleSetting('anti-deps'); }
     else if (event.key === "t") { toggleSetting('container-transfers'); }
     else if (event.key === "r") { toggleSetting('show_regions'); }

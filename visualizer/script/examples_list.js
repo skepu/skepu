@@ -9,6 +9,13 @@ export function languageOf(example) {
     return example && example.language === 'python' ? 'python' : 'cpp';
 }
 
+/** Whether an example has snapshots of containers for a backend (its trace has them, and the archive of the files): the welcome screen marks it. */
+export function hasSnapshots(example, backend) {
+    const archive = example && example.snapshot_archive;
+    if (typeof archive === 'string') return archive !== '';
+    return !!(archive && typeof archive === 'object' && archive[backend]);
+}
+
 /** The languages that the examples have, C++ first. */
 export function exampleLanguages(examples) {
     const present = new Set((examples ?? []).map(languageOf));

@@ -681,7 +681,7 @@ export class AllocationNode extends DataNode {
 
         // In JS, super() must be called before returning.  Call it, then undo
         // registration if this node should be skipped.
-        super(graph, jsonData.label, totalOrder, null);
+        super(graph, jsonData.label, totalOrder, jsonData.region);
 
         if (isInternal || !graph.settings.allocations) {
             graph._removeNode(this);
@@ -727,7 +727,7 @@ export class DeallocationNode extends DataNode {
     constructor(graph, jsonData, totalOrder) {
         const isInternal = jsonData.label.toLowerCase().includes('internal');
 
-        super(graph, jsonData.label, totalOrder, null);
+        super(graph, jsonData.label, totalOrder, jsonData.region);
 
         if (isInternal || !graph.settings.deallocations) {
             graph._removeNode(this);
@@ -762,6 +762,82 @@ export class DeallocationNode extends DataNode {
             data.trace_indices = this.traceIndices;
         }
         return data;
+    }
+}
+
+// ── SnapshotNode ──────────────────────────────────────────────────────────────
+
+/**
+ * A snapshot of a container (a snapshot event: SKEPU_TRACE_SNAPSHOT in the program, built with SKEPU_TRACING_SNAPSHOTS). It is a node
+ * only if the snapshots are shown (settings.snapshots); the snapshot is also a part of the node that made the data (graph.attachSnapshot), and
+ * the info of both has its contents. It hangs on the producer of the container, and has the place in the source of the call that took it.
+ */
+export class SnapshotNode extends DataNode {
+    constructor(graph, jsonData, totalOrder) {
+        super(graph, jsonData.label, totalOrder, jsonData.region);
+
+        if (!graph.settings.snapshots) {
+            graph._removeNode(this);
+            return;
+        }
+
+        this.type              = 'snapshot';
+        this.timestamp         = jsonData.start ?? jsonData.time ?? null;
+        this.start             = jsonData.start ?? null;
+        this.end               = jsonData.end ?? null;
+        this.file              = jsonData.file ?? '';
+        this.line              = jsonData.line ?? 0;
+        this.dataFile          = jsonData.data_file ?? '';
+        this.objectId          = jsonData.object_id;
+        this.hasSnapshot       = true;
+        this.snapshotDataFiles = this.dataFile ? [[totalOrder, this.dataFile]] : [];
+        new ProxyEdge(graph, jsonData.label, jsonData.object_id, this);
+    }
+
+    toCytoscape() {
+        const d = { ...super.toCytoscape(), timestamp: this.timestamp ?? null, data_file: this.dataFile };
+        if (this.file) { d.file = this.file; d.line = this.line; }
+        return d;
+    }
+
+    toTimeline() {
+        return {
+            id:              this.id,
+            label:           this.label,
+            type:            this.type,
+            timestamp:       this.timestamp ?? null,
+            start:           this.start,
+            end:             this.end,
+            nesting_level:   this.nestingLevel,
+            iteration_count: this.iterationCount,
+        };
+    }
+
+    toSourceBadge() {
+        const data = {
+            id:          this.id,
+            type:        this.type,
+            trace_index: this.traceIndex,
+            total_order: this.totalOrder,
+        };
+        if (this.totalOrders.length > 1) {
+            data.total_orders  = this.totalOrders;
+            data.trace_indices = this.traceIndices;
+        }
+        if (this.file) {
+            data.file = this.file;
+            data.line = this.line;
+        }
+        const locations = badgeLocations(this);
+        if (locations) data.locations = locations;
+        return data;
+    }
+
+    infoData() {
+        const info = { ...super.infoData(), Container: this.label };
+        if (this.file) { info.File = this.file; info.Line = this.line; }
+        if (this.start != null && this.end != null) info.Duration = this.end - this.start;
+        return info;
     }
 }
 

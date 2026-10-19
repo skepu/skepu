@@ -117,6 +117,16 @@ the hover shows its value, and a plot of positive numbers over three orders of m
 y axis (the checkbox switches). The scalars that different calls make, and the results of one call that has several, are separate nodes and
 separate series. (A value that is not finite leaves a gap.) A scalar node is in the graph when **View > Scalars** is on.
 
+## Snapshots of containers
+
+A program that is built for snapshots (`SKEPU_TRACE_SNAPSHOT(container)` in the program, `make TRACE_SNAPSHOTS=1` for the examples) writes the contents of
+a container to a file each time, and the trace has a `snapshot` event for it. The archive of the files (`snapshot_archive` of an example, or **Files › Load
+Trace** with the files) gives the node that made the data its heat maps, in the info pane. A snapshot is also a node of its own, a **yellow star**, when
+**Nodes > Snapshots** (key **K**) is on (it is on from the start): it hangs on the node that made the data, is in the Events row of the timeline
+(Gantt chart) like the allocations and deallocations, has a badge at the line of the `SKEPU_TRACE_SNAPSHOT` call in the source, and has the contents of its
+snapshot in its info pane. The welcome screen marks the examples that have snapshots with a small yellow star after the name of the backend.
+In the VS Code extension the lines of the snapshots (and of the regions, when they are shown) have the same lenses and highlights as the calls.
+
 ## Where the instances and user functions are defined
 
 A trace of a program that the precompiler made has, in its header, a table of the skeleton instances with the lines of the instance and of

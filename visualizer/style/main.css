@@ -1613,10 +1613,8 @@ html.dark-mode .cpp-tab:hover {
   position: absolute;
   inset: 0;
   z-index: 5;
-  overflow-y: auto;
+  overflow-y: auto;      /* (only if the window is too small for the card even with its list at the least height) */
   display: flex;
-  align-items: center;
-  justify-content: center;
   padding: 3em 1em;
   background: #f5f5f7;
 }
@@ -1627,17 +1625,42 @@ html.dark-mode .cpp-tab:hover {
   background: #fff;
   border-radius: 0.8em;
   padding: 3em 4em;
-  max-width: 520px;
+  max-width: calc(520px + 8em);   /* (520px of text between the paddings: the card has box-sizing border-box, for its max-height) */
   width: 100%;
   box-shadow: 0 2px 12px rgba(0,0,0,0.07);
   font-family: monospace;
+  /* Centred by its auto margins (not by the panel: that clips the top of a card that does not fit). The card is never higher than the
+     panel, which is the place below the menu bar to the bottom of the window: the list of the examples is what gives way, and scrolls. */
+  margin: auto;
+  max-height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;      /* (only if even the least list does not fit: a window that is far too small) */
 }
+.welcome-card > * { flex: 0 0 auto; }
+/* The section shrinks, but not below its heading, the language control and a few rows of the list (a height: the automatic minimum is that of the
+   whole list): the list is what gives way, and scrolls. */
+#welcome-examples-section {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 11em;
+}
+/* (only the list gives way: the heading and the language control keep their height) */
+#welcome-examples-section > :not(#welcome-examples-list) { flex: 0 0 auto; }
+#welcome-examples-section > .welcome-language { align-self: flex-start; }
 
 .welcome-logo {
   display: block;
   margin: 0 auto 1em;
   width: 60%;
   height: auto;
+}
+/* A short window: the logo and the padding of the card are smaller, so that more of the list shows */
+@media (max-height: 760px) {
+  .welcome-card { padding-top: 1.5em; padding-bottom: 1.5em; }
+  .welcome-logo { width: 38%; margin-bottom: 0.5em; }
 }
 
 .logo-small
@@ -1699,8 +1722,13 @@ html.dark-mode .logo.logo-dark { display: block; }
 #welcome-examples-list {
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: 0.5em;
   margin-top: 0.4em;
+  flex: 1 1 auto;
+  min-height: 0;         /* (the section has the least height: heading, control and about two rows of pills) */
+  overflow-y: auto;
+  padding-right: 0.3em;  /* (the scroll bar does not cover the pills) */
 }
 
 /* The language of the examples (C++ or Python): a segmented control */
@@ -1751,6 +1779,14 @@ html.dark-mode .logo.logo-dark { display: block; }
   cursor: pointer;
 }
 .welcome-example-seg:hover { background: #134e8c; }
+/* The star after a backend that has snapshots: yellow, a little smaller than the text, with a thin dark edge so that it shows on any background */
+.welcome-snapshot-star {
+  color: #ffd43b;
+  font-size: 0.75em;
+  margin-left: 0.2em;
+  text-shadow: 0 0 1px #a67c00, 0 0 1px #a67c00;
+  pointer-events: none;
+}
 
 /* Dark mode */
 html.dark-mode #welcome-panel { background: #1a1a24; }

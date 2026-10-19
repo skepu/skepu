@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { basename } from 'node:path';
 import { getHtmlForWebview, hashContent, hashFile } from './util.js';
 import { callsOfInstance, CallData } from './traceFacts.js';
-import { linesOfNode, pathEndsWith, traceSuffix, lensesOfBadges, lensTitle, nextNodeIndex, NodeData } from './nodeLines.js';
+import { linesOfNode, nodesWithBadges, pathEndsWith, traceSuffix, lensesOfBadges, lensTitle, nextNodeIndex, NodeData } from './nodeLines.js';
 
 
 /** What the extension did with the source files of a trace (View > Output > SkeVU): which were found, which were not, and the badges made. */
@@ -66,6 +66,8 @@ class SkevuSession {
 	traceLineRanges: Array<Array<number>> = [];
 	/** The graph that the viewer drew last (what the badges are made of). */
 	private lastGraph: any = undefined;
+	/** Whether the viewer shows the regions: they have badges (lenses) only if it does, as in the viewer. */
+	private showRegions = false;
 
 	/** The call nodes of the instance with this name, if the file is a source file of this trace (found, with its hash). */
 	public callsOfInstance(fileName: string, name: string): CallData[] {
@@ -181,6 +183,7 @@ class SkevuSession {
 
 				case 'build_documents':
 					this.lastGraph = e.rawData;
+					this.showRegions = !!e.showRegions;
 					this.buildDocuments(e.rawData);
 					return;
 
@@ -434,7 +437,7 @@ class SkevuSession {
 			// Calls to this function will likely contain different IDs for the same nodes.
 			documentData.highlightableRanges.clear();
 			const badges: Array<TextBadge> = [];
-			for (const node of rawData.nodes) {
+			for (const node of nodesWithBadges<{ data: NodeData }>(rawData.nodes ?? [], this.showRegions)) {
 				const data: NodeData = node.data;
 				const lines = linesOfNode(data, fileName, fileName === this.traceFileName, this.traceLineRanges);
 				if (!lines) continue;

@@ -4,7 +4,7 @@
 
 import {
     Node, ComputationNode, CallNode, ExternalNode, RegionNode, FusedNode,
-    AllocationNode, DeallocationNode, UpdateNode, ScalarNode, TransferNode, CommunicationNode, CompileNode,
+    AllocationNode, DeallocationNode, SnapshotNode, UpdateNode, ScalarNode, TransferNode, CommunicationNode, CompileNode,
 } from './node.js';
 import { ElwiseEdge, ProxyEdge, SetupEdge, VirtualAliasEdge } from './edge.js';
 
@@ -41,6 +41,7 @@ export class GraphSettings {
         this.antideps      = true;
         this.allocations   = true;
         this.deallocations = true;
+        this.snapshots     = false;  // the snapshots of containers (snapshot events) as nodes: the snapshot is always part of the node that made the data
         this.regions       = true;
         this.scalars       = true;
         this.synthesizeRootRegion = true;
@@ -256,7 +257,10 @@ export class DirectedGraph {
 
     attachSnapshot(objectId, dataFile, totalOrder = null) {
         const e    = this._latestProducerOfID[objectId];
-        const node = e ? e['ANY'] : null;
+        let node   = e ? e['ANY'] : null;
+        // A transfer does not change the data. On a device the snapshot reads the container, so the transfer to the host comes just
+        // before it, and is the latest producer: the snapshot is of what the transfer moved, which a node before it made.
+        while (node instanceof TransferNode) node = node._incoming[0]?.source ?? null;
         if (node instanceof UpdateNode) {
             node.hasSnapshot = true;
             node.snapshotDataFiles.push([totalOrder, dataFile]);
@@ -738,7 +742,7 @@ export class DirectedGraph {
                 }
             }
             else if (t === 'region')            new RegionNode(g, ev, order);
-            else if (t === 'snapshot')          g.attachSnapshot(ev.object_id, ev.data_file, order);
+            else if (t === 'snapshot')          { g.attachSnapshot(ev.object_id, ev.data_file, order); new SnapshotNode(g, ev, order); }
             else if (t === 'virtual_container') g.registerVirtualContainer(ev.virtual_id, ev.label, ev.object_ids);
         }
         // (collectives of a call that is not in the trace)

@@ -14,6 +14,7 @@ export const State = {
     'container-updates':       false,
     'container-allocations':   false,
     'container-deallocations': false,
+    'container-snapshots':     true,
     'container-transfers':     false,
     'kernel-compiles':         false,
     'communications':          true,

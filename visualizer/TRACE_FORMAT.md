@@ -177,7 +177,7 @@ copy out of date. An exchange before a call (a halo, the rows of a MatRow) only 
 
 The merge also says what is wrong with the files: a missing rank, a rank that makes another call or collective than rank 0
 (`divergence`: the program does not do the same on all processes), more calls on a rank than on rank 0, and clocks that are not aligned well
-(the collectives end far apart).
+(the collectives end more than 20 ms apart; a large allgather can end a few ms apart on a host with exact clocks, as MPI makes it in steps).
 
 ## Known limits
 

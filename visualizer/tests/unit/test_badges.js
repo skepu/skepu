@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { collectBadges, badgeNodesToShow } from '../../script/badges.js';
+import { collectBadges, badgeNodesToShow, timelineNodesToShow } from '../../script/badges.js';
 import { builder } from '../event_builders.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -123,5 +123,23 @@ describe('collectBadges', () => {
     it('gives the order of each iteration, for the arrows between the badges', () => {
         const { orders } = collectBadges([node({ id: 'a', file: 'p.cpp', line: 5, total_orders: [7, 8], trace_indices: [1, 2] }), node({ id: 'b', file: 'p.cpp', line: 6, total_order: 9 })], []);
         expect(orders).toEqual({ a: [7, 8], b: [9] });
+    });
+});
+
+
+describe('the nodes of the timeline', () => {
+    const nodes = [
+        { data: { id: 'r', type: 'region', label: 'Octave', region_start: 1, region_end: 9 } },
+        { data: { id: 'c', type: 'skeleton_call', label: 'k', start: 2, end: 3 } },
+        { data: { id: 'a', type: 'allocation', label: 'A', timestamp: 1 } },
+    ];
+
+    it('have the regions when the regions are shown', () => {
+        expect(timelineNodesToShow(nodes, true).map(n => n.data.id)).toEqual(['r', 'c', 'a']);
+    });
+
+    it('do not have them (no row for them in the chart) when the regions are not shown', () => {
+        expect(timelineNodesToShow(nodes, false).map(n => n.data.id)).toEqual(['c', 'a']);
+        expect(timelineNodesToShow(nodes, undefined).map(n => n.data.id)).toEqual(['c', 'a']);
     });
 });

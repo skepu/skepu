@@ -7,7 +7,7 @@ import { setPaneOpen } from './panes.js';
 var STORAGE_KEY = SETTINGS_KEY;
 
 var SETTING_CHECKBOXES = [
-  'container-updates', 'container-allocations', 'container-deallocations',
+  'container-updates', 'container-allocations', 'container-deallocations', 'container-snapshots',
   'container-transfers', 'kernel-compiles', 'communications', 'element-accesses', 'anti-deps', 'virtual-alias-edges',
   'edge-labels', 'node-labels', 'show_regions', 'collapse_iteration', 'fusion_analysis',
 ];
@@ -19,7 +19,7 @@ var SETTING_SELECTS = [
 var DEFAULTS = {
   checkboxes: {
     'container-updates': false, 'container-allocations': false,
-    'container-deallocations': false, 'container-transfers': false, 'kernel-compiles': false, 'communications': true,
+    'container-deallocations': false, 'container-snapshots': true, 'container-transfers': false, 'kernel-compiles': false, 'communications': true,
     'element-accesses': false, 'anti-deps': false, 'virtual-alias-edges': false,
     'edge-labels': false, 'node-labels': true, 'show_regions': false,
     'collapse_iteration': false, 'fusion_analysis': false,

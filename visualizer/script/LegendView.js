@@ -102,6 +102,9 @@ export class LegendView {
     if (inGraph('node[type="deallocation"]'))
       nodeEntries.push([nodeIcon('<polygon points="' + STAR + '" fill="' + dealFill + '" stroke="' + dealStr + '" stroke-width="1"/>'),
        'Deallocation', 'deallocation']);
+    if (inGraph('node[type="snapshot"]'))
+      nodeEntries.push([nodeIcon('<polygon points="' + STAR + '" fill="' + COLORS.snapshot.fill + '" stroke="' + COLORS.snapshot.stroke + '" stroke-width="1"/>'),
+       'Snapshot', 'snapshot']);
     if (this.settings['show_regions'] && inGraph('node[type="region"]'))
       nodeEntries.push([nodeIcon('<rect x="1" y="3" width="18" height="14" rx="2" fill="' + regionF + '" stroke="' + regionS + '" stroke-width="1.5"/>'),
        'Instrumented Region', 'region']);

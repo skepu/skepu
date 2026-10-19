@@ -302,7 +302,7 @@ function _handleLoadSnapshots({ snapshotFiles = {} }) {
 // requires only a minimal shim (postMessage instead of fetch).
 //
 // Payload: {
-//   container_allocations, container_deallocations, container_transfers, kernel_compiles,
+//   container_allocations, container_deallocations, container_snapshots, container_transfers, kernel_compiles,
 //   show_scalars, anti_deps, data_as_edges,
 //   show_regions, expand_all_regions, first_load,
 //   collapse_iteration, fusion_analysis, show_virtual_alias,
@@ -320,6 +320,7 @@ function _handleGraph({
     mode                    = 'dependence-dag',
     container_allocations   = false,
     container_deallocations = false,
+    container_snapshots     = false,
     container_transfers     = false,
     kernel_compiles         = false,
     show_communications     = true,
@@ -357,7 +358,7 @@ function _handleGraph({
 
     // Re-preprocess paths on every build (idempotent after first call, matches Flask).
     ({ graph: _graph, fusionHints } = buildDisplayGraph(_eventData, {
-        mode, container_allocations, container_deallocations, container_transfers, kernel_compiles, show_communications,
+        mode, container_allocations, container_deallocations, container_snapshots, container_transfers, kernel_compiles, show_communications,
         show_scalars, anti_deps, data_as_edges, show_regions,
         collapse_iteration, fusion_analysis, show_virtual_alias, aggregate_by, instances: _instances,
     }));

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { languageOf, exampleLanguages, examplesOfLanguage, initialLanguage } from '../../script/examples_list.js';
+import { languageOf, exampleLanguages, examplesOfLanguage, initialLanguage, hasSnapshots } from '../../script/examples_list.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const list = [{ title: 'A' }, { title: 'B', language: 'python' }, { title: 'C', language: 'cpp' }, { title: 'D', language: 'python' }];
@@ -42,5 +42,34 @@ describe('the shipped examples', () => {
             expect([].concat(example.cpp_files?.default ?? example.cpp_files).every(f => f.endsWith('.py'))).toBe(true);
         for (const { example } of examplesOfLanguage(examples, 'cpp'))
             expect(JSON.stringify(example.cpp_files)).not.toMatch(/\.py"/);
+    });
+});
+
+
+describe('the examples that have snapshots of containers', () => {
+    it('are marked for the backends that have an archive of them (the welcome screen shows a star there)', () => {
+        const example = { title: 'Perlin', snapshot_archive: { openmp: 'a.zip', opencl: 'a.zip', mpi: 'm.zip' } };
+        expect(hasSnapshots(example, 'openmp')).toBe(true);
+        expect(hasSnapshots(example, 'mpi')).toBe(true);
+        expect(hasSnapshots(example, 'cuda')).toBe(false);
+    });
+
+    it('are all the backends of an example with one archive', () => {
+        expect(hasSnapshots({ snapshot_archive: 'cellular/snapshots.zip' }, 'opencl')).toBe(true);
+        expect(hasSnapshots({ snapshot_archive: 'cellular/snapshots.zip' }, 'anything')).toBe(true);
+    });
+
+    it('are not marked for an example without an archive', () => {
+        expect(hasSnapshots({ title: 'Horner' }, 'openmp')).toBe(false);
+        expect(hasSnapshots({ snapshot_archive: '' }, 'openmp')).toBe(false);
+        expect(hasSnapshots({ snapshot_archive: null }, 'openmp')).toBe(false);
+        expect(hasSnapshots(undefined, 'openmp')).toBe(false);
+    });
+
+    it('are the examples of the list that name an archive for the backend of their traces', () => {
+        const list = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../examples/examples.json'), 'utf-8'));
+        const marked = list.filter(e => Object.keys(e.trace).some(b => hasSnapshots(e, b))).map(e => e.title);
+        expect(marked).toContain('Cellular Automaton');
+        expect(marked).not.toContain('Dot Product');
     });
 });

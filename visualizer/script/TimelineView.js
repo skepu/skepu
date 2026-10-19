@@ -29,6 +29,7 @@
 
 'use strict';
 
+import { timelineNodesToShow } from './badges.js';
 import { rankCount, layoutRows, rankSegments, segmentExtent, collectiveParts, commSegments } from './timeline_layout.js';
 
 // ── Module-local layout constants ────────────────────────────────────────────
@@ -415,6 +416,9 @@ export class TimelineView {
     var container = this._containerEl;
     var provider  = this._provider;
 
+    // The regions are in the data always (see timelineNodesToShow): the chart has a row for them only if they are shown.
+    cyNodes = timelineNodesToShow(cyNodes, !!(provider && provider.settings['show_regions']));
+
     // ── Categorise nodes ──────────────────────────────────────────────────────
     var timedBars = cyNodes.filter(function(n) {
       return n.data.start != null && n.data.end != null &&
@@ -434,7 +438,7 @@ export class TimelineView {
     });
     var timedMarkers = cyNodes.filter(function(n) {
       return n.data.timestamp != null &&
-        (n.data.type === 'allocation' || n.data.type === 'deallocation');
+        (n.data.type === 'allocation' || n.data.type === 'deallocation' || n.data.type === 'snapshot');
     });
     var timedRegions = cyNodes.filter(function(n) {
       return n.data.type === 'region' &&
@@ -916,6 +920,8 @@ export class TimelineView {
           pts = starPoints(cx, evCY, HS, HS * 0.42); fill = 'white'; stroke = '#333'; strokeW = 1;
         } else if (d.type === 'deallocation') {
           pts = starPoints(cx, evCY, HS, HS * 0.42); fill = 'black'; stroke = '#ddd'; strokeW = 1;
+        } else if (d.type === 'snapshot') {
+          pts = starPoints(cx, evCY, HS, HS * 0.42); fill = '#ffd43b'; stroke = '#a67c00'; strokeW = 1;   // (a yellow star, as in the graph)
         } else {
           pts = diamondPoints(cx, evCY, HS); fill = 'purple'; stroke = 'rgba(0,0,0,0.25)'; strokeW = 0.5;
         }

@@ -306,6 +306,7 @@ export class TraceDataProvider {
       mode:                    this.settings['graph-mode'],
       container_allocations:   this.settings['container-allocations'],
       container_deallocations: this.settings['container-deallocations'],
+      container_snapshots:     this.settings['container-snapshots'],
       container_transfers:     this.settings['container-transfers'],
       kernel_compiles:         this.settings['kernel-compiles'],
       show_communications:     this.settings['communications'],

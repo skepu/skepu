@@ -1,7 +1,8 @@
 // test_node_lines.js — the lines that a node of the graph marks in a file (src/nodeLines.ts), which the extension puts badges at. The cases are
 // those of real traces: an `external` made without C++20 has no file and line 0 (it once made every file "match" and the editor throw).
 import { describe, it, expect } from 'vitest';
-import { linesOfNode, pathEndsWith, traceSuffix, lensesOfBadges, lensTitle, nextNodeIndex } from '../../src/nodeLines.ts';
+import { linesOfNode, pathEndsWith, traceSuffix, lensesOfBadges, lensTitle, nextNodeIndex, SOURCE_NODE_TYPES, nodesWithBadges } from '../../src/nodeLines.ts';
+import { SOURCE_TYPES, badgeNodesToShow } from '../../script/badges.js';
 
 const FILE = '/Users/me/skepu/examples/dotproduct.cpp';
 const call = { id: 'n1', type: 'skeleton_call', file: '/examples/dotproduct.cpp', line: 39 };
@@ -101,5 +102,22 @@ describe('the lenses of a file', () => {
         expect(nextNodeIndex(2, 3)).toBe(0);
         expect(nextNodeIndex(undefined, 1)).toBe(0);
         expect(nextNodeIndex(0, 1)).toBe(0);
+    });
+});
+
+
+describe('the lines of the nodes that the viewer puts badges at', () => {
+    it('are those of the snapshots and the regions, as of the calls', () => {
+        expect(linesOfNode({ ...call, type: 'snapshot', line: 12 }, FILE, false, [])).toEqual([11, 11]);
+        expect(linesOfNode({ ...call, type: 'region', line: 20 }, FILE, false, [])).toEqual([19, 19]);
+        expect(linesOfNode({ ...call, type: 'snapshot', file: '/examples/other.cpp' }, FILE, false, [])).toBeNull();
+        expect(linesOfNode({ ...call, type: 'snapshot', file: '', line: 0 }, FILE, false, [])).toBeNull(); // (a snapshot made without C++20)
+    });
+
+    it('are of the same types as the badges of the viewer (script/badges.js), and the regions are left out by the same rule', () => {
+        expect([...SOURCE_NODE_TYPES].sort()).toEqual([...SOURCE_TYPES].sort());
+        const nodes = [{ data: { type: 'region' } }, { data: { type: 'skeleton_call' } }, { data: { type: 'snapshot' } }, { data: { type: 'allocation' } }];
+        for (const shown of [true, false])
+            expect(nodesWithBadges(nodes, shown)).toEqual(badgeNodesToShow(nodes, shown));
     });
 });

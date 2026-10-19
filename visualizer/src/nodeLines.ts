@@ -10,6 +10,17 @@ export interface NodeData {
 }
 
 /**
+ * The nodes that mark a line of a source file: those that have a gutter badge in the viewer (SOURCE_TYPES of script/badges.js, which
+ * tests/unit/test_node_lines.js compares this with). The viewer shows the regions only if the setting says so.
+ */
+export const SOURCE_NODE_TYPES = ['skeleton_call', 'external', 'region', 'snapshot'];
+
+/** The nodes of the graph that get a badge or a lens: as in the viewer (badgeNodesToShow of script/badges.js), the regions only if they are shown. */
+export function nodesWithBadges<T extends { data: { type: string } }>(nodes: T[], showRegions: boolean): T[] {
+	return showRegions ? nodes : nodes.filter(n => n.data.type !== 'region');
+}
+
+/**
  * What can be compared of the path of a file in a trace: the path as the compiler had it, which is relative to the directory that the program was
  * compiled in for a file that was found by a relative include (".//..//skepu-headers/src/skepu-lib/io.hpp"). Doubled and "." parts go, and so do
  * the ".." at the start of a relative path (they are where the program was compiled, which is not known here); an absolute path stays absolute.
@@ -40,15 +51,15 @@ export function pathEndsWith(path: string, end: string): boolean {
 
 /**
  * The first and the last line (from 0) that a node marks in the file, or null if it marks none. In the file of the trace, the lines of the event
- * that the node is of. In a source file, the line of the call of a skeleton (or of an `external`) that is in that file: an event may have no file
- * or no line (an `external` made without C++20 has neither), and then it is in no file.
+ * that the node is of. In a source file, the line of the node (of a call of a skeleton or an `external`, a region, a snapshot) that is in that file:
+ * an event may have no file or no line (an `external` made without C++20 has neither), and then it is in no file.
  */
 export function linesOfNode(data: NodeData, fileName: string, isTraceFile: boolean, traceLineRanges: number[][]): [number, number] | null {
 	if (isTraceFile) {
 		const range = data.trace_index === undefined ? undefined : traceLineRanges[data.trace_index];
 		return range ? [Math.max(0, range[0] - 1), Math.max(0, range[1] - 1)] : null;
 	}
-	if (data.type !== 'skeleton_call' && data.type !== 'external') return null;
+	if (!SOURCE_NODE_TYPES.includes(data.type)) return null;
 	if (!data.file || !pathEndsWith(fileName, traceSuffix(data.file))) return null;
 	if (!Number.isInteger(data.line) || (data.line as number) < 1) return null;
 	return [(data.line as number) - 1, (data.line as number) - 1];

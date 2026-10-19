@@ -239,7 +239,9 @@ export function mergeMpiTraces(files) {
     const uncertainty = Math.max(0, ...info.map(i => i.uncertainty_us));
     let worstSpread = 0;
     for (const e of events) if (e.type === 'communication' && e.rank_summary && SYNCHRONIZING.has(e.operation)) worstSpread = Math.max(worstSpread, e.rank_summary.end_spread_us);
-    if (worstSpread > Math.max(1000, 20 * uncertainty))
+    // (a few ms are not a sign of misaligned clocks: the processes of a large allgather, which MPI does with an algorithm in steps, leave it at
+    // different times, by up to some ms on one host, where the clocks are exact. Clocks that are really off are off by far more.)
+    if (worstSpread > Math.max(20000, 20 * uncertainty))
         warnings.push(`The collectives end up to ${Math.round(worstSpread)} us apart on the clock of rank ${detail}: the clocks are not well aligned (measured to within ${Math.round(uncertainty)} us)`);
 
     // The source files of the trace: those of the process with the trace first, and the files that the other processes name (a lean process has

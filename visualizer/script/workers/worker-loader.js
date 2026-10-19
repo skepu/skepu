@@ -18,7 +18,7 @@ import { holdForReveal } from '../reveal.js';
 import { headerSourceFiles } from '../backend/trace.js';
 import { createSessionStore, sessionId } from '../session_store.js';
 import { exampleSlug, findExample, encodePermalink, decodePermalink } from '../permalink.js';
-import { LANGUAGE_LABELS, exampleLanguages, examplesOfLanguage, initialLanguage } from '../examples_list.js';
+import { LANGUAGE_LABELS, exampleLanguages, examplesOfLanguage, initialLanguage, hasSnapshots } from '../examples_list.js';
 
 // ── 2. Build examples menu + welcome panel ────────────────────────────────────
 // examples.json is fetched once; both the menubar submenu and the welcome-panel
@@ -159,6 +159,14 @@ function _buildWelcomeExamples(examples) {
                 var seg = document.createElement('button');
                 seg.className   = 'welcome-example-seg';
                 seg.textContent = BACKEND_NAMES[b] || b;
+                // A small yellow star (a camera flash) after the name: the example has snapshots of containers for this backend
+                if (hasSnapshots(ex, b)) {
+                    var star = document.createElement('sup');
+                    star.className   = 'welcome-snapshot-star';
+                    star.textContent = '✦';
+                    star.title       = 'Has snapshots of containers';
+                    seg.appendChild(star);
+                }
                 seg.onclick     = function() { window.loadExample(idx, b); };
                 pill.appendChild(seg);
             });

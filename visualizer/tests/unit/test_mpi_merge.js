@@ -159,6 +159,11 @@ describe('what is wrong with a set of files', () => {
         expect(m.divergence).toMatchObject({ kind: 'extra', rank: 1 });
     });
 
+    it('a few ms of difference between the clocks is not a warning (a large allgather ends at different times on the processes)', () => {
+        const m = mergeMpiTraces(withEdit(2, t => { t.header.clock.start.offset_us += 3000; t.header.clock.end.offset_us += 3000; }));
+        expect(m.warnings.join(' ')).not.toMatch(/not well aligned/);
+    });
+
     it('clocks that are not aligned are a warning', () => {
         const m = mergeMpiTraces(withEdit(2, t => { t.header.clock.start.offset_us += 500000; t.header.clock.end.offset_us += 500000; }));
         expect(m.warnings.join(' ')).toMatch(/not well aligned/);
