@@ -3,7 +3,7 @@
 #include <skepu>
 
 // MapPairs in place mode adds the result to the old value of the output element
-// (sequential, CPU, OpenMP and OpenCL backends; the CUDA backend reports an error).
+// (sequential, CPU, OpenMP, OpenCL and CUDA backends).
 float product_f(float x, float y)
 {
 	return x * y;

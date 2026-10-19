@@ -27,7 +27,7 @@ namespace
 
 	float scaled(skepu::Index1D index, float a)
 	{
-		return a * float(index.i);
+		return a * (float)index.i;
 	}
 
 	float box(skepu::Region2D<float> r)
@@ -187,8 +187,8 @@ namespace
 	int mul(int a, int b) { return a * b; }
 	int sum(int a, int b) { return a + b; }
 
-	int indexed_product(skepu::Index2D i, int a, int b) { return a * b + int(i.row); }
-	int index_only(skepu::Index2D i, int u) { return int(i.row) * 10 + int(i.col) + u; }
+	int indexed_product(skepu::Index2D i, int a, int b) { return a * b + (int)i.row; }
+	int index_only(skepu::Index2D i, int u) { return (int)i.row * 10 + (int)i.col + u; }
 
 	int stencil(skepu::Region1D<int> r) { return r(-1) + r(0) + r(1); }
 	int stencil3(skepu::Region3D<int> r) { return r(0, 0, 0) + r(1, 0, 0) + r(0, 1, 0) + r(0, 0, 1); }

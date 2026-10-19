@@ -686,6 +686,9 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CL(
 const std::string KernelPredefinedTypes_CL = R"~~~(
 #define SKEPU_USING_BACKEND_CL 1
 
+// No fused multiply-add: some OpenCL compilers (NVIDIA) contract a * b + c by default, which gives other results than the host
+#pragma OPENCL FP_CONTRACT OFF
+
 typedef struct{
 	size_t i;
 } index1_t;

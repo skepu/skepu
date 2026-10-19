@@ -54,7 +54,7 @@ std::string createMapKernelProgram_CU(SkeletonInstance &instance, UserFunction &
 		SSMapFuncArgs << param.name << "[skepu_i * skepu_strides[" << stride_counter++ << "]]";
 		first = false;
 	}
-	auto argsInfo = handleRandomAccessAndUniforms_CU(mapFunc, SSMapFuncArgs, SSKernelParamList, first);
+	auto argsInfo = handleRandomAccessAndUniforms_CU(mapFunc, SSMapFuncArgs, SSKernelParamList, first, true);
 
 	const std::string kernelName = instance + "_" + transformToCXXIdentifier(ResultName) + "_MapKernel_" + mapFunc.uniqueName;
 	SSStrideCount << (mapFunc.elwiseParams.size() + std::max<size_t>(1, mapFunc.multipleReturnTypes.size()));

@@ -18,6 +18,9 @@ namespace skepu
 			if (this->m_mode == ReduceMode::ColWise)
 				std::swap(Vsize, Hsize);
 			
+			// (the sizes of the containers: after the swap Vsize is the size of the reduced dimension (the major one), whatever the mode)
+			const size_t vertSize = (this->m_mode == ReduceMode::ColWise) ? Hsize : Vsize;
+			const size_t horSize = (this->m_mode == ReduceMode::ColWise) ? Vsize : Hsize;
 			const size_t numRowsPerSlice = Vsize / numDevices;
 			const size_t rest = Vsize % numDevices;
 			
@@ -37,8 +40,8 @@ namespace skepu
 			{
 				const size_t baseIndex = startIdx + i * numRowsPerSlice * Hsize;
 				outMemP[i] = std::make_tuple(std::get<OI>(oArgs).getParent().updateDevice_CU((std::get<OI>(oArgs).begin() + baseIndex).getAddress(), Vsize, i, AccessMode::None)...);
-				velwiseMemP[i] = std::make_tuple(std::get<VEI-outArity>(veArgs).getParent().updateDevice_CU((std::get<VEI-outArity>(veArgs) + startIdx).getAddress(), Vsize, i, AccessMode::None)...);
-				helwiseMemP[i] = std::make_tuple(std::get<HEI-Varity-outArity>(heArgs).getParent().updateDevice_CU((std::get<HEI-Varity-outArity>(heArgs) + startIdx).getAddress(), Hsize, i, AccessMode::None)...);
+				velwiseMemP[i] = std::make_tuple(std::get<VEI-outArity>(veArgs).getParent().updateDevice_CU((std::get<VEI-outArity>(veArgs) + startIdx).getAddress(), vertSize, i, AccessMode::None)...);
+				helwiseMemP[i] = std::make_tuple(std::get<HEI-Varity-outArity>(heArgs).getParent().updateDevice_CU((std::get<HEI-Varity-outArity>(heArgs) + startIdx).getAddress(), horSize, i, AccessMode::None)...);
 				anyMemP[i]    = std::make_tuple(std::get<AI-Varity-Harity-outArity>(aArgs).cudaProxy(i, AccessMode::None, std::get<AI-Varity-Harity-outArity>(proxy_tags), Index1D{0})...);
 			}
 			
@@ -47,18 +50,17 @@ namespace skepu
 				const size_t numThreads = std::min(this->m_selected_spec->GPUThreads(), closestPow2(Hsize));
 				const size_t numBlocks = std::min(Vsize, this->m_selected_spec->GPUBlocks());
 				const size_t baseIndex = startIdx + i * numRowsPerSlice * Hsize;
-				const size_t sharedMemSize = sizeof(Ret) * numThreads;
-				std::cout << "Shared Mem size: " << sharedMemSize << "\n";
+				const size_t sharedMemSize = sizeof(Ret) * numThreads * outArity; // (one reduction buffer for each output)
 				
 				DEBUG_TEXT_LEVEL1("CUDA MapPairsReduce kernel: device " << i << ", numBlocks = " << numBlocks << ", numThreads = " << numThreads);
 				
 				outMemP[i]    = std::make_tuple(std::get<OI>(oArgs).getParent().updateDevice_CU((std::get<OI>(oArgs).begin() + baseIndex).getAddress(), Vsize, i, AccessMode::Write, true)...);
-				velwiseMemP[i] = std::make_tuple(std::get<VEI-outArity>(veArgs).getParent().updateDevice_CU((std::get<VEI-outArity>(veArgs) + startIdx).getAddress(), Vsize, i, AccessMode::Read)...);
-				helwiseMemP[i] = std::make_tuple(std::get<HEI-Varity-outArity>(heArgs).getParent().updateDevice_CU((std::get<HEI-Varity-outArity>(heArgs) + startIdx).getAddress(), Hsize, i, AccessMode::Read)...);
+				velwiseMemP[i] = std::make_tuple(std::get<VEI-outArity>(veArgs).getParent().updateDevice_CU((std::get<VEI-outArity>(veArgs) + startIdx).getAddress(), vertSize, i, AccessMode::Read)...);
+				helwiseMemP[i] = std::make_tuple(std::get<HEI-Varity-outArity>(heArgs).getParent().updateDevice_CU((std::get<HEI-Varity-outArity>(heArgs) + startIdx).getAddress(), horSize, i, AccessMode::Read)...);
 				anyMemP[i]    = std::make_tuple(std::get<AI-Varity-Harity-outArity>(aArgs).getParent().cudaProxy(i, MapPairsFunc::anyAccessMode[AI-Varity-Harity-outArity], std::get<AI-Varity-Harity-outArity>(proxy_tags), Index1D{0})...);
 				
-				size_t threads = std::min<size_t>(1, numBlocks * numThreads); // FIX
-				auto random = this->template prepareRandom<MapPairsFunc::randomCount>(1, threads);
+				size_t threads = Vsize * Hsize; // (one number for each pair)
+				auto random = this->template prepareRandom<MapPairsFunc::randomCount>(Vsize * Hsize, threads);
 				auto randomMemP = random.updateDevice_CU(random.getAddress(), threads, i, AccessMode::ReadWrite);
 				
 #ifdef USE_PINNED_MEMORY

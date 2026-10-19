@@ -281,7 +281,7 @@ namespace skepu
 
 				this->selectBackend(size);
 
-				switch (this->checkMirrorBackend(this->m_selected_spec->activateBackend(), "MapOverlap 1D", false))
+				switch (this->checkMirrorBackend(this->m_selected_spec->activateBackend(), "MapOverlap 1D"))
 				{
 				case Backend::Type::Hybrid:
 #ifdef SKEPU_HYBRID
@@ -406,7 +406,7 @@ namespace skepu
 				switch (this->m_overlapPolicy)
 				{
 					case Overlap::ColWise:
-						switch (this->checkMirrorBackend(this->m_selected_spec->activateBackend(), "MapOverlap 1D", false))
+						switch (this->checkMirrorBackend(this->m_selected_spec->activateBackend(), "MapOverlap 1D"))
 						{
 						case Backend::Type::Hybrid:
 #ifdef SKEPU_HYBRID
@@ -435,7 +435,7 @@ namespace skepu
 						break;
 
 					case Overlap::RowWise:
-						switch (this->checkMirrorBackend(this->m_selected_spec->activateBackend(), "MapOverlap 1D", false))
+						switch (this->checkMirrorBackend(this->m_selected_spec->activateBackend(), "MapOverlap 1D"))
 						{
 						case Backend::Type::Hybrid:
 #ifdef SKEPU_HYBRID

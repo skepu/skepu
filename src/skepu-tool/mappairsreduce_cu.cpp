@@ -8,14 +8,21 @@ using namespace clang;
 // ------------------------------
 
 const char *MapPairsReduceKernelTemplate_CU = R"~~~(
+// (the outputs of a user function that returns multiple values are reduced one by one with the reduction function)
+#define SKEPU_REDUCE_STEP_{{KERNEL_NAME}}(OFFSET) \
+	if (skepu_tid < (OFFSET) && skepu_tid + (OFFSET) < skepu_Hsize) \
+		for (size_t skepu_k = 0; skepu_k < {{OUTPUT_COUNT}}; ++skepu_k) \
+			{{SHARED_BUFFER}}[skepu_k * skepu_blockSize + skepu_tid] = {{FUNCTION_NAME_REDUCE}}({{SHARED_BUFFER}}[skepu_k * skepu_blockSize + skepu_tid], {{SHARED_BUFFER}}[skepu_k * skepu_blockSize + skepu_tid + (OFFSET)]); \
+	__syncthreads();
+
 __global__ void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_Vsize, size_t skepu_Hsize, size_t skepu_base, bool skepu_transposed)
 {
 	extern __shared__ {{REDUCE_RESULT_TYPE}} {{SHARED_BUFFER}}[];
 	
-	size_t skepu_global_prng_id = blockIdx.x * blockDim.x + threadIdx.x;
+	size_t skepu_global_prng_id = 0; // (the number of a pair is its position in the order of the reduction: major * minorSize + minor)
 	size_t skepu_blockSize = blockDim.x;
 	size_t skepu_tid = threadIdx.x;
-	{{REDUCE_RESULT_TYPE}} skepu_result{};
+	{{REDUCE_RESULT_TYPE}} skepu_result[{{OUTPUT_COUNT}}];
 	
 	size_t skepu_thread_V = blockIdx.x;
 	size_t skepu_thread_H = threadIdx.x;
@@ -25,8 +32,14 @@ __global__ void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_Vsize, size_t ske
 	
 	if (skepu_thread_H < skepu_Hsize)
 	{
+		skepu_global_prng_id = skepu_thread_V * skepu_Hsize + skepu_thread_H;
 		{{INDEX_INITIALIZER}}
-		skepu_result = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
+#if !{{USE_MULTIRETURN}}
+		skepu_result[0] = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
+#else
+		auto skepu_out_temp = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
+		{{OUTPUT_FIRST}}
+#endif
 		
 		skepu_thread_H += skepu_blockSize;
 		if (!skepu_transposed)
@@ -37,10 +50,15 @@ __global__ void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_Vsize, size_t ske
 	
 	while (skepu_thread_H < skepu_Hsize)
 	{
+		skepu_global_prng_id = skepu_thread_V * skepu_Hsize + skepu_thread_H;
 		{{INDEX_INITIALIZER}}
-		
+#if !{{USE_MULTIRETURN}}
 		{{MAPPAIRS_RESULT_TYPE}} tempMap = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
-		skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, tempMap);
+		skepu_result[0] = {{FUNCTION_NAME_REDUCE}}(skepu_result[0], tempMap);
+#else
+		auto skepu_out_temp = {{FUNCTION_NAME_MAPPAIRS}}({{MAPPAIRS_ARGS}});
+		{{OUTPUT_ACCUMULATE}}
+#endif
 		
 		skepu_thread_H += skepu_blockSize;
 		if (!skepu_transposed)
@@ -49,37 +67,35 @@ __global__ void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_Vsize, size_t ske
 			skepu_lookup_V += skepu_blockSize;
 	}
 	
-	
-	{{SHARED_BUFFER}}[skepu_tid] = skepu_result;
+	// (a thread that has no pair holds nothing; the reduction steps only read the threads that have one)
+	for (size_t skepu_k = 0; skepu_k < {{OUTPUT_COUNT}}; ++skepu_k)
+		{{SHARED_BUFFER}}[skepu_k * skepu_blockSize + skepu_tid] = skepu_result[skepu_k];
 	
 	__syncthreads();
 	
 	// do reduction in shared mem
-	if (skepu_blockSize >= 1024) { if (skepu_tid < 512) { {{SHARED_BUFFER}}[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, {{SHARED_BUFFER}}[skepu_tid + 512]); } __syncthreads(); }
-	if (skepu_blockSize >=  512) { if (skepu_tid < 256) { {{SHARED_BUFFER}}[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, {{SHARED_BUFFER}}[skepu_tid + 256]); } __syncthreads(); }
-	if (skepu_blockSize >=  256) { if (skepu_tid < 128) { {{SHARED_BUFFER}}[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, {{SHARED_BUFFER}}[skepu_tid + 128]); } __syncthreads(); }
-	if (skepu_blockSize >=  128) { if (skepu_tid <  64) { {{SHARED_BUFFER}}[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, {{SHARED_BUFFER}}[skepu_tid +  64]); } __syncthreads(); }
-
-	if (skepu_tid < 32)
-	{
-		// now that we are using warp-synchronous programming (below)
-		// we need to declare our shared memory volatile so that the compiler
-		// doesn't reorder stores to it and induce incorrect behavior.
-		// UPDATE: volatile causes issues with custom struct data types; use __syncwarp() instead
-		/*volatile*/ {{REDUCE_RESULT_TYPE}}* skepu_smem = {{SHARED_BUFFER}};
-		if (skepu_blockSize >=  64) { if (skepu_tid < 32) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid + 32]); } __syncwarp(); }
-		if (skepu_blockSize >=  32) { if (skepu_tid < 16) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid + 16]); } __syncwarp(); }
-		if (skepu_blockSize >=  16) { if (skepu_tid <  8) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  8]); } __syncwarp(); }
-		if (skepu_blockSize >=   8) { if (skepu_tid <  4) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  4]); } __syncwarp(); }
-		if (skepu_blockSize >=   4) { if (skepu_tid <  2) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  2]); } __syncwarp(); }
-		if (skepu_blockSize >=   2) { if (skepu_tid <  1) { skepu_smem[skepu_tid] = skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, skepu_smem[skepu_tid +  1]); } __syncwarp(); }
-	}
+	if (skepu_blockSize >= 1024) { SKEPU_REDUCE_STEP_{{KERNEL_NAME}}(512) }
+	if (skepu_blockSize >=  512) { SKEPU_REDUCE_STEP_{{KERNEL_NAME}}(256) }
+	if (skepu_blockSize >=  256) { SKEPU_REDUCE_STEP_{{KERNEL_NAME}}(128) }
+	if (skepu_blockSize >=  128) { SKEPU_REDUCE_STEP_{{KERNEL_NAME}}( 64) }
+	if (skepu_blockSize >=   64) { SKEPU_REDUCE_STEP_{{KERNEL_NAME}}( 32) }
+	if (skepu_blockSize >=   32) { SKEPU_REDUCE_STEP_{{KERNEL_NAME}}( 16) }
+	if (skepu_blockSize >=   16) { SKEPU_REDUCE_STEP_{{KERNEL_NAME}}(  8) }
+	if (skepu_blockSize >=    8) { SKEPU_REDUCE_STEP_{{KERNEL_NAME}}(  4) }
+	if (skepu_blockSize >=    4) { SKEPU_REDUCE_STEP_{{KERNEL_NAME}}(  2) }
+	if (skepu_blockSize >=    2) { SKEPU_REDUCE_STEP_{{KERNEL_NAME}}(  1) }
 
 	if (skepu_tid == 0)
 	{
-		skepu_output[skepu_thread_V] = {{SHARED_BUFFER}}[skepu_tid];
+#if !{{USE_MULTIRETURN}}
+		skepu_output[skepu_thread_V] = {{SHARED_BUFFER}}[0];
+#else
+		skepu_thread_V = blockIdx.x;
+		{{OUTPUT_STORE}}
+#endif
 	}
 }
+#undef SKEPU_REDUCE_STEP_{{KERNEL_NAME}}
 )~~~";
 
 
@@ -95,6 +111,14 @@ std::string createMapPairsReduceKernelProgram_CU(SkeletonInstance &instance, Use
 	IndexCodeGen indexInfo = indexInitHelper_CU(mapPairsFunc);
 	bool first = !indexInfo.hasIndex;
 	std::string multiOutputAssign = handleOutputs_CU(mapPairsFunc, SSKernelParamList);
+	const size_t outputCount = std::max<size_t>(1, mapPairsFunc.multipleReturnTypes.size());
+	std::stringstream SSOutputFirst, SSOutputAccumulate, SSOutputStore;
+	for (size_t k = 0; k < mapPairsFunc.multipleReturnTypes.size(); ++k)
+	{
+		SSOutputFirst << "skepu_result[" << k << "] = skepu_out_temp.e" << k << ";\n";
+		SSOutputAccumulate << "skepu_result[" << k << "] = " << reduceFunc.funcNameCUDA() << "(skepu_result[" << k << "], skepu_out_temp.e" << k << ");\n";
+		SSOutputStore << "skepu_output_" << k << "[skepu_thread_V] = sdata_" << instance << "[" << k << " * skepu_blockSize];\n";
+	}
 	handleRandomParam_CU(mapPairsFunc, SSMapPairsFuncArgs, SSKernelParamList, first);
 	
 	size_t ctr = 0, stride_counter = 0;
@@ -133,7 +157,11 @@ std::string createMapPairsReduceKernelProgram_CU(SkeletonInstance &instance, Use
 		{"{{REDUCE_RESULT_TYPE}}",      reduceFunc.rawReturnTypeName},
 		{"{{REDUCE_RESULT_CPU}}",       reduceFunc.resolvedReturnTypeName},
 		{"{{FUNCTION_NAME_REDUCE}}",    reduceFunc.funcNameCUDA()},
-		{"{{SHARED_BUFFER}}",           "sdata_" + instance}
+		{"{{SHARED_BUFFER}}",           "sdata_" + instance},
+		{"{{OUTPUT_COUNT}}",            std::to_string(outputCount)},
+		{"{{OUTPUT_FIRST}}",            SSOutputFirst.str()},
+		{"{{OUTPUT_ACCUMULATE}}",       SSOutputAccumulate.str()},
+		{"{{OUTPUT_STORE}}",            SSOutputStore.str()}
 	});
 	
 	return kernelName;

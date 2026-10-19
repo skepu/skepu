@@ -7,6 +7,24 @@
 #include <test_helper_automatic_setup.hpp>
 #include <test_helper_functions.hpp>
 #include <type_traits>
+#include <algorithm>
+#include <vector>
+
+// The output sizes to test in a dimension where the largest output has 'max' elements: all of them when there are few, else the smallest
+// sizes, the middle, and the sizes closest to the largest one (an output smaller than the largest one is what the "small output" tests are for;
+// every size in between runs the same code, but the number of calls grows with the product of the dimensions)
+static std::vector<int> out_sizes(int max)
+{
+    std::vector<int> sizes;
+    if (max <= 5)
+        for (int s = 1; s <= max; ++s)
+            sizes.push_back(s);
+    else
+        sizes = {1, 2, 3, (max + 1) / 2, max - 1, max};
+    std::sort(sizes.begin(), sizes.end());
+    sizes.erase(std::unique(sizes.begin(), sizes.end()), sizes.end());
+    return sizes;
+}
 
 
 // ======== mappool_2d ========
@@ -940,8 +958,8 @@ TEST_CASE("mappool_2d_small_output: Fundamentals")
                 for (int stride = 1; stride <= pool_size; ++stride)
                 {
                     pool.setStride(stride);
-                    for (int out_size_i = 1; out_size_i <= (input.size_i() - pool_size) / stride + 1; ++out_size_i)
-                        for (int out_size_j = 1; out_size_j <= (input.size_j() - pool_size) / stride + 1; ++out_size_j)
+                    for (int out_size_i : out_sizes((input.size_i() - pool_size) / stride + 1))
+                        for (int out_size_j : out_sizes((input.size_j() - pool_size) / stride + 1))
                         {
                             skepu::Matrix<int> actual(out_size_i, out_size_j, 0);
                             std::vector<std::vector<int>> expected;
@@ -1044,9 +1062,9 @@ TEST_CASE("mappool_3d_small_output: Fundamentals")
                     for (int stride = 1; stride <= pool_size; ++stride)
                     {
                         pool.setStride(stride);
-                        for (int out_size_i = 1; out_size_i <= (input.size_i() - pool_size) / stride + 1; ++out_size_i)
-                            for (int out_size_j = 1; out_size_j <= (input.size_j() - pool_size) / stride + 1; ++out_size_j)
-                                for (int out_size_k = 1; out_size_k <= (input.size_k() - pool_size) / stride + 1; ++out_size_k)
+                        for (int out_size_i : out_sizes((input.size_i() - pool_size) / stride + 1))
+                            for (int out_size_j : out_sizes((input.size_j() - pool_size) / stride + 1))
+                                for (int out_size_k : out_sizes((input.size_k() - pool_size) / stride + 1))
                                 {
                                     skepu::Tensor3<int> actual(out_size_i, out_size_j, out_size_k, "actual", 0);
                                     vector3<int> expected;
@@ -1163,10 +1181,10 @@ TEST_CASE("mappool_4d_small_output: Fundamentals")
                         for (int stride = 1; stride <= pool_size; ++stride)
                         {
                             pool.setStride(stride);
-                            for (int out_size_i = 1; out_size_i <= (input.size_i() - pool_size) / stride + 1; ++out_size_i)
-                                for (int out_size_j = 1; out_size_j <= (input.size_j() - pool_size) / stride + 1; ++out_size_j)
-                                    for (int out_size_k = 1; out_size_k <= (input.size_k() - pool_size) / stride + 1; ++out_size_k)
-                                        for (int out_size_l = 1; out_size_l <= (input.size_l() - pool_size) / stride + 1; ++out_size_l)
+                            for (int out_size_i : out_sizes((input.size_i() - pool_size) / stride + 1))
+                                for (int out_size_j : out_sizes((input.size_j() - pool_size) / stride + 1))
+                                    for (int out_size_k : out_sizes((input.size_k() - pool_size) / stride + 1))
+                                        for (int out_size_l : out_sizes((input.size_l() - pool_size) / stride + 1))
                                         {
                                             skepu::Tensor4<int> actual(out_size_i, out_size_j, out_size_k, out_size_l, "output", 0);
                                             vector4<int> expected;

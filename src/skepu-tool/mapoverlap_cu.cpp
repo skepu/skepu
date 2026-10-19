@@ -20,88 +20,57 @@ static const std::string MapOverlapKernel_CU = R"~~~(
 __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU({{KERNEL_PARAMS}}
 	{{MAPOVERLAP_INPUT_TYPE}}* wrap, size_t n,
 	size_t out_offset, size_t out_numelements,
-	skepu::Edge edgeMode, {{MAPOVERLAP_INPUT_TYPE}} pad, size_t overlap
+	skepu::Edge edgeMode, {{MAPOVERLAP_INPUT_TYPE}} pad, size_t overlap, int skepu_parity, int skepu_mirror
 )
 {
-   extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} {{SHARED_BUFFER}}[];
-   size_t skepu_tid = threadIdx.x;
-   size_t skepu_i = blockIdx.x * blockDim.x + threadIdx.x;
- 	size_t skepu_global_prng_id = blockIdx.x * blockDim.x + threadIdx.x;
-   size_t gridSize = blockDim.x*gridDim.x;
+	extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} {{SHARED_BUFFER}}[];
+	const size_t skepu_tid = threadIdx.x;
 
-   while (skepu_i < n + overlap)
-   {
-      if (edgeMode == skepu::Edge::None)
-      {
-         {{SHARED_BUFFER}}[skepu_tid] = skepu_input[skepu_i];
-      }
-      //Copy data to shared memory
-      else if (edgeMode == skepu::Edge::Pad)
-      {
-         {{SHARED_BUFFER}}[overlap+skepu_tid] = (skepu_i < n) ? skepu_input[skepu_i] : pad;
+	// The output is cut into tiles of blockDim.x elements. A block loads the elements of its tile and the overlap on both sides, applying the
+	// edge mode, then computes the tile. Mirror mode (the edge mode None with an input of the size of the output): the halo is loaded as for
+	// Duplicate and only the elements that have the whole overlap in the input are computed. With the edge mode None the output is
+	// shorter than the input, by the overlap on each side.
+	const bool none = edgeMode == skepu::Edge::None && !skepu_mirror;
+	const size_t shift = none ? overlap : 0;
+	const size_t shared_size = blockDim.x + 2 * overlap;
 
-         if (skepu_tid < overlap)
-         {
-            {{SHARED_BUFFER}}[skepu_tid] = (skepu_i<overlap) ? pad : skepu_input[skepu_i-overlap];
-         }
+	for (size_t skepu_tile = blockIdx.x * blockDim.x; skepu_tile < out_numelements; skepu_tile += (size_t)gridDim.x * blockDim.x)
+	{
+		const long skepu_base = (long)(skepu_tile + out_offset + shift) - (long)overlap;
 
-         if (skepu_tid >= (blockDim.x-overlap))
-         {
-            {{SHARED_BUFFER}}[skepu_tid+2*overlap] = (skepu_i+overlap < n) ? skepu_input[skepu_i+overlap] : pad;
-         }
-      }
-      else if (edgeMode == skepu::Edge::Cyclic)
-      {
-         if (skepu_i < n)
-         {
-            {{SHARED_BUFFER}}[overlap+skepu_tid] = skepu_input[skepu_i];
-         }
-         else
-         {
-            {{SHARED_BUFFER}}[overlap + skepu_tid] = wrap[overlap + (skepu_i - n)];
-         }
+		for (size_t k = skepu_tid; k < shared_size; k += blockDim.x)
+		{
+			long p = skepu_base + (long)k;
+			{{MAPOVERLAP_INPUT_TYPE}} value;
+			if (p >= 0 && p < (long)n)
+				value = skepu_input[p];
+			else if (edgeMode == skepu::Edge::Pad)
+				value = pad;
+			else if (edgeMode == skepu::Edge::Cyclic)
+				value = (p < 0) ? wrap[p + (long)overlap] : wrap[overlap + (size_t)p - n];
+			else
+				value = skepu_input[(p < 0) ? 0 : n - 1]; // (Duplicate, mirror mode; the edge mode None only outside of the tile that is computed)
+			{{SHARED_BUFFER}}[k] = value;
+		}
 
-         if (skepu_tid < overlap)
-         {
-            {{SHARED_BUFFER}}[skepu_tid] = (skepu_i < overlap) ? wrap[skepu_tid] : skepu_input[skepu_i - overlap];
-         }
+		__syncthreads();
 
-         if (skepu_tid >= (blockDim.x - overlap))
-         {
-            {{SHARED_BUFFER}}[skepu_tid + 2 * overlap] = (skepu_i + overlap < n) ? skepu_input[skepu_i + overlap] : wrap[overlap + (skepu_i + overlap - n)];
-         }
-      }
-      else if (edgeMode == skepu::Edge::Duplicate)
-      {
-         {{SHARED_BUFFER}}[overlap + skepu_tid] = (skepu_i < n) ? skepu_input[skepu_i] : skepu_input[n - 1];
+		const size_t skepu_j = skepu_tile + skepu_tid;
+		const size_t skepu_center = skepu_j + out_offset + shift;
+		if (skepu_j < out_numelements && (!skepu_mirror || (skepu_center >= overlap && skepu_center + overlap < n))
+			&& (skepu_parity < 0 || (int)(skepu_j & 1) == skepu_parity))
+		{
+			size_t skepu_i = skepu_j;
+			// (the number of an element is its position in the output; in mirror mode the computed elements are numbered one after the other)
+			const size_t skepu_global_prng_id = skepu_mirror ? skepu_center - overlap : skepu_j;
+			{{INDEX_INITIALIZER}}
+			{{PROXIES_UPDATE}}
+			auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
+			{{OUTPUT_BINDINGS}}
+		}
 
-         if (skepu_tid < overlap)
-         {
-            {{SHARED_BUFFER}}[skepu_tid] = (skepu_i < overlap) ? skepu_input[0] : skepu_input[skepu_i - overlap];
-         }
-
-         if (skepu_tid >= (blockDim.x - overlap))
-         {
-            {{SHARED_BUFFER}}[skepu_tid+2*overlap] = (skepu_i + overlap < n) ? skepu_input[skepu_i + overlap] : skepu_input[n - 1];
-         }
-      }
-
-      __syncthreads();
-			
-      //Compute and store data
-      if ( (skepu_i >= out_offset) && (skepu_i < out_offset + out_numelements))
-			{
-				skepu_i = skepu_i - out_offset;
-				{{INDEX_INITIALIZER}}
-				{{PROXIES_UPDATE}}
-				auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
-				{{OUTPUT_BINDINGS}}
-			}
-
-      skepu_i += gridSize;
-
-      __syncthreads();
-   }
+		__syncthreads();
+	}
 }
 )~~~";
 
@@ -117,17 +86,16 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU({{KERNEL_PARAMS}}
 static const std::string MapOverlapKernel_CU_Matrix_Row = R"~~~(
 __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Row({{KERNEL_PARAMS}}
 	{{MAPOVERLAP_INPUT_TYPE}}* wrap, size_t n, size_t out_offset, size_t out_numelements,
-	skepu::Edge edgeMode, {{MAPOVERLAP_INPUT_TYPE}} pad, size_t overlap, size_t blocksPerRow, size_t rowWidth
+	skepu::Edge edgeMode, {{MAPOVERLAP_INPUT_TYPE}} pad, size_t overlap, size_t blocksPerRow, size_t rowWidth, int skepu_parity, int skepu_mirror
 )
 {
 	extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} {{SHARED_BUFFER}}[];
 	const size_t skepu_tid = threadIdx.x;
-	const size_t skepu_global_prng_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-	// Every row is cut into tiles of blockDim.x output elements. A block loads the elements of its tile and
-	// the overlap on both sides, applying the edge mode (the wrap array is not needed), then computes the tile.
+	// Every row is cut into tiles of blockDim.x output elements. A block loads the elements of its tile and the overlap on both sides,
+	// applying the edge mode (the wrap array is not needed), then computes the tile. Mirror mode: see the vector kernel.
 	const size_t numRows = n / rowWidth;
-	const bool none = edgeMode == skepu::Edge::None;
+	const bool none = edgeMode == skepu::Edge::None && !skepu_mirror;
 	const size_t out_rowWidth = none ? rowWidth - overlap * 2 : rowWidth;
 	const size_t shared_size = blockDim.x + 2 * overlap;
 
@@ -144,7 +112,7 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Row({{KERNEL_PARAMS}}
 			{
 				if (edgeMode == skepu::Edge::Cyclic) p = ((p % (long)rowWidth) + (long)rowWidth) % (long)rowWidth;
 				else if (edgeMode == skepu::Edge::Pad) p = -1;
-				else p = (p < 0) ? 0 : (long)rowWidth - 1; // (Duplicate; None only outside of the tile that is computed)
+				else p = (p < 0) ? 0 : (long)rowWidth - 1; // (Duplicate, mirror mode; the edge mode None only outside of the tile that is computed)
 			}
 			{{SHARED_BUFFER}}[k] = (p < 0) ? pad : skepu_input[skepu_row * rowWidth + p];
 		}
@@ -152,12 +120,14 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Row({{KERNEL_PARAMS}}
 		__syncthreads();
 
 		const size_t skepu_col = skepu_tile + skepu_tid;
-		if (skepu_col < out_rowWidth)
+		if (skepu_col < out_rowWidth && (!skepu_mirror || (skepu_col >= overlap && skepu_col + overlap < rowWidth))
+			&& (skepu_parity < 0 || (int)(skepu_col & 1) == skepu_parity))
 		{
 			size_t skepu_i = skepu_col;
 			{{INDEX_INITIALIZER}}
 			{{PROXIES_UPDATE}}
 			skepu_i = skepu_row * out_rowWidth + skepu_col;
+			const size_t skepu_global_prng_id = skepu_mirror ? skepu_row * (rowWidth - 2 * overlap) + skepu_col - overlap : skepu_i;
 			auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
 			{{OUTPUT_BINDINGS}}
 		}
@@ -180,15 +150,14 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Row({{KERNEL_PARAMS}}
 static const std::string MapOverlapKernel_CU_Matrix_Col = R"~~~(
 __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Col({{KERNEL_PARAMS}}
 	{{MAPOVERLAP_INPUT_TYPE}}* wrap, size_t n, size_t out_offset, size_t out_numelements,
-	skepu::Edge edgeMode, {{MAPOVERLAP_INPUT_TYPE}} pad, size_t overlap, size_t blocksPerCol, size_t rowWidth, size_t colWidth
+	skepu::Edge edgeMode, {{MAPOVERLAP_INPUT_TYPE}} pad, size_t overlap, size_t blocksPerCol, size_t rowWidth, size_t colWidth, int skepu_parity, int skepu_mirror
 )
 {
 	extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} {{SHARED_BUFFER}}[];
 	const size_t skepu_tid = threadIdx.x;
-	const size_t skepu_global_prng_id = blockIdx.x * blockDim.x + threadIdx.x;
 
 	// Every column (rowWidth is the number of columns) is cut into tiles of blockDim.x output elements, as in the row-wise kernel.
-	const bool none = edgeMode == skepu::Edge::None;
+	const bool none = edgeMode == skepu::Edge::None && !skepu_mirror;
 	const size_t out_colWidth = none ? colWidth - overlap * 2 : colWidth;
 	const size_t shared_size = blockDim.x + 2 * overlap;
 
@@ -205,7 +174,7 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Col({{KERNEL_PARAMS}}
 			{
 				if (edgeMode == skepu::Edge::Cyclic) p = ((p % (long)colWidth) + (long)colWidth) % (long)colWidth;
 				else if (edgeMode == skepu::Edge::Pad) p = -1;
-				else p = (p < 0) ? 0 : (long)colWidth - 1; // (Duplicate; None only outside of the tile that is computed)
+				else p = (p < 0) ? 0 : (long)colWidth - 1; // (Duplicate, mirror mode; the edge mode None only outside of the tile that is computed)
 			}
 			{{SHARED_BUFFER}}[k] = (p < 0) ? pad : skepu_input[(size_t)p * rowWidth + skepu_col];
 		}
@@ -213,12 +182,15 @@ __global__ void {{KERNEL_NAME}}_MapOverlapKernel_CU_Matrix_Col({{KERNEL_PARAMS}}
 		__syncthreads();
 
 		const size_t skepu_orow = skepu_tile + skepu_tid;
-		if (skepu_orow < out_colWidth)
+		if (skepu_orow < out_colWidth && (!skepu_mirror || (skepu_orow >= overlap && skepu_orow + overlap < colWidth))
+			&& (skepu_parity < 0 || (int)(skepu_orow & 1) == skepu_parity))
 		{
 			size_t skepu_i = skepu_orow;
 			{{INDEX_INITIALIZER}}
 			{{PROXIES_UPDATE}}
 			skepu_i = skepu_orow * rowWidth + skepu_col;
+			// (the numbers of the elements of the output go down the columns, one column after the other)
+			const size_t skepu_global_prng_id = skepu_mirror ? skepu_col * (colWidth - 2 * overlap) + skepu_orow - overlap : skepu_col * out_colWidth + skepu_orow;
 			auto skepu_res = {{FUNCTION_NAME_MAPOVERLAP}}({{MAPOVERLAP_ARGS}});
 			{{OUTPUT_BINDINGS}}
 		}
@@ -410,7 +382,7 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_2D_kernel({{KERNEL_PARAMS}}
    size_t skepu_stride_y, size_t skepu_stride_x,
 	size_t skepu_in_pitch, size_t skepu_out_pitch,
 	const size_t skepu_sharedRows, const size_t skepu_sharedCols,
-	int skepu_is_pool, skepu::Edge skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad
+	int skepu_is_pool, skepu::Edge skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad, int skepu_parity
 )
 {
   extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} {{SHARED_BUFFER}}[];
@@ -486,7 +458,8 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_2D_kernel({{KERNEL_PARAMS}}
 	// Mirror mode (the edge mode None and an input of the size of the output): only the interior of the output is computed, the
 	// elements near the edges keep their values
 	const bool skepu_mirror = !skepu_is_pool && skepu_edge == skepu::Edge::None && skepu_out_rows == skepu_in_rows && skepu_out_cols == skepu_in_cols;
-	if (skepu_x < skepu_out_cols && skepu_y < skepu_out_rows
+	// (update modes: skepu_parity is -1 for all the elements, else the parity of the sum of the indices of the elements to compute)
+	if (skepu_x < skepu_out_cols && skepu_y < skepu_out_rows && (skepu_parity < 0 || (int)((skepu_x + skepu_y) & 1) == skepu_parity)
 		&& (!skepu_mirror || (skepu_x >= skepu_overlap_x && skepu_x + skepu_overlap_x < skepu_out_cols && skepu_y >= skepu_overlap_y && skepu_y + skepu_overlap_y < skepu_out_rows)))
 	{
 		size_t skepu_i = skepu_y * skepu_out_cols + skepu_x;
@@ -512,7 +485,7 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_3D_kernel({{KERNEL_PARAMS}}
 	size_t skepu_overlap_i, size_t skepu_overlap_j, size_t skepu_overlap_k,
     size_t skepu_stride_i, size_t skepu_stride_j, size_t skepu_stride_k,
 	const size_t skepu_shared_size_i, const size_t skepu_shared_size_j, const size_t skepu_shared_size_k,
-	int skepu_is_pool, skepu::Edge skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad
+	int skepu_is_pool, skepu::Edge skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad, int skepu_parity
 )
 {
   extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} {{SHARED_BUFFER}}[];
@@ -601,7 +574,8 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_3D_kernel({{KERNEL_PARAMS}}
 	// Mirror mode (the edge mode None and an input of the size of the output): only the interior of the output is computed, the
 	// elements near the edges keep their values
 	const bool skepu_mirror = !skepu_is_pool && skepu_edge == skepu::Edge::None && skepu_out_size_i == skepu_in_size_i && skepu_out_size_j == skepu_in_size_j && skepu_out_size_k == skepu_in_size_k;
-	if (skepu_i < skepu_out_size_i && skepu_j < skepu_out_size_j && skepu_k < skepu_out_size_k
+	// (update modes: skepu_parity is -1 for all the elements, else the parity of the sum of the indices of the elements to compute)
+	if (skepu_i < skepu_out_size_i && skepu_j < skepu_out_size_j && skepu_k < skepu_out_size_k && (skepu_parity < 0 || (int)((skepu_i + skepu_j + skepu_k) & 1) == skepu_parity)
 		&& (!skepu_mirror || (skepu_i >= skepu_overlap_i && skepu_i + skepu_overlap_i < skepu_out_size_i && skepu_j >= skepu_overlap_j && skepu_j + skepu_overlap_j < skepu_out_size_j
 			&& skepu_k >= skepu_overlap_k && skepu_k + skepu_overlap_k < skepu_out_size_k)))
 	{
@@ -625,7 +599,7 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_4D_kernel({{KERNEL_PARAMS}}
     size_t skepu_stride_i, size_t skepu_stride_j, size_t skepu_stride_k, size_t skepu_stride_l,
 	size_t skepu_shared_size_i, size_t skepu_shared_size_j, size_t skepu_shared_size_k, size_t skepu_shared_size_l,
 	size_t skepu_numThreads_0a,
-    int skepu_is_pool, skepu::Edge skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad
+    int skepu_is_pool, skepu::Edge skepu_edge, {{MAPOVERLAP_INPUT_TYPE}} skepu_pad, int skepu_parity
 )
 {
     extern __shared__ {{MAPOVERLAP_INPUT_TYPE}} {{SHARED_BUFFER}}[];
@@ -749,7 +723,9 @@ __global__ void {{KERNEL_NAME}}_conv_cuda_4D_kernel({{KERNEL_PARAMS}}
 	// Mirror mode (the edge mode None and an input of the size of the output): only the interior of the output is computed, the
 	// elements near the edges keep their values
 	const bool skepu_mirror = !skepu_is_pool && skepu_edge == skepu::Edge::None && skepu_out_size_i == skepu_in_size_i && skepu_out_size_j == skepu_in_size_j && skepu_out_size_k == skepu_in_size_k && skepu_out_size_l == skepu_in_size_l;
+	// (update modes: skepu_parity is -1 for all the elements, else the parity of the sum of the indices of the elements to compute)
 	if (skepu_i < skepu_out_size_i && skepu_j < skepu_out_size_j && skepu_k < skepu_out_size_k && skepu_l < skepu_out_size_l
+		&& (skepu_parity < 0 || (int)((skepu_i + skepu_j + skepu_k + skepu_l) & 1) == skepu_parity)
 		&& (!skepu_mirror || (skepu_i >= skepu_overlap_i && skepu_i + skepu_overlap_i < skepu_out_size_i && skepu_j >= skepu_overlap_j && skepu_j + skepu_overlap_j < skepu_out_size_j
 			&& skepu_k >= skepu_overlap_k && skepu_k + skepu_overlap_k < skepu_out_size_k && skepu_l >= skepu_overlap_l && skepu_l + skepu_overlap_l < skepu_out_size_l)))
 	{

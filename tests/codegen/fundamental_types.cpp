@@ -377,7 +377,8 @@ auto mapLongDouble = skepu::Map(uf_long_double);
 // CUDA does not support long double in device code (https://forums.developer.nvidia.com/t/support-for-long-double-data-type-in-gpu-code/313337),
 // The compiler should be throwing the following warning: warning #20208-D: 'long double' is treated as 'double' in device code
 // The skeletons above should still be tested for code generation purposes.
-#ifndef SKEPU_CUDA
+// Nor does OpenCL, where it is a double of 8 bytes: with a host long double of another size (x86: 80 bits) the elements of the containers do not match.
+#if !defined(SKEPU_CUDA) && (!defined(SKEPU_OPENCL) || __LDBL_MANT_DIG__ == __DBL_MANT_DIG__)
 TEST_CASE("fundamental_types: Long double")
 {
     skepu::Vector<long double> vLongDouble(1, 1.0l), rLongDouble(1, 0.0l);
@@ -385,7 +386,7 @@ TEST_CASE("fundamental_types: Long double")
     rLongDouble.flush();
     is_similar(rLongDouble(0), 1.0l);
 }
-#endif //SKEPU_CUDA
+#endif // long double
 }
 
 

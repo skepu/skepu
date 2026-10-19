@@ -38,7 +38,7 @@ namespace skepu
 			cudaSetDevice(deviceID);
 			
 			auto in_mem_p = arg.updateDevice_CU(arg.getAddress(), in_size_i * in_size_j * in_size_k * in_size_l, deviceID, AccessMode::Read, true);
-			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_size_i * out_size_j * out_size_k * out_size_l, deviceID, this->m_mirror_mode ? AccessMode::ReadWrite : AccessMode::Write, true)...); // (in mirror mode some elements are not computed: the output keeps their values)
+			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_size_i * out_size_j * out_size_k * out_size_l, deviceID, (this->m_mirror_mode || p != Parity::None) ? AccessMode::ReadWrite : AccessMode::Write, true)...); // (in mirror mode and with the update modes some elements are not computed: the output keeps their values)
 			
 			dim3 numBlocks, numThreads;
 
@@ -68,8 +68,7 @@ namespace skepu
 
 			if (this->isPool)
 			{
-				cudaDeviceProp properties;
-                cudaGetDeviceProperties(&properties, deviceID);
+				const cudaDeviceProp &properties = this->m_environment->m_devices_CU.at(deviceID)->getDeviceProp(); // (cached: cudaGetDeviceProperties takes about 0.7 ms)
 
 				bool should_use_global_memory = true;
 
@@ -112,7 +111,8 @@ namespace skepu
 				this->m_strides[0], this->m_strides[1], this->m_strides[2], this->m_strides[3],
 				sharedI, sharedJ, sharedK, sharedL,
 				numThreads_0a,
-				(int)(this->isPool ? 1 : 0), this->m_edge, this->m_pad
+				(int)(this->isPool ? 1 : 0), this->m_edge, this->m_pad,
+				parity_cl(p)
 			);
 			cudaError_t syncError = cudaDeviceSynchronize();
 			cudaError_t kernelError = cudaGetLastError();
@@ -228,7 +228,8 @@ namespace skepu
 					numThreads.z + this->m_overlap[0] * 2,
 					numThreads.y + this->m_overlap[1] * 2,
 					numThreads.x + this->m_overlap[2] * 2,
-					this->m_edge, this->m_pad
+					this->m_edge, this->m_pad,
+					-1
 				);
 				
 				// Make sure the data is marked as changed by the device
@@ -249,6 +250,9 @@ namespace skepu
 				<< ", maxBlocks = " << this->m_selected_spec->GPUBlocks() << ", maxThreads = " << this->m_selected_spec->GPUThreads());
 			
 			const size_t numDevices = std::min(this->m_selected_spec->devices(), this->m_environment->m_devices_CU.size());
+			
+			if (numDevices > 1 && p != Parity::None)
+				SKEPU_ERROR("MapOverlap 4D with update modes does not work on multiple CUDA devices; use one device");
 			
 			if (numDevices > 1 && this->m_mirror_mode)
 				SKEPU_ERROR("MapOverlap 4D with the edge mode None and an input of the size of the output (mirror mode) does not work on multiple CUDA devices; use one device");

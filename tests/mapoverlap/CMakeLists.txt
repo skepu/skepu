@@ -17,10 +17,9 @@ skepu_add_test(mapoverlap_new EXCLUDE hybrid_cuda)
 #   in place calls
 # ------------------------------------------------
 
-# The mirror mode is not implemented for the hybrid backends (the call stops with an error), nor for MapOverlap 1D on CUDA (2D to 4D work).
-# MapOverlap2D is not implemented for the hybrid backend, and the hybrid and CUDA backends ignore the update modes (the test fails on
-# hybrid OpenCL and on CUDA).
-skepu_add_test(mapoverlap_edges EXCLUDE cuda hybrid_opencl hybrid_cuda)
+# The mirror mode is not implemented for the hybrid backends (the call stops with an error). MapOverlap2D is not implemented for the
+# hybrid backend, and the hybrid backends ignore the update modes (the test fails on hybrid OpenCL).
+skepu_add_test(mapoverlap_edges EXCLUDE hybrid_opencl hybrid_cuda)
 
 # ------------------------------------------------
 #   MapPool 2D, 3D and 4D, also with small output sizes

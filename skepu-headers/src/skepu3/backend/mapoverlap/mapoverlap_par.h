@@ -50,12 +50,11 @@ namespace skepu
             }
 
             // The backend of the call, checked: mirror mode (the edge mode None with an input of the size of the output; only the interior of the
-            // output is computed) is not implemented for the Hybrid backend, nor for the CUDA backend in 1D (cudaMirror is false there).
-            Backend::Type checkMirrorBackend(Backend::Type type, const char *skeleton, bool cudaMirror = true)
+            // output is computed) is not implemented for the Hybrid backend.
+            Backend::Type checkMirrorBackend(Backend::Type type, const char *skeleton)
             {
-                if (this->m_mirror_mode && (type == Backend::Type::Hybrid || (type == Backend::Type::CUDA && !cudaMirror)))
-                    SKEPU_ERROR(skeleton << " with the edge mode None and an input of the size of the output (mirror mode) is not implemented for the "
-                        << (type == Backend::Type::CUDA ? "CUDA" : "Hybrid") << " backend");
+                if (this->m_mirror_mode && type == Backend::Type::Hybrid)
+                    SKEPU_ERROR(skeleton << " with the edge mode None and an input of the size of the output (mirror mode) is not implemented for the Hybrid backend");
                 return type;
             }
 

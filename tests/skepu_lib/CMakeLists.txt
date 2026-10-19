@@ -18,9 +18,7 @@ skepu_add_test(complex)
 #   Random fundamentals, using namespace and the random fills of skepu-lib/randomize.hpp
 # ------------------------------------------------
 
-# CUDA: three cases fail: MapOverlap 1D in mirror mode (not implemented for CUDA, with a large vector too), and MapPairs + MapPairsReduce
-# (wrong results, see mappairsreduce). The rest passes.
-skepu_add_test(random EXCLUDE cuda hybrid_cuda)
+skepu_add_test(random EXCLUDE hybrid_cuda)
 
 
 # ------------------------------------------------
@@ -50,7 +48,7 @@ skepu_add_test(skepu_external)
 
 # With the precompiler: the same tests on the other backends. The backend is selected with the
 # environment variable SKEPU_TEST_BACKEND (the test program runs on the sequential backend otherwise).
-skepu_add_test(dnn EXCLUDE cuda hybrid_opencl hybrid_cuda)
+skepu_add_test(dnn EXCLUDE hybrid_opencl hybrid_cuda)
 if(TEST dnn_cpu)
 	set_tests_properties(dnn_cpu PROPERTIES ENVIRONMENT "SKEPU_TEST_BACKEND=CPU")
 endif()
@@ -70,7 +68,7 @@ add_test(NAME dnn_regression
 #   BLAS library, checked float routines (blas_float, blas_level1, blas_level23: one program)
 # ------------------------------------------------
 
-skepu_add_test(blas_checked EXCLUDE cuda hybrid_opencl hybrid_cuda)
+skepu_add_test(blas_checked EXCLUDE hybrid_opencl hybrid_cuda)
 
 
 # ------------------------------------------------

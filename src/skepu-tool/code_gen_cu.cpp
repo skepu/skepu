@@ -60,7 +60,8 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CU(
 	UserFunction &func,
 	std::stringstream& SSMapFuncArgs,
 	std::stringstream& SSKernelParamList,
-	bool &first
+	bool &first,
+	bool elementIndexIsLinear
 )
 {
 	RandomAccessAndScalarsResult res;
@@ -77,11 +78,17 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CU(
 		switch (param.containerType)
 		{
 			case ContainerType::MatRow:
-				SSProxiesUpdate << param.name << ".data = skepu_" << param.name << "_base + skepu_i * " << param.name << ".cols;\n";
+				if (elementIndexIsLinear) // (the row of an element: skepu_w2 is the number of columns of the output, 0 for a vector)
+					SSProxiesUpdate << param.name << ".data = skepu_" << param.name << "_base + (skepu_w2 ? (skepu_base + skepu_i) / skepu_w2 : (skepu_base + skepu_i)) * " << param.name << ".cols;\n";
+				else
+					SSProxiesUpdate << param.name << ".data = skepu_" << param.name << "_base + skepu_i * " << param.name << ".cols;\n";
 				break;
 			
 			case ContainerType::MatCol:
-				SSProxiesUpdate << param.name << ".data = skepu_" << param.name << "_base + skepu_i;\n";
+				if (elementIndexIsLinear) // (the column of an element: the output width is the number of columns of the matrix)
+					SSProxiesUpdate << param.name << ".data = skepu_" << param.name << "_base + (skepu_base + skepu_i) % " << param.name << ".cols;\n";
+				else
+					SSProxiesUpdate << param.name << ".data = skepu_" << param.name << "_base + skepu_i;\n";
 				break;
 			default:
 				break;

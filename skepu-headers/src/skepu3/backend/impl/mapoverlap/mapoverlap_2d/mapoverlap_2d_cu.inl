@@ -32,7 +32,7 @@ namespace skepu
 			cudaSetDevice(deviceID);
 			
 			auto in_mem_p = arg.updateDevice_CU(arg.getAddress(), in_size_i * in_size_j, deviceID, AccessMode::Read, true);
-			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_size_i * out_size_j, deviceID, this->m_mirror_mode ? AccessMode::ReadWrite : AccessMode::Write, true)...); // (in mirror mode some elements are not computed: the output keeps their values)
+			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_size_i * out_size_j, deviceID, (this->m_mirror_mode || p != Parity::None) ? AccessMode::ReadWrite : AccessMode::Write, true)...); // (in mirror mode and with the update modes some elements are not computed: the output keeps their values)
 			
 			dim3 numBlocks, numThreads;
 
@@ -62,8 +62,7 @@ namespace skepu
 			
             if (this->isPool)
 			{
-                cudaDeviceProp properties;
-                cudaGetDeviceProperties(&properties, deviceID);
+                const cudaDeviceProp &properties = this->m_environment->m_devices_CU.at(deviceID)->getDeviceProp(); // (cached: cudaGetDeviceProperties takes about 0.7 ms)
 
 				bool should_use_global_memory = (this->m_overlap[0] == 0 || this->m_overlap[0] <= this->m_strides[0]) &&
                         						(this->m_overlap[1] == 0 || this->m_overlap[1] <= this->m_strides[1]);
@@ -97,7 +96,8 @@ namespace skepu
 				in_size_j, out_size_j,
 				shared_i,
 				shared_j,
-				(int)(this->isPool ? 1 : 0), this->m_edge, this->m_pad
+				(int)(this->isPool ? 1 : 0), this->m_edge, this->m_pad,
+				parity_cl(p)
 			);
 			
 			// Make sure the data is marked as changed by the device
@@ -161,7 +161,7 @@ namespace skepu
 				size_t inRows = outRows + this->m_overlap[1] * 2; // no matter which device, number of input rows is same.
 				
 				in_mem_p[i] = arg.updateDevice_CU(arg.getAddress() + i * numRowsPerSlice * in_size_j, inRows * in_size_j, i, AccessMode::Read, true);
-				out_mem_p[i] = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress() + i * numRowsPerSlice * out_size_j, outRows * out_size_j, i, AccessMode::Write, true, true)...);
+				out_mem_p[i] = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress() + i * numRowsPerSlice * out_size_j, outRows * out_size_j, i, p != Parity::None ? AccessMode::ReadWrite : AccessMode::Write, true, true)...);
 				
 				dim3 numBlocks;
 				dim3 numThreads;
@@ -201,7 +201,8 @@ namespace skepu
 					in_size_j, out_size_j,
 					numThreads.y + this->m_overlap[1] * 2,
 					numThreads.x + this->m_overlap[0] * 2,
-					(int)(this->isPool ? 1 : 0), this->m_edge, this->m_pad
+					(int)(this->isPool ? 1 : 0), this->m_edge, this->m_pad,
+					parity_cl(p, i * numRowsPerSlice)
 				);
 				
 				// Make sure the data is marked as changed by the device

@@ -17,8 +17,8 @@ namespace skepu
 		void MapPairs<Varity, Harity, MapPairsFunc, CUDAKernel, CLKernel>
 		::mapPairsSingleThread_CU(size_t deviceID, size_t startIdx, size_t Vsize, size_t Hsize, pack_indices<OI...>, pack_indices<VEI...>, pack_indices<HEI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 		{
-			if (this->m_in_place)
-				SKEPU_ERROR("MapPairs in place mode is not implemented for the CUDA backend");
+			if (this->m_in_place && !(outArity == 1 && std::is_arithmetic<typename MapPairsFunc::Ret>::value))
+				SKEPU_ERROR("MapPairs in place mode needs a single output of an arithmetic type on the CUDA backend");
 
 			const size_t size = Vsize * Hsize;
 			auto oArgs = std::forward_as_tuple(get<OI>(std::forward<CallArgs>(args)...)...);
@@ -35,7 +35,7 @@ namespace skepu
 			DEBUG_TEXT_LEVEL1("CUDA MapPairs (ST): numBlocks = " << numBlocks << ", numThreads = " << numThreads);
 			
 			// Copies the elements to the device
-			auto outMemP    = std::make_tuple(std::get<OI>(oArgs).getParent().updateDevice_CU((std::get<OI>(oArgs).begin() + startIdx).getAddress(), size, deviceID, AccessMode::Write)...);
+			auto outMemP    = std::make_tuple(std::get<OI>(oArgs).getParent().updateDevice_CU((std::get<OI>(oArgs).begin() + startIdx).getAddress(), size, deviceID, (this->m_in_place ? AccessMode::ReadWrite : AccessMode::Write))...);
 			auto velwiseMemP = std::make_tuple(std::get<VEI-outArity>(veArgs).getParent().updateDevice_CU(std::get<VEI-outArity>(veArgs).getAddress() + startIdx, Vsize, deviceID, AccessMode::Read)...);
 			auto helwiseMemP = std::make_tuple(std::get<HEI-Varity-outArity>(heArgs).getParent().updateDevice_CU(std::get<HEI-Varity-outArity>(heArgs).getAddress() + startIdx, Hsize, deviceID, AccessMode::Read)...);
 			auto anyMemP    = std::make_tuple(std::get<AI-Varity-Harity-outArity>(aArgs).getParent().cudaProxy(deviceID, MapPairsFunc::anyAccessMode[AI-Varity-Harity-outArity], std::get<AI-Varity-Harity-outArity>(proxy_tags), Index1D{0})...);
@@ -58,7 +58,8 @@ namespace skepu
 				std::get<HEI-Varity-outArity>(helwiseMemP)->getDeviceDataPointer()...,
 				std::get<AI-Varity-Harity-outArity>(anyMemP).second...,
 				std::get<CI-Varity-Harity-anyArity-outArity>(scArgs)...,
-				Vsize, Hsize, startIdx
+				Vsize, Hsize, startIdx,
+				(int)this->m_in_place
 			);
 			
 			// Make sure the data is marked as changed by the device
@@ -76,8 +77,8 @@ namespace skepu
 		void MapPairs<Varity, Harity, MapPairsFunc, CUDAKernel, CLKernel>
 		::mapPairsMultiStream_CU(size_t deviceID, size_t startIdx, size_t Vsize, size_t Hsize, pack_indices<OI...>, pack_indices<VEI...>, pack_indices<HEI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 		{
-			if (this->m_in_place)
-				SKEPU_ERROR("MapPairs in place mode is not implemented for the CUDA backend");
+			if (this->m_in_place && !(outArity == 1 && std::is_arithmetic<typename MapPairsFunc::Ret>::value))
+				SKEPU_ERROR("MapPairs in place mode needs a single output of an arithmetic type on the CUDA backend");
 
 			CHECK_CUDA_ERROR(cudaSetDevice(deviceID));
 			const size_t size = Vsize * Hsize;
@@ -116,7 +117,7 @@ namespace skepu
 				const size_t numElem = numElemPerSlice + ((i == numKernels-1) ? rest : 0);
 				const size_t baseIndex = startIdx + i * numElemPerSlice;
 				
-				outMemP[i]    = std::make_tuple(std::get<OI>(oArgs).getParent().updateDevice_CU((std::get<OI>(oArgs).begin() + baseIndex).getAddress(), numElem, deviceID, AccessMode::Write, false, i)...);
+				outMemP[i]    = std::make_tuple(std::get<OI>(oArgs).getParent().updateDevice_CU((std::get<OI>(oArgs).begin() + baseIndex).getAddress(), numElem, deviceID, (this->m_in_place ? AccessMode::ReadWrite : AccessMode::Write), false, i)...);
 				velwiseMemP[i] = std::make_tuple(std::get<VEI-outArity>(veArgs).getParent().updateDevice_CU((std::get<VEI-outArity>(veArgs) + startIdx).getAddress(), Vsize, deviceID, AccessMode::Read,  false, i)...);
 				helwiseMemP[i] = std::make_tuple(std::get<HEI-Varity-outArity>(heArgs).getParent().updateDevice_CU((std::get<HEI-Varity-outArity>(heArgs) + startIdx).getAddress(), Hsize, deviceID, AccessMode::Read,  false, i)...);
 				anyMemP[i]    = std::make_tuple(std::get<AI-Varity-Harity-outArity>(aArgs).getParent().cudaProxy(deviceID, MapPairsFunc::anyAccessMode[AI-Varity-Harity-outArity], false, i, std::get<AI-Varity-Harity-outArity>(proxy_tags), Index1D{0})...);
@@ -149,7 +150,8 @@ namespace skepu
 					std::get<HEI-Varity-outArity>(helwiseMemP[i])->getDeviceDataPointer()...,
 					std::get<AI-Varity-Harity-outArity>(anyMemP[i]).second...,
 					std::get<CI-Varity-Harity-anyArity-outArity>(scArgs)...,
-					Vsize, Hsize, startIdx
+					Vsize, Hsize, startIdx,
+				(int)this->m_in_place
 				);
 				
 				// Change device data
@@ -168,8 +170,8 @@ namespace skepu
 		void MapPairs<Varity, Harity, MapPairsFunc, CUDAKernel, CLKernel>
 		::mapPairsMultiStreamMultiGPU_CU(size_t useNumGPU, size_t startIdx, size_t Vsize, size_t Hsize, pack_indices<OI...>, pack_indices<VEI...>, pack_indices<HEI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 		{
-			if (this->m_in_place)
-				SKEPU_ERROR("MapPairs in place mode is not implemented for the CUDA backend");
+			if (this->m_in_place && !(outArity == 1 && std::is_arithmetic<typename MapPairsFunc::Ret>::value))
+				SKEPU_ERROR("MapPairs in place mode needs a single output of an arithmetic type on the CUDA backend");
 
 #ifdef USE_PINNED_MEMORY
 			const size_t size = Vsize * Hsize;
@@ -228,7 +230,7 @@ namespace skepu
 					const size_t numElem = numElemPerStream[i] + ((j == numKernels[i]-1) ? streamRest[i] : 0);
 					const size_t baseIndex = startIdx + i * numElemPerDevice + j * numElemPerStream[i];
 					
-					outMemP[i][j]    = std::make_tuple(std::get<OI>(oArgs).getParent().updateDevice_CU((std::get<OI>(oArgs).begin() + baseIndex).getAddress(), numElem, i, AccessMode::Write, false, j)...);
+					outMemP[i][j]    = std::make_tuple(std::get<OI>(oArgs).getParent().updateDevice_CU((std::get<OI>(oArgs).begin() + baseIndex).getAddress(), numElem, i, (this->m_in_place ? AccessMode::ReadWrite : AccessMode::Write), false, j)...);
 					velwiseMemP[i][j] = std::make_tuple(std::get<VEI-outArity>(veArgs).getParent().updateDevice_CU((std::get<VEI-outArity>(veArgs) + startIdx).getAddress(), Vsize, i, AccessMode::Read,  false, j)...);
 					helwiseMemP[i][j] = std::make_tuple(std::get<HEI-Varity-outArity>(heArgs).getParent().updateDevice_CU((std::get<HEI-Varity-outArity>(heArgs) + startIdx).getAddress(), Hsize, i, AccessMode::Read,  false, j)...);
 					anyMemP[i][j]    = std::make_tuple(std::get<AI-Varity-Harity-outArity>(aArgs).cudaProxy(i, MapPairsFunc::anyAccessMode[AI-Varity-Harity-outArity], false, j, std::get<AI-Varity-Harity-outArity>(proxy_tags), Index1D{0})...);
@@ -260,7 +262,8 @@ namespace skepu
 						std::get<HEI-Varity-outArity>(helwiseMemP[i][j])->getDeviceDataPointer()...,
 						std::get<AI-Varity-Harity-outArity>(anyMemP[i][j]).second...,
 						std::get<CI-Varity-Harity-anyArity-outArity>(scArgs)...,
-						Vsize, Hsize, startIdx
+						Vsize, Hsize, startIdx,
+				(int)this->m_in_place
 					);
 					
 					pack_expand((std::get<OI>(outMemP[i][j])->changeDeviceData(), 0)...);
@@ -276,6 +279,9 @@ namespace skepu
 		void MapPairs<Varity, Harity, MapPairsFunc, CUDAKernel, CLKernel>
 		::mapPairsSingleThreadMultiGPU_CU(size_t numDevices, size_t startIdx, size_t Vsize, size_t Hsize, pack_indices<OI...>, pack_indices<VEI...>, pack_indices<HEI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
 		{
+			if (this->m_in_place && !(outArity == 1 && std::is_arithmetic<typename MapPairsFunc::Ret>::value))
+				SKEPU_ERROR("MapPairs in place mode needs a single output of an arithmetic type on the CUDA backend");
+
 			const size_t size = Vsize * Hsize;
 			const size_t numElemPerSlice = size / numDevices;
 			const size_t rest = size % numDevices;
@@ -315,7 +321,7 @@ namespace skepu
 				
 				DEBUG_TEXT_LEVEL1("CUDA MapPairs (STMD): device " << i << ", numElem = " << numElem << ", numBlocks = " << numBlocks << ", numThreads = " << numThreads);
 				
-				outMemP[i]    = std::make_tuple(std::get<OI>(oArgs).getParent().updateDevice_CU((std::get<OI>(oArgs).begin() + baseIndex).getAddress(), numElem, i, AccessMode::Write, true)...);
+				outMemP[i]    = std::make_tuple(std::get<OI>(oArgs).getParent().updateDevice_CU((std::get<OI>(oArgs).begin() + baseIndex).getAddress(), numElem, i, (this->m_in_place ? AccessMode::ReadWrite : AccessMode::Write), true)...);
 				velwiseMemP[i] = std::make_tuple(std::get<VEI-outArity>(veArgs).getParent().updateDevice_CU((std::get<VEI-outArity>(veArgs) + startIdx).getAddress(), Vsize, i, AccessMode::Read)...);
 				helwiseMemP[i] = std::make_tuple(std::get<HEI-Varity-outArity>(heArgs).getParent().updateDevice_CU((std::get<HEI-Varity-outArity>(heArgs) + startIdx).getAddress(), Hsize, i, AccessMode::Read)...);
 				anyMemP[i]    = std::make_tuple(std::get<AI-Varity-Harity-outArity>(aArgs).cudaProxy(i, MapPairsFunc::anyAccessMode[AI-Varity-Harity-outArity], std::get<AI-Varity-Harity-outArity>(proxy_tags), Index1D{0})...);
@@ -338,7 +344,8 @@ namespace skepu
 					std::get<HEI-Varity-outArity>(helwiseMemP[i])->getDeviceDataPointer()...,
 					std::get<AI-Varity-Harity-outArity>(anyMemP[i]).second...,
 					std::get<CI-Varity-Harity-anyArity-outArity>(scArgs)...,
-					Vsize, Hsize, startIdx
+					Vsize, Hsize, startIdx,
+				(int)this->m_in_place
 				);
 				
 				// Change device data

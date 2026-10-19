@@ -8,7 +8,7 @@ using namespace clang;
 // ------------------------------
 
 const char *MapPairsKernelTemplate_CU = R"~~~(
-__global__ void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_Vsize, size_t skepu_Hsize, size_t skepu_base)
+__global__ void {{KERNEL_NAME}}({{KERNEL_PARAMS}} size_t skepu_Vsize, size_t skepu_Hsize, size_t skepu_base, int skepu_in_place)
 {
 	size_t skepu_n = skepu_Vsize * skepu_Hsize;
 	size_t skepu_i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -34,6 +34,9 @@ std::string createMapPairsKernelProgram_CU(SkeletonInstance &instance, UserFunct
 	bool first = !indexInfo.hasIndex;
 	SSMapPairsFuncArgs << indexInfo.mapFuncParam;
 	std::string multiOutputAssign = handleOutputs_CU(mapPairsFunc, SSKernelParamList);
+	// (in place mode: the result is added to the old value of the element; only for a single output of an arithmetic type)
+	if (mapPairsFunc.multipleReturnTypes.size() == 0 && mapPairsFunc.astDeclNode->getReturnType()->isArithmeticType())
+		multiOutputAssign = "skepu_output[skepu_i] = skepu_in_place ? skepu_output[skepu_i] + skepu_res : skepu_res;";
 	handleRandomParam_CU(mapPairsFunc, SSMapPairsFuncArgs, SSKernelParamList, first);
 	
 	size_t ctr = 0;

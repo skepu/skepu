@@ -211,6 +211,14 @@ public:
    }
 
    /*!
+    *  \return The properties of the device, as read when the device was set up (cudaGetDeviceProperties is slow: do not call it for each skeleton call).
+    */
+   const cudaDeviceProp &getDeviceProp() const
+   {
+      return m_deviceProp;
+   }
+
+   /*!
     *  \return The maximum number of threads per block or group.
     */
    size_t getMaxThreads() const
