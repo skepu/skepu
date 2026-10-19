@@ -18,7 +18,7 @@ skepu_add_test(complex)
 #   Random fundamentals, using namespace and the random fills of skepu-lib/randomize.hpp
 # ------------------------------------------------
 
-skepu_add_test(random EXCLUDE hybrid_cuda)
+skepu_add_test(random)
 
 
 # ------------------------------------------------

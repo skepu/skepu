@@ -2,7 +2,7 @@
 #   MapPairs fundamentals
 # ------------------------------------------------
 
-skepu_add_test(mappairs EXCLUDE hybrid_cuda)
+skepu_add_test(mappairs)
 
 
 # ------------------------------------------------

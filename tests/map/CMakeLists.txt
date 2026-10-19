@@ -19,7 +19,7 @@ skepu_add_test(map_variants)
 
 # With these sizes the if (gpuSize < 32) passes, so only OpenMP executes in the hybrid backend: the test passes, but it does not
 # exercise the GPU part of the hybrid execution.
-skepu_add_test(map_stride EXCLUDE hybrid_cuda)
+skepu_add_test(map_stride)
 
 # ------------------------------------------------
 #   Index of a strided Map

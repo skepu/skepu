@@ -755,6 +755,17 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		}
 	}
 
+	// CUDA: the kernels are __global__ functions, which cannot be members of a class: for a skeleton in a member function the code goes
+	// before the outermost class (and its template header) instead of inside it
+	if (GenCUDA)
+		if (const FunctionDecl *f = dyn_cast_or_null<FunctionDecl>(DeclCtx))
+			for (const CXXRecordDecl *rd = dyn_cast<CXXRecordDecl>(f->getLexicalDeclContext()); rd; rd = dyn_cast<CXXRecordDecl>(rd->getLexicalDeclContext()))
+			{
+				if (const CXXRecordDecl *pattern = rd->getTemplateInstantiationPattern())
+					rd = pattern;
+				loc = rd->getDescribedClassTemplate() ? rd->getDescribedClassTemplate()->getBeginLoc() : rd->getBeginLoc();
+			}
+
 	// A function that is defined by a macro (as the test cases of Catch are): the code goes before the macro invocation
 	if (loc.isMacroID())
 		loc = GlobalRewriter.getSourceMgr().getExpansionLoc(loc);

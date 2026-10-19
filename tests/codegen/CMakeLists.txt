@@ -80,31 +80,26 @@ add_test(included_uf included_uf_cpu_test)
 #   Lambda expressions in skeleton instances
 # ------------------------------------------------
 
-skepu_add_test(lambda EXCLUDE sequential hybrid_cuda)
+skepu_add_test(lambda EXCLUDE sequential)
 
 # ------------------------------------------------
 #   Skeleton instances passed by reference to function templates
 # ------------------------------------------------
 
-skepu_add_test(skeleton_reference EXCLUDE hybrid_cuda)
+skepu_add_test(skeleton_reference)
 
 # ------------------------------------------------
 #   Namespace in skeleton instances
 # ------------------------------------------------
 
 # namespace: namespace, objectoriented (one program)
-skepu_add_test(namespace EXCLUDE sequential cuda hybrid_cuda)
+skepu_add_test(namespace EXCLUDE sequential)
 
 
 # ------------------------------------------------
 #   Object-oriented SkePU usage
 # ------------------------------------------------
 
-
-# CUDA does not work because TestClass.scale() calls a __global__ kernel. The kernel then relies on the struct::CU function.
-# 2 problems arise from this.
-# 1. The kernel gets included inside the class and a __global__ function cannot be a member function.
-# 2. The kernel calls the function struct::CU but needs to actually call TestClass::struct::CU.
 
 # ------------------------------------------------
 #   User types
@@ -131,7 +126,7 @@ skepu_add_test(template_instances_types EXCLUDE hybrid_opencl hybrid_cuda)
 
 # User constants in the user functions of every skeleton, with several types
 # userconstants_element_types: userconstants, element_types (one program)
-skepu_add_test(userconstants_element_types EXCLUDE hybrid_cuda)
+skepu_add_test(userconstants_element_types)
 
 
 # Regions of several threads that overlap in time: events belong to the region of their own thread.
