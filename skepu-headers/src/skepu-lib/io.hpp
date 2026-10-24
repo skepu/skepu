@@ -84,23 +84,28 @@ ostream &&operator<<(ostream &&s, C &arg)
 
 
 
-template<typename Stream, typename T, REQUIRES_VALUE(is_skepu_istream<Stream>)>
-Stream &&operator<<(Stream &&s, T const& arg)
+// Input. A value is read as a standard stream reads it. A container is read with as many values, separated by white space, as it has
+// elements, in the order of its elements (a matrix by rows): the container is written by the host, as with skepu::external, so that the
+// backends have the values afterwards.
+template<typename T, typename = std::enable_if_t<!is_skepu_io_container<T>::value>>
+istream &operator>>(istream &s, T &arg)
 {
-  s.m_stream << arg;
-  return std::forward<istream>(s);
+  s.m_stream >> arg;
+  return s;
 }
 
-template<typename Stream, typename C, REQUIRES_VALUE(is_skepu_istream<Stream>), REQUIRES_VALUE(is_skepu_io_container<C>)>
-Stream &&operator<<(Stream &&s, C &arg)
+template<typename C, REQUIRES_VALUE(is_skepu_io_container<C>)>
+istream &operator>>(istream &s, C &arg)
 {
   skepu::external("I/O", [&]{
-    s.m_stream << arg;
+    for (size_t i = 0; i < arg.size(); ++i)
+      s.m_stream >> arg.data()[i];
   }, skepu::write(arg));
-  return std::forward<istream>(s);
+  return s;
 }
 
-static ostream cout{std::cout}; // TODO
-static istream cin{std::cin}; // TODO
+// (inline: one stream for the whole program, not one for each translation unit)
+inline ostream cout{std::cout};
+inline istream cin{std::cin};
 
 }} // skepu::io

@@ -22,6 +22,13 @@ skepu_add_test(random)
 
 
 # ------------------------------------------------
+#   Stream wrappers (skepu-lib/io.hpp): cout, and cin that reads values and containers
+# ------------------------------------------------
+
+skepu_add_test(io EXCLUDE cuda hybrid_cuda)
+
+
+# ------------------------------------------------
 #   Argument parser (skepu-lib/args.hpp)
 # ------------------------------------------------
 
