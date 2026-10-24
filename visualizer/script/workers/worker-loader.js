@@ -377,11 +377,6 @@ export async function loadFiles(data, saved) {
 
         if (window.skevu?.vscode) {
             window.skevu.vscode.postMessage({
-                type: 'status_message',
-                text: result
-            });
-
-            window.skevu.vscode.postMessage({
                 type: 'trace_line_ranges',
                 text: result.traceLineRanges
             });
@@ -427,15 +422,16 @@ function _applyLoadResult(result) {
     if (State.sourceView)
         State.sourceView.rebuild(
             result.cppFiles    || {},
-            result.traceJsonRaw  || null,
+            // (the text that the code view shows: a trace that is compact is formatted; the ranges are those of that text)
+            result.traceDisplayText ?? result.traceJsonRaw ?? null,
             result.traceFilename || 'trace.json',
-            result.traceLineRanges || [],
+            result.traceDisplayRanges ?? result.traceLineRanges ?? [],
             result.rankTraces || [],
             result.mpi ? result.mpi.detail_rank : null
         );
     else
         // Fallback: keep the global in sync even when sourceView isn't ready yet.
-        (window.skevu ??= {}).traceLineRanges = result.traceLineRanges || [];
+        (window.skevu ??= {}).traceLineRanges = result.traceDisplayRanges ?? result.traceLineRanges ?? [];
 
     _setLoadingState(false);
 

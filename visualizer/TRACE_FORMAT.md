@@ -4,9 +4,14 @@ What `SKEPU_TRACING` writes (`skepu3/impl/tracing.h`, `tracing.hpp`) and what Sk
 events, in the order in which they were recorded (a trace is written when the program ends, or by `SKEPU_TRACE_FLUSH()`).
 `tests/codegen/tracing_skeletons.cpp` checks the parts of it that are described here, on every backend.
 
-A trace is a JSON array of events, or an object `{ header, data }` whose `data` is that array (the key can be anywhere in the
+A trace is a JSON array of events, or an object `{ data, header }` whose `data` is that array (the key can be anywhere in the
 object). The header has what is known about the run as a whole, in sections: `files` (the hash of each source file, below), `instances`
 (below), `mpi` and `clock` (below). SkeVU reads both forms; a trace that is an array has no header.
+
+The tracer writes the object with `data` first, one event per line, and the header last (`{"data":[\n<event>,\n...\n],"header":{...}}`).
+The file is complete after every flush, and a flush adds to it: events older than the newest 1024 are not rewritten. The tracer flushes by
+itself when many events wait. A rename (`relabel`) reaches only the newest 1024 events; a container renamed later keeps its old name in
+older events. SkeVU shows a compact trace pretty-printed in the code view.
 
 The section `files` maps the path of each source file that the events name (their `file`) to the SHA-256 of its contents, in hexadecimal, so
 that a viewer that gets the sources from somewhere else (an editor) can tell whether it has the version that was run. The hash of a file with

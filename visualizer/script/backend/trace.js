@@ -160,6 +160,106 @@ export function computeTraceLineRanges(jsonText) {
     return ranges;
 }
 
+// ── The trace as the code view shows it ──────────────────────────────────────────────────────────────────────────
+// A trace can be written compactly (the tracer writes one event on each line, or a whole trace on one line), which is not a text to read in
+// the code view. The view shows a formatted copy of the text instead, and the line ranges of the events in that copy. The formatting changes
+// white space only: every string and number is copied as it is written, so the values are the ones of the file.
+
+/** Text with lines that are longer than this on average is not read as it is: it is formatted for the view. */
+export const READABLE_AVERAGE_LINE = 120;
+/** A text longer than this is shown as it is (a copy of it, formatted, would be much larger and take a long time). */
+export const MAX_FORMATTED_CHARS = 64 * 1024 * 1024;
+/** An array of values (no objects or arrays in it) that is shorter than this is kept on one line. */
+const INLINE_ARRAY_CHARS = 100;
+
+function lineCount(text) {
+    let lines = 1;
+    for (let at = text.indexOf('\n'); at >= 0; at = text.indexOf('\n', at + 1)) lines++;
+    return lines;
+}
+
+const isSpace = code => code === 32 || code === 10 || code === 13 || code === 9;
+
+/** The index one past the string that starts at text[at] (a quote). */
+function stringEnd(text, at) {
+    for (let i = at + 1; i < text.length; i++) {
+        const code = text.charCodeAt(i);
+        if (code === 92) i++;                 // (a backslash: the next character is part of the string)
+        else if (code === 34) return i + 1;
+    }
+    throw new SyntaxError('Unterminated JSON string at offset ' + at);
+}
+
+/** If the array that starts at text[at] has only values in it (no objects or arrays) and is short, the index of its ']'; else -1. */
+function inlineArrayEnd(text, at) {
+    const limit = Math.min(text.length, at + INLINE_ARRAY_CHARS);
+    for (let i = at + 1; i < limit; i++) {
+        const code = text.charCodeAt(i);
+        if (code === 34) { i = stringEnd(text, i) - 1; if (i >= limit) return -1; }
+        else if (code === 123 || code === 91) return -1;     // { [
+        else if (code === 93) return i;                       // ]
+    }
+    return -1;
+}
+
+/** The array of values text[at .. end] on one line: ", " between the values, the values as they are written. */
+function inlineArray(text, at, end) {
+    const out = [];
+    let i = at + 1;
+    while (i < end) {
+        const code = text.charCodeAt(i);
+        if (isSpace(code) || code === 44) { i++; continue; }
+        let stop;
+        if (code === 34) stop = stringEnd(text, i);
+        else { stop = i; while (stop < end && !isSpace(text.charCodeAt(stop)) && text.charCodeAt(stop) !== 44) stop++; }
+        out.push(text.slice(i, stop));
+        i = stop;
+    }
+    return '[' + out.join(', ') + ']';
+}
+
+/** JSON text with two spaces of indentation, an object member or an array element on each line, and short arrays of values on one line. */
+export function prettyPrintJson(text) {
+    const out = [], indents = ['\n'];
+    const indent = depth => indents[depth] ??= '\n' + '  '.repeat(depth);
+    let depth = 0, i = 0;
+    const n = text.length;
+    while (i < n) {
+        const code = text.charCodeAt(i);
+        if (isSpace(code)) { i++; continue; }
+        if (code === 34) { const end = stringEnd(text, i); out.push(text.slice(i, end)); i = end; }
+        else if (code === 123 || code === 91) {                        // { [
+            let next = i + 1;
+            while (next < n && isSpace(text.charCodeAt(next))) next++;
+            const close = code === 123 ? 125 : 93;
+            if (text.charCodeAt(next) === close) { out.push(code === 123 ? '{}' : '[]'); i = next + 1; continue; }
+            if (code === 91) {
+                const end = inlineArrayEnd(text, i);
+                if (end >= 0) { out.push(inlineArray(text, i, end)); i = end + 1; continue; }
+            }
+            out.push(text[i]); depth++; out.push(indent(depth)); i++;
+        }
+        else if (code === 125 || code === 93) { if (--depth < 0) throw new SyntaxError('Unbalanced JSON at offset ' + i); out.push(indent(depth), text[i]); i++; }
+        else if (code === 44) { out.push(',', indent(depth)); i++; }
+        else if (code === 58) { out.push(': '); i++; }
+        else { let stop = i; while (stop < n && !isSpace(text.charCodeAt(stop)) && ',:]}'.indexOf(text[stop]) < 0) stop++; out.push(text.slice(i, stop)); i = stop; }
+    }
+    if (depth !== 0) throw new SyntaxError('Unbalanced JSON at the end');
+    return out.join('');
+}
+
+/**
+ * The text of a trace for the code view and the line ranges of its events in that text: the text as it is if it is readable, formatted
+ * otherwise (a text that cannot be formatted, or is very large, is shown as it is).
+ */
+export function formatTraceForDisplay(text) {
+    let shown = text;
+    if (text.length <= MAX_FORMATTED_CHARS && text.length / lineCount(text) > READABLE_AVERAGE_LINE) {
+        try { shown = prettyPrintJson(text); } catch (e) { shown = text; }
+    }
+    return { text: shown, ranges: computeTraceLineRanges(shown) };
+}
+
 // ── Utility: file path preprocessing ─────────────────────────────────────────
 // Mirrors preprocess_file_paths() in visualizer.py.
 // Strips the longest common directory prefix from all `file` fields so paths

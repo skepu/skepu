@@ -25,7 +25,7 @@
 
 import { UpdateNode } from './node.js';
 import { buildDisplayGraph } from './pipeline.js';
-import { computeTraceLineRanges as _computeTraceLineRanges, preprocessFilePaths as _preprocessFilePaths, parseTrace as _parseTrace, headerInstances } from './trace.js';
+import { computeTraceLineRanges as _computeTraceLineRanges, formatTraceForDisplay as _formatTraceForDisplay, preprocessFilePaths as _preprocessFilePaths, parseTrace as _parseTrace, headerInstances } from './trace.js';
 import { isMpiHeader as _isMpiHeader, mergeMpiTraces as _mergeMpiTraces } from './mpi.js';
 
 // ── Module-level state (mirrors Flask globals) ────────────────────────────────
@@ -38,6 +38,8 @@ let _cppFiles        = {};     // { basename: content }
 let _traceFilename   = null;
 let _traceJsonRaw    = null;   // original file text (verbatim for source pane)
 let _traceLineRanges = [];     // [[startLine, endLine], …] per top-level event
+let _traceDisplayText = null;   // the text of the trace as the code view shows it (formatted if the file is not readable), and the line ranges of the events in it
+let _traceDisplayRanges = [];
 let _snapshotFiles   = {};     // { basename: text } — extracted by main thread
 let _graph           = null;   // DirectedGraph from the most recent 'graph' call
 
@@ -163,7 +165,11 @@ function _installTraces(files) {
     _instances       = headerInstances(_traceHeader);
     _traceJsonRaw    = primary.text;
     _traceFilename   = primary.name;
-    _traceLineRanges = _computeTraceLineRanges(primary.text);
+    // (the ranges of the file are for the editor, which shows the file; the code view of the page shows a formatted copy of a trace that is compact)
+    const display = _formatTraceForDisplay(primary.text);
+    _traceDisplayText   = display.text;
+    _traceDisplayRanges = display.ranges;
+    _traceLineRanges    = display.text === primary.text ? display.ranges : _computeTraceLineRanges(primary.text);
     _graph           = null;
     _preprocessFilePaths(_eventData);
 }
@@ -174,7 +180,8 @@ function _rankTraces(parsed, primary, events) {
     const out = [];
     for (const f of parsed) {
         if (f === primary) continue;
-        const lines = _computeTraceLineRanges(f.text);
+        const shown = _formatTraceForDisplay(f.text);   // (these files are only shown, in the trace pane: the text and the ranges are those of the formatted copy)
+        const lines = shown.ranges;
         const calls = new Map(), comms = new Map();
         f.events.forEach((e, i) => {
             if (e.type === 'rank_call') calls.set(e.seq, lines[i]);
@@ -183,7 +190,7 @@ function _rankTraces(parsed, primary, events) {
         const ranges = events.map(e =>
             e.type === 'communication' ? comms.get(e.comm_seq) ?? null
             : (e.type === 'skeleton_call' || e.type === 'external') && e.seq != null ? calls.get(e.seq) ?? null : null);
-        out.push({ rank: f.header.mpi.rank, name: f.name, text: f.text, ranges });
+        out.push({ rank: f.header.mpi.rank, name: f.name, text: shown.text, ranges });
     }
     return out;
 }
@@ -212,6 +219,8 @@ async function _handleLoad({ traceJson, traceFilename = 'trace.json', traceFiles
         traceFilename:   _traceFilename,
         traceLineRanges: _traceLineRanges,
         traceJsonRaw:    _traceJsonRaw,
+        traceDisplayText:   _traceDisplayText,
+        traceDisplayRanges: _traceDisplayRanges,
         cppFiles:        _cppFiles,
         eventCount:      _eventData.length,
         header:          _traceHeader,
@@ -275,6 +284,8 @@ async function _handleLoadExample({ index, backend }) {
         traceFilename:    _traceFilename,
         traceLineRanges:  _traceLineRanges,
         traceJsonRaw:     _traceJsonRaw,
+        traceDisplayText:   _traceDisplayText,
+        traceDisplayRanges: _traceDisplayRanges,
         cppFiles:         _cppFiles,
         eventCount:       _eventData.length,
         header:           _traceHeader,

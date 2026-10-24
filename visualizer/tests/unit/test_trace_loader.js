@@ -117,6 +117,26 @@ describe('the worker loads { header, data }', () => {
         expect(loaded.eventCount).toBe(2);
         expect(loaded.header).toBeNull();
     });
+
+    it('a compact trace: the ranges of the file are for the editor, and the code view gets a formatted copy with its own ranges', async () => {
+        const text = JSON.stringify({ header: { files: {} }, data: events });   // (one line: how a tracer can write it)
+        const loaded = await call('load', { traceJson: text });
+        expect(loaded.traceJsonRaw).toBe(text);                                 // (the file as it is)
+        expect(loaded.traceLineRanges).toEqual([[1, 1], [1, 1]]);               // (its events are on the one line)
+        expect(loaded.traceDisplayText).not.toBe(text);
+        expect(JSON.parse(loaded.traceDisplayText)).toEqual(JSON.parse(text));
+        const shown = loaded.traceDisplayText.split('\n');
+        expect(loaded.traceDisplayRanges).toHaveLength(2);
+        expect(shown.slice(loaded.traceDisplayRanges[1][0] - 1, loaded.traceDisplayRanges[1][1]).join('\n')).toContain('"skeleton_call"');
+        expect(loaded.traceDisplayRanges[0][1]).toBeLessThan(loaded.traceDisplayRanges[1][0]);
+    });
+
+    it('a readable trace: the code view shows the file as it is, with the ranges of the file', async () => {
+        const text = JSON.stringify({ header: { files: {} }, data: events }, null, 4);
+        const loaded = await call('load', { traceJson: text });
+        expect(loaded.traceDisplayText).toBe(text);
+        expect(loaded.traceDisplayRanges).toEqual(loaded.traceLineRanges);
+    });
 });
 
 describe('the examples', () => {
