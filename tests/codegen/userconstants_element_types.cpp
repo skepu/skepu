@@ -245,7 +245,7 @@ TEST_CASE("userconstants: User constants of type double")
 
 	skel_map(y, x);
 	y.updateHost();
-	for (size_t k = 0; k < n; ++k) REQUIRE(y(k) == (double)k * GAIN_D + SHIFT_D);
+	for (size_t k = 0; k < n; ++k) REQUIRE(y(k) == Approx((double)k * GAIN_D + SHIFT_D).epsilon(1e-12).margin(1e-12));
 
 	double expected = 0;
 	for (size_t k = 0; k < n; ++k) expected += (double)k * (double)k + SHIFT_D;
@@ -263,8 +263,10 @@ TEST_CASE("userconstants: User constants in a Map that is a template: float and 
 	fr.updateHost(); dr.updateHost();
 	for (size_t k = 0; k < n; ++k)
 	{
-		REQUIRE(fr(k) == (float)k * (float)GAIN_D + (float)SHIFT_D);
-		REQUIRE(dr(k) == (double)k * GAIN_D + SHIFT_D);
+		// (a tolerance: 1/3 is not exact, and the compilers of the host and of the kernels may or may not fuse the multiplication and the addition,
+		// which differ in the last bit: -0.5f was not equal to -0.5f)
+		REQUIRE(fr(k) == Approx((float)k * (float)GAIN_D + (float)SHIFT_D).epsilon(1e-5).margin(1e-6));
+		REQUIRE(dr(k) == Approx((double)k * GAIN_D + SHIFT_D).epsilon(1e-12).margin(1e-12));
 	}
 }
 }

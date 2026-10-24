@@ -163,7 +163,10 @@ namespace skepu
 
 				const size_t size = arg.size();
 
-				// TODO: check size
+				// The result has an element for each row (row-wise) or column (column-wise), as in the sequential skeleton: the backends write
+				// all of them
+				if (res.size() != (this->m_mode == ReduceMode::ColWise ? arg.total_cols() : arg.total_rows()))
+					SKEPU_ERROR("Reduce: Non-matching container sizes");
 
 				this->selectBackend(size);
 

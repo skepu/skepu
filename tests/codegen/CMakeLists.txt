@@ -257,3 +257,28 @@ add_test(NAME tracing_scalar_values COMMAND tracing_scalar_values_test)
 set_tests_properties(tracing_scalar_values PROPERTIES
 	ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_scalar_values.json")
 
+
+# ------------------------------------------------
+#   What skepu-tool refuses
+#   (run the tool on a source and check its status and its message; needs the tool to be built)
+# ------------------------------------------------
+
+list(JOIN SKEPU_TOOL_SYSTEM_INCLUDE_FLAGS "|" _tool_error_flags)
+set(_tool_error_flags "${_tool_error_flags}|-I|${CMAKE_SOURCE_DIR}/skepu-headers/src")
+
+function(skepu_add_tool_error_test name source expected)
+	add_test(NAME ${name}
+		COMMAND ${CMAKE_COMMAND}
+			-DTOOL=${SKEPU_EXECUTABLE}
+			-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}/tool_errors/${source}
+			-DOUT=${CMAKE_CURRENT_BINARY_DIR}/${name}_output
+			-DFLAGS=${_tool_error_flags}
+			-DEXPECT=${expected}
+			-P ${CMAKE_CURRENT_SOURCE_DIR}/expect_tool_error.cmake)
+endfunction()
+
+# A user constant is put into the kernels from its initializer: it must be constexpr, and have one
+skepu_add_tool_error_test(tool_userconstant_not_constexpr userconstant_not_constexpr.cpp "must be declared constexpr")
+skepu_add_tool_error_test(tool_userconstant_no_initializer userconstant_no_initializer.cpp "must be declared constexpr")
+# (and one that is as it must be is accepted)
+skepu_add_tool_error_test(tool_userconstant_valid userconstant_valid.cpp "")

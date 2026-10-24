@@ -403,8 +403,18 @@ bool SkePUASTVisitor::VisitVarDecl(clang::VarDecl *d)
 	else if (d->hasAttr<clang::SkepuUserConstantAttr>())
 	{
 		SkePULog() << "Found user constant: " << d->getNameAsString() << "\n";
+		// The constant is put into the kernels from its initializer, so it must be one that the compiler knows: constexpr, with an initializer.
+		// (A declaration without one, or one that is not constexpr, was accepted: the tool crashed or the kernels got a value that the
+		// program may change.) The language server, which shares this visitor, must not end: it does not register the constant.
 		if (!(d->isConstexpr() && d->hasDefinition() == clang::VarDecl::Definition))
-			SkePULog() << "Invalid!\n"; // TODO: diagnostic
+		{
+			#ifndef SKEPU_LSP
+				SkePUAbort("The user constant " + d->getNameAsString() + " must be declared constexpr and have an initializer: [[skepu::userconstant]] constexpr T NAME = value;");
+			#else
+				SkePULog() << "Invalid user constant (it must be constexpr, with an initializer): " << d->getNameAsString() << "\n";
+				return RecursiveASTVisitor<SkePUASTVisitor>::VisitVarDecl(d);
+			#endif
+		}
 		UserConstants[d] = new UserConstant(d);
 	}
 

@@ -515,7 +515,9 @@ namespace skepu
 					}
 				}
 				else
-					assert(false);
+				{
+					SKEPU_ERROR("DeviceMemPointer_CU: an overlap of two copies that is none of the cases that are handled (internal error)");
+				}
 			}
 		}
 		
@@ -585,14 +587,18 @@ namespace skepu
 
 #ifdef USE_PINNED_MEMORY
 				if(m_usePitch)
-					assert(false); /*! dont support yet. TBA in future */
+				{
+					SKEPU_ERROR("Updating a pitched device allocation from other copies is not supported");
+				}
 				else if(updateStruct[i].srcIsHost || updateStruct[i].srcDevId == m_deviceID)
 					CHECK_CUDA_ERROR(cudaMemcpyAsync(m_deviceDataPointer + updateStruct[i].dstOffset, updateStruct[i].src + updateStruct[i].srcOffset, sizeVec, memKind, (m_dev->m_streams[streamID])))
 						else
 							CHECK_CUDA_ERROR(cudaMemcpyPeer(m_deviceDataPointer + updateStruct[i].dstOffset, m_deviceID, updateStruct[i].src + updateStruct[i].srcOffset, updateStruct[i].srcDevId, sizeVec));
 #else
-				if(m_usePitch) /*! dont support yet. TBA in future */
-					assert(false);
+				if(m_usePitch)
+				{
+					SKEPU_ERROR("Updating a pitched device allocation from other copies is not supported");
+				}
 				else if(updateStruct[i].srcIsHost || updateStruct[i].srcDevId == m_deviceID)
 					CHECK_CUDA_ERROR(cudaMemcpy(m_deviceDataPointer + updateStruct[i].dstOffset, updateStruct[i].src + updateStruct[i].srcOffset, sizeVec, memKind))
 						else
