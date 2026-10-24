@@ -4,6 +4,8 @@
 #include <sstream>
 #include <fstream>
 #include <functional>
+#include <map>
+#include <set>
 #include <unordered_set>
 #include <unordered_map>
 #include <utility>
@@ -36,6 +38,7 @@ extern llvm::cl::opt<bool> DoNotGenLineDirectives;
 extern llvm::cl::opt<std::string> ResultName;
 extern llvm::cl::opt<std::string> ResultDir;
 
+extern llvm::cl::opt<bool> NoTraceRegions;
 extern llvm::cl::opt<bool> Verbose;
 
 extern std::string inputFileName;
@@ -57,6 +60,17 @@ struct InlineInstance
 	unsigned callLine;
 };
 extern std::vector<InlineInstance> InlineInstances;
+
+// A function of the program (defined in the file) that can get a trace region of its own, and what decides if it does: a function
+// that makes events (it uses skeletons or containers, or calls a function of SkePU), or calls such a function that is in the file
+// (see PlantAutoRegions). A function that is called from a user function is never one.
+struct ScopeCandidate
+{
+	const clang::FunctionDecl *definition;
+	bool direct = false;                                 // makes events itself
+	std::set<const clang::FunctionDecl *> callees;       // the functions it refers to (normalized, see NormalizedFunction)
+};
+extern std::map<const clang::FunctionDecl *, ScopeCandidate> ScopeCandidates;
 
 // User functions, name maps to AST entry and indexed indicator
 extern std::unordered_map<const clang::TypeDecl*, UserType*> UserTypes;

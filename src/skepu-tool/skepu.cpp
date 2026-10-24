@@ -24,6 +24,7 @@ llvm::cl::opt<bool> GenOMP("openmp", llvm::cl::desc("Generate OpenMP backend"), 
 llvm::cl::opt<bool> GenCL("opencl",  llvm::cl::desc("Generate OpenCL backend"), llvm::cl::cat(SkePUCategory));
 llvm::cl::opt<bool> GenMPI("mpi", llvm::cl::desc("Generate code for the MPI backend (distributed containers over the other backends)"), llvm::cl::cat(SkePUCategory));
 
+llvm::cl::opt<bool> NoTraceRegions("no-trace-regions", llvm::cl::desc("Do not mark the functions of the program as trace regions (SKEPU_TRACE_AUTO_REGION)"), llvm::cl::cat(SkePUCategory));
 llvm::cl::opt<bool> Verbose("verbose",  llvm::cl::desc("Verbose logging printout"), llvm::cl::cat(SkePUCategory));
 llvm::cl::opt<bool> Silent("silent",  llvm::cl::desc("Disable normal printouts"), llvm::cl::cat(SkePUCategory));
 llvm::cl::opt<bool> NoAddExtension("override-extension",  llvm::cl::desc("Do not automatically add file extension to output file (good for headers)"), llvm::cl::cat(SkePUCategory));
@@ -44,6 +45,7 @@ std::string inputFileName;
 
 // User functions, name maps to AST entry and indexed indicator
 std::unordered_map<const clang::FunctionDecl*, UserFunction*> UserFunctions;
+std::map<const clang::FunctionDecl *, ScopeCandidate> ScopeCandidates;
 
 // User functions, name maps to AST entry and indexed indicator
 std::unordered_map<const clang::TypeDecl*, UserType*> UserTypes;
@@ -64,6 +66,7 @@ void clearGlobals()
 	for (auto& pair : UserFunctions)
 		delete pair.second;
 	UserFunctions.clear();
+	ScopeCandidates.clear();
 
 	for (auto& pair : UserTypes)
 		delete pair.second;
@@ -304,6 +307,9 @@ public:
 
 			for (const InlineInstance &instance : InlineInstances)
 				HandleInlineInstance(instance);
+
+			if (!NoTraceRegions)
+				PlantAutoRegions();
 
 			namespace lm = library_markers;
 			libraryFileHandlerHelper(lm::foundBlas, lm::blasBegin, lm::blasEnd, lm::blasBegin, "BLAS");

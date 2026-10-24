@@ -103,6 +103,8 @@ namespace skepu
 #define SKEPU_TRACE_CALL(...) skepu::tracing::tracer().call(__VA_ARGS__)
 #define SKEPU_TRACE_EXTERNAL(...) skepu::tracing::tracer().external(__VA_ARGS__)
 #define SKEPU_TRACE_SCOPE(label) skepu::tracing::Scope scope(label)
+// (what skepu-tool adds at the start of the functions of a program, see AutoRegion)
+#define SKEPU_TRACE_AUTO_REGION(label, file, line) skepu::tracing::AutoRegion skepu_trace_auto_region(label, file, line)
 #define SKEPU_CALL_SITE_PARAM , const char *skepu_site_file = __builtin_FILE(), int skepu_site_line = __builtin_LINE()
 #define SKEPU_CALL_SITE_PARAM_ONLY const char *skepu_site_file = __builtin_FILE(), int skepu_site_line = __builtin_LINE()
 #define SKEPU_TRACE_API(label) skepu::tracing::ApiScope skepu_api_scope(label, skepu_site_file, skepu_site_line)
@@ -131,6 +133,7 @@ namespace skepu
 #define SKEPU_TRACE_CALL(...)
 #define SKEPU_TRACE_EXTERNAL(...)
 #define SKEPU_TRACE_SCOPE(label)
+#define SKEPU_TRACE_AUTO_REGION(label, file, line)
 #define SKEPU_CALL_SITE_PARAM
 #define SKEPU_CALL_SITE_PARAM_ONLY
 #define SKEPU_TRACE_API(label)
@@ -236,6 +239,17 @@ namespace skepu
 		};
 
 #ifdef SKEPU_TRACING
+		// The region of a call of a function of the program: skepu-tool puts SKEPU_TRACE_AUTO_REGION at the start of the functions that can
+		// make events (they use skeletons or containers, or call such functions), so that the trace has the structure of the program without
+		// regions that the programmer has marked. A region that is not needed is not in the trace: see Tracer::beginAutoRegion.
+		struct AutoRegion
+		{
+			AutoRegion(const char *label, const char *file, int line);
+			~AutoRegion();
+			AutoRegion(const AutoRegion &) = delete;
+			AutoRegion &operator=(const AutoRegion &) = delete;
+		};
+
 		// The region of a call of a function of the SkePU libraries (skepu-lib: dnn, blas, randomize), at the place of the call in the
 		// program: the library function takes its caller's file and line as default arguments (SKEPU_CALL_SITE_PARAM), and its
 		// first statement is SKEPU_TRACE_API("name"). A call of the library from another library function with the same name (an
@@ -279,12 +293,7 @@ namespace skepu
 			Field<std::decay_t<V>> operator=(V &&value) const { return {this->name, std::forward<V>(value), this->condition}; }
 		};
 
-		// A value that is worked out when the event is replayed, from the state of the tracer (Key::DEPTH = at_replay([this]{ ... })),
-		// and something that is done then, in the order of the fields, that is not a field (then([this]{ ... }))
-		template<typename F>
-		struct AtReplay { F get; };
-		template<typename F>
-		AtReplay<std::decay_t<F>> at_replay(F &&function) { return {std::forward<F>(function)}; }
+		// Something that is done when the event is replayed, in the order of the fields, that is not a field (then([this]{ ... }))
 		template<typename F>
 		struct [[nodiscard]] Action { F run; };
 		template<typename F>
@@ -446,6 +455,9 @@ namespace skepu
 			// (with an explicit place, for programs that are not C++: SkePY says where in its source)
 			void beginRegion(std::string const& label, std::string const& file, int line);
 			void endRegion();
+			// A region that skepu-tool has marked (see AutoRegion): it is in the trace only if it has two events or more. The events of one that has
+			// none or one are not changed, except that they are in the region around it
+			void beginAutoRegion(std::string const& label, std::string const& file, int line);
 			void region(std::string const& label,
 				std::function<void(void)> &&work_func SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM);
 
@@ -494,9 +506,26 @@ namespace skepu
 			// stack of the thread that recorded it.
 			struct Capture { std::thread::id thread; std::function<void()> work; };
 			std::vector<Capture> m_captures;
-			std::map<std::thread::id, std::stack<std::string>> m_region_stacks;
+			// The regions that are open on a thread, innermost last. A region that skepu-tool has marked is not written until it has a second event
+			// (a committed region); one that is not committed holds the event that it has had (if any). The ones that are not committed are the
+			// innermost ones. An event is in the innermost committed region.
+			struct RegionEntry
+			{
+				std::string label;
+				bool committed;
+				nlohmann::json begin;      // the event of the region, when it is not committed
+				nlohmann::json buffered;   // the first event in the region, null if none (or if it is committed)
+				int events = 0;
+			};
+			std::map<std::thread::id, std::vector<RegionEntry>> m_region_stacks;
 			std::thread::id m_replaying_thread;
-			std::stack<std::string> &m_regions() { return this->m_region_stacks[this->m_replaying_thread]; }
+			std::vector<RegionEntry> &m_regions() { return this->m_region_stacks[this->m_replaying_thread]; }
+			void replayBeginRegion(std::string label, std::string file, int line, unsigned long time, bool automatic);
+			void replayEndRegion();
+			void submit(nlohmann::json entry);   // an event in the region it is in
+			void commitRegions();                // writes the regions that are not, from the outermost, and the events that they hold
+			void settleRegions();                // at the end of the program: the regions that are still open and hold an event
+
 #endif
 			std::string m_file_name;
 		};

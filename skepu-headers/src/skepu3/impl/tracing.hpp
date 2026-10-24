@@ -177,6 +177,11 @@ namespace skepu
 		inline Tracer::~Tracer()
 		{
 			this->flush();
+#ifdef SKEPU_TRACING
+			// (a region of the program that did not end, and has an event that waits)
+			this->settleRegions();
+			this->writeFile();
+#endif
 		}
 
 		// The files that the events name, with the hash of the contents of each (SHA-256 of the bytes), in header.files: what a viewer that reads
@@ -316,17 +321,25 @@ namespace skepu
 			// A skeleton instance can be named again and again, for example by the layers of a network that share one: only the events
 			// before its first call, the builds of its kernels, get the name; its calls keep the name that it had at the call)
 			auto capture = [=, this]{
-			for (auto it = this->m_window.rbegin(); it != this->m_window.rend(); ++it)
+			// (true if the event ends the search)
+			auto rename = [&](nlohmann::json &event)
 			{
-				auto object = it->find(Schema::Keys::OBJECT_ID);
-				if (object == it->end() || *object != id || !it->contains(Schema::Keys::LABEL))
-					continue;
-				if (instance && (*it)[Schema::Keys::TYPE] == Schema::Values::Types::CALL)
+				auto object = event.find(Schema::Keys::OBJECT_ID);
+				if (object == event.end() || *object != id || !event.contains(Schema::Keys::LABEL))
+					return false;
+				if (instance && event[Schema::Keys::TYPE] == Schema::Values::Types::CALL)
+					return true;
+				event[Schema::Keys::LABEL] = label;
+				return event[Schema::Keys::TYPE] == Schema::Values::Types::ALLOCATION;
+			};
+			// (the events that wait in the regions that are not written are the newest)
+			for (auto &stack : this->m_region_stacks)
+				for (auto entry = stack.second.rbegin(); entry != stack.second.rend(); ++entry)
+					if (!entry->buffered.is_null() && rename(entry->buffered))
+						return;
+			for (auto it = this->m_window.rbegin(); it != this->m_window.rend(); ++it)
+				if (rename(*it))
 					break;
-				(*it)[Schema::Keys::LABEL] = label;
-				if ((*it)[Schema::Keys::TYPE] == Schema::Values::Types::ALLOCATION)
-					break;
-			}
 			}; this->push_capture(std::move(capture), CaptureKind::Raw);
 #endif
 		}
@@ -521,13 +534,6 @@ namespace skepu
 				entry[field.key] = field.value;
 		}
 
-		template<typename F>
-		inline void write_part(nlohmann::json &entry, const Field<AtReplay<F>> &field)
-		{
-			if (field.present)
-				entry[field.key] = field.value.get();
-		}
-
 		// The fields of a JSON object, for the ones that an event gets from outside (the parameters of a skeleton): merge(object)
 		struct Merge { nlohmann::json fields; };
 		inline Merge merge(nlohmann::json fields) { return {std::move(fields)}; }
@@ -551,10 +557,8 @@ namespace skepu
 			this->push_capture([this, type = &type, body = std::move(body)]{
 				nlohmann::json entry;
 				entry[Schema::Keys::TYPE] = *type;
-				if (!this->m_regions().empty())
-					entry[Schema::Keys::REGION] = this->m_regions().top();
 				body(entry);
-				this->emit(std::move(entry));
+				this->submit(std::move(entry));
 			}, kind);
 		}
 
@@ -589,12 +593,8 @@ namespace skepu
 #ifdef SKEPU_TRACING
 		inline void Tracer::raw(nlohmann::json entry)
 		{
-			const bool lean = this->m_lean;
 			auto capture = [=, this]{
-			nlohmann::json e = entry;
-			if (!lean && !this->m_regions().empty())
-				e[Schema::Keys::REGION] = this->m_regions().top();
-			this->emit(std::move(e));
+			this->submit(entry);
 			}; this->push_capture(std::move(capture), CaptureKind::Raw);
 		}
 #endif
@@ -886,25 +886,117 @@ namespace skepu
 		{
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
+			this->push_capture([=, this]{ this->replayBeginRegion(label, file, line, now, false); }, CaptureKind::Region);
+#endif
+		}
 
-			this->record(CaptureKind::Region, Type::REGION,
-				Key::LABEL = label,
-				Key::TIME = now,
-				Key::FILE = file,
-				Key::LINE = line,
-				Key::DEPTH = at_replay([this]{ return this->m_regions().size() + 1; }),
-				then([this, label]{ this->m_regions().push(label); }));   // (after the depth: the event itself is in the region around it)
+		inline void Tracer::beginAutoRegion(std::string const& label, std::string const& file, int line)
+		{
+#ifdef SKEPU_TRACING
+			unsigned long now = timestamp_now();
+			this->push_capture([=, this]{ this->replayBeginRegion(label, file, line, now, true); }, CaptureKind::Region);
 #endif
 		}
 
 		inline void Tracer::endRegion()
 		{
 #ifdef SKEPU_TRACING
-			auto capture = [=, this]{
-			this->m_regions().pop();
-			}; this->push_capture(std::move(capture), CaptureKind::Region);
+			this->push_capture([this]{ this->replayEndRegion(); }, CaptureKind::Region);
 #endif
 		}
+
+#ifdef SKEPU_TRACING
+		inline void Tracer::replayBeginRegion(std::string label, std::string file, int line, unsigned long time, bool automatic)
+		{
+			nlohmann::json entry;
+			entry[Schema::Keys::TYPE]  = Schema::Values::Types::REGION;
+			entry[Schema::Keys::LABEL] = label;
+			entry[Schema::Keys::TIME]  = time;
+			entry[Schema::Keys::FILE]  = file;
+			entry[Schema::Keys::LINE]  = line;
+			if (automatic)
+			{
+				this->m_regions().push_back(RegionEntry{std::move(label), false, std::move(entry), nullptr});
+				return;
+			}
+			// (the regions around a region that is written are written: the trace has them first)
+			this->commitRegions();
+			auto &stack = this->m_regions();
+			entry[Schema::Keys::DEPTH] = stack.size() + 1;
+			if (!stack.empty())
+				entry[Schema::Keys::REGION] = stack.back().label;
+			this->emit(std::move(entry));
+			stack.push_back(RegionEntry{std::move(label), true, nullptr, nullptr});
+		}
+
+		inline void Tracer::replayEndRegion()
+		{
+			auto &stack = this->m_regions();
+			if (stack.empty())
+				return;
+			RegionEntry region = std::move(stack.back());
+			stack.pop_back();
+			// (the one event of a region that is not written is in the region around it)
+			if (!region.committed && !region.buffered.is_null())
+				this->submit(std::move(region.buffered));
+		}
+
+		inline void Tracer::submit(nlohmann::json entry)
+		{
+			auto &stack = this->m_regions();
+			if (!stack.empty() && !stack.back().committed)
+			{
+				RegionEntry &region = stack.back();
+				if (region.events++ == 0)
+				{
+					region.buffered = std::move(entry);
+					return;
+				}
+				this->commitRegions();
+			}
+			if (!stack.empty())
+				entry[Schema::Keys::REGION] = stack.back().label;
+			this->emit(std::move(entry));
+		}
+
+		inline void Tracer::commitRegions()
+		{
+			auto &stack = this->m_regions();
+			for (size_t i = 0; i < stack.size(); ++i)
+			{
+				RegionEntry &region = stack[i];
+				if (region.committed)
+					continue;
+				region.begin[Schema::Keys::DEPTH] = i + 1;
+				if (i > 0)
+					region.begin[Schema::Keys::REGION] = stack[i - 1].label;
+				this->emit(std::move(region.begin));
+				region.begin = nullptr;
+				region.committed = true;
+				if (!region.buffered.is_null())
+				{
+					nlohmann::json event = std::move(region.buffered);
+					region.buffered = nullptr;
+					event[Schema::Keys::REGION] = region.label;
+					this->emit(std::move(event));
+				}
+			}
+		}
+
+		inline void Tracer::settleRegions()
+		{
+			for (auto &stack : this->m_region_stacks)
+			{
+				this->m_replaying_thread = stack.first;
+				for (const RegionEntry &region : stack.second)
+					if (!region.committed && !region.buffered.is_null())
+					{
+						this->commitRegions();
+						break;
+					}
+			}
+		}
+#endif
 
 		inline void Tracer::region(std::string const& label, std::function<void(void)> &&work_func SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER)
 		{
@@ -987,6 +1079,16 @@ namespace skepu
 			if (!m_active)
 				return;
 			detail::api_calls().pop_back();
+			tracer().endRegion();
+		}
+
+		inline AutoRegion::AutoRegion(const char *label, const char *file, int line)
+		{
+			tracer().beginAutoRegion(label, file, line);
+		}
+
+		inline AutoRegion::~AutoRegion()
+		{
 			tracer().endRegion();
 		}
 

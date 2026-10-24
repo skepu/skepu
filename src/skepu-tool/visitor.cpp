@@ -476,6 +476,179 @@ bool SkePUASTVisitor::VisitCompoundStmt(clang::CompoundStmt *block)
 	return true;
 }
 
+#ifndef SKEPU_LSP
+// The functions of the program that get a trace region, and why (PlantAutoRegions). A function is known by the declaration that is the same for
+// all its declarations and, for a template, for the pattern.
+static const clang::FunctionDecl *NormalizedFunction(const clang::FunctionDecl *f)
+{
+	if (const clang::FunctionDecl *pattern = f->getTemplateInstantiationPattern())
+		f = pattern;
+	return f->getCanonicalDecl();
+}
+
+static void MarkMakesEvents(const clang::FunctionDecl *f)
+{
+	if (!f)
+		return;
+	auto candidate = ScopeCandidates.find(NormalizedFunction(f));
+	if (candidate != ScopeCandidates.end())
+		candidate->second.direct = true;
+}
+
+// Does a value of the type hold a SkePU container (also behind references and pointers)?
+static bool MentionsContainer(clang::QualType type)
+{
+	for (;;)
+	{
+		type = type.getNonReferenceType();
+		if (type->isPointerType())
+			type = type->getPointeeType();
+		else
+			break;
+	}
+	return IsContainerType(type);
+}
+#endif
+
+// A function that can have a region: a function of the program, defined in the file that is being processed, that is not main (the
+// program itself), a constructor, a destructor, a constexpr function or a function of a lambda
+bool SkePUASTVisitor::VisitFunctionDecl(clang::FunctionDecl *f)
+{
+	#ifndef SKEPU_LSP
+		clang::SourceManager &SM = this->Context->getSourceManager();
+		auto *body = clang::dyn_cast_or_null<clang::CompoundStmt>(f->getBody());
+		if (!f->isThisDeclarationADefinition() || !body || f->isMain() || f->isDefaulted() || f->isDeleted() || f->isConstexpr() || f->isConsteval()
+			|| clang::isa<clang::CXXConstructorDecl>(f) || clang::isa<clang::CXXDestructorDecl>(f)
+			|| f->getBeginLoc().isMacroID() || body->getLBracLoc().isMacroID() || !SM.isWrittenInMainFile(body->getLBracLoc()))
+			return true;
+		if (auto *method = clang::dyn_cast<clang::CXXMethodDecl>(f))
+			if (method->getParent()->isLambda())
+				return true;
+
+		ScopeCandidate &candidate = ScopeCandidates[NormalizedFunction(f)];
+		candidate.definition = f;
+		for (const clang::ParmVarDecl *parameter : f->parameters())
+			if (MentionsContainer(parameter->getType()))
+				candidate.direct = true;
+	#endif
+	return true;
+}
+
+// A function that refers to a container, or to a function of SkePU (they make events), or to another function: an edge of the call graph
+bool SkePUASTVisitor::VisitDeclRefExpr(clang::DeclRefExpr *ref)
+{
+	#ifndef SKEPU_LSP
+		if (FunctionStack.empty())
+			return true;
+		const clang::FunctionDecl *current = FunctionStack.back();
+		auto candidate = ScopeCandidates.find(NormalizedFunction(current));
+		if (candidate == ScopeCandidates.end())
+			return true;
+		if (auto *function = clang::dyn_cast<clang::FunctionDecl>(ref->getDecl()))
+		{
+			if (function->getQualifiedNameAsString().compare(0, 7, "skepu::") == 0)
+				candidate->second.direct = true;
+			else
+				candidate->second.callees.insert(NormalizedFunction(function));
+		}
+		else if (auto *variable = clang::dyn_cast<clang::VarDecl>(ref->getDecl()))
+		{
+			if (MentionsContainer(variable->getType()))
+				candidate->second.direct = true;
+		}
+	#endif
+	return true;
+}
+
+bool SkePUASTVisitor::VisitMemberExpr(clang::MemberExpr *member)
+{
+	#ifndef SKEPU_LSP
+		if (FunctionStack.empty())
+			return true;
+		auto candidate = ScopeCandidates.find(NormalizedFunction(FunctionStack.back()));
+		if (candidate == ScopeCandidates.end())
+			return true;
+		if (auto *function = clang::dyn_cast<clang::FunctionDecl>(member->getMemberDecl()))
+			candidate->second.callees.insert(NormalizedFunction(function));
+	#endif
+	return true;
+}
+
+// A container that is made without a variable
+bool SkePUASTVisitor::VisitCXXConstructExpr(clang::CXXConstructExpr *construct)
+{
+	#ifndef SKEPU_LSP
+		if (!FunctionStack.empty() && IsContainerType(construct->getType()))
+			MarkMakesEvents(FunctionStack.back());
+	#endif
+	return true;
+}
+
+#ifndef SKEPU_LSP
+static std::string CStringLiteral(const std::string &text)
+{
+	std::string result;
+	for (char c : text)
+	{
+		if (c == '"' || c == '\\')
+			result += '\\';
+		result += c;
+	}
+	return result;
+}
+
+void PlantAutoRegions()
+{
+	clang::SourceManager &SM = GlobalRewriter.getSourceMgr();
+
+	// The functions that make events, and the functions in the file that call them
+	std::set<const clang::FunctionDecl *> makesEvents;
+	for (auto &entry : ScopeCandidates)
+		if (entry.second.direct)
+			makesEvents.insert(entry.first);
+	for (bool changed = true; changed;)
+	{
+		changed = false;
+		for (auto &entry : ScopeCandidates)
+			if (!makesEvents.count(entry.first))
+				for (const clang::FunctionDecl *callee : entry.second.callees)
+					if (makesEvents.count(callee))
+					{
+						makesEvents.insert(entry.first);
+						changed = true;
+						break;
+					}
+	}
+
+	// (a function that a user function calls runs once for each element: it has no region)
+	std::set<const clang::FunctionDecl *> userFunctions;
+	for (auto &entry : UserFunctions)
+		userFunctions.insert(NormalizedFunction(entry.first));
+
+	// (in the order of the source: the places of the edits do not depend on the addresses of the declarations)
+	std::vector<const ScopeCandidate *> planted;
+	for (const clang::FunctionDecl *function : makesEvents)
+		if (!userFunctions.count(function))
+			planted.push_back(&ScopeCandidates[function]);
+	std::sort(planted.begin(), planted.end(), [&](const ScopeCandidate *a, const ScopeCandidate *b)
+	{
+		return SM.isBeforeInTranslationUnit(a->definition->getBeginLoc(), b->definition->getBeginLoc());
+	});
+
+	for (const ScopeCandidate *candidate : planted)
+	{
+		const clang::FunctionDecl *f = candidate->definition;
+		auto *body = clang::dyn_cast<clang::CompoundStmt>(f->getBody());
+		const std::string file = SM.getFilename(SM.getSpellingLoc(f->getLocation())).str();
+		const unsigned line = SM.getSpellingLineNumber(f->getLocation());
+		// (on the line of the brace: the line numbers stay)
+		GlobalRewriter.InsertTextAfterToken(body->getLBracLoc(), " SKEPU_TRACE_AUTO_REGION(\"" + CStringLiteral(f->getQualifiedNameAsString())
+			+ "\", \"" + CStringLiteral(file) + "\", " + std::to_string(line) + ");");
+		SkePULog() << "Trace region for " << f->getQualifiedNameAsString() << "\n";
+	}
+}
+#endif
+
 // The factory call of an anonymous skeleton instance, if the object of a call is one: the factory call itself or
 // a chain of settings (member calls that return the skeleton) on it. Otherwise nullptr.
 static clang::CallExpr *findInlineFactory(clang::Expr *e)
@@ -543,6 +716,7 @@ bool SkePUASTVisitor::VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr *c)
 				instance.callFile = file;
 				instance.callLine = line;
 				InlineInstances.push_back(instance);
+				MarkMakesEvents(f);
 				SkePULog() << "Found anonymous instance " << instance.name << " at " << file << ":" << line << "\n";
 
 				return RecursiveASTVisitor<SkePUASTVisitor>::VisitCallExpr(c);
@@ -557,6 +731,7 @@ bool SkePUASTVisitor::VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr *c)
 				if (type.find(skeletonName) != std::string::npos)
 				{
 					SkePULog() << "Found skeleton call " << type << "\n";
+					MarkMakesEvents(FunctionStack.empty() ? nullptr : FunctionStack.back());
 
 					if (clang::isa<clang::ImplicitCastExpr>(arg))
 						arg = clang::dyn_cast<clang::ImplicitCastExpr>(arg)->getSubExpr();

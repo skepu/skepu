@@ -24,6 +24,12 @@ happens at a moment has `time`. Every event has the `region` it happened in, if 
 the CPU part of a hybrid call, has none), and most have `label`, `file` and `line` (`file` is empty and `line` is 0
 for the host code that is not compiled as C++20, which has no `std::source_location`).
 
+skepu-tool puts a region at the start of the functions of the program that make events (they use skeletons or containers, or call such
+functions; not `main`, constructors, constexpr functions, or the functions that a user function calls), so the nesting of the events
+follows the calls of the program (`-no-trace-regions` turns it off). Such a region is in the trace only if it has two events or more. One that
+has none is not there; the event of one that has one is in the region around it. A region that is in the trace has the regions around it in the
+trace too, also if it holds nothing else. Regions that the program marks (`SKEPU_TRACE_SCOPE`, the library calls) are always there.
+
 ## Containers
 
 `allocation` and `deallocation` (`object_id`, `label`, `time`): a Vector, Matrix or Tensor gets an id when it is constructed and

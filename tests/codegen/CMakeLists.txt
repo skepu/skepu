@@ -87,6 +87,18 @@ add_test(NAME tracing_streaming_trace COMMAND ${CMAKE_COMMAND}
 	-P ${CMAKE_CURRENT_LIST_DIR}/check_trace.cmake)
 set_tests_properties(tracing_streaming_trace PROPERTIES FIXTURES_REQUIRED tracing_streaming_run)
 
+# Regions that skepu-tool marks are in the trace only if they have two events or more
+skepu_add_executable(tracing_auto_regions_test SKEPUSRC tracing_auto_regions.cpp)
+target_compile_definitions(tracing_auto_regions_test PRIVATE SKEPU_TRACING)
+add_test(NAME tracing_auto_regions COMMAND tracing_auto_regions_test)
+set_tests_properties(tracing_auto_regions PROPERTIES ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_auto_regions.json")
+
+# skepu-tool marks the functions of the program that make events as regions
+skepu_add_executable(tracing_auto_functions_test SKEPUSRC tracing_auto_functions.cpp)
+target_compile_definitions(tracing_auto_functions_test PRIVATE SKEPU_TRACING)
+add_test(NAME tracing_auto_functions COMMAND tracing_auto_functions_test)
+set_tests_properties(tracing_auto_functions PROPERTIES ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_auto_functions.json")
+
 # ------------------------------------------------
 #   User function in included file
 # ------------------------------------------------

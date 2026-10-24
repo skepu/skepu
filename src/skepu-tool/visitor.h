@@ -14,6 +14,10 @@ UserFunction *HandleUserFunction(clang::FunctionDecl *f);
 const Skeleton::Type* FactoryCallSkeleton(clang::CallExpr *CExpr);
 bool HandleInlineInstance(const InlineInstance &instance);
 UserType *HandleUserType(const clang::CXXRecordDecl *t);
+#ifndef SKEPU_LSP
+// Marks the functions of the program that make events (or call such functions) with a trace region: SKEPU_TRACE_AUTO_REGION at the start of the body
+void PlantAutoRegions();
+#endif
 
 #ifdef SKEPU_LSP
 Skeleton* 
@@ -35,6 +39,11 @@ public:
 
 	bool VisitVarDecl(clang::VarDecl *d);
 	bool VisitCompoundStmt(clang::CompoundStmt *block);
+	// What decides which functions get a trace region (PlantAutoRegions)
+	bool VisitFunctionDecl(clang::FunctionDecl *f);
+	bool VisitDeclRefExpr(clang::DeclRefExpr *ref);
+	bool VisitMemberExpr(clang::MemberExpr *member);
+	bool VisitCXXConstructExpr(clang::CXXConstructExpr *construct);
 	bool VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr *c);
 
 #ifdef SKEPU_LSP
