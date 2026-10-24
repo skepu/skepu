@@ -286,56 +286,6 @@ namespace skepu
 
 	} // end namespace backend
 
-#ifdef SKEPU_MERCURIUM
-
-template<int Arity, int GivenArity, typename Ret, typename ... Args>
-class MapReduceImpl: public SeqSkeletonBase
-{
-	static constexpr bool indexed = is_indexed<Args...>::value;
-	using First = typename pack_element<indexed ? 1 : 0, Args...>::type;
-
-public:
-	void setStartValue(Ret val);
-	void setDefaultSize(size_t i, size_t j = 0, size_t k = 0, size_t l = 0);
-
-	template<
-		template<class> class Container,
-		typename... CallArgs,
-		REQUIRES_VALUE(is_skepu_container<Container<First>>)>
-	Ret operator()(Container<First>& arg1, CallArgs&&... args);
-
-	template<
-		template<class> class Container,
-		typename... CallArgs,
-		REQUIRES_VALUE(is_skepu_container<Container<First>>)>
-	Ret operator()(const Container<First>& arg1, CallArgs&&... args);
-
-	template<
-		typename Iterator,
-		typename... CallArgs,
-		REQUIRES_VALUE(is_skepu_iterator<Iterator, First>)>
-	Ret operator()(Iterator arg1, Iterator arg1_end, CallArgs&&... args);
-
-	template< typename... CallArgs>
-	Ret operator()(CallArgs&&... args);
-};
-
-template<int arity = SKEPU_UNSET_ARITY, typename Ret, typename ... Args>
-auto
-MapReduce(Ret (*)(Args...), Ret (*)(Ret, Ret))
--> MapReduceImpl<
-		resolve_map_arity<arity, Args...>::value,
-		arity,
-		Ret,
-		Args...>;
-
-template<int arity = SKEPU_UNSET_ARITY, typename T, typename U>
-auto
-MapReduce(T map_op, U red_op)
--> decltype(MapReduce<arity>(lambda_cast(map_op), lambda_cast(red_op)));
-
-#endif // SKEPU_MERCURIUM
-
 } // end namespace skepu
 
 

@@ -237,33 +237,6 @@ namespace skepu
 
 	} // namespace backend
 
-#ifdef SKEPU_MERCURIUM
-template<typename Ret, typename... Args>
-struct MapPairsImpl : public SeqSkeletonBase
-{
-	MapPairsImpl(Ret(*)(Args...));
-
-	void setDefaultSize(size_t x, size_t y = 0);
-
-	template<template<class> class Container, typename... CallArgs>
-	Container<Ret> &operator()(Container<Ret> &res, CallArgs&&... args);
-
-	template<
-		typename Iterator,
-		typename... CallArgs,
-		REQUIRES_VALUE(is_skepu_iterator<Iterator, Ret>)>
-	Iterator operator()(Iterator res, Iterator res_end, CallArgs&&... args);
-
-	template<template<class> class Container = Vector, typename... CallArgs>
-	Container<Ret> operator()(CallArgs&&... args);
-};
-
-template<int Varity, int Harity, typename Ret, typename... Args>
-auto inline
-MapPairs(Ret(*)(Args...))
--> MapPairsImpl<Ret, Args...>;
-#endif // SKEPU_MERCURIUM
-
 } // namespace skepu
 
 

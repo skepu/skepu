@@ -242,50 +242,6 @@ namespace skepu
 
 	} // namespace backend
 
-#ifdef SKEPU_MERCURIUM
-template<int Arity, int GivenArity, typename Ret, typename... Args>
-struct MapImpl : public SeqSkeletonBase
-{
-	template<
-		template<class> class Container,
-		typename ... CallArgs,
-		REQUIRES_VALUE(is_skepu_container<Container<Ret>>)>
-	Container<Ret> &
-	operator()(Container<Ret> &res, CallArgs&&... args);
-
-	template<
-		typename Iterator,
-		typename... CallArgs,
-		REQUIRES_VALUE(is_skepu_iterator<Iterator, Ret>)>
-	Iterator
-	operator()(Iterator res, Iterator res_end, CallArgs&&... args);
-};
-
-template<int arity = SKEPU_UNSET_ARITY, typename Ret, typename... Args>
-auto
-Map(Ret(*)(Args...))
--> MapImpl<
-		resolve_map_arity<arity, Args...>::value,
-		arity,
-		Ret,
-		Args...>;
-
-template<int arity = SKEPU_UNSET_ARITY, typename Ret, typename... Args>
-auto
-Map(std::function<Ret(Args...)>)
--> MapImpl<
-		resolve_map_arity<arity, Args...>::value,
-		arity,
-		Ret,
-		Args...>;
-
-template<int arity = SKEPU_UNSET_ARITY, typename T>
-auto constexpr
-Map(T op)
--> decltype(Map<arity>(lambda_cast(op)));
-
-#endif // SKEPU_MERCURIUM
-
 } // namespace skepu
 
 

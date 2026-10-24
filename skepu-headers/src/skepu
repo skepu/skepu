@@ -22,14 +22,6 @@
 # endif
 #endif
 
-/* TODO: Get rid of this hack if possible. */
-#ifdef SKEPU_MERCURIUM_CUDA
-#define __CUDACC__
-#include <cuda.h>
-#include <device_functions.h>
-#undef __CUDACC__
-#endif
-
 #include <memory>
 
 // MPI backend (SKEPU_MPI): the node-level library below is compiled under the namespace name skepu_node, and the

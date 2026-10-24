@@ -254,12 +254,6 @@ namespace skepu
 
 	} // end namespace backend
 
-#ifdef SKEPU_MERCURIUM
-
-// TODO
-
-#endif // SKEPU_MERCURIUM
-
 } // end namespace skepu
 
 
