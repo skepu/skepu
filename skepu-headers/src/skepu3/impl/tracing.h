@@ -1,7 +1,10 @@
 #ifndef TRACING_H
 #define TRACING_H
 
+#include <deque>
+#include <filesystem>
 #include <fstream>
+#include <set>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -262,6 +265,40 @@ namespace skepu
 		// itself marks (regions, snapshots, virtual datasets, the elements it reads)
 		enum class CaptureKind { Node, Region, Raw };
 
+		// A field of an event, for Tracer::record: the key and a copy of the value, which is written when the event is replayed. It is made
+		// by assigning to a key (Schema::Keys, as Key::LABEL = label), or to a key that is conditional (Key::ERROR.when(!ok) = error:
+		// the field is left out if the condition is false).
+		template<typename V>
+		struct [[nodiscard]] Field { const std::string &key; V value; bool present; };
+
+		struct ConditionalKey
+		{
+			const std::string &name;
+			bool condition;
+			template<typename V>
+			Field<std::decay_t<V>> operator=(V &&value) const { return {this->name, std::forward<V>(value), this->condition}; }
+		};
+
+		// A value that is worked out when the event is replayed, from the state of the tracer (Key::DEPTH = at_replay([this]{ ... })),
+		// and something that is done then, in the order of the fields, that is not a field (then([this]{ ... }))
+		template<typename F>
+		struct AtReplay { F get; };
+		template<typename F>
+		AtReplay<std::decay_t<F>> at_replay(F &&function) { return {std::forward<F>(function)}; }
+		template<typename F>
+		struct [[nodiscard]] Action { F run; };
+		template<typename F>
+		Action<std::decay_t<F>> then(F &&function) { return {std::forward<F>(function)}; }
+
+		// The name of a field of an event: a string that makes a Field when it is assigned a value
+		struct KeyName : std::string
+		{
+			using std::string::string;
+			template<typename V>
+			Field<std::decay_t<V>> operator=(V &&value) const { return {*this, std::forward<V>(value), true}; }
+			ConditionalKey when(bool condition) const { return {*this, condition}; }
+		};
+
 		// While a thread has one of these, the events that it records are not dropped by a tracer that is configured to
 		// drop the events of the node-level library (the MPI backend records the events of a call itself)
 		struct AllowScope
@@ -416,10 +453,40 @@ namespace skepu
 			void push_capture(std::function<void()> &&capture, CaptureKind kind = CaptureKind::Node);
 
 #ifdef SKEPU_TRACING
+			// Every event is recorded with one of these. The event is made when it is replayed, in the order of the trace: its type (one of
+			// Schema::Values::Types) and the region that it is in, then the fields. record_with is for an event that needs the state of the tracer
+			// when it is replayed (the region stack, the header): the body gets the event after its type and region, and the event is
+			// written when the body returns.
+			template<typename... Fs>
+			void record(CaptureKind kind, const std::string &type, Fs... fields);
+			template<typename... Fs>
+			void record(const std::string &type, Fs... fields) { this->record(CaptureKind::Node, type, std::move(fields)...); }
+			template<typename Body>
+			void record_with(CaptureKind kind, const std::string &type, Body body);
+#endif
+
+#ifdef SKEPU_TRACING
 			std::mutex m_mutex; // guards m_captures
-			nlohmann::json m_trace_json;
+			// The events are written to the file as they are replayed. The newest ones (the window) are kept as JSON objects, as relabel can still rename
+			// them; an event that leaves the window is written as one line of text, and its object is gone. The file is complete after each flush: the
+			// events of the window and the end of the file (the header) are written after the committed ones, and written again by the next flush.
+			static constexpr size_t kEditableEvents = 1024;      // the size of the window
+			static constexpr size_t kAutoFlushCaptures = 16384;  // the captured events that make the tracer replay and write them (the closures take memory until then)
+			std::deque<nlohmann::json> m_window;
+			std::string m_committed_text;           // the events that left the window and are not in the file yet: a line each, with a comma at the end
+			std::set<std::string> m_event_files;    // the files that the events name (collectSourceFiles)
+			bool m_file_started = false;
+			std::streamoff m_commit_pos = 0;        // where the committed events end in the file
+			std::uintmax_t m_file_end = 0;          // the size of the file as it was written last
+			std::mutex m_flush_mutex;               // one flush at a time (the program, or the tracer when its captures are many)
+			void emit(nlohmann::json entry);        // an event, in the order of the trace
+			void writeFile();
 			nlohmann::json m_header = nlohmann::json::object();
 			void collectSourceFiles(); // the files that the events name, with the hashes of their contents, to the header
+			// What a call tells the header, when it is replayed: the hash of its source file (made by the precompiler: the program as it was compiled), once
+			// per file, and where its instance and the user functions of it are defined, once per instance
+			void noteSourceFile(std::string const& file, std::string const& hash);
+			void noteInstance(TraceID id, std::string const& label);
 			std::map<TraceID, nlohmann::json> m_definitions; // of the instances that have made a call (guarded by m_mutex)
 			bool m_suppress_node = false, m_lean = false;
 			// The events are recorded as closures that run in the order they were recorded when the

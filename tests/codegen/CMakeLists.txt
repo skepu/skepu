@@ -74,6 +74,19 @@ add_test(NAME tracing_threads_trace COMMAND ${CMAKE_COMMAND}
 	-P ${CMAKE_CURRENT_LIST_DIR}/check_trace.cmake)
 set_tests_properties(tracing_threads_trace PROPERTIES FIXTURES_REQUIRED tracing_threads_run)
 
+# The trace as it is written: complete after a flush, in order, renames in the window of the newest events, and the tracer replaying by itself while threads record.
+skepu_add_executable(tracing_streaming_test SKEPUSRC tracing_streaming.cpp)
+target_compile_definitions(tracing_streaming_test PRIVATE SKEPU_TRACING)
+target_link_libraries(tracing_streaming_test PRIVATE Threads::Threads)
+add_test(NAME tracing_streaming COMMAND tracing_streaming_test)
+set_tests_properties(tracing_streaming PROPERTIES
+	ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_streaming.json"
+	FIXTURES_SETUP tracing_streaming_run)
+add_test(NAME tracing_streaming_trace COMMAND ${CMAKE_COMMAND}
+	-DTRACE=${CMAKE_CURRENT_BINARY_DIR}/tracing_streaming.json -DTYPE=allocation -DCALLS=120501 -DEXACT=ON
+	-P ${CMAKE_CURRENT_LIST_DIR}/check_trace.cmake)
+set_tests_properties(tracing_streaming_trace PROPERTIES FIXTURES_REQUIRED tracing_streaming_run)
+
 # ------------------------------------------------
 #   User function in included file
 # ------------------------------------------------

@@ -87,40 +87,40 @@ namespace skepu
 		{
 			namespace Keys
 			{
-				static const std::string OBJECT_ID{"object_id"};
-				static const std::string OBJECT_IDS{"object_ids"};
-				static const std::string VIRTUAL_ID{"virtual_id"};
-				static const std::string TYPE{"type"};
-				static const std::string LABEL{"label"};
-				static const std::string TIME{"time"};
-				static const std::string FILE{"file"};
-				static const std::string LINE{"line"};
-				static const std::string REGION{"region"};
-				static const std::string START{"start"};
-				static const std::string DEPTH{"region_depth"};
-				static const std::string END{"end"};
-				static const std::string ELEMENTS{"elements"};
-				static const std::string ELWISE_INPUTS{"elwise_inputs"};
-				static const std::string PROXY_INPUTS{"proxy_inputs"};
-				static const std::string SCALAR_INPUTS{"scalar_inputs"};
-				static const std::string OUTPUTS{"outputs"};
-				static const std::string PATTERN{"pattern"};
-				static const std::string BACKEND{"backend"};
-				static const std::string THREADS{"threads"};
-				static const std::string DEVICES{"devices"};
-				static const std::string PARAMETERS{"parameters"};
-				static const std::string DIRECTION{"direction"};
-				static const std::string PRNG{"prng"};
-				static const std::string SOURCE{"source"};
-				static const std::string INDEX{"index"};
-				static const std::string DATA_FILE{"data_file"};
-				static const std::string VALUE{"value"};
-				static const std::string QUALIFIER{"qualifier"};
-				static const std::string DEVICE{"device"};
-				static const std::string OPTIONS{"options"};
-				static const std::string SOURCE_BYTES{"source_bytes"};
-				static const std::string OK{"ok"};
-				static const std::string ERROR{"error"};
+				static const KeyName OBJECT_ID{"object_id"};
+				static const KeyName OBJECT_IDS{"object_ids"};
+				static const KeyName VIRTUAL_ID{"virtual_id"};
+				static const KeyName TYPE{"type"};
+				static const KeyName LABEL{"label"};
+				static const KeyName TIME{"time"};
+				static const KeyName FILE{"file"};
+				static const KeyName LINE{"line"};
+				static const KeyName REGION{"region"};
+				static const KeyName START{"start"};
+				static const KeyName DEPTH{"region_depth"};
+				static const KeyName END{"end"};
+				static const KeyName ELEMENTS{"elements"};
+				static const KeyName ELWISE_INPUTS{"elwise_inputs"};
+				static const KeyName PROXY_INPUTS{"proxy_inputs"};
+				static const KeyName SCALAR_INPUTS{"scalar_inputs"};
+				static const KeyName OUTPUTS{"outputs"};
+				static const KeyName PATTERN{"pattern"};
+				static const KeyName BACKEND{"backend"};
+				static const KeyName THREADS{"threads"};
+				static const KeyName DEVICES{"devices"};
+				static const KeyName PARAMETERS{"parameters"};
+				static const KeyName DIRECTION{"direction"};
+				static const KeyName PRNG{"prng"};
+				static const KeyName SOURCE{"source"};
+				static const KeyName INDEX{"index"};
+				static const KeyName DATA_FILE{"data_file"};
+				static const KeyName VALUE{"value"};
+				static const KeyName QUALIFIER{"qualifier"};
+				static const KeyName DEVICE{"device"};
+				static const KeyName OPTIONS{"options"};
+				static const KeyName SOURCE_BYTES{"source_bytes"};
+				static const KeyName OK{"ok"};
+				static const KeyName ERROR{"error"};
 			}
 
 			namespace Values
@@ -142,6 +142,9 @@ namespace skepu
 				}
 			}
 		}
+
+		namespace Key = Schema::Keys;
+		namespace Type = Schema::Values::Types;
 
 		inline EventHandle::EventHandle()
 #ifdef SKEPU_TRACING
@@ -182,14 +185,8 @@ namespace skepu
 #ifdef SKEPU_TRACING
 		inline void Tracer::collectSourceFiles()
 		{
-			if (!this->m_trace_json.is_array())
-				return;
-			for (const nlohmann::json &entry : this->m_trace_json)
+			for (const std::string &name : this->m_event_files)
 			{
-				auto file = entry.find(Schema::Keys::FILE);
-				if (file == entry.end() || !file->is_string() || file->get<std::string>().empty())
-					continue;
-				const std::string name = file->get<std::string>();
 				if (this->m_header["files"].contains(name))
 					continue;
 				std::ifstream in(name, std::ios::binary);
@@ -202,9 +199,34 @@ namespace skepu
 		}
 #endif
 
+#ifdef SKEPU_TRACING
+		inline void Tracer::noteSourceFile(std::string const& file, std::string const& hash)
+		{
+			if (!file.empty() && !hash.empty() && !this->m_header["files"].contains(file))
+				this->m_header["files"][file] = hash;
+		}
+
+		inline void Tracer::noteInstance(TraceID id, std::string const& label)
+		{
+			const std::string key = std::to_string(id);
+			if (this->m_header["instances"].contains(key))
+				return;
+			nlohmann::json definition;
+			{
+				std::lock_guard<std::mutex> lock(this->m_mutex);   // (the definitions are made when calls are recorded)
+				definition = this->m_definitions[id];
+			}
+			if (definition.is_null())
+				return;
+			definition[Schema::Keys::LABEL] = label;
+			this->m_header["instances"][key] = std::move(definition);
+		}
+#endif
+
 		inline void Tracer::flush()
 		{
 #ifdef SKEPU_TRACING
+			std::lock_guard<std::mutex> flushing(this->m_flush_mutex);
 			std::vector<Capture> captures;
 			{
 				std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -217,23 +239,59 @@ namespace skepu
 			}
 
 			this->collectSourceFiles();
-
-			std::ofstream ofs;
-			ofs.open(this->m_file_name, std::ofstream::out | std::ofstream::trunc);
-			if (this->m_header.empty())
-				ofs << this->m_trace_json.dump(4) << std::endl;
-			else
-			{
-				nlohmann::json whole = nlohmann::json::object();
-				whole["header"] = this->m_header;
-				whole["data"] = this->m_trace_json.is_null() ? nlohmann::json::array() : this->m_trace_json;
-				ofs << whole.dump(4) << std::endl;
-			}
-			ofs.close();
+			this->writeFile();
 #endif
 		}
 
+#ifdef SKEPU_TRACING
+		// An event in the order of the trace: it stays an object while it is in the window, where relabel can rename it, and is text after that.
+		inline void Tracer::emit(nlohmann::json entry)
+		{
+			auto file = entry.find(Schema::Keys::FILE);
+			if (file != entry.end() && file->is_string() && !file->get<std::string>().empty())
+				this->m_event_files.insert(file->get<std::string>());
+			this->m_window.push_back(std::move(entry));
+			if (this->m_window.size() > kEditableEvents)
+			{
+				this->m_committed_text += this->m_window.front().dump();
+				this->m_committed_text += ",\n";
+				this->m_window.pop_front();
+			}
+		}
 
+		// The file is { "data": [ one event on each line ], "header": { ... } }: the header is last, as it is complete only at the end of the run. The
+		// committed events are written where the last write left them; after them the events of the window, and the end of the file, which the next
+		// write replaces (a write costs the new events, the window and the header, not the whole trace). A reader reads this as any { header, data }.
+		inline void Tracer::writeFile()
+		{
+			if (!this->m_file_started)
+			{
+				std::ofstream start(this->m_file_name, std::ofstream::out | std::ofstream::trunc | std::ofstream::binary);
+				start << "{\"data\":[\n";
+				this->m_commit_pos = start.tellp();
+				this->m_file_started = true;
+			}
+			std::fstream file(this->m_file_name, std::ios::in | std::ios::out | std::ios::binary);
+			if (!file)
+				return;
+			file.seekp(this->m_commit_pos);
+			file << this->m_committed_text;
+			this->m_commit_pos = file.tellp();
+			this->m_committed_text.clear();
+			size_t left = this->m_window.size();
+			for (const nlohmann::json &entry : this->m_window)
+				file << entry.dump() << (--left ? ",\n" : "\n");
+			file << "],\"header\":" << this->m_header.dump() << "}\n";
+			const std::uintmax_t end = static_cast<std::uintmax_t>(file.tellp());
+			file.close();
+			if (end < this->m_file_end)
+			{
+				std::error_code ignored;
+				std::filesystem::resize_file(this->m_file_name, end, ignored);   // (what the last write had after this one's end)
+			}
+			this->m_file_end = end;
+		}
+#endif
 
 
 		inline void Tracer::allocation(TraceID id, std::string const& label, int line)
@@ -241,18 +299,11 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 
-			auto capture = [=, this]{
-			nlohmann::json entry;
-			entry[Schema::Keys::OBJECT_ID] = id;
-			entry[Schema::Keys::TYPE]  = Schema::Values::Types::ALLOCATION;
-			entry[Schema::Keys::LABEL] = label;
-			entry[Schema::Keys::TIME]  = now;
-			entry[Schema::Keys::LINE]  = line;
-			if (!this->m_regions().empty())
-				entry[Schema::Keys::REGION] = this->m_regions().top();
-
-			this->m_trace_json.push_back(entry);
-			}; this->push_capture(std::move(capture));
+			this->record(Type::ALLOCATION,
+				Key::OBJECT_ID = id,
+				Key::LABEL = label,
+				Key::TIME = now,
+				Key::LINE = line);
 #endif
 		}
 
@@ -260,11 +311,12 @@ namespace skepu
 		{
 #ifdef SKEPU_TRACING
 			// (the events are written in order, and a container is named right after its declaration: the
-			// events of the container are the last ones; a Raw capture is also kept in the traces of the other processes of an MPI program.
+			// events of the container are the last ones, which are still in the window of the events that can be changed (kEditableEvents); a
+			// container that is named later than that keeps the name that its older events have; a Raw capture is also kept in the traces of the other processes of an MPI program.
 			// A skeleton instance can be named again and again, for example by the layers of a network that share one: only the events
 			// before its first call, the builds of its kernels, get the name; its calls keep the name that it had at the call)
 			auto capture = [=, this]{
-			for (auto it = this->m_trace_json.rbegin(); it != this->m_trace_json.rend(); ++it)
+			for (auto it = this->m_window.rbegin(); it != this->m_window.rend(); ++it)
 			{
 				auto object = it->find(Schema::Keys::OBJECT_ID);
 				if (object == it->end() || *object != id || !it->contains(Schema::Keys::LABEL))
@@ -292,30 +344,19 @@ namespace skepu
 			std::string const& error)
 		{
 #ifdef SKEPU_TRACING
-			auto capture = [=, this]{
-			nlohmann::json entry;
-			if (instance != UniqueIdentifier::null())
-				entry[Schema::Keys::OBJECT_ID] = instance;
-			entry[Schema::Keys::TYPE]    = Schema::Values::Types::COMPILE;
-			entry[Schema::Keys::LABEL]   = label;
-			if (!qualifier.empty())
-				entry[Schema::Keys::QUALIFIER] = qualifier;
-			entry[Schema::Keys::BACKEND] = "OpenCL";
-			entry[Schema::Keys::DEVICE]  = device;
-			if (!options.empty())
-				entry[Schema::Keys::OPTIONS] = options;
-			entry[Schema::Keys::SOURCE_BYTES] = source_bytes;
-			entry[Schema::Keys::OK]      = ok;
-			if (!ok)
-				entry[Schema::Keys::ERROR] = error;
-			entry[Schema::Keys::START]   = start;
-			entry[Schema::Keys::END]     = end;
-			entry[Schema::Keys::TIME]    = end;
-			if (!this->m_regions().empty())
-				entry[Schema::Keys::REGION] = this->m_regions().top();
-
-			this->m_trace_json.push_back(entry);
-			}; this->push_capture(std::move(capture));
+			this->record(Type::COMPILE,
+				Key::OBJECT_ID.when(instance != UniqueIdentifier::null()) = instance,
+				Key::LABEL = label,
+				Key::QUALIFIER.when(!qualifier.empty()) = qualifier,
+				Key::BACKEND = std::string("OpenCL"),
+				Key::DEVICE = device,
+				Key::OPTIONS.when(!options.empty()) = options,
+				Key::SOURCE_BYTES = source_bytes,
+				Key::OK = ok,
+				Key::ERROR.when(!ok) = error,
+				Key::START = start,
+				Key::END = end,
+				Key::TIME = end);
 #endif
 		}
 
@@ -337,18 +378,11 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 
-			auto capture = [=, this]{
-			nlohmann::json entry;
-			entry[Schema::Keys::OBJECT_ID] = id;
-			entry[Schema::Keys::TYPE]  = Schema::Values::Types::DEALLOCATION;
-			entry[Schema::Keys::LABEL] = label;
-			entry[Schema::Keys::TIME]  = now;
-			entry[Schema::Keys::LINE]  = line;
-			if (!this->m_regions().empty())
-				entry[Schema::Keys::REGION] = this->m_regions().top();
-
-			this->m_trace_json.push_back(entry);
-			}; this->push_capture(std::move(capture));
+			this->record(Type::DEALLOCATION,
+				Key::OBJECT_ID = id,
+				Key::LABEL = label,
+				Key::TIME = now,
+				Key::LINE = line);
 #endif
 		}
 
@@ -357,21 +391,14 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 
-			auto capture = [=, this]{
-			nlohmann::json entry;
-			entry[Schema::Keys::OBJECT_ID] = id;
-			entry[Schema::Keys::SOURCE] = source_id;
-			entry[Schema::Keys::TYPE]  = Schema::Values::Types::ELEM_ACCESS;
-			entry[Schema::Keys::INDEX]  = index;
-			entry[Schema::Keys::LABEL] = label;
-			entry[Schema::Keys::TIME]  = now;
-			entry[Schema::Keys::FILE]  = file;
-			entry[Schema::Keys::LINE]  = line;
-			if (!this->m_regions().empty())
-				entry[Schema::Keys::REGION] = this->m_regions().top();
-
-			this->m_trace_json.push_back(entry);
-			}; this->push_capture(std::move(capture), CaptureKind::Region);
+			this->record(CaptureKind::Region, Type::ELEM_ACCESS,
+				Key::OBJECT_ID = id,
+				Key::SOURCE = source_id,
+				Key::INDEX = index,
+				Key::LABEL = label,
+				Key::TIME = now,
+				Key::FILE = file,
+				Key::LINE = line);
 #endif
 		}
 
@@ -417,17 +444,10 @@ namespace skepu
 				unsigned long now = timestamp_now();
 				nlohmann::json number = scalar_value_json(value);
 
-				auto capture = [=, this]{
-				nlohmann::json entry;
-				entry[Schema::Keys::OBJECT_ID] = id;
-				entry[Schema::Keys::TYPE]  = Schema::Values::Types::SCALAR_VALUE;
-				entry[Schema::Keys::VALUE] = number;
-				entry[Schema::Keys::TIME]  = now;
-				if (!this->m_regions().empty())
-					entry[Schema::Keys::REGION] = this->m_regions().top();
-
-				this->m_trace_json.push_back(entry);
-				}; this->push_capture(std::move(capture), CaptureKind::Region);
+			this->record(CaptureKind::Region, Type::SCALAR_VALUE,
+				Key::OBJECT_ID = id,
+				Key::VALUE = number,
+				Key::TIME = now);
 			}
 #endif
 		}
@@ -437,20 +457,13 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 
-			auto capture = [=, this]{
-			nlohmann::json entry;
-			entry[Schema::Keys::TYPE]      = Schema::Values::Types::COPY;
-			entry[Schema::Keys::SOURCE]    = source_id;
-			entry[Schema::Keys::OBJECT_ID] = destination_id;
-			entry[Schema::Keys::LABEL]     = label;
-			entry[Schema::Keys::ELEMENTS]  = elements;
-			entry[Schema::Keys::START]     = h.m_time;
-			entry[Schema::Keys::END]       = now;
-			if (!this->m_regions().empty())
-				entry[Schema::Keys::REGION] = this->m_regions().top();
-
-			this->m_trace_json.push_back(entry);
-			}; this->push_capture(std::move(capture));
+			this->record(Type::COPY,
+				Key::SOURCE = source_id,
+				Key::OBJECT_ID = destination_id,
+				Key::LABEL = label,
+				Key::ELEMENTS = elements,
+				Key::START = h.m_time,
+				Key::END = now);
 #endif
 		}
 
@@ -466,23 +479,16 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 
-			auto capture = [=, this]{
-			nlohmann::json entry;
-			entry[Schema::Keys::OBJECT_ID] = id;
-			entry[Schema::Keys::TYPE]  = Schema::Values::Types::TRANSFER;
-			entry[Schema::Keys::ELEMENTS]  = elements;
-			entry[Schema::Keys::DIRECTION] = direction;
-			entry[Schema::Keys::BACKEND] = backend;
-			entry[Schema::Keys::LABEL] = label;
-			entry[Schema::Keys::START]   = h.m_time;
-			entry[Schema::Keys::END]     = now;
-			entry[Schema::Keys::TIME]  = now;
-			entry[Schema::Keys::LINE]  = line;
-			if (!this->m_regions().empty())
-				entry[Schema::Keys::REGION] = this->m_regions().top();
-
-			this->m_trace_json.push_back(entry);
-			}; this->push_capture(std::move(capture));
+			this->record(Type::TRANSFER,
+				Key::OBJECT_ID = id,
+				Key::ELEMENTS = elements,
+				Key::DIRECTION = direction,
+				Key::BACKEND = backend,
+				Key::LABEL = label,
+				Key::START = h.m_time,
+				Key::END = now,
+				Key::TIME = now,
+				Key::LINE = line);
 #endif
 		}
 
@@ -507,6 +513,61 @@ namespace skepu
 #endif
 		}
 
+#ifdef SKEPU_TRACING
+		template<typename V>
+		inline void write_part(nlohmann::json &entry, const Field<V> &field)
+		{
+			if (field.present)
+				entry[field.key] = field.value;
+		}
+
+		template<typename F>
+		inline void write_part(nlohmann::json &entry, const Field<AtReplay<F>> &field)
+		{
+			if (field.present)
+				entry[field.key] = field.value.get();
+		}
+
+		// The fields of a JSON object, for the ones that an event gets from outside (the parameters of a skeleton): merge(object)
+		struct Merge { nlohmann::json fields; };
+		inline Merge merge(nlohmann::json fields) { return {std::move(fields)}; }
+
+		inline void write_part(nlohmann::json &entry, const Merge &merge)
+		{
+			for (auto it = merge.fields.begin(); it != merge.fields.end(); ++it)
+				entry[it.key()] = it.value();
+		}
+
+		template<typename F>
+		inline void write_part(nlohmann::json &, const Action<F> &action)
+		{
+			action.run();
+		}
+
+		template<typename Body>
+		inline void Tracer::record_with(CaptureKind kind, const std::string &type, Body body)
+		{
+			// (type is a constant of Schema::Values::Types: the closure refers to it)
+			this->push_capture([this, type = &type, body = std::move(body)]{
+				nlohmann::json entry;
+				entry[Schema::Keys::TYPE] = *type;
+				if (!this->m_regions().empty())
+					entry[Schema::Keys::REGION] = this->m_regions().top();
+				body(entry);
+				this->emit(std::move(entry));
+			}, kind);
+		}
+
+		template<typename... Fs>
+		inline void Tracer::record(CaptureKind kind, const std::string &type, Fs... fields)
+		{
+			this->record_with(kind, type, [fields = std::make_tuple(std::move(fields)...)](nlohmann::json &entry)
+			{
+				std::apply([&](const auto &...part) { (write_part(entry, part), ...); }, fields);
+			});
+		}
+#endif
+
 		inline void Tracer::push_capture(std::function<void()> &&capture, CaptureKind kind)
 		{
 #ifdef SKEPU_TRACING
@@ -514,8 +575,14 @@ namespace skepu
 				return;
 			if (this->m_suppress_node && kind == CaptureKind::Node && allow_depth() == 0)
 				return;
-			std::lock_guard<std::mutex> lock(this->m_mutex);
-			this->m_captures.push_back(Capture{std::this_thread::get_id(), std::move(capture)});
+			bool many;
+			{
+				std::lock_guard<std::mutex> lock(this->m_mutex);
+				this->m_captures.push_back(Capture{std::this_thread::get_id(), std::move(capture)});
+				many = this->m_captures.size() >= kAutoFlushCaptures;
+			}
+			if (many)
+				this->flush();   // (the closures take memory until they are replayed: this keeps it bounded, and the file is complete after it)
 #endif
 		}
 
@@ -527,7 +594,7 @@ namespace skepu
 			nlohmann::json e = entry;
 			if (!lean && !this->m_regions().empty())
 				e[Schema::Keys::REGION] = this->m_regions().top();
-			this->m_trace_json.push_back(e);
+			this->emit(std::move(e));
 			}; this->push_capture(std::move(capture), CaptureKind::Raw);
 		}
 #endif
@@ -576,65 +643,40 @@ namespace skepu
 			if (parameters.values.value("pool", false) && pattern.compare(0, 10, "MapOverlap") == 0)
 				pattern.replace(0, 10, "MapPool");
 
-			auto capture = [=, this]{
-			nlohmann::json entry;
-			entry[Schema::Keys::OBJECT_ID] = id;
-			entry[Schema::Keys::TYPE]    = Schema::Values::Types::CALL;
-			entry[Schema::Keys::PATTERN] = pattern;
-			entry[Schema::Keys::LABEL]   = label;
-			entry[Schema::Keys::START]   = h.m_time;
-			entry[Schema::Keys::END]     = now;
-			entry[Schema::Keys::ELEMENTS] = elements;
-			entry[Schema::Keys::FILE]          = std::get<0>(source_location);
-			entry[Schema::Keys::LINE]          = std::get<2>(source_location);
-			entry[Schema::Keys::ELWISE_INPUTS] = elwise_inputs;
-			entry[Schema::Keys::PROXY_INPUTS]  = proxy_inputs;
-			entry[Schema::Keys::SCALAR_INPUTS] = scalar_inputs;
-			entry[Schema::Keys::OUTPUTS]       = elwise_outputs;
-			if (prng != UniqueIdentifier::null())
-				entry[Schema::Keys::PRNG]      		 = prng;
-			if (!this->m_regions().empty())
-				entry[Schema::Keys::REGION] = this->m_regions().top();
-			if (!parameters.values.empty())
-				entry[Schema::Keys::PARAMETERS] = parameters.values;
-			for (auto it = extra_fields.begin(); it != extra_fields.end(); ++it)
-				entry[it.key()] = it.value();
+			// (what the skeleton adds to the call, and what runs it: the backend, the threads of the host and the devices that a call used)
+			nlohmann::json more = extra_fields;
 			if (backend)
 			{
 				std::stringstream ss;
 				ss << type;
-				entry[Schema::Keys::BACKEND]       = ss.str();
-				// the threads of the host, and the devices that a call used: what runs a call
+				more[Schema::Keys::BACKEND] = ss.str();
 				if (type == Backend::Type::CPU)
-					entry[Schema::Keys::THREADS]   = 1;
+					more[Schema::Keys::THREADS] = 1;
 				else if (type == Backend::Type::OpenMP || type == Backend::Type::Hybrid)
-					entry[Schema::Keys::THREADS]   = threads;
+					more[Schema::Keys::THREADS] = threads;
 				if (type == Backend::Type::OpenCL || type == Backend::Type::CUDA || type == Backend::Type::Hybrid)
-					entry[Schema::Keys::DEVICES]   = devices;
+					more[Schema::Keys::DEVICES] = devices;
 			}
+			const std::string &file = std::get<0>(source_location), &file_hash = std::get<1>(source_location);
 
-			// the hash of the source file that the call is in (computed by the precompiler: the program as it was compiled), once per file
-			if (!std::get<0>(source_location).empty() && !std::get<1>(source_location).empty())
-			{
-				std::lock_guard<std::mutex> lock(this->m_mutex);
-				if (!this->m_header["files"].contains(std::get<0>(source_location)))
-					this->m_header["files"][std::get<0>(source_location)] = std::get<1>(source_location);
-			}
-
-			// where the instance and its user functions are defined: once, in the header of the file
-			{
-				std::lock_guard<std::mutex> lock(this->m_mutex);
-				const nlohmann::json &definition = this->m_definitions[id];
-				if (!definition.is_null() && !this->m_header["instances"].contains(std::to_string(id)))
-				{
-					nlohmann::json described = definition;
-					described[Schema::Keys::LABEL] = label;
-					this->m_header["instances"][std::to_string(id)] = std::move(described);
-				}
-			}
-
-			this->m_trace_json.push_back(entry);
-			}; this->push_capture(std::move(capture));
+			this->record(Type::CALL,
+				Key::OBJECT_ID = id,
+				Key::PATTERN = pattern,
+				Key::LABEL = label,
+				Key::START = h.m_time,
+				Key::END = now,
+				Key::ELEMENTS = elements,
+				Key::FILE = file,
+				Key::LINE = std::get<2>(source_location),
+				Key::ELWISE_INPUTS = elwise_inputs,
+				Key::PROXY_INPUTS = proxy_inputs,
+				Key::SCALAR_INPUTS = scalar_inputs,
+				Key::OUTPUTS = elwise_outputs,
+				Key::PRNG.when(prng != UniqueIdentifier::null()) = prng,
+				Key::PARAMETERS.when(!parameters.values.empty()) = parameters.values,
+				merge(std::move(more)),
+				then([this, file, file_hash]{ this->noteSourceFile(file, file_hash); }),
+				then([this, id, label]{ this->noteInstance(id, label); }));
 #endif
 		}
 
@@ -667,23 +709,16 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 
-			auto capture = [=, this]{
-			nlohmann::json entry;
-			entry[Schema::Keys::TYPE]    = Schema::Values::Types::EXTERNAL;
-			entry[Schema::Keys::LABEL]   = label;
-			entry[Schema::Keys::START]   = h.m_time;
-			entry[Schema::Keys::END]     = now;
-			entry[Schema::Keys::ELWISE_INPUTS] = std::vector<TraceID>{};
-			entry[Schema::Keys::PROXY_INPUTS]  = inputs;
-			entry[Schema::Keys::SCALAR_INPUTS] = std::vector<TraceID>{};
-			entry[Schema::Keys::OUTPUTS]       = outputs;
-			entry[Schema::Keys::FILE]          = file;
-			entry[Schema::Keys::LINE]          = line;
-			if (!this->m_regions().empty())
-				entry[Schema::Keys::REGION] = this->m_regions().top();
-
-			this->m_trace_json.push_back(entry);
-			}; this->push_capture(std::move(capture));
+			this->record(Type::EXTERNAL,
+				Key::LABEL = label,
+				Key::START = h.m_time,
+				Key::END = now,
+				Key::ELWISE_INPUTS = std::vector<TraceID>{},
+				Key::PROXY_INPUTS = inputs,
+				Key::SCALAR_INPUTS = std::vector<TraceID>{},
+				Key::OUTPUTS = outputs,
+				Key::FILE = file,
+				Key::LINE = line);
 #endif
 		}
 		
@@ -692,23 +727,16 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 
-			auto capture = [=, this]{
-			nlohmann::json entry;
-			entry[Schema::Keys::TYPE]  = Schema::Values::Types::EXTERNAL;
-			entry[Schema::Keys::LABEL] = label;
-			entry[Schema::Keys::START] = now;
-			entry[Schema::Keys::END]   = now;
-			entry[Schema::Keys::ELWISE_INPUTS] = std::vector<TraceID>{};
-			entry[Schema::Keys::PROXY_INPUTS]  = std::vector<TraceID>{};
-			entry[Schema::Keys::SCALAR_INPUTS] = ids;
-			entry[Schema::Keys::OUTPUTS]       = std::vector<TraceID>{};
-			entry[Schema::Keys::FILE]          = file;
-			entry[Schema::Keys::LINE]          = line;
-			if (!this->m_regions().empty())
-				entry[Schema::Keys::REGION] = this->m_regions().top();
-
-			this->m_trace_json.push_back(entry);
-			}; this->push_capture(std::move(capture));
+			this->record(Type::EXTERNAL,
+				Key::LABEL = label,
+				Key::START = now,
+				Key::END = now,
+				Key::ELWISE_INPUTS = std::vector<TraceID>{},
+				Key::PROXY_INPUTS = std::vector<TraceID>{},
+				Key::SCALAR_INPUTS = ids,
+				Key::OUTPUTS = std::vector<TraceID>{},
+				Key::FILE = file,
+				Key::LINE = line);
 #endif
 		}
 
@@ -802,21 +830,14 @@ namespace skepu
 
             unsigned long end = timestamp_now();
       
-			auto capture = [=, this]{
-			nlohmann::json entry;
-			entry[Schema::Keys::TYPE]      = Schema::Values::Types::SNAPSHOT;
-			entry[Schema::Keys::OBJECT_ID] = id;
-			entry[Schema::Keys::LABEL]     = label;
-			entry[Schema::Keys::START]     = start;
-			entry[Schema::Keys::END]       = end;
-			entry[Schema::Keys::DATA_FILE] = fname;
-			entry[Schema::Keys::FILE]      = file;
-			entry[Schema::Keys::LINE]      = line;
-			if (!this->m_regions().empty())
-				entry[Schema::Keys::REGION] = this->m_regions().top();
-      
-			this->m_trace_json.push_back(entry);
-			}; this->push_capture(std::move(capture), CaptureKind::Region);
+			this->record(CaptureKind::Region, Type::SNAPSHOT,
+				Key::OBJECT_ID = id,
+				Key::LABEL = label,
+				Key::START = start,
+				Key::END = end,
+				Key::DATA_FILE = fname,
+				Key::FILE = file,
+				Key::LINE = line);
          
 #endif
 		}
@@ -845,21 +866,14 @@ namespace skepu
 
             std::vector<TraceID> ids{ data1.getObjectID(), data2.getObjectID() };
                 
-            auto capture = [=, this]{
-            nlohmann::json entry;
-            entry[Schema::Keys::TYPE]       = Schema::Values::Types::VIRTUAL_DATASET;
-            entry[Schema::Keys::VIRTUAL_ID] = UniqueIdentifier::generate();
-            entry[Schema::Keys::OBJECT_IDS] = ids;
-            entry[Schema::Keys::LABEL]      = label;
-            entry[Schema::Keys::START]      = time;
-            entry[Schema::Keys::END]        = time;
-            entry[Schema::Keys::FILE]       = file;
-            entry[Schema::Keys::LINE]       = line;
-            if (!this->m_regions().empty())
-            entry[Schema::Keys::REGION] = this->m_regions().top();
-                
-            this->m_trace_json.push_back(entry);
-            }; this->push_capture(std::move(capture), CaptureKind::Region);
+            this->record(CaptureKind::Region, Type::VIRTUAL_DATASET,
+                Key::VIRTUAL_ID = UniqueIdentifier::generate(),
+                Key::OBJECT_IDS = ids,
+                Key::LABEL = label,
+                Key::START = time,
+                Key::END = time,
+                Key::FILE = file,
+                Key::LINE = line);
 #endif
 		}
 
@@ -873,20 +887,13 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
 
-			auto capture = [=, this]{
-			nlohmann::json entry;
-			entry[Schema::Keys::TYPE]  = Schema::Values::Types::REGION;
-			entry[Schema::Keys::LABEL] = label;
-			entry[Schema::Keys::TIME]  = now;
-			entry[Schema::Keys::FILE]  = file;
-			entry[Schema::Keys::LINE]  = line;
-			entry[Schema::Keys::DEPTH] = this->m_regions().size() + 1;
-			if (!this->m_regions().empty())
-				entry[Schema::Keys::REGION] = this->m_regions().top();
-
-			this->m_trace_json.push_back(entry);
-			this->m_regions().push(label);
-			}; this->push_capture(std::move(capture), CaptureKind::Region);
+			this->record(CaptureKind::Region, Type::REGION,
+				Key::LABEL = label,
+				Key::TIME = now,
+				Key::FILE = file,
+				Key::LINE = line,
+				Key::DEPTH = at_replay([this]{ return this->m_regions().size() + 1; }),
+				then([this, label]{ this->m_regions().push(label); }));   // (after the depth: the event itself is in the region around it)
 #endif
 		}
 
