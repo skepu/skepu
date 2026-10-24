@@ -853,8 +853,6 @@ std::string generateUserTypeCode_CL(UserType &type)
 	const std::regex tag("\\b(struct|class)\\s+" + type.name + "\\b");
 	def = std::regex_replace(def, tag, "struct " + type.typeNameOpenCL, std::regex_constants::format_first_only);
 	return "typedef " + def + " " + type.typeNameOpenCL + ";\n";
-	
-	// TODO handle complex numbers
 }
 
 std::string generateUserFunctionCode_CL(UserFunction &Func)
@@ -949,7 +947,7 @@ std::string generateUserFunctionCode_CL(UserFunction &Func, std::set<UserFunctio
 
 	std::string transformedSource = replaceReferencesToOtherUFs(Backend::OpenCL, Func, [] (UserFunction &UF) { return UF.uniqueName; });
 
-	// Recursive call, potential for circular loop: TODO FIX!!
+	// The functions that this one calls come first (each function is emitted once, so circular references end)
 	for (UserFunction *RefFunc : Func.ReferencedUFs)
 		SSFuncSource << generateUserFunctionCode_CL(*RefFunc, emitted);
 

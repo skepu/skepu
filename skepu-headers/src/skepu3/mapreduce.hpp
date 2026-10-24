@@ -32,7 +32,7 @@ namespace skepu
 
 
 
-	/* MapReduce "semantic guide" for the SkePU 2 precompiler.
+	/* MapReduce "semantic guide" for the SkePU precompiler.
 	 * Sequential implementation when used with any C++ compiler.
 	 * Works with any number of variable arguments > 0.
 	 * Works with any number of constant arguments >= 0.

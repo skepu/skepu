@@ -269,7 +269,7 @@ namespace skepu
 		void MapOverlap1D<MapOverlapFunc, CUDAKernel, C2, C3, C4, CLKernel>
 		::colwise_Hybrid(skepu::Parity p, pack_indices<OI...> oi, pack_indices<EI...> ei, pack_indices<AI...> ai, pack_indices<CI...> ci, CallArgs&&... args)
 		{
-			std::cout << "WARNING: colwise_Hybrid is not implemented for Hybrid exection yet. Will run OpenMP version." << std::endl;
+			std::cout << "WARNING: colwise_Hybrid is not implemented for Hybrid execution yet. Will run OpenMP version." << std::endl;
 			
 			this->colwise_OpenMP(p, oi, ei, ai, ci, std::forward<CallArgs>(args)...);
 		}

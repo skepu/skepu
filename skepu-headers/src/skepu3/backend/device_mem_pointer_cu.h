@@ -792,11 +792,6 @@ namespace skepu
 					m_valid = false;
 				m_deviceDataHasChanged = false;
 				
- 				// TODO: With this uncommented, SkePU 2 crashes when executing the following skeleton instance using CUDA:
- 				// instance(out, in);
-				// out.invalidateDeviceData();
-				// instance(out, in);
-// 				DeviceAllocations_CU<int>::getInstance()->removeAllocation(m_deviceDataPointer,this,m_deviceID);
 			}
 		}
 

@@ -18,7 +18,7 @@ namespace skepu
 		{
 			SKEPU_ERROR((this->isPool ? "MapPool3D" : "MapOverlap3D") << " is not implemented for Hybrid execution");
             
-            std::cout << "WARNING: helper_Hybrid is not implemented for Hybrid exection yet. Will run OpenMP version." << std::endl;
+            std::cout << "WARNING: helper_Hybrid is not implemented for Hybrid execution yet. Will run OpenMP version." << std::endl;
 			
 			this->helper_OpenMP(p, oi, ei, ai, ci, std::forward<CallArgs>(args)...);
 		}

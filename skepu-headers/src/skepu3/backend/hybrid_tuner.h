@@ -55,9 +55,6 @@ namespace skepu
 					resize_all_in_tuple(elwiseArgs, i, instance);
 					resize_all_in_tuple(containerArgs, i, instance);
 					
-					// TODO: Set default size on Map and MapReduce skeletons only
-// 					instance.setDefaultSize(i);
-					
 					BackendSpec cpuSpec(skepu::Backend::Type::OpenMP);
 					cpuSpec.setCPUThreads(numThreads-1); // One will be used for GPU
 					instance.setBackend(cpuSpec);

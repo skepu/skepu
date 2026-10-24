@@ -722,13 +722,6 @@ namespace skepu
 
 	public: //-- Constructors & Destructor --//
 
-	/*	TODO: Fix pinned memory
-#ifdef USE_PINNED_MEMORY
-		typedef typename std::vector<typename std::remove_const<T>::type, malloc_allocator<typename std::remove_const<T>::type> >::iterator iterator_type;
-#else
-		typedef typename std::vector<typename std::remove_const<T>::type>::iterator iterator_type;
-#endif*/
-
 		MatrixIterator(parent_type *mat, T *std_iterator);
 
 	public: //-- Extras --//

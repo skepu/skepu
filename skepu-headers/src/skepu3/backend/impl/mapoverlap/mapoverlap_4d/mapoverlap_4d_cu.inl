@@ -235,7 +235,7 @@ namespace skepu
 				// Make sure the data is marked as changed by the device
 				pack_expand((std::get<OI>(out_mem_p[i])->changeDeviceData(), 0)...);
 			}*/
-			SKEPU_ERROR("Multi-device CUDA MapOverlap 3D not implemented");
+			SKEPU_ERROR("Multi-device CUDA MapOverlap 4D not implemented");
 		}
 
 
