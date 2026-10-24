@@ -228,6 +228,28 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 			}
 		}
 
+	// The calls of standard library functions: OpenCL C has the math builtins under their plain names
+	if (backend == Backend::OpenCL)
+		if (const Stmt *body = f->getBody())
+		{
+			const SourceManager &SM = GlobalRewriter.getSourceMgr();
+			for (auto &ref : UF.StdCallReferences)
+			{
+				const SourceRange range = std::get<0>(ref);
+				if (SM.isBeforeInTranslationUnit(range.getBegin(), body->getBeginLoc()) || SM.isBeforeInTranslationUnit(body->getEndLoc(), range.getEnd()))
+					continue;
+				if (std::get<1>(ref).empty())
+				{
+#ifndef SKEPU_LSP
+					SkePUAbort("The user function " + UF.uniqueName + " calls std::" + std::get<2>(ref)
+						+ ", which has no equivalent in OpenCL C. Use a math function that OpenCL has (sin, sqrt, pow, fabs, ...) or a user function.");
+#endif
+					continue;
+				}
+				R.ReplaceText(range, std::get<1>(ref));
+			}
+		}
+
 	// (after the container that is subscripted; the begin of the callee of the operator is not the [ in an instantiated template)
 	for (auto subscript : UF.containerSubscripts)
 		R.InsertText(Lexer::getLocForEndOfToken(subscript->getArg(0)->getEndLoc(), 0, GlobalRewriter.getSourceMgr(), GlobalRewriter.getLangOpts()), ".data");

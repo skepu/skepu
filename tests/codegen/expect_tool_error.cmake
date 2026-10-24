@@ -1,13 +1,14 @@
 # Runs skepu-tool on a source and checks what it does:
 #   -DEXPECT=text   it must refuse the source: exit status 1 (not 0, and not a crash) and the text in what it says
 #   no EXPECT       it must accept the source (exit status 0)
-# Arguments: TOOL (skepu-tool), SOURCE, OUT (a directory for what it makes), FLAGS (the flags after --, separated by |), EXPECT.
+# Arguments: TOOL (skepu-tool), SOURCE, OUT (a directory for what it makes), FLAGS (the flags after --, separated by |), EXPECT, and OPTIONS (flags of the tool before the source, as -opencl).
 string(REPLACE "|" ";" _flags "${FLAGS}")
+string(REPLACE "|" ";" _options "${OPTIONS}")
 file(REMOVE_RECURSE "${OUT}")
 file(MAKE_DIRECTORY "${OUT}")
 
 execute_process(
-	COMMAND "${TOOL}" -silent -name tool_error_test -dir=${OUT} "${SOURCE}" -- ${_flags}
+	COMMAND "${TOOL}" ${_options} -silent -name tool_error_test -dir=${OUT} "${SOURCE}" -- ${_flags}
 	RESULT_VARIABLE _status
 	OUTPUT_VARIABLE _output
 	ERROR_VARIABLE _errors)

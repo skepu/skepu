@@ -695,4 +695,36 @@ TEST_CASE("builtins: Test built-in math functions")
 			is_similar(res(i), 0.0f);
 	});
 }
+
+
+// The same functions called with a std:: qualifier (OpenCL C has them under their plain names; std::abs of a float is fabs)
+auto skepu_std_math = skepu::Map<2>([](float f, float f2) -> float
+{
+	return std::sin(f) + std::sqrt(f) + std::pow(f, 2.f) + std::fabs(f - f2) + std::abs(f - f2) + std::max(f, f2) + std::min<float>(f, f2) + ::floor(f);
+});
+
+TEST_CASE("builtins: Test math functions called with std::")
+{
+	size_t constexpr N{1000};
+
+	skepu::Vector<float> in(N), in2(N), res(N);
+	skepu::external([&]
+	{
+		for(size_t i = 0; i < N; ++i)
+		{
+			in(i) = (float)i / 100.0f;
+			in2(i) = 3.f;
+		}
+	}, skepu::write(in, in2));
+
+	REQUIRE_NOTHROW(skepu_std_math(res, in, in2));
+	skepu::external(skepu::read(res, in, in2), [&]
+	{
+		for(size_t i = 0; i < N; ++i)
+		{
+			const float f = in(i), f2 = in2(i);
+			is_similar(res(i), std::sin(f) + std::sqrt(f) + std::pow(f, 2.f) + std::fabs(f - f2) + std::abs(f - f2) + std::max(f, f2) + std::min(f, f2) + std::floor(f));
+		}
+	});
+}
 }

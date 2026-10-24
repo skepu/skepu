@@ -1340,7 +1340,7 @@ __kernel void {{KERNEL_NAME}}({{KERNEL_PARAMS}}
 		+ skepu_k * skepu_out_size_l
 		+ skepu_l;
 
-	// Note/TODO: The work groups at the edge copies more padding into shared memory than necessary
+	// Note: The work groups at the edge copies more padding into shared memory than necessary
 	if ( skepu_i < skepu_out_size_i + skepu_overlap_i * 2
 		&& skepu_j < skepu_out_size_j + skepu_overlap_j * 2
 		&& skepu_k < skepu_out_size_k + skepu_overlap_k * 2

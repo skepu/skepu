@@ -178,6 +178,15 @@ understanding the syntax, capabilities, and limitations of this skeleton
 is of utmost importance for anyone interested in using or otherwise
 learning SkePU.
 
+### Math functions in user functions {#sec-mathfunctions}
+
+A user function may call the math functions that every backend has: `exp`, `sqrt`, `pow`, `log`, `sin`, `cos`, `tan` (and their
+inverse and hyperbolic variants), `fabs`, `abs`, `min`, `max`, `fmin`, `fmax`, `fmod`, `floor`, `ceil`, `round`, `trunc`, `erf`,
+`isnan` and `isinf`. They can be written plain (`sin(x)`) or qualified (`std::sin(x)`); for the OpenCL backend, SkePU's precompiler
+translates the qualified form to the built-in function of OpenCL C, and `std::abs` of a floating-point value to `fabs`.
+Other functions of the standard library (`std::sort`, `std::vector`, ...) have no counterpart in OpenCL C, and the precompiler
+reports an error if it finds a call of one for that backend. Put what such a function does into a user function of your own.
+
 ### Freely accessible containers inside user functions {#sec-randomaccess}
 
 Map patterns often only concern themselves with providing a single

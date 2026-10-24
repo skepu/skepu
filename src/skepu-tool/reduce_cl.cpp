@@ -112,7 +112,7 @@ std::string createReduce1DKernelProgram_CL(SkeletonInstance &instance, UserFunct
 		sourceStream << "#define " << pair.second->name << " (" << pair.second->definition << ") // " << pair.second->typeName << "\n";
 
 	// check for extra user-supplied opencl code for custome datatype
-	for (UserType *RefType : reduceFunc.ReferencedUTs)
+	for (UserType *RefType : reduceFunc.allReferencedUTs())
 		sourceStream << generateUserTypeCode_CL(*RefType);
 
 	const std::string kernelName = instance + "_" + transformToCXXIdentifier(ResultName) + "_ReduceKernel_" + reduceFunc.uniqueName;
@@ -222,10 +222,9 @@ std::string createReduce2DKernelProgram_CL(SkeletonInstance &instance, UserFunct
 		sourceStream << "#define " << pair.second->name << " (" << pair.second->definition << ") // " << pair.second->typeName << "\n";
 
 	// check for extra user-supplied opencl code for custome datatype
-	std::set<UserType*> referencedUTs;
-	std::set_union(
-		rowWiseFunc.ReferencedUTs.cbegin(), rowWiseFunc.ReferencedUTs.cend(),
-		colWiseFunc.ReferencedUTs.cbegin(), colWiseFunc.ReferencedUTs.cend(), std::inserter(referencedUTs, referencedUTs.begin()));
+	std::set<UserType*> referencedUTs = rowWiseFunc.allReferencedUTs();
+	for (UserType *type : colWiseFunc.allReferencedUTs())
+		referencedUTs.insert(type);
 
 	for (UserType *RefType : referencedUTs)
 		sourceStream << generateUserTypeCode_CL(*RefType);

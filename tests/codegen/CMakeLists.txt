@@ -8,6 +8,13 @@ skepu_add_test(fundamental_types EXCLUDE sequential)
 
 
 # ------------------------------------------------
+#   User types that only the functions called by an operator use
+# ------------------------------------------------
+
+skepu_add_test(helper_user_types EXCLUDE sequential)
+
+
+# ------------------------------------------------
 #   Code on the line of a skeleton instance declaration
 # ------------------------------------------------
 
@@ -267,6 +274,8 @@ list(JOIN SKEPU_TOOL_SYSTEM_INCLUDE_FLAGS "|" _tool_error_flags)
 set(_tool_error_flags "${_tool_error_flags}|-I|${CMAKE_SOURCE_DIR}/skepu-headers/src")
 
 function(skepu_add_tool_error_test name source expected)
+	set(_options "${ARGN}")
+	string(REPLACE ";" "|" _options "${_options}")
 	add_test(NAME ${name}
 		COMMAND ${CMAKE_COMMAND}
 			-DTOOL=${SKEPU_EXECUTABLE}
@@ -274,6 +283,7 @@ function(skepu_add_tool_error_test name source expected)
 			-DOUT=${CMAKE_CURRENT_BINARY_DIR}/${name}_output
 			-DFLAGS=${_tool_error_flags}
 			-DEXPECT=${expected}
+			-DOPTIONS=${_options}
 			-P ${CMAKE_CURRENT_SOURCE_DIR}/expect_tool_error.cmake)
 endfunction()
 
@@ -282,3 +292,7 @@ skepu_add_tool_error_test(tool_userconstant_not_constexpr userconstant_not_const
 skepu_add_tool_error_test(tool_userconstant_no_initializer userconstant_no_initializer.cpp "must be declared constexpr")
 # (and one that is as it must be is accepted)
 skepu_add_tool_error_test(tool_userconstant_valid userconstant_valid.cpp "")
+
+# The standard library has no counterpart in OpenCL C, only the math functions (see AllowedFunctionNamesCalledInUFs) have
+skepu_add_tool_error_test(tool_std_call_opencl std_call.cpp "calls std::stable_sort" -opencl)
+skepu_add_tool_error_test(tool_std_call_cpu std_call.cpp "")

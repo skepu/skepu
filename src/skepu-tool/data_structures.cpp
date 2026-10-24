@@ -36,6 +36,16 @@ class UserFunctionVisitor : public RecursiveASTVisitor<UserFunctionVisitor>
 {
 public:
 
+	// Whether a name is qualified with std:: or ::, as the text says it (std::sin(float) is not always declared in std)
+	bool isStdQualifier(const DeclRefExpr *ref)
+	{
+		const ASTContext &Context = ref->getDecl()->getASTContext();
+		const SourceManager &SM = Context.getSourceManager();
+		bool invalid = false;
+		llvm::StringRef text = Lexer::getSourceText(CharSourceRange::getCharRange(ref->getBeginLoc(), ref->getNameInfo().getBeginLoc()), SM, Context.getLangOpts(), &invalid);
+		return !invalid && (text == "std::" || text == "::");
+	}
+
 	bool VisitCallExpr(CallExpr *c)
 	{
 		if (isa<CXXOperatorCallExpr>(c))
@@ -70,6 +80,20 @@ public:
 
 		FunctionDecl *Func = c->getDirectCallee();
 		std::string name = Func->getName().str();
+
+		// A call that is qualified with std:: (or ::) is a call of the standard library function, which OpenCL C does not have:
+		// the builtin of the same name is used there (see StdCallReferences)
+		if (auto *ref = dyn_cast<DeclRefExpr>(callee))
+			if (ref->hasQualifier() && !ref->getBeginLoc().isMacroID() && isStdQualifier(ref)
+				&& (Func->getDeclContext()->getRedeclContext()->isStdNamespace() || AllowedFunctionNamesCalledInUFs.count(name)))
+			{
+				const bool allowed = AllowedFunctionNamesCalledInUFs.count(name) > 0;
+				std::string plain = name;
+				if (name == "abs" && c->getNumArgs() == 1 && c->getArg(0)->getType()->isFloatingType())
+					plain = "fabs";
+				StdCallReferences.emplace_back(ref->getSourceRange(), allowed ? plain : "", name);
+				return true;
+			}
 
 		if (name == "")
 		{
@@ -215,6 +239,7 @@ public:
 
 	// The qualified names of user constants in the function, with the plain name of the constant
 	std::vector<std::pair<SourceRange, std::string>> ConstantReferences{};
+	std::vector<std::tuple<SourceRange, std::string, std::string>> StdCallReferences{};
 
 	std::vector<CXXOperatorCallExpr*> containerSubscripts{}, containerCalls{};
 	std::vector<CXXOperatorCallExpr*> operatorOverloads{};
@@ -391,12 +416,12 @@ UserFunction::Param::Param(const clang::ParmVarDecl *p)
 	replaceTextInString(this->resolvedTypeName, "struct ", "");
 
 	if (	this->rawTypeName != "unsigned long"
-		&&	this->rawTypeName != "unsigned char") // TODO add other basic types
+		&&	this->rawTypeName != "unsigned char") // (the other built-in types are made identifiers: unsigned int is unsigned_int)
 		this->escapedTypeName = transformToCXXIdentifier(this->resolvedTypeName);
 	else
 		this->escapedTypeName = this->rawTypeName;
 	
-	// TODO: link with UserType
+	// A user type is named by its record name (UserTypes are looked up by that name)
 	if (auto *userType = p->getOriginalType().getTypePtr()->getAs<clang::RecordType>())
 		this->rawTypeName = userType->getDecl()->getNameAsString();
 	
@@ -960,6 +985,7 @@ UserFunction::UserFunction(clang::FunctionDecl *f)
 	this->ReferencedUTs = UFVisitor.ReferencedUTs;
 	this->UTReferences = UFVisitor.UTReferences;
 	this->ConstantReferences = UFVisitor.ConstantReferences;
+	this->StdCallReferences = UFVisitor.StdCallReferences;
 	
 	this->ReferencedRets = UFVisitor.ReferencedRets;
 	this->ReferencedGets = UFVisitor.ReferencedGets;
@@ -1008,6 +1034,25 @@ UserFunction::UserFunction(clang::FunctionDecl *f)
 	for (UserFunction *called : this->ReferencedUFs)
 		if (called->requiresDoublePrecision)
 			this->requiresDoublePrecision = true;
+}
+
+std::set<UserType*> UserFunction::allReferencedUTs() const
+{
+	std::set<UserType*> types = this->ReferencedUTs;
+	std::set<const UserFunction*> visited{this};
+	std::vector<const UserFunction*> pending{this};
+	while (!pending.empty())
+	{
+		const UserFunction *func = pending.back();
+		pending.pop_back();
+		for (UserFunction *called : func->ReferencedUFs)
+			if (visited.insert(called).second)
+			{
+				types.insert(called->ReferencedUTs.begin(), called->ReferencedUTs.end());
+				pending.push_back(called);
+			}
+	}
+	return types;
 }
 
 std::string UserFunction::funcNameCUDA()

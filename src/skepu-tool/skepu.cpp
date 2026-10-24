@@ -254,7 +254,7 @@ public:
 					if(skeleton == nullptr || Invocation == nullptr)
 						continue;
 
-					// TODO: Check if some more data points need to be compared such as special names and such
+					// (only the return types are compared here)
 					if(Invocation->retType.isNull())
 					{
 						//clangd::log("Invocation ret is null");

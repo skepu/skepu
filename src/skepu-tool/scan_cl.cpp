@@ -245,8 +245,7 @@ std::string createScanKernelProgram_CL(SkeletonInstance &instance, UserFunction 
 		sourceStream << "#define " << pair.second->name << " (" << pair.second->definition << ") // " << pair.second->typeName << "\n";
 
 	// check for extra user-supplied opencl code for custome datatype
-	// TODO: Also check the referenced UFs for referenced UTs skepu::userstruct
-	for (UserType *RefType : scanFunc.ReferencedUTs)
+	for (UserType *RefType : scanFunc.allReferencedUTs())
 		sourceStream << generateUserTypeCode_CL(*RefType);
 
 	sourceStream << KernelPredefinedTypes_CL << generateUserFunctionCode_CL(scanFunc) << ScanKernel_CL << ScanUpdate_CL << ScanAdd_CL;
