@@ -175,6 +175,15 @@
     ]
   },
   {
+    "title": "SkePU-BLAS Tour (every routine, and sparse matrices)",
+    "trace": {
+      "openmp": "blas_tour/trace_blas_tour_openmp.json"
+    },
+    "cpp_files": [
+      "blas_tour/blas_tour.cpp"
+    ]
+  },
+  {
     "title": "Miller-Rabin",
     "trace": {
       "openmp": "miller_rabin/trace_miller_rabin_openmp.json",

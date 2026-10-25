@@ -177,9 +177,11 @@ TRACE_DIR    ?= $(TRACE_BASE)$(MPI_SUFFIX)
 # All SkePU example programs (unless the Makefile that includes this one has set PROGS; used for 'make all-[parallel|sequential]' and 'make clean').
 
 ifndef PROGS
+PROGS += blas_tour
 PROGS += cellular_automaton
 PROGS += cma
 PROGS += conjugate_gradient
+PROGS += conjugate_gradient_sparse
 PROGS += coulombic
 PROGS += dotproduct
 PROGS += edgedetect
@@ -207,6 +209,10 @@ PROGS += psnr
 PROGS += riemann_sum
 PROGS += taylor
 
+# The programs that are built for the CPU backends only (the sequential version, and the parallel version for OpenMP): the sparse matrices
+# are not supported by the OpenCL, CUDA and MPI backends yet
+CPU_ONLY_PROGS = blas_tour conjugate_gradient_sparse
+
 # The programs that the MPI backend supports (see examples/CMake/example-options.cmake): the others are not built in MPI mode
 MPI_PROGS = cellular_automaton cma conjugate_gradient coulombic dotproduct horner mandelbrot maxmin miller_rabin \
 	mmmult mmmult_row_col montecarlo mvmult mvmult_row nbody nbody_mappairs ode_fisher ode_lorenz ozaki_gemm perlin ppmcc pso psnr riemann_sum taylor
@@ -217,9 +223,11 @@ endif
 
 RUN_BACKEND = OpenCL
 SIZE_BACKEND = 2048
+lookup.blas_tour           := 64 OpenMP
 lookup.cellular_automaton  := 2 256 10 0.1 $(RUN_BACKEND)
 lookup.cma                 := $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.conjugate_gradient  := 256 $(RUN_BACKEND)
+lookup.conjugate_gradient_sparse := 4096 OpenMP
 lookup.coulombic           := $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.dotproduct          := $(SIZE_BACKEND) $(RUN_BACKEND)
 lookup.edgedetect          := edge data/goose.png run/result_edgedetect 2 $(RUN_BACKEND)
@@ -350,11 +358,15 @@ $(COMPILE_COMMANDS): $(MAKEFILE_LIST)
 $(SEQ_DIR)/% : $$(call srcs,$$*) $(SEQ_DEPS) | $(SEQ_DIR)
 	$(DBGR) $(SEQ_CXX) $(SEQ_FLAGS) $(COMMON_SOURCES) $(call srcs,$*) -o $@
 
+# The backends and the file type of a program: a CPU-only program is built for OpenMP alone, even if CUDA or OpenCL are in BACKENDS
+program_backends = $(if $(filter $(1),$(CPU_ONLY_PROGS)),$(filter-out -opencl -cuda -mpi,$(BACKENDS)),$(BACKENDS))
+program_filetype = $(if $(filter $(1),$(CPU_ONLY_PROGS)),cpp,$(FILETYPE))
+
 # Precompiles and builds a single parallel test program (the precompiled source of each of its sources is
 # $(PAR_DIR)/<source>_precompiled.$(FILETYPE)).
 $(PAR_DIR)/%: $$(call srcs,$$*) $(PAR_DEPS) | $(PAR_DIR) $(TRACE_DIR)
-	set -e; $(foreach s,$(call srcs,$*),$(DBGR) $(SKEPU_TOOL_PATH) $(BACKENDS) -name $(basename $(notdir $(s)))_precompiled $(s) -dir $(PAR_DIR) $(SKEPU_FLAGS);) true
-	$(DBGR) $(CXX) $(foreach s,$(call srcs,$*),$(PAR_DIR)/$(basename $(notdir $(s)))_precompiled.$(FILETYPE)) $(COMMON_SOURCES) $(TARGET_FLAGS) -DSKEPU_TRACE_FILE="$(TRACE_DIR)/trace_$*.json" -DSKEPU_TRACE_SNAPSHOT_DIR="$(SNAPSHOT_DIR)" -o $@
+	set -e; $(foreach s,$(call srcs,$*),$(DBGR) $(SKEPU_TOOL_PATH) $(call program_backends,$*) -name $(basename $(notdir $(s)))_precompiled $(s) -dir $(PAR_DIR) $(SKEPU_FLAGS);) true
+	$(DBGR) $(CXX) $(foreach s,$(call srcs,$*),$(PAR_DIR)/$(basename $(notdir $(s)))_precompiled.$(call program_filetype,$*)) $(COMMON_SOURCES) $(TARGET_FLAGS) -DSKEPU_TRACE_FILE="$(TRACE_DIR)/trace_$*.json" -DSKEPU_TRACE_SNAPSHOT_DIR="$(SNAPSHOT_DIR)" -o $@
 
 # The start of a run: the processes of an MPI program are started by MPIRUN, one for each rank (SPMD)
 RUN_PREFIX = $(RUN_ENV) $(if $(MPI_MODE),$(MPIRUN) $(MPIRUN_OPTIONS) -n $(MPI_RANKS))

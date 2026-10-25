@@ -3,8 +3,9 @@
 #   SKEPU_EXAMPLE_<NAME>            build the program
 #   SKEPU_EXAMPLE_<NAME>_<BACKEND>  build it for the backend (CUDA, OPENCL, OPENMP, MPI)
 
-# Programs that are not built for these backends by default (none: all of them are built for CUDA)
-set(_skepu_examples_no_cuda)
+# Programs that are not built for these backends by default (the sparse matrices are not supported by the CUDA and OpenCL backends yet)
+set(_skepu_examples_no_cuda blas_tour conjugate_gradient_sparse)
+set(_skepu_examples_no_opencl blas_tour conjugate_gradient_sparse)
 set(_skepu_examples_mpi
 	cellular_automaton cma conjugate_gradient coulombic dotproduct horner mandelbrot maxmin miller_rabin
 	mmmult mmmult_row_col montecarlo mvmult mvmult_row nbody nbody_mappairs ode_fisher ode_lorenz ozaki_gemm perlin ppmcc pso psnr riemann_sum taylor)
@@ -16,6 +17,10 @@ foreach(_example IN LISTS _skepu_examples)
 	if(_example IN_LIST _skepu_examples_no_cuda)
 		set(_cuda OFF)
 	endif()
+	set(_opencl ${SKEPU_OPENCL})
+	if(_example IN_LIST _skepu_examples_no_opencl)
+		set(_opencl OFF)
+	endif()
 	set(_mpi OFF)
 	if(_example IN_LIST _skepu_examples_mpi)
 		set(_mpi ${SKEPU_MPI})
@@ -23,7 +28,7 @@ foreach(_example IN LISTS _skepu_examples)
 
 	option(SKEPU_EXAMPLE_${_uc} "" ${SKEPU_BUILD_EXAMPLES})
 	option(SKEPU_EXAMPLE_${_uc}_CUDA "" ${_cuda})
-	option(SKEPU_EXAMPLE_${_uc}_OPENCL "" ${SKEPU_OPENCL})
+	option(SKEPU_EXAMPLE_${_uc}_OPENCL "" ${_opencl})
 	option(SKEPU_EXAMPLE_${_uc}_OPENMP "" ${SKEPU_OPENMP})
 	option(SKEPU_EXAMPLE_${_uc}_MPI "" ${_mpi})
 	mark_as_advanced(FORCE

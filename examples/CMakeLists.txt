@@ -2,9 +2,11 @@ project(skepu-examples LANGUAGES CXX)
 
 # The example programs. The same set as PROGS in the Makefile; keep them in step.
 set(_skepu_examples
+	blas_tour
 	cellular_automaton
 	cma
 	conjugate_gradient
+	conjugate_gradient_sparse
 	coulombic
 	dotproduct
 	edgedetect

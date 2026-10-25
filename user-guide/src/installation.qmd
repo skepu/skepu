@@ -264,11 +264,15 @@ implemented/tested for this release.
 
 The SkePU distribution comes with a selection of example programs:
 
+- **A tour of SkePU-BLAS: a call of each routine, in labelled trace scopes** (`blas_tour`; the CPU and OpenMP backends)
+
 - **Cellular automaton** (`cellular_automaton`)
 
 - **Cumulative moving average** (`cma`)
 
 - **Conjugate gradient solver** (`conjugate_gradient`)
+
+- **Conjugate gradient solver for a sparse matrix** (`conjugate_gradient_sparse`; the CPU and OpenMP backends)
 
 - **Coulombic potential** (`coulombic`)
 
