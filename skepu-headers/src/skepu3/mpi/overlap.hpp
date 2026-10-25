@@ -602,7 +602,7 @@ namespace skepu
 			{
 				if constexpr (mpi_detail::any_distributed<CallArgs...>::value)
 				{
-					this->checkUpdateModeRandom(MapOverlapFunc::randomCount);
+					this->checkUpdateMode(MapOverlapFunc::randomCount, this->out_indices, this->elwise_indices, this->any_indices, std::forward<CallArgs>(args)...);
 					return this->distribute(std::forward<CallArgs>(args)...);
 				}
 				else
@@ -726,7 +726,7 @@ namespace skepu
 			{
 				if constexpr (mpi_detail::any_distributed<CallArgs...>::value)
 				{
-					this->checkUpdateModeRandom(MapOverlapFunc::randomCount);
+					this->checkUpdateMode(MapOverlapFunc::randomCount, this->out_indices, this->elwise_indices, this->any_indices, std::forward<CallArgs>(args)...);
 					return this->distribute(std::forward<CallArgs>(args)...);
 				}
 				else
@@ -813,7 +813,7 @@ namespace skepu
 			{
 				if constexpr (mpi_detail::any_distributed<CallArgs...>::value)
 				{
-					this->checkUpdateModeRandom(MapOverlapFunc::randomCount);
+					this->checkUpdateMode(MapOverlapFunc::randomCount, this->out_indices, this->elwise_indices, this->any_indices, std::forward<CallArgs>(args)...);
 					return this->distribute(std::forward<CallArgs>(args)...);
 				}
 				else
@@ -894,7 +894,7 @@ namespace skepu
 			{
 				if constexpr (mpi_detail::any_distributed<CallArgs...>::value)
 				{
-					this->checkUpdateModeRandom(MapOverlapFunc::randomCount);
+					this->checkUpdateMode(MapOverlapFunc::randomCount, this->out_indices, this->elwise_indices, this->any_indices, std::forward<CallArgs>(args)...);
 					return this->distribute(std::forward<CallArgs>(args)...);
 				}
 				else

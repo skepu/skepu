@@ -106,7 +106,8 @@ messages are printed by the first process of an MPI program only.
 ## Time Measurement Utilities
 
 `skepu::benchmark` measures the execution time of skeleton calls on one or all backends.
-`measureExecTime` times one call of a function and `basicBenchmark` returns the median of
+`measure` times one call of a function (`measureExecTime` is its older name), `measureMedian` returns the median of
+several calls of the function, and `basicBenchmark` returns the median of
 several repetitions (as a `std::chrono::microseconds` duration); `fullBenchmark` runs a function over a range of problem sizes
 for every available backend of a tuple of skeleton instances and returns a `BenchmarkResult`
 with the times for each backend and size.

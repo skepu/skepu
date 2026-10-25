@@ -17,6 +17,7 @@
 #define SKEPU_STRINGIFY_NESTED(x) SKEPU_STRINGIFY(x)
 
 #include <vector>
+#include <type_traits>
 #include <utility>
 #include "skepu3/impl/chain.hpp"
 #include <array>
@@ -383,6 +384,27 @@ namespace skepu
 	}
 
 #endif
+
+	// Whether a container has a host pointer to its memory (getAddress())
+	template<typename C, typename = void>
+	struct has_get_address : std::false_type {};
+	template<typename C>
+	struct has_get_address<C, std::void_t<decltype(std::declval<C &>().getAddress())>> : std::true_type {};
+
+	// Whether two containers (of any kind and element type) are the same object, or have the same memory
+	template<typename A, typename B>
+	inline bool sameContainer(A &a, B &b)
+	{
+		if (static_cast<const void *>(&a) == static_cast<const void *>(&b))
+			return true;
+		if constexpr (has_get_address<A>::value && has_get_address<B>::value)
+		{
+			const void *first = static_cast<const void *>(a.getAddress()), *second = static_cast<const void *>(b.getAddress());
+			return first != nullptr && first == second;
+		}
+		else
+			return false;
+	}
 }
 
 

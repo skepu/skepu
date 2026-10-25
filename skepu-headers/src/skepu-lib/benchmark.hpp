@@ -2,11 +2,15 @@
 #ifndef SKEPU_BENCHMARK_H
 #define SKEPU_BENCHMARK_H 1
 
+#include <algorithm>
 #include <chrono>
 #include <functional>
 #include <iostream>
+#include <iterator>
+#include <map>
 #include <string>
 #include <tuple>
+#include <vector>
 
 #include <skepu3/impl/backend.hpp>
 #include <skepu3/impl/meta_helpers.hpp>
@@ -83,6 +87,13 @@ namespace skepu
 
 			return {minSize, maxSize, repetitions};
 		}
+		
+		template<typename T>
+		inline T median(std::vector<T> &v)
+		{
+			std::nth_element(v.begin(), v.begin() + v.size() / 2, v.end());
+			return *std::next(v.begin(), v.size() / 2);
+		}
 
 		class BenchmarkResult
 		{
@@ -122,35 +133,39 @@ namespace skepu
 		using BenchmarkFunc = std::function<void(size_t size, BackendSpec &spec)>;
 
 		template<typename BF, typename... Args>
-		inline std::chrono::microseconds measureExecTime(BF f, Args&&... args)
+		inline std::chrono::microseconds measure(BF f, Args&&... args)
 		{
-			// (the arguments are a pack: the function cannot take the place of its call)
-			SKEPU_TRACE_API_NO_SITE("benchmark.measureExecTime");
+			SKEPU_TRACE_API_NO_SITE("benchmark.measure");
 			auto t1 = std::chrono::steady_clock::now();
 			f(std::forward<Args>(args)...);
-
 			auto t2 = std::chrono::steady_clock::now();
 			return std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
 		}
 
 		template<typename BF, typename... Args>
-		inline std::chrono::microseconds measureExecTimeIdempotent(BF f, Args&&... args)
+		inline std::chrono::microseconds measureMedian(size_t repeats, BF f, Args&&... args)
 		{
-			SKEPU_TRACE_API_NO_SITE("benchmark.measureExecTimeIdempotent");
-			f(std::forward<Args>(args)...);
-
-			auto t1 = std::chrono::steady_clock::now();
-			f(std::forward<Args>(args)...);
-
-			auto t2 = std::chrono::steady_clock::now();
-			return std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+			SKEPU_TRACE_API_NO_SITE("benchmark.measureMedian");
+			if (repeats == 0)
+				SKEPU_ERROR("benchmark::measureMedian: the number of repetitions must be at least 1");
+			std::vector<TimeSpan> durations(repeats);
+			for (auto &duration : durations)
+				duration = measure(f, args...);   // (the arguments are used again: they are not forwarded)
+			return median(durations);
 		}
 
-		template<typename T>
-		inline T median(std::vector<T> &v)
+		// deprecated, kept for compatibility
+		template<typename BF, typename... Args>
+		inline std::chrono::microseconds measureExecTime(BF f, Args&&... args)
 		{
-			std::nth_element(v.begin(), v.begin() + v.size() / 2, v.end());
-			return *std::next(v.begin(), v.size() / 2);
+			return measure(f, std::forward<Args>(args)...);
+		}
+
+		// deprecated, kept for compatibility
+		template<typename BF, typename... Args>
+		inline std::chrono::microseconds measureExecTimeIdempotent(BF f, Args&&... args)
+		{
+			return measureMedian(3, f, std::forward<Args>(args)...);
 		}
 
 
@@ -170,7 +185,7 @@ namespace skepu
 				// Run multiple tests to smooth out fluctuations
 				for (auto &duration : durations)
 				{
-					duration = measureExecTime(f, size, spec);
+					duration = measure(f, size, spec);
 					callback(duration);
 				}
 
@@ -191,7 +206,7 @@ namespace skepu
 			// Run multiple tests to smooth out fluctuations
 			for (auto &duration : durations)
 			{
-				duration = measureExecTime(f, size);
+				duration = measure(f, size);
 				callback(duration);
 			}
 

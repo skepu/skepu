@@ -92,14 +92,17 @@ TEST_CASE("The benchmark functions are regions")
 	int calls = 0;
 	const int basic_line = __LINE__ + 1;
 	skepu::benchmark::basicBenchmark(3, 8, [&](size_t) { ++calls; });
-	skepu::benchmark::measureExecTime([&](int) { ++calls; }, 1);
-	REQUIRE(calls == 4);
+	skepu::benchmark::measure([&](int) { ++calls; }, 1);
+	skepu::benchmark::measureMedian(2, [&](int) { ++calls; }, 1);
+	REQUIRE(calls == 6);
 
 	auto trace = read_trace();
 	auto basic = regions(trace, "benchmark.basicBenchmark");
 	REQUIRE(basic.size() == 1);
 	REQUIRE(is_this_file(basic[0].first));
 	REQUIRE(basic[0].second == basic_line);
-	// (one for each of the three repetitions, and the call of the program: they have no place)
-	REQUIRE(regions(trace, "benchmark.measureExecTime").size() == 4);
+	// (they have no place: their arguments are a pack. measure: one for each of the three repetitions of basicBenchmark, the call of the program, and the two
+	// repetitions of measureMedian, which is a region of its own around them)
+	REQUIRE(regions(trace, "benchmark.measure").size() == 6);
+	REQUIRE(regions(trace, "benchmark.measureMedian").size() == 1);
 }

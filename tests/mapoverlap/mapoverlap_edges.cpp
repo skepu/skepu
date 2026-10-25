@@ -1012,3 +1012,72 @@ TEST_CASE("mapoverlap_4d_mirror: MapOverlap 4D, mirror mode and a dimension that
 	CHECK(prng.get() == reference.get());
 }
 }
+
+
+// ======== mapoverlap_in_place_error ========
+
+namespace mapoverlap_in_place_error_part
+{
+// In the normal update mode the elements are computed in an order that depends on the backend (and in parallel): an output that is also an input (an
+// element-wise input, or a container that the user function reads with random access) has no defined result, and the call is an error, before anything is
+// computed. The update modes Red, Black and RedBlack are the ones for it.
+int blur_1d(skepu::Region1D<int> r) { return r(-1) + r(0) + r(1); }
+int blur_2d(skepu::Region2D<int> r) { return r(-1, 0) + r(0, 0) + r(1, 0); }
+int blur_3d(skepu::Region3D<int> r) { return r(-1, 0, 0) + r(0, 0, 0) + r(1, 0, 0); }
+int blur_4d(skepu::Region4D<int> r) { return r(-1, 0, 0, 0) + r(0, 0, 0, 0) + r(1, 0, 0, 0); }
+int table_1d(skepu::Region1D<int> r, skepu::Vec<int> table) { return r(0) + table[0]; }
+int table_2d(skepu::Region2D<int> r, skepu::Mat<int> table) { return r(0, 0) + table(0, 0); }
+
+auto blur_skeleton_1d = skepu::MapOverlap(blur_1d);
+auto blur_skeleton_2d = skepu::MapOverlap(blur_2d);
+auto blur_skeleton_3d = skepu::MapOverlap(blur_3d);
+auto blur_skeleton_4d = skepu::MapOverlap(blur_4d);
+auto table_skeleton_1d = skepu::MapOverlap(table_1d);
+auto table_skeleton_2d = skepu::MapOverlap(table_2d);
+
+TEST_CASE("mapoverlap_in_place_error: an output that is an input is an error in the normal update mode")
+{
+	const char *message = "also an input";
+	skepu::Vector<int> v(20, 1), v_out(20, 0);
+	skepu::Matrix<int> m(8, 9, 1), m_out(8, 9, 0);
+	skepu::Tensor3<int> t3(5, 6, 7), t3_out(5, 6, 7);
+	skepu::Tensor4<int> t4(4, 5, 6, 3), t4_out(4, 5, 6, 3);
+	blur_skeleton_1d.setOverlap(1);
+	blur_skeleton_2d.setOverlap(1, 1);
+	blur_skeleton_3d.setOverlap(1, 1, 1);
+	blur_skeleton_4d.setOverlap(1, 1, 1, 1);
+	table_skeleton_1d.setOverlap(1);
+	table_skeleton_2d.setOverlap(1, 1);
+
+	// The output is the input
+	CHECK_THROWS_WITH(blur_skeleton_1d(v, v), Catch::Contains(message));
+	CHECK_THROWS_WITH(blur_skeleton_2d(m, m), Catch::Contains(message));
+	CHECK_THROWS_WITH(blur_skeleton_3d(t3, t3), Catch::Contains(message));
+	CHECK_THROWS_WITH(blur_skeleton_4d(t4, t4), Catch::Contains(message));
+
+	// The output is a container that is read with random access
+	CHECK_THROWS_WITH(table_skeleton_1d(v_out, v, v_out), Catch::Contains(message));
+	CHECK_THROWS_WITH(table_skeleton_2d(m_out, m, m_out), Catch::Contains(message));
+
+	// Another container for the output is no error; the error is before the call computes anything (the input has its values)
+	CHECK_NOTHROW(blur_skeleton_1d(v_out, v));
+	CHECK_NOTHROW(blur_skeleton_2d(m_out, m));
+	CHECK_NOTHROW(blur_skeleton_3d(t3_out, t3));
+	CHECK_NOTHROW(blur_skeleton_4d(t4_out, t4));
+	CHECK_NOTHROW(table_skeleton_1d(v_out, v, v));
+	CHECK_NOTHROW(table_skeleton_2d(m_out, m, m));
+	for (size_t i = 0; i < v.size(); ++i)
+		CHECK(v[i] == 1);
+
+	// The update modes for it
+	for (auto mode : {skepu::UpdateMode::Red, skepu::UpdateMode::Black, skepu::UpdateMode::RedBlack})
+	{
+		blur_skeleton_1d.setUpdateMode(mode);
+		blur_skeleton_2d.setUpdateMode(mode);
+		CHECK_NOTHROW(blur_skeleton_1d(v, v));
+		CHECK_NOTHROW(blur_skeleton_2d(m, m));
+	}
+	blur_skeleton_1d.setUpdateMode(skepu::UpdateMode::Normal);
+	blur_skeleton_2d.setUpdateMode(skepu::UpdateMode::Normal);
+}
+}

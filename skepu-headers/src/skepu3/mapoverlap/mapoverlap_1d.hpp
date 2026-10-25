@@ -227,7 +227,7 @@ namespace skepu
 				REQUIRES(is_skepu_vector<typename std::remove_reference<typename pack_element<0, CallArgs...>::type>::type>::value)>
 			auto operator()(CallArgs&&... args) -> decltype(get<0>(std::forward<CallArgs>(args)...))
 			{
-				this->checkUpdateModeRandom(randomCount);
+				this->checkUpdateMode(randomCount, this->out_indices, this->elwise_indices, this->any_indices, std::forward<CallArgs>(args)...);
 				
 				if (this->m_updateMode == UpdateMode::Normal)
 				{
@@ -565,7 +565,7 @@ namespace skepu
 				switch (this->m_overlapPolicy)
 				{
 					case Overlap::ColWise:
-						this->checkUpdateModeRandom(randomCount);
+						this->checkUpdateMode(randomCount, this->out_indices, this->elwise_indices, this->any_indices, std::forward<CallArgs>(args)...);
 						
 						if (this->m_updateMode == UpdateMode::Normal)
 						{
@@ -584,7 +584,7 @@ namespace skepu
 						break;
 
 					case Overlap::RowWise:
-						this->checkUpdateModeRandom(randomCount);
+						this->checkUpdateMode(randomCount, this->out_indices, this->elwise_indices, this->any_indices, std::forward<CallArgs>(args)...);
 						
 						if (this->m_updateMode == UpdateMode::Normal)
 						{

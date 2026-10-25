@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
 
 	skepu::Map<1>(skepu::util::identity<float>)(swarm.best_positions, swarm.positions);
 	size_t iteration = 0;
-	auto duration = skepu::benchmark::measureExecTime([&]
+	auto duration = skepu::benchmark::measure([&]
 	{
 		track_best(swarm, function);
 		for (; iteration < iterations && swarm.lowest_value > tolerance; ++iteration)

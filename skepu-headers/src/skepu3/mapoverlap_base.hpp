@@ -69,6 +69,28 @@ namespace skepu
                     SKEPU_ERROR("MapOverlap: the update modes Red, Black and RedBlack cannot be used with a user function that uses random numbers");
             }
 
+            // The checks of a call, first of all: the combination of the update mode and the random numbers (above), and, in the normal update mode,
+            // an output that is also an input. The elements are computed in an order that the backend decides (and in parallel), so a stencil that reads
+            // what it writes has no defined result: only the update modes Red, Black and RedBlack, that are made for it, are in place.
+            template<size_t... OI, size_t... EI, size_t... AI, typename... CallArgs>
+            void checkUpdateMode(size_t random_count, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, CallArgs&&... args) const
+            {
+                this->checkUpdateModeRandom(random_count);
+                if (this->m_updateMode != UpdateMode::Normal)
+                    return;
+                bool overwritten = false;
+                auto against_inputs = [&](auto &output)
+                {
+                    overwritten = overwritten
+                        || (sameContainer(output, get<EI>(std::forward<CallArgs>(args)...)) || ...)
+                        || (sameContainer(output, get<AI>(std::forward<CallArgs>(args)...)) || ...);
+                };
+                (against_inputs(get<OI>(std::forward<CallArgs>(args)...)), ...);
+                if (overwritten)
+                    SKEPU_ERROR("MapOverlap: an output is also an input of the call, which is not defined in the normal update mode (the elements are computed in an "
+                        "order that depends on the backend, and in parallel). Use another container for the output, or setUpdateMode(skepu::UpdateMode::RedBlack)");
+            }
+
             size_t getSmallestAllowedInputSizePool(size_t out_size, size_t dim) const
             {
                 return (out_size - 1) * this->m_strides[dim] + this->m_overlap[dim];
