@@ -332,7 +332,8 @@ export class TraceDataProvider {
       self._allRegionPids = allRegionPids;
       var defaultCollapsed = !rawData.auto_expand_regions;
       allRegionPids.forEach(function(pid) {
-        if (!(pid in self._collapsedNodes)) self._collapsedNodes[pid] = defaultCollapsed;
+        // (the root region of the program tree mode is open: collapsed it hides all of the tree)
+        if (!(pid in self._collapsedNodes)) self._collapsedNodes[pid] = pid === 'region_global' ? false : defaultCollapsed;
       });
       self._regionParents = rawData.region_parents || {};
       var allFusionPids = rawData.all_fusion_pids || [];

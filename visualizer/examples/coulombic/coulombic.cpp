@@ -116,6 +116,7 @@ int main(int argc, char* argv[])
 	
 	const size_t atomcount = std::stoul(argv[1]);
 	auto spec = skepu::BackendSpec{argv[2]};
+	skepu::setGlobalBackendSpec(spec); // (also for the initialization: data that a GPU backend has written cannot be used directly by another one)
 	
 	skepu::Vector<Atom> atoms(atomcount);
 	skepu::Matrix<float> energy_out(matrixSize, matrixSize);

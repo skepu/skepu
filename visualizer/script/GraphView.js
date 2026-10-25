@@ -665,13 +665,16 @@ export class GraphView {
     });
 
     // ── Region double-click: toggle collapsed/expanded and re-render ─────────
-    cy.on('dblclick', 'node[type="region"]', function(event) {
+    // (in the program tree mode a region is a node of the tree, that stands for it: the same toggles what is below it, which is hidden or shown)
+    cy.on('dblclick', 'node[type="region"], node[type="tree-region"]', function(event) {
       event.stopPropagation();
       if (event.target.hasClass('layout-phantom')) return;
       var pid = event.target.data('persistent_region_id');
       if (!pid) return;
       var collapsed = self._provider.collapsedNodes;
-      collapsed[pid] = (collapsed[pid] === false);
+      var collapse = (collapsed[pid] === false);
+      // (a node that the iterations of a loop are merged into is all of them: they are what is collapsed when the iterations are shown one by one)
+      (event.target.data('persistent_region_ids') || [pid]).forEach(function(id) { collapsed[id] = collapse; });
       self.render();
     });
 
@@ -931,6 +934,10 @@ export class GraphView {
       'elk.layered.cycleBreaking.strategy':        'GREEDY',
       'elk.layered.nodePlacement.strategy':        'NETWORK_SIMPLEX',
       'elk.edgeRouting':                           'SPLINES',
+      // Nodes and components that the dependences do not order (the independent trials of a loop, a forest) are placed in the order of the trace
+      // (the order of the nodes that are given), not in the order that the algorithm happens to get to them
+      'elk.layered.considerModelOrder.strategy':   'NODES_AND_EDGES',
+      'elk.layered.considerModelOrder.components': 'MODEL_ORDER',
     }, layoutOpts.elkOptions || {});
 
     var elk = _getElk(this._elkWorkerUrl);

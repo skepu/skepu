@@ -308,7 +308,8 @@ public:
 			for (const InlineInstance &instance : InlineInstances)
 				HandleInlineInstance(instance);
 
-			if (!NoTraceRegions)
+			// (-no-trace-regions, or -DSKEPU_NO_TRACE_REGIONS in the options of the compiler, for a frontend that has regions of its own: SkePY)
+			if (!NoTraceRegions && !getCompilerInstance().getPreprocessor().isMacroDefined("SKEPU_NO_TRACE_REGIONS"))
 				PlantAutoRegions();
 
 			namespace lm = library_markers;

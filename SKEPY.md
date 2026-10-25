@@ -132,7 +132,7 @@ SKEPU_TRACE_FILE=trace.json build/cellular_automaton 2 12 4 0.4 openmp
 | SkePY | C++ |
 |---|---|
 | `with skepu.scope("Iteration"): ...` | `SKEPU_TRACE_SCOPE`: a region around the calls in the block |
-| `skepu.snapshot(container)` | `SKEPU_TRACE_SNAPSHOT`: the contents, in `NAME@N.txt` files in the working directory (`SKEPU_TRACE_SNAPSHOT_DIR`; SkeVU loads them from a zip) |
+| `skepu.snapshot(container)` | `SKEPU_TRACE_SNAPSHOT`: the contents, in `NAME@N.txt` files in the working directory (`SKEPU_TRACE_SNAPSHOT_DIR`; SkeVU loads them from a zip). Taken only in a build with `--trace --snapshots`, as in C++ (`SKEPU_TRACING` and `SKEPU_TRACING_SNAPSHOTS`); otherwise the call does nothing |
 | `skepu.virtual_dataset("Domain", a, b)` | `SKEPU_TRACE_VIRTUAL_DATASET`: two containers shown as one data set |
 | `with skepu.external(read=..., write=...): ...` | `SKEPU_TRACE_EXTERNAL`: made automatically, with the containers read and written |
 | `print(container)` | `skepu::io::cout << container`: an "I/O" external event that reads the container, at the line of the `print` (made automatically; `print` with `sep=`/`end=` is not traced) |

@@ -73,7 +73,7 @@ export class Node {
         this.durations       = [];
         this.intervals       = [];
 
-        this.treeParents     = [];
+        this.treeParents     = [];   // the node above it in the tree of the program tree mode (DirectedGraph.buildProgramTree)
 
         // Region nesting
         this.region       = null;
@@ -89,19 +89,6 @@ export class Node {
                 this.region.addNestedNode(this);
                 this.nestingLevel = this.region.nestingLevel + 1;
             }
-        }
-
-        // program-order spanning-tree building
-        // assumes graph settings has root region synthethis enabled
-        if (graph.settings.regions && graph.settings.synthesizeRootRegion)
-        {
-          if (this.region) {
-            var previousNode = graph.getLastNode();
-            if (previousNode.region && this.region.id == previousNode.region.id)
-              this.treeParents.push(previousNode);
-            else
-              this.treeParents.push(this.region);
-          }
         }
 
         graph.addNode(this);
@@ -507,13 +494,16 @@ export class RegionNode extends Node {
             return;
         }
 
-        this.treeParents = (this.region) ? [this.region] : [];
-
         // Parent region nesting (the super() call is given null).
         const parentLabel = jsonData.region ?? null;
         if (parentLabel) {
             const parentRegion = graph.getNodeByLabel(parentLabel);
             if (parentRegion instanceof RegionNode) {
+                // (the constructor of Node has put it in the root region: it is in the region that it is in, and only there)
+                if (this.region?.nestedNodes) {
+                    const i = this.region.nestedNodes.indexOf(this);
+                    if (i !== -1) this.region.nestedNodes.splice(i, 1);
+                }
                 this.region = parentRegion;
                 parentRegion.addNestedNode(this);
                 this.nestingLevel = parentRegion.nestingLevel + 1;
@@ -530,7 +520,11 @@ export class RegionNode extends Node {
         this.file = jsonData.file ?? null;
         this.line = jsonData.line ?? null;
 
-        this.persistentRegionId = 'region_' + graph.nextRegionNumber();
+        // The id of a region is what the viewer keeps whether it is collapsed by, so that it means the same region in every mode of the graph: the root
+        // region of the program tree mode has an id of its own and is not counted (the others are numbered as in the dependence graph)
+        this.persistentRegionId = graph._rootPhase ? 'region_global' : 'region_' + graph.nextRegionNumber();
+        // (the regions that the iterations of a loop are merged into one region from: the viewer collapses or expands them all together)
+        this.memberRegionIds = [this.persistentRegionId];
     }
 
     addNestedNode(node)   { this.nestedNodes.push(node); }
@@ -573,6 +567,7 @@ export class RegionNode extends Node {
             region_end:          this.regionEnd,
             region_intervals:    this.regionIntervals,
             persistent_region_id: this.persistentRegionId,
+            persistent_region_ids: this.memberRegionIds,
             file:                this.file,
             line:                this.line,
         };

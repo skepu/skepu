@@ -180,14 +180,6 @@ static void print_statistics(Container &noise, float max_value)
 static auto gray_level = skepu::Map<1>(to_gray);
 
 
-struct Settings
-{
-	float persistence, base_frequency;
-	size_t octaves, width;
-	unsigned long seed;
-	std::string out;
-};
-
 // Writes the texture to PREFIX.png, or the frames to PREFIX0000.png, PREFIX0001.png, ...
 static void write_images(const std::string &prefix, skepu::Matrix<unsigned char> &image)
 {
@@ -208,30 +200,33 @@ static void write_images(const std::string &prefix, skepu::Tensor3<unsigned char
 }
 
 // Makes the noise of a texture, a Matrix (extents: height, width) or a Tensor3 (extents: frames, height, width), with the
-// gradients and the skeletons of its dimension, and reports on it
+// gradients and the skeletons of its dimension, and reports on it. The arguments of the program are read from the parser
+// (the names that main declared are the same arguments).
 template<template<typename> class Texture, typename Gradient, typename MakeGradients, typename Render, typename... Extents>
-static void make_noise(MakeGradients &make_gradients, Render &render, const Settings &settings, Extents... extents)
+static void make_noise(skepu::args::Parser &args, MakeGradients &make_gradients, Render &render, Extents... extents)
 {
-	skepu::PRNG prng(settings.seed);
+	const size_t width = args.get<size_t>("width"), octaves = args.get<size_t>("octaves");
+	const float persistence = args.get<float>("persistence"), base_frequency = args.get<float>("base_frequency");
+	skepu::PRNG prng(args.get<unsigned long>("seed"));
 	make_gradients.setPRNG(prng);
 
 	float max_value = 0; // the sum of the amplitudes
-	for (size_t o = 0; o < settings.octaves; ++o)
-		max_value += pow(settings.persistence, o);
+	for (size_t o = 0; o < octaves; ++o)
+		max_value += pow(persistence, o);
 
 	// The size of a grid cell is the same in all directions, so the noise does not stretch with the shape of the texture
-	auto cell_size_of = [&](size_t octave) { return (float)settings.width / (settings.base_frequency * pow(2.f, (float)octave)); };
+	auto cell_size_of = [&](size_t octave) { return (float)width / (base_frequency * pow(2.f, (float)octave)); };
 	auto grid_size_of = [&](size_t octave, size_t extent) { return (size_t)ceil(extent / cell_size_of(octave)) + 1; };
 
 	Texture<float> noise(extents..., "noise", 0.f);
 	auto duration = skepu::benchmark::measureExecTime([&]
 	{
-		for (size_t o = 0; o < settings.octaves; ++o)
+		for (size_t o = 0; o < octaves; ++o)
 		{
 			SKEPU_TRACE_SCOPE("Octave");
 			Texture<Gradient> grid(grid_size_of(o, extents)..., "gradients");
 			make_gradients(grid);
-			render(noise, noise, grid, cell_size_of(o), (float)pow(settings.persistence, o));
+			render(noise, noise, grid, cell_size_of(o), (float)pow(persistence, o));
 			SKEPU_TRACE_SNAPSHOT(noise); // (if the program is built for it: make TRACE_SNAPSHOTS=1)
 		}
 	});
@@ -241,8 +236,8 @@ static void make_noise(MakeGradients &make_gradients, Render &render, const Sett
 	gray_level(image, noise, 1.f / max_value);
 	print_statistics(noise, max_value);
 
-	if (!settings.out.empty())
-		write_images(settings.out, image);
+	if (const std::string out = args.named<std::string>("out", ""); !out.empty())
+		write_images(out, image);
 }
 
 
@@ -254,9 +249,9 @@ int main(int argc, char *argv[])
 	const float persistence    = args.get<float>("persistence");
 	const size_t octaves       = args.get<size_t>("octaves");
 	const float base_frequency = args.get<float>("base_frequency");
-	const unsigned long seed   = args.get<unsigned long>("seed");
+	args.get<unsigned long>("seed");   // (make_noise reads this one, and the output file, from the parser)
 	const size_t frames        = args.named<size_t>("frames", 0, "make this many frames (a Tensor3) instead of one texture");
-	const std::string out      = args.named<std::string>("out", "", "write the texture to PREFIX.png (the frames to PREFIX0000.png, ...)");
+	args.named<std::string>("out", "", "write the texture to PREFIX.png (the frames to PREFIX0000.png, ...)");
 	args.backend();
 
 	if (height < 1 || width < 1 || octaves < 1 || persistence <= 0 || base_frequency <= 0)
@@ -265,19 +260,18 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	const Settings settings{persistence, base_frequency, octaves, width, seed, out};
 	// (the skeletons are made in the branch that uses them: the OpenCL kernels of an instance are compiled when it is made)
 	if (frames == 0)
 	{
 		auto gradients_2d = skepu::Map<0>(gradient_2d);
 		auto render_2d = skepu::Map<1>(perlin_2d);
-		make_noise<skepu::Matrix, vec2>(gradients_2d, render_2d, settings, height, width);
+		make_noise<skepu::Matrix, vec2>(args, gradients_2d, render_2d, height, width);
 	}
 	else
 	{
 		auto gradients_3d = skepu::Map<0>(gradient_3d);
 		auto render_3d = skepu::Map<1>(perlin_3d);
-		make_noise<skepu::Tensor3, vec3>(gradients_3d, render_3d, settings, frames, height, width);
+		make_noise<skepu::Tensor3, vec3>(args, gradients_3d, render_3d, frames, height, width);
 	}
 	return 0;
 }

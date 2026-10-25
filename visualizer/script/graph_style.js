@@ -268,6 +268,16 @@ export function buildGraphStyle(self, minmax) {
       }
     },
     {
+      // (a region of the program tree mode whose contents are hidden: double-clicking it shows them; it is paler, as something that is off)
+      selector: 'node[type="tree-region"][collapsed]',
+      style: {
+        'border-style':     'dashed',
+        'border-color':     function() { return dark() ? '#4a3524' : '#a9c9d0'; },
+        'background-color': function() { return dark() ? '#241309' : '#e4f1f7'; },
+        'color':            function() { return dark() ? '#8a7766' : '#7a8f95'; },
+      }
+    },
+    {
       selector: 'node.layout-phantom',
       style: {
         'background-opacity': 0, 'border-width': 0,

@@ -379,7 +379,7 @@ export function load()
 
 // Regions and fusion nodes are collapsed the same way: by the id that the backend gives them.
 function _collapsibleId(d) {
-  return d.type === 'region' ? d.persistent_region_id
+  return d.type === 'region' || d.type === 'tree-region' ? d.persistent_region_id
        : d.type === 'fusion' ? d.persistent_fusion_id
        : null;
 }
@@ -398,8 +398,9 @@ function _setSelectedRegions(collapsed, recursive) {
   var changed = false;
   State.graphView.selectedNodes().forEach(function(d) {
     var id = _collapsibleId(d);
-    if (id && (d.type !== 'region' || _regionsAreShown())) {
+    if (id && (d.type !== 'region' && d.type !== 'tree-region' || _regionsAreShown())) {
       State._collapsedNodes[id] = collapsed;
+      (d.persistent_region_ids || []).forEach(function(member) { State._collapsedNodes[member] = collapsed; });
       if (recursive) descendantsOf(State._regionParents, id).forEach(function(c) { State._collapsedNodes[c] = collapsed; });
       changed = true;
     }

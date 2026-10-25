@@ -118,10 +118,6 @@ export class DirectedGraph {
         this._nodeLabelIndex[node.label] = node;
     }
 
-    getLastNode() {
-      return this._nodes.at(-1); 
-    }
-
     /** Undo addNode — called by conditional constructors (AllocationNode etc.)
      *  when a node should be silently skipped rather than registered. */
     _removeNode(node) {
@@ -285,6 +281,37 @@ export class DirectedGraph {
                 for (let i = 0; i < members.length - 1; i++)
                     new VirtualAliasEdge(this, members[i], members[i + 1], label);
             }
+        }
+    }
+
+    /**
+     * The tree of the program tree mode: the root is the region around the program, an inner node is a region, and what happens in a
+     * region is a chain that starts at the region, in the order of the trace: region -> first event -> next event -> ... -> last event
+     * (the leaf). A region in a region is a child of the region it is in, with a chain of its own. Each node gets its parent in treeParents.
+     * (Fusion groups are not regions here: a fusion node is an event of the region that its calls are in. Without regions the whole
+     * program is one chain.)
+     */
+    buildProgramTree() {
+        const root = this.getRootRegion();
+        const container = n => {
+            let r = n.region;
+            while (r && !(r instanceof RegionNode)) r = r.region;
+            return r ?? root;
+        };
+        const position = new Map(this._nodes.map((n, i) => [n, i]));   // (a fusion node is made after its calls: it goes where the first of them is)
+        const ordered = [...this._nodes].sort((a, b) => a.totalOrder - b.totalOrder || position.get(a) - position.get(b));
+        const tail = new Map();   // region -> the last node of its chain so far (the region itself before the first)
+        for (const n of this._nodes) n.treeParents = [];
+        for (const n of ordered) {
+            if (n === root) continue;
+            const region = container(n);
+            if (n instanceof RegionNode) {
+                if (region) n.treeParents.push(region);
+                continue;
+            }
+            const before = tail.has(region) ? tail.get(region) : region;
+            if (before) n.treeParents.push(before);
+            tail.set(region, n);
         }
     }
 
@@ -578,8 +605,6 @@ export class DirectedGraph {
                     can.locations ??= [{ file: can.file, line: can.line }];
                     can.locations.push({ file: node.file, line: node.line });
                 }
-                if (node.treeParents.length > 0)
-                  can.treeParents.push(canonical.get(node.treeParents[0].keypath));
                 if (node.durations) can.durations.push(...node.durations);
                 if (node.intervals) can.intervals.push(...node.intervals);
                 if (node.rankDatas) can.rankDatas.push(...node.rankDatas);
@@ -588,6 +613,7 @@ export class DirectedGraph {
                 if (node.scalarValues) can.scalarValues.push(...node.scalarValues);
                 if (node instanceof RegionNode) {
                     can.regionIntervals.push(...node.regionIntervals);
+                    can.memberRegionIds.push(...node.memberRegionIds);
                     if (node.regionStart != null) {
                         if (can.regionStart == null) {
                             can.regionStart = node.regionStart;
@@ -729,7 +755,7 @@ export class DirectedGraph {
             else if (t === 'external')          callMade(new ExternalNode(g, ev, order), ev, order);
             else if (t === 'allocation')        new AllocationNode(g, ev, order);
             else if (t === 'deallocation')      new DeallocationNode(g, ev, order);
-            else if (t === 'element_access')    ScalarNode.fromEventData(g, ev, order);
+            else if (t === 'element_access')    ScalarNode.fromEventData(g, ev, order, ev.region ?? null);
             // a copy of a container (copy constructor, assignment): host code that reads one container and writes another
             else if (t === 'copy')              new ExternalNode(g, { ...ev, type: 'external', label: `copy of ${g.labelForID(ev.source)}`,
                                                     elwise_inputs: [ev.source], proxy_inputs: [], scalar_inputs: [], outputs: [ev.object_id], file: '', line: 0 }, order);
@@ -863,18 +889,15 @@ export class DirectedGraph {
               item.data.type = "tree-region";
           }
   
-          // total order tree mode 
-          if (true)
-          {
-            for (const node of this._nodes) {
-              for (var parent of node.treeParents)
-              {
-                var d = {};
-                d.target = node.id;
-                d.id = crypto.randomUUID();
-                d.source = parent.id;
-                cyEdges.push({ data: d });
-              }
+          // The tree (buildProgramTree): an edge from the parent of a node, if both are shown (the parents are more than one after the
+          // iterations of a loop are merged: the same edge once)
+          const seenTree = new Set();
+          for (const node of this._nodes) {
+            if (!visibleIds.has(node.id)) continue;
+            for (const parent of node.treeParents) {
+              if (!visibleIds.has(parent.id) || seenTree.has(parent.id + '>' + node.id)) continue;
+              seenTree.add(parent.id + '>' + node.id);
+              cyEdges.push({ data: { id: crypto.randomUUID(), source: parent.id, target: node.id } });
             }
           }
         }

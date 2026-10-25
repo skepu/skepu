@@ -1,3 +1,6 @@
+# Copyright (c) 2025-2026, Axel Hammarberg and August Ernstsson (see CONTRIBUTORS.txt)
+# Based on SkePU's examples/cellular_automaton.cpp, Copyright (c) 2010-2021, the SkePU developers team (see SkePU's CONTRIBUTORS.txt)
+# SPDX-License-Identifier: LicenseRef-SkePU
 # Cellular automaton (1D rule table and Game of Life in 2D) with MapOverlap, Region1D and
 # Region2D, edge mode Pad, a Mat proxy as rule table and Map with a Random generator
 # (translation of SkePU's examples/cellular_automaton.cpp; the trace calls are no-ops unless
