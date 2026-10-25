@@ -144,10 +144,72 @@ namespace skepu
 			return *this;
 		}
 
+		auto &setSparsePolicy(SparsePolicy policy)
+		{
+			this->m_sparse_policy = policy;
+			return *this;
+		}
+
+		auto &setImplicitZero(double zero)
+		{
+			this->m_implicit_zero = zero;
+			return *this;
+		}
+
+		auto &setReduceMode(ReduceMode mode)
+		{
+			this->m_reduce_mode = mode;
+			return *this;
+		}
+
+		// With sparse input(s): the mapped entries of each row are reduced, to an element of the output Vector for each row
+		template<typename R, typename S, typename... CallArgs, REQUIRES(InArity > 0 && sizeof...(CallArgs) + 2 == numArgs + 1)>
+		Vector<R> &operator()(Vector<R> &out, SparseMatrix<S> &arg1, CallArgs&&... args)
+		{
+			if (this->m_reduce_mode != ReduceMode::RowWise)
+				SKEPU_ERROR("MapReduce of a sparse matrix: only the reduction of the rows is supported (use the transpose for columns)");
+			auto sparse_guard = sparse_prepare<0, InArity>(this->m_sparse_policy, this->m_implicit_zero, arg1, args...);
+			return this->sparse_rows(elwise_indices, any_indices, const_indices, out, arg1, std::forward<CallArgs>(args)...);
+		}
+
+		template<size_t... EI, size_t... AI, size_t... CI, typename R, typename... CallArgs>
+		Vector<R> &sparse_rows(pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, Vector<R> &out, CallArgs&&... args)
+		{
+			const SparsePatternPtr &pattern = get<0>(std::forward<CallArgs>(args)...).pattern();
+			const size_t rows = pattern->rows();
+			if (out.size() != rows)
+				SKEPU_ERROR("MapReduce: the output Vector has " << out.size() << " elements, and the sparse matrix " << rows << " rows");
+
+			pack_expand((get<EI>(std::forward<CallArgs>(args)...).updateHost(), 0)...);
+			out.invalidateDeviceData();
+			auto random = this->template prepareRandom<randomCount>(rows);
+			auto elwise = std::make_tuple(get<EI>(std::forward<CallArgs>(args)...).begin()...);
+			const SparseIndex *offsets = pattern->row_offsets().data(), *columns = pattern->col_indices().data();
+			R *result = out.getAddress();
+
+			for (size_t r = 0; r < rows; ++r)
+			{
+				RetType res = this->m_start;
+				for (SparseIndex k = offsets[r]; k < offsets[r + 1]; ++k)
+				{
+					const Index2D index{r, (size_t)columns[k]};
+					RetType temp = F::forward(mapFunc, index, random,
+						std::get<EI>(elwise)(k)...,
+						get<AI>(std::forward<CallArgs>(args)...).hostProxy(typename pack_element<AI + (indexed ? 1 : 0) + (randomized ? 1 : 0), typename proxy_tag<Args>::type...>::type{}, index)...,
+						get<CI>(std::forward<CallArgs>(args)...)...
+					);
+					res = redFunc(res, temp);
+				}
+				result[r] = res;
+			}
+			return out;
+		}
+
 		// For first elwise argument as container
 		template<typename... CallArgs, REQUIRES(InArity > 0 && sizeof...(CallArgs) == numArgs)>
 		RetType operator()(CallArgs&&... args)
 		{
+			auto sparse_guard = sparse_prepare<0, InArity>(this->m_sparse_policy, this->m_implicit_zero, args...);
 			return apply(
 				get<0>(std::forward<CallArgs>(args)...).size() / this->m_strides[0],
 				out_indices, elwise_indices, any_indices, const_indices,
@@ -185,6 +247,9 @@ namespace skepu
 		size_t default_size_l = 0;
 
 		StrideList<InArity> m_strides{};
+		SparsePolicy m_sparse_policy = SparsePolicy::SamePattern;
+		double m_implicit_zero = 0;
+		ReduceMode m_reduce_mode = ReduceMode::RowWise;
 
 		friend MapReduceImpl<InArity, GivenArity, RetType, RedType, Args...> MapReduceWrapper<GivenArity, RetType, RedType, Args...>(MapFunc, RedFunc);
 

@@ -121,6 +121,31 @@ namespace skepu
 				return Scalar<T>(value);
 			}
 
+			// The entries of each row of a sparse matrix are reduced, to an element of the output Vector
+			Vector<T> &operator()(Vector<T> &res, SparseMatrix<T> &arg)
+			{
+				if (this->m_mode != ReduceMode::RowWise)
+					SKEPU_ERROR("Reduce of a sparse matrix: only the reduction of the rows is supported (use the transpose for columns)");
+				if (!arg.has_pattern())
+					SKEPU_ERROR("Reduce: the sparse matrix has no pattern");
+				const size_t rows = arg.rows();
+				if (res.size() != rows)
+					SKEPU_ERROR("Reduce: the output Vector has " << res.size() << " elements, and the sparse matrix " << rows << " rows");
+
+				arg.updateHost();
+				res.invalidateDeviceData();
+				const SparseIndex *offsets = arg.pattern()->row_offsets().data();
+				const T *values = arg.values().getAddress();
+				for (size_t r = 0; r < rows; ++r)
+				{
+					T inner = this->m_start;
+					for (SparseIndex k = offsets[r]; k < offsets[r + 1]; ++k)
+						inner = this->redFunc(inner, values[k]);
+					res.getAddress()[r] = inner;
+				}
+				return res;
+			}
+
 			Vector<T> &operator()(Vector<T> &res, Matrix<T>& arg)
 			{
 				size_t rows = arg.total_rows();

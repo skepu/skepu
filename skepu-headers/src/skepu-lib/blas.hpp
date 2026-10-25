@@ -1888,6 +1888,133 @@ void trsm(Side side, Uplo uplo, blas::Op trans, Diag diag, size_type m, size_typ
 	put(B, B, *cur, m, n);
 }
 
+// ================================================================================
+// ================================================================================
+// ==========================       SPARSE (CSR) MATRICES
+// ================================================================================
+// ================================================================================
+//
+// The matrices are skepu::SparseMatrix containers (compressed sparse rows). The transpose of a matrix is made (once for a
+// pattern: only the values are moved) when the operation is a transpose.
+
+namespace sparse {
+
+// The products of the entries of a row with the elements of x that they multiply
+template<typename TA, typename TX, typename TR = scalar_type<TA, TX>>
+TR csrmv_uf_1(skepu::Index2D index, TA a, const skepu::Vec<TX> x, stride_type incx, int conjugate)
+{
+	return (conjugate ? skepu::complex::conj(a) : a) * x(index.col * incx);
+}
+
+template<typename T>
+T csrmv_uf_2(T lhs, T rhs)
+{
+	return lhs + rhs;
+}
+
+// y := alpha * op(A) * x + beta * y for a sparse matrix A. The products and the sum of a row are a MapReduce of the entries of the row.
+template<typename TA, typename TX, typename TY, typename TS = scalar_type<TA, TX, TY>>
+void csrmv(
+	blas::Op                         trans,
+	TS                               alpha,
+	SparseMatrix<TA> &               A,
+	Vector<TX> BLAS_CONST&           x,
+	stride_type                      incx,
+	TS                               beta,
+	Vector<TY> &                     y,
+	stride_type                      incy
+	SKEPU_CALL_SITE_PARAM
+)
+{
+	SKEPU_TRACE_API("blas.csrmv");
+	if (!A.has_pattern())
+		SKEPU_ERROR("blas::csrmv: the sparse matrix has no pattern");
+	const TS zero = 0, one = 1;
+	const bool t = (trans != Op::NoTrans);
+	const size_type lenx = t ? A.rows() : A.cols(), leny = t ? A.cols() : A.rows();
+	if (leny == 0 || (alpha == zero && beta == one))
+		return;
+
+	vec_view<TY> vy("csrmv", "y", y, leny, incy, !(beta == zero), true);
+	if (alpha == zero)
+	{
+		auto scale = Map<1>(gemv_scale_uf<TY, TS>);
+		scale.setStride(vy.stride(), vy.stride());
+		scale.setLabel("scale");
+		scale(vy.vec(), vy.vec(), beta);
+		vy.commit();
+		return;
+	}
+
+	vec_view<TX> vx("csrmv", "x", x, lenx, incx, true, false);
+	SparseMatrix<TA> transposed;
+	SparseMatrix<TA> *matrix = &A;
+	if (t)
+	{
+		transposed = A.transposed(SKEPU_CALL_SITE_FORWARD_ARG_ONLY);
+		matrix = &transposed;
+	}
+
+	Vector<TS> product(leny);
+	auto skel = MapReduce<1>(csrmv_uf_1<TA, TX, TS>, csrmv_uf_2<TS>);
+	skel.setReduceMode(ReduceMode::RowWise);
+	skel.setLabel("CSRMV");
+	skel(product, *matrix, vx.vec(), vx.stride(), trans == Op::ConjTrans);
+
+	// y := alpha * product + beta * y
+	axpby(leny, alpha, product, 1, beta, vy.vec(), vy.stride());
+	vy.commit();
+}
+
+// C(i, j) := alpha * sum_l op(A)(i, l) * B(l, j) + beta * C(i, j)
+template<typename TA, typename TB, typename TC, typename TS = scalar_type<TA, TB, TC>>
+TC csrmm_uf(skepu::Index2D index, TC c, const skepu::SparseMat<TA> A, const skepu::Mat<TB> B, TS alpha, TS beta, int conjugate)
+{
+	TS sum = 0;
+	for (SKEPU_BLAS_SIZE_TYPE_UF k = A.row_offsets[index.row]; k < A.row_offsets[index.row + 1]; ++k)
+		sum += (conjugate ? skepu::complex::conj(A.data[k]) : A.data[k]) * B(A.col_indices[k], index.col);
+	const TS zero = 0;
+	return (beta == zero) ? alpha * sum : alpha * sum + beta * c;
+}
+
+// C := alpha * op(A) * B + beta * C for a sparse matrix A and dense matrices B and C
+template<typename TA, typename TB, typename TC, typename TS = scalar_type<TA, TB, TC>>
+void csrmm(
+	blas::Op                         trans,
+	TS                               alpha,
+	SparseMatrix<TA> &               A,
+	Matrix<TB> BLAS_CONST&           B,
+	TS                               beta,
+	Matrix<TC> &                     C
+	SKEPU_CALL_SITE_PARAM
+)
+{
+	SKEPU_TRACE_API("blas.csrmm");
+	if (!A.has_pattern())
+		SKEPU_ERROR("blas::csrmm: the sparse matrix has no pattern");
+	const bool t = (trans != Op::NoTrans);
+	const size_type m = t ? A.cols() : A.rows(), k = t ? A.rows() : A.cols();
+	if (B.size_i() != k || C.size_i() != m || C.size_j() != B.size_j())
+		SKEPU_ERROR("blas::csrmm: the sizes do not match: A is " << m << " x " << k << ", B is " << B.size_i() << " x " << B.size_j()
+			<< ", and C is " << C.size_i() << " x " << C.size_j());
+	if (m == 0 || B.size_j() == 0)
+		return;
+
+	SparseMatrix<TA> transposed;
+	SparseMatrix<TA> *matrix = &A;
+	if (t)
+	{
+		transposed = A.transposed(SKEPU_CALL_SITE_FORWARD_ARG_ONLY);
+		matrix = &transposed;
+	}
+	auto skel = Map<1>(csrmm_uf<TA, TB, TC>);
+	skel.setLabel("CSRMM");
+	skel(C, C, *matrix, B, alpha, beta, trans == Op::ConjTrans);
+}
+
+} // namespace sparse
+
+
 #undef SKEPU_BLAS_STRIDE_TYPE_UF
 #undef SKEPU_BLAS_SIZE_TYPE_UF
 }}

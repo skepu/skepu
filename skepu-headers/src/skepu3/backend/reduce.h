@@ -157,6 +157,49 @@ namespace skepu
 				return this->backendDispatch(arg_end - arg, arg.begin());
 			}
 
+			// The entries of each row of a sparse matrix are reduced, to an element of the output Vector
+			Vector<T> &operator()(Vector<T> &res, SparseMatrix<T> &arg)
+			{
+				if (this->m_mode != ReduceMode::RowWise)
+					SKEPU_ERROR("Reduce of a sparse matrix: only the reduction of the rows is supported (use the transpose for columns)");
+				if (!arg.has_pattern())
+					SKEPU_ERROR("Reduce: the sparse matrix has no pattern");
+				const size_t rows = arg.rows();
+				if (res.size() != rows)
+					SKEPU_ERROR("Reduce: the output Vector has " << res.size() << " elements, and the sparse matrix " << rows << " rows");
+
+				this->selectBackend(arg.nnz());
+				arg.updateHost();
+				res.invalidateDeviceData();
+				SKEPU_TRACE_START_EVENT(trace_handle);
+				const SparseIndex *offsets = arg.pattern()->row_offsets().data();
+				const T *values = arg.values().getAddress();
+				T *result = res.getAddress();
+
+				auto row = [&](size_t r)
+				{
+					T inner = this->m_start;
+					for (SparseIndex k = offsets[r]; k < offsets[r + 1]; ++k)
+						inner = ReduceFunc::CPU(inner, values[k]);
+					result[r] = inner;
+				};
+#ifdef SKEPU_OPENMP
+				if (this->m_selected_spec->activateBackend() == Backend::Type::OpenMP)
+				{
+#pragma omp parallel for schedule(runtime)
+					for (size_t r = 0; r < rows; ++r)
+						row(r);
+				}
+				else
+#endif
+				{
+					for (size_t r = 0; r < rows; ++r)
+						row(r);
+				}
+				SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Partial", this, {rows, arg.nnz()}, {res.getObjectID()}, {arg.getObjectID()}, {}, {});
+				return res;
+			}
+
 			Vector<T> &operator()(Vector<T> &res, Matrix<T>& arg)
 			{
 			//	assert(this->m_execPlan != NULL && this->m_execPlan->isCalibrated());

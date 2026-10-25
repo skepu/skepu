@@ -71,6 +71,9 @@ namespace skepu
 
 			Ret m_start{};
 			bool m_apply_start = true;
+			SparsePolicy m_sparse_policy = SparsePolicy::SamePattern;
+			double m_implicit_zero = 0;
+			ReduceMode m_reduce_mode = ReduceMode::RowWise;
 			size_t m_default_origin = 0;
 
 		public:
@@ -93,6 +96,26 @@ namespace skepu
 			auto &setDefaultOrigin(size_t origin)
 			{
 				this->m_default_origin = origin;
+				return *this;
+			}
+
+			// How sparse inputs of different patterns are combined (see Map)
+			auto &setSparsePolicy(SparsePolicy policy)
+			{
+				this->m_sparse_policy = policy;
+				return *this;
+			}
+
+			auto &setImplicitZero(double zero)
+			{
+				this->m_implicit_zero = zero;
+				return *this;
+			}
+
+			// For a sparse input and an output Vector: the direction of the reduction (only the rows, so far)
+			auto &setReduceMode(ReduceMode mode)
+			{
+				this->m_reduce_mode = mode;
 				return *this;
 			}
 
@@ -133,10 +156,83 @@ namespace skepu
 				tuner::tune(*this, std::forward<Args>(args)...);
 			}
 
+			// With sparse input(s): the mapped entries of each row are reduced, to an element of the output Vector for each row
+			template<typename R, typename S, typename... CallArgs, REQUIRES(arity > 0 && sizeof...(CallArgs) + 2 == numArgs + 1)>
+			Vector<R> &operator()(Vector<R> &out, SparseMatrix<S> &arg1, CallArgs&&... args)
+			{
+				static_assert(outArity == 1, "MapReduce of the rows of sparse matrices: the map function must have one return value");
+				static_assert(!MapFunc::usesPRNG, "MapReduce of the rows of sparse matrices: the map function cannot use random numbers");
+				if (this->m_reduce_mode != ReduceMode::RowWise)
+					SKEPU_ERROR("MapReduce of a sparse matrix: only the reduction of the rows is supported (use the transpose for columns)");
+				auto sparse_guard = sparse_prepare<0, arity>(this->m_sparse_policy, this->m_implicit_zero, arg1, args...);
+				return this->sparseRows(elwise_indices, any_indices, const_indices, out, arg1, std::forward<CallArgs>(args)...);
+			}
+
+			template<size_t... EI, size_t... AI, size_t... CI, typename R, typename... CallArgs>
+			Vector<R> &sparseRows(pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, Vector<R> &out, CallArgs&&... args)
+			{
+				const SparsePatternPtr &pattern = get<0>(std::forward<CallArgs>(args)...).pattern();
+				const size_t rows = pattern->rows();
+				if (out.size() != rows)
+					SKEPU_ERROR("MapReduce: the output Vector has " << out.size() << " elements, and the sparse matrix " << rows << " rows");
+				DEBUG_TEXT_LEVEL1("MapReduce of sparse rows: rows = " << rows << " nnz = " << pattern->nnz());
+
+				this->selectBackend(pattern->nnz());
+				pack_expand((get<EI>(std::forward<CallArgs>(args)...).getParent().updateHost(), 0)...);
+				pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateHost(hasReadAccess(MapFunc::anyAccessMode[AI-arity])), 0)...);
+				out.invalidateDeviceData();
+
+				SKEPU_TRACE_START_EVENT(trace_handle);
+				auto random = this->template prepareRandom<MapFunc::randomCount>(rows);
+				auto elwise = std::make_tuple(get<EI>(std::forward<CallArgs>(args)...).begin()...);
+				const SparseIndex *offsets = pattern->row_offsets().data(), *columns = pattern->col_indices().data();
+				R *result = out.getAddress();
+
+				auto row = [&](size_t r)
+				{
+					Ret res = this->m_start;
+					for (SparseIndex k = offsets[r]; k < offsets[r + 1]; ++k)
+					{
+						const Index2D index{r, (size_t)columns[k]};
+						Ret temp = F::forward(MapFunc::CPU, index, random,
+							std::get<EI>(elwise)(k)...,
+							get<AI>(std::forward<CallArgs>(args)...).hostProxy(std::get<AI-arity>(typename MapFunc::ProxyTags{}), index)...,
+							get<CI>(std::forward<CallArgs>(args)...)...
+						);
+						res = ReduceFunc::CPU(res, temp);
+					}
+					result[r] = res;
+				};
+
+#ifdef SKEPU_OPENMP
+				if (this->m_selected_spec->activateBackend() == Backend::Type::OpenMP)
+				{
+#pragma omp parallel for schedule(runtime)
+					for (size_t r = 0; r < rows; ++r)
+						row(r);
+				}
+				else
+#endif
+				{
+					for (size_t r = 0; r < rows; ++r)
+						row(r);
+				}
+
+				SKEPU_TRACE_CALL(trace_handle, "MapReduce", this, {pattern->nnz()},
+					{out.getObjectID()},
+					{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+					{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
+					tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+					this->template randomID<MapFunc::randomCount>()
+				);
+				return out;
+			}
+
 			// For first elwise argument as container
 			template<typename First, template<class> class Container, typename... CallArgs, REQUIRES(arity > 0 && is_skepu_container<Container<First>>::value)>
 			scalar_wrapper_t<Ret> operator()(Container<First> &arg1, CallArgs&&... args)
 			{
+				auto sparse_guard = sparse_prepare<0, arity>(this->m_sparse_policy, this->m_implicit_zero, arg1, args...);
 				return backendDispatch(
 					out_indices, elwise_indices, any_indices, const_indices,
 					arg1.size() / this->m_strides[0], arg1,

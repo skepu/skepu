@@ -90,6 +90,7 @@ namespace skepu
 		auto operator()(CallArgs&&... args) -> decltype(get<0>(std::forward<CallArgs>(args)...))
 		{
 			static_assert(sizeof...(CallArgs) == numArgs, "Number of arguments not matching Map function");
+			auto sparse_guard = sparse_prepare<OutArity, InArity>(this->m_sparse_policy, this->m_implicit_zero, args...);
 			this->apply(
 				get<0>(std::forward<CallArgs>(args)...).size() / this->m_strides[0],
 				out_indices, elwise_indices, any_indices, const_indices,
@@ -117,11 +118,25 @@ namespace skepu
 			return *this;
 		}
 
+		auto &setSparsePolicy(SparsePolicy policy)
+		{
+			this->m_sparse_policy = policy;
+			return *this;
+		}
+
+		auto &setImplicitZero(double zero)
+		{
+			this->m_implicit_zero = zero;
+			return *this;
+		}
+
 //	private:
 		MapFunc mapFunc;
 		MapImpl(MapFunc map): mapFunc(map) {}
 
 		StrideList<OutArity + InArity> m_strides{};
+		SparsePolicy m_sparse_policy = SparsePolicy::SamePattern;
+		double m_implicit_zero = 0;
 
 	//	friend MapImpl<InArity, GivenArity, Ret, Args...> MapWrapper<GivenArity, Ret, Args...>(MapFunc);
 

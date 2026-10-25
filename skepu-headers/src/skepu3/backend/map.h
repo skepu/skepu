@@ -41,6 +41,8 @@ namespace skepu
 
 			CUDAKernel m_cuda_kernel;
 			StrideList<outArity + arity> m_strides{};
+			SparsePolicy m_sparse_policy = SparsePolicy::SamePattern;
+			double m_implicit_zero = 0;
 
 		public:
 			SKEPU_CHAIN_SKELETON_SETTERS(SkeletonBase)
@@ -92,12 +94,27 @@ namespace skepu
 				return *this;
 			}
 
+			// How sparse inputs of different patterns are combined: the output has an entry wherever any (Union) or all (Intersection)
+			// of the inputs have one, and a missing entry has the implicit zero as its value
+			auto &setSparsePolicy(SparsePolicy policy)
+			{
+				this->m_sparse_policy = policy;
+				return *this;
+			}
+
+			auto &setImplicitZero(double zero)
+			{
+				this->m_implicit_zero = zero;
+				return *this;
+			}
+
 			// =======================      Call operators      ==========================
 
 			template<typename... CallArgs>
 			auto operator()(CallArgs&&... args) -> decltype(get<0>(std::forward<CallArgs>(args)...))
 			{
 				static_assert(sizeof...(CallArgs) == numArgs, "Number of arguments not matching Map function");
+				auto sparse_guard = sparse_prepare<outArity, arity>(this->m_sparse_policy, this->m_implicit_zero, args...);
 				this->backendDispatch(
 					get<0>(std::forward<CallArgs>(args)...).size() / this->m_strides[0],
 					out_indices, elwise_indices, any_indices, const_indices,

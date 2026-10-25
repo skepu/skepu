@@ -263,17 +263,6 @@ namespace skepu
 				return std::make_tuple(&c, memP);
 			}
 			
-			template<typename T>
-			inline std::tuple<SparseMatrix<T> *, DeviceMemPointer_CL<T> *, DeviceMemPointer_CL<size_t> *, DeviceMemPointer_CL<size_t> *>
-			randomAccessArg(SparseMatrix<T> &c, Device_CL *device, bool /* ignored, always read-only */)
-			{
-				auto valuesMemP     = c.updateDevice_CL(      c.get_values(),       c.total_nnz(), device, true);
-				auto rowOffsetsMemP = c.updateDevice_Index_CL(c.get_row_pointers(), c.total_rows() + 1, device, true);
-				auto colIndicesMemP = c.updateDevice_Index_CL(c.get_col_indices(),  c.total_nnz(), device, true);
-				
-				return std::make_tuple(&c, valuesMemP, rowOffsetsMemP, colIndicesMemP);
-			}
-			
 			template <typename T>
 			inline void copyDeviceToHost(T *hostPtr, cl_mem devPtr, size_t numElements, Device_CL* device, size_t offset)
 			{

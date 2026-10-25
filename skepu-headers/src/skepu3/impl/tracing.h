@@ -110,6 +110,7 @@ namespace skepu
 #define SKEPU_CALL_SITE_PARAM_ONLY const char *skepu_site_file = __builtin_FILE(), int skepu_site_line = __builtin_LINE()
 // (the place that a function got, to a function of the library that it calls)
 #define SKEPU_CALL_SITE_FORWARD_ARG , skepu_site_file, skepu_site_line
+#define SKEPU_CALL_SITE_FORWARD_ARG_ONLY skepu_site_file, skepu_site_line
 #define SKEPU_TRACE_API(label) skepu::tracing::ApiScope skepu_api_scope(label, skepu_site_file, skepu_site_line)
 // (for a function that cannot take the place of its call: it has a pack of arguments, or is an operator; the region has no place)
 #define SKEPU_TRACE_API_NO_SITE(label) skepu::tracing::ApiScope skepu_api_scope(label, nullptr, 0)
@@ -144,6 +145,7 @@ namespace skepu
 #define SKEPU_CALL_SITE_PARAM
 #define SKEPU_CALL_SITE_PARAM_ONLY
 #define SKEPU_CALL_SITE_FORWARD_ARG
+#define SKEPU_CALL_SITE_FORWARD_ARG_ONLY
 #define SKEPU_TRACE_API(label)
 #define SKEPU_TRACE_API_NO_SITE(label)
 #define SKEPU_TRACE_PLACE(...)

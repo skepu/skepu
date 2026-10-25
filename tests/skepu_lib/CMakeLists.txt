@@ -105,6 +105,14 @@ skepu_add_test(blas_complex BACKENDS sequential cpu openmp)
 
 
 # ------------------------------------------------
+#   Sparse matrices (skepu::SparseMatrix) and the sparse BLAS routines
+#   (only the sequential, CPU and OpenMP backends so far)
+# ------------------------------------------------
+
+skepu_add_test(sparse BACKENDS sequential cpu openmp)
+
+
+# ------------------------------------------------
 #   Image filter library (skepu-lib/filter): user types in a namespace
 # ------------------------------------------------
 

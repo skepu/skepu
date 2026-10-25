@@ -624,6 +624,96 @@ As `trsv`, this is a substitution with one Map for each row (`Left`) or
 column (`Right`) of the solution. The Map of a step works on all the
 right-hand sides at once.
 
+## Sparse Matrices {#sec-sparse}
+
+The sparse routines work on a `skepu::SparseMatrix<T>`, a matrix in compressed sparse
+row (CSR) format. It is a *pattern* (the size and where the stored entries are: the
+row offsets and the sorted column indices, which does not change and can be shared by
+matrices) and a `Vector` of the values of the entries, which is `A.values()`.
+
+```cpp
+skepu::SparseMatrix<float> A(rows, cols, row_offsets, col_indices, values); // CSR (copied)
+auto B = skepu::SparseMatrix<float>::from_dense(dense_matrix);
+auto C = skepu::SparseMatrix<float>::from_coo(rows, cols, triplets);       // (row, column, value)
+auto D = skepu::SparseMatrix<float>::read_matrix_market("matrix.mtx");
+skepu::SparseMatrix<float> E(A.pattern());  // the pattern of A is shared, the values are new
+```
+
+Rows without entries are allowed. Since the values are a `Vector`, the routines of
+vectors work on them: `skepu::blas::scal(A.nnz(), 2.f, A.values(), 1)`.
+
+### Matrix-vector multiply: `csrmv`
+
+$y := a * op(A) * x + b * y$
+
+```cpp
+template<typename TA, typename TX, typename TY,
+         typename TS = scalar_type<TA, TX, TY>>
+void sparse::csrmv (
+ Op trans,
+ TS alpha,
+ SparseMatrix<TA> & A,
+ Vector<TX> BLAS_CONST& x,
+ stride_type incx,
+ TS beta,
+ Vector<TY> & y,
+ stride_type incy
+)
+```
+
+The products and the sum of each row are a `MapReduce` of the entries of the row, in
+parallel over the rows. For a transpose, the transposed matrix is made (the pattern of
+it once for a pattern: only the values are moved).
+
+### Sparse-dense matrix multiply: `csrmm`
+
+$C := a * op(A) * B + b * C$ (`B` and `C` are dense matrices)
+
+```cpp
+template<typename TA, typename TB, typename TC,
+         typename TS = scalar_type<TA, TB, TC>>
+void sparse::csrmm (
+ Op trans,
+ TS alpha,
+ SparseMatrix<TA> & A,
+ Matrix<TB> BLAS_CONST& B,
+ TS beta,
+ Matrix<TC> & C
+)
+```
+
+### Sparse matrices in skeletons
+
+A `SparseMatrix` can also be used directly in skeletons (the CPU and OpenMP backends so
+far):
+
+- As a random access argument, a `skepu::SparseMat<T>` in the user function, to read
+  the rows. Its fields are `row_offsets`, `col_indices` and `data`: the entries of row
+  `i` are the positions `row_offsets[i]` to `row_offsets[i + 1] - 1`.
+- As the stored values: `Map`, `MapReduce` and `Reduce` work on the entries, and a user
+  function that takes an index gets its row and column (`skepu::Index2D`). The inputs and
+  the output share a pattern, and an output that has none gets the pattern of the inputs.
+  (Functions are applied to the stored entries only.)
+- By rows: a `Reduce`, or a `MapReduce` with `setReduceMode(skepu::ReduceMode::RowWise)`,
+  of a sparse matrix gives a `Vector` with an element for each row.
+- With different patterns: a `Map` with `setSparsePolicy(skepu::SparsePolicy::Union)`
+  (the output has an entry wherever an input has one) or `Intersection`. A missing entry
+  has the value that `setImplicitZero` gives (zero by default). The patterns are combined
+  once for the same patterns.
+
+```cpp
+float times_x(skepu::Index2D index, float a, skepu::Vec<float> x) { return a * x(index.col); }
+float add(float a, float b) { return a + b; }
+
+auto spmv = skepu::MapReduce<1>(times_x, add);
+spmv.setReduceMode(skepu::ReduceMode::RowWise);
+spmv(y, A, x); // y(i) is the row i of A times x
+
+auto sum = skepu::Map<2>(add);
+sum.setSparsePolicy(skepu::SparsePolicy::Union);
+sum(C, A, B); // C = A + B, whatever the patterns of A and B
+```
+
 ## Example: Conjugate-Gradient Solver {#sec-CG}
 
 The following example code using SkePU-BLAS functions is adapted from
