@@ -63,6 +63,14 @@ The SkePU additions to clangd are in `src/skepu-lsp/` (and the analysis of `skep
 
 To make the LSP aware of SkePU and its files, you need to generate a compile_commands.json file. In the examples folder, `make compile-commands` writes one for the example programs. After doing this, the LSP should be able to find where the `#include <skepu>` and similar are fetched from. You might need to restart your code editor after generating the compile_commands.json for the changes to take effect.
 
+## A package for a course, lab or tutorial
+
+For a group of students that should not build SkePU and LLVM themselves, `packaging/make-package.sh` makes one tar file of what is needed: `skepu-tool`, the headers, the language
+server (if it is built, `-DSKEPU_LSP=ON`) and `skepu.mk`, which builds programs for OpenMP, CUDA and OpenCL by default (`packaging/files/`). Run it on a computer like the ones the
+students use, from a SkePU that has been built; it builds what is out of date, installs into a temporary directory and writes the tar file. What is particular to a course (its programs,
+Makefiles, data and README) is a directory, the overlay, added on top: `--overlay DIR`, or `-DSKEPU_PACKAGE_OVERLAY=DIR` with `cmake --build build --target skepu-package`. The package
+is tested by unpacking it and building a small program with it. See the top of the script for the options.
+
 ## Compatibility with SkePU 1 and 2
 
 SkePU 3 is not compatible with SkePU 2 nor with SkePU 1. Check the user

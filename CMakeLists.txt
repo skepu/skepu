@@ -206,6 +206,19 @@ install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/llvm/clang/lib/Headers/
 	DESTINATION lib/SkePU/clang-headers/)
 # TODO: We should probably install the clang licence in that directory.
 
+# A package (skepu-tool, the headers, the language server if it is built, and skepu.mk) in one tar file, for a course, lab or tutorial: packaging/make-package.sh,
+# which this target runs on what has been built. SKEPU_PACKAGE_OVERLAY is the directory with what is particular to the course, that is added to the package.
+set(SKEPU_PACKAGE_OVERLAY "" CACHE PATH "What is added to the package that the target skepu-package makes: the programs, Makefiles and data of a course")
+set(_package_args --no-build --build-dir ${CMAKE_BINARY_DIR} --output ${CMAKE_BINARY_DIR})
+if(SKEPU_PACKAGE_OVERLAY)
+	list(APPEND _package_args --overlay ${SKEPU_PACKAGE_OVERLAY})
+endif()
+add_custom_target(skepu-package
+	COMMAND ${CMAKE_CURRENT_LIST_DIR}/packaging/make-package.sh ${_package_args}
+	COMMENT "Making the SkePU package"
+	USES_TERMINAL VERBATIM)
+add_dependencies(skepu-package skepu-tool)
+
 # Enable testing first.
 if(SKEPU_ENABLE_TESTING)
 	enable_testing()
