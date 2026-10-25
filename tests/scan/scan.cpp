@@ -1,6 +1,7 @@
 #include "../../external/catch2/catch.hpp"
 
 #include <skepu>
+#include <skepu-lib/randomize.hpp>
 #include <skepu-lib/io.hpp>
 #include <test_helper_automatic_setup.hpp>
 
@@ -16,7 +17,7 @@ TEST_CASE("Scan fundamentals")
 	const size_t size{100};
 
 	skepu::Vector<float> v(size), r(size);
-	v.randomize(0, 10);
+	skepu::randomize::uniform(v, 0, 10);
 
 	skepu::io::cout << "v: " << v << "\n";
 

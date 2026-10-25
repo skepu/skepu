@@ -1,7 +1,7 @@
 // test_smooth_scroll.js — the scroll of a pane to a selected line (script/smooth_scroll.js): from where the pane is, in a time that grows a little with
 // the distance, taken over by the next one from where it is, and ended by the user.
 import { describe, it, expect } from 'vitest';
-import { scrollDuration, ease, smoothScrollTo, cancelScroll, MIN_MS, MAX_MS } from '../../script/smooth_scroll.js';
+import { scrollDuration, ease, smoothScrollTo, cancelScroll, linesInView, flexBasisPx, scrollOffset, MIN_MS, MAX_MS } from '../../script/smooth_scroll.js';
 
 // a pane and a clock: frames are run by hand
 function setup(scrollTop = 0, scrollHeight = 2000, clientHeight = 400) {
@@ -66,6 +66,14 @@ describe('the scroll of a pane', () => {
     smoothScrollTo(pane, -50, {}, env);
     run(1000);
     expect(pane.scrollTop).toBe(0);
+  });
+  it('can go further than the pane allows now, as far as it will when the pane has got smaller (the info pane slides up), and says where it goes', () => {
+    const { pane, env, run } = setup(100);   // (the end is at 1600)
+    expect(smoothScrollTo(pane, 1700, { extraRange: 150 }, env)).toBe(1700);
+    pane.clientHeight = 250;                 // (the pane has got smaller: the end is at 1750)
+    run(1000);
+    expect(pane.scrollTop).toBe(1700);
+    expect(smoothScrollTo(pane, 99999, {}, env)).toBe(1750);   // (without the range: the end of the pane that is now)
   });
   it('jumps when it is not to animate, or there is nothing to move', () => {
     const { pane, env } = setup(100);
@@ -172,5 +180,55 @@ describe('whether the lines are in view already', () => {
   it('is no for a pane that is not shown (no height), and for no lines', () => {
     expect(linesInView([line(300)], line(300), { top: 0, bottom: 0 })).toBe(false);
     expect(linesInView([], line(300), view)).toBe(false);
+  });
+});
+
+describe('the size of a flex item from its style', () => {
+  it('is the basis, in px or em', () => {
+    expect(flexBasisPx('0 0 180px', 12)).toBe(180);
+    expect(flexBasisPx('0 0 10em', 12.8)).toBeCloseTo(128);
+    expect(flexBasisPx('0 0 0em', 12)).toBe(0);
+    expect(flexBasisPx('0 0 123.5px', 12)).toBe(123.5);
+  });
+  it('is nothing for what is not a size', () => {
+    expect(flexBasisPx('1 1 auto', 12)).toBeNull();
+    expect(flexBasisPx('', 12)).toBeNull();
+    expect(flexBasisPx(undefined, 12)).toBeNull();
+  });
+});
+
+describe('a line that the info pane is going to cover', () => {
+  // the code pane is 500 px high now, and 300 px when the info pane has slid up over the lower 200 px
+  const nowView = { top: 0, bottom: 500 }, settledView = { top: 0, bottom: 300 };
+  it('is in view now, and not in view when the pane has its size', () => {
+    const line = { top: 380, bottom: 396 };
+    expect(linesInView([line], line, nowView)).toBe(true);
+    expect(linesInView([line], line, settledView)).toBe(false);
+  });
+  it('is in view if it stays above the info pane, with a margin', () => {
+    const line = { top: 100, bottom: 116 };
+    expect(linesInView([line], line, settledView)).toBe(true);
+    const near = { top: 270, bottom: 286 };   // (the margin is 15% of the pane: 45 px)
+    expect(linesInView([near], near, settledView)).toBe(false);
+  });
+});
+
+describe('where the line that is scrolled to goes in the pane', () => {
+  const line = 16;   // px
+  it('is a third of the way down, with lines of the code above and below it', () => {
+    const offset = scrollOffset(480, line, line);
+    expect(offset).toBeCloseTo((480 - line) / 3);
+    expect(offset).toBeGreaterThanOrEqual(3 * line);
+    expect(480 - offset - line).toBeGreaterThanOrEqual(3 * line);
+  });
+  it('has at least three lines above, and three below the end of a range of lines', () => {
+    const view = 300, span = 80;   // (five lines)
+    const offset = scrollOffset(view, line, span);
+    expect(offset).toBeGreaterThanOrEqual(3 * line);
+    expect(view - offset - span).toBeGreaterThanOrEqual(3 * line);
+  });
+  it('is in the middle in a pane that has hardly room for the lines, and at the top for lines that do not fit', () => {
+    expect(scrollOffset(100, line, 60)).toBe(20);
+    expect(scrollOffset(100, line, 300)).toBe(0);
   });
 });

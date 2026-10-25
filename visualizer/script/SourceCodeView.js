@@ -23,9 +23,13 @@
 //   src.clearBadges();
 //   src.placeBadges(badgeNodes);
 
-import { smoothScrollTo, cancelScroll, linesInView } from './smooth_scroll.js';
+import { smoothScrollTo, cancelScroll, linesInView, flexBasisPx, scrollOffset } from './smooth_scroll.js';
+
 import { collectBadges, definitionMarks, sitesAt } from './badges.js';
 import { isDarkTheme } from './appearance.js';
+
+// (the transition of the size of the info pane, in style/main.css)
+const INFO_PANE_TRANSITION_MS = 300;
 
 'use strict';
 
@@ -549,7 +553,7 @@ export class SourceCodeView {
 
   /**
    * Mark lines of a pane as selected (`line-selected`), after clearing the marks, and optionally scroll the pane to them: smoothly, with the
-   * line that is scrolled to 5 px below the top.
+   * line that is scrolled to a third of the way down the pane (with lines of the code above and below it).
    *
    * @param {number[]} lineNumbers  1-based line numbers.
    * @param {object}   [options]
@@ -575,12 +579,40 @@ export class SourceCodeView {
     // A line that is in view stays where it is (selecting it again, or a line that was in sight, does not move the code)
     var rect = function(el) { var r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; };
     var paneRect = pane.getBoundingClientRect();
-    if (linesInView(Array.from(found.values()).map(rect), rect(first), { top: paneRect.top, bottom: paneRect.bottom })) {
+    // (the part of the pane that is left when the info pane has got its size: it is opened with the selection, and slides up over the code)
+    var view = this._viewWithInfoPane(pane, paneRect);
+    if (linesInView(Array.from(found.values()).map(rect), rect(first), view)) {
       cancelScroll(pane);   // (a scroll that is going on to somewhere else is not wanted any more)
       return;
     }
-    var top = pane.scrollTop + first.getBoundingClientRect().top - pane.getBoundingClientRect().top - 5;
-    smoothScrollTo(pane, top, { animate: options.animate });
+    // (the line goes a third of the way down the part of the pane that stays: lines of the code are above and below it)
+    var firstRect = rect(first), lowest = Math.max.apply(null, Array.from(found.values()).map(function(el) { return rect(el).bottom; }));
+    var offset = scrollOffset(view.bottom - view.top, firstRect.bottom - firstRect.top, Math.max(lowest, firstRect.bottom) - firstRect.top);
+    var top = pane.scrollTop + firstRect.top - paneRect.top - offset;
+    var extraRange = paneRect.bottom - view.bottom;
+    var to = smoothScrollTo(pane, top, { animate: options.animate, extraRange: extraRange });
+    // A line near the end of the code can only be scrolled to the top of the pane when the pane has got smaller: the scroll that is made while it
+    // does so ends where the pane let it, and is finished when it is done (unless the user, or another selection, has scrolled in the meantime)
+    if (extraRange > 1) {
+      var token = pane._scrollSettle = {};
+      setTimeout(function() {
+        if (pane._scrollSettle === token && !pane._scrollAnim && pane.scrollTop < to - 1) pane.scrollTop = to;
+      }, INFO_PANE_TRANSITION_MS + 60);
+    }
+  }
+
+  /**
+   * The rectangle of the pane as it is when the info pane has its size (the transition of its size takes a moment): the info pane covers the
+   * lower part of the right column, where the code pane is the rest. If it cannot be known, the rectangle as it is now.
+   */
+  _viewWithInfoPane(pane, paneRect) {
+    var view = { top: paneRect.top, bottom: paneRect.bottom };
+    if (typeof document === 'undefined') return view;
+    var info = document.getElementById('info_window'), column = document.getElementById('right_pane');
+    if (!info || !column || !column.contains(pane)) return view;
+    var height = flexBasisPx(info.style.flex, parseFloat(getComputedStyle(info).fontSize));
+    if (height != null) view.bottom = Math.min(view.bottom, column.getBoundingClientRect().bottom - height);
+    return view;
   }
 
   clearHighlight() {

@@ -88,3 +88,31 @@ TEST_CASE("Container variables are named in the trace")
 	for (auto const& name : {"constant", "reference", "in_condition", "in_header"})
 		CHECK(counted(labels, name) == 0);
 }
+
+TEST_CASE("The allocation event of a container is at its declaration")
+{
+	const int line = __LINE__ + 1;
+	skepu::Vector<float> located(3); skepu::Matrix<float> also_located(2, 2);
+	skepu::Vector<float> constructed_in_place = skepu::Vector<float>(2);   // (named, and located, as a variable)
+	located.flush();
+
+	SKEPU_TRACE_FLUSH();
+	std::ifstream file(std::getenv("SKEPU_TRACE_FILE"));
+	REQUIRE(file.good());
+	json trace = json::parse(file);
+	std::map<std::string, std::pair<std::string, int>> places;
+	for (auto const& e : trace.is_object() ? trace["data"] : trace)
+		if (e["type"] == "allocation" && e.contains("file"))   // (the containers that the program does not declare have the place of the header)
+			places[e["label"].get<std::string>()] = {e["file"].get<std::string>(), e["line"].get<int>()};
+
+	const std::string name = "tracing_container_labels.cpp";
+	for (auto const& label : {"located", "also_located", "constructed_in_place"})
+	{
+		REQUIRE(places.count(label) == 1);
+		REQUIRE(places[label].first.size() >= name.size());
+		CHECK(places[label].first.compare(places[label].first.size() - name.size(), name.size(), name) == 0);
+	}
+	CHECK(places["located"].second == line);
+	CHECK(places["also_located"].second == line);
+	CHECK(places["constructed_in_place"].second == line + 1);
+}

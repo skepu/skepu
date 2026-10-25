@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <skepu>
+#include <skepu-lib/randomize.hpp>
 
 int increment(int a) { return a + 1; }
 int scaled(int a, int factor) { return a * factor; }
@@ -104,9 +105,9 @@ int main()
 	skepu::Tensor4<int> hypervolume(5, 2, 2, 3, "hypervolume", 6);
 	SKEPU_TRACE_SNAPSHOT(volume);
 	SKEPU_TRACE_SNAPSHOT(hypervolume);
-	// randomize is an external call of the library, as in a single node
+	// the random fill of the library: a call of a skeleton, as in a single node
 	skepu::Vector<int> rnd(30, "rnd");
-	rnd.randomize(0, 9);
+	skepu::randomize::uniform(rnd, 0, 9);
 	std::cout << "random: " << rnd[0] << " " << rnd[29] << "\n";
 
 	// containers that have only their initial value are not gathered to be read: every process knows what is in them

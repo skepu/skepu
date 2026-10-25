@@ -1,4 +1,5 @@
 #include <skepu>
+#include <skepu-lib/randomize.hpp>
 #include <skepu-lib/io.hpp>
 
 template<typename T>
@@ -21,7 +22,7 @@ int main(int argc, char *argv[])
 	auto square = skepu::Map(square_f<float>);
 	
 	skepu::Vector<float> in(size), out(size);
-	in.randomize(0, 9);
+	skepu::randomize::uniform(in, 0, 9);
 	
 	square(out, in);
 	

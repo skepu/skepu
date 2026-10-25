@@ -10,6 +10,7 @@
 
 #include <skepu3/impl/backend.hpp>
 #include <skepu3/impl/meta_helpers.hpp>
+#include <skepu3/impl/tracing.h>
 
 namespace skepu
 {
@@ -123,6 +124,8 @@ namespace skepu
 		template<typename BF, typename... Args>
 		inline std::chrono::microseconds measureExecTime(BF f, Args&&... args)
 		{
+			// (the arguments are a pack: the function cannot take the place of its call)
+			SKEPU_TRACE_API_NO_SITE("benchmark.measureExecTime");
 			auto t1 = std::chrono::steady_clock::now();
 			f(std::forward<Args>(args)...);
 
@@ -133,6 +136,7 @@ namespace skepu
 		template<typename BF, typename... Args>
 		inline std::chrono::microseconds measureExecTimeIdempotent(BF f, Args&&... args)
 		{
+			SKEPU_TRACE_API_NO_SITE("benchmark.measureExecTimeIdempotent");
 			f(std::forward<Args>(args)...);
 
 			auto t1 = std::chrono::steady_clock::now();
@@ -155,8 +159,9 @@ namespace skepu
 		inline void nullCallbackFn(TimeSpan) {}
 
 		template<typename BF>
-		inline std::vector<TimeSpan> measureForEachBackend(size_t repeats, size_t size, std::vector<BackendSpec> backends, BF f, Callback callback = nullCallbackFn)
+		inline std::vector<TimeSpan> measureForEachBackend(size_t repeats, size_t size, std::vector<BackendSpec> backends, BF f, Callback callback = nullCallbackFn SKEPU_CALL_SITE_PARAM)
 		{
+			SKEPU_TRACE_API("benchmark.measureForEachBackend");
 			std::vector<TimeSpan> medianTimes;
 			for (auto &spec : backends)
 			{
@@ -178,8 +183,9 @@ namespace skepu
 		// Runs a skeleton instance with the currently set ExecPlan and BackendSpec ´repeats´ times
 		// and returns the median execution time
 		template<typename BF>
-		inline TimeSpan basicBenchmark(size_t repeats, size_t size, BF f, Callback callback = nullCallbackFn)
+		inline TimeSpan basicBenchmark(size_t repeats, size_t size, BF f, Callback callback = nullCallbackFn SKEPU_CALL_SITE_PARAM)
 		{
+			SKEPU_TRACE_API("benchmark.basicBenchmark");
 			std::vector<TimeSpan> durations(repeats);
 
 			// Run multiple tests to smooth out fluctuations
@@ -226,8 +232,9 @@ namespace skepu
 		template<typename... Skeletons>
 		inline BenchmarkResult fullBenchmark(
 			std::string name, std::tuple<Skeletons...> &instances, size_t minSize, size_t maxSize, size_t repeats,
-			BenchmarkFunc f, UpdateFunc update, Callback callback)
+			BenchmarkFunc f, UpdateFunc update, Callback callback SKEPU_CALL_SITE_PARAM)
 		{
+			SKEPU_TRACE_API("benchmark.fullBenchmark");
 			skepu::benchmark::BenchmarkResult result(name);
 			const size_t stepFactor = 2;
 
@@ -238,7 +245,7 @@ namespace skepu
 				for (size_t size = minSize; size <= maxSize; size *= stepFactor)
 				{
 					update(size);
-					auto duration = basicBenchmark(repeats, size, f, callback);
+					auto duration = basicBenchmark(repeats, size, f, callback SKEPU_CALL_SITE_FORWARD_ARG);
 					result.set(backend, size, duration);
 				}
 			}
@@ -247,7 +254,7 @@ namespace skepu
 			for (size_t size = minSize; size <= maxSize; size *= stepFactor)
 			{
 				update(size);
-				auto duration = basicBenchmark(repeats, size, f, callback);
+				auto duration = basicBenchmark(repeats, size, f, callback SKEPU_CALL_SITE_FORWARD_ARG);
 				result.set(Backend::Type::Auto, size, duration);
 			}
 			return result;
@@ -256,10 +263,12 @@ namespace skepu
 		template<typename Skeleton>
 		inline BenchmarkResult fullBenchmark(
 			std::string name, Skeleton &instance, size_t minSize, size_t maxSize, size_t repeats,
-			BenchmarkFunc f, UpdateFunc update, Callback callback)
+			BenchmarkFunc f, UpdateFunc update, Callback callback SKEPU_CALL_SITE_PARAM)
 		{
+			// (the one region is that of the call of the program: the call below is for the same library function)
+			SKEPU_TRACE_API("benchmark.fullBenchmark");
 			auto tuple = std::make_tuple(&instance);
-			return fullBenchmark(name, tuple, minSize, maxSize, repeats, f, update, callback);
+			return fullBenchmark(name, tuple, minSize, maxSize, repeats, f, update, callback SKEPU_CALL_SITE_FORWARD_ARG);
 		}
 	} // namespace benchmarks
 } // namespace skepu

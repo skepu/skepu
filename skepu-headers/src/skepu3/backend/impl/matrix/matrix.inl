@@ -13,41 +13,6 @@ void Matrix<T>::setValidFlag(bool val)
 
 
 /*!
-*  \brief Randomizes the Matrix.
-*
-*  Sets each element of the Matrix to a random number between \p min and \p max.
-*  The numbers are generated as \p integers but are cast to the type of the matrix.
-*
-*  \param min The smallest number an element can become.
-*  \param max The largest number an element can become.
-*/
-template<typename T>
-void Matrix<T>::randomize(int min, int max)
-{
-   invalidateDeviceData();
-   SKEPU_TRACE_START_EVENT(trace_handle);
-
-   for(typename Matrix<T>::size_type i = 0; i < this->size(); i++)
-   {
-      this->m_data[i] = (T)( rand() % (int)(max-min+1) + min);
-   }
-   SKEPU_TRACE_EXTERNAL(trace_handle, "randomize", "", 0, {this->m_object_id}, {});
-}
-
-template<typename T>
-void Matrix<T>::randomizeReal(double min, double max)
-{
-   invalidateDeviceData();
-   SKEPU_TRACE_START_EVENT(trace_handle);
-
-   for(typename Matrix<T>::size_type i = 0; i < this->size(); i++)
-   {
-      this->m_data[i] = min + (T)( (rand() % RAND_MAX) / (double)RAND_MAX) * (max - min);
-   }
-   SKEPU_TRACE_EXTERNAL(trace_handle, "randomizeReal", "", 0, {this->m_object_id}, {});
-}
-
-/*!
 *  \brief Saves content of Matrix to a file.
 *
 *  Outputs the matrix as text on one line with space between elements to the specified file.

@@ -1,29 +1,6 @@
 namespace skepu
 {
 	/*!
-	 *  \brief Randomizes the vector.
-	 *
-	 *  Sets each element of the vector to a random number between \p min and \p max.
-	 *  The numbers are generated as \p integers but are cast to the type of the vector.
-	 *
-	 *  \param min The smallest number an element can become.
-	 *  \param max The largest number an element can become.
-	 */
-	template<typename T>
-	void Vector<T>::randomize(int min, int max)
-	{
-		invalidateDeviceData();
-		SKEPU_TRACE_START_EVENT(trace_handle);
-		
-		for (size_type i = 0; i < size(); i++)
-		{
-			m_data[i] = (T)( rand() % max + min );
-		}
-		SKEPU_TRACE_EXTERNAL(trace_handle, "randomize", "", 0, {this->m_object_id}, {});
-	}
-	
-	
-	/*!
 	 *  \brief Saves content of vector to a file.
 	 *
 	 *  Outputs the vector as text on one line with space between elements to the specified file.

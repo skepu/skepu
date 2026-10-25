@@ -168,7 +168,8 @@ namespace skepu
 			return this->m_object_id;
 		}
 
-		void randomize(int min = 0, int max = RAND_MAX);
+		// (removed: the random fills are in skepu-lib/randomize.hpp)
+		void randomize(int = 0, int = RAND_MAX) { static_assert(sizeof(T) == 0, "Vector::randomize is removed: use skepu::randomize::uniform (skepu-lib/randomize.hpp)"); }
 		void save(const std::string& filename, const std::string& delimiter=" ");
 		void load(const std::string& filename, size_type numElements = 0);
 

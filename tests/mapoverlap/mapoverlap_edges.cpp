@@ -3,6 +3,7 @@
 
 #include "../../external/catch2/catch.hpp"
 #include <skepu>
+#include <skepu-lib/randomize.hpp>
 #include <algorithm>
 #include <vector>
 #include <skepu-lib/io.hpp>
@@ -97,7 +98,8 @@ TEST_CASE("mapoverlap_in_place: MapOverlap in place")
 	// and as long as the result container is not also passed as a random-access input
 
 	skepu::Vector<float> domain(size, 0);
-	domain.randomize(0, 2);
+	skepu::randomize::uniform(domain, 0, 2);
+	domain.flush();   // (the elements are read on the host below)
 	
 	// The result on the host: the red elements (the odd ones) first, then the black ones (the even ones), each from the latest values
 	std::vector<float> expected(size);

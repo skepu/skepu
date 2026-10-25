@@ -321,8 +321,7 @@ namespace skepu
 			// A skeleton instance can be named again and again, for example by the layers of a network that share one: only the events
 			// before its first call, the builds of its kernels, get the name; its calls keep the name that it had at the call)
 			auto capture = [=, this]{
-			// (true if the event ends the search)
-			auto rename = [&](nlohmann::json &event)
+			this->forRecentEvents([&](nlohmann::json &event)
 			{
 				auto object = event.find(Schema::Keys::OBJECT_ID);
 				if (object == event.end() || *object != id || !event.contains(Schema::Keys::LABEL))
@@ -331,18 +330,42 @@ namespace skepu
 					return true;
 				event[Schema::Keys::LABEL] = label;
 				return event[Schema::Keys::TYPE] == Schema::Values::Types::ALLOCATION;
-			};
-			// (the events that wait in the regions that are not written are the newest)
-			for (auto &stack : this->m_region_stacks)
-				for (auto entry = stack.second.rbegin(); entry != stack.second.rend(); ++entry)
-					if (!entry->buffered.is_null() && rename(entry->buffered))
-						return;
-			for (auto it = this->m_window.rbegin(); it != this->m_window.rend(); ++it)
-				if (rename(*it))
-					break;
+			});
 			}; this->push_capture(std::move(capture), CaptureKind::Raw);
 #endif
 		}
+
+		inline void Tracer::place(TraceID id, std::string const& file, int line)
+		{
+#ifdef SKEPU_TRACING
+			auto capture = [=, this]{
+			this->forRecentEvents([&](nlohmann::json &event)
+			{
+				auto object = event.find(Schema::Keys::OBJECT_ID);
+				if (object == event.end() || *object != id || event[Schema::Keys::TYPE] != Schema::Values::Types::ALLOCATION)
+					return false;
+				event[Schema::Keys::FILE] = file;
+				event[Schema::Keys::LINE] = line;
+				return true;
+			});
+			}; this->push_capture(std::move(capture), CaptureKind::Raw);
+#endif
+		}
+
+#ifdef SKEPU_TRACING
+		template<typename Visit>
+		inline void Tracer::forRecentEvents(Visit visit)
+		{
+			// (the events that wait in the regions that are not written are the newest)
+			for (auto &stack : this->m_region_stacks)
+				for (auto entry = stack.second.rbegin(); entry != stack.second.rend(); ++entry)
+					if (!entry->buffered.is_null() && visit(entry->buffered))
+						return;
+			for (auto it = this->m_window.rbegin(); it != this->m_window.rend(); ++it)
+				if (visit(*it))
+					return;
+		}
+#endif
 
 		inline void Tracer::compile(
 			unsigned long start,
@@ -809,7 +832,8 @@ namespace skepu
 			SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER
 		)
 		{
-			this->data_snapshot(data, SKEPU_EXTERNAL_SOURCE_LOCATION_FILE, SKEPU_EXTERNAL_SOURCE_LOCATION_LINE);
+			// (a string: the overload that takes the place, not this one)
+			this->data_snapshot(data, std::string(SKEPU_EXTERNAL_SOURCE_LOCATION_FILE), SKEPU_EXTERNAL_SOURCE_LOCATION_LINE);
 		}
 
  		template<typename C>
@@ -851,7 +875,8 @@ namespace skepu
 			SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER
 		)
 		{
-			this->virtual_dataset(label, data1, data2, SKEPU_EXTERNAL_SOURCE_LOCATION_FILE, SKEPU_EXTERNAL_SOURCE_LOCATION_LINE);
+			// (a string: the overload that takes the place, not this one)
+			this->virtual_dataset(label, data1, data2, std::string(SKEPU_EXTERNAL_SOURCE_LOCATION_FILE), SKEPU_EXTERNAL_SOURCE_LOCATION_LINE);
 		}
 
 		template<template<typename> typename C1, template<typename> typename C2, typename T1, typename T2>
@@ -879,7 +904,8 @@ namespace skepu
 
 		inline void Tracer::beginRegion(std::string const& label SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER)
 		{
-			this->beginRegion(label, SKEPU_EXTERNAL_SOURCE_LOCATION_FILE, SKEPU_EXTERNAL_SOURCE_LOCATION_LINE);
+			// (a string: the overload that takes the place, not this one)
+			this->beginRegion(label, std::string(SKEPU_EXTERNAL_SOURCE_LOCATION_FILE), SKEPU_EXTERNAL_SOURCE_LOCATION_LINE);
 		}
 
 		inline void Tracer::beginRegion(std::string const& label, std::string const& file, int line)
@@ -1110,12 +1136,15 @@ namespace skepu
 	// Names a container in the traces and the debug output, unless the program has named it (a label that the program
 	// gives, in the constructor or with setLabel, is the name). skepu-tool adds a call after each declaration of a container
 	// variable, with the name of the variable. It does nothing if the program is not traced.
+	// The place that skepu-tool gives (the file and line of the declaration, in the program as the programmer wrote it) is the place of the allocation event.
 	template<typename Container>
-	void trace_label(Container &container, const char *label)
+	void trace_label(Container &container, const char *label, const char *file = nullptr, int line = 0)
 	{
 #ifdef SKEPU_TRACING
 		if (!container.hasLabel())
 			container.setLabel(label);
+		if (file)
+			SKEPU_TRACE_PLACE(container.getObjectID(), file, line);
 #endif
 	}
 }

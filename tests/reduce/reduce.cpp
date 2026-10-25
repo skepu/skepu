@@ -3,6 +3,7 @@
 #include "../../external/catch2/catch.hpp"
 #define SKEPU_ENABLE_EXCEPTIONS   // (a Reduce with containers of the wrong sizes is an error that the test catches)
 #include <skepu>
+#include <skepu-lib/randomize.hpp>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -49,8 +50,8 @@ TEST_CASE("reduce: Reduce fundamentals")
 	
 	skepu::Matrix<float> m(size / 2, size / 2);
 	skepu::Vector<float> v(size), rv(size / 2);
-	m.randomize(0, 10);
-	v.randomize(0, 10);
+	skepu::randomize::uniform(m, 0, 10);
+	skepu::randomize::uniform(v, 0, 10);
 
 	// With containers
 	float r = sum(v);

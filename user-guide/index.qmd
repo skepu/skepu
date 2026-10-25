@@ -34,6 +34,7 @@ We will introduce the SkePU syntax with an example, see
 #include <iostream>
 #include <cmath>
 #include <skepu>
+#include <skepu-lib/randomize.hpp>
 
 // Unary user function
 float square(float a) { return a * a; }
@@ -74,8 +75,8 @@ int main()
     const size_t size = 100;
     // Vector operands
     skepu::Vector<float> x(size), y(size);
-    x.randomize(1, 3);
-    y.randomize(2, 4);
+    skepu::randomize::uniform(x, 1, 3);
+    skepu::randomize::uniform(y, 2, 4);
     std::cout << "X: " << x << "\n";
     std::cout << "Y: " << y << "\n";
     float res = ppmcc(x, y);

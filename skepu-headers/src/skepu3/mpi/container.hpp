@@ -294,31 +294,6 @@ namespace skepu
 
 				Tile &tile() { return *this->m_tile; }
 
-				// What the randomize functions of the node-level containers do: the elements get a value from rand(), one call for
-				// each, in the order of the memory. Every process makes the calls for all the elements (so that the state of
-				// rand() is that of a single node, on every process) and keeps the values of its own.
-				template<typename F>
-				void generate_from_rand(F value)
-				{
-					// (a call for the trace, as in a single node, where randomize is an external of the library)
-					mpi::trace::CallScope trace_scope("external");
-					trace_scope.work_begin();
-					const size_t first = this->local_offset(), last = first + this->local_size();
-					T *tile = this->local_size() > 0 ? this->m_tile->getAddress() : nullptr;
-					const size_t total = this->size();
-					for (size_t i = 0; i < total; ++i)
-					{
-						const int r = std::rand();
-						if (i >= first && i < last)
-							tile[i - first] = value(r);
-					}
-					if (this->local_size() > 0)
-						this->m_tile->invalidateDeviceData();
-					this->tile_written();
-					trace_scope.work_finish();
-					trace_scope.finish_external("randomize", "", 0, {this->m_identity.id}, {});
-				}
-
 				const T *read_access() const
 				{
 					this->ensure_mirror();

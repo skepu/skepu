@@ -69,17 +69,9 @@ namespace skepu
 		T &operator[](size_type index) { return this->write_access()[index]; }
 		const T &operator[](size_type index) const { return this->read_access()[index]; }
 
-		void randomize(int min = 0, int max = RAND_MAX)
-		{
-			// as the node-level matrix
-			this->generate_from_rand([&](int r) { return (T)(r % (int)(max - min + 1) + min); });
-		}
-
-		void randomizeReal(double min = 0, double max = 1)
-		{
-			// as the node-level matrix
-			this->generate_from_rand([&](int r) { return min + (T)((r % RAND_MAX) / (double)RAND_MAX) * (max - min); });
-		}
+		// (removed: the random fills are in skepu-lib/randomize.hpp)
+		void randomize(int = 0, int = RAND_MAX) { static_assert(sizeof(T) == 0, "Matrix::randomize is removed: use skepu::randomize::uniform (skepu-lib/randomize.hpp)"); }
+		void randomizeReal(double = 0, double = 1) { static_assert(sizeof(T) == 0, "Matrix::randomizeReal is removed: use skepu::randomize::uniform (skepu-lib/randomize.hpp)"); }
 
 		// The whole matrix, to be read, on every process (not a copy)
 		::skepu_node::Matrix<T> replicated_view() const

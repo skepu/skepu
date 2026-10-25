@@ -1,5 +1,6 @@
 #include <iostream>
 #include <skepu>
+#include <skepu-lib/randomize.hpp>
 
 template<typename T>
 T arr(skepu::Index1D row, const skepu::Mat<T> m, const skepu::Vec<T> v)
@@ -20,8 +21,8 @@ int main(int argc, char *argv[])
 	
 	skepu::Matrix<float> m(size, size);
 	skepu::Vector<float> v(size), r(size);
-	m.randomize(3, 9);
-	v.randomize(0, 9);
+	skepu::randomize::uniform(m, 3, 9);
+	skepu::randomize::uniform(v, 0, 9);
 	
 	mvprod(r, m, v);
 

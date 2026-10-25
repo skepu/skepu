@@ -44,12 +44,13 @@
 #define SKEPU_EXTERNAL_SOURCE_LOCATION_FILE loc.file_name()
 #define SKEPU_EXTERNAL_SOURCE_LOCATION_LINE loc.line()
 #else
-#define SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM
-#define SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER
-#define SKEPU_EXTERNAL_SOURCE_LOCATION_FORWARD_ARG
-#define SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS "", 0
-#define SKEPU_EXTERNAL_SOURCE_LOCATION_FILE ""
-#define SKEPU_EXTERNAL_SOURCE_LOCATION_LINE 0
+// (before C++20 the place of the call is made by the compiler: __builtin_FILE and __builtin_LINE as default arguments, as for SKEPU_CALL_SITE_PARAM)
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM , const char *skepu_loc_file = __builtin_FILE(), int skepu_loc_line = __builtin_LINE()
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER , const char *skepu_loc_file, int skepu_loc_line
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_FORWARD_ARG , skepu_loc_file, skepu_loc_line
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_ARGS skepu_loc_file, skepu_loc_line
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_FILE skepu_loc_file
+#define SKEPU_EXTERNAL_SOURCE_LOCATION_LINE skepu_loc_line
 #endif
 
 #ifdef SKEPU_TRACING
@@ -107,7 +108,13 @@ namespace skepu
 #define SKEPU_TRACE_AUTO_REGION(label, file, line) skepu::tracing::AutoRegion skepu_trace_auto_region(label, file, line)
 #define SKEPU_CALL_SITE_PARAM , const char *skepu_site_file = __builtin_FILE(), int skepu_site_line = __builtin_LINE()
 #define SKEPU_CALL_SITE_PARAM_ONLY const char *skepu_site_file = __builtin_FILE(), int skepu_site_line = __builtin_LINE()
+// (the place that a function got, to a function of the library that it calls)
+#define SKEPU_CALL_SITE_FORWARD_ARG , skepu_site_file, skepu_site_line
 #define SKEPU_TRACE_API(label) skepu::tracing::ApiScope skepu_api_scope(label, skepu_site_file, skepu_site_line)
+// (for a function that cannot take the place of its call: it has a pack of arguments, or is an operator; the region has no place)
+#define SKEPU_TRACE_API_NO_SITE(label) skepu::tracing::ApiScope skepu_api_scope(label, nullptr, 0)
+// (the place in the program where the container was declared: the allocation event is where it was made)
+#define SKEPU_TRACE_PLACE(...) skepu::tracing::tracer().place(__VA_ARGS__)
 #define SKEPU_TRACE_REGION_BEGIN(...) skepu::tracing::tracer().beginRegion(__VA_ARGS__)
 #define SKEPU_TRACE_REGION_END() skepu::tracing::tracer().endRegion()
 #define SKEPU_TRACE_REGION(...) skepu::tracing::tracer().region(__VA_ARGS__)
@@ -136,7 +143,10 @@ namespace skepu
 #define SKEPU_TRACE_AUTO_REGION(label, file, line)
 #define SKEPU_CALL_SITE_PARAM
 #define SKEPU_CALL_SITE_PARAM_ONLY
+#define SKEPU_CALL_SITE_FORWARD_ARG
 #define SKEPU_TRACE_API(label)
+#define SKEPU_TRACE_API_NO_SITE(label)
+#define SKEPU_TRACE_PLACE(...)
 #define SKEPU_TRACE_REGION_BEGIN(label)
 #define SKEPU_TRACE_REGION_END()
 #define SKEPU_TRACE_REGION(...)
@@ -363,6 +373,9 @@ namespace skepu
 			// A container gets its name after it was allocated (see skepu::trace_label): its events so far get it too. With `instance`, a skeleton
 			// instance is named: only its events before its first call (the builds of its kernels) get it
 			void relabel(TraceID id, std::string const& label, bool instance = false);
+			// The place in the program where a container was declared (see skepu::trace_label): the allocation event, which has the place of the
+			// header that made it, gets this place. Like relabel, it reaches only the newest events
+			void place(TraceID id, std::string const& file, int line);
 			// The build of an OpenCL kernel for a device: `instance` and `label` are the skeleton instance whose kernel it is (null and a name of
 			// its own for a kernel of the library), `qualifier` says which one of its kernels (empty if it has one). A failed build is recorded too.
 			void compile(unsigned long start, unsigned long end, TraceID instance, std::string const& label, std::string const& qualifier, std::string const& device,
@@ -523,6 +536,9 @@ namespace skepu
 			void replayBeginRegion(std::string label, std::string file, int line, unsigned long time, bool automatic);
 			void replayEndRegion();
 			void submit(nlohmann::json entry);   // an event in the region it is in
+			// Calls visit with the events that can still be changed, the newest first, until it returns true (for the changes of relabel and place; at replay)
+			template<typename Visit>
+			void forRecentEvents(Visit visit);
 			void commitRegions();                // writes the regions that are not, from the outermost, and the events that they hold
 			void settleRegions();                // at the end of the program: the regions that are still open and hold an event
 

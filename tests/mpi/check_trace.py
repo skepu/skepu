@@ -192,10 +192,10 @@ found = [e["line"] for e in full if e["type"] == "external" and e.get("label") =
 if found != marked:
     fail("the external 'line-mark' is on line %s in the trace, and on line %s in the source" % (found, marked))
 
-# randomize is recorded as an external call of the library, as in a single node
+# skepu::randomize::uniform is a skeleton call that writes the container, in a region of the library function, as in a single node
 rnd_ids = [e["object_id"] for e in full if e["type"] == "allocation" and e.get("label") == "rnd"]
-if not any(e["type"] == "external" and e.get("label") == "randomize" and e["outputs"] == rnd_ids for e in full):
-    fail("no external 'randomize' that writes the container rnd")
+if not any(e["type"] == "skeleton_call" and e.get("label") == "randomize::uniform" and e["outputs"] == rnd_ids and e.get("region") == "randomize.uniform" for e in full):
+    fail("no skeleton call 'randomize::uniform' in the region 'randomize.uniform' that writes the container rnd")
 
 # the elements that were read (Vector::elem): of a container that was allocated, and given to a call as a scalar
 accesses = [e for e in full if e["type"] == "element_access"]

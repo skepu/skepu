@@ -252,8 +252,6 @@ TEST_CASE("the trace of the lifetime of containers")
 		skepu::Vector<float> moved_from(8, "moved_from", 1.0f);
 		skepu::Vector<float> moved(std::move(moved_from));
 		map_moved(moved, moved);
-		skepu::Vector<float> randomized(8, "randomized");
-		randomized.randomize(0, 10);
 		skepu::Matrix<float> filled(2, 2, "filled");
 		filled = 2.0f;
 	}
@@ -321,7 +319,7 @@ TEST_CASE("the trace of the lifetime of containers")
 			CHECK(n == 1);
 			CHECK(freed[id] <= 1);
 		}
-		for (auto const& name : {"moved_from", "randomized", "filled"})
+		for (auto const& name : {"moved_from", "filled"})
 			CHECK(freed[id_of(name)] == 1);
 	}
 
@@ -350,13 +348,11 @@ TEST_CASE("the trace of the lifetime of containers")
 		CHECK(e["outputs"][0] == id_of("moved_from"));
 	}
 
-	SECTION("randomize and a fill write the container")
+	SECTION("a fill writes the container")
 	{
-		bool randomize = false, fill = false;
+		bool fill = false;
 		for (auto const& e : trace)
-			if (e["type"] == "external" && e["label"] == "randomize" && e["outputs"][0] == id_of("randomized")) randomize = true;
-			else if (e["type"] == "external" && e["label"] == "fill" && e["outputs"][0] == id_of("filled")) fill = true;
-		CHECK(randomize);
+			if (e["type"] == "external" && e["label"] == "fill" && e["outputs"][0] == id_of("filled")) fill = true;
 		CHECK(fill);
 	}
 }

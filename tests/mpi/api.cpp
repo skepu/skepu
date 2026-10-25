@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <skepu>
+#include <skepu-lib/randomize.hpp>
 
 struct Range
 {
@@ -91,17 +92,17 @@ int main()
 
 	// randomize: the values of a single node
 	skepu::Vector<int> random_vector(101);
-	random_vector.randomize(0, 50);
+	skepu::randomize::uniform(random_vector, 0, 50);
 	skepu::Matrix<int> random_matrix(13, 5);
-	random_matrix.randomize(-5, 5);
+	skepu::randomize::uniform(random_matrix, -5, 5);
 	skepu::Matrix<float> random_real(6, 7);
-	random_real.randomizeReal(0, 10);
+	skepu::randomize::uniform(random_real, 0, 10);
 	random_real.flush();
 	double sum = 0;
 	for (size_t i = 0; i < random_real.size(); ++i)
 		sum += random_real.getAddress()[i];
 	skepu::Tensor3<int> random_tensor(4, 3, 5);
-	random_tensor.randomize(0, 9);
+	skepu::randomize::uniform(random_tensor, 0, 9);
 	std::cout << "randomize: " << checksum(random_vector) << " " << checksum(random_matrix) << " " << (long)(sum * 1000) << " " << checksum(random_tensor) << "\n";
 	std::cout << "after: " << rand() << "\n";
 	return 0;

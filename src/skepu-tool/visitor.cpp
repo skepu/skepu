@@ -438,6 +438,10 @@ static bool IsContainerType(clang::QualType type)
 	return name == "skepu::Vector" || name == "skepu::Matrix" || name == "skepu::Tensor3" || name == "skepu::Tensor4";
 }
 
+#ifndef SKEPU_LSP
+static std::string CStringLiteral(const std::string &text);
+#endif
+
 // A container variable is named in the traces by its variable name: a call is added after its declaration, on the
 // same line so that the line numbers stay. Only the declarations that are statements of a block are named (not
 // the ones in a condition or a loop header, or in a macro or a header file).
@@ -462,7 +466,12 @@ bool SkePUASTVisitor::VisitCompoundStmt(clang::CompoundStmt *block)
 			{
 				auto *d = clang::dyn_cast<clang::VarDecl>(decl);
 				if (d && !d->isInvalidDecl() && !d->getType().isConstQualified() && IsContainerType(d->getType()))
-					calls += " skepu::trace_label(" + d->getNameAsString() + ", \"" + d->getNameAsString() + "\");";
+				{
+					// (with the place of the declaration: the allocation event is where the container was made, not in the header that makes it)
+					const clang::SourceLocation place = SM.getSpellingLoc(d->getLocation());
+					calls += " skepu::trace_label(" + d->getNameAsString() + ", \"" + d->getNameAsString() + "\", \""
+						+ CStringLiteral(SM.getFilename(place).str()) + "\", " + std::to_string(SM.getSpellingLineNumber(place)) + ");";
+				}
 			}
 
 			// (a block in a function template is visited once, but the same statement can be reached again)

@@ -4,10 +4,28 @@
 #define SKEPU_ENABLE_EXCEPTIONS
 #include <iostream>
 #include <skepu>
+#include <skepu-lib/randomize.hpp>
 
 #include <skepu-lib/blas.hpp>
 #include <skepu-lib/io.hpp>
 #include <test_helper_automatic_setup.hpp>
+
+namespace
+{
+	// Random elements from lo to hi (integers, as real numbers: the elements of a complex container are given as the real part). skepu::randomize
+	// has no complex containers.
+	template<typename C>
+	void fill_random(C &container, int lo, int hi)
+	{
+		skepu::Vector<float> real(container.size());
+		skepu::randomize::uniform(real, (float)lo, (float)hi);
+		real.flush();
+		container.flush();
+		for (size_t i = 0; i < container.size(); ++i)
+			container.getAddress()[i] = typename std::remove_reference<decltype(container.getAddress()[i])>::type(std::floor(real.getAddress()[i]));
+		container.invalidateDeviceData();
+	}
+}
 
 TEST_CASE("BLAS level 1")
 {
@@ -15,7 +33,7 @@ TEST_CASE("BLAS level 1")
 	
 	skepu::Vector<skepu::complex::complex<float>> v1(n), v2(n), r(n);
 	
-	v1.randomize(-10, 10);
+	fill_random(v1, -10, 10);
 	
 	
 	// LEVEL 1
@@ -114,9 +132,9 @@ TEST_CASE("BLAS level 2")
 		skepu::Matrix<TestType> A(m, n);
 		skepu::Vector<TestType> x(n), y(m);
 		
-		A.randomize(0, 10);
-		x.randomize(0, 10);
-		y.randomize(0, 10);
+		fill_random(A, 0, 10);
+		fill_random(x, 0, 10);
+		fill_random(y, 0, 10);
 		
 		skepu::io::cout << "y: " << y << "\n";
 		skepu::io::cout << "A: " << A << "\n";
@@ -202,9 +220,9 @@ TEST_CASE("BLAS level 3 integral")
 	size_t k = n + 1;
 	skepu::Matrix<TestType> C(m, n), A(m, k), B(k, n);
 	
-	A.randomize(0, 10);
-	B.randomize(0, 10);
-	C.randomize(0, 10);
+	fill_random(A, 0, 10);
+	fill_random(B, 0, 10);
+	fill_random(C, 0, 10);
 	
 	skepu::io::cout << "C: " << C << "\n";
 	skepu::io::cout << "A: " << A << "\n";
@@ -229,9 +247,9 @@ TEST_CASE("BLAS level 3 floating point")
 	size_t k = n + 1;
 	skepu::Matrix<TestType> C(m, n), A(m, k), B(k, n);
 	
-	A.randomize(0, 10);
-	B.randomize(0, 10);
-	C.randomize(0, 10);
+	fill_random(A, 0, 10);
+	fill_random(B, 0, 10);
+	fill_random(C, 0, 10);
 	
 	skepu::io::cout << "C: " << C << "\n";
 	skepu::io::cout << "A: " << A << "\n";
@@ -256,9 +274,9 @@ TEST_CASE("BLAS level 3 complex")
 	size_t k = n + 1;
 	skepu::Matrix<TestType> C(m, n), A(m, k), B(k, n);
 	
-	A.randomize(0, 10);
-	B.randomize(0, 10);
-	C.randomize(0, 10);
+	fill_random(A, 0, 10);
+	fill_random(B, 0, 10);
+	fill_random(C, 0, 10);
 	
 	skepu::io::cout << "C: " << C << "\n";
 	skepu::io::cout << "A: " << A << "\n";

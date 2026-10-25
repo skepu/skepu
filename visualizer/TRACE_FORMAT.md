@@ -36,6 +36,9 @@ trace too, also if it holds nothing else. Regions that the program marks (`SKEPU
 the label it was given (`skepu::Vector<float> v(n, "v")`); one without a label is `Vector #id` or `Matrix #id` (the id
 counts in order of creation, so the name is the same in every run). The id belongs to the data: `swap` and the move
 constructor swap ids. A PRNG stream is also allocated (label `[Global PRNG]` for the default stream) and never freed.
+
+The `allocation` of a container that the program declares as a variable (a statement in a block of the program's file) has `file` and `line`,
+the place of the declaration (skepu-tool adds them with the name); the others have the `line` of the SkePU header and no `file`.
 The temporaries of SkePU are labelled `Internal (...)`: `[Internal PRNG]`, `Internal (reduce-temp)`,
 `Internal (overlap-wrap)`, `Internal (transpose)`. Scalars (the result of a Reduce) have an id and no allocation.
 
@@ -46,8 +49,10 @@ memory it was given (`Vector(ptr, size)`), is allocated there; one that wraps me
 assignment of a Vector, Matrix or Tensor (the elements are copied). It reads the source
 (which is brought to the host first: a `transfer` inside the interval) and writes the destination. It has no `file` and `line`: the
 constructor and the assignment operator have no place for them. A *move* has no event: the id goes with the data, so the call that
-reads the moved container reads the id of the container that was moved from. `Vector::randomize`, `Matrix::randomize`, `randomizeReal`, a fill
-(`matrix = value`) and the assignment of an initializer list are `external` events (label `randomize`, `fill`, `assign`) that write the container.
+reads the moved container reads the id of the container that was moved from. A fill
+(`matrix = value`) and the assignment of an initializer list are `external` events (label `fill`, `assign`) that write the container; as operators
+they cannot take the place of their call, so their events have none. (`Vector::randomize`, `Matrix::randomize` and `randomizeReal` are removed: the random fills
+of `skepu::randomize` are skeleton calls inside regions of their own.)
 
 Not traced: element access through `operator()` and `operator[]`, which is only coherent inside `skepu::external` (traced there) or with
 `Vector::elem`; `load`, `save`; SparseMatrix.

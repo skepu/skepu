@@ -2,6 +2,7 @@
 
 #include "../../external/catch2/catch.hpp"
 #include <skepu>
+#include <skepu-lib/randomize.hpp>
 #include <iostream>
 #include <skepu-lib/io.hpp>
 #include <test_helper_automatic_setup.hpp>
@@ -23,7 +24,7 @@ TEST_CASE("map_in_place: Map in place")
 	const size_t size{100};
 
 	skepu::Vector<int> values(size);
-	values.randomize(0, 9);
+	skepu::randomize::uniform(values, 0, 9);
 	
 	
 	instance(values, values, 1);
@@ -395,8 +396,10 @@ TEST_CASE("mvmult: Matrix vector multiplication")
 	skepu::Matrix<float> m(N,N);
 	skepu::Vector<float> v(N), res(N), expected(N);
 
-	m.randomize();
-	v.randomize();
+	skepu::randomize::uniform(m, 0, RAND_MAX);
+	skepu::randomize::uniform(v, 0, RAND_MAX);
+	m.flush();   // (directMV reads the elements on the host)
+	v.flush();
 
 	directMV(v, m, expected);
 	REQUIRE_NOTHROW(mvprod(res, m, v));

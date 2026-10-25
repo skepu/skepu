@@ -207,8 +207,9 @@ namespace skepu
 		}
 
 		void setValidFlag(bool val);
-		void randomize(int min = 0, int max = RAND_MAX);
-		void randomizeReal(double min = 0, double max = 1);
+		// (removed: the random fills are in skepu-lib/randomize.hpp)
+		void randomize(int = 0, int = RAND_MAX) { static_assert(sizeof(T) == 0, "Matrix::randomize is removed: use skepu::randomize::uniform (skepu-lib/randomize.hpp)"); }
+		void randomizeReal(double = 0, double = 1) { static_assert(sizeof(T) == 0, "Matrix::randomizeReal is removed: use skepu::randomize::uniform (skepu-lib/randomize.hpp)"); }
 		void save(const std::string& filename);
 		void load(const std::string& filename, size_type rowWidth, size_type numRows = 0);
 

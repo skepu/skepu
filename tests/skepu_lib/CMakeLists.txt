@@ -22,6 +22,24 @@ skepu_add_test(random)
 
 
 # ------------------------------------------------
+#   The removed member functions of the containers that fill them with random numbers: a call must not compile, and the error says what to use
+# ------------------------------------------------
+
+foreach(_case vector matrix matrix_real)
+	string(TOUPPER ${_case} _define)
+	add_executable(randomize_removed_${_case} EXCLUDE_FROM_ALL randomize_removed.cpp)
+	target_link_libraries(randomize_removed_${_case} PRIVATE SkePU::SkePU)
+	target_compile_definitions(randomize_removed_${_case} PRIVATE CASE_${_define})
+	add_test(NAME randomize_removed_${_case}
+		COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target randomize_removed_${_case})
+	# (the build fails with the message of the static assertion; a build that succeeds does not match)
+	set_tests_properties(randomize_removed_${_case} PROPERTIES
+		PASS_REGULAR_EXPRESSION "is removed: use skepu::randomize::uniform"
+		RUN_SERIAL TRUE)
+endforeach()
+
+
+# ------------------------------------------------
 #   Stream wrappers (skepu-lib/io.hpp): cout, and cin that reads values and containers
 # ------------------------------------------------
 
