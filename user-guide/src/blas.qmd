@@ -1,10 +1,11 @@
 # SkePU-BLAS API {#sec-skepublas}
 
 This appendix chapter documents the SkePU-BLAS coverage and API
-interface as in [@Ernstsson2022PhD]. Currently, the SkePU-BLAS coverage
-is limited to level-1 BLAS and dense operations from level 2 and 3.
-Unsupported level-2 and level-3 BLAS functions are omitted below for
-brevity.
+interface as in [@Ernstsson2022PhD]. The SkePU-BLAS coverage is level-1
+BLAS and the dense (full storage) operations from level 2 and 3,
+including those of symmetric, Hermitian and triangular matrices (which
+are stored in a triangle of a full `Matrix`). The banded and packed
+storage formats are not supported, and their functions are omitted below.
 
 SkePU-BLAS replaces the character arguments in CBLAS with C++-style
 type-safe `enum`s:
@@ -20,6 +21,32 @@ signatures are defined in header `skepu-lib/blas`.
 
 An example of using SkePU-BLAS, Conjugate Gradient computing, is given
 in @sec-CG.
+
+## Conventions {#sec-skepublas-conventions}
+
+**Vectors.** A routine on $n$ elements of a vector `x` with the
+increment `incx` works on the elements `x[0]`, `x[incx]`, ...,
+`x[(n-1) * incx]` of the `Vector`, which can be longer than that (it
+needs at least $1 + (n-1)|incx|$ elements, which is checked). A
+negative increment starts from the far end, as in the reference BLAS:
+the first element of the operation is `x[(n-1) * |incx|]`. The routines
+that are not defined for a negative increment in the reference BLAS
+(`scal`, `nrm2`, `asum`, `iamax`) do nothing, or give zero, for one.
+Strided and reversed vectors are handled by the skeletons (a stride), or
+by a copy of the elements when a stride cannot be used.
+
+**Matrices.** The matrices are row-major SkePU `Matrix` containers, which
+carry their own leading dimension: the `lda`, `ldb` and `ldc` arguments
+must be the number of columns of the `Matrix` (an error otherwise). A
+routine on $m \times n$ elements works on the leading $m \times n$ part of
+the matrix, which is all of it for a matrix of that size.
+
+**Zero sizes and not-a-number.** A routine with a size of zero does
+nothing, and a scalar result is zero. As in the reference BLAS, the terms
+of a product are not read if `alpha` is zero, and the old value of the
+result is not read if `beta` is zero (so that a not-a-number in them does
+not go to the result). `iamax` returns a zero-based index, the first one
+of equal values, and zero for no elements.
 
 ## Level 0 BLAS Functions
 
@@ -52,9 +79,35 @@ void rot (
 )
 ```
 
-The BLAS functionality \"Setup modified Givens rotation\" (CBLAS
-functions SROTMG, DROTMG) and \"Apply modified Givens rotation\" (CBLAS
-functions SROTM, DROTM) is currently not supported yet in SkePU-BLAS.
+### Setup modified Givens rotation: `rotmg`
+
+CBLAS functions: SROTMG, DROTMG
+
+```cpp
+template<typename T>
+void rotmg (T *d1, T *d2, T *x1, T y1, T *param)
+```
+
+`param` has five elements: the flag and the elements `H11`, `H21`,
+`H12` and `H22` of the transformation, as in the reference BLAS (the
+elements that the flag says are 1, -1 or 0 are not set).
+
+### Apply modified Givens rotation: `rotm`
+
+CBLAS functions: SROTM, DROTM
+
+```cpp
+template<typename TX, typename TY,
+         typename TS = scalar_type<TX, TY>>
+void rotm (
+ size_type n,
+ Vector<TX> & x,
+ stride_type incx,
+ Vector<TY> & y,
+ stride_type incy,
+ const TS * param
+)
+```
 
 ### Swap x and y: `swap`
 
@@ -131,7 +184,7 @@ CBLAS functions: SDOT, DDOT, CDOTC, ZDOTC
 
 ```cpp
 template<typename TX, typename TY>
-scalar_type<TX, TY> dot (
+Scalar<scalar_type<TX, TY>> dot (
  size_type n,
  Vector<TX> BLAS_CONST& x,
  stride_type incx,
@@ -140,9 +193,32 @@ scalar_type<TX, TY> dot (
 )
 ```
 
-The BLAS functionality \"Dot product with extended precision
-accumulation\" (CBLAS functions: DSDOT, SDSDOT) is currently not yet
-supported in SkePU-BLAS.
+### Dot product with extended precision: `dsdot`, `sdsdot`
+
+CBLAS functions: DSDOT, SDSDOT
+
+```cpp
+Scalar<double> dsdot (
+ size_type n,
+ Vector<float> BLAS_CONST& x,
+ stride_type incx,
+ Vector<float> BLAS_CONST& y,
+ stride_type incy
+)
+
+Scalar<float> sdsdot (
+ size_type n,
+ float sb,
+ Vector<float> BLAS_CONST& x,
+ stride_type incx,
+ Vector<float> BLAS_CONST& y,
+ stride_type incy
+)
+```
+
+The products and the sum are in double precision. `sdsdot` adds `sb`
+to the dot product and rounds the result to `float`. (Not for the OpenCL
+backend, on devices that do not have double precision.)
 
 ### Dot product: `dotu`
 
@@ -150,7 +226,7 @@ CBLAS functions: CDOTU, ZDOTU
 
 ```cpp
 template<typename TX, typename TY>
-scalar_type<TX, TY> dotu (
+Scalar<scalar_type<TX, TY>> dotu (
  size_type n,
  Vector<TX> BLAS_CONST& x,
  stride_type incx,
@@ -165,7 +241,7 @@ CBLAS functions: SNRM2, DNRM2, SCNRM2, DZNRM2
 
 ```cpp
 template<typename T>
-real_type<T> nrm2 (
+Scalar<real_type<T>> nrm2 (
  size_type n,
  Vector<T> BLAS_CONST& x,
  stride_type incx
@@ -178,7 +254,7 @@ CBLAS functions: SASUM, DASUM, SCASUM, DZASUM
 
 ```cpp
 template<typename T>
-T asum (
+Scalar<real_type<T>> asum (
  size_type n,
  Vector<T> BLAS_CONST& x,
  stride_type incx
@@ -195,6 +271,39 @@ size_type iamax (
  size_type n,
  Vector<T> BLAS_CONST& x,
  stride_type incx
+)
+```
+
+### Index of minimum absolute value: `iamin`
+
+CBLAS functions: ISAMIN, IDAMIN, ICAMIN, IZAMIN
+
+```cpp
+template<typename T>
+size_type iamin (
+ size_type n,
+ Vector<T> BLAS_CONST& x,
+ stride_type incx
+)
+```
+
+### Scaled vector sum: `axpby`
+
+$y := a * x + b * y$
+
+CBLAS functions: SAXPBY, DAXPBY, CAXPBY, ZAXPBY
+
+```cpp
+template<typename TX, typename TY,
+         typename TS = scalar_type<TX, TY>>
+void axpby (
+ size_type n,
+ TS alpha,
+ Vector<TX> BLAS_CONST& x,
+ stride_type incx,
+ TS beta,
+ Vector<TY> & y,
+ stride_type incy
 )
 ```
 
@@ -262,6 +371,114 @@ void geru (
 )
 ```
 
+### Symmetric and Hermitian matrix-vector multiply: `symv`, `hemv`
+
+$y := a * A * x + b * y$
+
+CBLAS functions: SSYMV, DSYMV, CHEMV, ZHEMV
+
+```cpp
+template<typename TA, typename TX, typename TY,
+         typename TS = scalar_type<TA, TX, TY>>
+void symv (  // and hemv
+ Uplo uplo,
+ size_type n,
+ TS alpha,
+ Matrix<TA> BLAS_CONST& A,
+ size_type lda,
+ Vector<TX> BLAS_CONST& x,
+ stride_type incx,
+ TS beta,
+ Vector<TY> & y,
+ stride_type incy
+)
+```
+
+The matrix is the one that the `uplo` triangle of `A` stands for (the other
+triangle is not read): `A` is symmetric for `symv`, and Hermitian for `hemv`
+(with a real diagonal).
+
+### Triangular matrix-vector multiply: `trmv`
+
+$x := op(A) * x$
+
+CBLAS functions: STRMV, DTRMV, CTRMV, ZTRMV
+
+```cpp
+template<typename TA, typename TX>
+void trmv (
+ Uplo uplo,
+ Op trans,
+ Diag diag,
+ size_type n,
+ Matrix<TA> BLAS_CONST& A,
+ size_type lda,
+ Vector<TX> & x,
+ stride_type incx
+)
+```
+
+### Triangular solve: `trsv`
+
+Solves $op(A) * x = b$, where `x` holds $b$ and is replaced by the solution.
+
+CBLAS functions: STRSV, DTRSV, CTRSV, ZTRSV
+
+```cpp
+template<typename TA, typename TX>
+void trsv (
+ Uplo uplo,
+ Op trans,
+ Diag diag,
+ size_type n,
+ Matrix<TA> BLAS_CONST& A,
+ size_type lda,
+ Vector<TX> & x,
+ stride_type incx
+)
+```
+
+A substitution is sequential: it is done in `n` steps, one Map for each
+element of the solution (the elements that are solved for are as they were).
+It is correct on all backends, but with a latency for each step that makes it
+slow for large `n`.
+
+### Symmetric and Hermitian rank-1 and rank-2 update: `syr`, `her`, `syr2`, `her2`
+
+$A := A + a * x * x^T$ (`syr`), $A := A + a * x * x^H$ (`her`, with a real $a$),
+$A := A + a * (x * y^T + y * x^T)$ (`syr2`),
+$A := A + a * x * y^H + \overline{a} * y * x^H$ (`her2`)
+
+CBLAS functions: SSYR, DSYR, CHER, ZHER, SSYR2, DSYR2, CHER2, ZHER2
+
+```cpp
+template<typename TX, typename TA, typename TS>
+void syr (  // and her
+ Uplo uplo,
+ size_type n,
+ TS alpha,
+ Vector<TX> BLAS_CONST& x,
+ stride_type incx,
+ Matrix<TA> & A,
+ size_type lda
+)
+
+template<typename TX, typename TY, typename TA, typename TS>
+void syr2 (  // and her2
+ Uplo uplo,
+ size_type n,
+ TS alpha,
+ Vector<TX> BLAS_CONST& x,
+ stride_type incx,
+ Vector<TY> BLAS_CONST& y,
+ stride_type incy,
+ Matrix<TA> & A,
+ size_type lda
+)
+```
+
+Only the `uplo` triangle of `A` is updated.
+
 ## Level 3 BLAS Functions
 
 ### Matrix-matrix multiply: `gemm`
@@ -286,6 +503,126 @@ void gemm (
  size_type ldc
 )
 ```
+
+### Symmetric and Hermitian matrix-matrix multiply: `symm`, `hemm`
+
+$C := a * A * B + b * C$ (`side` is `Left`) or $C := a * B * A + b * C$ (`Right`)
+
+CBLAS functions: SSYMM, DSYMM, CSYMM, ZSYMM, CHEMM, ZHEMM
+
+```cpp
+template<typename TA, typename TB, typename TC,
+         typename TS = scalar_type<TA, TB, TC>>
+void symm (  // and hemm
+ Side side,
+ Uplo uplo,
+ size_type m,
+ size_type n,
+ TS alpha,
+ Matrix<TA> BLAS_CONST& A,
+ size_type lda,
+ Matrix<TB> BLAS_CONST& B,
+ size_type ldb,
+ TS beta,
+ Matrix<TC> & C,
+ size_type ldc
+)
+```
+
+### Rank-k and rank-2k update: `syrk`, `herk`, `syr2k`, `her2k`
+
+$C := a * A * A^T + b * C$ (`syrk`, with $A^T * A$ for `trans` not `NoTrans`),
+$C := a * A * A^H + b * C$ (`herk`), $C := a * (A * B^T + B * A^T) + b * C$ (`syr2k`),
+$C := a * A * B^H + \overline{a} * B * A^H + b * C$ (`her2k`)
+
+CBLAS functions: SSYRK, DSYRK, CSYRK, ZSYRK, CHERK, ZHERK, SSYR2K, DSYR2K,
+CSYR2K, ZSYR2K, CHER2K, ZHER2K
+
+```cpp
+template<typename TA, typename TC, typename TS>
+void syrk (  // and herk (trans is NoTrans or ConjTrans, alpha and beta are real)
+ Uplo uplo,
+ Op trans,
+ size_type n,
+ size_type k,
+ TS alpha,
+ Matrix<TA> BLAS_CONST& A,
+ size_type lda,
+ TS beta,
+ Matrix<TC> & C,
+ size_type ldc
+)
+
+template<typename TA, typename TB, typename TC, typename TS>
+void syr2k (  // and her2k (beta is real)
+ Uplo uplo,
+ Op trans,
+ size_type n,
+ size_type k,
+ TS alpha,
+ Matrix<TA> BLAS_CONST& A,
+ size_type lda,
+ Matrix<TB> BLAS_CONST& B,
+ size_type ldb,
+ TS beta,
+ Matrix<TC> & C,
+ size_type ldc
+)
+```
+
+Only the `uplo` triangle of `C` is updated.
+
+### Triangular matrix-matrix multiply: `trmm`
+
+$B := a * op(A) * B$ (`side` is `Left`) or $B := a * B * op(A)$ (`Right`)
+
+CBLAS functions: STRMM, DTRMM, CTRMM, ZTRMM
+
+```cpp
+template<typename TA, typename TB,
+         typename TS = scalar_type<TA, TB>>
+void trmm (
+ Side side,
+ Uplo uplo,
+ Op trans,
+ Diag diag,
+ size_type m,
+ size_type n,
+ TS alpha,
+ Matrix<TA> BLAS_CONST& A,
+ size_type lda,
+ Matrix<TB> & B,
+ size_type ldb
+)
+```
+
+### Triangular solve with multiple right-hand sides: `trsm`
+
+Solves $op(A) * X = a * B$ (`Left`) or $X * op(A) = a * B$ (`Right`) for $X$, which replaces $B$.
+
+CBLAS functions: STRSM, DTRSM, CTRSM, ZTRSM
+
+```cpp
+template<typename TA, typename TB,
+         typename TS = scalar_type<TA, TB>>
+void trsm (
+ Side side,
+ Uplo uplo,
+ Op trans,
+ Diag diag,
+ size_type m,
+ size_type n,
+ TS alpha,
+ Matrix<TA> BLAS_CONST& A,
+ size_type lda,
+ Matrix<TB> & B,
+ size_type ldb
+)
+```
+
+As `trsv`, this is a substitution with one Map for each row (`Left`) or
+column (`Right`) of the solution. The Map of a step works on all the
+right-hand sides at once.
 
 ## Example: Conjugate-Gradient Solver {#sec-CG}
 

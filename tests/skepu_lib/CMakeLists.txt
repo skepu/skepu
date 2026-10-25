@@ -90,14 +90,14 @@ add_test(NAME dnn_regression
 	COMMAND ${CMAKE_CURRENT_LIST_DIR}/dnn_regression/run.sh --cxx ${CMAKE_CXX_COMPILER} --tol 1e-2)
 
 # ------------------------------------------------
-#   BLAS library, checked float routines (blas_float, blas_level1, blas_level23: one program)
+#   BLAS library, checked float routines (blas_float, blas_level1, blas_level23, blas_semantics, blas_phase1: one program)
 # ------------------------------------------------
 
 skepu_add_test(blas_checked EXCLUDE hybrid_opencl hybrid_cuda)
 
 
 # ------------------------------------------------
-#   BLAS library, checked complex and mixed precision routines (blas_complex, blas_mixed_precision: one program)
+#   BLAS library, checked complex and mixed precision routines (blas_complex, blas_mixed_precision, blas_complex_triangle: one program)
 #   (not on OpenCL: the kernels of the complex numbers are not complete there)
 # ------------------------------------------------
 

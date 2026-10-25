@@ -143,7 +143,7 @@ TEST_CASE("BLAS level 2")
 		float alpha = 0.5;
 		float beta = 0.5;
 		skepu::blas::gemv(skepu::blas::Op::NoTrans,
-			m, n, alpha, A, m, x, 1, beta, y, 1
+			m, n, alpha, A, A.size_j(), x, 1, beta, y, 1
 		);
 		skepu::io::cout << "y: " << y << "\n\n";
 	}
@@ -171,7 +171,7 @@ TEST_CASE("BLAS level 2")
 		float alpha = .1;
 		float beta = 0.5;
 		skepu::blas::gemv(skepu::blas::Op::NoTrans,
-			my_m, my_n, alpha, A, my_m, x, 1, beta, y, 1
+			my_m, my_n, alpha, A, A.size_j(), x, 1, beta, y, 1
 		);
 		skepu::io::cout << "y: " << y << "\n\n";
 	}
@@ -199,11 +199,11 @@ TEST_CASE("BLAS level 2")
 		
 		float alpha = 1;
 		skepu::blas::ger(
-			my_m, my_n, alpha, x, 1, y, 1, A, my_m
+			my_m, my_n, alpha, x, 1, y, 1, A, A.size_j()
 		);
 		skepu::io::cout << "A: " << A << "\n\n";
 		skepu::blas::geru(
-			my_m, my_n, alpha, x, 1, y, 1, A, my_m
+			my_m, my_n, alpha, x, 1, y, 1, A, A.size_j()
 		);
 		skepu::io::cout << "###########\n### ---\n###########\n\n";
 	}
@@ -231,7 +231,7 @@ TEST_CASE("BLAS level 3 integral")
 	float alpha = 0.5;
 	float beta = 0.5;
 	skepu::blas::gemm(skepu::blas::Op::NoTrans, skepu::blas::Op::NoTrans,
-		m, n, k, alpha, A, 1, B, 1, beta, C, 1
+		m, n, k, alpha, A, A.size_j(), B, B.size_j(), beta, C, C.size_j()
 	);
 	skepu::io::cout << "C: " << C << "\n\n";
 	
@@ -245,20 +245,20 @@ TEST_CASE("BLAS level 3 floating point")
 	using TestType = float;
 	size_t m = n + 2;
 	size_t k = n + 1;
-	skepu::Matrix<TestType> C(m, n), A(m, k), B(k, n);
-	
+	skepu::Matrix<TestType> C(m, n), A(m, k), B(n, k); // (B is transposed)
+
 	fill_random(A, 0, 10);
 	fill_random(B, 0, 10);
 	fill_random(C, 0, 10);
-	
+
 	skepu::io::cout << "C: " << C << "\n";
 	skepu::io::cout << "A: " << A << "\n";
 	skepu::io::cout << "B: " << B << "\n";
-	
+
 	float alpha = 0.5;
 	float beta = 0.5;
 	skepu::blas::gemm(skepu::blas::Op::NoTrans, skepu::blas::Op::Trans,
-		m, n, k, alpha, A, 1, B, 1, beta, C, 1
+		m, n, k, alpha, A, A.size_j(), B, B.size_j(), beta, C, C.size_j()
 	);
 	skepu::io::cout << "C: " << C << "\n\n";
 	
@@ -285,7 +285,7 @@ TEST_CASE("BLAS level 3 complex")
 	float alpha = 0.5;
 	float beta = 0.5;
 	skepu::blas::gemm(skepu::blas::Op::NoTrans, skepu::blas::Op::NoTrans,
-		m, n, k, alpha, A, 1, B, 1, beta, C, 1
+		m, n, k, alpha, A, A.size_j(), B, B.size_j(), beta, C, C.size_j()
 	);
 	skepu::io::cout << "C: " << C << "\n\n";
 	

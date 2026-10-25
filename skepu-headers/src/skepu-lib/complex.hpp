@@ -31,7 +31,7 @@ struct complex
 	__host__ __device__
 #endif
   constexpr complex(T real, T im)
-  : re{real}, im{0}
+  : re{real}, im{im}
   {}
   
   template<typename T1, typename T2>
@@ -40,6 +40,15 @@ __host__ __device__
 #endif
   constexpr complex(T1 real, T2 imaginary) 
   : re(real), im(imaginary)
+  {}
+
+  // The conversion from a complex number of another precision
+  template<typename U>
+#ifdef SKEPU_CUDA
+__host__ __device__
+#endif
+  constexpr explicit complex(complex<U> z)
+  : re(z.re), im(z.im)
   {}
 };
 
@@ -371,14 +380,22 @@ complex<T> operator*(T lhs, complex<T> rhs)
 
 // OPERATOR /
 
-/*template<typename T>
+// (Smith's algorithm, which does not overflow in the denominator)
+template<typename T>
 #ifdef SKEPU_CUDA
 	__host__ __device__
 #endif
 complex<T> operator/(complex<T> lhs, complex<T> rhs)
 {
-  return mul(lhs, rhs);
-}*/
+  const T ac = (rhs.re < 0) ? -rhs.re : rhs.re, ad = (rhs.im < 0) ? -rhs.im : rhs.im;
+  if (ac >= ad)
+  {
+    const T r = rhs.im / rhs.re, den = rhs.re + rhs.im * r;
+    return complex<T>((lhs.re + lhs.im * r) / den, (lhs.im - lhs.re * r) / den);
+  }
+  const T r = rhs.re / rhs.im, den = rhs.re * r + rhs.im;
+  return complex<T>((lhs.re * r + lhs.im) / den, (lhs.im * r - lhs.re) / den);
+}
 
 template<typename T>
 #ifdef SKEPU_CUDA
