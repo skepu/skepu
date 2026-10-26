@@ -1,4 +1,4 @@
-Copyright (c) 2010-2021, by the SkePU developers team (see CONTRIBUTORS.txt)
+Copyright (c) 2010-2026, by the SkePU developers team (see CONTRIBUTORS.txt)
 
 All rights reserved.
 

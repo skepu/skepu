@@ -5,6 +5,8 @@
 
 !package.json
 !README.md
+!LICENSE.txt
+!NOTICE
 
 # the extension (npm run compile) and the bundles of the viewer and its workers (npm run build)
 !out/**/*.js

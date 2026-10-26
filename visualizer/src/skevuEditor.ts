@@ -458,11 +458,6 @@ class SkevuSession {
 			);
 		});
 	}
-
-	/**
-	 * Get the static html used for the editor webviews.
-	 */
-	
 }
 
 /** The editors of SkeVU: a session for each trace that is open (any number of them), and the command of the badges, which is for all of them. */
@@ -485,14 +480,14 @@ export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
 		const provider = new SkevuEditorProvider(context);
 		SkevuEditorProvider.current = provider;
 		return [
-			...SkevuEditorProvider.viewTypes.map(viewType => vscode.window.registerCustomEditorProvider(viewType, provider)),
+			vscode.window.registerCustomEditorProvider(SkevuEditorProvider.viewType, provider),
 			// (a badge in a source file has the session that made it: a command is registered once, not for each editor)
 			vscode.commands.registerCommand('skevu.highlightNode', (fileName: string, line: number, nodeIDs: string[], sessionId: number) =>
 				provider.sessions.get(sessionId)?.highlightNode(fileName, line, nodeIDs)),
 		];
 	}
 
-	private static readonly viewTypes = ['skepu.skevu', 'skepu.skevu.any'];
+	private static readonly viewType = 'skepu.skevu';
 
 	constructor(private readonly context: vscode.ExtensionContext) { }
 
