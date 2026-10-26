@@ -48,6 +48,7 @@ namespace skepu
 			auto random = this->template prepareRandom_CL<MapFunc::randomCount>(size, threads);
 			auto randomMemP = random.updateDevice_CL(random.getAddress(), threads, device, true);
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			CLKernel::mapReduce (
 				deviceID, numThreads, numBlocks * numThreads,
@@ -80,6 +81,7 @@ namespace skepu
 				pack_expand((get_or_return<OI>(res) = ReduceFunc::CPU(get_or_return<OI>(res), get_or_return<OI>(startValue)), 0)...);
 			
 			auto result = scalar_wrapper_t<typename MapFunc::Ret>(res);
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "MapReduce", this, {size}, tracing::scalar_output_labels(result),
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
@@ -103,6 +105,7 @@ namespace skepu
 			Ret result[numDevices];//[sizeof...(OI)];
 			std::vector<decltype(std::make_tuple(makeTempReduceMemPointer(&get_or_return<OI>(res), 0, nullptr)...))> outMemP;
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 
 			for (size_t i = 0; i < numDevices; ++i)
 			{
@@ -168,6 +171,7 @@ namespace skepu
 			}
 
 			auto result_w = scalar_wrapper_t<typename MapFunc::Ret>(res);
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "MapReduce", this, {size}, tracing::scalar_output_labels(result_w),
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},

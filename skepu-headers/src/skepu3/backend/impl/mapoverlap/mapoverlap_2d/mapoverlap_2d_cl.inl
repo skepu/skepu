@@ -46,6 +46,7 @@ namespace skepu
 #endif
 			wrapMemP.copyHostToDevice();
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			size_t numThreads[2], numBlocks[2];
 			size_t sizeLength = (size_t)std::sqrt(maxThreads);
@@ -112,7 +113,7 @@ namespace skepu
 			// Make sure the data is marked as changed by the device
 			pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
-			SKEPU_TRACING_FINISH_CL();
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 2D", this, {out_size_i, out_size_j},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
@@ -151,6 +152,7 @@ namespace skepu
 			// Bad for performance since whole vector needs to be copied, fix so that only overlap is fetched and updated.
 			arg.updateHostAndInvalidateDevice();
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			for (size_t i = 0; i < numDevices; ++i)
 			{
@@ -208,7 +210,7 @@ namespace skepu
 				// Make sure the data is marked as changed by the device
 				pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 				pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
-				SKEPU_TRACING_FINISH_CL();
+				SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 				SKEPU_TRACE_CALL(trace_handle, "MapOverlap 2D", this, {out_size_i, out_size_j},
 					{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 					{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},

@@ -121,6 +121,7 @@ namespace skepu
 		void Scan<ScanFunc, CUDAScan, CUDAScanUpdate, CUDAScanAdd, CLKernel>
 		::scanMulti_CU(size_t numDevices, size_t size, OutIterator res, InIterator arg, ScanMode mode, T initial)
 		{
+			SKEPU_TRACE_CALL_SCOPE_CU(this->m_environment, this->m_selected_spec->devices(), "Scan", this, {size}, {res.getParent().getObjectID()}, {arg.getParent().getObjectID()}, {}, {}, UniqueIdentifier::null());
 			const size_t numElemPerSlice = size / numDevices;
 			const size_t rest = size % numDevices;
 			
@@ -181,6 +182,7 @@ namespace skepu
 		void Scan<ScanFunc, CUDAScan, CUDAScanUpdate, CUDAScanAdd, CLKernel>
 		::scanSingleThread_CU(size_t deviceID, size_t size, OutIterator res, InIterator arg, ScanMode mode, T initial)
 		{
+			SKEPU_TRACE_CALL_SCOPE_CU(this->m_environment, this->m_selected_spec->devices(), "Scan", this, {size}, {res.getParent().getObjectID()}, {arg.getParent().getObjectID()}, {}, {}, UniqueIdentifier::null());
 			// Setup parameters
 			const size_t numThreads = this->m_selected_spec->GPUThreads();
 			const std::vector<DeviceMemPointer_CU<T>*> blockSums = allocateBlockSums<T>(size, numThreads, this->m_environment->m_devices_CU.at(deviceID));

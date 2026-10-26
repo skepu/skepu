@@ -45,6 +45,7 @@ namespace skepu
 			
 			auto random = this->template prepareRandom<MapPairsFunc::randomCount>(cpuVSize * Hsize, numCPUThreads, Hsize);
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			size_t counter = 0;
 			std::vector<size_t> start_idxs(numCPUThreads);
@@ -97,7 +98,7 @@ namespace skepu
 					}
 				}
 			}
-			SKEPU_TRACING_FINISH_CL();
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "MapPairs", this, {Hsize, Vsize},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<VEI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...,

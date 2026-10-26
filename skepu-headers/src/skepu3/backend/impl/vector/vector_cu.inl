@@ -162,6 +162,11 @@ template <typename T>
 typename Vector<T>::device_pointer_type_cu Vector<T>::updateDevice_CU(T* start, size_type numElements, size_t deviceID, AccessMode accessMode, bool markOnlyLocalCopiesInvalid, size_t streamID) const
 {
     DEBUG_TEXT_LEVEL3("Vector updating device CUDA\n")
+
+#ifdef SKEPU_OPENCL
+   syncOpenCLbeforeCUDA(hasWriteAccess(accessMode));
+#endif
+
     
    /// \p m_noValidDeviceCopy is an optimization flag which is true when there is no valid device copy...
    /// used to skip invalidDeviceCopy function call just like updateHost() is only called when m_valid is not set
@@ -180,6 +185,9 @@ typename Vector<T>::device_pointer_type_cu Vector<T>::updateDevice_CU(T* start, 
    if(result == m_deviceMemPointers_CU[deviceID].end()) //no copy should be reused, right? may be not in multigpu case as it is allocated and then copied data
    {
       tempCopy = new backend::DeviceMemPointer_CU<T>(start, numElements, backend::Environment<int>::getInstance()->m_devices_CU.at(deviceID), this->getLabel());
+#ifdef SKEPU_TRACING
+      tempCopy->m_container_id = this->getObjectID();
+#endif
       if(hasReadAccess(accessMode))
       {
          tempCopy->copyHostToDevice();
@@ -189,6 +197,10 @@ typename Vector<T>::device_pointer_type_cu Vector<T>::updateDevice_CU(T* start, 
    else
    {
       tempCopy = result->second;
+#ifdef SKEPU_TRACING
+      tempCopy->m_nameVerbose = this->getLabel(); // (the container may have got a label since the copy was made)
+      tempCopy->m_container_id = this->getObjectID();
+#endif
 
       //already exists but need to update contents...
       if(hasReadAccess(accessMode) && tempCopy->isCopyValid() == false) // we check whether the copy is invalid and we need to copy data
@@ -201,6 +213,9 @@ typename Vector<T>::device_pointer_type_cu Vector<T>::updateDevice_CU(T* start, 
    if(result == m_deviceMemPointers_CU[deviceID].end()) //insert new, alloc mem and copy
    {
       tempCopy = new backend::DeviceMemPointer_CU<T>(start, numElements, backend::Environment<int>::getInstance()->m_devices_CU.at(deviceID), this->getLabel());
+#ifdef SKEPU_TRACING
+      tempCopy->m_container_id = this->getObjectID();
+#endif
 
       if(hasReadAccess(accessMode))
       {
@@ -211,6 +226,10 @@ typename Vector<T>::device_pointer_type_cu Vector<T>::updateDevice_CU(T* start, 
    else
    {
       tempCopy = result->second;
+#ifdef SKEPU_TRACING
+      tempCopy->m_nameVerbose = this->getLabel(); // (the container may have got a label since the copy was made)
+      tempCopy->m_container_id = this->getObjectID();
+#endif
 
       //already exists but need to update contents...
       if(hasReadAccess(accessMode) && tempCopy->isCopyValid() == false) // we check whether the copy is invalid and we need to copy data

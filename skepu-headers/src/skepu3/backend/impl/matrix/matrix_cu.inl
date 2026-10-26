@@ -176,6 +176,11 @@ template <typename T>
 typename Matrix<T>::device_pointer_type_cu Matrix<T>::updateDevice_CU(T* start, size_type rows, size_type cols, size_t deviceID, size_t streamID, AccessMode accessMode, bool usePitch, bool markOnlyLocalCopiesInvalid) const
 {
    DEBUG_TEXT_LEVEL3("Matrix updating device CUDA\n")
+
+#ifdef SKEPU_OPENCL
+   syncOpenCLbeforeCUDA(hasWriteAccess(accessMode));
+#endif
+
    
    const bool copy = hasReadAccess(accessMode);
    const bool writeAccess = hasWriteAccess(accessMode);
@@ -199,7 +204,10 @@ typename Matrix<T>::device_pointer_type_cu Matrix<T>::updateDevice_CU(T* start, 
 #ifdef NO_LAZY_MEMORY_COPYING
    if(result == m_deviceMemPointers_CU[deviceID].end()) //no copy should be reused, right? may be not in multigpu case as it is allocated and then copied data
    {
-      tempCopy = new backend::DeviceMemPointer_CU<T>(start, rows, cols, backend::Environment<int>::getInstance()->m_devices_CU.at(deviceID), usePitch, "noname A");
+      tempCopy = new backend::DeviceMemPointer_CU<T>(start, rows, cols, backend::Environment<int>::getInstance()->m_devices_CU.at(deviceID), usePitch, this->getLabel());
+#ifdef SKEPU_TRACING
+      tempCopy->m_container_id = this->getObjectID();
+#endif
       if(copy)
       {
          tempCopy->copyHostToDevice();
@@ -209,6 +217,10 @@ typename Matrix<T>::device_pointer_type_cu Matrix<T>::updateDevice_CU(T* start, 
    else
    {
       tempCopy = result->second;
+#ifdef SKEPU_TRACING
+      tempCopy->m_nameVerbose = this->getLabel(); // (the container may have got a label since the copy was made)
+      tempCopy->m_container_id = this->getObjectID();
+#endif
 
       //already exists but need to update contents...
       if(copy && tempCopy->isCopyValid() == false) // we check whether the copy is invalid and we need to copy data
@@ -220,7 +232,10 @@ typename Matrix<T>::device_pointer_type_cu Matrix<T>::updateDevice_CU(T* start, 
 #else   
    if(result == m_deviceMemPointers_CU[deviceID].end()) //insert new, alloc mem and copy
    {
-      tempCopy = new backend::DeviceMemPointer_CU<T>(start, rows, cols, backend::Environment<int>::getInstance()->m_devices_CU.at(deviceID), usePitch, "noname B");
+      tempCopy = new backend::DeviceMemPointer_CU<T>(start, rows, cols, backend::Environment<int>::getInstance()->m_devices_CU.at(deviceID), usePitch, this->getLabel());
+#ifdef SKEPU_TRACING
+      tempCopy->m_container_id = this->getObjectID();
+#endif
       
       if(copy)
       {
@@ -231,6 +246,10 @@ typename Matrix<T>::device_pointer_type_cu Matrix<T>::updateDevice_CU(T* start, 
    else
    {
       tempCopy = result->second;
+#ifdef SKEPU_TRACING
+      tempCopy->m_nameVerbose = this->getLabel(); // (the container may have got a label since the copy was made)
+      tempCopy->m_container_id = this->getObjectID();
+#endif
 
       //already exists but need to update contents...
       if(copy && tempCopy->isCopyValid() == false) // we check whether the copy is invalid and we need to copy data

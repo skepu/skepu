@@ -20,6 +20,8 @@ namespace skepu
 		void Reduce1D<ReduceFunc, CUDAKernel, CLKernel>
 		::reduceSingleThreadOneDim_CU(size_t deviceID, VectorIterator<T> &res, const MatrixIterator<T> &arg, size_t numRows)
 		{
+			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CU(trace_handle);
 			cudaSetDevice(deviceID);
 			Device_CU *device = this->m_environment->m_devices_CU[deviceID];
 			unsigned int maxKernelsSupported = device->getNoConcurrentKernels();
@@ -64,6 +66,8 @@ namespace skepu
 			
 			cutilDeviceSynchronize(); //Do CUTIL way, more safe approach,
 			freeCudaMemory<T>(deviceMemPointer);
+			SKEPU_TRACE_DEVICE_END_CU(trace_handle, deviceID);
+			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Partial", this, {rows, cols}, {res.getParent().getObjectID()}, {arg.getParent().getTraceObjectID()}, {}, {});
 		}
 
 		
@@ -71,6 +75,8 @@ namespace skepu
 		void Reduce1D<ReduceFunc, CUDAKernel, CLKernel>
 		::reduceMultipleOneDim_CU(size_t numDevices, VectorIterator<T> &res, const MatrixIterator<T> &arg, size_t numRows)
 		{
+			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CU(trace_handle);
 			const size_t rows = numRows;
 			const size_t cols = arg.getParent().total_cols();
 			const size_t numRowsPerSlice = rows / numDevices;
@@ -144,6 +150,8 @@ namespace skepu
 				
 				freeCudaMemory<T>(deviceMemPointers[i]);
 			}
+			for (size_t d = 0; d < numDevices; ++d) { SKEPU_TRACE_DEVICE_END_CU(trace_handle, (int)d); }
+			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Partial", this, {rows, cols}, {res.getParent().getObjectID()}, {arg.getParent().getTraceObjectID()}, {}, {});
 		}
 		
 		
@@ -185,6 +193,8 @@ namespace skepu
 		Scalar<typename ReduceFunc::Ret> Reduce1D<ReduceFunc, CUDAKernel, CLKernel>
 		::reduceSingleThread_CU(size_t deviceID, size_t size, T &res, Iterator arg)
 		{
+			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CU(trace_handle);
 			cudaSetDevice(deviceID);
 			Device_CU *device = this->m_environment->m_devices_CU[deviceID];
 			const size_t maxBlocks = this->m_selected_spec->GPUBlocks();
@@ -195,7 +205,7 @@ namespace skepu
 			// Copies "all" elements to the device at once, better?
 			typename Iterator::device_pointer_type_cu in_mem_p = arg.getParent().updateDevice_CU(arg.getAddress(), size, deviceID, AccessMode::Read);
 			T partialRes;
-			DeviceMemPointer_CU<T> out_mem_p(&partialRes, numBlocks, device);
+			DeviceMemPointer_CU<T> out_mem_p(&partialRes, numBlocks, device, "Internal (reduce-temp)");
 			
 #ifdef USE_PINNED_MEMORY
 			ExecuteReduceOnADevice(this->m_cuda_kernel, size, numThreads, numBlocks, maxThreads, maxBlocks, in_mem_p->getDeviceDataPointer(), out_mem_p.getDeviceDataPointer(), deviceID, device->m_streams[0]);
@@ -210,7 +220,10 @@ namespace skepu
 #endif
 			
 			res = ReduceFunc::CPU(res, partialRes);
-			return res;
+			SKEPU_TRACE_DEVICE_END_CU(trace_handle, deviceID);
+			auto scalar_res = Scalar<T>(res);
+			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Full", this, {size}, tracing::scalar_labels(scalar_res), {arg.getParent().getObjectID()}, {}, {});
+			return scalar_res;
 		}
 		
 		template<typename ReduceFunc, typename CUDAKernel, typename CLKernel>
@@ -218,6 +231,8 @@ namespace skepu
 		Scalar<typename ReduceFunc::Ret> Reduce1D<ReduceFunc, CUDAKernel, CLKernel>
 		::reduceMultiple_CU(size_t numDevices, size_t size, T &res, Iterator arg)
 		{
+			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CU(trace_handle);
 			const size_t numElemPerSlice = size / numDevices;
 			const size_t rest = size % numDevices;
 			const size_t maxBlocks = this->m_selected_spec->GPUBlocks();
@@ -240,7 +255,7 @@ namespace skepu
 				in_mem_p[i] = arg.getParent().updateDevice_CU((arg + i * numElemPerSlice).getAddress(), numElem, i, AccessMode::None);
 				
 				// Create the output memory
-				out_mem_p[i] = new DeviceMemPointer_CU<T>(&result[i], numBlocks[i], this->m_environment->m_devices_CU[i]);
+				out_mem_p[i] = new DeviceMemPointer_CU<T>(&result[i], numBlocks[i], this->m_environment->m_devices_CU[i], "Internal (reduce-temp)");
 			}
 			
 			// Create argument structs for all threads
@@ -293,7 +308,10 @@ namespace skepu
 			
 			cudaSetDevice(m_environment->m_best_cuda_device_id);
 		
-			return res;
+			for (size_t d = 0; d < numDevices; ++d) { SKEPU_TRACE_DEVICE_END_CU(trace_handle, (int)d); }
+			auto scalar_res = Scalar<T>(res);
+			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Full", this, {size}, tracing::scalar_labels(scalar_res), {arg.getParent().getObjectID()}, {}, {});
+			return scalar_res;
 		}
 		
 		
@@ -334,6 +352,8 @@ namespace skepu
 		typename ReduceFuncRowWise::Ret Reduce2D<ReduceFuncRowWise, ReduceFuncColWise, CUDARowWise, CUDAColWise, CLKernel>
 		::reduceSingleThread_CU(size_t deviceID, T &res, const MatrixIterator<T>& arg, size_t numRows)
 		{
+			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CU(trace_handle);
 			cudaSetDevice(deviceID);
 			Device_CU *device = this->m_environment->m_devices_CU[deviceID];
 			const size_t maxKernelsSupported = device->getNoConcurrentKernels();
@@ -423,7 +443,10 @@ namespace skepu
 			
 			freeCudaMemory<T>(deviceMemPointer);
 			
-			return res;
+			SKEPU_TRACE_DEVICE_END_CU(trace_handle, deviceID);
+			auto result = Scalar<T>(res);
+			SKEPU_TRACE_CALL(trace_handle, "Reduce 2D", this, {rows, cols}, tracing::scalar_labels(result), {arg.getParent().getObjectID()}, {}, {});
+			return result;
 		}
 		
 		
@@ -438,6 +461,8 @@ namespace skepu
 		typename ReduceFuncRowWise::Ret Reduce2D<ReduceFuncRowWise, ReduceFuncColWise, CUDARowWise, CUDAColWise, CLKernel>
 		::reduceMultiple_CU(size_t numDevices, T &res, const MatrixIterator<T>& arg, size_t numRows)
 		{
+			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CU(trace_handle);
 			const size_t rows = numRows;
 			const size_t cols = arg.getParent().total_cols();
 			const size_t numRowsPerSlice = rows / numDevices;
@@ -554,7 +579,10 @@ namespace skepu
 				freeCudaMemory<T>(deviceMemPointers[i]);
 			}
 			
-			return res;
+			for (size_t d = 0; d < numDevices; ++d) { SKEPU_TRACE_DEVICE_END_CU(trace_handle, (int)d); }
+			auto result = Scalar<T>(res);
+			SKEPU_TRACE_CALL(trace_handle, "Reduce 2D", this, {rows, cols}, tracing::scalar_labels(result), {arg.getParent().getObjectID()}, {}, {});
+			return result;
 		}
 		
 		

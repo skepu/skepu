@@ -24,6 +24,9 @@ namespace skepu
 	template <typename T>
 	typename Matrix<T>::device_pointer_type_cl Matrix<T>::updateDevice_CL(T* start, size_type rows, size_type cols, backend::Device_CL* device, bool copy)
 	{
+#ifdef SKEPU_CUDA
+		syncCUDAbeforeOpenCL(true); // (the use may write: OpenCL says it only in the copy flag)
+#endif
 		DEBUG_TEXT_LEVEL3("Matrix updating device OpenCL\n")
 		
 		std::pair<cl_device_id, std::pair<const T*, size_type>> key(device->getDeviceID(), std::pair<const T*, size_type>(start, rows * cols));
@@ -63,6 +66,9 @@ namespace skepu
 	template <typename T>
 	typename Matrix<T>::device_const_pointer_type_cl Matrix<T>::updateDevice_CL(const T* start, size_type rows, size_type cols, backend::Device_CL* device, bool copy) const
 	{
+#ifdef SKEPU_CUDA
+		syncCUDAbeforeOpenCL(false);
+#endif
 		DEBUG_TEXT_LEVEL3("Matrix updating device OpenCL\n")
 			
 		std::pair<cl_device_id, std::pair<const T*, size_type>> key(device->getDeviceID(), std::pair<const T*, size_type>(start, rows * cols));
@@ -166,7 +172,7 @@ template <typename T>
 		DEBUG_TEXT_LEVEL3("Matrix invalidating device data OpenCL\n")
 
    //deallocs all device mem for matrix for now
-			if (!this->m_deviceMemPointers_CL.empty())
+			if (!this->m_deviceMemPointers_CL.empty() || !this->m_deviceConstMemPointers_CL.empty())
 				releaseDeviceAllocations_CL();
    //Could maybe be made better by only setting a flag that data is not valid
 	}
@@ -185,8 +191,49 @@ template <typename T>
 				delete memptr.second;
    
 		m_deviceMemPointers_CL.clear();
+
+		// (see the vector)
+		for (auto &memptr : this->m_deviceConstMemPointers_CL)
+			delete memptr.second;
+
+		m_deviceConstMemPointers_CL.clear();
 	}
 
+
+#ifdef SKEPU_CUDA
+	// CUDA and OpenCL in the same program (see the declarations in the class). The backends do not know of each other's copies, so
+	// without this the one that uses the matrix second would read the stale host memory, or an old copy of its own.
+	template <typename T>
+	void Matrix<T>::syncCUDAbeforeOpenCL(bool mayWrite) const
+	{
+		if (m_noValidDeviceCopy)
+			return; // CUDA has no copy
+		DEBUG_TEXT_LEVEL1("BACKEND SWITCH CUDA -> OpenCL, label: " << this->getLabel() << ": the matrix goes through the host memory"
+			<< (m_valid ? ", CUDA has no changes" : ", CUDA has changes that are transferred to the host") << (mayWrite ? ", the CUDA copies are invalidated" : ""));
+		if (!m_valid)
+		{
+			updateHost_CU(); // (the transfers are traced by the CUDA device pointers)
+			m_valid = true;
+		}
+		if (mayWrite)
+		{
+			invalidateDeviceData_CU();
+			m_noValidDeviceCopy = true;
+		}
+	}
+
+	template <typename T>
+	void Matrix<T>::syncOpenCLbeforeCUDA(bool mayWrite) const
+	{
+		if (m_deviceMemPointers_CL.empty() && m_deviceConstMemPointers_CL.empty())
+			return; // OpenCL has no copy
+		DEBUG_TEXT_LEVEL1("BACKEND SWITCH OpenCL -> CUDA, label: " << this->getLabel() << ": the matrix goes through the host memory"
+			<< (mayWrite ? ", the OpenCL copies are released" : ""));
+		updateHost_CL(); // (only copies that OpenCL has changed are transferred)
+		if (mayWrite)
+			releaseDeviceAllocations_CL();
+	}
+#endif
 }
 
 #endif

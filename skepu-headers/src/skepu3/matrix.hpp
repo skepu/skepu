@@ -504,6 +504,14 @@ namespace skepu
 
 	public: //-- Additions to interface --//
 
+#if defined(SKEPU_OPENCL) && defined(SKEPU_CUDA)
+		// CUDA and OpenCL in the same program: the container keeps the device copies of each of them separately. Before a backend uses the
+		// container, the changes that the other backend has made are brought to the host, and the copies of the other backend are
+		// invalidated if this use may write (a transfer through the host memory, which the trace and the debug log show)
+		void syncCUDAbeforeOpenCL(bool mayWrite) const;
+		void syncOpenCLbeforeCUDA(bool mayWrite) const;
+#endif
+
 	#ifdef SKEPU_OPENCL
 		device_pointer_type_cl updateDevice_CL(T* start, size_type rows, size_type cols, backend::Device_CL* device, bool copy);
 		device_pointer_type_cl updateDevice_CL(T* start, size_type cols, backend::Device_CL* device, bool copy);

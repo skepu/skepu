@@ -14,6 +14,9 @@
 #include <thread>
 #include <map>
 #include <atomic>
+#include <memory>
+#include <algorithm>
+#include <deque>
 
 #ifndef SKEPU_PRECOMPILED
 #ifdef SKEPU_TRACING
@@ -86,17 +89,30 @@ namespace skepu
 #define SKEPU_TRACE_SNAPSHOT_DIR_NAME SKEPU_STRINGIFY_NESTED(SKEPU_TRACE_SNAPSHOT_DIR)
 #endif
 
-// Synchronous OpenCL kernels when tracing is enabled
-#ifdef SKEPU_TRACING
-	#define SKEPU_TRACING_WAIT_CL(event) clWaitForEvents(1, &event);
-#else
-    #define SKEPU_TRACING_WAIT_CL(event)
-#endif
-// (for the calls that do not have an event to wait for)
+// The times of a call that runs on OpenCL devices come from the profiling of the devices (see backend/tracing_opencl.h), and nothing waits
+// for the devices at the call: SKEPU_TRACE_DEVICE_BEGIN_CL(handle) after the start of the event, SKEPU_TRACE_DEVICE_END_CL(handle) after the
+// work on the devices and before the call is traced.
 #if defined(SKEPU_TRACING) && defined(SKEPU_OPENCL)
-	#define SKEPU_TRACING_FINISH_CL() skepu::backend::finishDevicesCL();
+	#define SKEPU_TRACE_DEVICE_BEGIN_CL(handle) (handle).m_device = std::make_shared<skepu::tracing::OpenClDeviceTimer>(), (handle).m_time = skepu::tracing::timestamp_now(), skepu::tracing::registerDeviceTimer((handle).m_device);
+	#define SKEPU_TRACE_DEVICE_END_CL(handle) if (auto skepu_timer = std::static_pointer_cast<skepu::tracing::OpenClDeviceTimer>((handle).m_device)) skepu_timer->recordEnd();
 #else
-	#define SKEPU_TRACING_FINISH_CL()
+	#define SKEPU_TRACE_DEVICE_BEGIN_CL(handle)
+	#define SKEPU_TRACE_DEVICE_END_CL(handle)
+#endif
+
+// The times of a call that runs on a CUDA device come from events of the device (see tracing_cuda.hpp), and nothing waits for the device
+// at the call: SKEPU_TRACE_DEVICE_BEGIN_CU(handle) after the start of the event, SKEPU_TRACE_DEVICE_END_CU(handle, device) after the
+// work on the device (once for each device) and before the call is traced.
+#if defined(SKEPU_TRACING) && defined(SKEPU_CUDA)
+#define SKEPU_TRACE_DEVICE_BEGIN_CU(handle) (handle).m_device = std::make_shared<skepu::tracing::CudaDeviceTimer>(), (handle).m_time = skepu::tracing::timestamp_now(), skepu::tracing::registerDeviceTimer((handle).m_device);
+#define SKEPU_TRACE_DEVICE_END_CU(handle, device) if (auto skepu_timer = std::static_pointer_cast<skepu::tracing::CudaDeviceTimer>((handle).m_device)) skepu_timer->recordEnd(device);
+// The whole call in a function with several returns: the arguments are those of SKEPU_TRACE_CALL after the handle, with the environment and the
+// number of devices that the call may use before them. The call is traced when the scope ends.
+#define SKEPU_TRACE_CALL_SCOPE_CU(environment, max_devices, ...) skepu::tracing::CudaCallScope skepu_call_scope(environment, max_devices, __VA_ARGS__);
+#else
+#define SKEPU_TRACE_DEVICE_BEGIN_CU(handle)
+#define SKEPU_TRACE_DEVICE_END_CU(handle, device)
+#define SKEPU_TRACE_CALL_SCOPE_CU(...)
 #endif
 
 #ifdef SKEPU_TRACING
@@ -234,6 +250,73 @@ namespace skepu
 #endif
 		};
 
+		// The times of a call of which the work runs on a device and is not waited for (a CUDA kernel): the device measures the work
+		// itself, and the times are asked for when the event is replayed, so that the program is not made to wait for the device at the call.
+		// The times are microseconds, as those of the host (timestamp_now); hostStart is the time when the call was started on the host,
+		// hostEnd when the host was done with it.
+		//
+		// A timer holds objects of the device (events, markers) until it has read the times of them. It does so as soon as the device has
+		// done the work, without waiting for it (poll, which the tracer calls for the oldest timers whenever a new call is traced), so that
+		// the objects of the device that are live are those of the work that is still going on, and not those of all the calls that have
+		// not been written to the trace yet. When the trace is written the times have mostly been read already.
+		class DeviceTimer
+		{
+		public:
+			virtual ~DeviceTimer() = default;
+
+			// Reads the times if the device is done, without waiting. True if the times are known.
+			bool poll()
+			{
+				std::lock_guard<std::mutex> lock(m_mutex);
+				if (!m_resolved && ready())
+					settle();
+				return m_resolved;
+			}
+
+			// Reads the times, waiting for the device if need be
+			void resolve()
+			{
+				std::lock_guard<std::mutex> lock(m_mutex);
+				if (!m_resolved)
+					settle();
+			}
+
+			unsigned long startTime(unsigned long hostStart)
+			{
+				resolve();
+				return std::max(hostStart, m_start);
+			}
+
+			unsigned long endTime(unsigned long hostStart, unsigned long hostEnd)
+			{
+				resolve();
+				return std::max(m_end ? m_end : hostEnd, startTime(hostStart));
+			}
+
+		protected:
+			// Is all the work of the call done? (False if the end of the call has not been recorded yet.)
+			virtual bool ready() = 0;
+			// Reads the times of the start and of the end of the work (0 if the device cannot say) into m_start and m_end, waiting for the
+			// device if need be, and releases the objects of the device
+			virtual void read() = 0;
+
+			unsigned long m_start = 0, m_end = 0;
+
+		private:
+			void settle() { read(); m_resolved = true; }
+
+			std::mutex m_mutex;
+			bool m_resolved = false;
+		};
+
+		// The timers that have not been read yet, the oldest first (the devices do their work in order). Called when a call that a device
+		// runs is started: the timers that are done are read and let go, and if the host is far ahead of the devices the oldest are waited for,
+		// so that the number of the objects of the devices that are live is bounded.
+		inline void registerDeviceTimer(std::shared_ptr<DeviceTimer> timer);
+		inline size_t pendingDeviceTimers();
+		// (the limit can be changed: the tests of it use a small one)
+		inline size_t &maxPendingDeviceTimers() { static size_t limit = 1024; return limit; }
+
 		struct EventHandle
 		{
 			EventHandle();
@@ -241,6 +324,7 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			UniqueIdentifier::ID m_id;
 			unsigned long m_time;
+			std::shared_ptr<DeviceTimer> m_device; // (null if the host measures the call)
 #endif
 		};
 
@@ -304,6 +388,12 @@ namespace skepu
 			template<typename V>
 			Field<std::decay_t<V>> operator=(V &&value) const { return {this->name, std::forward<V>(value), this->condition}; }
 		};
+
+		// A field of which the value is found when the event is replayed (the end of a call that a device has not finished when the call returns)
+		template<typename F>
+		struct [[nodiscard]] LazyField { const std::string &key; F compute; };
+		template<typename F>
+		LazyField<std::decay_t<F>> lazy(const std::string &key, F &&function) { return {key, std::forward<F>(function)}; }
 
 		// Something that is done when the event is replayed, in the order of the fields, that is not a field (then([this]{ ... }))
 		template<typename F>

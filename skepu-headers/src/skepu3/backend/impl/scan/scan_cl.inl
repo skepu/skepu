@@ -83,6 +83,7 @@ namespace skepu
 			typename InIterator::device_pointer_type_cl inMemP = arg.getParent().updateDevice_CL(arg.getAddress(), size, device, true);
 			typename OutIterator::device_pointer_type_cl outMemP = res.getParent().updateDevice_CL(res.getAddress(), size, device, false);
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			this->scanLargeVectorRecursively_CL(nullptr, deviceID, inMemP, outMemP, blockSums, size, mode, initial);
 			outMemP->changeDeviceData();
@@ -91,7 +92,7 @@ namespace skepu
 			for (size_t i = 0; i < blockSums.size(); ++i)
 				delete blockSums[i];
 			
-			SKEPU_TRACING_FINISH_CL();
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "Scan", this, {size}, {res.getParent().getObjectID()}, {arg.getParent().getObjectID()}, {}, {});
 		}
 
@@ -127,6 +128,7 @@ namespace skepu
 			}
 			
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			for (size_t i = 0; i < numDevices; ++i)
 			{
@@ -169,7 +171,7 @@ namespace skepu
 				for (size_t j = 0; j < blockSums[i].size(); ++j)
 					delete blockSums[i][j];
 			
-			SKEPU_TRACING_FINISH_CL();
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "Scan", this, {size}, {res.getParent().getObjectID()}, {arg.getParent().getObjectID()}, {}, {});
 		}
 		

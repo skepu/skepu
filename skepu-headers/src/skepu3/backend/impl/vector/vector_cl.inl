@@ -18,6 +18,9 @@ namespace skepu
 	template <typename T>
 	typename Vector<T>::device_pointer_type_cl Vector<T>::updateDevice_CL(T* start, size_type numElements, backend::Device_CL* device, bool copy)
 	{
+#ifdef SKEPU_CUDA
+		syncCUDAbeforeOpenCL(true); // (the use may write: OpenCL says it only in the copy flag)
+#endif
 		T* root = &m_data[0];
 		std::pair<cl_device_id, const T*> key(device->getDeviceID(), root);
 		auto result = m_deviceMemPointers_CL.find(key);
@@ -76,6 +79,9 @@ namespace skepu
 	template <typename T>
 	typename Vector<T>::device_const_pointer_type_cl Vector<T>::updateDevice_CL(const T* start, size_type numElements, backend::Device_CL* device, bool copy) const
 	{
+#ifdef SKEPU_CUDA
+		syncCUDAbeforeOpenCL(false);
+#endif
 		const T* root = &m_data[0];
 		std::pair< cl_device_id, const T* > key(device->getDeviceID(), root);
 		auto result = m_deviceConstMemPointers_CL.find(key);
@@ -166,7 +172,7 @@ namespace skepu
 	inline void Vector<T>::invalidateDeviceData_CL() const
 	{
 		// deallocs all device mem for vector for now
-		if (!this->m_deviceMemPointers_CL.empty())
+		if (!this->m_deviceMemPointers_CL.empty() || !this->m_deviceConstMemPointers_CL.empty())
 		{
 			DEBUG_TEXT_LEVEL3("Invalidate device data OpenCL (" << this->size() << " elements)");
 			releaseDeviceAllocations_CL();
@@ -187,7 +193,48 @@ namespace skepu
 			delete memptr.second;
 
 		m_deviceMemPointers_CL.clear();
+
+		// (the copies of the const overload are not changed by OpenCL, but the data they hold is old after a write of another backend or of the host)
+		for (auto &memptr : this->m_deviceConstMemPointers_CL)
+			delete memptr.second;
+
+		m_deviceConstMemPointers_CL.clear();
 	}
+
+#ifdef SKEPU_CUDA
+	// CUDA and OpenCL in the same program (see the declarations in the class). The backends do not know of each other's copies, so
+	// without this the one that uses the vector second would read the stale host memory, or an old copy of its own.
+	template <typename T>
+	void Vector<T>::syncCUDAbeforeOpenCL(bool mayWrite) const
+	{
+		if (m_noValidDeviceCopy)
+			return; // CUDA has no copy
+		DEBUG_TEXT_LEVEL1("BACKEND SWITCH CUDA -> OpenCL, label: " << this->getLabel() << ": the vector goes through the host memory"
+			<< (m_valid ? ", CUDA has no changes" : ", CUDA has changes that are transferred to the host") << (mayWrite ? ", the CUDA copies are invalidated" : ""));
+		if (!m_valid)
+		{
+			updateHost_CU(); // (the transfers are traced by the CUDA device pointers)
+			m_valid = true;
+		}
+		if (mayWrite)
+		{
+			invalidateDeviceData_CU();
+			m_noValidDeviceCopy = true;
+		}
+	}
+
+	template <typename T>
+	void Vector<T>::syncOpenCLbeforeCUDA(bool mayWrite) const
+	{
+		if (m_deviceMemPointers_CL.empty() && m_deviceConstMemPointers_CL.empty())
+			return; // OpenCL has no copy
+		DEBUG_TEXT_LEVEL1("BACKEND SWITCH OpenCL -> CUDA, label: " << this->getLabel() << ": the vector goes through the host memory"
+			<< (mayWrite ? ", the OpenCL copies are released" : ""));
+		updateHost_CL(); // (only copies that OpenCL has changed are transferred)
+		if (mayWrite)
+			releaseDeviceAllocations_CL();
+	}
+#endif
 }
 
 #endif

@@ -64,6 +64,7 @@ namespace skepu
 			cl_mem d_input = deviceInPointer;
 			cl_mem d_output = deviceMemPointer;
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			// First reduce all elements row-wise so that each row produces one element.
 			for (size_t r = 0; r < rows; r++)
@@ -91,6 +92,7 @@ namespace skepu
 			}
 			
 			cl_helpers::freeDeviceMemory<T>(deviceMemPointer);
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Partial", this, {rows, cols}, {res.getParent().getObjectID()}, {arg.getParent().getTraceObjectID()}, {}, {});
 		}
 		
@@ -126,6 +128,7 @@ namespace skepu
 			}
 			
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			for (size_t i = 0; i < numDevices; ++i)
 			{
@@ -171,6 +174,7 @@ namespace skepu
 			for (size_t i = 0; i < numDevices; ++i)
 				cl_helpers::freeDeviceMemory<T>(deviceMemPointers[i]);
 			
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Partial", this, {rows, cols}, {res.getParent().getObjectID()}, {arg.getParent().getTraceObjectID()}, {}, {});
 		}
 		
@@ -227,6 +231,7 @@ namespace skepu
 #endif
 
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 
 			ExecuteReduceOnADevice<T>(deviceID, CLKernel::reduce, size, numThreads, numBlocks, inMemP->getDeviceDataPointer(), outMemP.getDeviceDataPointer());
 			
@@ -236,6 +241,7 @@ namespace skepu
 			
 			res = ReduceFunc::CPU(res, partialRes);
 			auto scalar_res = Scalar<T>(res);
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Full", this, {size}, tracing::scalar_labels(scalar_res), {arg.getParent().getObjectID()}, {}, {});
 			return scalar_res;
 		}
@@ -268,6 +274,7 @@ namespace skepu
 			}
 
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 
 			// Create argument structs for all threads
 			// Fill out argument struct with right information and start threads.
@@ -294,6 +301,7 @@ namespace skepu
 			}
 
 			auto scalar_res = Scalar<typename ReduceFunc::Ret>(res);
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "Reduce 1D-Full", this, {size}, tracing::scalar_labels(scalar_res), {arg.getParent().getObjectID()}, {}, {});
 			return scalar_res;
 		}
@@ -362,6 +370,7 @@ namespace skepu
 			cl_mem d_output = deviceMemPointer;
 			
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			// First reduce all elements row-wise so that each row produces one element.
 			for (size_t r = 0; r < rows; r++)
@@ -410,6 +419,7 @@ namespace skepu
 			cl_helpers::freeDeviceMemory<T>(deviceMemPointer);
 			
 			auto result = Scalar<T>(res);
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "Reduce 2D", this, {rows, cols}, tracing::scalar_labels(result), {arg.getParent().getObjectID()}, {}, {});
 			return result;
 		}
@@ -455,6 +465,7 @@ namespace skepu
 			
 			std::vector<T> tempResult(rows);
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			for (size_t i = 0; i < numDevices; ++i)
 			{
@@ -518,6 +529,7 @@ namespace skepu
 				cl_helpers::freeDeviceMemory<T>(deviceMemPointers[i]);
 			
 			auto result = Scalar<T>(res);
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "Reduce 2D", this, {rows, cols}, tracing::scalar_labels(result), {arg.getParent().getObjectID()}, {}, {});
 			return result;
 		}

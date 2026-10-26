@@ -74,6 +74,44 @@ namespace skepu
 			return std::vector<TraceID>{};
 		}
 
+		struct PendingDeviceTimers
+		{
+			std::mutex mutex;
+			std::deque<std::shared_ptr<DeviceTimer>> timers;
+		};
+
+		// (inline: one list for all translation units of a program)
+		inline PendingDeviceTimers &pendingTimers()
+		{
+			static PendingDeviceTimers *pending = new PendingDeviceTimers; // (not destroyed: the devices may be gone before the static objects are)
+			return *pending;
+		}
+
+		inline void registerDeviceTimer(std::shared_ptr<DeviceTimer> timer)
+		{
+			PendingDeviceTimers &pending = pendingTimers();
+			std::lock_guard<std::mutex> lock(pending.mutex);
+			pending.timers.push_back(std::move(timer));
+			// the oldest first: the work of the devices is done in order, so the ones that are done are at the front
+			while (!pending.timers.empty() && pending.timers.front()->poll())
+				pending.timers.pop_front();
+			// the host is far ahead of the devices: wait for the oldest, so that what the devices keep for the trace has a limit
+			while (pending.timers.size() > maxPendingDeviceTimers())
+			{
+				pending.timers.front()->resolve();
+				pending.timers.pop_front();
+			}
+		}
+
+		inline size_t pendingDeviceTimers()
+		{
+			PendingDeviceTimers &pending = pendingTimers();
+			std::lock_guard<std::mutex> lock(pending.mutex);
+			while (!pending.timers.empty() && pending.timers.front()->poll())
+				pending.timers.pop_front();
+			return pending.timers.size();
+		}
+
 		// (inline: one origin of time for all translation units of a program)
 		inline unsigned long timestamp_now()
 		{
@@ -320,7 +358,7 @@ namespace skepu
 			// container that is named later than that keeps the name that its older events have; a Raw capture is also kept in the traces of the other processes of an MPI program.
 			// A skeleton instance can be named again and again, for example by the layers of a network that share one: only the events
 			// before its first call, the builds of its kernels, get the name; its calls keep the name that it had at the call)
-			auto capture = [=, this]{
+			auto capture = [=]{
 			this->forRecentEvents([&](nlohmann::json &event)
 			{
 				auto object = event.find(Schema::Keys::OBJECT_ID);
@@ -338,7 +376,7 @@ namespace skepu
 		inline void Tracer::place(TraceID id, std::string const& file, int line)
 		{
 #ifdef SKEPU_TRACING
-			auto capture = [=, this]{
+			auto capture = [=]{
 			this->forRecentEvents([&](nlohmann::json &event)
 			{
 				auto object = event.find(Schema::Keys::OBJECT_ID);
@@ -557,6 +595,12 @@ namespace skepu
 				entry[field.key] = field.value;
 		}
 
+		template<typename F>
+		inline void write_part(nlohmann::json &entry, const LazyField<F> &field)
+		{
+			entry[field.key] = field.compute();
+		}
+
 		// The fields of a JSON object, for the ones that an event gets from outside (the parameters of a skeleton): merge(object)
 		struct Merge { nlohmann::json fields; };
 		inline Merge merge(nlohmann::json fields) { return {std::move(fields)}; }
@@ -616,7 +660,7 @@ namespace skepu
 #ifdef SKEPU_TRACING
 		inline void Tracer::raw(nlohmann::json entry)
 		{
-			auto capture = [=, this]{
+			auto capture = [=]{
 			this->submit(entry);
 			}; this->push_capture(std::move(capture), CaptureKind::Raw);
 		}
@@ -686,8 +730,9 @@ namespace skepu
 				Key::OBJECT_ID = id,
 				Key::PATTERN = pattern,
 				Key::LABEL = label,
-				Key::START = h.m_time,
-				Key::END = now,
+				// (the times of work on a device that was not waited for are asked of the device when the event is replayed)
+				lazy(Key::START, [device = h.m_device, start = h.m_time] { return device ? device->startTime(start) : start; }),
+				lazy(Key::END, [device = h.m_device, start = h.m_time, now] { return device ? device->endTime(start, now) : now; }),
 				Key::ELEMENTS = elements,
 				Key::FILE = file,
 				Key::LINE = std::get<2>(source_location),
@@ -912,7 +957,7 @@ namespace skepu
 		{
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
-			this->push_capture([=, this]{ this->replayBeginRegion(label, file, line, now, false); }, CaptureKind::Region);
+			this->push_capture([=]{ this->replayBeginRegion(label, file, line, now, false); }, CaptureKind::Region);
 #endif
 		}
 
@@ -920,7 +965,7 @@ namespace skepu
 		{
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
-			this->push_capture([=, this]{ this->replayBeginRegion(label, file, line, now, true); }, CaptureKind::Region);
+			this->push_capture([=]{ this->replayBeginRegion(label, file, line, now, true); }, CaptureKind::Region);
 #endif
 		}
 
@@ -1148,5 +1193,9 @@ namespace skepu
 #endif
 	}
 }
+
+#if defined(SKEPU_TRACING) && defined(SKEPU_CUDA)
+#include "tracing_cuda.hpp"
+#endif
 
 #endif

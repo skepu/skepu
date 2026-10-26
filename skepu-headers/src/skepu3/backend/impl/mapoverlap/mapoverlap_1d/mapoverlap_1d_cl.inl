@@ -57,6 +57,7 @@ namespace skepu
 #endif
 			wrap_mem_p.copyHostToDevice();
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			const size_t numThreads = std::min<size_t>(this->m_selected_spec->GPUThreads(), n);
 			const size_t numBlocks = std::max<size_t>(1, std::min(n / numThreads + (n % numThreads == 0 ? 0 : 1), this->m_selected_spec->GPUBlocks()));
@@ -94,7 +95,7 @@ namespace skepu
 			// Make sure the data is marked as changed by the device
 			pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
-			SKEPU_TRACING_FINISH_CL();
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 1D", this, {numElem},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
@@ -141,6 +142,7 @@ namespace skepu
 				}
 			}
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			for (size_t i = 0; i < numDevices; ++i)
 			{
@@ -197,7 +199,7 @@ namespace skepu
 				pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 				pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
 			}
-			SKEPU_TRACING_FINISH_CL();
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap 1D", this, {size},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
@@ -367,6 +369,7 @@ namespace skepu
 #endif
 			wrapMemP.copyHostToDevice();
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			const size_t numThreads = trdsize; // std::min<size_t>(this->m_selected_spec->GPUThreads(), n);
 			const size_t numBlocks = std::max<size_t>(1, std::min(blocksPerRow * numrows, this->m_selected_spec->GPUBlocks()));
@@ -403,7 +406,7 @@ namespace skepu
 			// Make sure the data is marked as changed by the device
 			pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
-			SKEPU_TRACING_FINISH_CL();
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap RowWise", this, {colWidth, rowWidth},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
@@ -503,6 +506,7 @@ namespace skepu
 			
 			size_t out_offset = 0;
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			// we will divide the computation row-wise... copy data and do operation
 			for (size_t i = 0; i < numDevices; ++i)
@@ -552,7 +556,7 @@ namespace skepu
 			// to properly de-allocate the memory
 			for (size_t i = 0; i < numDevices; ++i)
 				pack_expand((delete std::get<OI>(outMemP[i]), 0)...);
-			SKEPU_TRACING_FINISH_CL();
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap RowWise", this, {colWidth, rowWidth},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
@@ -655,6 +659,7 @@ namespace skepu
 #endif
 			wrapMemP.copyHostToDevice();
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			const size_t numThreads = trdsize; //std::min(maxThreads, rowWidth);
 			const size_t numBlocks = std::max<size_t>(1, std::min(blocksPerCol * numcols, maxBlocks));
@@ -693,7 +698,7 @@ namespace skepu
 			// Make sure the data is marked as changed by the device
 			pack_expand((std::get<AI-InArity-OutArity>(anyMemP)->changeDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
-			SKEPU_TRACING_FINISH_CL();
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap ColWise", this, {colWidth, numcols},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
@@ -790,6 +795,7 @@ namespace skepu
 			
 			int _deviceType[MAX_GPU_DEVICES];
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			// Sets the pad and edge policy values that are sent to the kernel
 			const int _poly = static_cast<int>(this->m_edge);
@@ -874,7 +880,7 @@ namespace skepu
 				delete wrapStartDev_mem_p[i];
 				delete wrapEndDev_mem_p[i];
 			}
-			SKEPU_TRACING_FINISH_CL();
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap ColWise", this, {colWidth, numCols},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},

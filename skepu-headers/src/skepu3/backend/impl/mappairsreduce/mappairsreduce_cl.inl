@@ -39,6 +39,7 @@ namespace skepu
 			}
 			
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			for (size_t i = 0; i < numDevices; ++i)
 			{
@@ -85,7 +86,7 @@ namespace skepu
 				pack_expand((std::get<1>(std::get<AI-Varity-Harity-outArity>(anyMemP))->changeDeviceData(hasWriteAccess(MapPairsFunc::anyAccessMode[AI-Varity-Harity-outArity])), 0)...);
 				pack_expand((std::get<OI>(outMemP)->changeDeviceData(), 0)...);
 			}
-			SKEPU_TRACING_FINISH_CL();
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "MapPairsReduce", this, {Hsize, Vsize},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<VEI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...,

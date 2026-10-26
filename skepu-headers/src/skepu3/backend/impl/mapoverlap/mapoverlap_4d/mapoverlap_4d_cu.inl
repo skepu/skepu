@@ -248,6 +248,13 @@ namespace skepu
 			auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 			DEBUG_TEXT_LEVEL1("CUDA MapOverlap 4D: size = " << arg.size() << ", maxDevices = " << this->m_selected_spec->devices()
 				<< ", maxBlocks = " << this->m_selected_spec->GPUBlocks() << ", maxThreads = " << this->m_selected_spec->GPUThreads());
+			SKEPU_TRACE_CALL_SCOPE_CU(this->m_environment, this->m_selected_spec->devices(), "MapOverlap 4D", this, {res.size_i(), res.size_j(), res.size_k(), res.size_l()},
+			{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+			{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+			{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
+			tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+			this->template randomID<MapOverlapFunc::randomCount>());
+			
 			
 			const size_t numDevices = std::min(this->m_selected_spec->devices(), this->m_environment->m_devices_CU.size());
 			

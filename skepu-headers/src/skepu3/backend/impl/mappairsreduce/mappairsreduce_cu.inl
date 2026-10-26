@@ -94,6 +94,14 @@ namespace skepu
 		{
 			DEBUG_TEXT_LEVEL1("CUDA MapPairsReduce: Vsize = " << Vsize << ", Hsize = " << Hsize << ", maxDevices = " << this->m_selected_spec->devices()
 				<< ", maxBlocks = " << this->m_selected_spec->GPUBlocks() << ", maxThreads = " << this->m_selected_spec->GPUThreads());
+			SKEPU_TRACE_CALL_SCOPE_CU(this->m_environment, this->m_selected_spec->devices(), "MapPairsReduce", this, {Hsize, Vsize},
+			{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+			{get<VEI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...,
+				get<HEI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+			{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
+			tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+			this->template randomID<MapPairsFunc::randomCount>());
+			
 			
 			const size_t numDevices = std::min(this->m_selected_spec->devices(), this->m_environment->m_devices_CU.size());
 			

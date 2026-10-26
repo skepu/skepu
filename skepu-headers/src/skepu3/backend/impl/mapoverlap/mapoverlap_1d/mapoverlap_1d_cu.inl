@@ -286,6 +286,13 @@ namespace skepu
 			auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 			DEBUG_TEXT_LEVEL1("CUDA MapOverlap 1D Vector: size = " << arg.size() << ", maxDevices = " << this->m_selected_spec->devices()
 				<< ", maxBlocks = " << this->m_selected_spec->GPUBlocks() << ", maxThreads = " << this->m_selected_spec->GPUThreads());
+			SKEPU_TRACE_CALL_SCOPE_CU(this->m_environment, this->m_selected_spec->devices(), "MapOverlap 1D", this, {arg.size() - startIdx},
+			{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+			{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+			{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
+			tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+			this->template randomID<MapOverlapFunc::randomCount>());
+			
 			
 			const size_t numDevices = std::min(this->m_selected_spec->devices(), this->m_environment->m_devices_CU.size());
 			
@@ -623,6 +630,13 @@ namespace skepu
 			auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 			DEBUG_TEXT_LEVEL1("CUDA MapOverlap 1D Matrix Col-wise: size = " << arg.size() << ", maxDevices = " << this->m_selected_spec->devices()
 				<< ", maxBlocks = " << this->m_selected_spec->GPUBlocks() << ", maxThreads = " << this->m_selected_spec->GPUThreads());
+			SKEPU_TRACE_CALL_SCOPE_CU(this->m_environment, this->m_selected_spec->devices(), "MapOverlap ColWise", this, {arg.total_rows(), numcols},
+			{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+			{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+			{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
+			tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+			this->template randomID<MapOverlapFunc::randomCount>());
+			
 			
 			const size_t numDevices = std::min(this->m_selected_spec->devices(), this->m_environment->m_devices_CU.size());
 			
@@ -855,6 +869,13 @@ namespace skepu
 			auto &arg = get<OutArity>(std::forward<CallArgs>(args)...);
 			DEBUG_TEXT_LEVEL1("CUDA MapOverlap 1D Matrix Row-wise: size = " << arg.size() << ", maxDevices = " << this->m_selected_spec->devices()
 				<< ", maxBlocks = " << this->m_selected_spec->GPUBlocks() << ", maxThreads = " << this->m_selected_spec->GPUThreads());
+			SKEPU_TRACE_CALL_SCOPE_CU(this->m_environment, this->m_selected_spec->devices(), "MapOverlap RowWise", this, {numrows, arg.total_cols()},
+			{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+			{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+			{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
+			tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+			this->template randomID<MapOverlapFunc::randomCount>());
+			
 			
 			const size_t numDevices = std::min(this->m_selected_spec->devices(), this->m_environment->m_devices_CU.size());
 			

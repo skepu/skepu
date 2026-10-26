@@ -88,17 +88,31 @@ namespace skepu
 #endif
 		
 #ifdef SKEPU_OPENCL
-			init_CL();
-			createOpenCLProgramForMatrixTranspose();
+			{
+				// (the start of the program is often this: the platforms, the devices, the queues and the build of the first kernels)
+				SKEPU_TRACE_START_EVENT(trace_handle);
+				init_CL();
+				createOpenCLProgramForMatrixTranspose();
+				SKEPU_TRACE_EXTERNAL(trace_handle, "OpenCL initialization", __FILE__, __LINE__, {}, {});
+			}
 #endif
 		
 		
 #ifdef SKEPU_CUDA
-			init_CU();
+			{
+				// (the context of the driver is created here, which can take a long time: it is the gap before the first call in a trace)
+				SKEPU_TRACE_START_EVENT(trace_handle);
+				init_CU();
+				SKEPU_TRACE_EXTERNAL(trace_handle, "CUDA initialization", __FILE__, __LINE__, {}, {});
+			}
 		//	CHECK_CUDA_ERROR(cudaFuncSetCacheConfig("conv_cuda_shared_kernel", cudaFuncCachePreferShared));
 		//	assert(m_devices_CU.size() == 1);
 			assert(SKEPU_CUDA_DEV_ID == m_best_cuda_device_id);
-			bwDataStruct = measureOrLoadCUDABandwidth(m_best_cuda_device_id, false);
+			{
+				SKEPU_TRACE_START_EVENT(trace_handle);
+				bwDataStruct = measureOrLoadCUDABandwidth(m_best_cuda_device_id, false);
+				SKEPU_TRACE_EXTERNAL(trace_handle, "CUDA bandwidth measurement", __FILE__, __LINE__, {}, {});
+			}
 #else
 			//	std::cerr << "[SkePU Warning]: bwDataStruct is not initialized as CUDA is not enabled...\n";
 			bwDataStruct.cpu_id = -1;
@@ -254,11 +268,11 @@ namespace skepu
             int num_devices; // cudaGetDeviceCount requires int
 			err = cudaGetDeviceCount(&num_devices);
 			
+			if (err != cudaSuccess)
+				SKEPU_ERROR("cudaGetDeviceCount failed: " << cudaGetErrorString(err) << "\n");
+			
 			if (num_devices <= 0)
 				SKEPU_ERROR("No SKEPU_CUDA enabled devices found!\n");
-			
-			if (err != cudaSuccess)
-				SKEPU_ERROR("cudaGetDeviceCount failed!\n");
 			
             m_num_devices = num_devices;
 			// if more devices, found, we used only what is specified as MAX_GPU_DEVICES.

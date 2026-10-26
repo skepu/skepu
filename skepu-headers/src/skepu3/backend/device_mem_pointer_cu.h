@@ -94,6 +94,9 @@ namespace skepu
 // #if SKEPU_DEBUG>0   
 			std::string m_nameVerbose;
 // #endif   
+#ifdef SKEPU_TRACING
+			UniqueIdentifier::ID m_container_id = UniqueIdentifier::generate(); // (set by the container: the trace event of a transfer names the container; a buffer of the backend has an id of its own)
+#endif
 
 			size_t m_pitch;
 
@@ -584,6 +587,7 @@ namespace skepu
 
 				sizeVec = updateStruct[i].copySize;
 				CHECK_CUDA_ERROR(cudaSetDevice(m_deviceID));
+				SKEPU_TRACE_START_EVENT(trace_handle);
 
 #ifdef USE_PINNED_MEMORY
 				if(m_usePitch)
@@ -604,6 +608,7 @@ namespace skepu
 						else
 							CHECK_CUDA_ERROR(cudaMemcpyPeer(m_deviceDataPointer + updateStruct[i].dstOffset, m_deviceID, updateStruct[i].src + updateStruct[i].srcOffset, updateStruct[i].srcDevId, sizeVec));
 #endif
+				SKEPU_TRACE_TRANSFER(trace_handle, m_container_id, m_nameVerbose.empty() ? std::string("Internal (device buffer)") : m_nameVerbose, __LINE__, sizeVec / sizeof(T), updateStruct[i].srcIsHost ? "host-to-device" : "device-to-device", "CUDA");
 			}
 #ifdef VERBOSE
 			T *h_ptr;
@@ -663,6 +668,7 @@ namespace skepu
 				sizeVec = numElements*sizeof(T);
 
 				CHECK_CUDA_ERROR(cudaSetDevice(m_deviceID));
+				SKEPU_TRACE_START_EVENT(trace_handle);
 
 #ifdef USE_PINNED_MEMORY
 				if(m_usePitch)
@@ -675,6 +681,7 @@ namespace skepu
 						else
 							CHECK_CUDA_ERROR(cudaMemcpy(m_deviceDataPointer, m_hostDataPointer, sizeVec, cudaMemcpyHostToDevice));
 #endif
+				SKEPU_TRACE_TRANSFER(trace_handle, m_container_id, m_nameVerbose.empty() ? std::string("Internal (device buffer)") : m_nameVerbose, __LINE__, numElements, "host-to-device", "CUDA");
 
 				/*! set that the copy is valid now */
 				m_valid = true;
@@ -722,6 +729,7 @@ namespace skepu
 				sizeVec = numElements*sizeof(T);
 
 				CHECK_CUDA_ERROR(cudaSetDevice(m_deviceID));
+				SKEPU_TRACE_START_EVENT(trace_handle);
 
 #ifdef USE_PINNED_MEMORY
 				if(m_usePitch)
@@ -734,6 +742,7 @@ namespace skepu
 				else
 					{ CHECK_CUDA_ERROR(cudaMemcpy(m_hostDataPointer, m_deviceDataPointer, sizeVec, cudaMemcpyDeviceToHost)); }
 #endif
+				SKEPU_TRACE_TRANSFER(trace_handle, m_container_id, m_nameVerbose.empty() ? std::string("Internal (device buffer)") : m_nameVerbose, __LINE__, numElements, "device-to-host", "CUDA");
       
 				m_deviceDataHasChanged = false;
 			}

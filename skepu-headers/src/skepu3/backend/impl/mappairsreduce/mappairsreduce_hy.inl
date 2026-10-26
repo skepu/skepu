@@ -55,6 +55,7 @@ namespace skepu
 				? this->template prepareRandom<MapPairsFunc::randomCount>(cpuVSize * Hsize, numCPUThreads, Hsize)
 				: this->template prepareRandom<MapPairsFunc::randomCount>(cpuHSize * Vsize, numCPUThreads, Vsize);
 			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CL(trace_handle);
 			
 			size_t cpuActualSize = (this->m_mode == ReduceMode::RowWise) ? cpuVSize : cpuHSize;
 			size_t counter = 0;
@@ -152,7 +153,7 @@ namespace skepu
 					
 				}
 			}
-			SKEPU_TRACING_FINISH_CL();
+			SKEPU_TRACE_DEVICE_END_CL(trace_handle);
 			SKEPU_TRACE_CALL(trace_handle, "MapPairsReduce", this, {Hsize, Vsize},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
 				{get<VEI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...,

@@ -18,6 +18,8 @@ namespace skepu
 		scalar_wrapper_t<typename MapFunc::Ret> MapReduce<arity, MapFunc, ReduceFunc, CUDAKernel, CUDAReduceKernel, CLKernel>
 		::mapReduceSingleThread_CU(size_t deviceID, size_t startIdx, size_t size, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, Ret &res, CallArgs&&... args)
 		{
+			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CU(trace_handle);
 			Ret startValue = res;
 			// Setup parameters
 			Device_CU *device = this->m_environment->m_devices_CU[deviceID];
@@ -34,7 +36,7 @@ namespace skepu
 			auto anyMemP    = std::make_tuple(std::get<AI-arity>(aArgs).cudaProxy(deviceID, MapFunc::anyAccessMode[AI-arity], std::get<AI-arity>(proxy_tags), Index1D{0})...);
 			
 			// Create the output memory
-			DeviceMemPointer_CU<Ret> outMemP(&res, numBlocks, device);
+			DeviceMemPointer_CU<Ret> outMemP(&res, numBlocks, device, "Internal (reduce-temp)");
 			Ret *d_odata = outMemP.getDeviceDataPointer();
 			
 			// PRNG support
@@ -77,7 +79,14 @@ namespace skepu
 			outMemP.changeDeviceData();
 			outMemP.copyDeviceToHost(1);
 			
-			return ReduceFunc::CPU(res, startValue);
+			SKEPU_TRACE_DEVICE_END_CU(trace_handle, deviceID);
+			auto scalar_result = scalar_wrapper_t<typename MapFunc::Ret>(ReduceFunc::CPU(res, startValue));
+			SKEPU_TRACE_CALL(trace_handle, "MapReduce", this, {size}, tracing::scalar_output_labels(scalar_result),
+				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapFunc::randomCount>());
+			return scalar_result;
 		}
 		
 		
@@ -86,6 +95,8 @@ namespace skepu
 		scalar_wrapper_t<typename MapFunc::Ret> MapReduce<arity, MapFunc, ReduceFunc, CUDAKernel, CUDAReduceKernel, CLKernel>
 		::mapReduceMultiStream_CU(size_t deviceID, size_t startIdx, size_t size, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, Ret &res, CallArgs&&... args)
 		{
+			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CU(trace_handle);
 			CHECK_CUDA_ERROR(cudaSetDevice(deviceID));
 			
 			// Setup parameters
@@ -118,7 +129,7 @@ namespace skepu
 				
 				elwiseMemP[i] = std::make_tuple(std::get<EI>(eArgs).getParent().updateDevice_CU(std::get<EI>(eArgs).getAddress() + baseIndex, numElem * abs(this->m_strides[EI]), deviceID, AccessMode::None, false, i)...);
 				anyMemP[i]    = std::make_tuple(std::get<AI-arity>(aArgs).cudaProxy(deviceID, AccessMode::None, std::get<AI-arity>(proxy_tags), Index1D{i})...);
-				outMemP[i] = new DeviceMemPointer_CU<Ret>(&result[i], numBlocks[i], m_environment->m_devices_CU.at(deviceID));
+				outMemP[i] = new DeviceMemPointer_CU<Ret>(&result[i], numBlocks[i], m_environment->m_devices_CU.at(deviceID), "Internal (reduce-temp)");
 			}
 
 			// Breadth-first memory transfers and kernel executions
@@ -183,7 +194,14 @@ namespace skepu
 				delete outMemP[i];
 			}
 			
-			return res;
+			SKEPU_TRACE_DEVICE_END_CU(trace_handle, deviceID);
+			auto scalar_result = scalar_wrapper_t<typename MapFunc::Ret>(res);
+			SKEPU_TRACE_CALL(trace_handle, "MapReduce", this, {size}, tracing::scalar_output_labels(scalar_result),
+				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapFunc::randomCount>());
+			return scalar_result;
 		}
 		
 		
@@ -192,6 +210,8 @@ namespace skepu
 		scalar_wrapper_t<typename MapFunc::Ret> MapReduce<arity, MapFunc, ReduceFunc, CUDAKernel, CUDAReduceKernel, CLKernel>
 		::mapReduceMultiStreamMultiGPU_CU(size_t useNumGPU, size_t startIdx, size_t size, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, Ret &res, CallArgs&&... args)
 		{
+			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CU(trace_handle);
 #ifdef USE_PINNED_MEMORY
 			const size_t numElemPerDevice = size / useNumGPU;
 			const size_t deviceRest = size % useNumGPU;
@@ -239,7 +259,7 @@ namespace skepu
 					
 					elwiseMemP[i][j] = std::make_tuple(std::get<EI>(eArgs).getParent().updateDevice_CU((std::get<EI>(eArgs) + baseIndex).getAddress(), numElem * abs(this->m_strides[EI]), i, AccessMode::None, false, j)...);
 					anyMemP[i][j] = std::make_tuple(std::get<AI-arity>(aArgs).cudaProxy(i, AccessMode::None, , std::get<AI-arity>(proxy_tags), Index1D{j})...);
-					outMemP[i][j] = new DeviceMemPointer_CU<Ret>(&result[i][j], numBlocks[i][j], m_environment->m_devices_CU.at(i));
+					outMemP[i][j] = new DeviceMemPointer_CU<Ret>(&result[i][j], numBlocks[i][j], m_environment->m_devices_CU.at(i), "Internal (reduce-temp)");
 				}
 			}
 			
@@ -306,7 +326,14 @@ namespace skepu
 				}
 			}
 #endif
-			return res;
+			for (size_t d = 0; d < useNumGPU; ++d) { SKEPU_TRACE_DEVICE_END_CU(trace_handle, (int)d); }
+			auto scalar_result = scalar_wrapper_t<typename MapFunc::Ret>(res);
+			SKEPU_TRACE_CALL(trace_handle, "MapReduce", this, {size}, tracing::scalar_output_labels(scalar_result),
+				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapFunc::randomCount>());
+			return scalar_result;
 		}
 		
 		
@@ -315,6 +342,8 @@ namespace skepu
 		scalar_wrapper_t<typename MapFunc::Ret> MapReduce<arity, MapFunc, ReduceFunc, CUDAKernel, CUDAReduceKernel, CLKernel>
 		::mapReduceSingleThreadMultiGPU_CU(size_t numDevices, size_t startIdx, size_t size, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, Ret &res, CallArgs&&... args)
 		{
+			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CU(trace_handle);
 			// Divide elements among participating devices
 			const size_t numElemPerSlice = size / numDevices;
 			const size_t rest = size % numDevices;
@@ -345,7 +374,7 @@ namespace skepu
 				
 				elwiseMemP[i] = std::make_tuple(std::get<EI>(eArgs).getParent().updateDevice_CU((std::get<EI>(eArgs) + baseIndex).getAddress(), numElem * abs(this->m_strides[EI]), i, AccessMode::None)...);
 				anyMemP[i]    = std::make_tuple(std::get<AI-arity>(aArgs).cudaProxy(i, AccessMode::None, std::get<AI-arity>(proxy_tags), Index1D{i})...);
-				outMemP[i] = new DeviceMemPointer_CU<Ret>(&result[i], numBlocks[i], this->m_environment->m_devices_CU[i]);
+				outMemP[i] = new DeviceMemPointer_CU<Ret>(&result[i], numBlocks[i], this->m_environment->m_devices_CU[i], "Internal (reduce-temp)");
 			}
 			
 			// Fill out argument struct with right information and start threads.
@@ -405,7 +434,14 @@ namespace skepu
 			
 			CHECK_CUDA_ERROR(cudaSetDevice(m_environment->m_best_cuda_device_id));
 		
-			return res;
+			for (size_t d = 0; d < numDevices; ++d) { SKEPU_TRACE_DEVICE_END_CU(trace_handle, (int)d); }
+			auto scalar_result = scalar_wrapper_t<typename MapFunc::Ret>(res);
+			SKEPU_TRACE_CALL(trace_handle, "MapReduce", this, {size}, tracing::scalar_output_labels(scalar_result),
+				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapFunc::randomCount>());
+			return scalar_result;
 		}
 		
 		

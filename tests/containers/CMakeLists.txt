@@ -17,3 +17,16 @@ skepu_add_test(swap ALSO opencl_multi)
 # ------------------------------------------------
 
 skepu_add_test(external BACKENDS sequential cpu)
+
+
+# ------------------------------------------------
+#   A probe of the data coherence with both CUDA and OpenCL in the program (not a test: see the source)
+# ------------------------------------------------
+
+skepu_add_executable(coherence_probe CUDA OpenCL OpenMP SKEPUSRC coherence_probe.cpp)
+target_link_libraries(coherence_probe PRIVATE catch2_main)
+
+# The same probe with the debug log (level 1) and the trace: the transfers of a switch of backend are shown
+skepu_add_executable(coherence_probe_logged CUDA OpenCL OpenMP SKEPUSRC coherence_probe.cpp)
+target_link_libraries(coherence_probe_logged PRIVATE catch2_main)
+target_compile_definitions(coherence_probe_logged PRIVATE SKEPU_DEBUG=1 SKEPU_TRACING SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/coherence_probe_logged_trace.json)

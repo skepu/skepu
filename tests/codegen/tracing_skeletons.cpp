@@ -60,6 +60,8 @@ namespace
 
 #ifdef SKEPU_OPENCL
 	const std::string backend = "OpenCL";
+#elif defined(SKEPU_CUDA)
+	const std::string backend = "CUDA";
 #elif defined(SKEPU_OPENMP)
 	const std::string backend = "OpenMP";
 #else
