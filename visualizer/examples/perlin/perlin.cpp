@@ -219,7 +219,7 @@ static void make_noise(skepu::args::Parser &args, MakeGradients &make_gradients,
 	auto grid_size_of = [&](size_t octave, size_t extent) { return (size_t)ceil(extent / cell_size_of(octave)) + 1; };
 
 	Texture<float> noise(extents..., "noise", 0.f);
-	auto duration = skepu::benchmark::measureExecTime([&]
+	auto duration = skepu::benchmark::measure([&]
 	{
 		for (size_t o = 0; o < octaves; ++o)
 		{

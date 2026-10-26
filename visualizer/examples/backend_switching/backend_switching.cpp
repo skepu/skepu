@@ -1,6 +1,10 @@
-// Synthetic example for SkeVU: one program that uses the sequential, OpenMP and OpenCL backends, and the
-// host, on the same containers. A trace of it shows when the data has to cross between host and device.
-// (Illustrative: the trace was made by examples/synthetic_traces.py, this program has not been run.)
+// Example for SkeVU: one program that uses the sequential, OpenMP, OpenCL and CUDA backends, and the host, on the same
+// containers. A trace of it shows when the data has to cross between the host and the devices, and what a switch between
+// two devices costs: a device only gets its data from the host, so a container that is on the OpenCL device and is used
+// by a call on the CUDA device (or the other way round) goes back to the host first, and then out again. That is correct
+// whatever the sequence of the backends is, but a program should not do it. (The program computes nothing of use: its
+// calls are made to show the transfers.)
+#include <cmath>
 #include <iostream>
 #include <skepu>
 #include <skepu-lib/io.hpp>
@@ -12,7 +16,7 @@ constexpr size_t N = 1 << 20;
 
 int main()
 {
-	auto generate = skepu::Map<0>([](skepu::Index1D i) { return std::sin(i.i * 0.001f); });
+	auto generate = skepu::Map<0>([](skepu::Index1D i) { return (float)sin(i.i * 0.001f); });
 	auto scale    = skepu::Map<1>([](float x) { return 2.0f * x; });
 	auto offset   = skepu::Map<1>([](float x) { return x + 1.0f; });
 	auto square   = skepu::Map<1>([](float x) { return x * x; });
@@ -27,21 +31,30 @@ int main()
 
 	{ SKEPU_TRACE_SCOPE("OpenCL back to back");
 		skepu::Vector<float> stage(N, "Stage");
-		skepu::Scalar<float> sum("Sum");
 		offset.setBackend(BackendSpec(Backend::Type::OpenCL)); offset(stage, scaled);
-		square(stage, stage);
+		square.setBackend(BackendSpec(Backend::Type::OpenCL)); square(stage, stage);
 		scale.setBackend(BackendSpec(Backend::Type::OpenCL)); scale(stage, stage);
 		total.setBackend(BackendSpec(Backend::Type::OpenCL));
-		total(sum, stage);
+		skepu::Scalar<float> sum = total(stage);
+		std::cout << "sum " << sum << "\n";
+	}
+
+	{ SKEPU_TRACE_SCOPE("CUDA back to back");
+		skepu::Vector<float> stage(N, "Stage (CUDA)");
+		offset.setBackend(BackendSpec(Backend::Type::CUDA)); offset(stage, scaled);
+		square.setBackend(BackendSpec(Backend::Type::CUDA)); square(stage, stage);
+		scale.setBackend(BackendSpec(Backend::Type::CUDA)); scale(stage, stage);
+		total.setBackend(BackendSpec(Backend::Type::CUDA));
+		skepu::Scalar<float> sum = total(stage);
 		std::cout << "sum " << sum << "\n";
 	}
 
 	// Alternating backends: every switch moves the vector to the other side.
 	auto step_a = skepu::Map<1>([](float x) { return x * 0.5f + 1.0f; });
-	auto step_b = skepu::Map<1>([](float x) { return x - std::floor(x); });
-	{ SKEPU_TRACE_SCOPE("Alternating backends");
+	auto step_b = skepu::Map<1>([](float x) { return (float)(x - floor(x)); });
+	{ SKEPU_TRACE_SCOPE("Alternating device and host");
 		skepu::Vector<float> state(N, "State", 0.5f);
-		step_a.setBackend(BackendSpec(Backend::Type::OpenCL));
+		step_a.setBackend(BackendSpec(Backend::Type::CUDA));
 		step_b.setBackend(BackendSpec(Backend::Type::OpenMP));
 		for (int i = 0; i < 3; ++i)
 		{
@@ -51,33 +64,72 @@ int main()
 		}
 	}
 
-	{ SKEPU_TRACE_SCOPE("One backend");
-		skepu::Vector<float> state2(N, "State (OpenCL only)", 0.5f);
-		step_b.setBackend(BackendSpec(Backend::Type::OpenCL));
+	// Alternating between two devices: the vector cannot go from one device to the other. Every switch is two transfers,
+	// the first back to the host from the device that has it and the second out to the device that is next.
+	{ SKEPU_TRACE_SCOPE("Alternating two devices");
+		skepu::Vector<float> state(N, "State (two devices)", 0.5f);
+		step_a.setBackend(BackendSpec(Backend::Type::OpenCL));
+		step_b.setBackend(BackendSpec(Backend::Type::CUDA));
 		for (int i = 0; i < 3; ++i)
 		{
 			SKEPU_TRACE_SCOPE("Iteration");
-			step_a(state2, state2);
-			step_b(state2, state2);
+			step_a(state, state);
+			step_b(state, state);
 		}
+	}
+
+	// The same work, all on one device: one transfer in, and the vector stays there.
+	{ SKEPU_TRACE_SCOPE("One device");
+		skepu::Vector<float> state(N, "State (CUDA only)", 0.5f);
+		step_a.setBackend(BackendSpec(Backend::Type::CUDA));
+		step_b.setBackend(BackendSpec(Backend::Type::CUDA));
+		for (int i = 0; i < 3; ++i)
+		{
+			SKEPU_TRACE_SCOPE("Iteration");
+			step_a(state, state);
+			step_b(state, state);
+		}
+	}
+
+	// A container that two devices only read: each of them gets a copy from the host, and the host copy stays good. (The OpenCL
+	// backend treats every container that it is given as possibly written, so a call on it drops the copy on the CUDA device:
+	// the CUDA call after it uploads the container again.)
+	{ SKEPU_TRACE_SCOPE("Read by two devices");
+		skepu::Vector<float> shared(N, "Shared", 1.0f);
+		skepu::Vector<float> out_cl(N, "Out (OpenCL)");
+		skepu::Vector<float> out_cu(N, "Out (CUDA)");
+		offset.setBackend(BackendSpec(Backend::Type::OpenCL)); offset(out_cl, shared);
+		offset.setBackend(BackendSpec(Backend::Type::CUDA));   offset(out_cu, shared);
+		scale.setBackend(BackendSpec(Backend::Type::OpenCL));  scale(out_cl, shared);
+		scale.setBackend(BackendSpec(Backend::Type::CUDA));    scale(out_cu, shared);
+	}
+
+	// A device that writes a container that the other device had: the copy on the other device is stale.
+	{ SKEPU_TRACE_SCOPE("Written by the other device");
+		skepu::Vector<float> data(N, "Data", 1.0f);
+		offset.setBackend(BackendSpec(Backend::Type::OpenCL)); offset(data, data);
+		offset.setBackend(BackendSpec(Backend::Type::CUDA));   offset(data, data);
+		offset.setBackend(BackendSpec(Backend::Type::OpenCL)); offset(data, data);
 	}
 
 	auto blur = skepu::Map<1>([](float x) { return 0.9f * x; });
 	{ SKEPU_TRACE_SCOPE("Host code between kernels");
 		skepu::Vector<float> image(N, "Image", 1.0f);
-		blur.setBackend(BackendSpec(Backend::Type::OpenCL));
+		blur.setBackend(BackendSpec(Backend::Type::CUDA));
 		blur(image, image);
-		host_filter(image);   // plain C++ on the elements, through image[i]
+		skepu::external("Host filter", skepu::read(image),   // plain C++ on some of the elements
+			[&] { for (size_t i = 0; i < 64; ++i) image(i) = image(i) > 0.5f ? 0.5f : image(i); },
+			skepu::write(image));
 		blur(image, image);
 	}
 
 	{ SKEPU_TRACE_SCOPE("Single elements");
 		skepu::Vector<float> result(N, "Result");
-		generate.setBackend(BackendSpec(Backend::Type::OpenCL)); generate(result);
-		float first = result[0];       // reads one element: the whole vector comes back, the device copy stays good
-		offset(result, result);       // no transfer in
-		result[0] = 0.0f;               // writes one element: the whole vector comes back, the device copy is stale
-		offset(result, result);       // the whole vector goes out again
+		generate.setBackend(BackendSpec(Backend::Type::CUDA)); generate(result);
+		float first = result[0];        // reads one element: the whole vector comes back, the device copy stays good
+		offset(result, result);         // no transfer in
+		result[0] = first + 1.0f;       // writes one element: the whole vector comes back, the device copy is stale
+		offset(result, result);         // the whole vector goes out again
 	}
 
 	{ SKEPU_TRACE_SCOPE("Copy of a container");
@@ -85,11 +137,11 @@ int main()
 		generate(field);
 		skepu::Vector<float> backup(field);   // the copy is made on the host: field comes back, and backup is on the host
 		offset(field, field);
-		scale(backup, backup);   // and goes to the device when it is used there
+		scale(backup, backup);                // and goes to the device when it is used there
 	}
 
-	// The backend chosen by the size: sequential for small data, OpenMP for medium, OpenCL for large.
-	auto choose = [](size_t n) { return n < (1 << 12) ? Backend::Type::CPU : n < (1 << 18) ? Backend::Type::OpenMP : Backend::Type::OpenCL; };
+	// The backend chosen by the size: sequential for small data, OpenMP for medium, a device for large.
+	auto choose = [](size_t n) { return n < (1 << 12) ? Backend::Type::CPU : n < (1 << 18) ? Backend::Type::OpenMP : Backend::Type::CUDA; };
 	{ SKEPU_TRACE_SCOPE("Backend by size");
 		skepu::Vector<float> small(1024, "Small", 1.0f);
 		scale.setBackend(BackendSpec(choose(small.size())));

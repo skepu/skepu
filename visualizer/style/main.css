@@ -1768,6 +1768,22 @@ html.dark-mode .logo.logo-dark { display: block; }
 .welcome-example-name {
   padding: 0.35em 0.75em;
   background: #0f4a8a;
+  color: inherit;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+}
+.welcome-example-name:hover { background: #0b3b6e; }
+/* The backends of an example slide out of its pill when the title is clicked */
+.welcome-example-backends {
+  display: inline-flex;
+  max-width: 0;
+  overflow: hidden;
+  transition: max-width 0.25s ease;
+}
+.welcome-example-pill.open .welcome-example-backends { max-width: 30em; }
+@media (prefers-reduced-motion: reduce) {
+  .welcome-example-backends { transition: none; }
 }
 .welcome-example-seg {
   background: #1a6abf;

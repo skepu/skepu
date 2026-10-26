@@ -308,9 +308,10 @@ describe('fusion with the parameters that the tracer records', () => {
     });
 });
 
-// examples/fusion_patterns: one region for each case, made by examples/synthetic_traces.py.
+// examples/fusion_patterns: one region for each case (a trace of the program on OpenCL: a host access of a container is seen
+// as the transfer that it makes, so a program on OpenMP has no such blocked fusions).
 describe('the fusion_patterns example', () => {
-    const { events } = parseTrace(readFileSync(join(ROOT, 'examples/fusion_patterns/trace_fusion_patterns_synthetic.json'), 'utf8'));
+    const { events } = parseTrace(readFileSync(join(ROOT, 'examples/fusion_patterns/trace_fusion_patterns_opencl.json'), 'utf8'));
     const r = fusionCandidates(events);
     const groups = r.groups.map(g => `${g.kind}: ${names(g).join(' + ')}`).sort();
 
@@ -331,7 +332,7 @@ describe('the fusion_patterns example', () => {
         const why = Object.fromEntries(r.blocked.map(b => [`${b.producer.label}>${b.consumer?.label}`, b.reason]));
         expect(why).toMatchObject({
             'double_x>prefix_sum': 'pattern', 'blur>threshold': 'pattern', 'plus_one>times_two': 'multiple-readers',
-            'omp_add>T': 'host-access', 'add_one>T': 'host-access', 'bump>lookup': 'proxy-access', 'shift_vec>scale_mat': 'size-mismatch',
+            'omp_add>T': 'host-access', 'add_one>T': 'host-access', 'bump>lookup': 'proxy-access',
             'jitter>noise': 'shared-prng', 'increment>combine': 'hazard', 'total_of>normalize_by': 'scalar-output', 'step_f>step_g': 'strided',
         });
     });

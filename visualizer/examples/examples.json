@@ -4,6 +4,7 @@
     "trace": {
       "openmp": "horner/trace_horner_openmp.json",
       "opencl": "horner/trace_horner_opencl.json",
+      "cuda": "horner/trace_horner_cuda.json",
       "mpi": [
         "horner/mpi/trace_horner_mpi.json",
         "horner/mpi/trace_horner_mpi.rank1.json",
@@ -14,6 +15,7 @@
     "snapshot_archive": {
       "openmp": "horner/snapshots_horner.zip",
       "opencl": "horner/snapshots_horner.zip",
+      "cuda": "horner/snapshots_horner_cuda.zip",
       "mpi": "horner/mpi/snapshots_horner_mpi.zip"
     },
     "cpp_files": {
@@ -30,6 +32,7 @@
     "trace": {
       "openmp": "cellular_automaton/trace_cellular_automaton_openmp.json",
       "opencl": "cellular_automaton/trace_cellular_automaton_opencl.json",
+      "cuda": "cellular_automaton/trace_cellular_automaton_cuda.json",
       "mpi": [
         "cellular_automaton/mpi/trace_cellular_automaton_mpi.json",
         "cellular_automaton/mpi/trace_cellular_automaton_mpi.rank1.json",
@@ -40,6 +43,7 @@
     "snapshot_archive": {
       "openmp": "cellular_automaton/snapshots_cellular_automaton.zip",
       "opencl": "cellular_automaton/snapshots_cellular_automaton.zip",
+      "cuda": "cellular_automaton/snapshots_cellular_automaton_cuda.zip",
       "mpi": "cellular_automaton/mpi/snapshots_cellular_automaton_mpi.zip"
     },
     "cpp_files": {
@@ -56,6 +60,7 @@
     "trace": {
       "openmp": "coulombic/trace_coulombic_openmp.json",
       "opencl": "coulombic/trace_coulombic_opencl.json",
+      "cuda": "coulombic/trace_coulombic_cuda.json",
       "mpi": [
         "coulombic/mpi/trace_coulombic_mpi.json",
         "coulombic/mpi/trace_coulombic_mpi.rank1.json",
@@ -77,6 +82,7 @@
     "trace": {
       "openmp": "dotproduct/trace_dotproduct_openmp.json",
       "opencl": "dotproduct/trace_dotproduct_opencl.json",
+      "cuda": "dotproduct/trace_dotproduct_cuda.json",
       "mpi": [
         "dotproduct/mpi/trace_dotproduct_mpi.json",
         "dotproduct/mpi/trace_dotproduct_mpi.rank1.json",
@@ -108,7 +114,7 @@
     ]
   },
   {
-    "title": "Lorenz Ensemble (RK4)",
+    "title": "Lorenz",
     "trace": {
       "openmp": "ode_lorenz/trace_ode_lorenz_openmp.json",
       "opencl": "ode_lorenz/trace_ode_lorenz_opencl.json",
@@ -129,7 +135,7 @@
     ]
   },
   {
-    "title": "Reaction-Diffusion (adaptive RK23)",
+    "title": "Reaction-Diffusion",
     "trace": {
       "openmp": "ode_fisher/trace_ode_fisher_openmp.json",
       "opencl": "ode_fisher/trace_ode_fisher_opencl.json",
@@ -150,7 +156,7 @@
     ]
   },
   {
-    "title": "Ozaki Scheme (GEMM from integer products)",
+    "title": "Ozaki GEMM",
     "trace": {
       "opencl": "ozaki_gemm/trace_ozaki_gemm_opencl.json"
     },
@@ -163,6 +169,7 @@
     "trace": {
       "openmp": "conjugate_gradient/trace_conjugate_gradient_openmp.json",
       "opencl": "conjugate_gradient/trace_conjugate_gradient_opencl.json",
+      "cuda": "conjugate_gradient/trace_conjugate_gradient_cuda.json",
       "mpi": [
         "conjugate_gradient/mpi/trace_conjugate_gradient_mpi.json",
         "conjugate_gradient/mpi/trace_conjugate_gradient_mpi.rank1.json",
@@ -175,7 +182,7 @@
     ]
   },
   {
-    "title": "SkePU-BLAS Tour (every routine, and sparse matrices)",
+    "title": "BLAS Tour",
     "trace": {
       "openmp": "blas_tour/trace_blas_tour_openmp.json"
     },
@@ -188,6 +195,7 @@
     "trace": {
       "openmp": "miller_rabin/trace_miller_rabin_openmp.json",
       "opencl": "miller_rabin/trace_miller_rabin_opencl.json",
+      "cuda": "miller_rabin/trace_miller_rabin_cuda.json",
       "mpi": [
         "miller_rabin/mpi/trace_miller_rabin_mpi.json",
         "miller_rabin/mpi/trace_miller_rabin_mpi.rank1.json",
@@ -200,10 +208,11 @@
     ]
   },
   {
-    "title": "Perlin Noise (2D, with snapshots)",
+    "title": "Perlin 2D",
     "trace": {
       "openmp": "perlin/trace_perlin_openmp.json",
       "opencl": "perlin/trace_perlin_opencl.json",
+      "cuda": "perlin/trace_perlin_cuda.json",
       "mpi": [
         "perlin/mpi/trace_perlin_mpi.json",
         "perlin/mpi/trace_perlin_mpi.rank1.json",
@@ -214,6 +223,7 @@
     "snapshot_archive": {
       "openmp": "perlin/snapshots_perlin.zip",
       "opencl": "perlin/snapshots_perlin.zip",
+      "cuda": "perlin/snapshots_perlin_cuda.zip",
       "mpi": "perlin/mpi/snapshots_perlin_mpi.zip"
     },
     "cpp_files": [
@@ -221,10 +231,11 @@
     ]
   },
   {
-    "title": "Perlin Noise (3D, 32 frames)",
+    "title": "Perlin 3D",
     "trace": {
       "openmp": "perlin_3d/trace_perlin_3d_openmp.json",
       "opencl": "perlin_3d/trace_perlin_3d_opencl.json",
+      "cuda": "perlin_3d/trace_perlin_3d_cuda.json",
       "mpi": [
         "perlin_3d/mpi/trace_perlin_3d_mpi.json",
         "perlin_3d/mpi/trace_perlin_3d_mpi.rank1.json",
@@ -237,7 +248,7 @@
     ]
   },
   {
-    "title": "Particle Swarm Optimization (Rastrigin, 50 iterations)",
+    "title": "Particle Swarm",
     "trace": {
       "openmp": "pso/trace_pso_openmp.json",
       "opencl": "pso/trace_pso_opencl.json",
@@ -253,7 +264,7 @@
     ]
   },
   {
-    "title": "DNN CIFAR-10 (small CNN)",
+    "title": "DNN CIFAR-10",
     "trace": {
       "openmp": "dnn_cifar10/trace_dnn_cifar10_openmp.json",
       "opencl": "dnn_cifar10/trace_dnn_cifar10_opencl.json"
@@ -263,7 +274,7 @@
     ]
   },
   {
-    "title": "DNN MNIST (small CNN, one epoch on 480 samples)",
+    "title": "DNN MNIST",
     "trace": {
       "opencl": "dnn_mnist10/trace_dnn_mnist10_opencl.json"
     },
@@ -272,7 +283,7 @@
     ]
   },
   {
-    "title": "DNN MNIST (SkePY, Python)",
+    "title": "DNN MNIST (Py)",
     "language": "python",
     "trace": {
       "opencl": "dnn_mnist10_skepy/trace_dnn_mnist10_opencl.json"
@@ -282,7 +293,7 @@
     ]
   },
   {
-    "title": "Cellular Automaton (SkePY, Python)",
+    "title": "Cellular Automaton (Py)",
     "language": "python",
     "trace": {
       "openmp": "cellular_automaton_skepy/trace_cellular_automaton_openmp.json",
@@ -294,7 +305,7 @@
     ]
   },
   {
-    "title": "Backend switching",
+    "title": "Backend Switching",
     "trace": {
       "mixed": "backend_switching/trace_backend_switching_mixed.json"
     },
@@ -303,9 +314,11 @@
     ]
   },
   {
-    "title": "Fusion patterns",
+    "title": "Fusion",
     "trace": {
-      "synthetic": "fusion_patterns/trace_fusion_patterns_synthetic.json"
+      "openmp": "fusion_patterns/trace_fusion_patterns_openmp.json",
+      "opencl": "fusion_patterns/trace_fusion_patterns_opencl.json",
+      "cuda": "fusion_patterns/trace_fusion_patterns_cuda.json"
     },
     "cpp_files": [
       "fusion_patterns/fusion_patterns.cpp"

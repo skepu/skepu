@@ -178,6 +178,7 @@ TRACE_DIR    ?= $(TRACE_BASE)$(MPI_SUFFIX)
 # All SkePU example programs (unless the Makefile that includes this one has set PROGS; used for 'make all-[parallel|sequential]' and 'make clean').
 
 ifndef PROGS
+PROGS += backend_switching
 PROGS += blas_tour
 PROGS += cellular_automaton
 PROGS += cma
@@ -186,6 +187,7 @@ PROGS += conjugate_gradient_sparse
 PROGS += coulombic
 PROGS += dotproduct
 PROGS += edgedetect
+PROGS += fusion_patterns
 PROGS += heat_diffusion # no red-black update mode or mirror mode in CUDA
 PROGS += horner
 PROGS += image_manip

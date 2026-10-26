@@ -1,0 +1,21 @@
+{"data":[
+{"elwise_inputs":[],"end":235503,"file":".//..//skepu-headers/src/skepu3/backend/impl/environment.inl","label":"CUDA initialization","line":106,"outputs":[],"proxy_inputs":[],"scalar_inputs":[],"start":0,"type":"external"},
+{"elwise_inputs":[],"end":235551,"file":".//..//skepu-headers/src/skepu3/backend/impl/environment.inl","label":"CUDA bandwidth measurement","line":114,"outputs":[],"proxy_inputs":[],"scalar_inputs":[],"start":235505,"type":"external"},
+{"file":"/home/auger33/Research/skepu-alpha-2/examples/coulombic.cpp","label":"atoms","line":121,"object_id":1004,"time":235557,"type":"allocation"},
+{"file":"/home/auger33/Research/skepu-alpha-2/examples/coulombic.cpp","label":"energy_out","line":122,"object_id":1005,"time":235576,"type":"allocation"},
+{"file":"/home/auger33/Research/skepu-alpha-2/examples/coulombic.cpp","label":"initatoms","line":83,"region_depth":1,"time":235576,"type":"region"},
+{"label":"PRNG stream","line":139,"object_id":1007,"region":"initatoms","time":235577,"type":"allocation"},
+{"label":"[Internal PRNG]","line":228,"object_id":1010,"region":"initatoms","time":235640,"type":"allocation"},
+{"backend":"CUDA","direction":"host-to-device","elements":2048,"end":235657,"label":"[Internal PRNG]","line":611,"object_id":1010,"region":"initatoms","start":235648,"time":235657,"type":"transfer"},
+{"label":"[Internal PRNG]","line":259,"object_id":1010,"region":"initatoms","time":235833,"type":"deallocation"},
+{"backend":"CUDA","devices":1,"elements":[2048],"elwise_inputs":[],"end":235839,"file":"/home/auger33/Research/skepu-alpha-2/examples/coulombic.cpp","label":"init","line":88,"object_id":1006,"outputs":[1004],"pattern":"Map","prng":1007,"proxy_inputs":[],"region":"initatoms","scalar_inputs":[],"start":235601,"type":"skeleton_call"},
+{"file":"/home/auger33/Research/skepu-alpha-2/examples/coulombic.cpp","label":"coulombic","line":97,"region_depth":1,"time":235856,"type":"region"},
+{"file":"/home/auger33/Research/skepu-alpha-2/examples/coulombic.cpp","label":"grid_in","line":104,"object_id":1013,"region":"coulombic","time":235856,"type":"allocation"},
+{"backend":"CUDA","direction":"host-to-device","elements":100,"end":235869,"label":"grid_in","line":611,"object_id":1013,"region":"coulombic","start":235866,"time":235869,"type":"transfer"},
+{"backend":"CUDA","devices":1,"elements":[100],"elwise_inputs":[1013],"end":235882,"file":"/home/auger33/Research/skepu-alpha-2/examples/coulombic.cpp","label":"columbicPotential","line":106,"object_id":1003,"outputs":[1005],"pattern":"Map","proxy_inputs":[1004],"region":"coulombic","scalar_inputs":[],"start":235859,"type":"skeleton_call"},
+{"label":"grid_in","line":287,"object_id":1013,"region":"coulombic","time":236404,"type":"deallocation"},
+{"backend":"CUDA","direction":"device-to-host","elements":100,"end":236417,"label":"energy_out","line":745,"object_id":1005,"start":236408,"time":236417,"type":"transfer"},
+{"elwise_inputs":[],"end":236444,"file":".//..//skepu-headers/src/skepu-lib/io.hpp","label":"I/O","line":54,"outputs":[],"proxy_inputs":[1005],"scalar_inputs":[],"start":236408,"type":"external"},
+{"label":"energy_out","line":287,"object_id":1005,"time":236447,"type":"deallocation"},
+{"label":"atoms","line":259,"object_id":1004,"time":236485,"type":"deallocation"}
+],"header":{"files":{"/home/auger33/Research/skepu-alpha-2/examples/coulombic.cpp":"4455f52cef3b09d4f5ef2d2142354eca0bc1d0bfea82b8afde7da88f80915963"},"instances":{"1003":{"instance":{"end_line":95,"file":"/home/auger33/Research/skepu-alpha-2/examples/coulombic.cpp","line":95},"label":"columbicPotential","user_functions":[{"end_line":68,"file":"/home/auger33/Research/skepu-alpha-2/examples/coulombic.cpp","kind":"function","line":48,"name":"coulombPotential_f"}]},"1006":{"instance":{"end_line":85,"file":"/home/auger33/Research/skepu-alpha-2/examples/coulombic.cpp","line":85},"label":"init","user_functions":[{"end_line":80,"file":"/home/auger33/Research/skepu-alpha-2/examples/coulombic.cpp","kind":"function","line":72,"name":"random_atom"}]}}}}

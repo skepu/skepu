@@ -26,7 +26,7 @@ import { LANGUAGE_LABELS, exampleLanguages, examplesOfLanguage, initialLanguage,
 
 const BACKEND_NAMES = {
     cpu: 'CPU', openmp: 'OpenMP', opencl: 'OpenCL', cuda: 'CUDA',
-    mixed: 'CPU, OpenMP, OpenCL', synthetic: 'Synthetic', mpi: 'MPI',
+    mixed: 'CPU, OpenMP, OpenCL, CUDA', mpi: 'MPI',
 };
 
 /** The backends of an example in the order that they are shown: the MPI backend (all of the processes at once) last. */
@@ -127,7 +127,8 @@ function _buildExamplesMenu(examples) {
 
 /**
  * Populate the welcome-panel examples: a segmented control for the language of the programs (C++ or Python, if there are examples
- * of both; the one that was chosen last is remembered), and one multi-segment pill [title | backend | backend ...] for each example of it.
+ * of both; the one that was chosen last is remembered), and one pill for each example of it: at first only its title, which slides out
+ * the backends [title | backend | backend ...] when it is clicked (and slides in those of the pill that was open).
  */
 function _buildWelcomeExamples(examples) {
     var list    = document.getElementById('welcome-examples-list');
@@ -150,10 +151,24 @@ function _buildWelcomeExamples(examples) {
             var pill = document.createElement('div');
             pill.className = 'welcome-example-pill';
 
-            var name = document.createElement('span');
+            var name = document.createElement('button');
             name.className   = 'welcome-example-name';
             name.textContent = ex.title;
+            name.setAttribute('aria-expanded', 'false');
+            name.onclick = function() {
+                var open = !pill.classList.contains('open');
+                list.querySelectorAll('.welcome-example-pill.open').forEach(function(other) {
+                    other.classList.remove('open');
+                    other.firstChild.setAttribute('aria-expanded', 'false');
+                });
+                pill.classList.toggle('open', open);
+                name.setAttribute('aria-expanded', open ? 'true' : 'false');
+            };
             pill.appendChild(name);
+
+            var slide = document.createElement('span');
+            slide.className = 'welcome-example-backends';
+            pill.appendChild(slide);
 
             backends.forEach(function(b) {
                 var seg = document.createElement('button');
@@ -168,7 +183,7 @@ function _buildWelcomeExamples(examples) {
                     seg.appendChild(star);
                 }
                 seg.onclick     = function() { window.loadExample(idx, b); };
-                pill.appendChild(seg);
+                slide.appendChild(seg);
             });
             list.appendChild(pill);
         });

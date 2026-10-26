@@ -2,6 +2,7 @@ project(skepu-examples LANGUAGES CXX)
 
 # The example programs. The same set as PROGS in the Makefile; keep them in step.
 set(_skepu_examples
+	backend_switching
 	blas_tour
 	cellular_automaton
 	cma
@@ -10,6 +11,7 @@ set(_skepu_examples
 	coulombic
 	dotproduct
 	edgedetect
+	fusion_patterns
 	heat_diffusion
 	horner
 	image_manip

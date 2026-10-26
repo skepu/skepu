@@ -1,12 +1,59 @@
-// Synthetic example for SkeVU: calls that can be fused (skepu::Map(f) >> skepu::Map(g), a || b, see
+// Example for SkeVU: calls that can be fused (skepu::Map(f) >> skepu::Map(g), a || b, see
 // examples/fusion.cpp), and calls that look as if they could but cannot. Every block is one region; turn on
 // Advanced > Fusion analysis to see the groups, and the reason why the other calls are not in one.
-// (Illustrative: the trace was made by examples/synthetic_traces.py, this program has not been run.)
+// (The program computes nothing of use: its calls are made to show the patterns.)
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
-int main()
+// The user functions that cannot be lambdas: pools, stencils, random access and random numbers.
+float max_pooling_uf(skepu::Pool4D<float> p)
 {
+	float best = p(0, 0, 0, 0);
+	for (int i = 0; i < p.si; ++i)
+		for (int j = 0; j < p.sj; ++j)
+			for (int k = 0; k < p.sk; ++k)
+				for (int l = 0; l < p.sl; ++l)
+					best = p(i, j, k, l) > best ? p(i, j, k, l) : best;
+	return best;
+}
+
+float laplace_uf(skepu::Region2D<float> r)
+{
+	return r(-1, 0) + r(1, 0) + r(0, -1) + r(0, 1) - 4.0f * r(0, 0);
+}
+
+float blur_uf(skepu::Region2D<float> r)
+{
+	float sum = 0;
+	for (int i = -1; i <= 1; ++i)
+		for (int j = -1; j <= 1; ++j)
+			sum += r(i, j);
+	return sum / 9.0f;
+}
+
+float lookup_uf(float i, skepu::Vec<float> table)
+{
+	return table[(size_t)i % table.size];
+}
+
+float jitter_uf(skepu::Random<1> &r, float a)
+{
+	return a + r.getNormalized();
+}
+
+float noise_uf(skepu::Random<1> &r, float a)
+{
+	return a * (1.0f + 0.1f * r.getNormalized());
+}
+
+int main(int argc, char *argv[])
+{
+	if (argc > 1)
+	{
+		auto spec = skepu::BackendSpec{argv[1]};
+		skepu::setGlobalBackendSpec(spec);
+	}
+
 	{ SKEPU_TRACE_SCOPE("Fusible");
 		// Three Maps in a row, each reading only the result of the one before.
 		//   fused:  auto f = scale >> shift >> clamp;  f(y, x);
@@ -18,7 +65,7 @@ int main()
 			skepu::Vector<float> y(n, "Y");
 			auto scale = skepu::Map([](float a) { return 2.0f * a; });
 			auto shift = skepu::Map([](float a) { return a + 1.0f; });
-			auto clamp = skepu::Map([](float a) { return fminf(a, 10.0f); });
+			auto clamp = skepu::Map([](float a) { return a < 10.0f ? a : 10.0f; });
 			scale(t1, x);
 			shift(t2, t1);
 			clamp(y, t2);
@@ -30,11 +77,10 @@ int main()
 			size_t n = 73728;
 			skepu::Vector<float> x(n, "X");
 			skepu::Vector<float> t(n, "Squares");
-			skepu::Scalar<float> sum("Sum");
 			auto square_sum = skepu::Map([](float a) { return a * a; });
 			auto add_all = skepu::Reduce([](float a, float b) { return a + b; });
 			square_sum(t, x);
-			add_all(sum, t);
+			skepu::Scalar<float> sum = add_all(t);
 		}
 
 		// Three Maps over the same elements that do not depend on each other: one launch, X read once.
@@ -75,12 +121,10 @@ int main()
 		{ SKEPU_TRACE_SCOPE("Reduce and Reduce");
 			size_t n = 86016;
 			skepu::Vector<float> x(n, "X");
-			skepu::Scalar<float> hi("Max");
-			skepu::Scalar<float> lo("Min");
-			auto max_of = skepu::Reduce([](float a, float b) { return fmaxf(a, b); });
-			auto min_of = skepu::Reduce([](float a, float b) { return fminf(a, b); });
-			max_of(hi, x);
-			min_of(lo, x);
+			auto max_of = skepu::Reduce([](float a, float b) { return a > b ? a : b; });
+			auto min_of = skepu::Reduce([](float a, float b) { return a < b ? a : b; });
+			skepu::Scalar<float> hi = max_of(x);
+			skepu::Scalar<float> lo = min_of(x);
 		}
 
 		// A Map (ReLU) into a MapPool with windows that do not overlap (stride = window): no element is
@@ -90,9 +134,10 @@ int main()
 			skepu::Tensor4<float> x(8, 44, 44, 8, "X");
 			skepu::Tensor4<float> relu_out(8, 44, 44, 8, "Activations");
 			skepu::Tensor4<float> pooled(8, 22, 22, 8, "Pooled");
-			auto relu = skepu::Map([](float a) { return fmaxf(a, 0.0f); });
-			auto max_pool = skepu::MapPool(max_pooling_uf);   // pool size and stride set below
-			max_pool.setPoolSizeAndStride(1, 2, 2, 1);
+			auto relu = skepu::Map([](float a) { return a > 0.0f ? a : 0.0f; });
+			auto max_pool = skepu::MapPool(max_pooling_uf);
+			max_pool.setPoolSize(1, 2, 2, 1);
+			max_pool.setStride(1, 2, 2, 1);
 			relu(relu_out, x);
 			max_pool(pooled, relu_out);
 		}
@@ -107,6 +152,7 @@ int main()
 			auto brighten = skepu::Map([](float a) { return 1.2f * a + 0.1f; });
 			auto laplace = skepu::MapOverlap(laplace_uf);
 			laplace.setOverlap(1, 1);   // 3x3 stencil
+			laplace.setEdgeMode(skepu::Edge::Duplicate);
 			brighten(bright, image);
 			laplace(edges, bright);
 		}
@@ -120,9 +166,9 @@ int main()
 			skepu::Vector<float> b(160, "B");
 			skepu::Matrix<float> dist(160, 512, "Distances");
 			auto normalize = skepu::Map([](float a) { return a / 255.0f; });
-			auto distance = skepu::MapPairs<1, 1>([](float a, float b) { return fabsf(a - b); });
+			auto distance = skepu::MapPairs<1, 1>([](float a, float b) { return a > b ? a - b : b - a; });
 			normalize(a, raw_a);
-			distance(dist, a, b);
+			distance(dist, b, a);
 		}
 
 		// The matrix of a MapPairs, scaled element by element: the matrix is never stored.
@@ -135,7 +181,7 @@ int main()
 			skepu::Matrix<float> recip(132, 512, "Reciprocals");
 			auto pair_sum = skepu::MapPairs<1, 1>([](float a, float b) { return a + b; });
 			auto reciprocal = skepu::Map([](float a) { return 1.0f / a; });
-			pair_sum(sums, u, v);
+			pair_sum(sums, v, u);
 			reciprocal(recip, sums);
 		}
 
@@ -205,22 +251,9 @@ int main()
 			skepu::Vector<float> t(n, "T");
 			skepu::Vector<float> y(n, "Y");
 			auto bump = skepu::Map([](float a) { return a + 1.0f; });
-			auto lookup = skepu::Map([](float i, skepu::Vec<float> table) { return table[(size_t)i % table.size]; });
+			auto lookup = skepu::Map(lookup_uf);
 			bump(t, x);
 			lookup(y, w, t);
-		}
-
-		// The same data, read as a vector by the first call and as a matrix by the second:
-		// the calls do not run over the same elements.
-		{ SKEPU_TRACE_SCOPE("Other shapes");
-			size_t n = 126976;
-			skepu::Vector<float> x(n, "X");
-			skepu::Vector<float> t(n, "T");
-			skepu::Vector<float> y(n, "Y");
-			auto shift_vec = skepu::Map([](float a) { return a + 1.0f; });
-			auto scale_mat = skepu::Map([](float a) { return 2.0f * a; });
-			shift_vec(t, x);
-			scale_mat(y_matrix, t_matrix);   // the same memory, as a 256 x 496 matrix
 		}
 
 		// The second Map has a stride: it reads every other element, not one to one.
@@ -244,8 +277,8 @@ int main()
 			skepu::Vector<float> y(n, "Y");
 			auto omp_add = skepu::Map([](float a) { return a + 1.0f; });
 			auto ocl_scale = skepu::Map([](float a) { return 2.0f * a; });
-			f.setBackend(skepu::BackendSpec(skepu::Backend::Type::OpenMP));
-			g.setBackend(skepu::BackendSpec(skepu::Backend::Type::OpenCL));
+			omp_add.setBackend(skepu::BackendSpec(skepu::Backend::Type::OpenMP));
+			ocl_scale.setBackend(skepu::BackendSpec(skepu::Backend::Type::OpenCL));
 			omp_add(t, x);
 			ocl_scale(y, t);
 		}
@@ -256,11 +289,13 @@ int main()
 			skepu::Vector<float> x(n, "X");
 			skepu::Vector<float> t(n, "T");
 			skepu::Vector<float> y(n, "Y");
-			skepu::Random<> stream;   // shared by the calls below
-			auto jitter = skepu::Map([](float a, skepu::Random<1> &r) { return a + r.f(); });
-			auto noise = skepu::Map([](float a, skepu::Random<1> &r) { return a * (1.0f + 0.1f * r.f()); });
-			jitter(t, x, stream);
-			noise(y, t, stream);
+			skepu::PRNG stream;   // shared by the calls below
+			auto jitter = skepu::Map<1>(jitter_uf);
+			auto noise = skepu::Map<1>(noise_uf);
+			jitter.setPRNG(stream);
+			noise.setPRNG(stream);
+			jitter(t, x);
+			noise(y, t);
 		}
 
 		// Between f and combine, prefix overwrites x, which f reads, and produces what combine reads.
@@ -298,10 +333,9 @@ int main()
 			size_t n = 151552;
 			skepu::Vector<float> x(n, "X");
 			skepu::Vector<float> y(n, "Normalized");
-			skepu::Scalar<float> sum("Sum");
 			auto total_of = skepu::Reduce([](float a, float b) { return a + b; });
 			auto normalize_by = skepu::Map<1>([](float a, float total) { return a / total; });
-			total_of(sum, x);
+			skepu::Scalar<float> sum = total_of(x);
 			normalize_by(y, x, sum);
 		}
 
