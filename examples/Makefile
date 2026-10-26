@@ -69,11 +69,10 @@ SEQ_CXX = clang++
 # (Xcode or the Command Line Tools). Set SKEPU_TOOL_USER_FLAGS in Makefile.in to use other paths.
 ifeq ($(shell uname -s),Darwin)
 SKEPU_SDK          := $(shell xcrun --show-sdk-path 2>/dev/null)
-SKEPU_CLANG_RESDIR := $(shell xcrun clang++ -print-resource-dir 2>/dev/null)
 SKEPU_DEVDIR       := $(shell xcode-select -p 2>/dev/null)
-ifneq ($(and $(SKEPU_SDK),$(SKEPU_CLANG_RESDIR)),)
+ifneq ($(SKEPU_SDK),)
 SKEPU_TOOL_USER_FLAGS ?= -I /usr/local/include \
-	-I $(SKEPU_SDK)/usr/include/c++/v1 -I $(SKEPU_CLANG_RESDIR)/include \
+	-I $(SKEPU_SDK)/usr/include/c++/v1 \
 	-I $(SKEPU_SDK)/usr/include -I $(SKEPU_DEVDIR)/usr/include
 endif
 endif
@@ -131,9 +130,6 @@ endif
 # Derived paths and option sets.
 # ------------------------------------------------------------------- #
 
-# Path to Clang source directory (repository root)
-CLANG_INCLUDE_PATH = $(SKEPU_SRC_PATH)/llvm/clang/lib/Headers/
-
 # Default path to the SkePU sources
 SKEPU_INCLUDE_PATH = $(SKEPU_SRC_PATH)/skepu-headers/src/
 
@@ -142,6 +138,11 @@ LLVM_BUILD_PATH = $(SKEPU_SRC_PATH)/$(LLVM_BUILD_REL_PATH)
 
 # Location of SkePU precompiler binary
 SKEPU_TOOL_PATH = $(LLVM_BUILD_PATH)/llvm/bin/skepu-tool
+
+# The headers of Clang that the precompiler needs: the resource directory of the LLVM build (not llvm/clang/lib/Headers, which lacks the headers that
+# Clang generates). It is the only directory of Clang headers that is passed; the version is that of LLVM in this repository.
+CLANG_VERSION_MAJOR = $(shell sed -n 's/.*set(LLVM_VERSION_MAJOR \([0-9]*\)).*/\1/p' $(SKEPU_SRC_PATH)/llvm/cmake/Modules/LLVMVersion.cmake)
+CLANG_INCLUDE_PATH = $(LLVM_BUILD_PATH)/llvm/lib/clang/$(CLANG_VERSION_MAJOR)/include
 
 # What every program depends on besides its own source: the SkePU headers, the precompiler binary and
 # the build configuration. Deliberately coarse (no per-program dependency tracking): a change to any

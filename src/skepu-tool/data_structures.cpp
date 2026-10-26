@@ -1210,11 +1210,15 @@ std::string Skeleton::getDetails() const
 	std::ostringstream oss;
 	oss << this->name << "(";
 	
+	bool first = true;
 	for(UserFunction* param : this->parameters)
 	{
-		if (param != this->parameters.front())
-            oss << ", ";
-        oss << param->resolvedReturnTypeName;
+		if (!first)
+			oss << ", ";
+		first = false;
+		
+		// (a parameter that was not resolved is a null pointer: the language server asks for the details of whatever the user is typing)
+		oss << (param ? param->resolvedReturnTypeName : "<null>");
 	}
 
 	oss << ")";

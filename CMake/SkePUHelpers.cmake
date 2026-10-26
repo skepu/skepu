@@ -8,16 +8,13 @@ if(APPLE)
 		OUTPUT_VARIABLE _skepu_sdk OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 	execute_process(COMMAND xcode-select -p
 		OUTPUT_VARIABLE _skepu_devdir OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-	execute_process(COMMAND xcrun clang++ -print-resource-dir
-		OUTPUT_VARIABLE _skepu_clang_resdir OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-	if(_skepu_sdk AND _skepu_clang_resdir)
+	if(_skepu_sdk)
 		list(APPEND SKEPU_TOOL_SYSTEM_INCLUDE_FLAGS
 			-I ${_skepu_sdk}/usr/include/c++/v1
-			-I ${_skepu_clang_resdir}/include
 			-I ${_skepu_sdk}/usr/include
 			-I ${_skepu_devdir}/usr/include)
 	else()
-		message(WARNING "SkePU: could not determine the macOS SDK or clang resource directory "
+		message(WARNING "SkePU: could not determine the macOS SDK "
 			"(xcrun failed); skepu-tool may not find the system headers")
 	endif()
 endif()

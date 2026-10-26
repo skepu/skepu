@@ -368,47 +368,58 @@ bool SkepuMatcher::runMatcher()
 {
 	std::filesystem::path p(File.str());
 
-	// The directory of SkePU is found from the location of this program (clangd, in the build directory of SkePU)
+	// The headers are found from the location of this program (clangd), by looking upward for them. Two layouts:
+	// a build directory of SkePU (skepu-headers/src/skepu in the repository, and the resource directory of Clang, lib/clang/<version>/include, in the LLVM build)
+	// and a package made by packaging/make-package.sh (include/skepu and lib/SkePU/clang-headers). The Clang headers are the resource directory, not
+	// llvm/clang/lib/Headers, which lacks the headers that Clang generates.
 	static int anchor;
 	const std::string executable = llvm::sys::fs::getMainExecutable(nullptr, &anchor);
 	if (executable.empty())
 		return false;
-	std::filesystem::path skepuDir(executable);
-	while (!skepuDir.empty())
+
+	std::string headerPath, skepuSrcPath;
+	for (std::filesystem::path dir = std::filesystem::path(executable).parent_path(); !dir.empty(); )
 	{
-		// (a build directory of SkePU also has directories skepu-headers and llvm, so look for what is needed from them)
-		std::filesystem::path skepu_headers = skepuDir / "skepu-headers" / "src" / "skepu";
-		std::filesystem::path llvm_headers = skepuDir / "llvm" / "clang" / "lib" / "Headers";
+		std::error_code ec;
+		if (skepuSrcPath.empty())
+		{
+			if (std::filesystem::is_regular_file(dir / "skepu-headers" / "src" / "skepu", ec))
+				skepuSrcPath = (dir / "skepu-headers" / "src").string();
+			else if (std::filesystem::is_regular_file(dir / "include" / "skepu", ec))
+				skepuSrcPath = (dir / "include").string();
+		}
+		if (headerPath.empty())
+		{
+			if (std::filesystem::is_directory(dir / "lib" / "SkePU" / "clang-headers", ec))
+				headerPath = (dir / "lib" / "SkePU" / "clang-headers").string();
+			else if (std::filesystem::is_directory(dir / "lib" / "clang", ec))
+				for (const auto &version : std::filesystem::directory_iterator(dir / "lib" / "clang", ec))
+					if (std::filesystem::is_directory(version.path() / "include", ec))
+					{
+						headerPath = (version.path() / "include").string();
+						break;
+					}
+		}
 
-		if (std::filesystem::is_regular_file(skepu_headers) &&
-			std::filesystem::is_directory(llvm_headers))
-				break;
-		
-		std::filesystem::path parent = skepuDir.parent_path();
-
-		if (skepuDir == parent)
-			return false;
-
-		skepuDir = parent;
+		std::filesystem::path parent = dir.parent_path();
+		if (parent == dir)
+			break;
+		dir = parent;
 	}
-
-	std::string headerPath = skepuDir.string() + "/llvm/clang/lib/Headers";// tmpPathSkepuEx + "/../llvm/clang/lib/Headers";
-	std::string skepuSrcPath = skepuDir.string() + "/skepu-headers/src"; //tmpPathSkepuEx + "/../skepu-headers/src";
-  
+	if (headerPath.empty() || skepuSrcPath.empty())
+		return false;
 
 	std::string filePath = p.parent_path().string() +"/"+ p.filename().string();
 	std::string seperator = "--";
 	std::string cXX = "-std=c++20";
 	std::string expansion = "-Wno-expansion-to-defined";
-	std::string include = "-I ";
 	std::string argIncludeSkepu = "-include" + skepuSrcPath + "/skepu";
 	std::string argSkepu ="-I" + skepuSrcPath;
 		
 	std::vector<std::string> flags = {
 		"-std=c++20",
 		"-Wno-expansion-to-defined",
-		"-I ",
-		headerPath,
+		"-I" + headerPath, // (Clang's own headers: stdarg.h and others of the system headers need them, and a program that is not next to a lib/clang does not find them itself)
 		argIncludeSkepu,
 		argSkepu
 	};

@@ -94,11 +94,11 @@ if(SKEPU_LSP)
 		skepu_link(${CMAKE_CURRENT_LIST_DIR}/llvm/clang-tools-extra/clangd/${file} ../../../src/skepu-lsp/${file})
 	endforeach()
 	set(SKEPU_LLVM_PROJECTS "clang|clang-tools-extra")
-	set(SKEPU_LLVM_TARGETS skepu-tool clangd)
+	set(SKEPU_LLVM_TARGETS skepu-tool clangd clang-resource-headers)
 	set(SKEPU_LLVM_BYPRODUCTS llvm/bin/skepu-tool llvm/bin/clangd)
 else()
 	set(SKEPU_LLVM_PROJECTS clang)
-	set(SKEPU_LLVM_TARGETS skepu-tool)
+	set(SKEPU_LLVM_TARGETS skepu-tool clang-resource-headers)
 	set(SKEPU_LLVM_BYPRODUCTS llvm/bin/skepu-tool)
 endif()
 
@@ -197,12 +197,21 @@ install(TARGETS clang-headers
 install(EXPORT clang-headersTargets
 	DESTINATION lib/cmake/SkePU
 	NAMESPACE SkePU::)
-# To make sure that -I<path_to_clang-headers> is added when linking with
-# SkePU::clang-headers
+# The headers that the precompiler needs from Clang are its resource directory (lib/clang/<major>/include in the LLVM build, made by the target
+# clang-resource-headers), not llvm/clang/lib/Headers: that is the source directory, which lacks the headers that Clang generates when it is built
+# (arm_neon.h, arm_sve.h, riscv_vector.h, ...). A skepu-tool that is not next to a lib/clang finds no headers of its own (in a package, an installation),
+# so they are passed explicitly, and they are the only Clang headers that are passed: those of another Clang (the one of the system) are not for this one.
+file(STRINGS ${CMAKE_CURRENT_LIST_DIR}/llvm/cmake/Modules/LLVMVersion.cmake _skepu_llvm_major_line
+	REGEX "set\\(LLVM_VERSION_MAJOR [0-9]+\\)")
+string(REGEX MATCH "[0-9]+" SKEPU_LLVM_VERSION_MAJOR "${_skepu_llvm_major_line}")
+if(NOT SKEPU_LLVM_VERSION_MAJOR)
+	message(FATAL_ERROR "[SkePU] Could not find the version of LLVM in llvm/cmake/Modules/LLVMVersion.cmake")
+endif()
+set(SKEPU_CLANG_RESOURCE_HEADERS ${SKEPU_TOOL_LLVM_DIR}/lib/clang/${SKEPU_LLVM_VERSION_MAJOR}/include)
 target_include_directories(clang-headers INTERFACE
-	$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/llvm/clang/lib/Headers>
+	$<BUILD_INTERFACE:${SKEPU_CLANG_RESOURCE_HEADERS}>
 	$<INSTALL_INTERFACE:lib/SkePU/clang-headers>)
-install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/llvm/clang/lib/Headers/
+install(DIRECTORY ${SKEPU_CLANG_RESOURCE_HEADERS}/
 	DESTINATION lib/SkePU/clang-headers/)
 # TODO: We should probably install the clang licence in that directory.
 

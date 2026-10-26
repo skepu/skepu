@@ -38,8 +38,9 @@ SkePU files to clangd and call them) and adds `clang-tools-extra` to the LLVM pr
 `build/llvm/bin/clangd`.
 
 The language server finds the headers of SkePU from the location of its own executable, by looking
-upward for `skepu-headers/src/skepu` and `llvm/clang/lib/Headers`. It must therefore stay where it
-is built (in the SkePU tree); to use it from elsewhere, point the editor at it there. If it is
+upward for `skepu-headers/src/skepu` and the resource directory of Clang (`lib/clang/<version>/include`
+in the LLVM build), or, in a package, `include/skepu` and `lib/SkePU/clang-headers`. It must therefore stay
+where it is built or in its package; to use it from elsewhere, point the editor at it there. If it is
 started from somewhere else, everything of `clangd` works but the SkePU-specific parts are empty.
 
 #### Telling the editor about it {#lsp-editor .unnumbered}

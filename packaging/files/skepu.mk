@@ -34,11 +34,10 @@ CLANG_HEADERS = $(SKEPU_ROOT)/lib/SkePU/clang-headers
 # skepu-tool does not find the system headers of a Mac by itself: they are those of the active toolchain
 ifeq ($(shell uname -s),Darwin)
 SKEPU_SDK          := $(shell xcrun --show-sdk-path 2>/dev/null)
-SKEPU_CLANG_RESDIR := $(shell xcrun clang++ -print-resource-dir 2>/dev/null)
 SKEPU_DEVDIR       := $(shell xcode-select -p 2>/dev/null)
-ifneq ($(and $(SKEPU_SDK),$(SKEPU_CLANG_RESDIR)),)
+ifneq ($(SKEPU_SDK),)
 SKEPU_TOOL_USER_FLAGS ?= -I /usr/local/include \
-	-I $(SKEPU_SDK)/usr/include/c++/v1 -I $(SKEPU_CLANG_RESDIR)/include \
+	-I $(SKEPU_SDK)/usr/include/c++/v1 \
 	-I $(SKEPU_SDK)/usr/include -I $(SKEPU_DEVDIR)/usr/include
 OPENCL_LIBS ?= -framework OpenCL
 endif

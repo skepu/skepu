@@ -152,8 +152,12 @@ required arguments are as follows:
 - the language standard used for the program, e.g. `-std=c++17` as in
   the examples;
 
-- include path to Clang's compiler-specific C++ headers,
-  `-I <path_to_skepu>/llvm/clang/lib/Headers/`;
+- include path to Clang's compiler-specific C++ headers: the resource directory of the
+  Clang that built `skepu-tool`, `-I <path_to_skepu>/build/llvm/lib/clang/<version>/include`
+  (`lib/SkePU/clang-headers` in an installation or a package). It is the only directory of Clang
+  headers to pass: not `llvm/clang/lib/Headers` (the source directory lacks the headers that Clang
+  generates, such as `arm_neon.h`), and not the headers of another Clang, such as that of the
+  system;
 
 - include path to the SkePU header library:
   `-I <path_to_skepu>/skepu-headers/src/`;
@@ -165,7 +169,7 @@ required arguments are as follows:
   was being compiled.
 
 The `Makefile` of the examples and the CMake function below set these up;
-on macOS they derive the system include paths from the installed Xcode
+on macOS they derive the system include paths (the SDK, not Clang's headers) from the installed Xcode
 or Command Line Tools (`xcrun`), on other systems they can be given
 explicitly (`SKEPU_TOOL_USER_FLAGS` in `Makefile.in` for the examples).
 
