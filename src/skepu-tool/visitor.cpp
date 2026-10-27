@@ -404,8 +404,7 @@ bool SkePUASTVisitor::VisitVarDecl(clang::VarDecl *d)
 	{
 		SkePULog() << "Found user constant: " << d->getNameAsString() << "\n";
 		// The constant is put into the kernels from its initializer, so it must be one that the compiler knows: constexpr, with an initializer.
-		// (A declaration without one, or one that is not constexpr, was accepted: the tool crashed or the kernels got a value that the
-		// program may change.) The language server, which shares this visitor, must not end: it does not register the constant.
+		// The language server, which shares this visitor, must not end: it does not register the constant.
 		if (!(d->isConstexpr() && d->hasDefinition() == clang::VarDecl::Definition))
 		{
 			#ifndef SKEPU_LSP

@@ -141,7 +141,11 @@ int main(int argc, char* argv[])
 	
 	while (mode != "quit")
 	{
-		std::cin >> mode;
+		if (!(std::cin >> mode))
+		{
+			std::cout << "End of input\n";
+			break;
+		}
 		std::cout << "Command: " << mode << "\n";
 		SKEPU_TRACE_SCOPE("Command");
 		

@@ -47,7 +47,7 @@ add_test(linking_cpu linking_cpu_test)
 # Two precompiled files that write to one trace, and a plain file that includes SkePU: the
 # plain one is compiled without tracing support (SKEPU_TRACING is only honoured in
 # precompiled files), and the program must still run, exit and write the trace of both
-# precompiled files. (It aborted at exit, in the destructor of the tracer.)
+# precompiled files.
 skepu_add_executable(tracing_multi_test SKEPUSRC tracing_multi_main.cpp tracing_multi_other.cpp
 	SRC tracing_multi_plain.cpp)
 target_compile_definitions(tracing_multi_test PRIVATE SKEPU_TRACING)
@@ -300,7 +300,9 @@ set_tests_properties(tracing_scalar_values PROPERTIES
 #   (run the tool on a source and check its status and its message; needs the tool to be built)
 # ------------------------------------------------
 
-list(JOIN SKEPU_TOOL_SYSTEM_INCLUDE_FLAGS "|" _tool_error_flags)
+# Clang's headers go between the C++ library headers and the SDK headers, as in skepu_precompile
+set(_tool_error_flag_list ${SKEPU_TOOL_SYSTEM_INCLUDE_FLAGS} -I ${SKEPU_CLANG_RESOURCE_HEADERS} ${SKEPU_TOOL_SYSTEM_INCLUDE_FLAGS_AFTER_CLANG})
+list(JOIN _tool_error_flag_list "|" _tool_error_flags)
 set(_tool_error_flags "${_tool_error_flags}|-I|${CMAKE_SOURCE_DIR}/skepu-headers/src")
 
 function(skepu_add_tool_error_test name source expected)

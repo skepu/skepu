@@ -1,5 +1,5 @@
 // A struct that only a helper function of the operator uses (the operator itself does not name it): the OpenCL kernel of the
-// skeleton must define it also (the types of the functions that are called were not defined by Scan and Reduce).
+// skeleton must define it also.
 #include "../../external/catch2/catch.hpp"
 
 #include <skepu>

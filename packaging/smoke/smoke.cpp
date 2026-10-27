@@ -1,4 +1,5 @@
 // The test of a package (make-package.sh): a Map that adds one, and a check of the result.
+#include <stddef.h> // does not compile if the header search order is wrong
 #include <iostream>
 #ifdef __ARM_NEON
 #include <arm_neon.h> // (one of the headers that Clang generates: the precompiler fails on it if the package has the source directory of Clang's headers)

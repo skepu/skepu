@@ -67,12 +67,13 @@ SEQ_CXX = clang++
 # System include paths for the SkePU precompiler. skepu-tool is a libclang tool and does not find the
 # system headers of the machine by itself on macOS, so they are derived from the active toolchain
 # (Xcode or the Command Line Tools). Set SKEPU_TOOL_USER_FLAGS in Makefile.in to use other paths.
+# Clang's headers go between the C++ library headers and the SDK headers (the SDK's stddef.h relies on Clang's being found first).
 ifeq ($(shell uname -s),Darwin)
 SKEPU_SDK          := $(shell xcrun --show-sdk-path 2>/dev/null)
 SKEPU_DEVDIR       := $(shell xcode-select -p 2>/dev/null)
 ifneq ($(SKEPU_SDK),)
 SKEPU_TOOL_USER_FLAGS ?= -I /usr/local/include \
-	-I $(SKEPU_SDK)/usr/include/c++/v1 \
+	-I $(SKEPU_SDK)/usr/include/c++/v1 -I $(CLANG_INCLUDE_PATH) \
 	-I $(SKEPU_SDK)/usr/include -I $(SKEPU_DEVDIR)/usr/include
 endif
 endif
