@@ -3,6 +3,7 @@
 import { knownTheme, SETTINGS_KEY } from './appearance.js';
 import { State } from './state.js';
 import { setPaneOpen } from './panes.js';
+import { setWheelZooms } from './panzoom.js';
 
 var STORAGE_KEY = SETTINGS_KEY;
 
@@ -32,7 +33,7 @@ var DEFAULTS = {
     'right-pane-width': 500, 'source-open': true, 'info-pane-ratio': 0,
     'gantt-open': false, 'gantt-scale': 1, 'legend-open': false,
     'color-spectrum': 'default', 'dark-mode': false, 'hljs-theme': 'default',
-    'code-paths': true, 'pin-definitions': false, 'progress-bar': false,
+    'code-paths': true, 'pin-definitions': false, 'progress-bar': false, 'wheel-zoom': false, 'info-enabled': true,
   },
 };
 
@@ -91,12 +92,14 @@ export function saveSettings(layoutOverrides) {
   s.layout['code-paths']     = State._codePaths;
   s.layout['pin-definitions'] = State._pinDefinitions;
   s.layout['progress-bar']    = State._progressBar;
+  s.layout['wheel-zoom']      = State._wheelZoom;
+  s.layout['info-enabled']    = State._infoEnabled;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
 }
 
 /**
- * The options of the source view that are kept in State. The view is made when the page is (with the defaults), before the settings are read,
- * so it has to be told what was read, or it shows what the menu does not say: code paths drawn while the menu says they are off.
+ * The options of the source view that are kept in State. The view is made with the defaults before the settings are read, so it is told
+ * the values that were read.
  */
 function applyToSourceView() {
   if (!State.sourceView) return;
@@ -153,6 +156,8 @@ export function loadSettings() {
       State._codePaths = s.layout['code-paths'];
     }
     if (s.layout['progress-bar'] != null) State._progressBar = s.layout['progress-bar'];
+    if (s.layout['info-enabled'] != null) State._infoEnabled = s.layout['info-enabled'];
+    if (s.layout['wheel-zoom'] != null) { State._wheelZoom = s.layout['wheel-zoom']; setWheelZooms(State._wheelZoom); }
     if (s.layout['pin-definitions'] != null) {
       State._pinDefinitions = s.layout['pin-definitions'];
     }
@@ -225,6 +230,9 @@ export function menuRestoreDefaults() {
   State._codePaths      = DEFAULTS.layout['code-paths'];
   State._pinDefinitions = DEFAULTS.layout['pin-definitions'];
   State._progressBar    = DEFAULTS.layout['progress-bar'];
+  State._infoEnabled    = DEFAULTS.layout['info-enabled'];
+  State._wheelZoom      = DEFAULTS.layout['wheel-zoom'];
+  setWheelZooms(State._wheelZoom);
   if (State.simEngine) State.simEngine.setProgressBarEnabled(State._progressBar);
   applyToSourceView();
   document.getElementById('info_window').style.flex = '0 0 0em';

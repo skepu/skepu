@@ -285,11 +285,10 @@ export class DirectedGraph {
     }
 
     /**
-     * The tree of the program tree mode: the root is the region around the program, an inner node is a region, and what happens in a
-     * region is a chain that starts at the region, in the order of the trace: region -> first event -> next event -> ... -> last event
-     * (the leaf). A region in a region is a child of the region it is in, with a chain of its own. Each node gets its parent in treeParents.
-     * (Fusion groups are not regions here: a fusion node is an event of the region that its calls are in. Without regions the whole
-     * program is one chain.)
+     * The tree of the program tree mode. The root is the region around the program; an inner node is a region. The events of a region form
+     * chains that start at the region, in trace order. A nested region ends the current chain, so the events after it start a new chain from
+     * the region: visiting the tree depth first, children in order, replays the trace. Each node's parent is in treeParents.
+     * A fusion group is not a region here: a fusion node is an event of the region its calls are in.
      */
     buildProgramTree() {
         const root = this.getRootRegion();
@@ -300,13 +299,16 @@ export class DirectedGraph {
         };
         const position = new Map(this._nodes.map((n, i) => [n, i]));   // (a fusion node is made after its calls: it goes where the first of them is)
         const ordered = [...this._nodes].sort((a, b) => a.totalOrder - b.totalOrder || position.get(a) - position.get(b));
-        const tail = new Map();   // region -> the last node of its chain so far (the region itself before the first)
+        const tail = new Map();   // region -> the last node of its chain that is going on (the region itself, at the start of a chain)
         for (const n of this._nodes) n.treeParents = [];
         for (const n of ordered) {
             if (n === root) continue;
             const region = container(n);
             if (n instanceof RegionNode) {
-                if (region) n.treeParents.push(region);
+                if (region) {
+                    n.treeParents.push(region);
+                    tail.delete(region);   // (the next event of the region starts a chain from the region: after this region, in the order of the trace)
+                }
                 continue;
             }
             const before = tail.has(region) ? tail.get(region) : region;
@@ -792,8 +794,9 @@ export class DirectedGraph {
         const collapsedPids = expandAll ? new Set() : new Set(allPids.filter(p => !pidSet.has(p)));
         const collapsedFusions = new Set(collapsedFusionPids ?? []);
 
+        // The root region is never collapsed.
         const collapsedNode = r =>
-            (r instanceof RegionNode && collapsedPids.has(r.persistentRegionId)) ||
+            (r instanceof RegionNode && r !== this._rootRegionNode && collapsedPids.has(r.persistentRegionId)) ||
             (r instanceof FusedNode && collapsedFusions.has(r.persistentFusionId));
         const ancestorCollapsed = node => {
             for (let r = node.region; r; r = r.region) if (collapsedNode(r)) return true;
@@ -897,7 +900,7 @@ export class DirectedGraph {
             for (const parent of node.treeParents) {
               if (!visibleIds.has(parent.id) || seenTree.has(parent.id + '>' + node.id)) continue;
               seenTree.add(parent.id + '>' + node.id);
-              cyEdges.push({ data: { id: crypto.randomUUID(), source: parent.id, target: node.id } });
+              cyEdges.push({ data: { id: crypto.randomUUID(), source: parent.id, target: node.id, type: 'tree-edge' } });
             }
           }
         }

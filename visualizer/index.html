@@ -113,7 +113,8 @@
               <button id="menu-check-legend"   class="menu-check" data-click="toggleLegend menuClose"><span class="menu-icon"></span>Legend</button>
               <button id="menu-check-timeline" class="menu-check" data-click="toggleGanttPane menuClose"><span class="menu-icon"></span>Timeline<span class="menu-key">G</span></button>
               <button id="menu-check-source"     class="menu-check" data-only="web" data-click="toggleSourcePane menuClose"><span class="menu-icon"></span>Source Panel<span class="menu-key">S</span></button>
-              <button id="menu-check-info"     class="menu-check" data-only="editor" data-click="toggleSourcePane menuClose"><span class="menu-icon"></span>Info Panel<span class="menu-key">S</span></button>
+              <button id="menu-check-info"     class="menu-check" data-only="editor" data-click="toggleInfoPanel menuClose" title="Whether the info panel opens when a node is selected"><span class="menu-icon"></span>Info Panel<span class="menu-key">O</span></button>
+              <button id="menu-check-info-web" class="menu-check" data-only="web" data-click="toggleInfoPanel menuClose" title="Whether the info panel opens when a node is selected"><span class="menu-icon"></span>Info Panel<span class="menu-key">O</span></button>
               <button id="menu-check-progress" class="menu-check" data-click="toggleProgressBar menuClose" title="Where the selected node, or the simulation, is in the run"><span class="menu-icon"></span>Progress Bar</button>
               <button id="menu-check-code-paths" class="menu-check" data-only="web" data-click="toggleCodePaths menuClose"><span class="menu-icon"></span>Code Paths</button>
               <button id="menu-check-definitions" class="menu-check" data-only="web" data-click="toggleDefinitions menuClose" title="Mark where all the skeleton instances and user functions are defined"><span class="menu-icon"></span>Definitions</button>
@@ -133,6 +134,13 @@
                 <div class="dropdown dropdown-spectrum" id="spectrum-menu"></div>
               </div>
               <button id="menu-check-dark" class="menu-check" data-only="web" data-click="toggleDarkMode menuClose"><span class="menu-icon"></span>Dark mode<span class="menu-key">M</span></button>
+              <div class="submenu">
+                <button class="submenu-title menu-action">Scroll Behaviour<span class="menu-arrow">▶</span></button>
+                <div class="dropdown">
+                  <button id="menu-radio-scroll-pan"  class="menu-radio" data-click="setScrollPan menuClose"  title="The wheel and a two-finger swipe pan the graph; Shift+wheel pans sideways; Ctrl or ⌘+wheel and pinch zoom"><span class="menu-icon"></span>Pan (best for trackpads)</button>
+                  <button id="menu-radio-scroll-zoom" class="menu-radio" data-click="setScrollZoom menuClose" title="The wheel and a two-finger swipe zoom the graph; Shift+wheel pans sideways; pinch zooms"><span class="menu-icon"></span>Zoom (best for mice)</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -323,7 +331,7 @@
               <button class="shortcuts-close" data-click="hideShortcuts" aria-label="Close">✕</button>
             </div>
             <div class="shortcuts-body"></div>
-            <div class="shortcuts-foot"><button class="shortcuts-tour" data-click="startTour">Take the guided tour</button></div>
+            <div class="shortcuts-foot"><button class="shortcuts-tour" data-click="startTour">Guided Tour</button></div>
           </div>
         </div>
 
@@ -345,14 +353,11 @@
               </ol>
 
               <div id="welcome-examples-section" style="display:none">
-                <h3>Load a built-in example</h3>
-                <div id="welcome-language" class="welcome-language" role="tablist" aria-label="Language of the examples" style="display:none"></div>
+                <div class="welcome-examples-head">
+                  <h3>Load a built-in example</h3>
+                  <div id="welcome-language" class="welcome-language" role="tablist" aria-label="Language of the examples" style="display:none"></div>
+                </div>
                 <div id="welcome-examples-list"></div>
-              </div>
-
-              <div id="welcome-designer-section">
-                <h3>Design a program</h3>
-                <p class="welcome-hint">Draw a graph of skeleton calls, data and regions in the <a href="designer.html">SkeVU Designer</a>: it makes the SkePU or SkePY program, and the trace that it could have, to load here.</p>
               </div>
             </div>
           </div>

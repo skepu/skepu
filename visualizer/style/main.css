@@ -12,6 +12,7 @@ html.dark-mode {
 }
 
 body, html {
+  font-family: sans-serif;   /* (what the menu bar, the info window and the rest have: the dialogs, the tour and the context menu are outside them, and have this) */
   padding: 0; margin: 0;
   display: flex;
   flex-flow: column;
@@ -129,7 +130,9 @@ code, pre {
 }
 
 .dropdown button:hover,
-.submenu:hover > .submenu-title
+.submenu:hover > .submenu-title,
+.dropdown button.menu-hot,
+.submenu.menu-hot > .submenu-title
 {
   background-color: #ddeeff;
 }
@@ -223,7 +226,27 @@ html.dark-mode .menu-field input { border-color: #4a4660; }
   z-index: 1001;
 }
 
-.submenu:hover > .dropdown
+.submenu:hover > .dropdown,
+.submenu.menu-hot > .dropdown
+{
+  display: block;
+}
+
+/* The context menu of a node (script/context_menu.js) */
+.context-menu
+{
+  display: none;
+  position: fixed;
+  background: white;
+  border: 1px solid #aaa;
+  box-shadow: 2px 4px 10px rgba(0,0,0,0.18);
+  min-width: 170px;
+  z-index: 2000;
+  font-family: sans-serif;
+  font-size: 0.88em;   /* (the items of a menu of the menu bar: 1.1em of the 0.8em of the bar) */
+}
+
+.context-menu.open
 {
   display: block;
 }
@@ -1292,9 +1315,8 @@ body.hljs-theme-dark .hljs-ln tr:hover
   transition: opacity 0.15s ease 0.4s;
 }
 
-/* A badge must not change the height of its source line (the lines were taller where a badge was, and jumped when the badges came and
-   went): its box is smaller than the line, centred on it, with margins that take no height from the line box, and it is drawn larger
-   with a transform, which does not take part in the layout. */
+/* A badge must not change the height of its source line: its box is smaller than the line, centred on it, with margins that take no height
+   from the line box, and it is drawn larger with a transform, which does not take part in the layout. */
 .badge
 {
   --badge-scale: 1.2;
@@ -1579,7 +1601,9 @@ html.dark-mode .hljs-theme-radio:hover {
 
 /* Generic dropdown button hover (catches hljs-theme-radio and any other unlisted buttons) */
 html.dark-mode .dropdown button:hover,
-html.dark-mode .submenu:hover > .submenu-title {
+html.dark-mode .submenu:hover > .submenu-title,
+html.dark-mode .dropdown button.menu-hot,
+html.dark-mode .submenu.menu-hot > .submenu-title {
   background-color: #464359;
 }
 
@@ -1649,7 +1673,19 @@ html.dark-mode .cpp-tab:hover {
 }
 /* (only the list gives way: the heading and the language control keep their height) */
 #welcome-examples-section > :not(#welcome-examples-list) { flex: 0 0 auto; }
-#welcome-examples-section > .welcome-language { align-self: flex-start; }
+
+/* The heading with the control for the language on its right, in the same row, above the line of the heading */
+.welcome-examples-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  margin: 2em 0 0.5em;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.3em;
+}
+.welcome-card .welcome-examples-head h3 { margin: 0; border: none; padding: 0; }
+.welcome-examples-head .welcome-language { margin-top: 0; }
 
 .welcome-logo {
   display: block;
@@ -1813,6 +1849,7 @@ html.dark-mode .welcome-card {
 html.dark-mode .welcome-card h1          { color: #c8c0d8; }
 html.dark-mode .welcome-card .welcome-subtitle { color: #888; }
 html.dark-mode .welcome-card h3          { color: #b0a8c0; border-color: #3a3848; }
+html.dark-mode .welcome-examples-head   { border-color: #3a3848; }
 html.dark-mode .welcome-card ol          { color: #b0a8c0; }
 html.dark-mode .welcome-card ol code     { background: #1e1c28; color: #e0d8f0; }
 html.dark-mode .welcome-card .welcome-hint { color: #888; }

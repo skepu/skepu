@@ -28,7 +28,7 @@ function run(names, el, event, withValue) {
   names.split(/\s+/).filter(Boolean).forEach(function(name) {
     var own = ACTIONS[name], fn = own || window[name];
     if (typeof fn !== 'function') { console.error('actions: there is no action ' + name); return; }
-    // (a function of the page is called as a handler in markup was: with no arguments, or with the value of the control)
+    // A function of the page is called with no arguments, or with the value of the control.
     if (withValue) fn(el.value); else if (own) own(el, event); else fn();
   });
 }

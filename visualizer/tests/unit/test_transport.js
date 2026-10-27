@@ -1,5 +1,4 @@
-// test_transport.js — the replies of the worker: the id that pairs a reply with its request is not in the result.
-// (It was, and the info pane, which shows every key of the data of a node, had an "id" that counted the requests.)
+// test_transport.js — the replies of the worker: the id that pairs a reply with its request is not in the result (the info pane shows every key of the result).
 import { describe, it, expect } from 'vitest';
 import { initWorkerBackend, fetchGetData, workerCall } from '../../script/transport.js';
 

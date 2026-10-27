@@ -7,7 +7,7 @@
 import { State } from './state.js';
 import { SETTINGS_KEY } from './appearance.js';
 import { hideShortcuts } from './shortcuts.js';
-import { visibleSteps, stepIndex, spotRect, placePopover } from './tour_core.js';
+import { visibleSteps, stepIndex, spotRect, placePopover, placeInCorner } from './tour_core.js';
 import { closeGanttPane, openGanttPane, openSourcePane, closeSourcePane, toggleLegend } from './ui.js';
 
 const STORAGE_KEY = 'skevu-tour';   // 'offered' (the offer has been made) or 'done' (the tour was finished)
@@ -70,42 +70,45 @@ function ensureLegend() { if (!State._legendOpen) toggleLegend(); }
 // step (it may wait); when: false leaves the step out (context: { vscode }); side: where the text goes, if it fits.
 
 export const STEPS = [
-  { id: 'graph', target: '#cy', title: 'The graph',
-    text: 'Each node is a skeleton call or data event from the trace; edges are the dependences between them.',
-    task: { text: 'Try it: scroll to pan, or Ctrl or ⌘ + scroll (or pinch) to zoom', listen: onWheel('#cy') } },
-  { id: 'select', target: '#cy', title: 'Select a node', side: 'right',
-    text: 'A selected node lights up in every view: the info pane, the timeline, and the lines of the program that it came from.',
-    task: { text: 'Try it: click a node', listen: onSelect('graph') },
+  { id: 'graph', target: '#cy', title: 'Execution graph',
+    text: 'A directed graph of the traced run. Nodes are skeleton calls and data events (container updates, allocations, transfers); edges are the data dependences between them. Regions of the program group related nodes.',
+    task: { text: 'Try: pan with scroll or a swipe; zoom with Ctrl or ⌘ + scroll, or a pinch', listen: onWheel('#cy') } },
+  { id: 'legend', target: '#legend', title: 'Legend', side: 'top',
+    text: 'Lists the colours, node shapes and edge styles used in the current graph, and follows the settings that are applied.',
+    prepare: async function() { closeMenus(); ensureLegend(); await wait(300); } },
+  { id: 'select', region: contentArea, cardAt: '#cy', title: 'Node selection',
+    text: 'A selected node is shown in all views at once: the info pane lists its measurements, the timeline marks its interval, and the source view highlights the lines that produced it. Right-click opens further actions.',
+    task: { text: 'Try: click a node', listen: onSelect('graph') },
     prepare: async function() { ensureSource(); clearSelection(); await wait(250); } },
-  { id: 'source', target: '#right_pane', title: 'The same node in the source', side: 'left', when: ctx => !ctx.vscode,
-    text: 'Its lines are marked, with a badge in the gutter. Click a badge to select that node instead; the graph and the timeline follow.',
-    task: { text: 'Try it: click a badge in the gutter', listen: onSelect('code-listing') },
+  { id: 'source', target: '#right_pane', title: 'Source correspondence', side: 'left', when: ctx => !ctx.vscode,
+    text: 'The lines that produced the selected node are highlighted, and a gutter badge marks each line with trace events. Selecting a badge selects the corresponding node in the other views.',
+    task: { text: 'Try: click a badge in the gutter', listen: onSelect('code-listing') },
     prepare: async function() {
       ensureSource(); await wait(250);
       const id = firstCallId();
       if (!hasSelection() && id && State.graphView) State.graphView.selectNode(id, { zoom: false });
     } },
-  { id: 'timeline', target: '#gantt-pane', title: 'The timeline', side: 'top',
-    text: 'Time runs to the right, with a row for each backend. Z zooms to the measured interval, G shows or hides this pane.',
-    task: { text: 'Try it: click a bar', listen: onSelect('gantt') },
+  { id: 'timeline', target: '#gantt-pane', title: 'Timeline', side: 'top',
+    text: 'Execution time runs from left to right, with one row per backend; each bar is the interval of a skeleton call. Z zooms to the measured interval, and G shows or hides the pane.',
+    task: { text: 'Try: click a bar', listen: onSelect('gantt') },
     prepare: async function() { ensureTimeline(); await wait(350); } },
-  { id: 'nodes', target: () => dropdownOf('Nodes'), title: 'What to draw', side: 'right',
-    text: 'Show or hide kinds of nodes: allocations, transfers, kernel builds, communication. The graph is drawn again at once for small traces.',
+  { id: 'view', target: () => dropdownOf('View'), title: 'View options', side: 'right',
+    text: 'Settings for the presentation: the graph mode (dependence DAG or program tree), which panes and overlays are shown, the color theme and spectrum, and whether the wheel pans or zooms. Apply Settings redraws the graph.',
+    prepare: async function() { openMenu('View'); await wait(120); } },
+  { id: 'nodes', target: () => dropdownOf('Nodes'), title: 'Node types', side: 'right',
+    text: 'Selects which kinds of nodes are drawn: container updates, allocations, transfers, kernel builds and communication. For small traces the graph is redrawn immediately; otherwise, apply the settings with Space.',
     prepare: async function() { openMenu('Nodes'); await wait(120); } },
-  { id: 'edges', target: () => dropdownOf('Edges'), title: 'Edges and layout', side: 'right',
-    text: 'Anti-dependences, labels, and the direction of the layout.',
+  { id: 'edges', target: () => dropdownOf('Edges'), title: 'Edge options', side: 'right',
+    text: 'Selects anti-dependences, virtual datasets and edge labels, the direction of the layout, and the width and opacity of edges by a measure such as element count or critical path.',
     prepare: async function() { openMenu('Edges'); await wait(120); } },
-  { id: 'legend', target: '#legend', title: 'The legend', side: 'top',
-    text: 'It explains the colours, shapes and edge styles of what is on the screen now.',
-    prepare: async function() { closeMenus(); ensureLegend(); await wait(300); } },
-  { id: 'simulate', target: () => dropdownOf('Actions'), title: 'Replay the run', side: 'right',
-    text: 'Simulate plays the run as an animation, node by node (P plays and pauses). The arrow keys step through it from the selected node. The other actions work on the selected node.',
+  { id: 'simulate', target: () => dropdownOf('Actions'), title: 'Actions', side: 'right',
+    text: 'Simulate replays the run node by node (P starts and pauses it; the arrow keys step through it). Zoom to Measured Interval fits the timeline. The remaining groups collapse or expand the selected node, all regions, or fusion nodes.',
     prepare: async function() { openMenu('Actions'); await wait(120); } },
-  { id: 'files', target: () => dropdownOf('Files'), title: 'Your own trace', side: 'right', when: ctx => !ctx.vscode,
-    text: 'Load a trace of your own here, with its source files, or open another example.',
+  { id: 'files', target: () => dropdownOf('Files'), title: 'Loading traces', side: 'right', when: ctx => !ctx.vscode,
+    text: 'A trace is loaded here together with the source files that it refers to; the other example traces can be opened from the same menu.',
     prepare: async function() { openMenu('Files'); await wait(120); } },
-  { id: 'help', target: '.menu-help-title', title: 'Shortcuts', side: 'bottom',
-    text: 'Press ? at any time for the list of keyboard shortcuts. The tour is started again from there.',
+  { id: 'help', target: '.menu-help-title', title: 'Keyboard shortcuts', side: 'bottom',
+    text: 'The key ? opens the list of keyboard shortcuts, from which this tour can be started again.',
     prepare: async function() { closeMenus(); await wait(60); } },
 ];
 
@@ -117,6 +120,14 @@ export function tourActive() { return !!_active; }
 
 function readStorage() { try { return localStorage.getItem(STORAGE_KEY); } catch (e) { return null; } }
 function writeStorage(v) { try { localStorage.setItem(STORAGE_KEY, v); } catch (e) { /* (no storage) */ } }
+
+/** Sets the text of a task, with the word before the first colon in bold. */
+function setTask(taskEl, text) {
+  const colon = text.indexOf(':');
+  const label = document.createElement('strong');
+  label.textContent = text.slice(0, colon);
+  taskEl.replaceChildren(label, document.createTextNode(text.slice(colon)));
+}
 
 function el(tag, className, text) {
   const e = document.createElement(tag);
@@ -131,12 +142,20 @@ function targetElement(step) {
   return t && t.getBoundingClientRect().width > 0 ? t : null;
 }
 
+/** The window below the menu bar. */
+function contentArea() {
+  const bar = document.getElementById('menubar');
+  const top = bar ? bar.getBoundingClientRect().bottom : 0;
+  return { left: 0, top, width: window.innerWidth, height: window.innerHeight - top };
+}
+
 function position() {
   if (!_active) return;
   const step = _active.steps[_active.index];
   const viewport = { width: window.innerWidth, height: window.innerHeight };
   const target = targetElement(step);
-  const rect = target ? spotRect(target.getBoundingClientRect(), PAD, viewport) : null;
+  const area = step.region ? step.region() : null;   // (a step can light up a part of the window that is not one element: the spotlight is exactly it)
+  const rect = area ? spotRect(area, 0, viewport) : (target ? spotRect(target.getBoundingClientRect(), PAD, viewport) : null);
   const spot = _active.spot;
   if (rect) {
     spot.hidden = false;
@@ -155,7 +174,11 @@ function position() {
   }
   _active.layer.classList.toggle('tour-dim', !rect);   // (without a spotlight the layer itself dims the page)
   const card = _active.card;
-  const p = placePopover(rect, { width: card.offsetWidth, height: card.offsetHeight }, viewport, step.side || 'auto');
+  const size = { width: card.offsetWidth, height: card.offsetHeight };
+  // `cardAt`: the card goes in the bottom-left corner of that element.
+  const corner = step.cardAt && document.querySelector(step.cardAt);
+  const cornerRect = corner && corner.getBoundingClientRect();
+  const p = cornerRect && cornerRect.width > 0 ? placeInCorner(cornerRect, size, viewport) : placePopover(rect, size, viewport, step.side || 'auto');
   card.style.left = p.left + 'px'; card.style.top = p.top + 'px';
 }
 
@@ -185,13 +208,13 @@ async function show(index) {
   taskEl.hidden = !step.task;
   taskEl.classList.remove('tour-task-done');
   if (step.task) {
-    taskEl.textContent = step.task.text;
+    setTask(taskEl, step.task.text);
     stopTask();
     // (what the user does while the text is on the screen; once is enough)
     _active.stop = step.task.listen(function() {
       if (!_active || token !== _active.token || taskEl.classList.contains('tour-task-done')) return;
       taskEl.classList.add('tour-task-done');
-      taskEl.textContent = 'Done: ' + step.task.text.replace(/^Try it: /, '');
+      setTask(taskEl, 'Done: ' + step.task.text.replace(/^Try: /, ''));
       card.querySelector('.tour-next').classList.add('tour-ready');
     });
   }
@@ -304,9 +327,9 @@ function offer() {
   writeStorage('offered');
   const box = el('div', 'tour-offer');
   box.id = 'tour-offer';
-  box.appendChild(el('span', 'tour-offer-text', 'New to SkeVU? A one-minute tour shows the main parts.'));
-  const yes = el('button', 'tour-offer-yes', 'Take the tour');
-  const no = el('button', 'tour-offer-no', 'No thanks');
+  box.appendChild(el('span', 'tour-offer-text', 'A one-minute guided tour of the main parts of SkeVU is available.'));
+  const yes = el('button', 'tour-offer-yes', 'Start tour');
+  const no = el('button', 'tour-offer-no', 'Dismiss');
   yes.addEventListener('click', function() { startTour(); });
   no.addEventListener('click', hideOffer);
   box.appendChild(yes); box.appendChild(no);

@@ -374,6 +374,15 @@ export function buildGraphStyle(self, minmax) {
       style: { 'line-style': 'dotted' }
     },
     {
+      // Edges of the program tree mode: plain lines, as they are not dependences.
+      selector: 'edge[type="tree-edge"]',
+      style: {
+        'curve-style':        'straight',
+        'target-arrow-shape': 'none',
+        'source-arrow-shape': 'none',
+      }
+    },
+    {
       selector: 'edge[type="virtual-alias"]',
       style: {
         'line-color':         function() { return COLORS.alias[dark() ? 1 : 0]; },

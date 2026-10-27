@@ -151,7 +151,7 @@ State.provider  = _provider;
 
 // The collapse state is the provider's: the Actions menu (ui.js) writes it through State, the
 // double click on a region (GraphView) and the next fetch read it through the provider. They must be
-// one object; a second one in State was written by the menu and read by nobody.
+// one object.
 State._collapsedNodes = _provider.collapsedNodes;
 
 // ── LegendView singleton ──────────────────────────────────────────────────────
@@ -250,6 +250,11 @@ export function setInfoViewCanShowSource(func) {
   _infoView._canShowSource = func;
 }
 
+/** Sets the handler that marks the places of a call (instance, user functions, the call itself) in the editor. */
+export function setInfoViewOnDefinitions(func) {
+  _infoView._onDefinitions = func;
+}
+
 /** The editor shows the lines of a definition in its own file: what the links of the info pane do. */
 export function setInfoViewOnShowSource(func) {
   _infoView._onShowSource = func;
@@ -291,8 +296,7 @@ _provider.on('select', function(ev) {
   State._selectedRank = ev.rank != null ? ev.rank : null;   // (the rank whose bar was clicked, for the trace pane)
   // traceIdx is the raw trace-file index used by InfoView for line highlighting.
   // It is distinct from iterIdx (0-based iteration) and is only present in
-  // events emitted by simulation.js.  (The iteration is not a trace index: with it as one, a click on a bar
-  // would show the trace entry with the number of the iteration, the first, instead of the entry of the node.)
+  // events emitted by simulation.js. (An iteration number is not a trace index.)
   var infoIdx = ev.traceIdx;
   if (State.infoView) State.infoView.open(ev.nodeId, ev.source, infoIdx, ev.reveal);
 });

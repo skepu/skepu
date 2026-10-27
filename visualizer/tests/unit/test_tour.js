@@ -28,7 +28,7 @@ describe('the steps of the tour', () => {
   it('ask the user to try what they show, in the same words', () => {
     expect(tasks.length).toBeGreaterThanOrEqual(3);
     for (const t of tasks) {
-      expect(t.text.startsWith('Try it: ')).toBe(true);
+      expect(t.text.startsWith('Try: ')).toBe(true);
       expect(['onSelect', 'onWheel']).toContain(t.listen);
     }
   });

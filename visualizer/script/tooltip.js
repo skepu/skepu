@@ -72,6 +72,7 @@ export function edgeTooltipText(d) {
                 : d.type === 'virtual-alias' ? 'Virtual alias: ' + (d.virtual_label || '')
                 : d.type === 'prng-dep'      ? 'PRNG dep: '      + (d.prng_label   || '')
                 : d.type === 'setup-dep'     ? 'Setup: the kernel is built before the first call'
+                : d.type === 'tree-edge'     ? 'Trace total order'   // (program tree mode: visiting the tree depth first is replaying the trace)
                 : d.type || 'Edge';
   var lines = [typeLabel];
   if (d.label)       lines.push(d.label);

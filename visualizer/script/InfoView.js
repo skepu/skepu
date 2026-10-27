@@ -159,7 +159,7 @@ export class InfoView {
    * Fetch detail data for `nodeId` and populate the info pane.
    *
    * @param {string}  nodeId    Graph node UUID.
-   * @param {string}  [source]  Originating view: 'graph' | 'gantt' | 'code-listing'
+   * @param {string}  [source]  Originating view: 'graph' | 'gantt' | 'code-listing' | 'info-panel' (the panel was turned on: the selection is already shown elsewhere)
    * @param {number}  [traceIdx] Per-iteration trace_index override (simulation mode).
    * @param {string}  [reveal]   'instance' | 'function': also show that definition of the call in the source (the
    *                             shortcuts of the graph: shift-click, alt-click); 'function' goes on to the next user function each time.
@@ -244,7 +244,7 @@ export class InfoView {
     // Delegate entirely to the receiver (SourceCodeView.highlightNode) which
     // knows which of its own tabs is active.  Pass a copy of data so the
     // traceIdx override does not mutate the cached object.
-    if (source !== 'code-listing' && this._onHighlightNode) {
+    if (source !== 'code-listing' && source !== 'info-panel' && this._onHighlightNode) {
       data.node_id = nodeId;
       var nodeData = Object.assign({}, data);
       if (traceIdx != null) nodeData.trace_index = traceIdx;

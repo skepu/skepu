@@ -17,6 +17,9 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#ifdef __APPLE__
+#include <mach/mach_time.h>
+#endif
 
 #include "environment.h"
 #include "../impl/tracing.h"
@@ -130,6 +133,17 @@ namespace skepu
 				return a;
 			}
 
+			// The profiling times are in nanoseconds, except on macOS, where they are in ticks of the system clock (mach_absolute_time)
+			static double nanosecondsPerTick()
+			{
+#ifdef __APPLE__
+				static const double ratio = []{ mach_timebase_info_data_t info; mach_timebase_info(&info); return (double)info.numer / info.denom; }();
+				return ratio;
+#else
+				return 1.0;
+#endif
+			}
+
 			// The time of the host (microseconds) when a marker was done, or 0 if the device cannot say
 			static unsigned long hostTimeOf(backend::Device_CL *device, cl_event event)
 			{
@@ -138,7 +152,7 @@ namespace skepu
 				if (!a.valid || !event || clWaitForEvents(1, &event) != CL_SUCCESS
 					|| clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &time, nullptr) != CL_SUCCESS)
 					return 0;
-				const long long microseconds = ((long long)time - (long long)a.deviceTime) / 1000;
+				const long long microseconds = (long long)(((double)time - (double)a.deviceTime) * nanosecondsPerTick() / 1000.0);
 				return (unsigned long)std::max(1LL, (long long)a.hostTime + microseconds);
 			}
 

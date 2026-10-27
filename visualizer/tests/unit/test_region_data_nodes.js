@@ -1,5 +1,4 @@
-// test_region_data_nodes.js — the allocations and deallocations of containers in a region are nodes of the region (they were nodes of
-// the root region, wherever the trace put them).
+// test_region_data_nodes.js — the allocations and deallocations of containers in a region are nodes of that region, not of the root region.
 import { describe, it, expect } from 'vitest';
 
 import { DirectedGraph, GraphSettings } from '../../script/backend/graph.js';

@@ -1,7 +1,7 @@
 // test_panzoom.js — how the wheel and the pinch move the graph (script/panzoom.js). No device is guessed: a plain wheel or a swipe pans; Ctrl or Cmd
 // with the wheel zooms (that is how Chromium and Firefox report the pinch of a trackpad); the gestures of Safari zoom, and the wheel waits for them.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { bindPanZoom, wheelZoomFactor, wheelPan, wheelPixels, isClearlyInView, animateFitUnlessInView, FitKeeper, FIT_SETTLE_MS, FIT_QUIET_MS, FIT_WAIT_MAX_MS } from '../../script/panzoom.js';
+import { bindPanZoom, setWheelZooms, wheelAction, wheelZoomFactor, wheelPan, wheelPixels, isClearlyInView, animateFitUnlessInView, FitKeeper, FIT_SETTLE_MS, FIT_QUIET_MS, FIT_WAIT_MAX_MS } from '../../script/panzoom.js';
 
 function graph(zoom = 1) {
     const calls = [];
@@ -15,6 +15,32 @@ function element() {
     };
 }
 const wheel = (props) => ({ deltaX: 0, deltaY: 0, deltaMode: 0, ctrlKey: false, metaKey: false, shiftKey: false, clientX: 110, clientY: 120, preventDefault() { this.prevented = true; }, ...props });
+
+describe('the wheel that zooms (View > Scroll Behaviour > Zoom)', () => {
+    afterEach(() => setWheelZooms(false));
+
+    it('pans by default, and zooms with a plain wheel when it is set to (Ctrl and Cmd zoom either way, Shift pans)', () => {
+        expect(wheelAction(wheel({ deltaY: -10 }))).toBe('pan');
+        expect(wheelAction(wheel({ deltaY: -10, ctrlKey: true }))).toBe('zoom');
+        setWheelZooms(true);
+        expect(wheelAction(wheel({ deltaY: -10 }))).toBe('zoom');
+        expect(wheelAction(wheel({ deltaY: -10, ctrlKey: true }))).toBe('zoom');
+        expect(wheelAction(wheel({ deltaY: -10, metaKey: true }))).toBe('zoom');
+        expect(wheelAction(wheel({ deltaY: -10, shiftKey: true }))).toBe('pan');
+    });
+
+    it('zooms around the pointer with a plain wheel, and pans sideways with Shift', () => {
+        setWheelZooms(true);
+        const cy = graph(2), el = element();
+        bindPanZoom(cy, el);
+        el.listeners.wheel(wheel({ deltaY: -5 }));
+        expect(cy.calls).toHaveLength(1);
+        expect(cy.calls[0][0]).toBe('zoom');
+        expect(cy.calls[0][1].renderedPosition).toEqual({ x: 100, y: 100 });
+        el.listeners.wheel(wheel({ deltaY: 40, shiftKey: true }));
+        expect(cy.calls[1]).toEqual(['panBy', { x: -60, y: -0 }]);
+    });
+});
 
 describe('the wheel', () => {
     it('pans for a plain wheel or a swipe, in the direction of the fingers, and keeps the page still', () => {

@@ -4,15 +4,18 @@
 
 /** What the keys do that no menu item says, and the mouse and the trackpad. Groups of { keys, label }; `handles` names the keys (event.key) that the page handles for it. */
 export const EXTRA_SHORTCUTS = [
-  { group: 'General', keys: '?', label: 'This list', handles: ['?'] },
-  { group: 'General', keys: 'Esc', label: 'Close this list, or a pop-up', handles: ['Escape'] },
-  { group: 'General', keys: 'X', label: 'Close a pop-up', handles: ['x'] },
+  { group: 'General', keys: '?', label: 'Show shortcuts', handles: ['?'] },
+  { group: 'General', keys: 'Esc', label: 'Close dialog or pop-up', handles: ['Escape'] },
+  { group: 'General', keys: 'X', label: 'Close pop-up', handles: ['x'] },
   { group: 'Actions', keys: 'Shift+Tab', label: 'Previous source tab', handles: [], only: 'web' },
-  { group: 'Actions', keys: '←, →', label: 'The previous or next step of a simulation (from the selected node, if there is no simulation), or iteration of a heat map', handles: ['ArrowLeft', 'ArrowRight'] },
-  { group: 'Mouse and trackpad', keys: 'Scroll, swipe', label: 'Pan the graph' },
+  { group: 'Actions', keys: '←, →', label: 'Previous / next simulation step or heat map iteration', handles: ['ArrowLeft', 'ArrowRight'] },
+  { group: 'Mouse and trackpad', keys: 'Scroll, swipe', label: 'Pan' },
   { group: 'Mouse and trackpad', keys: 'Shift+scroll', label: 'Pan sideways' },
-  { group: 'Mouse and trackpad', keys: 'Ctrl or ⌘+scroll, pinch', label: 'Zoom the graph' },
-  { group: 'Mouse and trackpad', keys: 'Click a node', label: 'Show it in the info pane, the timeline and the source' },
+  { group: 'Mouse and trackpad', keys: 'Ctrl or ⌘+scroll, pinch', label: 'Zoom' },
+  { group: 'Mouse and trackpad', keys: 'Click a node', label: 'Show in info pane, timeline and source' },
+  { group: 'Mouse and trackpad', keys: 'Shift+click a call', label: 'Also show the skeleton instance' },
+  { group: 'Mouse and trackpad', keys: 'Alt+click a call', label: 'Also show a user function (repeat: the next)' },
+  { group: 'Mouse and trackpad', keys: 'Right-click a node', label: 'Context menu' },
 ];
 
 /** Groups of items, in the order of their first appearance: [{ group, entries: [{ keys, label }] }]. */

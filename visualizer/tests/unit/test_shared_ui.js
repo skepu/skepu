@@ -31,6 +31,7 @@ describe('tooltips', () => {
     it('say what an edge is', () => {
         expect(edgeTooltipText({ type: 'forward-dep', label: 'v', access_mode: 'elwise' })).toBe('Data dependence\nv\nmode  elwise');
         expect(edgeTooltipText({ type: 'prng-dep', prng_label: 'noise' })).toBe('PRNG dep: noise');
+        expect(edgeTooltipText({ type: 'tree-edge' })).toBe('Trace total order');
     });
 });
 

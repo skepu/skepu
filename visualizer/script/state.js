@@ -67,6 +67,8 @@ export const State = {
   _sourcePaneOpen: true,  // overridden by loadSettings
   _legendOpen:     true,  // overridden by loadSettings
   _codePaths:      true,  // overridden by loadSettings
+  _infoEnabled:    true,  // the info panel opens with a selection (View > Info Panel); overridden by loadSettings
+  _wheelZoom:      false, // a plain wheel zooms the graph instead of panning it (for a mouse); overridden by loadSettings
   _progressBar:    false, // the progress bar of the simulation is shown (on when a simulation starts); overridden by loadSettings
   _pinDefinitions: false, // the marks of all the definitions of the instances and user functions stay in the source; overridden by loadSettings
 

@@ -32,9 +32,8 @@ function withoutBrowserParts(html: string): string {
 	return html
 		// scripts for the browser, with a source or inline
 		.replace(/[ \t]*<script\b[^>]*\bdata-variant="web"[^>]*>[\s\S]*?<\/script>[ \t]*\n?/g, '')
-		// the logo links to the page itself; the designer is another page of the browser
-		.replace(/<a class="menu-anfang" href="\.">([\s\S]*?)<\/a>/, '<span class="menu-anfang">$1</span>')
-		.replace(/[ \t]*<div id="welcome-designer-section">[\s\S]*?<\/div>\s*<\/div>/, '</div>');
+		// the logo links to the page itself
+		.replace(/<a class="menu-anfang" href="\.">([\s\S]*?)<\/a>/, '<span class="menu-anfang">$1</span>');
 }
 
 export function buildWebviewHtml(indexHtml: string, page: WebviewPage): string {

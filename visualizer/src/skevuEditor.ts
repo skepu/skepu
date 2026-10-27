@@ -39,6 +39,8 @@ class TraceCodeLensProvider implements vscode.CodeLensProvider {
 
 interface SkePUTextDocument {
 	highlightRange: Array<vscode.Range>;
+	/** The places of the selected call (instance, user functions, the call), lightly shaded. Lines with the strong highlight are not shaded again. */
+	placeRange: Array<vscode.Range>;
 	badges?: vscode.Disposable;
 }
 
@@ -76,6 +78,11 @@ class SkevuSession {
 	}
 	private readonly highlightDecoration = vscode.window.createTextEditorDecorationType({
 		backgroundColor: new vscode.ThemeColor("editor.selectionHighlightBackground"), // See https://code.visualstudio.com/api/references/theme-color for options
+		isWholeLine: true
+	});
+
+	private readonly placeDecoration = vscode.window.createTextEditorDecorationType({
+		backgroundColor: new vscode.ThemeColor("editor.wordHighlightBackground"),
 		isWholeLine: true
 	});
 
@@ -146,6 +153,7 @@ class SkevuSession {
 			this.clearHighlights();
 			changeActiveTextEditorSubscription.dispose();
 			this.highlightDecoration.dispose();
+			this.placeDecoration.dispose();
 			this.textDocuments.forEach(document => {
 				document.badges?.dispose();
 			})
@@ -175,6 +183,10 @@ class SkevuSession {
 
 				case 'reveal_source':
 					await this.revealSource(e.source_file, e.line, e.end_line);
+					return;
+
+				case 'show_definitions':
+					this.showPlaces(e.marks);
 					return;
 
 				case 'clear_highlight':
@@ -283,7 +295,8 @@ class SkevuSession {
 			const relevantTextDocument = this.relevantTextDocuments.get(fileName);
 			const textDocument: SkePUTextDocument =
 			{
-				highlightRange: []
+				highlightRange: [],
+				placeRange: []
 			}
 			if (relevantTextDocument) {
 				textDocument.highlightRange = relevantTextDocument.currentHighlight;
@@ -352,6 +365,18 @@ class SkevuSession {
 			selection: new vscode.Range(range.start, range.start),
 			preserveFocus: true,
 		}).then(editor => editor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport));
+		// The revealed lines get the strong highlight, in place of the call's.
+		this.textDocuments.forEach((document, name) => {
+			document.highlightRange = [];
+			const data = this.relevantTextDocuments.get(name);
+			if (data) data.currentHighlight = [];
+		});
+		const document = this.textDocuments.get(fileName);
+		const data = this.relevantTextDocuments.get(fileName);
+		if (!document || !data) return;
+		document.highlightRange = [range];
+		data.currentHighlight = [range];
+		this.highlightAllRelevantEditors();
 	}
 
 	private highlightSourceFile(sourceFileEnd: string, nodeID: string) {
@@ -399,15 +424,29 @@ class SkevuSession {
 		if(!document) return;
 
 		editor.setDecorations(this.highlightDecoration, document.highlightRange);
+		editor.setDecorations(this.placeDecoration, document.placeRange.filter(place => !document.highlightRange.some(strong => strong.isEqual(place))));
 
 		if (document.highlightRange.length > 0) {
 			editor.revealRange(document.highlightRange[0], vscode.TextEditorRevealType.InCenterIfOutsideViewport);
 		}
 	}
 
+	/** Lightly shades the places of the selected call (`marks`: file and lines from 1) in the files that were found. No marks removes the shading. */
+	private showPlaces(marks: Array<{ file: string; from: number; to: number }>) {
+		this.textDocuments.forEach(document => { document.placeRange = []; });
+		for (const mark of marks ?? []) {
+			const suffix = traceSuffix(mark.file);
+			const fileName = [...this.textDocuments.keys()].find(file => pathEndsWith(file, suffix));
+			if (!fileName || !(mark.from >= 1)) continue;
+			this.textDocuments.get(fileName)!.placeRange.push(new vscode.Range(mark.from - 1, 0, Math.max(mark.from, mark.to) - 1, 0));
+		}
+		this.highlightAllRelevantEditors();
+	}
+
 	private clearHighlights() {
 		this.textDocuments.forEach((document, fileName) => {
 			document.highlightRange = [];
+			document.placeRange = [];
 			const relevantTextDocument = this.relevantTextDocuments.get(fileName);
 			if (relevantTextDocument) {
 				relevantTextDocument.currentHighlight = [];
@@ -424,6 +463,7 @@ class SkevuSession {
 		const document = this.textDocuments.get(fileName);
 		if (!document) return;
 		document.highlightRange = [];
+		document.placeRange = [];
 
 		for (const editor of editors) {
 			this.highlightRelevantEditor(editor);

@@ -43,6 +43,8 @@ import { highlightSelection, bindHover } from './graph_interaction.js';
 import { basePattern } from './TraceDataProvider.js';
 import { badgeNodesToShow } from './badges.js';
 import { globalUtil } from './util.js';
+import { showContextMenu, hideContextMenu } from './context_menu.js';
+import { definitionPlace } from './badges.js';
 
 // ── Shared page resources ─────────────────────────────────────────────────────
 // One ELK instance per page is correct: the ELK worker is expensive to spawn. (The tooltip is tooltip.js.)
@@ -640,9 +642,8 @@ export class GraphView {
     });
 
     // ── Node click ───────────────────────────────────────────────────────────
-    cy.on('click', 'node', function(event) {
-      if (event.target.hasClass('layout-phantom')) return;
-      var ele    = event.target;
+    // Selects `ele` in all views; `reveal` ('instance' or 'function') also shows that definition of the call in the source.
+    function selectNode(ele, reveal) {
       var nodeId = ele.data('id');
 
       cy.nodes().removeClass('selected_gutter');
@@ -653,15 +654,20 @@ export class GraphView {
       // Broadcast via the shared event bus so every attached view
       // (TimelineView, SourceCodeView, …) can update itself.  The 'graph'
       // source tag prevents this GraphView from receiving its own event back.
-      // (shift-click also shows where the instance of the call is defined in the source, alt-click where a user function is)
-      var mouse = event.originalEvent || {};
       self._provider._emit('select', {
         nodeId:  nodeId,
         source:  'graph',
         focusId: nodeId,
         allIds:  [nodeId],
-        reveal:  mouse.shiftKey ? 'instance' : (mouse.altKey ? 'function' : undefined),
+        reveal:  reveal,
       });
+    }
+
+    // Shift-click also shows the skeleton instance in the source, alt-click a user function.
+    cy.on('click', 'node', function(event) {
+      if (event.target.hasClass('layout-phantom')) return;
+      var mouse = event.originalEvent || {};
+      selectNode(event.target, mouse.shiftKey ? 'instance' : (mouse.altKey ? 'function' : undefined));
     });
 
     // ── Region double-click: toggle collapsed/expanded and re-render ─────────
@@ -670,13 +676,48 @@ export class GraphView {
       event.stopPropagation();
       if (event.target.hasClass('layout-phantom')) return;
       var pid = event.target.data('persistent_region_id');
-      if (!pid) return;
+      if (!pid || pid === 'region_global') return;   // (the root of the program tree mode is not collapsed)
       var collapsed = self._provider.collapsedNodes;
       var collapse = (collapsed[pid] === false);
       // (a node that the iterations of a loop are merged into is all of them: they are what is collapsed when the iterations are shown one by one)
       (event.target.data('persistent_region_ids') || [pid]).forEach(function(id) { collapsed[id] = collapse; });
       self.render();
     });
+
+    // ── Right click: the menu of the node ─────────────────────────────────────
+    // Clears the views, then selects `ele`, as a click does (for the items of a menu that show the node: opening the menu selects nothing).
+    function chooseNode(ele, reveal) {
+      self._provider._emit('clear', { background: false });
+      selectNode(ele, reveal);
+    }
+    // A region has the collapse and expand items of Actions > Selected Node, for that region (the root of the program tree has no menu); a call has
+    // Show call, Show instance and Show user function. They open when the button is pressed, as menus do on macOS. The browser's own menu is
+    // suppressed over the graph.
+    cy.container().addEventListener('contextmenu', function(event) { event.preventDefault(); });
+    cy.on('cxttapstart', 'node[type="region"], node[type="tree-region"]', function(event) {
+      if (event.target.hasClass('layout-phantom') || event.target.data('persistent_region_id') === 'region_global') return;
+      var data = event.target.data(), mouse = event.originalEvent;
+      var items = [['Collapse Recursive', true, true], ['Expand Recursive', false, true], ['Collapse Once', true, false], ['Expand Once', false, false]];
+      if (mouse) showContextMenu(mouse.clientX, mouse.clientY, items.map(function(item) {
+        return { label: item[0], onClick: function() { window.setRegionsOf(data, item[1], item[2]); } };
+      }));
+    });
+    cy.on('cxttapstart', 'node[type="skeleton_call"]', function(event) {
+      var ele = event.target, mouse = event.originalEvent;
+      if (ele.hasClass('layout-phantom') || !mouse) return;
+      var reveal = function(which) { return function() { chooseNode(ele, which); }; };
+      var buttons = showContextMenu(mouse.clientX, mouse.clientY, [
+        { label: 'Show call',          onClick: reveal(undefined) },
+        { label: 'Show instance',      onClick: reveal('instance') },
+        { label: 'Show user function', onClick: reveal('function') },
+      ]);
+      // Turn off the items for definitions that the call does not have.
+      self._provider.fetchNodeData(ele.data('id')).then(function(data) {
+        buttons[1].disabled = !definitionPlace(data.definitions, 'instance');
+        buttons[2].disabled = !definitionPlace(data.definitions, 'function');
+      }).catch(function() {});
+    });
+    cy.on('cxttapstart', function(event) { hideTooltip(); if (event.target === cy) hideContextMenu(); });
 
     // ── Fusion double-click: the same for a fusion node ──────────────────────
     cy.on('dblclick', 'node[type="fusion"]', function(event) {

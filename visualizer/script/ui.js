@@ -10,6 +10,7 @@ import { installMenus, enableMenuItem } from './menu.js';
 import { attachResizer } from './resizer.js';
 import { setPaneOpen } from './panes.js';
 import { reveal } from './reveal.js';
+import { setWheelZooms } from './panzoom.js';
 import { installShortcuts, shortcutsOpen, toggleShortcuts } from './shortcuts.js';
 import { installTour } from './tour.js';
 import { buildThemeMenu, buildSpectrumMenu } from './appearance.js';
@@ -120,6 +121,17 @@ export function closeSourcePane(animate) {
   saveSettings();
 }
 
+/** Whether the info panel opens when a node is selected (View > Info Panel). Off closes it. */
+export function setInfoEnabled(on) {
+  State._infoEnabled = !!on;
+  if (!State._infoEnabled) closePopup();
+  else if (State._ganttSelectedNodeId && State.infoView) State.infoView.open(State._ganttSelectedNodeId, 'info-panel');   // (the selection that is there now)
+  if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
+  saveSettings();
+}
+
+export function toggleInfoPanel() { setInfoEnabled(!State._infoEnabled); }
+
 export function toggleSourcePane() {
   enablePaneAnimation();
   if (State._sourcePaneOpen) closeSourcePane(true); else openSourcePane(true);
@@ -212,6 +224,17 @@ export function setProgressBar(on) {
 }
 
 export function toggleProgressBar() { setProgressBar(!State._progressBar); }
+
+/** Whether a plain wheel zooms the graph instead of panning it (View > Scroll Behaviour). */
+export function setWheelZoom(on) {
+  State._wheelZoom = !!on;
+  setWheelZooms(State._wheelZoom);
+  if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
+  saveSettings();
+}
+
+export function setScrollPan()  { setWheelZoom(false); }
+export function setScrollZoom() { setWheelZoom(true); }
 
 export function toggleLegend()
 {
@@ -331,7 +354,8 @@ export function load()
     else if (event.key === "z") { zoomGanttToMeasuredInterval(); }
     else if (event.key === "g") { toggleGanttPane(); }
     else if (event.key === "m") { toggleDarkMode(); }
-    else if (event.key === "s") { toggleSourcePane(); }
+    else if (event.key === "s") { if (!inEditor()) toggleSourcePane(); }   // (the editor has no source pane)
+    else if (event.key === "o") { toggleInfoPanel(); }
     else if (event.key === "p") { if (State.simEngine) State.simEngine.toggle(); }
     else if (event.key === "Tab") {
       // Tab / Shift+Tab — cycle forward / backward through source-code tabs.
@@ -379,7 +403,7 @@ export function load()
 
 // Regions and fusion nodes are collapsed the same way: by the id that the backend gives them.
 function _collapsibleId(d) {
-  return d.type === 'region' || d.type === 'tree-region' ? d.persistent_region_id
+  return d.type === 'region' || d.type === 'tree-region' ? (d.persistent_region_id === 'region_global' ? null : d.persistent_region_id)
        : d.type === 'fusion' ? d.persistent_fusion_id
        : null;
 }
@@ -391,12 +415,11 @@ function _regionsAreShown() {
   return false;
 }
 
-// Collapse or expand the selected regions and fusion nodes; with `recursive` everything inside them too (Once
+// Collapse or expand the regions and fusion nodes of `nodes` (data of graph nodes); with `recursive` everything inside them too (Once
 // leaves the state of what is inside as it is).
-function _setSelectedRegions(collapsed, recursive) {
-  if (!State.graphView) return;
+function _setRegions(nodes, collapsed, recursive) {
   var changed = false;
-  State.graphView.selectedNodes().forEach(function(d) {
+  nodes.forEach(function(d) {
     var id = _collapsibleId(d);
     if (id && (d.type !== 'region' && d.type !== 'tree-region' || _regionsAreShown())) {
       State._collapsedNodes[id] = collapsed;
@@ -408,10 +431,17 @@ function _setSelectedRegions(collapsed, recursive) {
   if (changed) fetchViewDataAndRender();
 }
 
+function _setSelectedRegions(collapsed, recursive) {
+  if (State.graphView) _setRegions(State.graphView.selectedNodes(), collapsed, recursive);
+}
+
+/** Collapses or expands the region or fusion node whose data is `node` (the context menu of a node does not select it). */
+export function setRegionsOf(node, collapsed, recursive) { _setRegions([node], collapsed, recursive); }
+
 function _setAllRegions(collapsed) {
   if (!_regionsAreShown()) return;
   var pids = State._allRegionPids || Object.keys(State._collapsedNodes);
-  pids.forEach(function(pid) { State._collapsedNodes[pid] = collapsed; });
+  pids.forEach(function(pid) { if (pid !== 'region_global') State._collapsedNodes[pid] = collapsed; });   // (the root of the program tree mode is never collapsed)
   fetchViewDataAndRender();
 }
 
@@ -480,8 +510,11 @@ export function syncExternalMenuIcons() {
   mark('menu-check-legend',      State._legendOpen);
   mark('menu-check-timeline',    State._ganttPaneOpen);
   mark('menu-check-source',      State._sourcePaneOpen);
-  mark('menu-check-info',        State._sourcePaneOpen);
+  mark('menu-check-info',        State._infoEnabled);
+  mark('menu-check-info-web',    State._infoEnabled);
   mark('menu-check-progress',    State._progressBar);
+  mark('menu-radio-scroll-pan',  !State._wheelZoom);
+  mark('menu-radio-scroll-zoom', State._wheelZoom);
   mark('menu-check-code-paths',  State._codePaths);
   mark('menu-check-definitions', State._pinDefinitions);
   mark('menu-check-dark',        State._darkMode);
@@ -491,6 +524,7 @@ export function syncExternalMenuIcons() {
 
 /** Open the info pane to the height that was remembered, or a default one. */
 export function openInfoPane() {
+  if (!State._infoEnabled) return;   // (View > Info Panel is off: a selection does not open it)
   var rightEl = document.getElementById('right_pane');
   var infoEl  = document.getElementById('info_window');
   if (inEditor()) {   // (the right pane is the info pane: it opens with the first selection and has the whole pane)
@@ -514,10 +548,14 @@ window.enablePaneAnimation         = enablePaneAnimation;
 window.openSourcePane              = openSourcePane;
 window.closeSourcePane             = closeSourcePane;
 window.toggleSourcePane            = toggleSourcePane;
+window.toggleInfoPanel             = toggleInfoPanel;
+window.setRegionsOf                = setRegionsOf;
 window.toggleCodePaths             = toggleCodePaths;
 window.toggleDefinitions           = toggleDefinitions;
 window.toggleLegend                = toggleLegend;
 window.toggleProgressBar           = toggleProgressBar;
+window.setScrollPan                = setScrollPan;
+window.setScrollZoom               = setScrollZoom;
 window.setProgressBar              = setProgressBar;
 window.closePopup                  = closePopup;
 window.showAlert                   = showAlert;

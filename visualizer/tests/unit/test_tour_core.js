@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { visibleSteps, stepIndex, spotRect, placePopover } from '../../script/tour_core.js';
+import { visibleSteps, stepIndex, spotRect, placePopover, placeInCorner } from '../../script/tour_core.js';
 
 const viewport = { width: 1000, height: 700 };
 const size = { width: 300, height: 140 };
@@ -61,5 +61,15 @@ describe('the popover', () => {
       expect(p.left).toBeGreaterThanOrEqual(12); expect(p.top).toBeGreaterThanOrEqual(12);
       expect(p.left + size.width).toBeLessThanOrEqual(988); expect(p.top + size.height).toBeLessThanOrEqual(688);
     }
+  });
+});
+
+describe('placeInCorner', () => {
+  const viewport = { width: 1000, height: 700 }, size = { width: 300, height: 200 };
+  it('puts the popover in the bottom-left corner of the rectangle, inside it', () => {
+    expect(placeInCorner({ left: 0, top: 22, width: 640, height: 480 }, size, viewport)).toEqual({ left: 12, top: 290, side: 'corner' });
+  });
+  it('keeps it inside the viewport', () => {
+    expect(placeInCorner({ left: 900, top: 22, width: 640, height: 2000 }, size, viewport)).toEqual({ left: 688, top: 488, side: 'corner' });
   });
 });

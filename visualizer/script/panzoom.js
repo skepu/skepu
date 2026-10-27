@@ -2,7 +2,8 @@
 // zoom to a node, a region or a group of nodes (when something is chosen in the code, say).
 //
 // No guess is made of the device, as the events say what is meant:
-//  * a plain wheel, or a two-finger swipe on a trackpad, pans the graph (Shift: sideways, for a wheel that only turns up and down);
+//  * a plain wheel, or a two-finger swipe on a trackpad, pans the graph (Shift: sideways); with View > Scroll Behaviour > Zoom (`setWheelZooms`),
+//    a plain wheel zooms and Shift pans;
 //  * Ctrl or Cmd with the wheel zooms around the pointer. This is also how Chromium and Firefox (and so an editor's webview) report the pinch
 //    of a trackpad: a wheel event with ctrlKey set;
 //  * Safari and WebKit report the pinch as gesturestart / gesturechange, which zoom around the pointer too (the wheel is ignored meanwhile).
@@ -39,6 +40,16 @@ export function wheelPan(event, pageSize) {
   return { x: dx * PAN_SPEED, y: dy * PAN_SPEED };
 }
 
+var wheelZooms = false;
+
+/** Whether a plain wheel zooms instead of panning (for mice; a trackpad swipe is a wheel event too). Ctrl and Cmd zoom either way. */
+export function setWheelZooms(on) { wheelZooms = !!on; }
+
+/** What a wheel event does: 'zoom' or 'pan'. */
+export function wheelAction(event) {
+  return (event.ctrlKey || event.metaKey || (wheelZooms && !event.shiftKey)) ? 'zoom' : 'pan';
+}
+
 /** Pans and zooms `cy` from the events of `el`. Returns a function that takes the listeners away again. */
 export function bindPanZoom(cy, el) {
   var baseZoom = 1, zooming = false;
@@ -47,7 +58,7 @@ export function bindPanZoom(cy, el) {
     event.preventDefault();
     if (zooming) return;                          // (a pinch of Safari: its gesture zooms, and the wheel events that come with it do not pan)
     var rect = el.getBoundingClientRect();
-    if (event.ctrlKey || event.metaKey) {
+    if (wheelAction(event) === 'zoom') {
       cy.zoom({
         level: cy.zoom() * wheelZoomFactor(event.deltaY, event.deltaMode, rect.height),
         renderedPosition: { x: event.clientX - rect.left, y: event.clientY - rect.top },

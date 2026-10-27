@@ -191,7 +191,9 @@ export class LegendView {
         '</div></div>';
     }
 
-    this._legendEl.innerHTML = colourSection + section('Nodes', nodeEntries) + section('Dependences', edgeEntries);
+    // The program tree mode has no dependences, so it has no Dependences section.
+    var dependences = this.settings['graph-mode'] === 'program-tree' ? '' : section('Dependences', edgeEntries);
+    this._legendEl.innerHTML = colourSection + section('Nodes', nodeEntries) + dependences;
 
     // Populate the freshly-inserted #color-bar gradient.
     this._updateColorBar();

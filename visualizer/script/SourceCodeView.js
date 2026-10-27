@@ -783,10 +783,9 @@ export class SourceCodeView {
   }
 
   /**
-   * Puts the badges of badgeNodes in the source panes, replacing the old ones in one step (the old badges are there until then, so that there is no
-   * time when the gutter has none: that was a flash). If the panes were just made, the placement waits BADGE_PLACEMENT_DELAY_MS for their line
-   * numbers. (The badges of one render are not skipped when they look like those of the one before: they have the ids of the nodes of their
-   * graph, which are new for each render, and a click uses them.)
+   * Puts the badges of badgeNodes in the source panes, replacing the old ones in one step (the old badges stay until then, so the gutter is never
+   * empty). If the panes were just made, the placement waits BADGE_PLACEMENT_DELAY_MS for their line numbers. The badges of a render are always
+   * replaced, even if they look like the previous ones: they carry the ids of the nodes of their graph, which are new for each render.
    *
    * @param {Array} badgeNodes  [{data:{type, file, line, id, ...}}] from /graph.
    */

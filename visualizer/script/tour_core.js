@@ -49,3 +49,16 @@ export function placePopover(rect, size, viewport, prefer = 'auto', gap = 14, ma
   }
   return { left: clamp(cx - size.width / 2, margin, maxLeft), top: clamp(rect.top + rect.height - size.height - margin, margin, maxTop), side: 'inside' };
 }
+
+/**
+ * Where the popover (size: { width, height }) goes in the bottom-left corner of `rect`, `margin` from its edges, kept inside the viewport.
+ * Returns { left, top, side: 'corner' }.
+ */
+export function placeInCorner(rect, size, viewport, margin = 12) {
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  return {
+    left: clamp(rect.left + margin, margin, viewport.width - size.width - margin),
+    top:  clamp(rect.top + rect.height - size.height - margin, margin, viewport.height - size.height - margin),
+    side: 'corner',
+  };
+}
