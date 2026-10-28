@@ -2,6 +2,7 @@
 // View and Colors menus offer them and as the browser remembers them (one entry of localStorage for both pages), and the menus themselves.
 
 import { COLOR_SPECTRUMS } from './TraceDataProvider.js';
+import { showContextMenu } from './context_menu.js';
 
 export const SETTINGS_KEY = 'skepu-visualizer-settings-v1';
 
@@ -109,6 +110,28 @@ export function buildSpectrumMenu(container, onPick) {
     b.onclick = function() { onPick(name); };
     container.append(b);
   });
+}
+
+/** The menu of the colour spectra at a place of the window (a click on the colour bar of the legend): the items of the menu of the menu bar, the current one checked. */
+export function showSpectrumMenu(x, y, current, onPick) {
+  var holder = document.createElement('div');
+  buildSpectrumMenu(holder, onPick);
+  showContextMenu(x, y, Array.prototype.slice.call(holder.children));
+  markChoice('.spectrum-radio', 'spectrum', current);
+}
+
+/**
+ * A menu of choices at a place of the window (a right click on the colour bar of the legend): one item for each of the buttons of a menu of the
+ * menu bar, with the text of it, checked if `isCurrent(button)`. An item does what its button does.
+ */
+export function showChoiceMenu(x, y, buttons, isCurrent) {
+  var items = Array.prototype.slice.call(buttons).map(function(source) {
+    var b = item('menu-radio', Array.prototype.filter.call(source.childNodes, function(n) { return n.nodeType === Node.TEXT_NODE; }).map(function(n) { return n.textContent; }).join(''), {});
+    b.querySelector('.menu-icon').textContent = isCurrent(source) ? '✓' : '';
+    b.onclick = function() { source.click(); };
+    return b;
+  });
+  showContextMenu(x, y, items);
 }
 
 /** Mark the item of a menu whose `data-<key>` is `value` (a check by it, none by the others). */

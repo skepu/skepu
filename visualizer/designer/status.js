@@ -1,14 +1,14 @@
-// status.js — what the designer says of the design: the problems (above the code) and the statistics (the ⓘ menu).
+// status.js — the problem list (above the code) and the statistics (ⓘ menu).
 import { objectsOf, PATTERNS } from './model.js';
 import { $, S, el, hooks } from './state.js';
 import { selectById } from './actions.js';
 
-/** The statistics of the design, in the ⓘ menu of the menu bar (as the statistics of a trace are in SkeVU). */
+/** Fills the statistics of the ⓘ menu. */
 export function renderStatus() {
     const set = (id, value) => { $(`#stat-${id}`).textContent = String(value); };
     const prng = S.design.containers.filter(c => c.kind === 'PRNG').length, externals = S.design.skeletons.filter(s => PATTERNS[s.pattern]?.host).length;
     const nodes = S.design.containers.length - prng, objects = [...objectsOf(S.design).values()].filter(m => m[0].kind !== 'PRNG').length;
-    set('data', nodes === objects ? nodes : `${objects} (${nodes} nodes: updates are the same data)`);
+    set('data', nodes === objects ? nodes : `${objects} (${nodes} nodes)`);
     set('streams', prng);
     set('skeletons', S.design.skeletons.length - externals);
     set('externals', externals);
@@ -26,7 +26,7 @@ export function renderProblems() {
     box.hidden = !all.length;
     box.classList.toggle('has-errors', S.result.errors.length > 0);
     $('summary', box).textContent = S.result.errors.length
-        ? `${S.result.errors.length} problem${S.result.errors.length === 1 ? '' : 's'} in the design${S.lastGood ? ': the program is the last one that could be made' : ''}`
+        ? `${S.result.errors.length} error${S.result.errors.length === 1 ? '' : 's'}${S.lastGood ? '; showing the last valid program' : ''}`
         : `${all.length} warning${all.length === 1 ? '' : 's'}`;
     list.replaceChildren(...all.map(p => {
         const row = el('div', { className: 'problem' + (p.error ? ' error' : ''), textContent: p.msg });

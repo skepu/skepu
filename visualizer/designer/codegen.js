@@ -1,18 +1,16 @@
-// codegen.js — the program of a lowered design (model.js lower()), as SkePU C++ and as SkePY Python.
-// Each emitter returns { text, lines, sites } where lines[i] is the ids of the design nodes that line (1-based: lines[0] is line 1) is for, so
-// that the editor can mark the code of the selected node and the node of the selected line; and sites are the lines where a skeleton is called
-// or a loop (a region) is entered, as the nodes of a trace are: { type, id, line (1-based), count (times it runs), order (in the program) }.
+// codegen.js — the program of a lowered design (model.js lower()) as SkePU C++ and SkePY Python.
+// Each emitter returns { text, lines, sites }: `lines[i]` has the design node ids of line i + 1 (for marking code and nodes), `sites` the lines where a
+// skeleton is called or a loop is entered, as { type, id, line, count (runs), order }.
 'use strict';
-import { readsOf, writesOf, overlapOf } from './model.js';
+import { PATTERNS, readsOf, writesOf, overlapOf, poolOf, strideOf, stridesOf, dimsOf } from './model.js';
 
 /**
- * Where each container is declared when it is declared before its first use (`containerPlacement: 'first-use'`): before the first step that
- * uses it, in the list of steps where all its uses are, and not inside a loop (it would be made again for each iteration): a loop is
- * entered only for a scope, a group that runs once. Random streams, and data that no call uses, are declared at the start (`start`).
- * Returns { before: Map(step -> the containers declared before it), start: [containers] }.
+ * Where containers are declared with `containerPlacement: 'first-use'`: before the first step that uses them, at the level where all uses are, outside loops
+ * (a scope runs once and is entered). Random streams and unused data are declared at the start (`start`).
+ * Returns { before: Map(step -> containers declared before it), start: [containers] }.
  */
 export function containerPlacement(program) {
-    const uses = new Map();                                    // object -> the paths (the steps from the top) of the calls that use it (by any of its updates)
+    const uses = new Map();                                    // object -> the step paths of the calls that use it (any update)
     walkCalls(program.steps, [], (call, path) => {
         for (const c of [...readsOf(call), ...writesOf(call)]) (uses.get(c.object) ?? uses.set(c.object, []).get(c.object)).push(path);
     });
@@ -26,7 +24,7 @@ export function containerPlacement(program) {
     return { before, start };
 }
 
-/** Calls fn(call, path) for each call, with the steps from the top that lead to it. */
+/** Calls fn(call, path) for each call, with the step path to it. */
 function walkCalls(steps, path, fn) {
     for (const step of steps) {
         const here = [...path, step];
@@ -34,7 +32,7 @@ function walkCalls(steps, path, fn) {
     }
 }
 
-/** The step that something used by the calls at `paths` is declared before: the first of them, in the list of steps where all of them are, and not inside a loop (a scope is entered when all of it is in one). */
+/** The step before which something used by the calls at `paths` is declared: the first use, at the level shared by all, outside loops. */
 function stepBefore(steps, paths) {
     let list = steps;
     for (let level = 0; ; level++) {
@@ -46,8 +44,8 @@ function stepBefore(steps, paths) {
 }
 
 /**
- * Where each skeleton is declared when it is declared before its first use (`skeletonPlacement: 'first-use'`): before its call, not inside a loop
- * (as for containers). Returns { before: Map(step -> the calls whose skeletons are declared before it) }.
+ * Where skeletons are declared with `skeletonPlacement: 'first-use'`: before their call, outside loops (as for containers).
+ * Returns { before: Map(step -> calls whose skeletons are declared before it) }.
  */
 export function skeletonPlacement(program) {
     const before = new Map();
@@ -60,24 +58,22 @@ export function skeletonPlacement(program) {
 }
 
 /**
- * The whitespace of the program (`options.whitespace`): 'balanced' (the default), 'readable' (a blank line between the fragments that come from
- * different nodes: the declarations of skeletons, the calls and the regions; what a call needs, its containers if they are declared
- * before their first use, and the setters of a skeleton, stay with it) or 'compact' (no comments of its own: no note on top, no names of
- * the sections, no note that a function is a stub; the comments of the user stay).
+ * The layout of the program (`options.whitespace`): 'balanced' (default); 'readable' (blank lines between fragments of different nodes: skeleton
+ * declarations, calls, regions; a call keeps its containers and setters); 'compact' (no generated comments; user comments stay).
  */
 class Writer {
     constructor(whitespace = 'balanced') {
         this.out = []; this.ids = []; this.depth = 0; this.sites = []; this.times = 1;
         this.readable = whitespace === 'readable'; this.compact = whitespace === 'compact';
     }
-    /** A comment of the program: not in the compact form. */
+    /** A generated comment (omitted in the compact form). */
     comment(text, ...ids) { if (!this.compact) this.line(text, ...ids); }
-    /** A blank line between two fragments, in the readable form: not after another blank line, an opening of a block or a comment. */
+    /** A blank line between fragments (readable form), not after a blank line, a block opening or a comment. */
     gap() {
         const last = (this.out[this.out.length - 1] ?? '').trim();
         if (this.readable && last !== '' && !last.endsWith('{') && !last.endsWith(':') && !last.startsWith('//') && !last.startsWith('#')) this.line();
     }
-    /** The next line is where a call (type 'skeleton_call') or a loop ('region') of the design is. */
+    /** Records that the next line is a call ('skeleton_call') or a loop ('region'). */
     site(type, id) { this.sites.push({ type, id, line: this.out.length + 1, count: this.times, order: this.sites.length }); }
     line(text = '', ...ids) {
         const ind = text === '' ? '' : this.indent.repeat(this.depth);
@@ -110,33 +106,52 @@ const cppParam = (p) => {
 
 const dims = c => c.size;
 
-/** A stub without the note that it is one (what the compact form has): the lines of comments are gone, and a comment after a statement. */
+/** A stub without comments (compact form). */
 const bare = (text, py) => text.split('\n').map(l => py ? l.replace(/\s*#.*$/, '') : l).filter(l => l.trim() && !l.trim().startsWith(py ? '#' : '//'));
 
-/** The lines of a user function: what the user wrote, or the stub with a note that it is one. */
+/** The lines of a user function: the user's body, or the stub with a TODO. */
 const cppBody = (f, compact) => {
     const user = (f.bodies.cpp ?? '').trim();
     return user ? user.split('\n') : compact ? bare(f.stub.cpp, false)
-        : ['// TODO: the function of ' + f.call.skeleton.label + (f.suffix === '_reduce' ? ' (the reduction)' : f.suffix === '_map' ? ' (the map)' : ''), ...f.stub.cpp.split('\n')];
+        : ['// TODO: ' + f.call.skeleton.label + (f.suffix === '_reduce' ? ' (reduction)' : f.suffix === '_map' ? ' (map)' : ''), ...f.stub.cpp.split('\n')];
 };
 
+/** Whether a user function is a lambda in its skeleton's declaration: the skeleton's setting, else the program option. */
+export const isLambda = (f, options) => !f.host && (f.call.skeleton.lambda?.[f.suffix] ?? options.userFunctions === 'lambdas');
+
+/** The skeleton type as the precompiler names it (Reduce1D, Reduce2D, MapOverlap2D, MapPool3D, Map, …); `call` is the lowered call, if any. */
+export const skeletonTypeName = (s, call) => s.pattern === 'Reduce' ? ((call ? call.second : s.params.second) ? 'Reduce2D' : 'Reduce1D')
+    : s.pattern === 'MapOverlap' || s.pattern === 'MapPool' ? `${s.pattern}${dimsOf(s)}D` : s.pattern;
+
+/** Whether a skeleton is created at its call: its own setting, else the program option (never for host blocks). */
+export const isAnonymous = (s, options) => !PATTERNS[s.pattern]?.host && (s.anonymous ?? options.skeletonInstancing === 'anonymous');
+
+/** Whether a text property is set (not empty). */
+const given = v => String(v ?? '').trim() !== '';
+/** Whether a numeric text is set and not zero (the default value). */
+const nonzero = v => given(v) && parseFloat(String(v).trim()) !== 0;
+/** Whether a Map or MapReduce has a stride other than 1. */
+const strided = call => stridesOf(call.skeleton, call.pattern === 'Map' ? 1 + call.elwise.length : call.elwise.length).some(x => x !== 1);
+
+/** The trace name of an anonymous skeleton: the type and the call site. */
+export const anonymousLabel = (s, call, file, line) => `${skeletonTypeName(s, call)}@${file}${line ? `:${line}` : ''}`;
+
 /**
- * The program as SkePU C++ (to be built with the precompiler: one skeleton for each line, or each statement).
- * `options.userFunctions`: 'functions' (the default: a function for each user function, before main) or 'lambdas' (a lambda in the
- * declaration of the skeleton). `options.containerPlacement`: 'grouped' (the default: the containers are declared together, before the
- * skeletons) or 'first-use' (before the first use, see containerPlacement()).
+ * The program as SkePU C++ (for the precompiler).
+ * `options.userFunctions`: 'functions' (default: named functions before main) or 'lambdas' (in the skeleton declaration), unless the skeleton sets it.
+ * `options.skeletonInstancing`: 'named' (default) or 'anonymous' (created at the call with chained settings), unless the skeleton sets it.
+ * `options.containerPlacement`: 'grouped' (default) or 'first-use'.
  */
 export function emitCpp(program, options = {}) {
-    const lambdas = options.userFunctions === 'lambdas';
+    const lambdaOf = f => isLambda(f, options);
     const w = new Writer(options.whitespace);
     w.style = 'cpp';
-    w.comment(`// ${program.name}: made by the SkeVU designer. The function bodies are stubs: write them, or`);
-    w.comment('// give them in the designer. Build it with the SkePU precompiler (see examples/Makefile).');
+    w.comment(`// ${program.name}: generated by the SkeVU designer. Function bodies are stubs.`);
     w.line('#include <iostream>');
     w.line('#include <skepu>');
     w.line('#include <skepu-lib/io.hpp>');
     w.line();
-    for (const f of lambdas ? [] : program.functions.filter(f => !f.host)) {
+    for (const f of program.functions.filter(f => !f.host && !lambdaOf(f))) {
         w.line(`${f.returns} ${f.name}(${f.params.map(cppParam).join(', ')})`, f.call.skeleton.id);
         w.line('{', f.call.skeleton.id);
         w.depth++;
@@ -157,66 +172,111 @@ export function emitCpp(program, options = {}) {
     w.line('skepu::setGlobalBackendSpec(spec);');
     w.line();
     const declareContainer = c => {
-        if (c.kind === 'PRNG') {                       // (the seed, if there is one, then the name: the stream has the default seed when it is left out)
+        if (c.kind === 'PRNG') {                       // seed (if any), then the name
             const seed = String(c.init ?? '').trim(), label = c.label.replace(/"/g, '\\"');
-            w.line(`skepu::PRNG ${c.name}(${seed ? `${seed}, ` : ''}"${label}");`, ...c.nodes);
+            const args = [...(seed ? [seed] : []), ...(c.label === c.name ? [] : [`"${label}"`])];
+            w.line(args.length ? `skepu::PRNG ${c.name}(${args.join(', ')});` : `skepu::PRNG ${c.name};`, ...c.nodes);
             return;
         }
-        const size = dims(c).join(', ');
-        w.line(`skepu::${c.kind}<${c.type}> ${c.name}(${size}, "${c.label.replace(/"/g, '\\"')}", ${cppNumber(c.init, c.type)});`, ...c.nodes);
+        // the label (the name of the symbol, by default) and the initial value (zero) are left out when they are the defaults
+        const zero = /^[-+]?0*(\.0*)?([eE][-+]?\d+)?[fFlL]?$/.test(String(c.init ?? '').trim());
+        const tensor = c.kind === 'Tensor3' || c.kind === 'Tensor4';
+        const args = [...dims(c)];
+        if (c.label !== c.name || (tensor && !zero)) args.push(`"${c.label.replace(/"/g, '\\"')}"`);
+        if (!zero) args.push(cppNumber(c.init, c.type));
+        w.line(`skepu::${c.kind}<${c.type}> ${c.name}(${args.join(', ')});`, ...c.nodes);
     };
     const placement = options.containerPlacement === 'first-use' ? containerPlacement(program) : null;
     const atStart = placement ? placement.start : program.containers;
-    if (atStart.length) w.comment(placement ? '// random streams, and data that no call uses' : '// containers');
+    if (atStart.length) w.comment(placement ? '// random streams and unused data' : '// containers');
     atStart.forEach(declareContainer);
     if (atStart.length) w.line();
-    /** `prefix` up to the parenthesis of the skeleton; then the user functions, by name or as lambdas (with the type that they return). */
-    const declare = (prefix, fns, id) => {
-        if (!lambdas) { w.line(`${prefix}${fns.map(f => f.name).join(', ')});`, id); return; }
+    /** Writes `prefix`, the user functions (by name or as lambdas), then `)` and `tail`; `chain` lines follow, indented. */
+    const declare = (prefix, fns, id, tail = ';', chain = []) => {
+        let pending = prefix;
         fns.forEach((f, i) => {
-            w.line(`${i === 0 ? prefix : ''}[](${f.params.map(cppParam).join(', ')}) -> ${f.returns}`, id);
+            const last = i === fns.length - 1;
+            if (!lambdaOf(f)) {
+                pending += f.name + (last ? `)${tail}` : ', ');
+                if (last) { w.line(pending, id); chainLines(); }
+                return;
+            }
+            w.line(`${pending}[](${f.params.map(cppParam).join(', ')}) -> ${f.returns}`, id);
+            pending = '';
             w.line('{', id);
             w.depth++;
             for (const l of cppBody(f, w.compact)) w.line(l, id);
             w.depth--;
-            w.line(i < fns.length - 1 ? '},' : '});', id);
+            w.line(last ? `})${tail}` : '},', id);
+            if (last) chainLines();
         });
+        function chainLines() {            // settings and call of an anonymous skeleton, one per line
+            w.depth++;
+            for (const [text, ...ids] of chain) w.line(text, id, ...ids);
+            w.depth--;
+        }
     };
-    const declareSkeleton = call => {
-        const s = call.skeleton, fns = program.functions.filter(f => f.call === call);
-        const id = s.id;
+    /** The skeleton constructor (`head`, up to the functions) and its settings as [text, ...node ids]. */
+    const skeletonParts = call => {
+        const s = call.skeleton, id = s.id, settings = [];
+        let head = '';
         switch (s.pattern) {
-            case 'Map':       declare(`auto ${call.name} = skepu::Map<${call.elwise.length}>(`, fns, id); break;
-            case 'MapReduce': declare(`auto ${call.name} = skepu::MapReduce<${call.elwise.length}>(`, fns, id); break;
-            case 'Reduce':    declare(`auto ${call.name} = skepu::Reduce(`, fns, id); break;
-            case 'Scan':
-                declare(`auto ${call.name} = skepu::Scan(`, fns, id);
-                if (s.params.mode === 'Exclusive') w.line(`${call.name}.setScanMode(skepu::ScanMode::Exclusive);`, id);
-                if (String(s.params.start ?? '').trim()) w.line(`${call.name}.setStartValue(${s.params.start});`, id);
+            case 'Map':
+                head = `skepu::Map<${call.elwise.length}>(`;
+                if (strided(call)) settings.push([`setStride(${stridesOf(s, 1 + call.elwise.length).join(', ')})`]);
                 break;
-            case 'MapOverlap': {
-                declare(`auto ${call.name} = skepu::MapOverlap(`, fns, id);
-                w.line(`${call.name}.setOverlap(${overlapOf(s).join(', ')});`, id);
-                w.line(`${call.name}.setEdgeMode(skepu::Edge::${s.params.edge});`, id);
-                if (s.params.edge === 'Pad') w.line(`${call.name}.setPad(${cppNumber(s.params.pad, call.elementType)});`, id);
+            case 'MapReduce':
+                head = `skepu::MapReduce<${call.elwise.length}>(`;
+                if (strided(call)) settings.push([`setStride(${stridesOf(s, call.elwise.length).join(', ')})`]);
+                if (given(s.params.start)) settings.push([`setStartValue(${cppNumber(s.params.start, call.elementType)})`]);
+                break;
+            case 'Reduce':
+                head = 'skepu::Reduce(';
+                if ((call.partial || call.second) && s.params.mode === 'ColWise') settings.push(['setReduceMode(skepu::ReduceMode::ColWise)']);
+                if (given(s.params.start)) settings.push([`setStartValue(${cppNumber(s.params.start, call.elementType)})`]);
+                break;
+            case 'Scan':
+                head = 'skepu::Scan(';
+                if (s.params.mode === 'Exclusive') settings.push(['setScanMode(skepu::ScanMode::Exclusive)']);
+                if (given(s.params.start)) settings.push([`setStartValue(${s.params.start})`]);
+                break;
+            case 'MapOverlap':
+                head = 'skepu::MapOverlap(';
+                if (overlapOf(s).some(o => o !== 1)) settings.push([`setOverlap(${overlapOf(s).join(', ')})`]);
+                if (s.params.edge !== 'Duplicate') settings.push([`setEdgeMode(skepu::Edge::${s.params.edge})`]);
+                if (s.params.edge === 'Pad' && nonzero(s.params.pad)) settings.push([`setPad(${cppNumber(s.params.pad, call.elementType)})`]);
+                if (s.params.update && s.params.update !== 'Normal') settings.push([`setUpdateMode(skepu::UpdateMode::${s.params.update})`]);
+                break;
+            case 'MapPool': {
+                head = 'skepu::MapPool(';
+                const pool = poolOf(s), stride = strideOf(s);
+                if (pool.join() === stride.join()) settings.push([`setPoolSizeAndStride(${pool.join(', ')})`]);
+                else settings.push([`setPoolSize(${pool.join(', ')})`], [`setStride(${stride.join(', ')})`]);
                 break;
             }
-            case 'MapPairs':  declare(`auto ${call.name} = skepu::MapPairs<1, 1>(`, fns, id); break;
+            case 'MapPairs':  head = 'skepu::MapPairs<1, 1>('; break;
             case 'MapPairsReduce':
-                declare(`auto ${call.name} = skepu::MapPairsReduce<1, 1>(`, fns, id);
-                w.line(`${call.name}.setReduceMode(skepu::ReduceMode::${s.params.mode === 'ColWise' ? 'ColWise' : 'RowWise'});`, id);
-                if (String(s.params.start ?? '').trim()) w.line(`${call.name}.setStartValue(${cppNumber(s.params.start, call.elementType)});`, id);
+                head = 'skepu::MapPairsReduce<1, 1>(';
+                if (s.params.mode === 'ColWise') settings.push(['setReduceMode(skepu::ReduceMode::ColWise)']);
+                if (given(s.params.start)) settings.push([`setStartValue(${cppNumber(s.params.start, call.elementType)})`]);
                 break;
         }
-        if (call.random) w.line(`${call.name}.setPRNG(${call.random.name});`, id, call.random.id);
-        if (s.backend) w.line(`${call.name}.setBackend(skepu::BackendSpec{"${s.backend}"});`, id);
+        if (call.random) settings.push([`setPRNG(${call.random.name})`, call.random.id]);
+        if (s.backend) settings.push([`setBackend(skepu::BackendSpec{"${s.backend}"})`]);
+        return { head, settings };
+    };
+    const declareSkeleton = call => {
+        const id = call.skeleton.id, fns = program.functions.filter(f => f.call === call);
+        const { head, settings } = skeletonParts(call);
+        declare(`auto ${call.name} = ${head}`, fns, id);
+        for (const [text, ...ids] of settings) w.line(`${call.name}.${text};`, id, ...ids);
     };
     const skeletons = options.skeletonPlacement === 'first-use' ? skeletonPlacement(program) : null;
     if (!skeletons) {
         w.comment('// skeletons');
         let declared = 0;
         for (const call of program.calls) {
-            if (call.host) continue;
+            if (call.host || isAnonymous(call.skeleton, options)) continue;
             if (declared++) w.gap();
             declareSkeleton(call);
         }
@@ -227,7 +287,7 @@ export function emitCpp(program, options = {}) {
     const emitCall = call => {
         const id = call.skeleton.id, names = cs => cs.map(c => c.name);
         const args = [...names(call.elwise), ...names(call.proxies), ...uniforms(call)];
-        if (call.io) {                                                  // skepu::io::cout of the data, and of the results that it prints
+        if (call.io) {                                                  // skepu::io::cout of the data and results
             w.site('external', id);
             const ids = [id, ...call.reads.map(c => c.id)];
             for (const c of call.reads) w.line(`skepu::io::cout << ${c.name} << "\\n";`, ...ids);
@@ -250,22 +310,24 @@ export function emitCpp(program, options = {}) {
             return;
         }
         w.site('skeleton_call', id);
-        switch (call.pattern) {
-            case 'MapReduce': case 'Reduce': {
-                const result = `${call.name}_result`;
-                w.line(`${call.elementType} ${result} = ${call.name}(${args.join(', ')});`, id);
-                if (call.printed) w.line(`skepu::io::cout << "${call.skeleton.label.replace(/"/g, '\\"')}: " << ${result} << "\\n";`, id);
-                break;
-            }
-            case 'MapPairs': case 'MapPairsReduce': w.line(`${call.name}(${[call.out.name, call.vertical.name, call.horizontal.name, ...names(call.proxies), ...uniforms(call)].join(', ')});`, id); break;
-            default: w.line(`${call.name}(${[call.out.name, ...args].join(', ')});`, id);
+        const callArgs = call.pattern === 'MapPairs' || call.pattern === 'MapPairsReduce'
+            ? [call.out.name, call.vertical.name, call.horizontal.name, ...names(call.proxies), ...uniforms(call)]
+            : call.scalar ? args : [call.out.name, ...args];
+        const scalar = call.scalar ? `${call.elementType} ${call.name}_result = ` : '';
+        if (isAnonymous(call.skeleton, options)) {                       // anonymous: created and called here
+            const { head, settings } = skeletonParts(call);
+            const fns = program.functions.filter(f => f.call === call), invoke = `(${callArgs.join(', ')});`;
+            if (settings.length) declare(`${scalar}${head}`, fns, id, '', [...settings.map(([text, ...ids]) => [`.${text}`, ...ids]), [invoke]]);
+            else declare(`${scalar}${head}`, fns, id, invoke);
+            return;
         }
+        w.line(`${scalar ? scalar + call.name : call.name}(${callArgs.join(', ')});`, id);
     };
     const emit = steps => {
         steps.forEach((step, i) => {
             if (i) w.gap();
             placement?.before.get(step)?.forEach(declareContainer);
-            skeletons?.before.get(step)?.forEach((call, k) => { if (k) w.gap(); declareSkeleton(call); });
+            skeletons?.before.get(step)?.filter(call => !isAnonymous(call.skeleton, options)).forEach((call, k) => { if (k) w.gap(); declareSkeleton(call); });
             if (step.type === 'call') { emitCall(step.call); return; }
             const v = step.loops === 0 ? 'iteration' : `iteration_${step.loops + 1}`;
             if (!step.scope) w.line(`for (size_t ${v} = 0; ${v} < ${step.count}; ++${v})`, step.loop.id);
@@ -291,7 +353,7 @@ export function emitCpp(program, options = {}) {
 const pyUniformValues = call => call.skeleton.uniforms.filter(u => u.name).map(u => pyNumber(u.value, u.type));
 const pyArg = (key, values) => values.length === 0 ? [] : [`${key}=${values.length === 1 ? values[0] : `(${values.join(', ')})`}`];
 
-/** The expression of a user function whose body is one line, `return expression` (comments and empty lines apart): what a lambda can have. Null if it is not. */
+/** The expression of a user function whose body is `return expression` (ignoring comments and blank lines); null otherwise. */
 const pyOneLiner = f => {
     const user = (f.bodies.py ?? '').trim();
     const lines = (user || f.stub.py).split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
@@ -300,18 +362,15 @@ const pyOneLiner = f => {
 };
 
 /**
- * The program as SkePY Python (the functions are plain Python, as Shed Skin takes them: build with `shedskin build`).
- * `options.userFunctions`: 'functions' (the default) or 'lambdas': a user function with a body of one line, `return expression`, is a
- * lambda in the declaration of the skeleton; one with more lines is a function, as before (a lambda cannot have statements).
+ * The program as SkePY Python. `options.userFunctions`: 'functions' (default) or 'lambdas': a function whose body is `return expression` becomes a
+ * lambda in the skeleton declaration; others stay functions.
  */
 export function emitPython(program, options = {}) {
-    const lambdas = options.userFunctions === 'lambdas';
-    const inline = f => lambdas && !f.host ? pyOneLiner(f) : null;
+    const inline = f => isLambda(f, options) ? pyOneLiner(f) : null;
     const used = f => { const e = inline(f); return e === null ? f.name : `lambda ${f.params.map(p => p.name).join(', ')}: ${e}`; };
     const w = new Writer(options.whitespace);
     w.style = 'py';
-    w.comment(`# ${program.name}: made by the SkeVU designer. The function bodies are stubs: write them, or`);
-    w.comment('# give them in the designer. Build it with SkePY (SKEPY.md): python3 -m shedskin build --trace this_file.py');
+    w.comment(`# ${program.name}: generated by the SkeVU designer. Function bodies are stubs.`);
     w.line('import skepu');
     w.line('import sys');
     w.line();
@@ -320,7 +379,7 @@ export function emitPython(program, options = {}) {
         const body = user || (w.compact ? bare(f.stub.py, true).join('\n') : f.stub.py);
         w.line(`def ${f.name}(${f.params.map(p => p.name).join(', ')}):`, f.call.skeleton.id);
         w.depth++;
-        if (!user) w.comment('# TODO: the function of ' + f.call.skeleton.label + (f.suffix === '_reduce' ? ' (the reduction)' : f.suffix === '_map' ? ' (the map)' : ''), f.call.skeleton.id);
+        if (!user) w.comment('# TODO: ' + f.call.skeleton.label + (f.suffix === '_reduce' ? ' (reduction)' : f.suffix === '_map' ? ' (map)' : ''), f.call.skeleton.id);
         for (const l of body.split('\n')) w.line(l, f.call.skeleton.id);
         w.depth--;
         w.line();
@@ -336,29 +395,42 @@ export function emitPython(program, options = {}) {
         w.line(c.kind === 'PRNG' ? `${c.name} = skepu.PRNG(${String(c.init ?? '').trim()})` : `${c.name} = skepu.${c.kind}(${[...c.size, pyNumber(c.init, c.type)].join(', ')})`, ...c.nodes);
     const placement = options.containerPlacement === 'first-use' ? containerPlacement(program) : null;
     const atStart = placement ? placement.start : program.containers;
-    if (atStart.length) w.comment(placement ? '# random streams, and data that no call uses' : '# containers');
+    if (atStart.length) w.comment(placement ? '# random streams and unused data' : '# containers');
     atStart.forEach(declareContainer);
     if (atStart.length) w.line();
     const declareSkeleton = call => {
         const s = call.skeleton, fns = program.functions.filter(f => f.call === call), id = s.id;
         switch (s.pattern) {
-            case 'Map': case 'MapPairs': case 'Scan': case 'MapOverlap': case 'Reduce':
+            case 'Map': case 'MapPairs': case 'Scan': case 'MapOverlap': case 'MapPool':
                 w.line(`${call.name} = skepu.${s.pattern}(${used(fns[0])})`, id); break;
+            case 'Reduce': w.line(`${call.name} = skepu.Reduce(${fns.map(used).join(', ')})`, id); break;
             case 'MapReduce': w.line(`${call.name} = skepu.MapReduce(${used(fns[0])}, ${used(fns[1])})`, id); break;
             case 'MapPairsReduce': w.line(`${call.name} = skepu.MapPairsReduce(${used(fns[0])}, ${used(fns[1])})`, id); break;
         }
         if (s.pattern === 'MapPairsReduce') {
-            w.line(`${call.name}.set_reduce_mode(skepu.REDUCEMODE_${s.params.mode === 'ColWise' ? 'ColWise' : 'RowWise'})`, id);
+            if (s.params.mode === 'ColWise') w.line(`${call.name}.set_reduce_mode(skepu.REDUCEMODE_ColWise)`, id);
+            if (given(s.params.start)) w.line(`${call.name}.set_start_value(${pyNumber(s.params.start, call.elementType)})`, id);
+        }
+        if (s.pattern === 'MapReduce' && given(s.params.start)) w.line(`${call.name}.set_start_value(${pyNumber(s.params.start, call.elementType)})`, id);
+        if ((s.pattern === 'Map' || s.pattern === 'MapReduce') && strided(call)) w.comment(`# ${call.name}: strides are not supported by SkePY.`, id);
+        if (s.pattern === 'Reduce') {
+            if ((call.partial || call.second) && s.params.mode === 'ColWise') w.line(`${call.name}.set_reduce_mode(skepu.REDUCEMODE_ColWise)`, id);
             if (String(s.params.start ?? '').trim()) w.line(`${call.name}.set_start_value(${pyNumber(s.params.start, call.elementType)})`, id);
+        }
+        if (s.pattern === 'MapPool') {
+            const pool = poolOf(s), stride = strideOf(s);
+            if (pool.join() === stride.join()) w.line(`${call.name}.set_pool_size_and_stride(${pool.join(', ')})`, id);
+            else w.line(`${call.name}.set_pool_size(${pool.join(', ')})`, id), w.line(`${call.name}.set_stride(${stride.join(', ')})`, id);
         }
         if (s.pattern === 'Scan') {
             if (s.params.mode === 'Exclusive') w.line(`${call.name}.set_scan_mode(skepu.SCANMODE_Exclusive)`, id);
             if (String(s.params.start ?? '').trim()) w.line(`${call.name}.set_start_value(${pyNumber(s.params.start, call.elementType)})`, id);
         }
         if (s.pattern === 'MapOverlap') {
-            w.line(`${call.name}.set_overlap(${overlapOf(s).join(', ')})`, id);
-            w.line(`${call.name}.set_edge_mode(skepu.EDGE_${s.params.edge})`, id);
-            if (s.params.edge === 'Pad') w.line(`${call.name}.set_pad(${pyNumber(s.params.pad, call.elementType)})`, id);
+            if (overlapOf(s).some(o => o !== 1)) w.line(`${call.name}.set_overlap(${overlapOf(s).join(', ')})`, id);
+            if (s.params.edge !== 'Duplicate') w.line(`${call.name}.set_edge_mode(skepu.EDGE_${s.params.edge})`, id);
+            if (s.params.edge === 'Pad' && nonzero(s.params.pad)) w.line(`${call.name}.set_pad(${pyNumber(s.params.pad, call.elementType)})`, id);
+            if (s.params.update && s.params.update !== 'Normal') w.line(`${call.name}.set_update_mode(skepu.UPDATEMODE_${s.params.update})`, id);
         }
         if (call.random) w.line(`${call.name}.set_prng(${call.random.name})`, id, call.random.id);
         if (s.backend) w.line(`${call.name}.set_backend(skepu.BackendSpec("${s.backend}"))`, id);
@@ -405,14 +477,13 @@ export function emitPython(program, options = {}) {
                 w.line(`${call.name}(${[call.out.name, ...pyArg('inargs', names(call.elwise)), ...kw].join(', ')})`, id); break;
             case 'MapReduce':
                 w.line(`${call.name}_result = ${call.name}(${[...pyArg('inargs', names(call.elwise)), ...kw].join(', ')})`, id);
-                if (call.printed) w.line(`print("${call.skeleton.label.replace(/"/g, '\\"')}:", ${call.name}_result)`, id);
                 break;
             case 'Reduce':
-                w.line(`${call.name}_result = ${call.name}(${call.elwise[0].name})`, id);
-                if (call.printed) w.line(`print("${call.skeleton.label.replace(/"/g, '\\"')}:", ${call.name}_result)`, id);
+                if (call.partial) w.comment(`# ${call.name}: Reduce to a vector is not supported by SkePY.`, id);
+                else w.line(`${call.name}_result = ${call.name}(${call.elwise[0].name})`, id);
                 break;
             case 'Scan': w.line(`${call.name}(${call.out.name}, ${call.elwise[0].name})`, id); break;
-            case 'MapOverlap': w.line(`${call.name}(${[call.out.name, call.elwise[0].name, ...kw].join(', ')})`, id); break;
+            case 'MapOverlap': case 'MapPool': w.line(`${call.name}(${[call.out.name, call.elwise[0].name, ...kw].join(', ')})`, id); break;
             case 'MapPairs': case 'MapPairsReduce': w.line(`${call.name}(${[call.out.name, `first=${call.vertical.name}`, `second=${call.horizontal.name}`, ...kw].join(', ')})`, id); break;
         }
     };
@@ -440,5 +511,5 @@ export function emitPython(program, options = {}) {
     return w.result();
 }
 
-/** The emitters by language; each takes the program and the options (`userFunctions`, `containerPlacement`, `skeletonPlacement`, `whitespace`). */
+/** The emitters by language; each takes the program and the options. */
 export const EMITTERS = { cpp: emitCpp, python: emitPython };

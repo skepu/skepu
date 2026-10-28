@@ -762,7 +762,7 @@ export class TimelineView {
           body.push('<rect class="gantt-bar' + selCls + '"' + opacityAttr
             + ' data-node-id="' + escAttr(d.id) + '" data-center-x="' + centerX + '" data-interval-idx="' + iidx + '"'
             + ' x="' + x1 + '" y="' + trBarY + '" width="' + bw + '" height="' + trBarH + '" rx="2"'
-            + ' fill="purple" stroke="rgba(0,0,0,0.2)" stroke-width="0.5">'
+            + ' fill="' + _callColor(d) + '" stroke="rgba(0,0,0,0.2)" stroke-width="0.5">'
             + '<title>' + tip + '</title></rect>');
           if (bw > _MIN_LABEL_W) {
             var iterSuffix = total > 1 ? ' ' + (iidx + 1) : '';

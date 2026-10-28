@@ -985,6 +985,7 @@ export class TransferNode extends DataNode {
         this.start     = jsonData.start;
         this.end       = jsonData.end;
         this.duration  = this.end - this.start;
+        this.durations = [this.duration];          // (the iterations of a transfer that is coalesced add theirs)
         this.intervals = [[this.start, this.end]];
         this.timestamp = jsonData.time ?? null;
         this.depth     = graph.depthByLabel(jsonData.label) + 1;
@@ -1006,6 +1007,8 @@ export class TransferNode extends DataNode {
             start:      this.start,
             end:        this.end,
             duration:   this.duration,
+            durations:  this.durations,
+            duration_cv: _durationCV(this.durations),
             intervals:  this.intervals,
         };
         if (this.elements != null) d.elements = this.elements;
@@ -1019,8 +1022,16 @@ export class TransferNode extends DataNode {
             type:            this.type,
             start:           this.start,
             end:             this.end,
+            duration:        this.duration,
+            durations:       this.durations,
+            duration_cv:     _durationCV(this.durations),
             intervals:       this.intervals,
             direction:       this.direction,
+            ...(this.elements != null ? { elements: this.elements } : {}),
+            dag_depth:       this.depth,
+            total_order:     this.totalOrder,
+            fan_in:          this._incoming.length,
+            fan_out:         this._outgoing.length,
             nesting_level:   this.nestingLevel,
             iteration_count: this.iterationCount,
         };

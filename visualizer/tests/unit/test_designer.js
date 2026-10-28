@@ -4,10 +4,10 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { lower, sampleDesign, allSkeletonsDesign, keepLoopsTogether, emptyDesign, defaultContainer, defaultSkeleton, identifier, inferOutput, effectiveContainers, transfers, defaultPrng, duplicateNodes, Residency, placeOf,
+import { lower, sampleDesign, allSkeletonsDesign, poolingDesign, emptyDesign, defaultContainer, defaultSkeleton, identifier, inferOutput, effectiveContainers, transfers, defaultPrng, duplicateNodes, Residency, placeOf,
          objectKey, membersOf, renameObject, joinObjects, detachNode, syncObject } from '../../designer/model.js';
 import { compareTrace } from '../../designer/compare.js';
-import { emitCpp, emitPython, containerPlacement } from '../../designer/codegen.js';
+import { emitCpp, emitPython, containerPlacement, isAnonymous } from '../../designer/codegen.js';
 import { synthesizeTrace } from '../../designer/trace.js';
 import { randomDesign, SIZES, ARITIES, SHAPES } from '../../designer/random.js';
 import { DirectedGraph } from '../../script/backend/graph.js';
@@ -50,7 +50,7 @@ describe('lowering a design', () => {
         d.positions[id.first].y = 500;
         const r = lower(d);
         expect(r.program.calls.map(c => c.name)).toEqual(['first', 'second']);
-        expect(r.warnings.map(w => w.msg).join()).not.toMatch(/before the call that writes it/);
+        expect(r.warnings.map(w => w.msg).join()).not.toMatch(/before it is written/);
     });
 
     it('orders by place the calls that the data flow does not order', () => {
@@ -83,7 +83,7 @@ describe('lowering a design', () => {
         expect(r.errors).toEqual([]);
         expect(r.program.calls.map(c => c.name)).toEqual(['w2', 'w1']);                // by place
         expect(r.versions[id.a2]).toEqual({ version: 1, count: 2 });
-        expect(r.warnings.map(w => w.msg).join()).toMatch(/does not say whether w[12] or w[12] writes it first/);
+        expect(r.warnings.map(w => w.msg).join()).toMatch(/write order of w[12] and w[12] is undetermined/);
     });
 
     it('has a node that nothing writes as the allocation of the object, and the updates after it', () => {
@@ -92,18 +92,18 @@ describe('lowering a design', () => {
         expect(r.errors).toEqual([]);
         expect(r.versions).toEqual({ [id.a2]: { version: 1, count: 1 } });             // (one update: no number)
         expect(r.program.calls[0]).toMatchObject({ name: 'f' });
-        expect(r.warnings.map(w => w.msg).join()).not.toMatch(/does not say/);
+        expect(r.warnings.map(w => w.msg).join()).not.toMatch(/undetermined/);
     });
 
     it('says when an update has two writers, or a second allocation, or another format, or is read and written by one call', () => {
         let { d, id } = make([['a']], [['f', 'Map'], ['g', 'Map']], [['f', 'a', 'out'], ['g', 'a', 'out']]);
-        expect(problems(lower(d)).join()).toMatch(/a is written by f and g: an update has one writer/);
+        expect(problems(lower(d)).join()).toMatch(/a: written by f and g; an update has one writer/);
         ({ d, id } = make([['a'], ['a2', 'Vector', undefined, 'a']], [['f', 'Map']], [['a', 'f', 'elwise']]));
-        expect(problems(lower(d)).join()).toMatch(/a has a second node that nothing writes/);
+        expect(problems(lower(d)).join()).toMatch(/a: several allocations of one object/);
         ({ d, id } = make([['a', 'Vector', [8]], ['a2', 'Vector', [9], 'a']], [['f', 'Map'], ['g', 'Map']], [['f', 'a', 'out'], ['g', 'a2', 'out']]));
-        expect(problems(lower(d)).join()).toMatch(/Vector<float> 8 and Vector<float> 9 are not the same object/);
+        expect(problems(lower(d)).join()).toMatch(/Vector<float> 8 and Vector<float> 9 differ; updates of one object share a format/);
         ({ d, id } = make([['a']], [['f', 'Map']], [['a', 'f', 'elwise'], ['f', 'a', 'out']]));
-        expect(problems(lower(d)).join()).toMatch(/f reads and writes a as the same update/);
+        expect(problems(lower(d)).join()).toMatch(/f: reads and writes a as one update/);
     });
 
     it('has the name of the object for all its nodes: one variable, and names that differ between objects', () => {
@@ -133,7 +133,7 @@ describe('lowering a design', () => {
         const { d } = make([['a'], ['b']], [['f', 'Map'], ['g', 'Map']], [['a', 'f', 'elwise'], ['f', 'b', 'out'], ['b', 'g', 'elwise'], ['g', 'a', 'out']]);
         const r = lower(d);
         expect(r.program.calls.map(c => c.name)).toEqual(['f', 'g']);
-        expect(r.warnings.map(w => w.msg).join()).toMatch(/is in a cycle of dependences/);
+        expect(r.warnings.map(w => w.msg).join()).toMatch(/dependence cycle/);
     });
 
     it('makes names that are identifiers and different', () => {
@@ -143,27 +143,27 @@ describe('lowering a design', () => {
     });
 
     it('checks the number of containers of each skeleton', () => {
-        const { d } = make([['a'], ['b']], [['f', 'Reduce'], ['g', 'Scan']], [['a', 'f', 'elwise'], ['b', 'f', 'elwise'], ['f', 'b', 'out']]);
+        const { d } = make([['a'], ['b'], ['c']], [['f', 'Reduce'], ['g', 'Scan'], ['h', 'MapReduce']], [['a', 'f', 'elwise'], ['b', 'f', 'elwise'], ['f', 'b', 'out'], ['a', 'h', 'elwise'], ['h', 'c', 'out']]);
         expect(problems(lower(d))).toEqual(expect.arrayContaining([
-            expect.stringMatching(/f: 2 input containers, a Reduce has 1/),
-            expect.stringMatching(/f: a Reduce has a scalar result, not an output container/),
-            expect.stringMatching(/g: 0 input containers, a Scan has 1/),
-            expect.stringMatching(/g: 0 output containers, a Scan has 1/),
+            expect.stringMatching(/f: 2 inputs, expected 1/),
+            expect.stringMatching(/h: scalar result, no output data/),
+            expect.stringMatching(/g: 0 inputs, expected 1/),
+            expect.stringMatching(/g: 0 outputs, expected 1/),
         ]));
     });
 
     it('checks sizes: of a Map, of a MapOverlap with an edge mode, of a MapPairs', () => {
         let { d } = make([['a', 'Vector', [10]], ['b', 'Vector', [12]]], [['f', 'Map']], [['a', 'f', 'elwise'], ['f', 'b', 'out']]);
-        expect(problems(lower(d))[0]).toMatch(/input a has 10 elements, the output b has 12/);
+        expect(problems(lower(d))[0]).toMatch(/input a \(10\) and output b \(12\) differ in size/);
         ({ d } = make([['v', 'Vector', [4]], ['h', 'Vector', [5]], ['m', 'Matrix', [5, 4]]], [['p', 'MapPairs']], [['v', 'p', 'vertical'], ['h', 'p', 'horizontal'], ['p', 'm', 'out']]));
-        expect(problems(lower(d))[0]).toMatch(/is a 4 x 5 Matrix/);
+        expect(problems(lower(d))[0]).toMatch(/output must be a 4 × 5 Matrix/);
         d.containers[2].size = [4, 5];
         expect(lower(d).ok).toBe(true);
     });
 
     it('checks that a MapOverlap is on a container of its dimensions', () => {
         const { d } = make([['m', 'Matrix', [4, 4]], ['o', 'Matrix', [4, 4]]], [['s', 'MapOverlap']], [['m', 's', 'elwise'], ['s', 'o', 'out']]);
-        expect(problems(lower(d))[0]).toMatch(/a 1D MapOverlap is on a Vector, not a Matrix/);
+        expect(problems(lower(d))[0]).toMatch(/1D MapOverlap requires a Vector, not a Matrix/);
         d.skeletons[0].params.dims = 2;
         expect(lower(d).ok).toBe(true);
     });
@@ -181,7 +181,7 @@ describe('lowering a design', () => {
             [['a', 'f', 'elwise'], ['f', 'b', 'out'], ['b', 'g', 'elwise'], ['g', 'c', 'out'], ['c', 'h', 'elwise'], ['h', 'a', 'out']], [['Loop']]);
         d.skeletons.find(s => s.id === id.f).parent = id.Loop;
         d.skeletons.find(s => s.id === id.h).parent = id.Loop;
-        expect(problems(lower(d)).join()).toMatch(/Loop: its calls are not consecutive/);
+        expect(problems(lower(d)).join()).toMatch(/Loop: calls are not consecutive/);
         d.skeletons.find(s => s.id === id.g).parent = id.Loop;
         const r = lower(d);
         expect(r.ok).toBe(true);
@@ -198,9 +198,10 @@ describe('the program in C++', () => {
         expect(cpp).toContain('float smooth_f(skepu::Region1D<float> r)');
         expect(cpp).toContain('float scale_f(float a, float factor)');
         expect(cpp).toContain('float energy_reduce(float a, float b)');
-        expect(cpp).toContain('skepu::Vector<float> signal(4096, "signal", 1.0f);');
+        expect(cpp).toContain('skepu::Vector<float> signal(4096, 1.0f);');
         expect(cpp).toContain('auto smooth = skepu::MapOverlap(smooth_f);');
-        expect(cpp).toContain('smooth.setOverlap(1);');
+        expect(cpp).not.toContain('smooth.setOverlap');          // the default overlap, edge mode and update mode are not set
+        expect(cpp).not.toContain('smooth.setEdgeMode');
         expect(cpp).toContain('auto energy = skepu::MapReduce<1>(energy_map, energy_reduce);');
         expect(cpp).toContain('for (size_t iteration = 0; iteration < 10; ++iteration)');
         expect(cpp).toContain('SKEPU_TRACE_SCOPE("Smoothing");');
@@ -222,7 +223,7 @@ describe('the program in C++', () => {
         const { text, lines } = emitCpp(lower(sampleDesign()).program);
         const row = text.split('\n').findIndex(l => l.includes('smooth(smoothed, signal);'));
         expect(lines[row]).toEqual(['s1']);
-        expect(lines[text.split('\n').findIndex(l => l.includes('"signal"'))]).toEqual(['c1']);
+        expect(lines[text.split('\n').findIndex(l => l.includes('signal(4096'))]).toEqual(['c1']);
         expect(lines.length).toBe(text.replace(/\n$/, '').split('\n').length);
     });
 
@@ -259,7 +260,7 @@ describe('the program in Python', () => {
         expect(py).toContain('return r[0]');
         expect(py).toContain('signal = skepu.Vector(4096, 1.0)');
         expect(py).toContain('smooth = skepu.MapOverlap(smooth_f)');
-        expect(py).toContain('smooth.set_overlap(1)');
+        expect(py).not.toContain('smooth.set_overlap');
         expect(py).toContain('energy = skepu.MapReduce(energy_map, energy_reduce)');
         expect(py).toContain('for iteration in range(10):');
         expect(py).toContain('with skepu.scope("Smoothing"):');
@@ -300,18 +301,6 @@ describe('the round trip: the trace of the program that was made from a design',
     });
 });
 
-describe('arranging a design', () => {
-    it('keeps the calls of a loop together, where the first of them is', () => {
-        const { d, id } = make([['a']], [['f', 'Map'], ['g', 'Map'], ['h', 'Map'], ['k', 'Map']], [], [['Loop']]);
-        for (const s of ['f', 'h']) d.skeletons.find(x => x.id === id[s]).parent = id.Loop;
-        // by place: f, g, h, k with g between the calls of the loop
-        keepLoopsTogether(d);
-        const order = d.skeletons.slice().sort((a, b) => d.positions[a.id].y - d.positions[b.id].y).map(s => s.label);
-        expect(order).toEqual(['f', 'h', 'g', 'k']);
-        expect(Object.values(d.positions).map(p => p.y).sort((a, b) => a - b)).toEqual([0, 100, 200, 300]);   // the same places
-    });
-});
-
 describe('the format of what a skeleton writes', () => {
     const vec = (n, type = 'float') => ({ kind: 'Vector', type, size: [n] });
     const mat = (r, c) => ({ kind: 'Matrix', type: 'float', size: [r, c] });
@@ -338,7 +327,7 @@ describe('the format of what a skeleton writes', () => {
         expect(sizes).toEqual({ a: '100', b: '100', c: '100', m: '100x100' });
         expect(d.containers.find(x => x.id === id.b).size).toEqual([3]);          // the design itself is as it was
         expect(lower(d).errors).toEqual([]);                                      // and the sizes that are inferred agree with each other
-        expect(emitCpp(lower(d).program).text).toMatch(/skepu::Matrix<float> m\(100, 100,/);
+        expect(emitCpp(lower(d).program).text).toMatch(/skepu::Matrix<float> m\(100, 100\)/);
     });
 
     it('keeps what a container has when its own call reads it', () => {
@@ -378,7 +367,7 @@ describe('in place', () => {
     it('is fine for a Map', () => expect(warnings('Map')).toEqual([]));
     it('is a warning through a proxy of a Map, and for the patterns that are not element by element', () => {
         expect(warnings('Map', 'proxy')[0]).toMatch(/proxy/);
-        expect(warnings('MapOverlap')[0]).toMatch(/not element by element/);
+        expect(warnings('MapOverlap')[0]).toMatch(/not elementwise/);
     });
 });
 
@@ -451,9 +440,9 @@ describe('random streams', () => {
         expect(program.calls.map(c => c.randomAfter)).toEqual([null, program.calls[0].skeleton.id]);
         expect(program.calls.map(c => c.random.name)).toEqual(['noise', 'noise']);
         const cpp = emitCpp(program).text;
-        expect(cpp).toContain('skepu::PRNG noise(7, "noise");');
+        expect(cpp).toContain('skepu::PRNG noise(7);');
         const { d: plain } = withStream();
-        expect(emitCpp(lower(plain).program).text).toContain('skepu::PRNG noise("noise");');          // (no seed: the default one, and the name)
+        expect(emitCpp(lower(plain).program).text).toContain('skepu::PRNG noise;');          // (no seed: the default one, and the name)
         expect(emitCpp(lower(plain).program).text).not.toContain('SKEPU_RAND_DEFAULT_SEED');
         expect(cpp).toContain('gen.setPRNG(noise);');
         expect(cpp).toContain('gen2.setPRNG(noise);');
@@ -464,10 +453,10 @@ describe('random streams', () => {
     it('have one edge out, and so has each Map in the chain, and a Map draws from one stream', () => {
         const { d, id } = withStream();
         d.edges.find(e => e.id === 'er2').from = 'p1';                                    // both Maps from the stream itself
-        expect(problems(lower(d)).join()).toMatch(/noise: 2 random edges out|2 random edges out/);
+        expect(problems(lower(d)).join()).toMatch(/2 outgoing random edges/);
         d.edges.find(e => e.id === 'er2').from = id.gen;
         d.edges.push({ id: 'er3', from: 'p1', to: id.gen2, role: 'random' });             // gen2 draws from two
-        expect(problems(lower(d)).join()).toMatch(/gen2: 2 random edges in/);
+        expect(problems(lower(d)).join()).toMatch(/gen2: 2 incoming random edges/);
     });
 
     it('go on in the order of the chain, whatever the places of the Maps', () => {
@@ -479,7 +468,7 @@ describe('random streams', () => {
     it('say when a Map is in a chain that has no stream, or a chain is a cycle', () => {
         const { d, id } = withStream();
         d.edges = d.edges.filter(e => e.id !== 'er1');                                    // gen2 follows gen, which has no stream
-        expect(problems(lower(d)).join()).toMatch(/gen2: draws random numbers after gen, which has no random stream/);
+        expect(problems(lower(d)).join()).toMatch(/gen2: gen has no random stream/);
         d.edges.push({ id: 'er4', from: id.gen2, to: id.gen, role: 'random' });
         expect(problems(lower(d)).join()).toMatch(/cycle/);
     });
@@ -503,22 +492,22 @@ describe('random streams', () => {
         expect(py).toContain('stencil(y, x, rand=skepu.Random(1))');
         expect(py).toContain('stencil.set_prng(noise)');
         d.skeletons.find(s => s.id === id.total).pattern = 'Reduce';                      // a Reduce has no Random parameter
-        expect(problems(lower(d)).join()).toMatch(/total: a Reduce does not draw random numbers/);
+        expect(problems(lower(d)).join()).toMatch(/total: Reduce takes no random stream/);
     });
 
     it('can only be the random numbers of a Map', () => {
         const { d, id } = withStream();
         d.edges.find(e => e.id === 'er1').role = 'elwise';
-        expect(lower(d).errors.map(e => e.msg).join()).toMatch(/is a random stream: connect it as the random numbers/);
+        expect(lower(d).errors.map(e => e.msg).join()).toMatch(/a random stream is not an input/);
         d.edges.find(e => e.id === 'er1').role = 'random';
         d.skeletons.find(s => s.id === id.gen).pattern = 'Scan';
-        expect(lower(d).errors.map(e => e.msg).join()).toMatch(/does not draw random numbers/);
+        expect(lower(d).errors.map(e => e.msg).join()).toMatch(/takes no random stream/);
     });
 
     it('are not written by a call', () => {
         const { d, id } = withStream();
         d.edges.push({ id: 'bad', from: id.gen, to: 'p1', role: 'out' });
-        expect(lower(d).errors.map(e => e.msg).join()).toMatch(/random stream: a call does not write it/);
+        expect(lower(d).errors.map(e => e.msg).join()).toMatch(/calls do not write random streams/);
     });
 });
 
@@ -594,7 +583,7 @@ describe('the trace that a design could have', () => {
         expect(ids[events.indexOf(calls[0])][0]).toBe('s1');
     });
 
-    it('has the transfers of a call on a device, the time of each, and the scalars of a reduction that is printed', () => {
+    it('has the transfers of a call on a device, the time of each, and the scalar of a reduction (no I/O block, nothing printed)', () => {
         const d = sampleDesign();
         d.skeletons.find(s => s.id === 's2').backend = 'opencl';
         const { events } = traceOf(d);
@@ -603,7 +592,7 @@ describe('the trace that a design could have', () => {
         for (const e of events.filter(e => e.type === 'skeleton_call' || e.type === 'transfer')) expect(e.end).toBeGreaterThan(e.start);
         const energy = events.find(e => e.label === 'energy');
         expect(energy.outputs).toHaveLength(1);
-        expect(events.find(e => e.label === 'I/O').proxy_inputs).toEqual(energy.outputs);
+        expect(events.some(e => e.label === 'I/O')).toBe(false);
     });
 
     it('is cut to the first iterations of long loops, and says how many', () => {
@@ -639,10 +628,10 @@ describe('I/O blocks', () => {
         expect(r.program.functions.filter(f => f.call === show.skeleton || f.call?.name === 'show')).toEqual([]);          // no user function
     });
 
-    it('leave the printing to the call when no block prints its result, and come after the call that makes the result', () => {
+    it('print a result only when it is connected to them, and come after the call that makes the result', () => {
         const { d, id } = design();
         d.edges = d.edges.filter(e => e.role !== 'scalar');
-        expect(emitCpp(lower(d).program).text).toContain('skepu::io::cout << "total: " << total_result');          // (by the call)
+        expect(emitCpp(lower(d).program).text).not.toContain('total: ');          // (the call does not print it)
         d.edges.push({ id: 'sc', from: id.total, to: id.show, role: 'scalar' });
         d.positions[id.show].y = -500; d.positions[id.total].y = 900;
         const r = lower(d);
@@ -664,10 +653,10 @@ describe('I/O blocks', () => {
     it('can only be connected from a Reduce or a MapReduce (its result) or from data', () => {
         const { d, id } = design();
         d.edges.push({ id: 'bad', from: id.f, to: id.show, role: 'scalar' });
-        expect(problems(lower(d)).join()).toMatch(/a scalar edge goes from a Reduce or MapReduce \(its result\) to an I\/O block/);
+        expect(problems(lower(d)).join()).toMatch(/Scalar edges go from a Reduce or MapReduce to an I\/O block/);
         d.edges.pop();
         d.edges.push({ id: 'bad2', from: id.total, to: id.f, role: 'scalar' });
-        expect(problems(lower(d)).join()).toMatch(/a scalar edge goes/);
+        expect(problems(lower(d)).join()).toMatch(/Scalar edges go/);
     });
 
     it('are made by Generate, with their results, and the designs stay valid and in the trace', () => {
@@ -695,17 +684,17 @@ describe('MapPairsReduce', () => {
         expect(r.program.functions.map(f => [f.name, f.params.map(p => p.name)])).toEqual([['rows_map', ['v', 'h']], ['rows_reduce', ['a', 'b']]]);
         const cpp = emitCpp(r.program).text, py = emitPython(r.program).text;
         expect(cpp).toContain('auto rows = skepu::MapPairsReduce<1, 1>(rows_map, rows_reduce);');
-        expect(cpp).toContain('rows.setReduceMode(skepu::ReduceMode::RowWise);');
+        expect(cpp).not.toContain('rows.setReduceMode');          // RowWise is the default
         expect(cpp).toContain('rows.setStartValue(1.0f);');
         expect(cpp).toContain('rows(r, v, h);');
         expect(py).toContain('rows = skepu.MapPairsReduce(rows_map, rows_reduce)');
-        expect(py).toContain('rows.set_reduce_mode(skepu.REDUCEMODE_RowWise)');
+        expect(py).not.toContain('rows.set_reduce_mode');
         expect(py).toContain('rows(r, first=v, second=h)');
     });
 
     it('is reduced along the rows or the columns: the output is as long as the vertical or the horizontal vector', () => {
         expect(lower(design('RowWise', 6).d).errors).toEqual([]);
-        expect(problems(lower(design('RowWise', 4).d)).join()).toMatch(/reduced along the rows, the output is a Vector of the size of v \(6\)/);
+        expect(problems(lower(design('RowWise', 4).d)).join()).toMatch(/output must be a Vector of 6 \(v\)/);
         expect(lower(design('ColWise', 4).d).errors).toEqual([]);
         expect(emitCpp(lower(design('ColWise', 4).d).program).text).toContain('rows.setReduceMode(skepu::ReduceMode::ColWise);');
         const { d, id } = design('ColWise', 4);
@@ -741,9 +730,9 @@ describe('a MapOverlap with no edge mode', () => {
 
     it('has an output that is smaller than the input by the overlap on each side (SkePU checks it)', () => {
         expect(lower(design(16).d).errors).toEqual([]);
-        expect(problems(lower(design(20).d)).join()).toMatch(/with the edge mode None the output is smaller than the input by the overlap on each side: 16 for a of 20, not 20/);
+        expect(problems(lower(design(20).d)).join()).toMatch(/edge mode None requires an output of 16 for a \(20\), not 20/);
         const { d } = design(16, [11]);
-        expect(problems(lower(d)).join()).toMatch(/more than a \(20\) has room for/);
+        expect(problems(lower(d)).join()).toMatch(/overlap exceeds a \(20\)/);
     });
 
     it('is inferred for data that the call writes, and has an output for each dimension of a Matrix', () => {
@@ -753,7 +742,7 @@ describe('a MapOverlap with no edge mode', () => {
         const m = make([['g', 'Matrix', [10, 12]], ['h', 'Matrix', [8, 12]]], [['s', 'MapOverlap', { params: { dims: 2, overlap: [1, 0], edge: 'None', pad: '0' } }]], [['g', 's', 'elwise'], ['s', 'h', 'out']]);
         expect(lower(m.d).errors).toEqual([]);
         m.d.skeletons[0].params.edge = 'Duplicate';
-        expect(problems(lower(m.d)).join()).toMatch(/with the edge mode Duplicate the output has the size of the input/);
+        expect(problems(lower(m.d)).join()).toMatch(/edge mode Duplicate requires an output of the input size/);
     });
 });
 
@@ -771,8 +760,8 @@ describe('3D and 4D tensors', () => {
         const r = lower(d);
         expect(r.errors).toEqual([]);
         const cpp = emitCpp(r.program).text, py = emitPython(r.program).text;
-        expect(cpp).toContain('skepu::Tensor3<float> t(4, 5, 6, "t", 0);');
-        expect(cpp).toContain('skepu::Tensor4<float> q(3, 3, 3, 3, "q", 0);');
+        expect(cpp).toContain('skepu::Tensor3<float> t(4, 5, 6);');
+        expect(cpp).toContain('skepu::Tensor4<float> q(3, 3, 3, 3);');
         expect(py).toContain('t = skepu.Tensor3(4, 5, 6, 0)');
         expect(py).toContain('q = skepu.Tensor4(3, 3, 3, 3, 0)');
     });
@@ -802,10 +791,10 @@ describe('3D and 4D tensors', () => {
     it('say when a MapOverlap is on a container of another rank, and check sizes', () => {
         const { d, id } = design();
         d.skeletons.find(s => s.id === id.blur).params.dims = 2;
-        expect(problems(lower(d)).join()).toMatch(/blur: a 2D MapOverlap is on a Matrix, not a Tensor3/);
+        expect(problems(lower(d)).join()).toMatch(/blur: 2D MapOverlap requires a Matrix, not a Tensor3/);
         d.skeletons.find(s => s.id === id.blur).params.dims = 3;
         d.containers.find(c => c.id === id.u).size = [4, 5, 7];
-        expect(problems(lower(d)).join()).toMatch(/with the edge mode Duplicate the output has the size of the input|has 120 elements/);
+        expect(problems(lower(d)).join()).toMatch(/edge mode Duplicate requires an output of the input size|differ in size/);
     });
 
     it('are in the trace with the pattern and the elements of their dimensions', () => {
@@ -864,7 +853,7 @@ describe('regions that are not loops', () => {
         r = lower(d);
         expect(r.dataRegion[id.b]).toBe(group.id);
         expect(r.dataRegion.b2).toBeNull();
-        expect(r.warnings.map(w => w.msg).join()).toMatch(/Other has no calls/);
+        expect(r.warnings.map(w => w.msg).join()).toMatch(/Other: no calls/);
     });
 
     it('nest, and a region with a call in it is not empty', () => {
@@ -873,7 +862,7 @@ describe('regions that are not loops', () => {
         d.skeletons.find(s => s.id === id.g).parent = 'inner';
         const r = lower(d);
         expect(r.ok).toBe(true);
-        expect(r.warnings.map(w => w.msg).join()).not.toMatch(/has no calls/);
+        expect(r.warnings.map(w => w.msg).join()).not.toMatch(/: no calls/);
         expect(r.program.steps[0].steps.map(s => s.type)).toEqual(['call', 'loop']);
     });
 });
@@ -1035,7 +1024,7 @@ describe('random designs', () => {
             seen.nested += d.loops.filter(l => l.parent).length;
             seen.proxies += d.edges.filter(e => e.role === 'proxy').length;
         }
-        expect([...seen.patterns].sort()).toEqual(['External', 'IO', 'Map', 'MapOverlap', 'MapPairs', 'MapPairsReduce', 'MapReduce', 'Reduce', 'Scan']);
+        expect([...seen.patterns].sort()).toEqual(['External', 'IO', 'Map', 'MapOverlap', 'MapPairs', 'MapPairsReduce', 'MapPool', 'MapReduce', 'Reduce', 'Scan']);
         expect(seen.prng).toBeGreaterThan(0); expect(seen.loop).toBeGreaterThan(0); expect(seen.scope).toBeGreaterThan(0);
         expect(seen.nested).toBeGreaterThan(0); expect(seen.proxies).toBeGreaterThan(0);
         expect([...seen.backends].sort()).toEqual(['cpu', 'opencl', 'openmp']);
@@ -1048,11 +1037,11 @@ describe('user functions as lambdas', () => {
     it('are in the declaration of the skeleton in C++, with the type that they return, and there is no function before main', () => {
         const text = emitCpp(lower(sampleDesign()).program, lambdas).text;
         expect(text).not.toMatch(/^float \w+\(/m);
-        expect(text).toMatch(/auto smooth = skepu::MapOverlap\(\[\]\(skepu::Region1D<float> r\) -> float\n\t\{\n\t\t\/\/ TODO: the function of smooth\n\t\treturn r\(0\);\n\t\}\);/);
+        expect(text).toMatch(/auto smooth = skepu::MapOverlap\(\[\]\(skepu::Region1D<float> r\) -> float\n\t\{\n\t\t\/\/ TODO: smooth\n\t\treturn r\(0\);\n\t\}\);/);
         expect(text).toMatch(/auto scale = skepu::Map<1>\(\[\]\(float a, float factor\) -> float/);
         // a MapReduce has two: the map and the reduction
         expect(text).toMatch(/skepu::MapReduce<1>\(\[\]\(float a\) -> float\n\t\{[^}]*\},\n\t\[\]\(float a, float b\) -> float\n\t\{[^}]*\}\);/);
-        expect(text).toContain('smooth.setOverlap(1);');            // what is set after the declaration is as before
+        expect(text).not.toContain('smooth.setOverlap');
     });
 
     it('have the body that the user gave, and their lines are the skeleton\'s', () => {
@@ -1113,7 +1102,7 @@ describe('where the containers are declared', () => {
         d.edges.push({ id: 'er', from: 'p', to: id.f, role: 'random' });
         return { d, id };
     };
-    const declarations = text => text.split('\n').flatMap((l, i) => /^\s*skepu::(Vector|Matrix|PRNG)/.test(l) ? [[i, l.match(/\b(\w+)\(/g).pop().slice(0, -1)]] : []);
+    const declarations = text => text.split('\n').flatMap((l, i) => /^\s*skepu::(Vector|Matrix|PRNG)/.test(l) ? [[i, l.match(/^\s*skepu::[\w<>]+ (\w+)/)[1]]] : []);
 
     it('is grouped by default, as before', () => {
         const { d } = design();
@@ -1137,7 +1126,7 @@ describe('where the containers are declared', () => {
         expect(at('t')).toBeLessThan(use('h'));
         expect(at('noise')).toBeLessThan(at('a'));
         expect(at('unused')).toBeLessThan(at('a'));
-        expect(text).toContain('// random streams, and data that no call uses');
+        expect(text).toContain('// random streams and unused data');
     });
 
     it('does not put a container in a loop, but in a scope that has all its uses', () => {
@@ -1158,7 +1147,7 @@ describe('where the containers are declared', () => {
         const r = lower(d);
         const py = emitPython(r.program, firstUse).text.split('\n');
         expect(py.findIndex(l => l.startsWith('    b = skepu.Vector'))).toBeLessThan(py.findIndex(l => l.startsWith('    f(b')));
-        expect(py).toContain('    # random streams, and data that no call uses');
+        expect(py).toContain('    # random streams and unused data');
         const { before, start } = containerPlacement(r.program);
         expect(start.map(c => c.label).sort()).toEqual(['noise', 'unused']);
         expect([...before.values()].flat().map(c => c.label).sort()).toEqual(['a', 'b', 'c', 't']);
@@ -1258,8 +1247,8 @@ describe('whitespace', () => {
         const cpp = emitCpp(r.program, compact).text, py = emitPython(r.program, compact).text;
         expect(comments(cpp, '//')).toEqual(['// mixing']);
         expect(comments(py, '#')).toEqual(['# mixing']);
-        expect(cpp).not.toMatch(/TODO|made by the SkeVU designer/);
-        expect(py).not.toMatch(/TODO|made by the SkeVU designer/);
+        expect(cpp).not.toMatch(/TODO|generated by the SkeVU designer/);
+        expect(py).not.toMatch(/TODO|generated by the SkeVU designer/);
         expect(py).toMatch(/with skepu\.external\(read=prefix, write=summary, label="inspect"\):\n {8}pass\n/);       // (an empty body needs a pass)
         expect(cpp).toMatch(/skepu::external\("inspect", skepu::read\(prefix\), \[&\]\n\t\{\n\t\}, skepu::write\(summary\)\);/);
         expect(cpp.split('\n').length).toBeLessThan(emitCpp(r.program).text.split('\n').length);
@@ -1277,12 +1266,11 @@ describe('whitespace', () => {
         expect(text).not.toMatch(/\{\n\n/);                                       // none after the opening of a block
         const at = re => lines.findIndex(l => re.test(l));
         expect(lines[at(/auto ramp_up =/) + 1]).toBe('');                       // the skeletons are apart
-        expect(lines[at(/smooth\.setPad/) + 1]).toBe('');                       // and what is set of one stays with it
+        expect(lines[at(/smooth\.setEdgeMode/) + 1]).toBe('');                  // and what is set of one stays with it
         expect(lines[at(/make_noise\.setPRNG/) - 1]).toMatch(/make_noise =/);
         expect(lines[at(/for \(size_t/) - 1]).toBe('');                         // a region is apart from what comes before it
         const closing = lines.findIndex((l, i) => i > at(/for \(size_t/) && l === '\t}');
         expect(lines[closing + 1]).toBe('');                                    // and from what comes after
-        expect(lines[at(/dot_result = dot/) + 1]).toMatch(/io::cout/);       // the print of a result stays with the call
     });
 
     it('keeps the containers before their first use with the call when it is readable', () => {
@@ -1356,8 +1344,8 @@ describe('objects: data nodes that are updates of the same data', () => {
     it('are never a random stream and data', () => {
         const d = emptyDesign();
         d.containers.push(defaultContainer('c1', 'data'), defaultPrng('c2', 'noise'));
-        expect(renameObject(d, d.containers[0], 'noise').refused).toMatch(/noise is a random stream/);
-        expect(joinObjects(d, d.containers[1], d.containers[0]).refused).toMatch(/not the same object/);
+        expect(renameObject(d, d.containers[0], 'noise').refused).toMatch(/cannot be one object/);
+        expect(joinObjects(d, d.containers[1], d.containers[0]).refused).toMatch(/cannot be one object/);
         expect(d.containers.map(objectKey)).toEqual(['c1', 'c2']);
     });
 
@@ -1365,7 +1353,7 @@ describe('objects: data nodes that are updates of the same data', () => {
         const { d, id } = chain();
         expect(joinObjects(d, node(d, id.a), node(d, id.c))).toEqual({ merged: 'a' });
         expect(node(d, id.c)).toMatchObject({ label: 'a', object: id.a });
-        expect(joinObjects(d, node(d, id.a), node(d, id.c)).refused).toMatch(/is an update of a already/);
+        expect(joinObjects(d, node(d, id.a), node(d, id.c)).refused).toMatch(/is already an update of a/);
         expect(membersOf(d, id.a).map(c => c.id)).toEqual([id.a, id.c]);
         expect(detachNode(d, node(d, id.c))).toBe('a_2');
         expect(node(d, id.c)).toMatchObject({ label: 'a_2' });
@@ -1404,5 +1392,202 @@ describe('objects: data nodes that are updates of the same data', () => {
         expect(trace.events.filter(e => e.type === 'transfer').map(e => [e.label, e.direction])).toEqual([['a', 'host-to-device'], ['a', 'device-to-host']]);
         expect(transfers(r.program).map(t => [t.container, t.consumer])).toEqual([[id.a, id.f], [id.a2, id.g]]);      // (by the node that is read)
         expect(compareTrace(r.program, trace.events)).toEqual([]);
+    });
+});
+
+
+describe('anonymous skeletons and lambdas for single functions', () => {
+    const design = (patch = {}) => make([['a', 'Vector', [8]], ['b', 'Vector', [8]], ['c', 'Vector', [8]]], [['sq', 'Map', { backend: 'cpu', ...patch }], ['total', 'MapReduce', patch], ['sm', 'Scan', patch]],
+        [['a', 'sq', 'elwise'], ['sq', 'b', 'out'], ['b', 'total', 'elwise'], ['b', 'sm', 'elwise'], ['sm', 'c', 'out']]);
+
+    it('are made where they are called, with their settings chained, and are not declared', () => {
+        const { d } = design({ anonymous: true });
+        d.skeletons.find(s => s.label === 'sm').params.mode = 'Exclusive';
+        const r = lower(d);
+        expect(r.errors).toEqual([]);
+        const cpp = emitCpp(r.program).text;
+        expect(cpp).not.toMatch(/auto (sq|total|sm) =/);
+        expect(cpp).toMatch(/\tskepu::Map<1>\(sq_f\)\n\t\t\.setBackend\(skepu::BackendSpec\{"cpu"\}\)\n\t\t\(b, a\);/);
+        expect(cpp).toMatch(/float total_result = skepu::MapReduce<1>\(total_map, total_reduce\)\(b\);/);
+        expect(cpp).toMatch(/\tskepu::Scan\(sm_f\)\n\t\t\.setScanMode\(skepu::ScanMode::Exclusive\)\n\t\t\(c, b\);/);
+        expect(cpp).toContain('float sq_f(float a)');                        // (a function that is not a lambda is before main, as before)
+    });
+
+    it('have a lambda in the expression of the call, and are named by the call in the trace', () => {
+        const { d } = design({ anonymous: true });
+        d.skeletons.find(s => s.label === 'sq').lambda = { _f: true };
+        const r = lower(d), cpp = emitCpp(r.program);
+        expect(cpp.text).toMatch(/skepu::Map<1>\(\[\]\(float a\) -> float\n\t\{\n[^]*?\t\}\)\n\t\t\.setBackend\(skepu::BackendSpec\{"cpu"\}\)\n\t\t\(b, a\);/);
+        const { events } = synthesizeTrace(r.program, { dir: '/x', file: 'd.cpp', lines: cpp.lines, sites: cpp.sites });
+        const line = cpp.sites.find(s => s.id === d.skeletons[0].id).line;
+        expect(events.find(e => e.pattern === 'Map').label).toBe(`Map@d.cpp:${line}`);
+        expect(compareTrace(r.program, events)).toEqual([]);
+    });
+
+    it('can have a lambda for one function of a skeleton and a name for the other', () => {
+        const { d } = design();
+        d.skeletons.find(s => s.label === 'total').lambda = { _reduce: true };
+        const cpp = emitCpp(lower(d).program).text;
+        expect(cpp).toMatch(/auto total = skepu::MapReduce<1>\(total_map, \[\]\(float a, float b\) -> float/);
+        expect(cpp).toContain('float total_map(float a)');
+        expect(cpp).not.toContain('float total_reduce(');
+        expect(emitCpp(lower(design().d).program, { userFunctions: 'lambdas' }).text).not.toContain('float sq_f(');      // (the option is the default)
+        const off = design().d;
+        off.skeletons.find(s => s.label === 'sq').lambda = { _f: false };
+        expect(emitCpp(lower(off).program, { userFunctions: 'lambdas' }).text).toContain('float sq_f(float a)');         // (and what a skeleton says wins)
+    });
+});
+
+describe('MapPool and the modes of Reduce', () => {
+    // a trace of the program of poolingDesign(), built with the precompiler and run on OpenMP (designer/roundtrip.mjs --pooling makes one)
+    const real = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../fixtures/designer_pooling_openmp.json'), 'utf8'));
+    const r = lower(poolingDesign());
+
+    it('have a design with no problems, and the calls of it are in the trace that the program made', () => {
+        expect(r.errors).toEqual([]);
+        expect(r.warnings).toEqual([]);
+        expect(compareTrace(r.program, real)).toEqual([]);
+    });
+
+    it('are named, sized and given their parameters in the trace as SkePU does', () => {
+        const cpp = emitCpp(r.program);
+        const mine = synthesizeTrace(r.program, { dir: '/x', file: 'a.cpp', lines: cpp.lines, sites: cpp.sites }).events.filter(e => e.type === 'skeleton_call');
+        const calls = real.filter(e => e.type === 'skeleton_call');
+        expect(mine.map(e => [e.label, e.pattern, e.elements, e.parameters ?? null]).map(x => JSON.stringify(x)))
+            .toEqual(calls.map(e => [e.label, e.pattern, e.elements, e.parameters ?? null]).map(x => JSON.stringify(x).replace('{"pool":true,"pool_size":[2,2],"stride":[2,2]}', '{"pool_size":[2,2],"stride":[2,2],"pool":true}')));
+    });
+
+    it('make the calls: a pool with its size and stride, and a reduction along the columns, of two functions, or into a vector', () => {
+        const cpp = emitCpp(r.program).text, py = emitPython(r.program).text;
+        expect(cpp).toContain('pool.setPoolSizeAndStride(2, 2);');
+        expect(cpp).toContain('col_total.setReduceMode(skepu::ReduceMode::ColWise);');
+        expect(cpp).toContain('auto max_row_sum = skepu::Reduce(max_row_sum_row, max_row_sum_col);');
+        expect(cpp).toContain('row_total(row_sums, image);');
+        expect(cpp).toContain('float max_row_sum_result = max_row_sum(image);');
+        expect(cpp).toContain('skepu::Pool2D<float> p');
+        expect(py).toContain('pool.set_pool_size_and_stride(2, 2)');
+        expect(py).toContain('# row_total: Reduce to a vector is not supported by SkePY');
+        expect(py).toContain('skepu.Reduce(max_row_sum_row, max_row_sum_col)');
+    });
+
+    it('have a pool with its own stride, a pool that does not fit, and a reduction of the wrong sort of data, said', () => {
+        const d = poolingDesign();
+        d.containers.find(c => c.label === 'pooled').auto = false;          // (an automatic output has the size that the pool makes)
+        const pool = d.skeletons.find(s => s.label === 'pool');
+        pool.params.stride = [3, 1];
+        const found = lower(d);
+        expect(emitCpp(found.program).text).toContain('pool.setPoolSize(2, 2);\n\tpool.setStride(3, 1);');
+        expect(found.errors.map(e => e.msg).join('\n')).toMatch(/output 16 × 24 does not fit image \(32 × 48\); pool 2 × 2 and stride 3 × 1 give 11 × 47/);
+        pool.params.stride = [1, 1];
+        expect(lower(d).warnings.map(w => w.msg).join('\n')).toMatch(/pool: pool and stride give 31 × 47; output pooled is 16 × 24/);
+        pool.params.pool = [40, 2];
+        expect(lower(d).errors.map(e => e.msg).join('\n')).toMatch(/pool 40 × 2 exceeds image/);
+        const bad = poolingDesign();
+        const sums = bad.containers.find(c => c.label === 'col_sums');
+        sums.auto = false; sums.size = [10];
+        expect(lower(bad).errors.map(e => e.msg).join('\n')).toMatch(/col_total: reducing the columns of image \(32 × 48\) gives a Vector of 48/);
+        const vec = poolingDesign();
+        vec.edges.push({ id: 'ex', from: 's5', to: vec.containers[2].id, role: 'out' });
+        expect(lower(vec).errors.map(e => e.msg).join('\n')).toMatch(/total: Reduce to a vector requires a Matrix, not a Vector/);
+        const io = poolingDesign();
+        io.edges.push({ id: 'ey', from: 's2', to: 's6', role: 'scalar' });
+        expect(lower(io).errors.map(e => e.msg).join('\n')).toMatch(/row_total has a vector result/);
+    });
+
+    it('infer the output of a pool and of a reduction of rows or columns', () => {
+        const m = { kind: 'Matrix', type: 'float', size: [32, 48] };
+        const pool = { ...defaultSkeleton('MapPool', 's', 'p'), params: { dims: 2, pool: [3, 2], stride: [2, 2] } };
+        expect(inferOutput(pool, { elwise: [m] }).size).toEqual([15, 24]);
+        const red = { ...defaultSkeleton('Reduce', 's', 'r'), params: { mode: 'ColWise' } };
+        expect(inferOutput(red, { elwise: [m] })).toMatchObject({ kind: 'Vector', size: [48] });
+        expect(inferOutput({ ...red, params: { mode: 'RowWise' } }, { elwise: [m] }).size).toEqual([32]);
+        expect(inferOutput(red, { elwise: [{ kind: 'Vector', type: 'float', size: [8] }] })).toBeNull();
+    });
+});
+
+describe('instance properties: strides, update mode, and defaults that are not written', () => {
+    const trace = (r, options = {}) => { const cpp = emitCpp(r.program, options); return synthesizeTrace(r.program, { dir: '/x', file: 'a.cpp', lines: cpp.lines, sites: cpp.sites, ...options }).events; };
+
+    it('are strides of a Map (the output, then each input) and of a MapReduce (each input): set in C++, a comment in Python, and sized as SkePU does', () => {
+        const { d } = make([['a', 'Vector', [256]], ['b', 'Vector', [128]]], [['halve', 'Map', { params: { strides: [1, 2] } }], ['total', 'MapReduce', { params: { start: '1.0f', strides: [2] } }]],
+            [['a', 'halve', 'elwise'], ['halve', 'b', 'out'], ['a', 'total', 'elwise']]);
+        const r = lower(d);
+        expect(r.errors).toEqual([]);
+        const cpp = emitCpp(r.program).text, py = emitPython(r.program).text;
+        expect(cpp).toContain('halve.setStride(1, 2);');
+        expect(cpp).toContain('total.setStride(2);');
+        expect(cpp).toContain('total.setStartValue(1.0f);');
+        expect(py).toContain('# halve: strides are not supported by SkePY.');
+        const calls = trace(r).filter(e => e.type === 'skeleton_call');
+        expect(calls.map(e => [e.elements, e.parameters])).toEqual([[[128], { strides: [1, 2] }], [[128], { strides: [2], start_value: 1 }]]);
+        d.skeletons[0].params.strides = [1, 4];
+        expect(lower(d).errors.map(e => e.msg).join()).toMatch(/halve: input a \(256\) and output b \(128\) differ in size/);
+    });
+
+    it('are inferred for the output of a strided Map, and not written when they are 1', () => {
+        const a = { kind: 'Vector', type: 'float', size: [256] };
+        const map = strides => ({ ...defaultSkeleton('Map', 's', 'm'), params: { strides } });
+        expect(inferOutput(map([1, 2]), { elwise: [a] }).size).toEqual([128]);
+        expect(inferOutput(map([2, 4]), { elwise: [a] }).size).toEqual([128]);
+        expect(inferOutput(map([]), { elwise: [a] }).size).toEqual([256]);
+        const { d } = make([['a', 'Vector', [8]], ['b', 'Vector', [8]]], [['f', 'Map', { params: { strides: [1, 1] } }]], [['a', 'f', 'elwise'], ['f', 'b', 'out']]);
+        expect(emitCpp(lower(d).program).text).not.toContain('setStride');
+        expect(trace(lower(d)).find(e => e.type === 'skeleton_call').parameters).toBeUndefined();
+    });
+
+    it('are the update mode of a MapOverlap: set when it is not Normal, and RedBlack is two passes in the trace', () => {
+        const design = update => make([['g', 'Matrix', [8, 8]], ['h', 'Matrix', [8, 8]]], [['sweep', 'MapOverlap', { params: { dims: 2, overlap: [1, 1], edge: 'Duplicate', pad: '0', update } }]],
+            [['g', 'sweep', 'elwise'], ['sweep', 'h', 'out']]).d;
+        const plain = lower(design('Normal')), red = lower(design('RedBlack')), black = lower(design('Black'));
+        expect(emitCpp(plain.program).text).not.toContain('setUpdateMode');
+        expect(emitCpp(red.program).text).toContain('sweep.setUpdateMode(skepu::UpdateMode::RedBlack);');
+        expect(emitPython(red.program).text).toContain('sweep.set_update_mode(skepu.UPDATEMODE_RedBlack)');
+        const passes = r => trace(r).filter(e => e.type === 'skeleton_call');
+        expect(passes(plain)).toHaveLength(1);
+        expect(passes(red)).toHaveLength(2);
+        expect(passes(black)).toHaveLength(1);
+        expect(passes(red)[0].parameters.update_mode).toBe('RedBlack');
+        expect(compareTrace(red.program, trace(red))).toEqual([]);
+    });
+
+    it('are not written for their defaults: the overlap 1, the edge mode Duplicate, a zero pad, the reduce mode RowWise', () => {
+        const overlap = params => make([['g', 'Matrix', [8, 8]], ['h', 'Matrix', [8, 8]]], [['s', 'MapOverlap', { params: { dims: 2, overlap: [1, 1], edge: 'Duplicate', pad: '0', ...params } }]],
+            [['g', 's', 'elwise'], ['s', 'h', 'out']]).d;
+        const text = params => emitCpp(lower(overlap(params)).program).text;
+        expect(text({})).not.toMatch(/s\.set/);
+        expect(text({ overlap: [2, 1] })).toContain('s.setOverlap(2, 1);');
+        expect(text({ edge: 'Cyclic' })).toContain('s.setEdgeMode(skepu::Edge::Cyclic);');
+        expect(text({ edge: 'Pad', pad: '0.0f' })).not.toContain('setPad');
+        expect(text({ edge: 'Pad', pad: '1.5f' })).toContain('s.setPad(1.5f);');
+    });
+});
+
+describe('skeleton instancing: the option of the program, and what a skeleton says', () => {
+    const design = (patch = {}) => make([['a', 'Vector', [8]], ['b', 'Vector', [8]]], [['f', 'Map', patch], ['io', 'IO']], [['a', 'f', 'elwise'], ['f', 'b', 'out'], ['b', 'io', 'read']]);
+
+    it('is named by default, and anonymous for every skeleton when the option says so', () => {
+        const r = lower(design().d);
+        expect(emitCpp(r.program).text).toContain('auto f = skepu::Map<1>(f_f);');
+        const anon = emitCpp(r.program, { skeletonInstancing: 'anonymous' }).text;
+        expect(anon).not.toContain('auto f =');
+        expect(anon).toContain('skepu::Map<1>(f_f)(b, a);');
+        expect(emitPython(r.program, { skeletonInstancing: 'anonymous' }).text).toContain('f = skepu.Map(f_f)');          // (SkePY declares it)
+    });
+
+    it('is what the skeleton sets, when it sets one, and never for a host block', () => {
+        const named = lower(design({ anonymous: false }).d), anonymous = lower(design({ anonymous: true }).d);
+        expect(emitCpp(named.program, { skeletonInstancing: 'anonymous' }).text).toContain('auto f = skepu::Map<1>(f_f);');
+        expect(emitCpp(anonymous.program, { skeletonInstancing: 'named' }).text).toContain('skepu::Map<1>(f_f)(b, a);');
+        const s = lower(design().d).program.calls.find(c => c.io).skeleton;
+        expect(isAnonymous(s, { skeletonInstancing: 'anonymous' })).toBe(false);
+    });
+
+    it('names the trace events of an anonymous skeleton by the call, and the comparison expects that', () => {
+        const r = lower(design().d), options = { skeletonInstancing: 'anonymous' };
+        const cpp = emitCpp(r.program, options);
+        const events = synthesizeTrace(r.program, { dir: '/x', file: 'd.cpp', lines: cpp.lines, sites: cpp.sites, ...options }).events;
+        expect(events.find(e => e.pattern === 'Map').label).toMatch(/^Map@d\.cpp:\d+$/);
+        expect(compareTrace(r.program, events, options)).toEqual([]);
+        expect(compareTrace(r.program, events).join()).toMatch(/the trace has Map@d\.cpp/);
     });
 });

@@ -12,12 +12,28 @@
 //   legend.highlightFor(ele);                 // the entry for a node or an edge that the pointer is over (legend.clearHighlight() when it leaves)
 //
 // options (all optional):
+//   hoverGraph  () -> the Cytoscape instance: the pointer over an entry of the legend marks the nodes or edges of that kind in the graph
+//               (class legend-match, styled in graph_style.js). Leave it out, or set HIGHLIGHT_GRAPH_ON_LEGEND_HOVER to false, for no such mark.
+//   clearHighlight   () -> (): the page lets go of its own highlight (the selection of a node...): called when a click on an entry keeps the mark of the entry
+//   onSelect         (callback) -> (): the page calls the callback when it highlights something (a selection); the mark that a click kept then ends
+//   onSpectrumClick  (x, y) -> (): a click on the colour bar (the spectrum that the calls are coloured by) asks for the menu of the spectra, at the place of the click
+//   onColorByClick   (x, y) -> (): a right click on it asks for the menu of what the calls are coloured after
 //   labels      { key: text }: another name for an entry (the key is its data-legend-key: 'container_update', ...)
 //   extraNodes  [{ key, label, icon(dark) -> svg markup, present() -> bool }]: kinds of nodes that only the page has
 //   typeKeys    { node type: key }: the entry of such a kind of node, for highlightFor
 
 import { COLORS, regionColor } from './graph_style.js';
 import { BACKEND_ORDER, PATTERN_ORDER, basePattern } from './TraceDataProvider.js';
+
+/** What the calls are coloured after, as the legend names it (the entries of Nodes > Color, shorter). */
+export const COLOR_BY_LABELS = {
+  'duration-total': 'total time', 'elements': 'elements', 'duration-per-element': 'time/element', 'iterations': 'iterations',
+  'duration-cv': 'variance', 'imbalance': 'imbalance', 'comm-bytes': 'comm. bytes', 'dag-depth': 'DAG depth', 'nesting-level': 'nesting',
+  'fan-in': 'fan-in', 'fan-out': 'fan-out', 'total-order': 'sequence', 'pattern': 'pattern', 'backend': 'backend',
+};
+
+/** The master switch of the mark in the graph (see the option hoverGraph): false turns it off for every graph that has a legend. */
+export const HIGHLIGHT_GRAPH_ON_LEGEND_HOVER = true;
 
 export class LegendView {
   // legendEl  — the #legend container element (safe to pass null; render() is a no-op)
@@ -27,6 +43,123 @@ export class LegendView {
     this._gv        = graphView;
     this._options   = options || {};
     this.settings   = {};   // set by graph.js to the shared settings reference
+    if (legendEl && this._options.onColorByClick) {
+      var colorPage = this;
+      legendEl.addEventListener('contextmenu', function(event) {
+        if (event.target.closest && event.target.closest('.legend-spectrum-section')) {
+          event.preventDefault();
+          colorPage._options.onColorByClick(event.clientX, event.clientY);
+        }
+      });
+    }
+    if (legendEl && this._options.onSpectrumClick) {
+      var page = this;
+      legendEl.addEventListener('click', function(event) {
+        if (event.target.closest && event.target.closest('.legend-spectrum-section')) {
+          event.stopPropagation();           // (the click that opens the menu is not one that closes it)
+          page._options.onSpectrumClick(event.clientX, event.clientY);
+        }
+      });
+    }
+    this._hoverKey   = null; // the entry that the pointer is over (hoverGraph)
+    this._lockedKey  = null; // the entry that a click keeps marked, while the pointer goes to the graph (a click on it again, or on another entry, ends it)
+    this._hoverFrame = 0;    // the frame that marks the graph
+    // (the entries are made again by render(): one listener on the panel, not one for each entry)
+    if (legendEl && this._options.hoverGraph && HIGHLIGHT_GRAPH_ON_LEGEND_HOVER) {
+      var self = this;
+      legendEl.classList.add('legend-interactive');      // (the entries answer the pointer: main.css)
+      var keyOf = function(event) { var item = event.target.closest && event.target.closest('[data-legend-key]'); return item ? item : null; };
+      legendEl.addEventListener('mouseover', function(event) {
+        var item = keyOf(event);
+        self._hoverGraph(item ? item.getAttribute('data-legend-key') : null);
+      });
+      legendEl.addEventListener('mouseleave', function() { self._hoverGraph(null); });
+      legendEl.addEventListener('click', function(event) {
+        var item = keyOf(event);
+        if (item) self._lock(item.getAttribute('data-legend-key'));
+      });
+      if (this._options.onSelect) this._options.onSelect(function() { self._unlock(); });
+    }
+  }
+
+  // The pointer is over the entry with this key (or none): a lock is not moved by it
+  _hoverGraph(key) {
+    if (key === this._hoverKey) return;
+    this._hoverKey = key;
+    this._markSoon();
+  }
+
+  // A click on an entry keeps its mark when the pointer leaves; on the entry that is kept, it lets go; on another, it is that one that is kept.
+  _lock(key) {
+    this._lockedKey = this._lockedKey === key ? null : key;
+    if (this._lockedKey && this._options.clearHighlight) this._options.clearHighlight();      // (the mark of the entry and a selection are not both in the graph)
+    this._showLock();
+    this._markSoon();
+  }
+
+  // The mark that a click kept ends (nothing happens when there is none)
+  _unlock() {
+    if (!this._lockedKey) return;
+    this._lockedKey = null;
+    this._showLock();
+    this._markSoon();
+  }
+
+  // What the user does in the graph (a click on a node, an edge or the background, a node that is dragged, a box that is drawn) ends the mark that a click kept: it
+  // is a mark to look at while the graph is panned or zoomed, and not one to keep when there is something else to look at. (Not the pan, the zoom and the hover.)
+  _bindRelease(cy) {
+    if (this._releaseCy === cy) return;
+    var self = this;
+    if (this._releaseCy) this._releaseCy.off('tap cxttapstart grab boxstart', this._release);
+    this._releaseCy = cy;
+    this._release = function() { self._unlock(); };
+    cy.on('tap cxttapstart grab boxstart', this._release);
+  }
+
+  // The entry that is kept has a class (main.css), and so has the panel while there is one (an entry that is not it answers the pointer less).
+  _showLock() {
+    var self = this;
+    this._legendEl.classList.toggle('legend-locked', !!this._lockedKey);
+    this._legendEl.querySelectorAll('.legend-item[data-legend-key]').forEach(function(el) {
+      el.classList.toggle('legend-item-locked', el.getAttribute('data-legend-key') === self._lockedKey);
+    });
+  }
+
+  // The nodes and edges of the entry that is kept, or else of the one that the pointer is over (what keyFor and swatchKeyFor say of them), marked at
+  // the next frame: a pointer that crosses the legend makes one change for each frame at most, and a change is one batch (one style pass, one redraw).
+  _markSoon() {
+    var self = this;
+    if (this._hoverFrame) cancelAnimationFrame(this._hoverFrame);
+    this._hoverFrame = requestAnimationFrame(function() {
+      self._hoverFrame = 0;
+      self._markGraph();
+    });
+  }
+
+  _markGraph() {
+    var self = this, key = this._lockedKey || this._hoverKey;
+    var cy = this._options.hoverGraph();
+    if (!cy) return;
+    this._bindRelease(cy);
+    var matches = key ? cy.elements().filter(function(ele) {
+      return !ele.hasClass('layout-phantom') && ele.visible() && (self.keyFor(ele) === key || self.swatchKeyFor(ele) === key);
+    }) : null;
+    cy.batch(function() {
+      cy.elements('.legend-match').removeClass('legend-match');
+      if (matches) matches.addClass('legend-match');
+    });
+    var entry = key && this._legendEl.querySelector('[data-legend-key="' + key + '"]');
+    if (entry) entry.title = matches.length + ' in the graph. Click to ' + (key === this._lockedKey ? 'let go of the mark.' : 'keep the mark.');
+  }
+
+  /** Marks nothing in the graph, and lets go of what a click kept (the graph was made again). */
+  clearGraphMark() {
+    this._hoverKey = null;
+    this._lockedKey = null;
+    if (this._hoverFrame) { cancelAnimationFrame(this._hoverFrame); this._hoverFrame = 0; }
+    var cy = this._options.hoverGraph && this._options.hoverGraph();
+    if (cy) cy.elements('.legend-match').removeClass('legend-match');
+    if (this._legendEl) this._showLock();
   }
 
   // Build or rebuild the full legend panel.
@@ -85,7 +218,7 @@ export class LegendView {
       nodeEntries.push([nodeIcon('<polygon points="10,2 18,17 2,17" fill="' + ctFill + '" stroke="' + ctStroke + '" stroke-width="2"/>'),
        'Scalar', 'scalar-node']);
     if (inGraph('node[type="transfer"]'))
-      nodeEntries.push([nodeIcon('<polygon points="10,1 19,10 10,19 1,10" fill="purple" stroke="#6a006a" stroke-width="1.5"/>'),
+      nodeEntries.push([nodeIcon('<polygon points="10,1 19,10 10,19 1,10" fill="' + midClr + '" stroke="' + midDark + '" stroke-width="1.5"/>'),
        'Transfer', 'transfer']);
     if (inGraph('node[type="compile"]'))
       nodeEntries.push([nodeIcon('<polygon points="5,2 15,2 19,6 19,14 15,18 5,18 1,14 1,6" fill="' + COLORS.compile.fill + '" stroke="' + COLORS.compile.stroke + '" stroke-width="1.5"/>'),
@@ -164,32 +297,31 @@ export class LegendView {
         '</div></div>';
     }
 
-    // What the colour of a call means: the spectrum of a measure, or (when the calls are coloured by pattern or by backend) the patterns or
-    // backends that the calls in the graph have
+    // What the colour of a call means: the measure that it is coloured after, on the spectrum (a gradient, with the ends of it); or, when the calls are
+    // coloured by pattern or by backend, the patterns or backends that the calls in the graph have, on the colours that the spectrum has for them (a bar of
+    // one colour for each, and no ends: it is not a scale)
     var mode = this.settings['node-color-call'];
-    var colourSection;
-    if (mode === 'pattern' || mode === 'backend') {
+    var classBased = mode === 'pattern' || mode === 'backend';
+    var swatches = '', classColors = null;
+    if (classBased) {
       var provider = gv._provider;
       var order = mode === 'pattern' ? PATTERN_ORDER : BACKEND_ORDER;
       var names = gv.callCategories(mode).slice().sort(function(a, b) {        // (in the order of the spectrum, the others last)
         var ia = order.indexOf(a), ib = order.indexOf(b);
         return (ia < 0 ? order.length : ia) - (ib < 0 ? order.length : ib);
       });
-      colourSection = section(mode === 'pattern' ? 'Skeletons' : 'Backends', names.map(function(name) {
-        var fill = mode === 'pattern' ? provider.patternColor(name) : provider.backendColor(name);
+      classColors = names.map(function(name) { return mode === 'pattern' ? provider.patternColor(name) : provider.backendColor(name); });
+      swatches = section(mode === 'pattern' ? 'Skeletons' : 'Backends', names.map(function(name, i) {
         var line = mode === 'pattern' ? provider.patternColor(name, true) : provider.backendColor(name, true);
-        return ['<i class="legend-swatch" style="background:' + fill + ';border-color:' + line + '"></i>', name, 'swatch:' + name];
+        return ['<i class="legend-swatch" style="background:' + classColors[i] + ';border-color:' + line + '"></i>', name, 'swatch:' + name];
       }));
-    } else {
-      colourSection =
-        '<div class="legend-section legend-spectrum-section">' +
-        '<div class="legend-section-title">Node color</div>' +
-        '<div class="legend-spectrum-row">' +
-        '<span class="legend-spec-end" style="color:' + textClr + '">min</span>' +
-        '<span id="color-bar"></span>' +
-        '<span class="legend-spec-end" style="color:' + textClr + '">max</span>' +
-        '</div></div>';
     }
+    this._classColors = classColors && classColors.length ? classColors : null;
+    var ends = function(word) { return classBased ? '' : '<span class="legend-spec-end" style="color:' + textClr + '">' + word + '</span>'; };
+    var colourSection = classBased && !this._classColors ? '' :
+      '<div class="legend-section legend-spectrum-section' + (this._options.onSpectrumClick ? ' legend-clickable" title="Click: another color spectrum.' + (this._options.onColorByClick ? ' Right click: color by something else.' : '') : '') + '">' +
+      '<div class="legend-section-title">Color by ' + (COLOR_BY_LABELS[mode] || 'measure') + '</div>' +
+      '<div class="legend-spectrum-row">' + ends('min') + '<span id="color-bar"></span>' + ends('max') + '</div></div>' + swatches;
 
     // The program tree mode has no dependences, so it has no Dependences section.
     var dependences = this.settings['graph-mode'] === 'program-tree' ? '' : section('Dependences', edgeEntries);
@@ -197,6 +329,10 @@ export class LegendView {
 
     // Populate the freshly-inserted #color-bar gradient.
     this._updateColorBar();
+
+    // an entry that a click kept is still kept if the graph has what it stands for; the marks are of the elements that the graph has now
+    if (this._lockedKey && !this._legendEl.querySelector('[data-legend-key="' + this._lockedKey + '"]')) this._lockedKey = null;
+    if (this._legendEl.classList.contains('legend-interactive')) { this._showLock(); this._markSoon(); }
   }
 
   /** The data-legend-key of the entry for a node or an edge of the graph (a Cytoscape element), or null. */
@@ -231,11 +367,16 @@ export class LegendView {
   /** Mark the entry for a node or an edge (and, for a call, the swatch of the pattern or backend that it is coloured by). */
   highlightFor(ele) {
     this.highlightKey(this.keyFor(ele));
-    var mode = this.settings['node-color-call'];
-    if (!this._legendEl || ele.data('type') !== 'skeleton_call' || (mode !== 'pattern' && mode !== 'backend')) return;
-    var name  = mode === 'pattern' ? basePattern(ele.data('pattern')) : ele.data('backend');
-    var entry = this._legendEl.querySelector('[data-legend-key="swatch:' + name + '"]');
+    var swatch = this.swatchKeyFor(ele);
+    var entry = swatch && this._legendEl && this._legendEl.querySelector('[data-legend-key="' + swatch + '"]');
     if (entry) entry.classList.add('legend-item-hovered');
+  }
+
+  /** The data-legend-key of the swatch (the pattern or the backend) that a call is coloured by, or null. */
+  swatchKeyFor(ele) {
+    var mode = this.settings['node-color-call'];
+    if (ele.data('type') !== 'skeleton_call' || (mode !== 'pattern' && mode !== 'backend')) return null;
+    return 'swatch:' + (mode === 'pattern' ? basePattern(ele.data('pattern')) : ele.data('backend'));
   }
 
   /**
@@ -265,6 +406,12 @@ export class LegendView {
     // Sample the active spectrum at 20 evenly-spaced points to produce a smooth
     // linear-gradient.  This avoids importing COLOR_SPECTRUMS directly and keeps
     // the gradient in sync with whatever spectrum the provider currently uses.
+    if (this._classColors) {      // (one block for each colour that is sampled)
+      var n = this._classColors.length, blocks = [];
+      this._classColors.forEach(function(c, k) { blocks.push(c + ' ' + (100 * k / n) + '%', c + ' ' + (100 * (k + 1) / n) + '%'); });
+      bar.style.background = 'linear-gradient(to right,' + blocks.join(',') + ')';
+      return;
+    }
     var N    = 20;
     var pts  = [];
     for (var i = 0; i <= N; i++) {

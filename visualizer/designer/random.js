@@ -1,14 +1,11 @@
-// random.js — a random design: a graph of containers, skeletons, externals, random streams and regions that makes a valid program
-// (model.js lower() has no errors). The settings bias the choices, they do not fix the result:
+// random.js — a random design (containers, skeletons, externals, random streams, regions) that lowers without errors. The settings bias the choices:
 //   size   small | medium | large   about 12, 40 or 100 nodes
-//   arity  small | large            how many inputs, proxies and uniforms the calls have, and how much the externals read and write
-//   shape  deep | balanced | wide   deep: each call reads what the last calls wrote (long chains); wide: many sources and calls on
-//                                   data that is read again and again (many short chains side by side)
-//   seed   text; the same settings and seed make the same design (empty: a seed is made, and returned)
-// A call often writes data that exists already, as SkePU programs do: a new update of an object that has the name (in place, for a Map; or
-// data that the call depends on), and the Maps that draw random numbers are sometimes a chain on one stream.
-// Pure: no DOM. The calls are made in order (each reads only what was made before), so the design has no cycles and the order of the
-// calls from the top is the order in which they were made; the regions are intervals of that order.
+//   arity  small | large            inputs, proxies and uniforms per call; reads and writes of externals
+//   shape  deep | balanced | wide   deep: calls read the latest writes (long chains); wide: many sources, data read repeatedly (many short chains)
+//   seed   text; the same settings and seed give the same design (empty: one is generated and returned)
+// Calls often write existing data as a new update of its object (in place for a Map, or data the call depends on); Maps that draw random numbers
+// sometimes form a chain on one stream. No DOM. Calls are created in order and read only earlier data, so there are no cycles; vertical order is
+// creation order, and regions are intervals of it.
 'use strict';
 import { defaultSkeleton, defaultContainer, defaultPrng, emptyDesign, objectKey } from './model.js';
 
@@ -19,11 +16,11 @@ export const SHAPES = ['deep', 'balanced', 'wide'];
 // ── A seeded random number generator ─────────────────────────────────────────
 
 function seeded(text) {
-    let h = 1779033703 ^ text.length;                          // (a hash of the text: xmur3)
+    let h = 1779033703 ^ text.length;                          // xmur3 hash of the text
     for (let i = 0; i < text.length; i++) { h = Math.imul(h ^ text.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
     h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909);
     let a = (h ^ (h >>> 16)) >>> 0;
-    return () => {                                              // (mulberry32)
+    return () => {                                              // mulberry32
         a = (a + 0x6D2B79F5) | 0;
         let t = Math.imul(a ^ (a >>> 15), 1 | a);
         t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
@@ -33,15 +30,14 @@ function seeded(text) {
 
 const newSeed = () => Math.random().toString(36).slice(2, 8);
 
-// ── The biases ───────────────────────────────────────────────────────────────
+// ── Biases ───────────────────────────────────────────────────────────────────
 
-const CALLS = { small: [4, 6], medium: [14, 22], large: [40, 52] };           // calls (about as many containers: 12, 40, 100 nodes)
-/** The weights of the inputs of an elementwise call: 1 input, 2, 3, ... */
+const CALLS = { small: [4, 6], medium: [14, 22], large: [40, 52] };           // call counts (about as many containers)
+/** Weights for the number of inputs of an elementwise call: 1, 2, 3, … */
 const INPUTS = { small: [0.72, 0.24, 0.04], large: [0.05, 0.3, 0.3, 0.2, 0.15] };
 const SHAPE = {
-    //        how much the newest data is preferred to the old (the weight of the data of age n is e^(-recency n)), how often a call starts
-    //        from new data instead of reading what there is, and how much data that is read already is read again
-    //        and how often a call writes a new update of data that exists, instead of new data
+    //        recency: preference for newer data (weight e^(-recency × age)); fresh: how often a call starts from new data; reuse: how often read data
+    //        is read again; again: how often a call writes a new update of existing data
     deep:     { recency: 1.6, fresh: 0.06, reuse: 0, again: 0.3 },
     balanced: { recency: 0.35, fresh: 0.2, reuse: 0.4, again: 0.3 },
     wide:     { recency: 0, fresh: 0.45, reuse: 1.2, again: 0.2 },
@@ -50,7 +46,7 @@ const VECTORS = [512, 1024, 2048, 4096], SMALL_VECTORS = [16, 32, 48, 64], MATRI
 
 /**
  * @param {{ size?: string, arity?: string, shape?: string, seed?: string }} settings
- * @returns {{ design, seed }}  the design, and the seed (the one given, or the one that was made)
+ * @returns {{ design, seed }}  the design and its seed (given or generated)
  */
 export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanced', seed = '' } = {}) {
     seed = String(seed ?? '').trim() || newSeed();
@@ -77,12 +73,12 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
     const step = 90, lane = 130;
     let row = 0;
 
-    // the formats: a few sizes of vectors, small vectors (for the pairs) and a matrix or two
+    // formats: some vector sizes, small vectors (for pairs) and a few matrices
     const vectorSizes = [...VECTORS].sort(() => rnd() - 0.5).slice(0, 2);
     const matrixShapes = [...MATRICES].sort(() => rnd() - 0.5).slice(0, 2);
     const formatKey = c => `${c.kind}:${c.size.join('x')}`;
 
-    // the data that there is: { container, age (calls since it was made), readers }
+    // available data: { container, age (calls since creation), readers }
     const pool = [];
     let calls = 0;
     const place = (node, x) => { d.positions[node.id] = { x: Math.round(x), y: Math.round(row * step + int(-10, 10)) }; };
@@ -94,14 +90,14 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
         return c;
     };
     const randomFormat = () => chance(0.7) ? { kind: 'Vector', type: 'float', size: [pick(vectorSizes)] } : { kind: 'Matrix', type: 'float', size: [...pick(matrixShapes)] };
-    /** New data that is read but not written by a call: an allocation. */
+    /** New data read but not written by any call: an allocation. */
     const source = (format = randomFormat()) => {
         const c = container(format, { fresh: true });
         place(c, int(0, 6) * lane);
         return c;
     };
 
-    /** An input: data that there is (the newest preferred for a deep graph, the data that is read often for a wide one), or new data. */
+    /** An input: existing data (newest for a deep graph, frequently read for a wide one) or new data. */
     const input = (matching, avoid = new Set()) => {
         const candidates = pool.filter(p => !avoid.has(p.container.id) && (!matching || matching(p.container)));
         if (!candidates.length || chance(bias.fresh)) return null;
@@ -118,11 +114,11 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
     const skeleton = (pattern, patch = {}) => {
         const s = { ...defaultSkeleton(pattern, id('s'), `${pattern.toLowerCase()}${(counts[pattern] = (counts[pattern] ?? 0) + 1)}`), ...patch };
         const backend = chance(0.4) ? pick(['cpu', 'openmp', 'opencl']) : '';
-        if (backend && pattern !== 'External' && pattern !== 'IO') s.backend = backend;          // (a host block has no backend)
+        if (backend && pattern !== 'External' && pattern !== 'IO') s.backend = backend;          // host blocks have no backend
         d.skeletons.push(s);
         return s;
     };
-    // an I/O block ("I/O", as in SkeVU): it prints data, or the result of a reduction (the block is connected from the call, and is in its region)
+    // an I/O block: prints data or a reduction result (connected from the call, in its region)
     const ioLabel = () => counts.IO ? `I/O ${counts.IO + 1}` : 'I/O';
     const followers = [];
     const printResult = (s, p) => {
@@ -133,7 +129,7 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
         followers.push([io, s]);
     };
 
-    // the first input of a call, and the others of the same format
+    // the first input of a call, then others of the same format
     const inputs = (k, format) => {
         const chosen = [];
         const avoid = new Set();
@@ -150,7 +146,7 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
         }
         return chosen;
     };
-    /** Proxies and uniforms of a call, as the arity wants them. */
+    /** Proxies and uniforms of a call, per the arity. */
     const extras = (s, taken) => {
         const proxies = large ? int(0, 2) : (chance(0.12) ? 1 : 0);
         const avoid = new Set(taken.map(c => c.id));
@@ -163,14 +159,14 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
         const uniforms = large ? int(0, 2) : (chance(0.25) ? 1 : 0);
         for (let i = 0; i < uniforms; i++) s.uniforms.push({ name: `u${i + 1}`, type: 'float', value: pick(['0.5f', '1.0f', '2.0f', '0.25f']) });
     };
-    // where the data was written: the call before each update (for what a call depends on), and the end of the chain of each random stream
+    // the call before each update (the dependencies of a call), and the end of each random chain
     const writerOf = new Map(), tailOf = new Map();
     const dependsOn = (call, target) => {
         const seen = new Set(), todo = [call];
         while (todo.length) {
             const x = todo.pop();
             for (const e of d.edges) if (e.to === x && e.role !== 'out') {
-                const w = writerOf.get(e.from) ?? (e.from.startsWith('s') ? e.from : null);       // (an edge from a call is a random edge)
+                const w = writerOf.get(e.from) ?? (e.from.startsWith('s') ? e.from : null);       // an edge from a call is a random edge
                 if (w === target) return true;
                 if (w && !seen.has(w)) { seen.add(w); todo.push(w); }
             }
@@ -178,9 +174,8 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
         return false;
     };
     /**
-     * A new update of data that exists, in the format that the call writes: the data that the call depends on the writer of (so that the data
-     * flow orders the updates), or that nothing wrote; and only the newest update of data can be read after that. A Map may write what it
-     * reads element by element (in place), no other call may write what it reads.
+     * A new update of existing data in the call's output format: depends on the data's writer (so the data flow orders the updates), or on nothing; only
+     * the newest update can be read afterwards. A Map may write what it reads in place; no other call may.
      */
     const update = (s, format) => {
         const key = `${format.kind}:${format.size.join('x')}:${format.type}`;
@@ -206,7 +201,7 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
         return made;
     };
 
-    /** Random numbers for a call, now and then: a stream that calls share (the call continues its chain: a stream has one edge out, and so has each call). */
+    /** Occasionally gives a call a random stream shared with others (the call extends the stream's chain). */
     const randomly = (s, p) => {
         if (!chance(p)) return;
         const streams = d.containers.filter(c => c.kind === 'PRNG');
@@ -220,7 +215,7 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
         Map() {
             const indexed = chance(0.08);
             const s = skeleton('Map');
-            if (indexed) {                                                  // no input: the size is the output's
+            if (indexed) {                                                  // no input: the output sets the size
                 place(s, int(0, 6) * lane);
                 output(s, randomFormat(), false);
                 return s;
@@ -244,11 +239,41 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
             return s;
         },
         Reduce() {
+            // of a matrix: sometimes rows or columns to a vector, or two functions
+            const p = chance(0.4) ? input(c => c.kind === 'Matrix') : null;
+            if (p) {
+                const c = read(p).container, mode = chance(0.4) ? 'ColWise' : 'RowWise';
+                if (chance(0.5)) {
+                    const s = skeleton('Reduce', { params: { mode, start: '', second: false } });
+                    link(c.id, s.id, 'elwise');
+                    place(s, avgX([c]));
+                    output(s, { kind: 'Vector', type: c.type, size: [c.size[mode === 'ColWise' ? 1 : 0]] }, true);
+                    return s;
+                }
+                const s = skeleton('Reduce', { params: { mode, start: '', second: chance(0.5) } });
+                link(c.id, s.id, 'elwise');
+                place(s, avgX([c]));
+                printResult(s, 0.5);
+                return s;
+            }
             const s = skeleton('Reduce');
             const ins = inputs(1);
             link(ins[0].id, s.id, 'elwise');
             place(s, avgX(ins));
             printResult(s, 0.5);
+            return s;
+        },
+        MapPool() {
+            const p = input(c => c.kind !== 'Vector' && c.size.every(n => n >= 24));
+            const c = p ? read(p).container : source({ kind: 'Matrix', type: 'float', size: [...pick(MATRICES)] });
+            const dims = c.size.length;
+            const pool = c.size.map(() => int(2, 3));
+            const stride = chance(0.6) ? [...pool] : pool.map(() => int(1, 3));
+            const s = skeleton('MapPool', { params: { dims, pool, stride } });
+            link(c.id, s.id, 'elwise');
+            place(s, avgX([c]));
+            extras(s, [c]);
+            output(s, { ...formatOf(c), size: c.size.map((n, i) => Math.floor((n - pool[i]) / stride[i]) + 1) }, true);
             return s;
         },
         Scan() {
@@ -270,8 +295,9 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
             place(s, avgX([c]));
             extras(s, [c]);
             randomly(s, 0.04);
+            if (s.params.edge === 'None' && c.size.some((n, i) => n - 2 * s.params.overlap[i] < 1)) s.params.edge = 'Duplicate';          // edge mode None needs room for the overlap
             const format = formatOf(c);
-            if (s.params.edge === 'None') format.size = c.size.map((n, i) => n - 2 * s.params.overlap[i]);          // (with no edge mode the output is smaller by the overlap on each side)
+            if (s.params.edge === 'None') format.size = c.size.map((n, i) => n - 2 * s.params.overlap[i]);          // edge mode None shrinks the output by the overlap on each side
             output(s, format, true);
             return s;
         },
@@ -311,7 +337,7 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
                 if (!p) break;
                 read(p); reads.push(p.container); avoid.add(p.container.id);
             }
-            if (!reads.length) return ops.Map();                          // (nothing to print yet)
+            if (!reads.length) return ops.Map();                          // nothing to print yet
             const s = skeleton('IO', { label: ioLabel() });
             reads.forEach(c => link(c.id, s.id, 'read'));
             place(s, avgX(reads));
@@ -335,9 +361,9 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
     const formatOf = c => ({ kind: c.kind, type: c.type, size: [...c.size] });
     const avgX = list => list.length ? list.reduce((a, c) => a + (d.positions[c.id]?.x ?? 0), 0) / list.length : int(0, 6) * lane;
 
-    // how often each pattern is chosen: a reduction ends a chain, so a deep graph has few
+    // pattern weights (reductions end chains, so deep graphs have fewer)
     const choose = () => weighted(Object.keys(ops), op => ({
-        Map: 38, MapOverlap: 12, Scan: 8, MapPairs: 6, MapPairsReduce: 4, External: 10, IO: 5,
+        Map: 38, MapOverlap: 12, MapPool: 5, Scan: 8, MapPairs: 6, MapPairsReduce: 4, External: 10, IO: 5,
         MapReduce: shape === 'deep' ? 3 : 9, Reduce: shape === 'deep' ? 2 : 7,
     })[op]);
 
@@ -350,7 +376,7 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
         calls++;
     }
 
-    // regions: intervals of the calls in order, nested or apart; a loop repeats its calls, a scope groups them
+    // regions: intervals of the call order, nested or disjoint (a loop repeats its calls, a scope groups them)
     const regions = size === 'small' ? int(0, 1) : size === 'medium' ? int(1, 3) : int(3, 7);
     const accepted = [];
     for (let attempt = 0; attempt < regions * 12 && accepted.length < regions; attempt++) {
@@ -359,14 +385,14 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
         const fits = accepted.every(r => (to < r.from || from > r.to) || (from >= r.from && to <= r.to && !(from === r.from && to === r.to)) || (r.from >= from && r.to <= to && !(from === r.from && to === r.to)));
         if (fits && len >= 2 && made.length >= 3) accepted.push({ from, to });
     }
-    accepted.sort((a, b) => (b.to - b.from) - (a.to - a.from));          // the outer ones first
+    accepted.sort((a, b) => (b.to - b.from) - (a.to - a.from));          // outermost first
     const loops = [];
     for (const r of accepted) {
         const scope = chance(0.5);
         loops.push({ id: id('l'), label: scope ? `Region ${loops.filter(l => l.scope).length + 1}` : `Loop ${loops.filter(l => !l.scope).length + 1}`,
                      count: scope ? 1 : int(2, 6), scope, parent: null, from: r.from, to: r.to });
     }
-    for (const l of loops) {                                               // the smallest region that is around it
+    for (const l of loops) {                                               // the innermost enclosing region
         const inside = loops.filter(o => o !== l && o.from <= l.from && o.to >= l.to);
         l.parent = inside.length ? inside.sort((a, b) => (a.to - a.from) - (b.to - b.from))[0].id : null;
     }
@@ -374,7 +400,7 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
         const inside = loops.filter(l => l.from <= i && l.to >= i).sort((a, b) => (a.to - a.from) - (b.to - b.from));
         if (inside.length) s.parent = inside[0].id;
     });
-    for (const [io, s] of followers) if (s.parent) io.parent = s.parent;                // (the block that prints a result is where the call is)
+    for (const [io, s] of followers) if (s.parent) io.parent = s.parent;                // a printing block sits in its call's region
     for (const l of loops) { delete l.from; delete l.to; d.loops.push(l); }
     return { design: d, seed };
 }

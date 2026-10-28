@@ -14,6 +14,7 @@ import { fetchGraph, fetchGetData }                       from './transport.js';
 import { TraceDataProvider }                            from './TraceDataProvider.js';
 import { GraphView }                                  from './GraphView.js';
 import { LegendView }                                 from './LegendView.js';
+import { showSpectrumMenu, showChoiceMenu }                           from './appearance.js';
 import { InfoView }                                     from './InfoView.js';
 import { SourceCodeView }                               from './SourceCodeView.js';
 import { TimelineView }                                 from './TimelineView.js';
@@ -156,7 +157,9 @@ State._collapsedNodes = _provider.collapsedNodes;
 
 // ── LegendView singleton ──────────────────────────────────────────────────────
 
-var _legendView = new LegendView(document.getElementById('legend'), _view);
+var _legendView = new LegendView(document.getElementById('legend'), _view, { hoverGraph: function() { return _view._cy; },
+  clearHighlight: function() { _view._provider._emit('clear', { background: false }); },
+  onSelect: function(callback) { _view._provider.on('select', callback); }, onColorByClick: function(x, y) { showChoiceMenu(x, y, document.querySelectorAll('[data-ctrl="node-color-call"]'), function(b) { return State.settings['node-color-call'] === b.dataset.value; }); }, onSpectrumClick: function(x, y) { showSpectrumMenu(x, y, State._colorSpectrum, function(name) { window.colorSpectrumChanged(name); }); } });
 _legendView.settings = State.settings;  // same reference as _view.settings
 
 // Wire the legend back into the graph view so hover events can highlight entries.

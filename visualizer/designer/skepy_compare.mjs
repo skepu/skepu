@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// skepy_compare.mjs — do the programs of a design, in C++ (SkePU) and in Python (SkePY), build, run and print the same?
+// skepy_compare.mjs — do a design's C++ (SkePU) and Python (SkePY) programs build, run and print the same?
 //   node designer/skepy_compare.mjs [design.json ...] [--count N] [--size small|medium|large] [--arity small|large] [--shape deep|balanced|wide]
 //                                   [--seed PREFIX] [--keep DIR] [--python python3.14]
-// For each design file given, or N random designs (settings as Generate's, seeds PREFIX1 .. PREFIXN), it writes both programs with function bodies that
-// compute something (the same expression in both languages) and an I/O block that prints the last update of all the data, builds both with the
-// sequential header-only SkePU (no precompiler: SkePY's own `shedskin` and `c++`), runs them, and compares what they print (skepy_compare.py).
-// Needs the SkePY repository (shedskin/, ignored by git) and Python 3.14. Exit code 1 if a pair differs or does not build.
+// For each design file, or N random designs (Generate settings, seeds PREFIX1 … PREFIXN): writes both programs with computing function bodies (the
+// same expressions in both) and an I/O block printing the last update of every container, builds them with the sequential header-only SkePU (no
+// precompiler; SkePY's `shedskin` and `c++`), runs them and compares the output (skepy_compare.py).
+// Requires the SkePY repository (shedskin/, git-ignored) and Python 3.14. Exits 1 if a pair differs or fails to build.
 import { readFileSync, writeFileSync, mkdirSync, mkdtempSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
@@ -21,7 +21,7 @@ const flags = new Set(['--count', '--size', '--arity', '--shape', '--seed', '--k
 const files = process.argv.slice(2).filter((a, i, all) => !a.startsWith('--') && !flags.has(all[i - 1]));
 const python = option('python', 'python3.14');
 
-/** The design with an I/O block that prints the last update of every container, and bodies for the user functions that compute something. */
+/** The design plus an I/O block printing the last update of every container, with computing function bodies. */
 function prepare(design) {
     const d = JSON.parse(JSON.stringify(design));
     const first = lower(d);

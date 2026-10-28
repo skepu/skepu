@@ -1,5 +1,4 @@
-// state.js — what the pieces of the designer share: the design and everything that is made from it (S), the helpers for the page, and `changed`,
-// which says that the design changed. No piece imports another for this: the others register what they do about a change in `hooks`.
+// state.js — shared designer state: the design and what is derived from it (S), page helpers, and `changed`. Modules register their reactions in `hooks`.
 
 import { emptyDesign, sampleDesign, lower, effectiveContainers, transfers } from './model.js';
 import { History } from './history.js';
@@ -36,7 +35,7 @@ export function restore() {
     return null;
 }
              // { cpp, python }: what the emitters made, { text, lines, sites }; and `trace`: { text, name, events, ids, ranges } (the trace that it could have)
-export const codeOptions = { userFunctions: 'functions', containerPlacement: 'grouped', skeletonPlacement: 'grouped', whitespace: 'balanced', ...stored(CODE, {}) };
+export const codeOptions = { userFunctions: 'functions', skeletonInstancing: 'named', containerPlacement: 'grouped', skeletonPlacement: 'grouped', whitespace: 'balanced', ...stored(CODE, {}) };
 
 export const allIds = () => [...S.design.containers, ...S.design.skeletons, ...S.design.loops, ...S.design.edges].map(x => x.id);
 
@@ -51,21 +50,21 @@ export const kindOf = id => S.design.containers.some(c => c.id === id) ? 'contai
 
 export const effective = id => effectiveContainers(S.design).find(c => c.id === id);
 
-/** The design is remembered by the page (and is what undo goes back to): the text of it. */
+/** Persists the design (JSON) in the page storage. */
 export function save() { const text = JSON.stringify(S.design); try { localStorage.setItem(STORAGE, text); } catch { /* private window: it is only not remembered */ } return text; }
 
-export const shownTransfers = () => transfers((S.result.ok ? S.result : S.lastGood)?.program ?? { steps: [] });
+export const shownTransfers = () => transfers((S.result.ok ? S.result : S.lastGood)?.program ?? { steps: [], containers: [], calls: [] });
 
 export const descendantOf = (id, ancestor) => { for (let p = find(id)?.parent; p; p = find(p)?.parent) if (p === ancestor) return true; return false; };
 
-/** A message in the menu bar, for a few seconds. */
+/** Shows a message in the menu bar for a few seconds. */
 export function say(message) {
     $('#message').textContent = message;
     clearTimeout(say.timer);
     say.timer = setTimeout(() => { $('#message').textContent = ''; }, 5000);
 }
 
-// ── The menus (those of SkeVU) ───────────────────────────────────────────────
+// ── Menus ────────────────────────────────────────────────────────────────────
 
 export const setChecked = (button, on) => { const icon = $('.menu-icon', button); if (icon) icon.textContent = on ? '✓' : ''; };
 
@@ -75,40 +74,38 @@ export function download(name, content, type) {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-/** The state: the design, what is made from it (the result of lowering it, the programs), the pieces of the page, and what the editor is doing. */
+/** The state: the design, derived data (lowering result, programs), page objects and editor mode. */
 export const S = {
     design: restore() ?? sampleDesign(),
     result: null,                // lower(design): { ok, errors, warnings, program, dataRegion }
-    lastGood: null,              // the last result that had no errors
-    cy: null, legend: null, source: null,                    // the graph, its legend, the view of the code
-    connecting: null,            // null (not connecting), or { source: id | null }
-    adding: null,                // null (not adding), or the type of node that a click on the canvas adds
-    lastAdd: stored('skevu-designer-add', 'Map'),       // the type that was added last: what `A` goes back to
-    inspected: null,             // what the properties were made for
+    lastGood: null,              // the last error-free result
+    cy: null, legend: null, source: null,                    // graph, legend, code view
+    connecting: null,            // null, or { source: id | null }
+    adding: null,                // null, or the type a canvas click adds
+    lastAdd: stored('skevu-designer-add', 'Map'),       // the last added type (what `A` returns to)
+    inspected: null,             // what the inspector shows
     programs: null,              // { cpp, python }: what the emitters made, { text, lines, sites }; and `trace`: { text, name, events, ids, ranges } (the trace that it could have)
     /**
-     * Where the selection that is being made comes from, for what follows it (as in SkeVU): 'graph' (a click on the graph, or an edit: the code
-     * scrolls to what is selected; the graph stays where it is), 'code' (a click on a line, a badge or a problem: the graph pans and zooms to what
-     * is selected; the code stays, it is where the pointer is) or 'restore' (the selection is put back after the graph was made again: nothing moves).
+     * The origin of the current selection: 'graph' (click or edit: the code scrolls), 'code' (line, badge or problem: the graph pans and zooms) or
+     * 'restore' (reselection after a rebuild: nothing moves).
      */
     selectionFrom: 'graph',
-    lastLanguage: 'cpp',         // the language of the program tab that was shown last (the bodies of functions are edited in it)
-    moveKey: '',                 // the transfers that the graph shows, to see when they change
+    lastLanguage: 'cpp',         // the language of the last shown program tab (function bodies are edited in it)
+    moveKey: '',                 // the transfers shown, to detect changes
     files: { cpp: 'design.cpp', py: 'design.py' },
 };
 S.result = lower(S.design);
 S.lastGood = S.result.ok ? S.result : null;
 
-/** The steps of undo and redo: the designs that a person made (history.js). */
+/** Undo and redo steps (history.js). */
 export const history = new History(JSON.stringify(S.design));
 
-/** What each piece does when the design changed (they register it when they are loaded): rebuild, syncData, markProblems, renderCode, renderProblems, renderStatus, updateMenu, renderInspector. */
+/** The reactions to a design change, registered by the modules: rebuild, syncData, markProblems, renderCode, renderProblems, renderStatus, updateMenu, renderInspector. */
 export const hooks = {};
 
 /**
- * The design changed: check it, make the program, and show both. `structure` says that nodes or edges were added, removed or moved to a loop.
- * The change is a step of undo (history.js); `merge` joins it to the last when that was the same kind of change a moment ago (the keys of a text,
- * the nodes of a drag), and `record: false` is for undo and redo themselves.
+ * The design changed: lower it, make the programs and refresh the views. `structure`: nodes or edges changed. The change is an undo step (history.js);
+ * `merge` joins it to a recent change of the same kind, `record: false` is for undo and redo.
  */
 export function changed({ structure = false, inspector = false, merge = null, record = true } = {}) {
     S.result = lower(S.design);
@@ -118,8 +115,8 @@ export function changed({ structure = false, inspector = false, merge = null, re
     hooks.renderProblems();
     hooks.renderStatus();
     if (inspector || structure) hooks.renderInspector(true);
-    const text = save();                   // (after the places that the graph gave to new nodes)
+    const text = save();                   // after the graph has placed new nodes
     if (record) history.commit(text, { merge, window: merge === 'move' ? 400 : 1000 });
     else history.present = text;
-    hooks.updateMenu();                    // (what can be undone)
+    hooks.updateMenu();                    // undo and redo availability
 }

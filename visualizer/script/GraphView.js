@@ -42,32 +42,13 @@ import { showTooltip, hideTooltip, positionTooltip, nodeTooltipText, edgeTooltip
 import { highlightSelection, bindHover } from './graph_interaction.js';
 import { basePattern } from './TraceDataProvider.js';
 import { badgeNodesToShow } from './badges.js';
-import { globalUtil } from './util.js';
 import { showContextMenu, hideContextMenu } from './context_menu.js';
 import { definitionPlace } from './badges.js';
-
-// ── Shared page resources ─────────────────────────────────────────────────────
-// One ELK instance per page is correct: the ELK worker is expensive to spawn. (The tooltip is tooltip.js.)
-
-
-var _sharedElk       = null;
-var _sharedElkUrl    = null;
-
-function _getElk(workerUrl) {
-  if (!_sharedElk || workerUrl !== _sharedElkUrl) {
-    _sharedElkUrl = workerUrl;
-    _sharedElk    = new ELK(globalUtil.elkOptions(workerUrl));  // ELK loaded as <script>
-  }
-  return _sharedElk;
-}
-
-
+import { LAYOUT_NODE_SEP, LAYOUT_RANK_SEP } from './layout_options.js';
+import { startLayout } from './layout.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const COMPOUND_SEP_SCALE = 0.15;
-const LAYOUT_NODE_SEP    = 15;
-const LAYOUT_RANK_SEP    = 20;
 const LAYOUT_FIT_PAD     = 30;
 const HIGHLIGHT_LIGHT    = '#0055cc';
 const HIGHLIGHT_DARK     = '#e8720c';
@@ -879,124 +860,18 @@ export class GraphView {
   // ── Layout workers ────────────────────────────────────────────────────────────
   // Self-contained: spacing constants are defined locally above.
 
+  // (the layout is layout.js, the one of the designer too: ELK for a trace with regions, dagre in a worker otherwise)
   _startLayoutWorker(layoutSeq, layoutOpts, onPositions) {
-    var traceHasRegions = this._provider.allRegionPids.length > 0;
-    if (traceHasRegions) {
-      this._startElkLayout(layoutSeq, layoutOpts, onPositions);
-    } else {
-      this._startDagreLayout(layoutSeq, layoutOpts, onPositions);
-    }
-  }
-
-  async _startDagreLayout(layoutSeq, layoutOpts, onPositions) {
     var self = this;
-    var cy   = this._cy;
-
-    // Serialise nodes for the worker.
-    var workerNodes = [];
-    cy.nodes().forEach(function(n) {
-      var dims  = n.layoutDimensions({ nodeDimensionsIncludeLabels: layoutOpts.nodeDimensionsIncludeLabels || false });
-      var entry = { id: n.id(), width: dims.w, height: dims.h };
-      if (n.isChild())  entry.parent   = n.parent().id();
-      if (n.isParent()) entry.isParent = true;
-      workerNodes.push(entry);
-    });
-
-    var workerEdges = [];
-    cy.edges().forEach(function(e) {
-      if (!e.source().isParent() && !e.target().isParent() && !e.hasClass('grouped-hidden'))
-        workerEdges.push({ id: e.id(), source: e.source().id(), target: e.target().id() });
-    });
-
-    var hasCompound = workerNodes.some(function(n) { return n.isParent; });
-    var sepScale    = hasCompound ? COMPOUND_SEP_SCALE : 1.0;
-
-    const worker = await globalUtil.fetchWorker(this._dagreWorkerUrl);
-    this._currentLayout = { stop: function() { worker.terminate(); self._currentLayout = null; } };
-
-    worker.onmessage = function(ev) {
-      worker.terminate();
+    var layout = startLayout(this._cy, layoutOpts, { dagre: this._dagreWorkerUrl, elk: this._elkWorkerUrl }, this._provider.allRegionPids.length > 0);
+    this._currentLayout = { stop: layout.stop };
+    layout.promise.then(function(positions) {
       self._currentLayout = null;
-      if (layoutSeq !== self._renderSeq) return;
-      if (ev.data.type === 'done') onPositions(ev.data.positions);
-      else self._layoutFailed(layoutSeq, layoutOpts, onPositions, 'dagre-worker error: ' + ev.data.message);
-    };
-    worker.onerror = function(err) {
-      worker.terminate();
+      if (layoutSeq === self._renderSeq) onPositions(positions);
+    }, function(err) {
       self._currentLayout = null;
-      self._layoutFailed(layoutSeq, layoutOpts, onPositions, 'dagre-worker uncaught error: ' + (err.message || err));
-    };
-
-    worker.postMessage({
-      type: 'layout', nodes: workerNodes, edges: workerEdges,
-      options: {
-        rankDir:   layoutOpts.rankDir,
-        nodeSep:   layoutOpts.nodeSep != null ? layoutOpts.nodeSep * sepScale : undefined,
-        rankSep:   layoutOpts.rankSep != null ? layoutOpts.rankSep * sepScale : undefined,
-        acyclicer: layoutOpts.acyclicer,
-        ranker:    layoutOpts.ranker,
-      },
+      self._layoutFailed(layoutSeq, layoutOpts, onPositions, String(err && err.message || err));
     });
-  }
-
-  _startElkLayout(layoutSeq, layoutOpts, onPositions) {
-    var self = this;
-    var cy   = this._cy;
-    var dir  = layoutOpts.rankDir === 'LR' ? 'RIGHT' : 'DOWN';
-
-    var elkNodeById = {};
-    cy.nodes().forEach(function(n) {
-      var dims = n.layoutDimensions({ nodeDimensionsIncludeLabels: layoutOpts.nodeDimensionsIncludeLabels || false });
-      var en = { id: n.id() };
-      if (!n.isParent()) { en.width = dims.w; en.height = dims.h; }
-      else en.layoutOptions = { 'elk.direction': dir };
-      elkNodeById[n.id()] = en;
-    });
-
-    var rootChildren = [];
-    cy.nodes().forEach(function(n) {
-      var en = elkNodeById[n.id()];
-      if (n.isChild()) { var p = elkNodeById[n.parent().id()]; (p.children = p.children || []).push(en); }
-      else rootChildren.push(en);
-    });
-
-    var elkEdges = [];
-    cy.edges().forEach(function(e) {
-      if (!e.hasClass('grouped-hidden'))
-        elkEdges.push({ id: e.id(), sources: [e.source().id()], targets: [e.target().id()] });
-    });
-
-    var elkOptions = Object.assign({
-      'algorithm':                                 layoutOpts.algorithm,
-      'elk.direction':                             dir,
-      'elk.hierarchyHandling':                     'INCLUDE_CHILDREN',
-      'elk.spacing.nodeNode':                      layoutOpts.nodeSep != null ? layoutOpts.nodeSep : LAYOUT_NODE_SEP,
-      'elk.layered.spacing.nodeNodeBetweenLayers': layoutOpts.rankSep != null ? layoutOpts.rankSep : LAYOUT_RANK_SEP,
-      'elk.layered.cycleBreaking.strategy':        'GREEDY',
-      'elk.layered.nodePlacement.strategy':        'NETWORK_SIMPLEX',
-      'elk.edgeRouting':                           'SPLINES',
-      // Nodes and components that the dependences do not order (the independent trials of a loop, a forest) are placed in the order of the trace
-      // (the order of the nodes that are given), not in the order that the algorithm happens to get to them
-      'elk.layered.considerModelOrder.strategy':   'NODES_AND_EDGES',
-      'elk.layered.considerModelOrder.components': 'MODEL_ORDER',
-    }, layoutOpts.elkOptions || {});
-
-    var elk = _getElk(this._elkWorkerUrl);
-    this._currentLayout = { stop: function() { self._currentLayout = null; } };
-
-    elk.layout({ id: 'root', layoutOptions: elkOptions, children: rootChildren, edges: elkEdges })
-      .then(function(result) {
-        self._currentLayout = null;
-        if (layoutSeq !== self._renderSeq) return;
-        var positions = {};
-        _collectElkPositions(result.children, positions, 0, 0);
-        onPositions(positions);
-      })
-      .catch(function(err) {
-        self._currentLayout = null;
-        _sharedElk = null;  // invalidate on error; next render gets a fresh instance
-        self._layoutFailed(layoutSeq, layoutOpts, onPositions, 'ELK layout error: ' + err);
-      });
   }
 
   // The layout algorithm failed (a graph with a very long chain of dependences can overflow the stack of its recursion, and a worker has
@@ -1068,12 +943,3 @@ export class GraphView {
 
 // ── Module-level pure utilities ───────────────────────────────────────────────
 
-function _collectElkPositions(nodes, positions, parentAbsX, parentAbsY) {
-  if (!nodes) return;
-  nodes.forEach(function(n) {
-    var absX = parentAbsX + (n.x || 0);
-    var absY = parentAbsY + (n.y || 0);
-    positions[n.id] = { x: absX + (n.width || 0) / 2, y: absY + (n.height || 0) / 2 };
-    if (n.children && n.children.length) _collectElkPositions(n.children, positions, absX, absY);
-  });
-}

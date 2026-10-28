@@ -14,7 +14,6 @@ export const COLORS = {
   allocation:   { fill: 'white',     stroke: '#333' },
   deallocation: { fill: 'black',     stroke: '#ddd' },
   snapshot:     { fill: '#ffd43b',   stroke: '#a67c00' },     // a snapshot of a container: a yellow star (a camera flash)
-  transfer:     { fill: 'purple',    stroke: '#6a006a' },
   compile:      { fill: '#f0b44c',   stroke: '#a86b00' },       // the build of an OpenCL kernel (an amber cut rectangle), and the setup edge from it to the first call
   communication:{ fill: '#17a2b8',   stroke: '#0e6676' },       // a collective operation of an MPI program (a teal hexagon)
   fusion:       { fill: '#88f' },
@@ -30,6 +29,9 @@ export function regionColor(depth, dark) {
     ? 'rgb(' + Math.min(100, 42 + depth * 15) + ',' + Math.min(74, 31 + depth * 10) + ',' + Math.min(42, 16 + depth * 6) + ')'
     : 'rgb(' + Math.max(20, 225 - depth * 34) + ',' + Math.max(185, 240 - depth * 9) + ',255)';
 }
+
+/** The orange of the entry of the legend that the pointer is over, and of what it stands for in the graph (light, dark: as in main.css). */
+export const LEGEND_MATCH = ['#ff9a2e', '#ff8c1a'];
 
 export const NODE_SIZE_SCALE = 100;
 export const NODE_SIZE_MIN   = 15;
@@ -122,9 +124,9 @@ export function buildGraphStyle(self, minmax) {
         'content':          function(ele) { return node_labels ? ele.data('label') + (transfer_map[ele.data('direction')] || '') : ''; },
         'text-valign':      'center',
         'shape':            'diamond',
-        'background-color': COLORS.transfer.fill,
+        'background-color': function(ele) { return sc(norm('node-color-call', ele)); },
         'border-width':     3,
-        'border-color':     COLORS.transfer.stroke,
+        'border-color':     function(ele) { return scd(norm('node-color-call', ele)); },
       }
     },
     {
@@ -447,6 +449,15 @@ export function buildGraphStyle(self, minmax) {
     {
       selector: 'edge.cy-hovered',
       style: { 'width': 4 }
+    },
+    // What the pointer is over in the legend (LegendView): the nodes and edges of that kind, in the orange of the legend entry
+    {
+      selector: 'node.legend-match',
+      style: { 'underlay-color': function() { return LEGEND_MATCH[dark() ? 1 : 0]; }, 'underlay-padding': 7, 'underlay-opacity': 0.9, 'underlay-shape': 'round-rectangle' }
+    },
+    {
+      selector: 'edge.legend-match',
+      style: { 'underlay-color': function() { return LEGEND_MATCH[dark() ? 1 : 0]; }, 'underlay-padding': 4, 'underlay-opacity': 0.9 }
     },
   ];
 }

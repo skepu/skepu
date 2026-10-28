@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-// generate.js — the program of a design, from the command line:
-//   node designer/generate.js [design.json | --sample] [cpp|python] [--lambdas] [--first-use] [--skeletons-first-use] [--whitespace=readable|balanced|compact]
-// Prints the program, and the problems of the design on stderr (exit 1 if it has errors).
+// generate.js — prints the program of a design:
+//   node designer/generate.js [design.json | --sample] [cpp|python] [--lambdas] [--anonymous] [--first-use] [--skeletons-first-use] [--whitespace=readable|balanced|compact]
+// Problems go to stderr (exit 1 on errors).
 import { readFileSync } from 'node:fs';
 import { lower, sampleDesign } from './model.js';
 import { EMITTERS } from './codegen.js';
 
 const args = process.argv.slice(2).filter(a => !a.startsWith('--') || a === '--sample');
 const [file, language = 'cpp'] = args;
-const options = { userFunctions: process.argv.includes('--lambdas') ? 'lambdas' : 'functions', containerPlacement: process.argv.includes('--first-use') ? 'first-use' : 'grouped',
+const options = { userFunctions: process.argv.includes('--lambdas') ? 'lambdas' : 'functions', skeletonInstancing: process.argv.includes('--anonymous') ? 'anonymous' : 'named', containerPlacement: process.argv.includes('--first-use') ? 'first-use' : 'grouped',
                   skeletonPlacement: process.argv.includes('--skeletons-first-use') ? 'first-use' : 'grouped',
                   whitespace: (process.argv.find(a => a.startsWith('--whitespace=')) ?? '').slice(13) || 'balanced' };
 const design = !file || file === '--sample' ? sampleDesign() : JSON.parse(readFileSync(file, 'utf8'));

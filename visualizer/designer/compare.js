@@ -1,11 +1,10 @@
-// compare.js — does the trace of the program that was made from a design have the design's calls? The check of the round trip:
-// design -> program -> run -> trace -> design. It compares what the design says (the calls in order, with their containers, and
-// the loops) with the skeleton calls and regions of the trace.
+// compare.js — round-trip check: compares the design's calls, containers and loops with the skeleton calls and regions of the trace of its program.
 'use strict';
+import { skeletonTypeName, isAnonymous } from './codegen.js';
 
 const expandSteps = (steps, out = []) => {
     for (const step of steps) {
-        if (step.type === 'call') out.push(step.call);
+        if (step.type === 'call') out.push(step.call, ...(step.call.pattern === 'MapOverlap' && step.call.skeleton.params.update === 'RedBlack' ? [step.call] : []));          // RedBlack: a pass for each colour
         else for (let i = 0; i < step.count; i++) expandSteps(step.steps, out);
     }
     return out;
@@ -13,8 +12,8 @@ const expandSteps = (steps, out = []) => {
 
 const base = pattern => String(pattern ?? '').split(' ')[0];
 
-/** The differences between a lowered program and the events of a trace of it (an empty list: they agree). */
-export function compareTrace(program, events) {
+/** The differences between a lowered program and the events of its trace (empty: they agree). `options`: the code options of the program. */
+export function compareTrace(program, events, options = {}) {
     const problems = [];
     const label = new Map();
     for (const e of events) if (e.type === 'allocation') label.set(e.object_id, e.label);
@@ -28,7 +27,7 @@ export function compareTrace(program, events) {
         const e = calls[i];
         if (!e) return;
         const at = `call ${i + 1} (${call.name})`;
-        if (e.label !== call.name) problems.push(`${at}: the trace has ${e.label}`);
+        if (isAnonymous(call.skeleton, options) ? !e.label.startsWith(`${skeletonTypeName(call.skeleton, call)}@`) : e.label !== call.name) problems.push(`${at}: the trace has ${e.label}`);
         if (base(e.pattern) !== call.pattern) problems.push(`${at}: the pattern is ${e.pattern}, not ${call.pattern}`);
         const wantIn = call.pattern === 'MapPairs' || call.pattern === 'MapPairsReduce' ? [call.vertical.label, call.horizontal.label] : call.elwise.map(c => c.label);
         if (names(e.elwise_inputs).join() !== wantIn.join()) problems.push(`${at}: it reads ${names(e.elwise_inputs).join(', ')}, the design ${wantIn.join(', ')}`);
@@ -38,10 +37,10 @@ export function compareTrace(program, events) {
         if (call.random && e.prng == null) problems.push(`${at}: it draws random numbers, and the trace has no random stream`);
     });
 
-    // the external blocks: those of the design are the external events that have their labels (the program has others, for what it prints)
+    // external blocks: the external events with the design's labels
     const hosts = everything.filter(c => c.host && !c.io), hostLabels = new Set(hosts.map(c => c.skeleton.label));
     const externals = events.filter(e => e.type === 'external' && hostLabels.has(e.label));
-    if (externals.length !== hosts.length) problems.push(`the trace has ${externals.length} external blocks of the design, the design ${hosts.length}`);
+    if (externals.length !== hosts.length) problems.push(`${externals.length} external blocks in the trace, ${hosts.length} in the design`);
     hosts.forEach((call, i) => {
         const e = externals[i];
         if (!e) return;
@@ -51,12 +50,12 @@ export function compareTrace(program, events) {
         if (names(e.outputs).join() !== call.writes.map(c => c.label).join()) problems.push(`${at}: it writes ${names(e.outputs).join(', ')}, the design ${call.writes.map(c => c.label).join(', ')}`);
     });
 
-    // the I/O blocks (skepu::io::cout): an event for each container that they print (a number that is printed is not an event of a real run)
+    // I/O blocks (skepu::io::cout): one event per printed container
     const printed = everything.filter(c => c.io).flatMap(c => c.reads.map(r => r.label));
     const ios = events.filter(e => e.type === 'external' && e.label === 'I/O' && (e.proxy_inputs ?? []).length === 1 && label.has(e.proxy_inputs[0])).map(e => label.get(e.proxy_inputs[0]));
     if (printed.join() !== ios.join()) problems.push(`the I/O blocks print ${ios.join(', ') || 'nothing'}, the design ${printed.join(', ') || 'nothing'}`);
 
-    // the iterations of the top-level loops: a region for each (an inner loop is a region for each of the iterations of the loops around it)
+    // loop iterations: one region per iteration (an inner loop: per iteration of the enclosing loops)
     for (const step of program.steps) {
         if (step.type !== 'loop') continue;
         const n = events.filter(e => e.type === 'region' && e.label === step.label).length;

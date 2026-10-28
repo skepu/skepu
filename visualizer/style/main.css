@@ -661,12 +661,35 @@ html.dark-mode #sim-progress-handle   { background: #e8720c; }
   transition: background-color 0.1s;
 }
 
-.legend-item-hovered {
-  background-color: rgba(0, 0, 0, 0.08);
+/* The entry of what the pointer is over in the graph: orange with dark text, which stands out in both modes (lighter and softer on the light panel, deeper and stronger on the dark one; the orange of the graph is LEGEND_MATCH in graph_style.js). */
+.legend-item-hovered,
+.legend-item-locked,
+.legend-interactive:not(.legend-locked) .legend-item[data-legend-key]:hover {
+  background-color: #fbc48a;
 }
 
-html.dark-mode .legend-item-hovered {
-  background-color: rgba(255, 255, 255, 0.1);
+/* An entry that marks its nodes and edges in the graph (LegendView hoverGraph) answers the pointer: the same orange, and a pointer. */
+.legend-interactive .legend-item[data-legend-key] {
+  cursor: pointer;
+}
+
+/* While an entry is kept (a click on it: the mark stays in the graph until a click on it again, or on another entry) the other entries only show that they can be
+   clicked, by the pointer: the orange is the entry that is kept. */
+
+/* (!important: the text of an entry has its colour in a style attribute, which LegendView makes for the mode) */
+.legend-item-hovered,
+.legend-item-hovered span,
+.legend-item-locked,
+.legend-item-locked span,
+.legend-interactive:not(.legend-locked) .legend-item[data-legend-key]:hover,
+.legend-interactive:not(.legend-locked) .legend-item[data-legend-key]:hover span {
+  color: #14100a !important;
+}
+
+html.dark-mode .legend-item-hovered,
+html.dark-mode .legend-item-locked,
+html.dark-mode .legend-interactive:not(.legend-locked) .legend-item[data-legend-key]:hover {
+  background-color: #de6a0c;
 }
 
 /* The swatch of a skeleton or a backend in the legend (when the calls are coloured by them) */
@@ -1877,3 +1900,8 @@ body.welcome-mode #split-gutter { display: none !important; }
 /* The editor (VS Code) shows the source in its own editors: the webview has no source pane, and what is for the browser is left out. */
 html.editor [data-only="web"], html:not(.editor) [data-only="editor"] { display: none !important; }
 html.editor #cpp_container, html.editor #info-resizer { display: none; }
+
+/* The colour bar of the legend opens the menu of the colour spectra */
+.legend-clickable {
+  cursor: pointer;
+}

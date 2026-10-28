@@ -1,0 +1,329 @@
+[
+    {
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "image",
+        "line": 54,
+        "object_id": 1000,
+        "time": 0,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenCL",
+        "device": "Apple M5 Pro",
+        "end": 43300,
+        "label": "matrix transpose",
+        "ok": true,
+        "options": "-DTYPE=\"int\" -DTILE_DIM=16",
+        "source_bytes": 802,
+        "start": 42143,
+        "time": 43300,
+        "type": "kernel_compile"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 43464,
+        "file": ".//..//skepu-headers/src/skepu3/backend/impl/environment.inl",
+        "label": "OpenCL initialization",
+        "line": 96,
+        "outputs": [],
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 23,
+        "type": "external"
+    },
+    {
+        "backend": "OpenCL",
+        "device": "Apple M5 Pro",
+        "end": 43568,
+        "label": "matrix transpose",
+        "ok": true,
+        "options": "-DTYPE=\"float\" -DTILE_DIM=16",
+        "source_bytes": 802,
+        "start": 43468,
+        "time": 43568,
+        "type": "kernel_compile"
+    },
+    {
+        "elwise_inputs": [],
+        "end": 43632,
+        "file": ".//..//skepu-headers/src/skepu3/backend/impl/environment.inl",
+        "label": "OpenCL initialization",
+        "line": 96,
+        "outputs": [],
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 11,
+        "type": "external"
+    },
+    {
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "pooled",
+        "line": 55,
+        "object_id": 1003,
+        "time": 43643,
+        "type": "allocation"
+    },
+    {
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "row_sums",
+        "line": 56,
+        "object_id": 1004,
+        "time": 43644,
+        "type": "allocation"
+    },
+    {
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "col_sums",
+        "line": 57,
+        "object_id": 1005,
+        "time": 43644,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenCL",
+        "device": "Apple M5 Pro",
+        "end": 43993,
+        "label": "pool",
+        "object_id": 1006,
+        "ok": true,
+        "source_bytes": 9860,
+        "start": 43671,
+        "time": 43993,
+        "type": "kernel_compile"
+    },
+    {
+        "backend": "OpenCL",
+        "device": "Apple M5 Pro",
+        "end": 44154,
+        "label": "row_total",
+        "object_id": 1007,
+        "ok": true,
+        "source_bytes": 3613,
+        "start": 43998,
+        "time": 44154,
+        "type": "kernel_compile"
+    },
+    {
+        "backend": "OpenCL",
+        "device": "Apple M5 Pro",
+        "end": 44286,
+        "label": "col_total",
+        "object_id": 1008,
+        "ok": true,
+        "source_bytes": 3613,
+        "start": 44157,
+        "time": 44286,
+        "type": "kernel_compile"
+    },
+    {
+        "backend": "OpenCL",
+        "device": "Apple M5 Pro",
+        "end": 44514,
+        "label": "max_row_sum",
+        "object_id": 1009,
+        "ok": true,
+        "source_bytes": 6016,
+        "start": 44293,
+        "time": 44514,
+        "type": "kernel_compile"
+    },
+    {
+        "backend": "OpenCL",
+        "device": "Apple M5 Pro",
+        "end": 44651,
+        "label": "total",
+        "object_id": 1010,
+        "ok": true,
+        "source_bytes": 3557,
+        "start": 44518,
+        "time": 44651,
+        "type": "kernel_compile"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            16,
+            24
+        ],
+        "elwise_inputs": [
+            1000
+        ],
+        "end": 44865,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "pool",
+        "line": 69,
+        "object_id": 1006,
+        "outputs": [
+            1003
+        ],
+        "parameters": {
+            "pool": true,
+            "pool_size": [
+                2,
+                2
+            ],
+            "stride": [
+                2,
+                2
+            ]
+        },
+        "pattern": "MapPool 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 44684,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            32,
+            48
+        ],
+        "elwise_inputs": [
+            1000
+        ],
+        "end": 45034,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "row_total",
+        "line": 70,
+        "object_id": 1007,
+        "outputs": [
+            1004
+        ],
+        "pattern": "Reduce 1D-Partial",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 44955,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "Internal (transpose)",
+        "line": 257,
+        "object_id": 1013,
+        "time": 45059,
+        "type": "allocation"
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            48,
+            32
+        ],
+        "elwise_inputs": [
+            1000
+        ],
+        "end": 45206,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "col_total",
+        "line": 71,
+        "object_id": 1008,
+        "outputs": [
+            1005
+        ],
+        "parameters": {
+            "mode": "ColWise"
+        },
+        "pattern": "Reduce 1D-Partial",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 45141,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "object_id": 1016,
+        "time": 45388,
+        "type": "scalar_value",
+        "value": 1536
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            32,
+            48
+        ],
+        "elwise_inputs": [
+            1000
+        ],
+        "end": 45390,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "max_row_sum",
+        "line": 72,
+        "object_id": 1009,
+        "outputs": [
+            1016
+        ],
+        "pattern": "Reduce 2D",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 45214,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "object_id": 1018,
+        "time": 45467,
+        "type": "scalar_value",
+        "value": 1536
+    },
+    {
+        "backend": "OpenMP",
+        "elements": [
+            32
+        ],
+        "elwise_inputs": [
+            1004
+        ],
+        "end": 45468,
+        "file": "/Users/august/Claude/skepu-alpha/examples/zz_designer_roundtrip.cpp",
+        "label": "total",
+        "line": 73,
+        "object_id": 1010,
+        "outputs": [
+            1018
+        ],
+        "pattern": "Reduce 1D-Full",
+        "proxy_inputs": [],
+        "scalar_inputs": [],
+        "start": 45400,
+        "threads": 15,
+        "type": "skeleton_call"
+    },
+    {
+        "label": "col_sums",
+        "line": 259,
+        "object_id": 1005,
+        "time": 45487,
+        "type": "deallocation"
+    },
+    {
+        "label": "row_sums",
+        "line": 259,
+        "object_id": 1004,
+        "time": 45487,
+        "type": "deallocation"
+    },
+    {
+        "label": "pooled",
+        "line": 287,
+        "object_id": 1003,
+        "time": 45487,
+        "type": "deallocation"
+    },
+    {
+        "label": "Internal (transpose)",
+        "line": 287,
+        "object_id": 1013,
+        "time": 45488,
+        "type": "deallocation"
+    },
+    {
+        "label": "image",
+        "line": 287,
+        "object_id": 1000,
+        "time": 45488,
+        "type": "deallocation"
+    }
+]

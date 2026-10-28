@@ -1,20 +1,18 @@
-// trace.js — the trace that the program of a design could have (TRACE_FORMAT.md): what SKEPU_TRACING would write if the program was built
-// and run, made from a small model of SkePU, not by running it: the calls in order with the containers they use and their parameters,
-// the transfers that the backends make between host and device, the time of each call from its backend and size, the regions of the
-// loops. The times are made up (a rough cost of each backend); the order, ids, labels, elements and transfers are what the design says.
-// Pure: no DOM. A call or block that has no backend of its own is run as the program is started: CPU.
+// trace.js — the trace a design's program could produce (TRACE_FORMAT.md), synthesized from a model of SkePU without running it: calls in order with
+// their containers and parameters, host–device transfers, call times from backend and size, and loop regions. Times are estimates; order, ids, labels,
+// elements and transfers follow the design. No DOM. A call without a backend runs on the CPU.
 'use strict';
-import { readsOf, writesOf, sizeOf, Residency, dimsOf, overlapOf } from './model.js';
-import { containerPlacement } from './codegen.js';
+import { PATTERNS, readsOf, writesOf, sizeOf, Residency, dimsOf, overlapOf, poolOf, strideOf, stridesOf } from './model.js';
+import { containerPlacement, anonymousLabel, isAnonymous } from './codegen.js';
 
-/** The cost of a call: a launch, and a time for each element (nanoseconds) on each backend. */
+/** Per backend: launch time, time per element (ns) and thread count. */
 const COST = { CPU: { launch: 2, ns: 6, threads: 1 }, OpenMP: { launch: 15, ns: 1.2, threads: 8 }, OpenCL: { launch: 250, ns: 0.15, threads: 8 } };
 const BACKEND = { cpu: 'CPU', openmp: 'OpenMP', opencl: 'OpenCL' };
 const START_ID = 1000;
 
 const iterationsOf = (steps, cap) => steps.reduce((n, step) => n + (step.type === 'call' ? 1 : Math.min(step.count, cap) * iterationsOf(step.steps, cap)), 0);
 
-/** The most iterations of a loop to simulate, so that the trace is a size that can be read: all of them while the calls are few. */
+/** The iteration cap per loop that keeps the trace within `budget` events (no cap while the calls are few). */
 function capFor(steps, budget) {
     let cap = Infinity;
     while (cap > 1 && iterationsOf(steps, cap === Infinity ? 1e9 : cap) > budget) cap = cap === Infinity ? 64 : Math.floor(cap / 2);
@@ -25,12 +23,9 @@ const number = v => { const x = parseFloat(String(v ?? '').trim()); return Numbe
 
 /**
  * @param program  the lowered design (model.js lower())
- * @param where    { dir, file, lines, sites }: the path and name of the C++ file, and what codegen.js emitCpp() returned for it
- *                 (`lines`: the ids of the nodes of each line, `sites`: the lines of the calls and loops), so that the events have the lines
- *                 of the program that was made); `containerPlacement`: 'first-use' if the containers are declared before their first use (codegen.js),
- *                 so that they are allocated there, and freed at the end of the block that has them
- * @returns { events, ids, truncated }  ids[i]: the ids of the design nodes that event i is about (the first is the main one); truncated: the
- *          number of iterations that the loops were cut to (null: they are all there)
+ * @param where    { dir, file, lines, sites, containerPlacement, skeletonInstancing }: the C++ path and name, and the `lines` and `sites` of codegen.js emitCpp() (events carry
+ *                 their lines); with 'first-use' placement, containers are allocated there and freed at the end of their block
+ * @returns { events, ids, truncated }  ids[i]: the design node ids of event i (the first is the main one); truncated: the iteration cap applied to loops (null: none)
  */
 export function synthesizeTrace(program, where) {
     const path = `${where.dir}/${where.file}`;
@@ -59,29 +54,33 @@ export function synthesizeTrace(program, where) {
     const idOf = c => object.get(c.object);
     const count = c => sizeOf(c);
 
-    // where the data is (a call that has no backend of its own runs as the program is started: on the CPU)
+    // where the data is (calls without a backend run on the CPU)
     const residency = new Residency(program, 'host');
 
     const transfer = (c, direction, nodes) => {
         const elements = count(c);
-        const start = clock, end = clock + Math.max(3, Math.round(20 + elements * 4 / 12000));       // about 12 GB/s, and a latency
+        const start = clock, end = clock + Math.max(3, Math.round(20 + elements * 4 / 12000));       // about 12 GB/s plus a latency
         clock = end + 1;
         push({ type: 'transfer', object_id: idOf(c), label: c.label, elements, direction, backend: 'OpenCL', start, end, time: end, ...scope() }, [c.id, ...nodes]);
     };
 
     const patternOf = call => {
         const s = call.skeleton;
-        if (s.pattern === 'Reduce') return 'Reduce 1D-Full';
+        if (s.pattern === 'Reduce') return call.partial ? 'Reduce 1D-Partial' : call.second ? 'Reduce 2D' : 'Reduce 1D-Full';
+        if (s.pattern === 'MapPool') return `MapPool ${dimsOf(s)}D`;
         if (s.pattern === 'MapOverlap') return `MapOverlap ${dimsOf(s)}D`;
         return s.pattern;
     };
     const elementsOf = call => {
         const first = call.elwise[0];
         switch (call.pattern) {
-            case 'Reduce': return [...first.size];
+            case 'Reduce':               // Full: one element count; otherwise rows and columns (swapped when along the columns)
+                return call.partial || call.second ? (call.skeleton.params.mode === 'ColWise' ? [first.size[1], first.size[0]] : [...first.size]) : [count(first)];
+            case 'MapPool': return [...(call.out ?? first).size];
             case 'MapOverlap': return [...(dimsOf(call.skeleton) >= 2 ? (call.out ?? first) : first).size];
             case 'MapPairs': case 'MapPairsReduce': return [call.horizontal.size[0], call.vertical.size[0]];
-            case 'MapReduce': return [count(first)];
+            case 'MapReduce': return [Math.floor(count(first) / stridesOf(call.skeleton, call.elwise.length)[0])];
+            case 'Map': return [Math.floor(count(call.out ?? first) / stridesOf(call.skeleton, 1 + call.elwise.length)[0])];          // strided: the output elements that are computed
             default: return [count(call.out ?? first)];
         }
     };
@@ -91,6 +90,17 @@ export function synthesizeTrace(program, where) {
             p.overlap = overlapOf(s);
             if (s.params.edge !== 'Duplicate') p.edge = s.params.edge;
             if (s.params.edge === 'Pad' && number(s.params.pad) !== null) p.pad = number(s.params.pad);
+            if (s.params.update && s.params.update !== 'Normal') p.update_mode = s.params.update;
+        }
+        if (call.pattern === 'Map' || call.pattern === 'MapReduce') {
+            const strides = stridesOf(s, call.pattern === 'Map' ? 1 + call.elwise.length : call.elwise.length);
+            if (strides.some(x => x !== 1)) p.strides = strides;
+        }
+        if (call.pattern === 'MapReduce' && number(s.params.start)) p.start_value = number(s.params.start);
+        if (call.pattern === 'MapPool') { p.pool_size = poolOf(s); p.stride = strideOf(s); p.pool = true; }
+        if (call.pattern === 'Reduce' && (call.partial || call.second)) {
+            if (s.params.mode === 'ColWise') p.mode = 'ColWise';
+            if (number(s.params.start)) p.start_value = number(s.params.start);
         }
         if (call.pattern === 'MapPairsReduce') {
             if (s.params.mode === 'ColWise') p.mode = 'ColWise';
@@ -103,8 +113,8 @@ export function synthesizeTrace(program, where) {
         return Object.keys(p).length ? p : null;
     };
 
-    const scalarOf = new Map();           // the call -> the id of the scalar that its latest run made (what an I/O block that prints it reads)
-    const io = (call, line, at, input, nodes) => {           // an I/O block of the program (skepu::io::cout): an external block that reads what is printed
+    const scalarOf = new Map();           // call -> id of the scalar of its latest run (read by the printing I/O block)
+    const io = (call, line, at, input, nodes) => {           // an I/O block (skepu::io::cout): an external event reading what is printed
         const t0 = clock;
         clock += 6;
         push({ type: 'external', label: 'I/O', file: path, ...(line ? { line: line + at } : {}), start: t0, end: t0 + 5, outputs: [], proxy_inputs: input === null ? [] : [input],
@@ -116,14 +126,14 @@ export function synthesizeTrace(program, where) {
         const nodes = [s.id];
         for (const m of residency.step(call)) transfer(m.container, m.direction, nodes);
 
-        if (call.io) {                    // one event for each thing that it prints, as skepu::io::cout makes them
+        if (call.io) {                    // one event per printed item
             const prints = [...call.reads.map(c => [idOf(c), [s.id, c.id]]), ...call.scalars.filter(c => scalarOf.has(c.skeleton.id)).map(c => [scalarOf.get(c.skeleton.id), [s.id, c.skeleton.id]])];
             if (!prints.length) io(call, line, 0, null, nodes);
             prints.forEach(([input, ids], k) => io(call, line, k, input, ids));
             return;
         }
 
-        const label = call.host ? s.label : call.name;
+        const label = call.host ? s.label : isAnonymous(s, where) ? anonymousLabel(s, call, where.file, line) : call.name;          // anonymous skeletons are named by their call
         if (call.host) {
             const start = clock, end = clock + Math.max(3, Math.round(10 + readsOf(call).concat(writesOf(call)).reduce((n, c) => n + count(c), 0) * 0.002));
             clock = end + 1;
@@ -137,7 +147,7 @@ export function synthesizeTrace(program, where) {
         const work = elements.reduce((a, b) => a * b, 1);
         const start = clock, end = clock + Math.max(2, Math.round(cost.launch + work * cost.ns / 1000));
         clock = end + 1;
-        const scalar = call.pattern === 'Reduce' || call.pattern === 'MapReduce' ? nextId++ : null;
+        const scalar = call.scalar ? nextId++ : null;
         const event = { type: 'skeleton_call', object_id: instance.get(s.id), label, pattern: patternOf(call), backend, file: path, ...(line ? { line } : {}), elements,
             elwise_inputs: (call.pattern === 'MapPairs' || call.pattern === 'MapPairsReduce' ? [call.vertical, call.horizontal] : call.elwise).map(idOf), proxy_inputs: call.proxies.map(idOf), scalar_inputs: [],
             outputs: scalar !== null ? [scalar] : call.out ? [idOf(call.out)] : [], threads: cost.threads, start, end, ...scope() };
@@ -146,11 +156,13 @@ export function synthesizeTrace(program, where) {
         const parameters = parametersOf(call);
         if (parameters) event.parameters = parameters;
         push(event, call.random ? [s.id, call.random.id] : nodes);
-
-        if (scalar !== null) {
-            scalarOf.set(s.id, scalar);
-            if (call.printed) io(call, line, 1, scalar, nodes);           // the program prints the result: an I/O block that reads the scalar
+        if (call.pattern === 'MapOverlap' && s.params.update === 'RedBlack') {          // two passes: red, then black
+            const second = { ...event, start: clock, end: clock + (event.end - event.start) };
+            clock = second.end + 1;
+            push(second, nodes);
         }
+
+        if (scalar !== null) scalarOf.set(s.id, scalar);
     };
 
     const cap = capFor(program.steps, 400);
@@ -165,7 +177,7 @@ export function synthesizeTrace(program, where) {
                 regions.push(step.label);
                 const inner = [];
                 run(step.steps, depth + 1, inner);
-                free(inner);                                 // (what a scope declared is freed at the end of it)
+                free(inner);                                 // freed at the end of the scope
                 regions.pop();
             }
         }

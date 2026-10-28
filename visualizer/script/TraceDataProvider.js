@@ -138,7 +138,8 @@ function _mm(minmax, key, value) {
 export function buildMinmax(nodes, edges) {
   var minmax = {};
   nodes.forEach(function(node) {
-    if (node.data.type !== 'skeleton_call' && node.data.type !== 'external') return;
+    // (the calls, the external blocks and the transfers: they are coloured on one scale)
+    if (node.data.type !== 'skeleton_call' && node.data.type !== 'external' && node.data.type !== 'transfer') return;
     var durs = (node.data.durations && node.data.durations.length)
       ? node.data.durations : [node.data.duration];
     durs.forEach(function(d) { _mm(minmax, 'duration-total', d); });
@@ -151,7 +152,7 @@ export function buildMinmax(nodes, edges) {
     _mm(minmax, 'duration-cv',   node.data.duration_cv     || 0);
     if (node.data.imbalance != null) _mm(minmax, 'imbalance', node.data.imbalance);
     if (node.data.comm_bytes != null) _mm(minmax, 'comm-bytes', node.data.comm_bytes);
-    if (node.data.type === 'skeleton_call' && node.data.elements) {
+    if ((node.data.type === 'skeleton_call' || node.data.type === 'transfer') && node.data.elements) {
       var el = node.data.elements.reduce(function(a, b) { return a * b; });
       _mm(minmax, 'elements', el);
       if (node.data.duration) _mm(minmax, 'duration-per-element', node.data.duration / el);

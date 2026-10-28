@@ -1,15 +1,13 @@
-// history.js — undo and redo of the design: the states of it that a person made, as the text (JSON) of the design after each change. No DOM.
+// history.js — undo and redo: the design (as JSON) after each change. No DOM.
 //
-// The design is all of the state (everything else is made from it), so a step is just the design before it. A change is a step when it changes
-// the design; not every event is one: a text field makes its change when it is left (not for each key), a drag when it ends (not for each
-// pixel), and what one action does in several calls of `changed` (they come in the same task) is one step. What comes in a quick series of
-// the same kind of change (the keys in the body of a function, the nodes that one drag moves) is one step too: `merge` names the kind.
+// A change is a step if it alters the design. Changes made by one action in the same task form one step; so do rapid changes of one kind (`merge`):
+// text fields commit on blur, a drag on release, keys in a function body together.
 
 export class History {
     /**
      * @param text   the design to start from (its JSON)
      * @param limit  the most steps to keep
-     * @param now    the clock, in milliseconds (a parameter for the tests)
+     * @param now    the clock in milliseconds (injectable for tests)
      */
     constructor(text, limit = 100, now = () => performance.now()) {
         this.limit = limit;
@@ -21,13 +19,13 @@ export class History {
         this.present = text;
         this.past = [];
         this.future = [];
-        this.merging = null;           // { merge, at }: the kind and time of the last change, for the next one to be joined to it
-        this.task = false;             // the last change was in this task
+        this.merging = null;           // { merge, at }: kind and time of the last change
+        this.task = false;             // the last change was in the current task
     }
 
     /**
-     * The design is `text` now. If it is not what it was, the one before it is a step, unless the change is joined to the last one: it is in
-     * the same task, or has the same `merge` as the last and comes within `window` milliseconds of it. Returns true if a step was made.
+     * The design is `text` now. If it changed, the previous design becomes a step, unless the change is joined to the last: same task, or same `merge`
+     * within `window` milliseconds. Returns true if a step was made.
      */
     commit(text, { merge = null, window = 1000 } = {}) {
         if (text === this.present) return false;
@@ -47,7 +45,7 @@ export class History {
     canUndo() { return this.past.length > 0; }
     canRedo() { return this.future.length > 0; }
 
-    /** The design before the last step (its JSON), or null. */
+    /** The design before the last step (JSON), or null. */
     undo() {
         if (!this.past.length) return null;
         this.future.push(this.present);
@@ -56,7 +54,7 @@ export class History {
         return this.present;
     }
 
-    /** The design after the step that was undone, or null. */
+    /** The design after the undone step, or null. */
     redo() {
         if (!this.future.length) return null;
         this.past.push(this.present);
