@@ -94,8 +94,11 @@ if [ $TEST = 1 ]; then
 	cp -R "$ROOT/packaging/smoke" "$CHECK/$NAME/smoke_test"   # (a small program of ours, not part of the package: it is built with the package's skepu.mk)
 	( cd "$CHECK/$NAME/smoke_test" \
 		&& make BACKENDS="${SMOKE_BACKENDS:--openmp}" CXX="${SMOKE_CXX:-g++}" bin/smoke > "$CHECK/make.log" 2>&1 \
-		&& ./bin/smoke OpenMP > "$CHECK/run.log" 2>&1 ) \
+		&& ./bin/smoke OpenMP > "$CHECK/run.log" 2>&1 \
+		&& cd ../template \
+		&& make BACKENDS="${SMOKE_BACKENDS:--openmp}" CXX="${SMOKE_CXX:-g++}" bin/hello >> "$CHECK/make.log" 2>&1 \
+		&& ./bin/hello OpenMP >> "$CHECK/run.log" 2>&1 ) \
 		|| { echo "the test failed:" >&2; tail -20 "$CHECK/make.log" "$CHECK/run.log" >&2 2>/dev/null; exit 1; }
-	echo "   a program was built and run from the unpacked package"
+	echo "   a program and the template were built and run from the unpacked package"
 fi
 ( cd "$OUTPUT" && { shasum -a 256 "$NAME.tar.gz" 2>/dev/null || sha256sum "$NAME.tar.gz"; } )

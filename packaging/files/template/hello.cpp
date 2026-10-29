@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 	skepu::setGlobalBackendSpec(spec);
 
 	auto map = skepu::Map(addOne);
-	skepu::Vector<float> in(8, 1.0f, "in"), out(8, "out");
+	skepu::Vector<float> in(8, "in", 1.0f), out(8, "out");
 	map(out, in);
 	skepu::io::cout << "out = " << out << "\n";
 	return 0;
