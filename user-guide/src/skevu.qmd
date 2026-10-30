@@ -55,8 +55,9 @@ archive its files as a `.zip` to load them.
 The example programs of SkePU can be built with tracing as follows; their traces are written
 to a `trace/` directory:
 
-- with `make` in `examples/`: the programs are built with tracing (`BACKEND_FLAGS` in
-  `examples/Makefile`); add `TRACE_SNAPSHOTS=1` to the `make` command to take snapshots too;
+- with `make` in `examples/`: the programs are built with tracing (`TRACE` in
+  `examples/programs.mk`; `make/skepu.mk` has the rules); add `TRACE_SNAPSHOTS=1` to the `make`
+  command to take snapshots too;
 - with CMake: configure with `-DSKEPU_EXAMPLES_TRACING=ON`, and also
   `-DSKEPU_EXAMPLES_TRACING_SNAPSHOTS=ON` for snapshots.
 

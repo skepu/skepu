@@ -27,7 +27,7 @@ writeFileSync(join(examples, `${name}.cpp`), emitCpp(result.program, { userFunct
 let failed = false;
 try {
     try {
-        execFileSync('make', ['-C', examples, `parallel/${name}`, 'BACKENDS=-openmp -opencl'], { stdio: 'pipe', maxBuffer: 1 << 28 });
+        execFileSync('make', ['-C', examples, `bin/${name}`, 'BACKENDS=-openmp -opencl'], { stdio: 'pipe', maxBuffer: 1 << 28 });
     } catch (e) {
         console.error(String(e.stderr).split('\n').filter(l => /error|FATAL/.test(l)).slice(0, 10).join('\n') || e.message);
         process.exit(2);
@@ -35,7 +35,7 @@ try {
     for (const backend of backends) {
         // the build fixes the trace file name
         const trace = join(examples, 'trace', `trace_${name}.json`);
-        execFileSync(join(examples, 'parallel', name), [backend], { cwd: examples, stdio: 'ignore' });
+        execFileSync(join(examples, 'bin', name), [backend], { cwd: examples, stdio: 'ignore' });
         if (process.env.SAVE_TRACE && backend === 'openmp') copyFileSync(trace, process.env.SAVE_TRACE);      // to regenerate the test fixture
         const traced = JSON.parse(readFileSync(trace, 'utf8'));          // the events, or a trace file { header, data }
         const problems = compareTrace(result.program, traced.data ?? traced, { skeletonInstancing: anonymous ? 'anonymous' : 'named' });
@@ -44,7 +44,7 @@ try {
         failed ||= problems.length > 0;
     }
 } finally {
-    for (const dir of [examples, join(examples, 'parallel')])
+    for (const dir of [examples, join(examples, 'bin')])
         for (const f of readdirSync(dir)) if (f.includes(name)) rmSync(join(dir, f), { force: true, recursive: true });
     rmSync(join(examples, 'trace', `trace_${name}.json`), { force: true });
 }

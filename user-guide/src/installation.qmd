@@ -171,7 +171,7 @@ required arguments are as follows:
 The `Makefile` of the examples and the CMake function below set these up;
 on macOS they derive the system include paths (the SDK, not Clang's headers) from the installed Xcode
 or Command Line Tools (`xcrun`), on other systems they can be given
-explicitly (`SKEPU_TOOL_USER_FLAGS` in `Makefile.in` for the examples).
+explicitly (`SKEPU_TOOL_USER_FLAGS` in `make/local.mk` for the examples; `make/local.mk.template` is the one to copy).
 
 #### Debugging
 

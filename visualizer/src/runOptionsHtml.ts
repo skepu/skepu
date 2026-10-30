@@ -1,16 +1,10 @@
-// The form of the options of a run (a panel of the editor): all of them at once, each with what the Makefile has until it is set.
-// Pure text, so that it can be tested without an editor (tests/unit/test_run_plan.js).
-import { BACKENDS, MakefileValues, RunOverrides } from './runPlan.js';
+// Run options form (editor panel). Pure text, for tests without an editor (tests/unit/test_run_plan.js).
+import { BACKENDS, MakefileValues, RunOverrides, usesBackend } from './runPlan.js';
 
 export interface RunForm {
 	program: string;
-	/** The source file, as the form names it. */
 	file: string;
-	/** The program is in PROGS of the Makefile. */
-	listed: boolean;
-	kind: 'examples' | 'package';
 	overrides: RunOverrides;
-	/** What the Makefile runs the program with (examples). */
 	makefile: MakefileValues;
 	cspSource: string;
 	nonce: string;
@@ -22,7 +16,6 @@ export function runOptionsHtml(form: RunForm): string {
 	const { overrides, makefile } = form;
 	const backends = [['', `Makefile${makefile.backend ? ` (${makefile.backend})` : ''}`], ...BACKENDS.map(b => [b, b])]
 		.map(([value, label]) => `<option value="${value}"${(overrides.backend ?? '') === value ? ' selected' : ''}>${escape(label)}</option>`).join('');
-	const examples = form.kind === 'examples';
 	const placeholder = makefile.arguments ?? '';
 	return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
@@ -41,8 +34,8 @@ button:hover { background: var(--vscode-button-hoverBackground); }
 button.secondary { color: var(--vscode-button-secondaryForeground); background: var(--vscode-button-secondaryBackground); }
 </style></head><body>
 <h1>Options for ${escape(form.file)}</h1>
-${examples ? `<label class="field"><span>Default backend</span><select id="backend"${overrides.arguments ? ' disabled' : ''}>${backends}</select><small>Part of the arguments of the Makefile; not used when Arguments is set.</small></label>` : '<select id="backend" hidden></select>'}
-<label class="field"><span>Arguments</span><input type="text" id="arguments" value="${escape(overrides.arguments ?? '')}" placeholder="${escape(placeholder)}" spellcheck="false"><small>${examples && !form.listed ? 'Required: not in PROGS of the Makefile.' : makefile.arguments ? 'Replace the arguments of the Makefile.' : 'Arguments of the program.'}</small></label>
+${usesBackend(makefile) ? `<label class="field"><span>Default backend</span><select id="backend"${overrides.arguments ? ' disabled' : ''}>${backends}</select><small>Used by the Makefile's arguments; ignored when Arguments is set.</small></label>` : '<select id="backend" hidden></select>'}
+<label class="field"><span>Arguments</span><input type="text" id="arguments" value="${escape(overrides.arguments ?? '')}" placeholder="${escape(placeholder)}" spellcheck="false">${makefile.arguments ? '<small>Replaces the Makefile\'s arguments.</small>' : ''}</label>
 <label class="check"><input type="checkbox" id="trace"${overrides.trace === false ? '' : ' checked'}>Enable tracing <small style="display:inline">TRACE=1</small></label>
 <label class="check"><input type="checkbox" id="snapshots"${overrides.snapshots && overrides.trace !== false ? ' checked' : ''}${overrides.trace === false ? ' disabled' : ''}>Enable snapshots <small style="display:inline">TRACE_SNAPSHOTS=1</small></label>
 <label class="check"><input type="checkbox" id="rebuild"${overrides.rebuild ? ' checked' : ''}>Force rebuild <small style="display:inline">make -B</small></label>

@@ -9,26 +9,28 @@ A directory with programs has a Makefile that lists them and includes `skepu.mk`
 
 ```
 cd template
-make                        # builds the programs of the Makefile into bin/ (next to the Makefile)
-make run/hello              # builds hello if it is out of date, and runs it with its arguments (lookup.hello in the Makefile)
-bin/hello OpenMP            # or run it yourself: the last argument of a program is usually the backend: CPU, OpenMP, OpenCL or CUDA (the program decides)
+make                        # build the programs of the Makefile into bin/ (next to the Makefile)
+make run/hello              # build hello if out of date, then run it with lookup.hello
+bin/hello OpenMP            # or run it directly (the last argument is usually the backend: CPU, OpenMP, OpenCL or CUDA, as the program decides)
 ```
 
-`make run/<program>` runs the program from this directory, where a lab keeps its data, with `lookup.<program>` of the Makefile as the arguments, or with `ARGS="..."`
+`make run/<program>` runs the program from the package root, where labs keep their data. Its arguments are `lookup.<program>` in the Makefile, or `ARGS="..."`
 (`make run/hello ARGS=CPU`).
 
 The default backends are OpenMP, CUDA and OpenCL. If the computer lacks one, build without it:
 
 ```
-make BACKENDS="-openmp"     # or put BACKENDS = -openmp in local.mk (next to skepu.mk), which every make reads
+make BACKENDS="-openmp"     # or set BACKENDS = -openmp in local.mk (next to skepu.mk), which every make reads
 ```
 
-`skepu.mk` has all the settings and their documentation: the backends, the compiler, more include directories, files that are built into every program.
+`skepu.mk` documents all settings: backends, compiler, include directories, files linked into every program.
 
 ## Seeing what a program does
 
-`make TRACE=1` builds with tracing: a run writes `skepu_trace.json` (or the file in `$SKEPU_TRACE_FILE`; `make run/<program>` writes `trace_<program>.json` here), which SkeVU, the SkePU visualizer, shows in a browser (Files >
-Load Trace, then the trace and the source files). `make TRACE=1 TRACE_SNAPSHOTS=1` also saves the containers that the program marks with `SKEPU_TRACE_SNAPSHOT` (in `snapshots/` when the program is run with `make run/<program>`).
+`make TRACE=1 run/<program>` builds with tracing and runs the program; the trace is `trace/trace_<program>.json` in the package root. SkeVU, the SkePU
+visualizer, shows it in a browser (Files > Load Trace, then the trace and the source files). A program run directly writes `trace/trace_<program>.json` relative to
+the current directory, if that directory exists. `TRACE_SNAPSHOTS=1` also saves the containers that the program marks with `SKEPU_TRACE_SNAPSHOT`, to `snapshots/`
+and, after `make run/<program>`, to `snapshots_<program>.zip` (the form SkeVU loads).
 
 ## Language server
 

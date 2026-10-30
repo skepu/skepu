@@ -1,0 +1,12 @@
+# Settings for this computer, read by skepu.mk and documented in its header. (Source tree: copy make/local.mk.template to make/local.mk.)
+# Each line shows the default; remove the # to change it.
+
+#BACKENDS = -openmp -opencl -cuda
+#CXX = g++
+#SEQ_CXX = g++
+#OPT = -O3
+#SKEPU_OPTIONS = -std=c++17 -g $(OPT)
+#SKEPU_DEBUG_LEVEL = 0
+#CUDA_HOME = /usr/local/cuda
+
+# Detected when unset: OPENCL_FLAGS and SKEPU_TOOL_USER_FLAGS (on a Mac, from the active toolchain).

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Makes a SkePU package: skepu-tool, the headers, the language server and skepu.mk (how programs are built), in one tar file that is unpacked and used where it is. It is
+# Makes a SkePU package: skepu-tool, the headers, the language server and skepu.mk (make/skepu.mk: the build rules), in one tar file that is unpacked and used where it is. It is
 # the same for any course, lab or tutorial: what is particular to one is a directory, the overlay, that is added on top. Run it on
 # a computer like the ones of the lab, from a SkePU that has been built (cmake --build build); it builds what is out of date first, which is nothing if the build is
 # up to date. A Linux package is for Linux computers like this one (the programs it needs, such as libstdc++, are those of the computer).
@@ -66,6 +66,8 @@ fi
 
 echo "== adding skepu.mk, the documentation and the template"
 cp -R "$ROOT/packaging/files/." "$PKG/"
+cp "$ROOT/make/skepu.mk" "$PKG/skepu.mk"
+cp "$ROOT/make/local.mk.template" "$PKG/local.mk"
 mkdir -p "$PKG/extras" "$PKG/licenses"
 cp "$ROOT/examples/lodepng.cpp" "$ROOT/examples/lodepng.h" "$PKG/extras/"
 cp "$ROOT/LICENSE.txt" "$ROOT/CONTRIBUTORS.txt" "$PKG/licenses/"

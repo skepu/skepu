@@ -1,12 +1,13 @@
-parallel
-parallel-mpi
+bin
+bin-mpi
 sequential
 run
 run-mpi
 data
-Makefile.in
 trace
 trace-mpi
 snapshots
 snapshots_*.zip
 compile_commands.json
+bin-wasm
+wasm
