@@ -3,16 +3,18 @@
 #     PROGS = program1 program2
 #     include skepu.mk       (include ../skepu.mk, from a subdirectory of the package)
 #
-# and has `all: $(PTESTS)`. Everything here is relative to the directory of this file, so the package can be unpacked anywhere.
+# and has `all: $(PTESTS)`. `make run/<program>` builds a program and runs it (see below). Everything here is relative to the directory of this file, so the package can be unpacked anywhere.
 #
 # Settings (in local.mk, which is read first, or on the command line: make BACKENDS="-openmp"):
 #   BACKENDS            -openmp -cuda -opencl (the default); take out what the computer does not have
 #   CXX                 the compiler (g++; nvcc when CUDA is a backend)
 #   OPT                 optimization (-O3)
-#   TRACE=1             the programs write a trace (trace.json, or $SKEPU_TRACE_FILE) that SkeVU shows; TRACE_SNAPSHOTS=1 also the snapshots
+#   TRACE=1             the programs write a trace that SkeVU shows (skepu_trace.json, or $SKEPU_TRACE_FILE; trace_<program>.json by `make run/<program>`);
+#                       TRACE_SNAPSHOTS=1 also the snapshots (in snapshots/)
 #   COMMON_SKEPU_SOURCES   other source files of the programs that use SkePU (they are precompiled too)
 #   COMMON_SOURCES         other source files of the programs (plain C++)
 #   USER_INCLUDES       more include directories of the programs, for the precompiler and the compiler (-I extras)
+#   lookup.<program>    the arguments of `make run/<program>` (set in the Makefile: lookup.median = data/small.png output/median.png 3 OpenMP)
 #   CUDA_HOME           where CUDA is (/usr/local/cuda), for the OpenCL headers that come with it
 
 SKEPU_ROOT := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
@@ -24,6 +26,7 @@ OPT      ?= -O3
 OUT_DIR  ?= bin
 TRACE    ?= 0
 TRACE_SNAPSHOTS ?= 0
+SNAPSHOT_DIR ?= snapshots
 CUDA_HOME ?= /usr/local/cuda
 SEQ_CXX  ?= g++
 
@@ -68,7 +71,7 @@ endif
 ifeq ($(TRACE),1)
 BACKEND_FLAGS += -DSKEPU_TRACING
 ifeq ($(TRACE_SNAPSHOTS),1)
-BACKEND_FLAGS += -DSKEPU_TRACING_SNAPSHOTS
+BACKEND_FLAGS += -DSKEPU_TRACING_SNAPSHOTS -DSKEPU_TRACE_SNAPSHOT_DIR=$(SNAPSHOT_DIR)
 endif
 endif
 TARGET_FLAGS = -g $(OPT) -std=c++17 -I $(SKEPU_INCLUDE) -I . $(USER_INCLUDES) $(NVCCPASS) -Wno-attributes $(BACKEND_FLAGS)
@@ -88,6 +91,16 @@ $(OUT_DIR)/%_precompiled.$(FILETYPE): %.cpp $(SKEPU_TOOL) $(MAKEFILE_LIST) | $(O
 
 $(OUT_DIR)/%: $(OUT_DIR)/%_precompiled.$(FILETYPE) $(COMMON_PRECOMPILED) $(COMMON_SOURCES)
 	$(CXX) $< $(COMMON_PRECOMPILED) $(COMMON_SOURCES) -o $@ $(TARGET_FLAGS)
+
+# Runs a program (built first, if it is out of date) from RUN_DIR, the directory of this file, where the data of the programs and what they write are
+# kept: `make run/median`. Its arguments are `lookup.median` of the Makefile, or ARGS (make run/median ARGS="data/small.png out.png 2 CPU"); with
+# TRACE=1, the trace is RUN_DIR/trace_median.json.
+RUN_DIR ?= $(SKEPU_ROOT)
+run_args = $(if $(filter undefined,$(origin ARGS)),$(lookup.$(1)),$(ARGS))
+
+run/%: $(OUT_DIR)/%
+	@$(if $(filter 1,$(TRACE_SNAPSHOTS)),mkdir -p $(RUN_DIR)/$(SNAPSHOT_DIR))
+	cd $(RUN_DIR) && SKEPU_TRACE_FILE=trace_$*.json $(abspath $(OUT_DIR))/$* $(call run_args,$*)
 
 # compile_commands.json, for the language server (clangd): an entry for each source, as the editor should read it
 COMPILE_SOURCES = $(sort $(foreach p,$(PROGS),$(p).cpp) $(COMMON_SKEPU_SOURCES) $(COMMON_SOURCES))

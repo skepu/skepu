@@ -53,7 +53,7 @@ PRECOMPILER_OPTIONS = #--no-preserve-lines #--verbose
 
 # Backend-specific flags
 # Override in Makefile.in
-BACKEND_FLAGS = -DSKEPU_TRACING #-DSKEPU_SIMULATE_MULTI_GPU # -DSKEPU_SET_DEFAULT_BACKEND_CUDA #  -g -O3
+BACKEND_FLAGS = #-DSKEPU_SIMULATE_MULTI_GPU # -DSKEPU_SET_DEFAULT_BACKEND_CUDA #  -g -O3
 
 # Default OpenCL specific flags (matching a CUDA-provided installation)
 # Override in Makefile.in
@@ -98,11 +98,9 @@ RUN_ENV =
 # Includes.
 # ------------------------------------------------------------------- #
 
-$(EXAMPLES_DIR)Makefile.in:
-	cd $(EXAMPLES_DIR) && ./generate_makefile.in.sh
-
-# Overrides default values for various paths and options
-include $(EXAMPLES_DIR)Makefile.in
+# Overrides default values for various paths and options. The file is the user's own (git-ignored): make never writes it, not even
+# with -B. It is made, once, by running ./generate_makefile.in.sh (which replaces an existing one); without it the defaults here are used.
+-include $(EXAMPLES_DIR)Makefile.in
 
 # MPI mode: -mpi among the backends (MPI=1 puts it there). The programs are built with the MPI compiler, in directories of their own
 # (parallel-mpi, run-mpi, trace-mpi) so that the builds, logs and traces of the two ways do not replace each other.
@@ -167,12 +165,17 @@ SEQ_DIR     = sequential
 RUN_DIR     = $(RUN_BASE)$(MPI_SUFFIX)
 SNAPSHOT_DIR ?= snapshots
 
+# The programs are built with tracing (-DSKEPU_TRACING; the trace is what SkeVU shows) unless 'make TRACE=0 ...', for example to measure its cost.
 # Snapshots of containers (SKEPU_TRACE_SNAPSHOT in the programs, shown as heat maps in SkeVU) are only taken if the programs are built
 # with 'make TRACE_SNAPSHOTS=1 ...' (-DSKEPU_TRACING_SNAPSHOTS, in addition to tracing). Each snapshot is a file with the whole
 # container, so they can fill the disk and slow the program down.
+TRACE ?= 1
 TRACE_SNAPSHOTS ?= 0
+ifeq ($(TRACE),1)
+BACKEND_FLAGS += -DSKEPU_TRACING
 ifeq ($(TRACE_SNAPSHOTS),1)
 BACKEND_FLAGS += -DSKEPU_TRACING_SNAPSHOTS
+endif
 endif
 TRACE_DIR    ?= $(TRACE_BASE)$(MPI_SUFFIX)
 
@@ -320,7 +323,7 @@ all-parallel: $(PTESTS)
 
 all-run: $(RUN_TESTS)
 
-all: $(EXAMPLES_DIR)Makefile.in all-sequential all-parallel
+all: all-sequential all-parallel
 
 .PHONY: all all-sequential all-parallel all-run pack-snapshots clean compile-commands
 
