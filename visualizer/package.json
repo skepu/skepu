@@ -33,8 +33,51 @@
       {
         "command": "skevu.openGuideInWindow",
         "title": "SkeVU: Open the User Guide in a New Window"
+      },
+      {
+        "command": "skevu.runTrace",
+        "title": "SkeVU: Run and Show the Trace",
+        "icon": "$(play)"
+      },
+      {
+        "command": "skevu.runOptions",
+        "title": "SkeVU: Run and Show the Trace with Options\u2026",
+        "icon": "$(settings-gear)"
       }
-    ]
+    ],
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "skevu.runTrace",
+          "when": "resourceExtname == .cpp",
+          "group": "navigation@1"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "skevu.runTrace",
+          "when": "resourceExtname == .cpp",
+          "group": "navigation@9"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "skevu.runOptions",
+          "when": "resourceExtname == .cpp",
+          "group": "navigation@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "SkeVU",
+      "properties": {
+        "skevu.run.make": {
+          "type": "string",
+          "default": "make",
+          "description": "The make program."
+        }
+      }
+    }
   },
   "scripts": {
     "build": "node esbuild.js",
