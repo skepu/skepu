@@ -17,7 +17,7 @@ namespace skepu
 			arg.updateHost();
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateHost(hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
-			// (with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values)
+			// with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values
 			if (p != Parity::None || this->m_mirror_mode)
 				pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().updateHost(), 0)...);
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
@@ -26,9 +26,9 @@ namespace skepu
 			const int overlap = this->m_overlap[0];
 			const size_t size = arg.size();
 			
-			// (one number for each element of the output: with the edge mode None it is 2 * overlap smaller than the input)
+			// one number for each element of the output: with the edge mode None it is 2 * overlap smaller than the input
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge == Edge::None ? size - 2 * overlap : size);
-			if (this->m_mirror_mode) // (mirror mode: the elements near the edges are not computed: their numbers are skipped)
+			if (this->m_mirror_mode) // mirror mode: the elements near the edges are not computed: their numbers are skipped
 				this->template prepareRandom<MapOverlapFunc::randomCount>(2 * overlap);
 			
 			if (this->m_edge != Edge::None)
@@ -92,7 +92,7 @@ namespace skepu
 
 			else
 			{
-				const size_t first = this->m_mirror_mode ? overlap : 0; // (mirror mode: the output keeps its values near the edges)
+				const size_t first = this->m_mirror_mode ? overlap : 0;
 				for (size_t i = 0; i < size - overlap * 2; ++i)
 					{
 						if (p == Parity::None || index_parity(p, i + first))
@@ -124,7 +124,7 @@ namespace skepu
 			arg.updateHost();
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateHost(hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
-			// (with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values)
+			// with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values
 			if (p != Parity::None || this->m_mirror_mode)
 				pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().updateHost(), 0)...);
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
@@ -142,7 +142,7 @@ namespace skepu
 			const T *inputEnd = inputBegin + size;
 			
 			size_t final_size = arg.total_cols() * colWidth;
-			// (one number for each element of the output; in mirror mode the elements near the edges are not computed and their numbers are skipped)
+			// one number for each element of the output; in mirror mode the elements near the edges are not computed and their numbers are skipped
 			const size_t out_total = get<0>(std::forward<CallArgs>(args)...).total_rows() * get<0>(std::forward<CallArgs>(args)...).total_cols();
 			const size_t computed = this->m_mirror_mode ? (get<0>(std::forward<CallArgs>(args)...).total_rows() - 2 * overlap) * get<0>(std::forward<CallArgs>(args)...).total_cols() : out_total;
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(computed);
@@ -216,7 +216,7 @@ namespace skepu
 				else // Edge::None
 				{
 					size_t out_rows = get<0>(std::forward<CallArgs>(args)...).total_rows();
-					const size_t first = this->m_mirror_mode ? overlap : 0; // (mirror mode: the output keeps its values near the edges)
+					const size_t first = this->m_mirror_mode ? overlap : 0;
 					for (size_t i = 0; i < out_rows - 2 * first; ++i)
 					{
 						if (p == Parity::None || index_parity(p, i + first))
@@ -251,7 +251,7 @@ namespace skepu
 			arg.updateHost();
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateHost(hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
-			// (with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values)
+			// with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values
 			if (p != Parity::None || this->m_mirror_mode)
 				pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().updateHost(), 0)...);
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
@@ -343,7 +343,7 @@ namespace skepu
 				else // Edge::none
 				{
 					size_t out_cols = get<0>(std::forward<CallArgs>(args)...).total_cols();
-					const size_t first = this->m_mirror_mode ? overlap : 0; // (mirror mode: the output keeps its values near the edges)
+					const size_t first = this->m_mirror_mode ? overlap : 0;
 					for (size_t i = 0; i < out_cols - 2 * first; ++i)
 					{
 						if (p == Parity::None || index_parity(p, i + first))

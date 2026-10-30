@@ -252,7 +252,7 @@ namespace skepu
 
 				checkTensor4Sizes(this->out_indices, std::forward<CallArgs>(args)...);
 
-				if (this->mirrorHasNoInterior(size_i, size_j, size_k, size_l)) // (mirror mode with nothing to compute: only the random numbers are used)
+				if (this->mirrorHasNoInterior(size_i, size_j, size_k, size_l)) // mirror mode with nothing to compute: only the random numbers are used
 				{
 					this->template prepareRandom<MapOverlapFunc::randomCount>(size_i * size_j * size_k * size_l);
 					return get<0>(std::forward<CallArgs>(args)...);

@@ -1,4 +1,4 @@
-// test_transfer_color.js — a transfer has timing data of its own, so it is coloured by the measures of the calls (one scale for the calls, the external blocks and the transfers).
+// test_transfer_color.js — transfers are coloured by the call measures, on one scale with the calls and the external blocks.
 import { describe, it, expect } from 'vitest';
 import { TraceDataProvider, buildMinmax } from '../../script/TraceDataProvider.js';
 
@@ -15,7 +15,7 @@ describe('the colour scale of the transfers', () => {
         const mm = buildMinmax(nodes, []);
         expect(mm['duration-total']).toEqual({ min: 10, max: 400 });
         expect(mm['elements']).toEqual({ min: 100, max: 400 });
-        expect(mm['duration-per-element'].max).toBeCloseTo(1, 6);          // (the call, 100 over 100 elements; the transfers 1 and 0.1)
+        expect(mm['duration-per-element'].max).toBeCloseTo(1, 6);          // call: 100 over 100 elements; transfers: 1 and 0.1
         expect(mm['dag-depth']).toEqual({ min: 0, max: 2 });
     });
 

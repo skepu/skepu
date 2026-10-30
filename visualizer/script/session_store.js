@@ -11,10 +11,10 @@ export const MAX_AGE_MS  = 24 * 60 * 60 * 1000;
 /** The id of this tab's session (made the first time). */
 export function sessionId(storage, makeId) {
   let id = null;
-  try { id = storage.getItem(SESSION_KEY); } catch (e) { /* (no storage) */ }
+  try { id = storage.getItem(SESSION_KEY); } catch (e) { /* no storage */ }
   if (!id) {
     id = makeId();
-    try { storage.setItem(SESSION_KEY, id); } catch (e) { /* (no storage: the id lasts until the page does) */ }
+    try { storage.setItem(SESSION_KEY, id); } catch (e) { /* no storage: the id lasts until the page does */ }
   }
   return id;
 }
@@ -41,7 +41,7 @@ export function createSessionStore(idb, sid, now = Date.now) {
   async function store(mode) {
     if (!db) {
       db = await open(idb);
-      // (what is older than a day is not any tab's any more)
+      // what is older than a day is not any tab's any more
       const all = db.transaction(STORE, 'readwrite').objectStore(STORE);
       const records = await request(all.getAll());
       for (const r of records) if (now() - r.saved > MAX_AGE_MS) all.delete(r.sid);

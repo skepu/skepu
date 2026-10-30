@@ -1,39 +1,38 @@
-// panzoom.js — how the graph of SkeVU is panned and zoomed, shared by GraphView and the designer: the wheel and the pinch, and the smooth pan and
-// zoom to a node, a region or a group of nodes (when something is chosen in the code, say).
+// panzoom.js — panning and zooming of the SkeVU graph (shared by GraphView and the designer): wheel and pinch, and smooth pan and zoom to a node,
+// region or group.
 //
-// No guess is made of the device, as the events say what is meant:
-//  * a plain wheel, or a two-finger swipe on a trackpad, pans the graph (Shift: sideways); with View > Scroll Behaviour > Zoom (`setWheelZooms`),
-//    a plain wheel zooms and Shift pans;
-//  * Ctrl or Cmd with the wheel zooms around the pointer. This is also how Chromium and Firefox (and so an editor's webview) report the pinch
-//    of a trackpad: a wheel event with ctrlKey set;
-//  * Safari and WebKit report the pinch as gesturestart / gesturechange, which zoom around the pointer too (the wheel is ignored meanwhile).
-// Cytoscape's own wheel zoom is off. Use `PAN_ZOOM_OPTIONS` in the options of cytoscape({...}), and `bindPanZoom(cy, element)` for the events of
-// the element that the graph is in.
+// Events are read as they say what is meant, with no device detection:
+//  * a plain wheel or a two-finger trackpad swipe pans (Shift: sideways); with View > Scroll Behaviour > Zoom (`setWheelZooms`) a plain wheel zooms
+//    and Shift pans;
+//  * Ctrl or Cmd with the wheel zooms around the pointer. Chromium and Firefox (so also an editor's webview) report a trackpad pinch the same way:
+//    a wheel event with ctrlKey;
+//  * Safari reports a pinch as gesturestart / gesturechange, which zoom around the pointer; the wheel is ignored meanwhile.
+// Cytoscape's own wheel zoom is off. Use `PAN_ZOOM_OPTIONS` in cytoscape({...}) and `bindPanZoom(cy, element)` for the element's events.
 
-/** Options of cytoscape() for the zoom: no zoom by the wheel (it pans), a range of zoom, and the zoom of touch. */
+/** Options for cytoscape(): wheel zoom off (the wheel pans), zoom range, touch zoom. */
 export const PAN_ZOOM_OPTIONS = { wheelSensitivity: 0.0, minZoom: 0.01, maxZoom: 5, userZoomingEnabled: true };
 
-/** How far the graph pans for a unit of the wheel (the sign makes it follow the fingers). */
+/** Pan per wheel unit; the sign makes it follow the fingers. */
 const PAN_SPEED = -1.5;
-/** The zoom of a Safari pinch is the scale of the gesture to this power. */
+/** A Safari pinch zooms by the gesture scale to this power. */
 const PINCH_EXPONENT = 1.2;
-/** The zoom of a wheel event is e to the power of this for each unit (pixel) of it: a pinch of Chromium is some units for each event (the rate of d3-zoom for it). */
+/** A wheel event zooms by e to the power of this per unit (pixel); a Chromium pinch gives a few units per event (d3-zoom's rate). */
 const WHEEL_ZOOM_RATE = 0.02;
-/** The most that a single wheel event zooms by, in units: the notch of a mouse wheel is 100 or more, and would jump by a factor of 7 or more. */
+/** Cap on the units one wheel event zooms by: a mouse notch is 100 or more, which would jump by a factor of 7 or more. */
 const WHEEL_ZOOM_MAX_DELTA = 12;
 
-/** The pixels of a wheel delta: the wheel of a mouse can report lines (Firefox) or pages. */
+/** A wheel delta in pixels: a mouse wheel may report lines (Firefox) or pages. */
 export function wheelPixels(delta, deltaMode, pageSize) {
   return deltaMode === 1 ? delta * 16 : deltaMode === 2 ? delta * (pageSize || 600) : delta;
 }
 
-/** The factor that a wheel event with Ctrl or Cmd (or the pinch of a trackpad in Chromium) zooms by: more than 1 for a turn away from the user. */
+/** The zoom factor of a Ctrl/Cmd wheel event (or Chromium trackpad pinch): above 1 for a turn away from the user. */
 export function wheelZoomFactor(deltaY, deltaMode, pageSize) {
   var d = Math.max(-WHEEL_ZOOM_MAX_DELTA, Math.min(WHEEL_ZOOM_MAX_DELTA, wheelPixels(deltaY, deltaMode, pageSize)));
   return Math.exp(-d * WHEEL_ZOOM_RATE);
 }
 
-/** How far a wheel event pans, in pixels of the graph: { x, y }. Shift turns a wheel that only goes up and down sideways. */
+/** The pan of a wheel event in graph pixels: { x, y }. Shift makes a vertical-only wheel pan sideways. */
 export function wheelPan(event, pageSize) {
   var dx = wheelPixels(event.deltaX, event.deltaMode, pageSize), dy = wheelPixels(event.deltaY, event.deltaMode, pageSize);
   if (event.shiftKey && dx === 0) { dx = dy; dy = 0; }
@@ -50,13 +49,13 @@ export function wheelAction(event) {
   return (event.ctrlKey || event.metaKey || (wheelZooms && !event.shiftKey)) ? 'zoom' : 'pan';
 }
 
-/** Pans and zooms `cy` from the events of `el`. Returns a function that takes the listeners away again. */
+/** Pans and zooms `cy` from the events of `el`. Returns a function that removes the listeners. */
 export function bindPanZoom(cy, el) {
   var baseZoom = 1, zooming = false;
 
   function onWheel(event) {
     event.preventDefault();
-    if (zooming) return;                          // (a pinch of Safari: its gesture zooms, and the wheel events that come with it do not pan)
+    if (zooming) return;                          // during a Safari pinch the gesture zooms; its wheel events do not pan
     var rect = el.getBoundingClientRect();
     if (wheelAction(event) === 'zoom') {
       cy.zoom({
@@ -91,13 +90,13 @@ export function bindPanZoom(cy, el) {
 
 // ── Panning and zooming to nodes ─────────────────────────────────────────────
 
-export const ANIM_ZOOM_MS      = 400;      // the time of a smooth pan and zoom
-export const ZOOM_FIT_PAD      = 40;       // the room around a region or a group that is fitted
-export const ZOOM_NODE_DIVISOR = 2.3;      // a node gets room of this fraction of the view around it
+export const ANIM_ZOOM_MS      = 400;
+export const ZOOM_FIT_PAD      = 40;
+export const ZOOM_NODE_DIVISOR = 2.3;      // a node gets 1/this of the view as room
 
 /**
- * The room that a single node has around it when the view is fitted to it: a fraction of the shorter side of the view (of the height alone,
- * a narrow view would have no width left for the node, and the zoom would go to its minimum).
+ * The room around a single node when the view is fitted to it: a fraction of the shorter side of the view (the height alone would leave a narrow
+ * view no width for the node, and the zoom would drop to its minimum).
  */
 export function roomAround(cy) {
   return Math.min(cy.width(), cy.height()) / ZOOM_NODE_DIVISOR;
@@ -109,18 +108,18 @@ export function animateFit(cy, eles, padding) {
 }
 
 /**
- * The room that something has to be inside the view, to be clearly in it (pixels, from each edge). It has to be less than what the graph leaves
- * at the edges when it is fitted (Reset View and each layout: 30 px, LAYOUT_FIT_PAD of GraphView), or the first and the last nodes of a graph that
- * has just been fitted would not be "in view" and a highlight would move it. The margin is for what is half behind an edge, not for a near one.
+ * Margin in px from each edge that something must be inside to be clearly in view. It must be smaller than the padding a fitted graph leaves at the
+ * edges (Reset View and each layout: LAYOUT_FIT_PAD, 30 px in GraphView), or the first and last nodes of a just-fitted graph would not count as in
+ * view and a highlight would move it. The margin is for what is half behind an edge, not for what is near one.
  */
 export const VIEW_MARGIN_PX = 16;
-/** What is too small to be seen as what it is: less than this fraction of the shorter side of the view, or than VISIBLE_MIN_PX, in its longer side. */
+/** Too small to recognize: its longer side is under this fraction of the view's shorter side, or under VISIBLE_MIN_PX. */
 export const VISIBLE_MIN_FRACTION = 0.03;
 export const VISIBLE_MIN_PX       = 28;
 
 /**
- * Whether something is clearly in the view: all of it is inside the view (VIEW_MARGIN_PX from the edges, so that it is not half behind one), and it
- * is not too small to see. `box` is where it is drawn, in pixels of the view: { x1, y1, x2, y2 }; `view` is { width, height }.
+ * Whether something is clearly in view: wholly inside it (VIEW_MARGIN_PX from the edges) and not too small. `box` is { x1, y1, x2, y2 } in view
+ * pixels; `view` is { width, height }.
  */
 export function isClearlyInView(box, view) {
   var shorter = Math.min(view.width, view.height);
@@ -131,8 +130,8 @@ export function isClearlyInView(box, view) {
 }
 
 /**
- * What a highlight of something in another view does to the graph: it is shown with animateFit, but only if it is not clearly in view already
- * (the view then stays still: it would move and zoom for what the eye already has). Returns whether the view moved.
+ * Shows a highlight from another view with animateFit, unless it is clearly in view already (the view stays still rather than move for what the eye
+ * already has). Returns whether the view moved.
  */
 export function animateFitUnlessInView(cy, eles, padding) {
   var b = eles.renderedBoundingBox({ includeLabels: false, includeOverlays: false });
@@ -151,35 +150,35 @@ function observeSize(el, callback) {
   return function() { observer.disconnect(); };
 }
 
-/**
- * Keeps the graph fitted in its element while it is the fitted view. `fit()` fits the graph (Reset View, each layout) and remembers that the view
- * is the fitted one; a pan or a zoom of anything else (the user, a highlight) forgets it. When the element changes size (the legend and the
- * timeline that are drawn after the layout, a pane that is dragged, the window), Cytoscape is told, and the graph is fitted again if the view still
- * is the fitted one: without that the graph is fitted to the size that the element had before, and clips when the element gets smaller.
- * This is done once the size has been still for FIT_SETTLE_MS, not for each change: a dragged pane changes it for every pointer move, and a resize
- * of Cytoscape (its canvas is made again) and a fit for each of them is a flicker.
- */
-/** How long the size of the element has to be still before the graph is fitted to it again. */
+/** How long the element's size must be still before the graph is fitted to it again. */
 export const FIT_SETTLE_MS = 120;
 
-/** `whenSettled`: the size of the element has to have been still for this long, and it is waited for at most FIT_WAIT_MAX_MS. */
+/** whenSettled: the size must have been still this long; the wait is at most FIT_WAIT_MAX_MS. */
 export const FIT_QUIET_MS    = 50;
 export const FIT_WAIT_MAX_MS = 800;
 
+/**
+ * Keeps the graph fitted in its element while the view is the fitted one. `fit()` fits the graph (Reset View, each layout) and records that the view is
+ * the fitted one; any other pan or zoom (the user, a highlight) clears that. When the element changes size (the legend and timeline drawn after a
+ * layout, a dragged pane, the window), Cytoscape is told and the graph is fitted again if the view is still the fitted one; otherwise it stays fitted
+ * to the old size and clips when the element shrinks.
+ * This waits until the size has been still for FIT_SETTLE_MS instead of reacting to each change: a dragged pane changes it on every pointer move, and
+ * a Cytoscape resize (its canvas is recreated) plus a fit for each would flicker.
+ */
 export class FitKeeper {
-  /** `observe(el, callback)` is for the tests: it makes the callback be called when the size of `el` changes, and returns what stops it. */
+  /** `observe(el, callback)` is for tests: calls the callback when the size of `el` changes and returns a function that stops it. */
   constructor(el, padding, observe) {
     this._padding = padding;
     this._timer   = null;
-    this._changedAt = 0;     // when the element last changed size
+    this._changedAt = 0;
     this._waiting = 0;       // the number of whenSettled that wait (destroy ends them)
     this._cy      = null;
-    this._fitted  = false;   // the view is the one that fit() made
+    this._fitted  = false;
     this._moving  = false;   // fit() or resize() is what moves the view just now
     this._stop    = (observe || observeSize)(el, this._onResize.bind(this));
   }
 
-  /** For the graph that is made (a new one for each render): the view of a new graph is not the fitted one until it is fitted. */
+  /** For the new graph of each render: its view is not the fitted one until fit() runs. */
   attach(cy) {
     var self = this;
     this._cy = cy;
@@ -187,7 +186,7 @@ export class FitKeeper {
     cy.on('viewport', function() { if (!self._moving) self._fitted = false; });
   }
 
-  /** Fits the graph, with the padding, and keeps it fitted while the view is not moved by anything else. */
+  /** Fits the graph with the padding and keeps it fitted until something else moves the view. */
   fit() {
     if (!this._cy) return;
     this._moving = true;
@@ -195,7 +194,7 @@ export class FitKeeper {
     this._fitted = true;
   }
 
-  /** The size of the element changed: what is to be done for it waits until the size is still (a change in the meantime starts the wait again). */
+  /** The element's size changed: wait until it is still; a further change restarts the wait. */
   _onResize() {
     this._changedAt = Date.now();
     clearTimeout(this._timer);
@@ -203,16 +202,15 @@ export class FitKeeper {
   }
 
   /**
-   * Calls `callback` when the element has been the same size for FIT_QUIET_MS (the panes that a render brings in, the legend and the timeline, are in
-   * place), or FIT_WAIT_MAX_MS after, whatever comes first, with Cytoscape told of the size and the graph fitted to it at once (as the wait of the
-   * ordinary refit is for a size that goes on changing). The graph can be kept hidden until then, so that nobody sees it fitted to a size that
-   * the element does not keep.
+   * Calls `callback` once the element has kept its size for FIT_QUIET_MS (the panes a render brings in, the legend and timeline, are in place), or
+   * FIT_WAIT_MAX_MS after the call, whichever comes first, with Cytoscape told of the size and the graph fitted to it immediately (the ordinary
+   * refit's wait is for a size that keeps changing). The graph can stay hidden until then, so that nobody sees it fitted to a size that does not last.
    */
   whenSettled(callback) {
     var self = this, start = Date.now();
     this._waiting++;
     function check() {
-      if (!self._waiting) return;                              // (destroyed)
+      if (!self._waiting) return;
       var now = Date.now();
       if (now - Math.max(self._changedAt, start) >= FIT_QUIET_MS || now - start >= FIT_WAIT_MAX_MS) {
         self._waiting--;
@@ -234,7 +232,6 @@ export class FitKeeper {
     if (this._fitted) this.fit();
   }
 
-  /** Stops watching the element. */
   destroy() {
     this._stop();
     clearTimeout(this._timer);

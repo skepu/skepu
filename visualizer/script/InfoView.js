@@ -212,7 +212,6 @@ export class InfoView {
       }
       html += definitionRows(data.definitions, this._onShowSource ? this._canShowSource : function() { return false; });
       bodyEl.innerHTML = html;
-      // (the links of the definitions)
       var onShowSource = this._onShowSource;
       bodyEl.onclick = function(ev) {
         var link = ev.target.closest && ev.target.closest('a.info-link');

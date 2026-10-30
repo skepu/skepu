@@ -42,7 +42,7 @@ export function placePopover(rect, size, viewport, prefer = 'auto', gap = 14, ma
   const order = prefer === 'auto' ? ['bottom', 'top', 'right', 'left'] : [prefer, ...['bottom', 'top', 'right', 'left'].filter(s => s !== prefer)];
   for (const side of order) {
     const c = candidates[side];
-    // (along the side it may be moved to fit: a popover below a target at the edge of the viewport is shifted, not moved to another side)
+    // along the side it may be moved to fit: a popover below a target at the edge of the viewport is shifted, not moved to another side
     const moved = { left: clamp(c.left, margin, maxLeft), top: clamp(c.top, margin, maxTop) };
     if (side === 'bottom' || side === 'top' ? fits({ left: moved.left, top: c.top }) : fits({ left: c.left, top: moved.top }))
       return { ...moved, side };

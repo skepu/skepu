@@ -429,7 +429,7 @@ TEST_CASE("random: PRNG API: MapOverlap 2D EdgeMode == None")
       for (size_t j = overlap_j; j < size_j - overlap_j; ++j)
         CHECK(out(i, j) == ref_prng.get() % 100);
   });
-  // (the inner elements get the numbers in order; the stream is advanced by the number of elements of the output)
+  // the inner elements get the numbers in order; the stream is advanced by the number of elements of the output
   ref_prng.forward(size_i * size_j - (size_i - 2 * overlap_i) * (size_j - 2 * overlap_j));
   CHECK(prng.get() == ref_prng.get()); // next value should also be correct
   //skepu::io::cout << "Result: " << out << "\n";
@@ -463,7 +463,7 @@ TEST_CASE("random: PRNG API: MapOverlap 3D EdgeMode == None")
   size_t size_i{38}, size_j{27}, size_k{15};
   size_t overlap_i{3}, overlap_j{3}, overlap_k{3};
   
-  // (the edge mode None makes an output that is 2 * overlap smaller than the input)
+  // the edge mode None makes an output that is 2 * overlap smaller than the input
   skepu::Tensor3<int> in(size_i + 2 * overlap_i, size_j + 2 * overlap_j, size_k + 2 * overlap_k, "", 1), out(size_i, size_j, size_k);
   
   mapoverlapper3d.setOverlap(overlap_i, overlap_j, overlap_k);
@@ -534,7 +534,7 @@ TEST_CASE("random: PRNG API: MapOverlap 3D EdgeMode != None")
 
 TEST_CASE("random: PRNG constructors: a name and a seed")
 {
-  // (a name is the label that a trace shows; the stream has the seed that PRNG() has when none is given)
+  // a name is the label that a trace shows; the stream has the seed that PRNG() has when none is given
   skepu::PRNG plain, named("named"), seeded(7), both(7, "both"), named_first("first", 7);
   for (int i = 0; i < 5; ++i)
   {
@@ -647,7 +647,7 @@ TEST_CASE("randomize: randomize::uniform, integers, the values of the stream, in
 	v.updateHost();
 	for (size_t i = 0; i < n; ++i)
 		REQUIRE(v(i) == -50 + (int)(bits62(reference) % 100));
-	require_same_state(stream, reference); // (one number on in both)
+	require_same_state(stream, reference); // one number on in both
 
 	skepu::Matrix<long> m(20, 30);
 	skepu::randomize::uniform(m, 99);

@@ -14,7 +14,7 @@ namespace userconstants_part
 // User constants ([[skepu::userconstant]]) in the user functions of every skeleton, with several types, written both ways
 // (before the declaration and after the name), from a namespace, initialized from other constants, used by a function that
 // a user function calls, and by a user function that is a template. The host reads the constants too, to check the results.
-// (The double precision ones are at the end: on an OpenCL device that does not have it, those skeletons run on another backend.)
+// The double precision ones are at the end: on an OpenCL device that does not have it, those skeletons run on another backend.
 
 [[skepu::userconstant]] constexpr float
 	SCALE_F = 2.5f,
@@ -336,7 +336,7 @@ TEST_CASE("element_types: Matrices of signed char and long long: elements, rows 
 	for (size_t i = 0; i < n; ++i)
 		for (size_t j = 0; j < n; ++j)
 		{
-			wa(i, j) = (long long)(i + 1) * 3000000000LL;           // (beyond 32 bits)
+			wa(i, j) = (long long)(i + 1) * 3000000000LL;
 			wb(i, j) = (long long)(j + 1) - 5;
 		}
 

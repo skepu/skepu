@@ -75,7 +75,7 @@ describe('the arrow keys from a selected node', () => {
     const { engine, provider } = setup(three());
     select(provider, { nodeId: 'a' });
     engine.stepFromSelection(+1);
-    expect(engine.stepFromSelection(+1)).toBe(false);   // (active: step() does it)
+    expect(engine.stepFromSelection(+1)).toBe(false);   // active: step() does it
   });
 });
 
@@ -118,8 +118,8 @@ describe('the progress bar', () => {
     const { engine, provider, fill } = withBar([iterated, node('x', 200), node('y', 400)]);
     engine.setProgressBarEnabled(true);
     select(provider, { nodeId: 'x' });
-    expect(parseFloat(fill.style.width)).toBeCloseTo(50, 5);   // (x is the second of 4 entries)
-    select(provider, { nodeId: 'i' });                           // (the node of two iterations as a whole)
+    expect(parseFloat(fill.style.width)).toBeCloseTo(50, 5);   // x is the second of 4 entries
+    select(provider, { nodeId: 'i' });                           // the node of two iterations as a whole
     expect(parseFloat(fill.style.width)).toBeCloseTo(50, 5);
     select(provider, { nodeId: 'i', iterIdx: 1 });
     expect(parseFloat(fill.style.width)).toBeCloseTo(75, 5);
@@ -136,7 +136,7 @@ describe('the progress bar', () => {
     engine.stepFromSelection(+1);
     expect(parseFloat(fill.style.width)).toBeCloseTo(200 / 3, 5);
     engine.stop();
-    expect(parseFloat(fill.style.width)).toBeCloseTo(200 / 3, 5);   // (the simulation showed b: the selection is b)
+    expect(parseFloat(fill.style.width)).toBeCloseTo(200 / 3, 5);   // the simulation showed b: the selection is b
   });
   it('tells the page when a simulation starts: the arrow keys, play, the bar itself', () => {
     const a = withBar(three());
@@ -187,7 +187,7 @@ describe('Simulate from the selection, and the deselection that stops it', () =>
     provider._emit('clear', { background: true });
     expect(engine.isActive).toBe(false);
     expect(engine._running).toBe(false);
-    expect(engine.stepFromSelection(+1)).toBe(false);   // (no selection any more)
+    expect(engine.stepFromSelection(+1)).toBe(false);   // no selection any more
   });
   it('is not stopped by the clear that a click on a node makes before its selection', () => {
     const { engine, provider } = setup(three());

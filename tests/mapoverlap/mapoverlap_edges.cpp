@@ -99,13 +99,13 @@ TEST_CASE("mapoverlap_in_place: MapOverlap in place")
 
 	skepu::Vector<float> domain(size, 0);
 	skepu::randomize::uniform(domain, 0, 2);
-	domain.flush();   // (the elements are read on the host below)
+	domain.flush();   // the elements are read on the host below
 	
 	// The result on the host: the red elements (the odd ones) first, then the black ones (the even ones), each from the latest values
 	std::vector<float> expected(size);
 	for (size_t i = 0; i < size; ++i)
 		expected[i] = domain(i);
-	auto at = [&](long i) { return expected[std::min<long>(std::max<long>(i, 0), size - 1)]; };   // (edge mode Duplicate)
+	auto at = [&](long i) { return expected[std::min<long>(std::max<long>(i, 0), size - 1)]; };   // edge mode Duplicate
 	for (size_t i = 1; i < size; i += 2)
 		expected[i] = (at(i - 1) + at(i + 1)) / 2;
 	for (size_t i = 0; i < size; i += 2)
@@ -303,7 +303,7 @@ TEST_CASE("mapoverlap_updatemode: MapOverlap update modes, 1D vector, edge modes
 						int expected = sentinel;
 						if (interior && computed(mode, i))
 						{
-							const long c = (edge == skepu::Edge::None && !mirror) ? i + 1 : i;  // (the center in the input)
+							const long c = (edge == skepu::Edge::None && !mirror) ? i + 1 : i;
 							auto at = [&](long x) { return (x < 0 || x >= in_size) ? (edge == skepu::Edge::Pad ? 5 : in(um_clamp(x, in_size))) : in(x); };
 							expected = (int)i * 10 + at(c) + at(c - 1) - at(c + 1);
 						}
@@ -649,7 +649,7 @@ TEST_CASE("mapoverlap_1d_mirror: MapOverlap 1D, mirror mode on matrices, row-wis
 			INFO("size = " << rows << "x" << cols << (rowwise ? ", row-wise" : ", column-wise"));
 			size_t wrong = 0;
 			auto at = [&](long i, long j) { return input_value(i, j); };
-			// (along the direction of the overlap; Index1D is the position in it)
+			// along the direction of the overlap; Index1D is the position in it
 			auto neighbour = [&](long i, long j, long d) { return rowwise ? at(i, j + d) : at(i + d, j); };
 			for (long i = 0; i < (long)rows; ++i)
 				for (long j = 0; j < (long)cols; ++j)
@@ -713,7 +713,7 @@ TEST_CASE("mapoverlap_1d_mirror: MapOverlap 1D, mirror mode and a dimension that
 	for (auto overlapMode : {skepu::Overlap::RowWise, skepu::Overlap::ColWise})
 	{
 		const bool rowwise = overlapMode == skepu::Overlap::RowWise;
-		const size_t rows = rowwise ? 6 : 4, cols = rowwise ? 4 : 6;   // (the dimension of the overlap is 4)
+		const size_t rows = rowwise ? 6 : 4, cols = rowwise ? 4 : 6;   // the dimension of the overlap is 4
 		skepu::Matrix<int> in(rows, cols, 1), out(rows, cols, 7);
 		random_skeleton.setOverlapMode(overlapMode);
 		skepu::PRNG prng(5), reference(5);
@@ -1018,9 +1018,9 @@ TEST_CASE("mapoverlap_4d_mirror: MapOverlap 4D, mirror mode and a dimension that
 
 namespace mapoverlap_in_place_error_part
 {
-// In the normal update mode the elements are computed in an order that depends on the backend (and in parallel): an output that is also an input (an
-// element-wise input, or a container that the user function reads with random access) has no defined result, and the call is an error, before anything is
-// computed. The update modes Red, Black and RedBlack are the ones for it.
+// In the normal update mode the elements are computed in a backend-dependent (and parallel) order, so an output that is also an input (an element-wise
+// input, or a container that the user function reads with random access) has no defined result: the call is an error, raised before anything is computed.
+// The update modes Red, Black and RedBlack are for in-place use.
 int blur_1d(skepu::Region1D<int> r) { return r(-1) + r(0) + r(1); }
 int blur_2d(skepu::Region2D<int> r) { return r(-1, 0) + r(0, 0) + r(1, 0); }
 int blur_3d(skepu::Region3D<int> r) { return r(-1, 0, 0) + r(0, 0, 0) + r(1, 0, 0); }
@@ -1059,7 +1059,7 @@ TEST_CASE("mapoverlap_in_place_error: an output that is an input is an error in 
 	CHECK_THROWS_WITH(table_skeleton_1d(v_out, v, v_out), Catch::Contains(message));
 	CHECK_THROWS_WITH(table_skeleton_2d(m_out, m, m_out), Catch::Contains(message));
 
-	// Another container for the output is no error; the error is before the call computes anything (the input has its values)
+	// Another output container is no error; the error comes before any computation (the input keeps its values)
 	CHECK_NOTHROW(blur_skeleton_1d(v_out, v));
 	CHECK_NOTHROW(blur_skeleton_2d(m_out, m));
 	CHECK_NOTHROW(blur_skeleton_3d(t3_out, t3));

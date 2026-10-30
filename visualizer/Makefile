@@ -83,7 +83,7 @@ guide:
 clean-guide:
 	rm -rf $(GUIDE_DIR) $(GUIDE_SRC)/_book-simple
 
-# (the guide is built for the package only: guide/, the book that it is made in and Quarto's cache, if there was none before, are removed after it)
+# the guide is built for the package only: guide/, the book that it is made in and Quarto's cache, if there was none before, are removed after it
 vsix: skepu-lib
 	@had_cache=0; test -d $(GUIDE_SRC)/.quarto && had_cache=1; \
 	if [ "$(GUIDE)" = 0 ]; then echo "guide: GUIDE=0: the extension is built without the user guide"; rm -rf $(GUIDE_DIR); else $(MAKE) --no-print-directory guide; fi; \

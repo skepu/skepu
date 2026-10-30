@@ -38,8 +38,7 @@ setInfoViewOnShowSource(function(place) {
   });
 });
 
-// Shades the places of a call lightly in the editor (instance, user functions, the call itself), as the source pane does in the browser.
-// No marks removes the shading.
+// Lightly shades the places of a call (instance, user functions, the call), as the source pane does in the browser. No marks removes the shading.
 setInfoViewOnDefinitions(function(definitions, call) {
   var marks = definitionMarks(definitions);
   if (marks.length && call && call.file && Number.isInteger(call.line) && call.line > 0)

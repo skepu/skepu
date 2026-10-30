@@ -28,7 +28,7 @@ import { smoothScrollTo, cancelScroll, linesInView, flexBasisPx, scrollOffset } 
 import { collectBadges, definitionMarks, sitesAt } from './badges.js';
 import { isDarkTheme } from './appearance.js';
 
-// (the transition of the size of the info pane, in style/main.css)
+// the transition of the size of the info pane, in style/main.css
 const INFO_PANE_TRANSITION_MS = 300;
 
 'use strict';
@@ -69,9 +69,9 @@ export class SourceCodeView {
     this._viewRank        = null;   // the rank whose trace file the trace pane shows
     this._tracePanes      = {};     // rank → the pane of its trace file (the one that is not shown is out of the DOM)
     this._lastBadgeNodes  = null;
-    this._badgeSeq        = 0;      // of the last placement asked for: an older one that is still waiting is not made
-    this._panesPending    = true;   // the panes were just made, and their line numbers (the places of the badges) come a little later
-    this._placing         = false;  // a placement of the badges waits for them (whenPlaced)
+    this._badgeSeq        = 0;      // of the last requested placement; an older pending one is dropped
+    this._panesPending    = true;   // the panes were just made; their line numbers (badge positions) arrive a little later
+    this._placing         = false;  // a placement is waiting for the line numbers (whenPlaced)
     this._placedWaiters   = [];
     this._badgeCycleIndex = {};
     this._definitionSites = [];     // where the instances and user functions of the calls are defined (collectBadges: sites)
@@ -93,7 +93,7 @@ export class SourceCodeView {
       this._tabPanesEl.addEventListener('click', function(e) {
         var badge = e.target.closest('[data-badge-entries]');
         if (!badge) {
-          // (the line number of a line of a definition: select the calls that use it)
+          // the line number of a line of a definition: select the calls that use it
           var cell = e.target.closest('.hljs-ln-n.def-site');
           var pane = cell && cell.closest('.cpp-tab-pane');
           if (cell && pane && pane.dataset.filename) self.siteClick(pane.dataset.filename, +cell.dataset.lineNumber);
@@ -132,7 +132,7 @@ export class SourceCodeView {
     this._boundFetchStart = function() {
       self.clearHighlight();
       self.clearDefinitions();
-      // (the badges are not taken away before the new ones are ready: that is a flash, whatever the size of the trace)
+      // the badges are not taken away before the new ones are ready: that is a flash, whatever the size of the trace
       self._markBadgesStale(true);
     };
     this._boundRenderEnd = function(stats) {
@@ -314,7 +314,7 @@ export class SourceCodeView {
     this._tracePanes         = {};
     this._lastBadgeNodes     = null;
     this._panesPending       = true;
-    this._badgeSeq++;                  // (a placement that waits is for the old panes)
+    this._badgeSeq++;                  // a placement that waits is for the old panes
     // Keep the window global in sync for any legacy code that reads it directly.
     (window.skevu ??= {}).traceLineRanges = this._traceLineRanges;
 
@@ -349,9 +349,9 @@ export class SourceCodeView {
       var pre  = document.createElement('pre');
       var code = document.createElement('code');
       code.textContent = cppFiles[filename];
-      // (Python sources, from SkePY programs: highlighted when the Python grammar is there,
+      // Python sources, from SkePY programs: highlighted when the Python grammar is there,
       // static/highlight/languages/python.min.js; otherwise no highlighting rather than a
-      // wrong guess at the language)
+      // wrong guess at the language
       if (/\.py$/i.test(filename))
         code.className = (typeof hljs !== 'undefined' && hljs.getLanguage && hljs.getLanguage('python'))
           ? 'language-python' : 'language-plaintext';
@@ -459,7 +459,6 @@ export class SourceCodeView {
       .find(function(b) { return b.textContent === shown.dataset.filename; });
     if (traceBtn) traceBtn.textContent = pane.dataset.filename;
     this.highlightAllBlocks(this._tabPanesEl);
-    // (the badges are those of the file that is shown)
     if (this._lastBadgeNodes) { this._panesPending = true; this.placeBadges(this._lastBadgeNodes); }
   }
 
@@ -526,8 +525,8 @@ export class SourceCodeView {
     if (!data) return;
     var tracePane = this._tabPanesEl.querySelector('.cpp-tab-pane.active[data-trace-pane="true"]');
     if (tracePane) {
-      // (of an MPI program: the trace file of the rank that was clicked; or else the file that is shown, if it has
-      // the event, and the main trace file if not)
+      // of an MPI program: the trace file of the rank that was clicked; or else the file that is shown, if it has
+      // the event, and the main trace file if not
       if (this._rankTraces.length) {
         var want = (data.trace_indices && data.trace_indices.length) ? data.trace_indices[0] : data.trace_index;
         if (rank == null) rank = (want != null && this._rankHasEntry(this._viewRank, want)) ? this._viewRank : this._detailRank;
@@ -552,8 +551,8 @@ export class SourceCodeView {
   }
 
   /**
-   * Mark lines of a pane as selected (`line-selected`), after clearing the marks, and optionally scroll the pane to them: smoothly, with the
-   * line that is scrolled to a third of the way down the pane (with lines of the code above and below it).
+   * Marks lines of a pane as selected (`line-selected`) after clearing the marks, and optionally scrolls the pane to them: smoothly, with the line
+   * a third of the way down the pane, so that code shows above and below it.
    *
    * @param {number[]} lineNumbers  1-based line numbers.
    * @param {object}   [options]
@@ -576,23 +575,23 @@ export class SourceCodeView {
     });
     if (!options.scroll || !found.size) return;
     var first = (options.target != null && found.get(options.target)) || found.get(Math.min.apply(null, Array.from(found.keys())));
-    // A line that is in view stays where it is (selecting it again, or a line that was in sight, does not move the code)
+    // A line already in view stays put: selecting it again, or a line in sight, does not move the code
     var rect = function(el) { var r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; };
     var paneRect = pane.getBoundingClientRect();
-    // (the part of the pane that is left when the info pane has got its size: it is opened with the selection, and slides up over the code)
+    // the part of the pane left once the info pane has its size: it opens with the selection and slides up over the code
     var view = this._viewWithInfoPane(pane, paneRect);
     if (linesInView(Array.from(found.values()).map(rect), rect(first), view)) {
-      cancelScroll(pane);   // (a scroll that is going on to somewhere else is not wanted any more)
+      cancelScroll(pane);   // a scroll toward somewhere else is obsolete
       return;
     }
-    // (the line goes a third of the way down the part of the pane that stays: lines of the code are above and below it)
+    // the line goes a third of the way down the part of the pane that stays, with code above and below
     var firstRect = rect(first), lowest = Math.max.apply(null, Array.from(found.values()).map(function(el) { return rect(el).bottom; }));
     var offset = scrollOffset(view.bottom - view.top, firstRect.bottom - firstRect.top, Math.max(lowest, firstRect.bottom) - firstRect.top);
     var top = pane.scrollTop + firstRect.top - paneRect.top - offset;
     var extraRange = paneRect.bottom - view.bottom;
     var to = smoothScrollTo(pane, top, { animate: options.animate, extraRange: extraRange });
-    // A line near the end of the code can only be scrolled to the top of the pane when the pane has got smaller: the scroll that is made while it
-    // does so ends where the pane let it, and is finished when it is done (unless the user, or another selection, has scrolled in the meantime)
+    // A line near the end of the code can reach the top of the pane only once the pane has shrunk: the scroll made meanwhile ends where the pane allowed,
+    // and is completed afterwards (unless the user or another selection has scrolled in the meantime)
     if (extraRange > 1) {
       var token = pane._scrollSettle = {};
       setTimeout(function() {
@@ -602,8 +601,8 @@ export class SourceCodeView {
   }
 
   /**
-   * The rectangle of the pane as it is when the info pane has its size (the transition of its size takes a moment): the info pane covers the
-   * lower part of the right column, where the code pane is the rest. If it cannot be known, the rectangle as it is now.
+   * The pane's rectangle once the info pane has its size (the size transition takes a moment): the info pane covers the lower part of the right
+   * column and the code pane is the rest. The current rectangle if that cannot be known.
    */
   _viewWithInfoPane(pane, paneRect) {
     var view = { top: paneRect.top, bottom: paneRect.bottom };
@@ -783,9 +782,9 @@ export class SourceCodeView {
   }
 
   /**
-   * Puts the badges of badgeNodes in the source panes, replacing the old ones in one step (the old badges stay until then, so the gutter is never
-   * empty). If the panes were just made, the placement waits BADGE_PLACEMENT_DELAY_MS for their line numbers. The badges of a render are always
-   * replaced, even if they look like the previous ones: they carry the ids of the nodes of their graph, which are new for each render.
+   * Replaces the badges of badgeNodes in the source panes in one step (the old ones stay until then, so the gutter is never empty). If the panes were
+   * just made, placement waits BADGE_PLACEMENT_DELAY_MS for their line numbers. Badges are always replaced, even if they look unchanged: they carry the
+   * node ids of their render's graph, which are new each render.
    *
    * @param {Array} badgeNodes  [{data:{type, file, line, id, ...}}] from /graph.
    */
@@ -795,7 +794,7 @@ export class SourceCodeView {
     var self = this;
 
     function place() {
-      if (seq !== self._badgeSeq) return;     // (a later placement, or other panes)
+      if (seq !== self._badgeSeq) return;     // a later placement, or other panes
       self._panesPending = false;
       self._placing = false;
       self._definitionSites = c.sites;
@@ -818,7 +817,7 @@ export class SourceCodeView {
     else callback();
   }
 
-  /** The badges are of the graph before the one that is being drawn: dimmed (after a moment, so that a quick render is not seen) and not clickable. */
+  /** The badges belong to the previous graph: dimmed after a short delay (a quick render is not visible) and not clickable. */
   _markBadgesStale(stale) {
     this._tabPanesEl.classList.toggle('badges-stale', stale);
   }
@@ -891,7 +890,7 @@ export class SourceCodeView {
     var key = file + ':' + line;
     this._siteCycle[key] = key in this._siteCycle ? (this._siteCycle[key] + 1) % ids.length : 0;
     var focusId = ids[this._siteCycle[key]];
-    // (what was clicked is the selection, with more opacity than the definitions of the call that get shaded)
+    // what was clicked is the selection, with more opacity than the definitions of the call that get shaded
     var lines = [];
     sites.forEach(function(s) { for (var n = s.line; n <= s.end_line; n++) if (lines.indexOf(n) < 0) lines.push(n); });
     this.highlightLines(lines, { pane: this._paneForFile(file), scroll: false });
@@ -993,7 +992,7 @@ export class SourceCodeView {
     var self = this;
     orderMap = orderMap || {};
 
-    // The old badges go in the same step as the new ones come (nothing is drawn in between).
+    // Old badges are replaced in one step: nothing is drawn in between.
     self.clearBadges();
 
     // Build pane lookup once — O(panes) instead of O(badges × panes).
@@ -1046,7 +1045,7 @@ export class SourceCodeView {
         var o = list ? list[entry.iterIdx] : null;
         if (o != null && o < minOrder) minOrder = o;
       });
-      // (the arrows follow the calls: a line that only has snapshots is not on the way)
+      // the arrows follow the calls: a line that only has snapshots is not on the way
       if (isFinite(minOrder) && !b.onlySnapshots) {
         if (!paneArrows.has(pane)) paneArrows.set(pane, []);
         paneArrows.get(pane).push({ gutterEl: el, totalOrder: minOrder, nodeIds: nodeIds });

@@ -35,7 +35,7 @@ describe('Code Paths and Definitions after the page is loaded', () => {
         loadSettings();
         expect(State._codePaths).toBe(false);
         expect(State._pinDefinitions).toBe(true);
-        expect(view.codePaths).toBe(false);   // (it was left at true: the arrows were drawn while the menu said no)
+        expect(view.codePaths).toBe(false);   // it was left at true: the arrows were drawn while the menu said no
         expect(view.pin).toBe(true);
     });
 
@@ -73,7 +73,7 @@ describe('Restore Defaults', () => {
 describe('the width of the source pane that is stored', () => {
     it('is the width that the pane has (its flex-basis), also while the pane slides open and has no width yet', () => {
         const right = element();
-        right.offsetWidth = 0;                       // (a pane that has just begun to slide open)
+        right.offsetWidth = 0;                       // a pane that has just begun to slide open
         right.style.flex = '0 0 420px';
         elements.right_pane = right;
         State._sourcePaneOpen = true;

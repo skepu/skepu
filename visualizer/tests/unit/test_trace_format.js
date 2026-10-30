@@ -27,9 +27,9 @@ describe('the formatter', () => {
     it('keeps every value as it is written (white space only changes)', () => {
         const compact = '{"header":{"n":12345678901234567890,"x":1.50,"e":1e-7,"s":"a\\"b, c: [d]"},"data":[{"a":[],"b":{},"c":[1,2,3]}]}';
         const pretty = prettyPrintJson(compact);
-        expect(stripped(pretty)).toBe(stripped(compact));   // (white space outside of strings is the only difference)
+        expect(stripped(pretty)).toBe(stripped(compact));
         expect(JSON.parse(pretty)).toEqual(JSON.parse(compact));
-        expect(pretty).toContain('12345678901234567890');   // (a number that a JSON.parse and stringify would change)
+        expect(pretty).toContain('12345678901234567890');   // a number that a JSON.parse and stringify would change
         expect(pretty).toContain('1.50');
         expect(pretty).toContain('1e-7');
     });
@@ -77,9 +77,9 @@ describe('the trace for the code view', () => {
     it('is formatted when the events are one on each line (a line of an event is long), and the ranges follow the formatted text', () => {
         expect(perLine.length / perLine.split('\n').length).toBeGreaterThan(READABLE_AVERAGE_LINE);
         const raw = computeTraceLineRanges(perLine);
-        expect(raw.map(([a, b]) => b - a)).toEqual([0, 0, 0]);   // (in the file: a line for an event)
+        expect(raw.map(([a, b]) => b - a)).toEqual([0, 0, 0]);   // in the file: a line for an event
         const shown = formatTraceForDisplay(perLine);
-        expect(shown.ranges[1][1] - shown.ranges[1][0]).toBeGreaterThan(5);   // (in the view: several lines)
+        expect(shown.ranges[1][1] - shown.ranges[1][0]).toBeGreaterThan(5);   // in the view: several lines
         expect(JSON.parse(shown.text)).toEqual(JSON.parse(perLine));
     });
 
@@ -97,7 +97,7 @@ describe('the trace for the code view', () => {
 
     it('is shown as it is when it cannot be formatted (the ranges of a text that is not a trace are an error of the loader, not of the formatter)', () => {
         const truncated = oneLine.slice(0, oneLine.length - 30);
-        expect(() => formatTraceForDisplay(truncated)).toThrow();   // (computeTraceLineRanges reports it, as it does for the raw text)
+        expect(() => formatTraceForDisplay(truncated)).toThrow();   // computeTraceLineRanges reports it, as it does for the raw text
     });
 
     it('takes a large trace in a short time', () => {

@@ -32,8 +32,8 @@ export function linesInView(lines, target, view) {
 }
 
 /**
- * The size in px of a flex item that has the flex-basis of `flex` (the style of an element: "0 0 120px", "0 0 10em"), or null if it is not
- * a size ("1 1 auto"). `fontSizePx` is the font size of the element (for em).
+ * The size in px of a flex item with flex-basis `flex` (an element's style: "0 0 120px", "0 0 10em"), or null if it is not a size ("1 1 auto").
+ * `fontSizePx` is the element's font size (for em).
  */
 export function flexBasisPx(flex, fontSizePx) {
   const m = /^\s*[\d.]+\s+[\d.]+\s+([\d.]+)(px|em)\s*$/.exec(flex || '');
@@ -42,10 +42,9 @@ export function flexBasisPx(flex, fontSizePx) {
 }
 
 /**
- * How far from the top of the pane (px) the line that is scrolled to goes: a third of the way down, so that there is code to read above it and
- * below it, and at least `CONTEXT_LINES` lines from the top and from the bottom. `view` is the height of the pane, `lineHeight` that of a line, `span`
- * the height from the top of the line to the end of the last of the lines that are selected with it. If the pane has hardly room for the
- * lines, they are in the middle.
+ * The distance in px from the top of the pane to the line scrolled to: a third of the way down, so that code shows above and below it, with at least
+ * `CONTEXT_LINES` lines above and below. `view` is the pane height, `lineHeight` the line height, `span` the height from the top of the line to the end
+ * of the last line selected with it. If the pane has hardly room for the lines, they are centered.
  */
 export const CONTEXT_LINES = 3;
 export function scrollOffset(view, lineHeight, span) {
@@ -67,13 +66,13 @@ export function cancelScroll(pane) {
 }
 
 /**
- * Scrolls the pane to `top` (px; kept inside the pane, which can be scrolled `extraRange` px further than it can now: it is going to get smaller).
- * `animate: false`, a pane that is not shown, and a system that asks for less motion jump instead. Returns the place that it scrolls to.
+ * Scrolls the pane to `top` (px; kept inside the pane, which may be scrolled `extraRange` px further than now because it is about to shrink).
+ * `animate: false`, a hidden pane and a reduced-motion setting jump instead. Returns the target position.
  * `env` is for tests: { now, raf, setTimeout, clearTimeout }.
  */
 export function smoothScrollTo(pane, top, options, env) {
   options = options || {};
-  // (arrow functions: the timer functions of a page throw when they are called as methods of another object)
+  // arrow functions: the timer functions of a page throw when they are called as methods of another object
   env = env || { now: () => performance.now(), raf: f => requestAnimationFrame(f), setTimeout: (f, ms) => setTimeout(f, ms), clearTimeout: t => clearTimeout(t) };
   cancelScroll(pane);
   const to = Math.max(0, Math.min(maxTop(pane) + (options.extraRange || 0), top));
@@ -106,7 +105,7 @@ export function smoothScrollTo(pane, top, options, env) {
     pane.scrollTop = from + (to - from) * ease(t);
     if (t >= 1) finish(); else env.raf(frame);
   };
-  // (a page that does not run frames, as a hidden one does not, still ends up where the line is)
+  // a page that does not run frames, as a hidden one does not, still ends up where the line is
   timer = env.setTimeout(function() { if (!done) { pane.scrollTop = to; finish(); } }, duration + 80);
   env.raf(frame);
   return to;

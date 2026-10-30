@@ -325,7 +325,7 @@ describe('the fusion_patterns example', () => {
 
     it('says which fusions recompute', () => {
         const cost = Object.fromEntries(r.groups.filter(g => g.recompute).map(g => [g.calls[1].label, g.recompute[0].kind + ':' + g.recompute[0].factor]));
-        expect(cost).toEqual({ laplace: 'overlap:9', distance: 'pairs:160' });      // (the pool has windows that do not overlap: no cost)
+        expect(cost).toEqual({ laplace: 'overlap:9', distance: 'pairs:160' });      // the pool has windows that do not overlap: no cost
     });
 
     it('gives the reason of each call that is almost fusible', () => {

@@ -40,7 +40,7 @@ std::string removeNamespacesFromTypeName(std::string type)
 	replaceTextInString(type, "struct ", "");
 	auto pos = type.rfind("::");
 	if (pos == std::string::npos)
-		return type;      // (a type without a namespace, as unsigned int or double: nothing to remove)
+		return type;      // a type without a namespace, as unsigned int or double: nothing to remove
 	return type.substr(pos+2, type.size() - pos-2);
 }
 
@@ -250,7 +250,7 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 			}
 		}
 
-	// (after the container that is subscripted; the begin of the callee of the operator is not the [ in an instantiated template)
+	// after the container that is subscripted; the begin of the callee of the operator is not the [ in an instantiated template
 	for (auto subscript : UF.containerSubscripts)
 		R.InsertText(Lexer::getLocForEndOfToken(subscript->getArg(0)->getEndLoc(), 0, GlobalRewriter.getSourceMgr(), GlobalRewriter.getLangOpts()), ".data");
 
@@ -366,7 +366,7 @@ static std::string jsonQuoted(const std::string &s)
 	return result + "\"";
 }
 
-// (the place that a #line directive gives, if there is one)
+// the place that a #line directive gives, if there is one
 static std::string sourceRangeJSON(clang::SourceRange range)
 {
 	clang::SourceManager &SM = GlobalRewriter.getSourceMgr();
@@ -388,7 +388,7 @@ static std::string definitionJSON(UserFunction &UF, VarDecl *d, const InlineInst
 		+ ",\"kind\":" + (lambda ? "\"lambda\"" : "\"function\"") + "," + sourceRangeJSON(UF.astDeclNode->getSourceRange()) + "}}";
 }
 
-// (by the name of the struct of the user function of the instance: a user function that another one refers to has its struct made first)
+// by the name of the struct of the user function of the instance: a user function that another one refers to has its struct made first
 static std::map<std::string, std::string> definitionsByStruct;
 
 void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clang::SourceLocation loc)
@@ -427,7 +427,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 			}
 
 			// Resolve the template parameter type occurences by a type alias to the argument type
-			// (a constant for the value of a non-type parameter)
+			// a constant for the value of a non-type parameter
 			SSSkepuFunctorStruct << arg.alias(true);
 		}
 
@@ -531,7 +531,7 @@ void generateUserFunctionStruct(UserFunction &UF, std::string InstanceName, clan
 
 	SSSkepuFunctorStruct << "constexpr static bool prefersMatrix = " << (UF.indexed2D) << ";\n\n";
 
-	// Whether the function needs double precision (a skeleton that has it does not run on an OpenCL device that does not: see SkeletonBase::selectBackend)
+	// Whether the function needs double precision (the skeleton then cannot run on an OpenCL device without it: see SkeletonBase::selectBackend)
 	SSSkepuFunctorStruct << "constexpr static bool requiresDouble = " << (UF.requiresDoublePrecision ? 1 : 0) << ";\n\n";
 
 	// CUDA code
@@ -1079,7 +1079,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		// The source location of the call, as for the call of a skeleton variable
 		std::stringstream SSUse;
 		SSUse << InstanceName << ".setSourceLoc(\"" << inlineInstance->callFile << "\", \"" << sourceFileHash(inlineInstance->callFile) << "\", " << inlineInstance->callLine << ")";
-		// (the call can span lines, which the replacement does not: the line numbers go on from where it ended)
+		// the call can span lines, which the replacement does not: the line numbers go on from where it ended
 		{
 			SourceLocation callEnd = inlineInstance->factoryCall->getSourceRange().getEnd();
 			SourceLocation callBegin = inlineInstance->factoryCall->getSourceRange().getBegin();
@@ -1104,7 +1104,7 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 		<< "> " << InstanceName << "("
 		<< SSCallArgs.str() << ")";
 
-	// (a declaration that spans lines is replaced by one line: the line numbers go on from where it ended, with the rest of that line, the semicolon)
+	// a declaration that spans lines is replaced by one line: the line numbers go on from where it ended, with the rest of that line, the semicolon
 	{
 		SourceLocation declEnd = d->getSourceRange().getEnd();
 		SourceManager &SM = GlobalRewriter.getSourceMgr();

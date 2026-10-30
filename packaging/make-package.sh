@@ -1,22 +1,22 @@
 #!/bin/bash
-# Makes a SkePU package: skepu-tool, the headers, the language server and skepu.mk (make/skepu.mk: the build rules), in one tar file that is unpacked and used where it is. It is
-# the same for any course, lab or tutorial: what is particular to one is a directory, the overlay, that is added on top. Run it on
-# a computer like the ones of the lab, from a SkePU that has been built (cmake --build build); it builds what is out of date first, which is nothing if the build is
-# up to date. A Linux package is for Linux computers like this one (the programs it needs, such as libstdc++, are those of the computer).
+# Makes a SkePU package: skepu-tool, the headers, the language server and skepu.mk (make/skepu.mk: the build rules) in one tar file, unpacked and used in place.
+# The same for any course, lab or tutorial: what is particular to one is a directory, the overlay, added on top. Run it on a computer like the lab's, from a
+# built SkePU (cmake --build build); it first builds what is out of date. A Linux package is for Linux computers like this one: the programs it needs, such as
+# libstdc++, are the computer's.
 #
 #   packaging/make-package.sh [--build-dir DIR] [--overlay DIR] [--name NAME] [--output DIR] [--no-build] [--no-test]
 #
 #   --build-dir DIR   the build directory of SkePU (default: build)
-#   --overlay DIR     what is particular to the course: its programs, Makefiles, data, documentation. Added on top of the package, so a file of the same
-#                     name replaces ours (README.md, for example). Its Makefiles include skepu.mk of the package root.
-#                     Not added: .git, and what the overlay's .packageignore lists (patterns, one on each line: PACKAGING.md, .gitignore).
-#   --name NAME       the name of the package, and of the directory in it (default: skepu-lab-<version>)
+#   --overlay DIR     the course's programs, Makefiles, data and documentation, added on top of the package; a file of the same name replaces ours (README.md,
+#                     for example). Its Makefiles include skepu.mk of the package root. Not added: .git, and the patterns listed one per line in the overlay's
+#                     .packageignore (PACKAGING.md, .gitignore).
+#   --name NAME       package name, also the directory inside it (default: skepu-lab-<version>)
 #   --output DIR      where the tar file is written (default: the current directory)
-#   --no-build        do not run the build first (cmake --build)
-#   --no-test         do not unpack the package and build a program with it, as the check that it works
+#   --no-build        skip the build (cmake --build)
+#   --no-test         skip unpacking the package and building a program with it
 #
-# The same through CMake: cmake --build build --target skepu-package (with -DSKEPU_PACKAGE_OVERLAY=... for the overlay).
-# Environment for the test: SMOKE_CXX is the compiler (g++), SMOKE_BACKENDS the backends to test with (-openmp).
+# Through CMake: cmake --build build --target skepu-package (-DSKEPU_PACKAGE_OVERLAY=... for the overlay).
+# Environment for the test: SMOKE_CXX (compiler, default g++), SMOKE_BACKENDS (default -openmp).
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -34,7 +34,7 @@ while [ $# -gt 0 ]; do
 		--output)    mkdir -p "$2"; OUTPUT=$(cd "$2" && pwd); shift 2 ;;
 		--no-build)  BUILD=0; shift ;;
 		--no-test)   TEST=0; shift ;;
-		-h|--help)   sed -n '2,17p' "$0"; exit 0 ;;
+		-h|--help)   sed -n '2,16p' "$0"; exit 0 ;;
 		*) echo "unknown option: $1 (see --help)" >&2; exit 2 ;;
 	esac
 done
@@ -77,7 +77,7 @@ printf 'SkePU %s, packaged %s on %s (%s)\n' "$VERSION" "$(date +%Y-%m-%d)" "$(un
 
 if [ -n "$OVERLAY" ]; then
 	echo "== adding the overlay: $OVERLAY"
-	# (not .git, and not what the overlay lists in its .packageignore, one pattern on each line: the files of the staff, the .gitignore)
+	# not .git, nor what .packageignore lists (staff files, .gitignore)
 	IGNORE=(--exclude=.git --exclude=.packageignore)
 	[ -f "$OVERLAY/.packageignore" ] && IGNORE+=(--exclude-from="$OVERLAY/.packageignore")
 	tar -C "$OVERLAY" "${IGNORE[@]}" -cf - . | tar -C "$PKG" -xf -
@@ -93,7 +93,7 @@ if [ $TEST = 1 ]; then
 	CHECK=$(mktemp -d "${TMPDIR:-/tmp}/skepu-package-test.XXXXXX")
 	trap 'rm -rf "$STAGE" "$CHECK"' EXIT
 	tar -C "$CHECK" -xzf "$TAR"
-	cp -R "$ROOT/packaging/smoke" "$CHECK/$NAME/smoke_test"   # (a small program of ours, not part of the package: it is built with the package's skepu.mk)
+	cp -R "$ROOT/packaging/smoke" "$CHECK/$NAME/smoke_test"   # a small program of ours, not part of the package: it is built with the package's skepu.mk
 	( cd "$CHECK/$NAME/smoke_test" \
 		&& make BACKENDS="${SMOKE_BACKENDS:--openmp}" CXX="${SMOKE_CXX:-g++}" bin/smoke > "$CHECK/make.log" 2>&1 \
 		&& make BACKENDS="${SMOKE_BACKENDS:--openmp}" CXX="${SMOKE_CXX:-g++}" run/smoke ARGS=OpenMP > "$CHECK/run.log" 2>&1 \

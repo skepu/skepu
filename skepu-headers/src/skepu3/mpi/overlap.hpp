@@ -231,7 +231,7 @@ namespace skepu
 			}
 
 			// What a window of the user function is: an overlap (a region around an element, with an edge mode) or a pool
-			// (a window of the size of the pool that starts every stride elements, with no edges)
+			// a window of the size of the pool that starts every stride elements, with no edges
 			struct WindowGeometry
 			{
 				bool pool = false;
@@ -322,7 +322,7 @@ namespace skepu
 			template<size_t... OI, typename... CallArgs>
 			void make_tiles_valid(std::index_sequence<OI...>, CallArgs&&... args)
 			{
-				auto touch = [](auto &c) { c.tile_for_read(); }; // (also on a process that has no rows: making the tiles can be a collective operation)
+				auto touch = [](auto &c) { c.tile_for_read(); }; // also on a process that has no rows: making the tiles can be a collective operation
 				(touch(get<OI>(std::forward<CallArgs>(args)...)), ...);
 			}
 
@@ -336,7 +336,7 @@ namespace skepu
 					const Shape s = shape_of(c);
 					for (int k = 1; k < s.rank; ++k)
 						unit *= s.d[k];
-					block.updateHost(); // (the node-level skeleton may have run on a device)
+					block.updateHost(); // the node-level skeleton may have run on a device
 					auto *source = block.getAddress();
 					auto *target = tile.getAddress();
 					std::copy(source + (size_t)o * unit, source + ((size_t)o + (mine.second - mine.first)) * unit, target + (mine.first - first) * unit);
@@ -388,15 +388,15 @@ namespace skepu
 				const std::vector<T> rows = exchange_rows(tile_data, in_distribution.unit, in_distribution, needed, "halo exchange", {input.getObjectID()});
 
 				const RowRange mine = interior(me);
-				// (the results are made valid on all the processes that have rows, also when they compute none)
-				make_tiles_valid(std::make_index_sequence<outArity>{}, std::forward<CallArgs>(args)...); // (on every process: it can be a collective operation)
+				// the results are made valid on all the processes that have rows, also when they compute none
+				make_tiles_valid(std::make_index_sequence<outArity>{}, std::forward<CallArgs>(args)...); // on every process: it can be a collective operation
 				if (mine.first < mine.second)
 				{
 					auto outs = make_mirror_outs<outArity>(std::make_index_sequence<outArity>{}, mine, out_distribution.offset(me), in_shape, o, std::forward<CallArgs>(args)...);
 					const std::array<long, 4> no_pad{{0, 0, 0, 0}};
 					const size_t count = mine.second - mine.first;
 					auto block = extended_block<InputContainer>(in_shape, count + 2 * (size_t)o, (long)mine.first - o, no_pad, Edge::None, T(), needed[me], rows);
-					// (the rows of the output block are counted from the row 'mine.first - o' of the output)
+					// the rows of the output block are counted from the row 'mine.first - o' of the output
 					if (pass != UpdateMode::Normal)
 						geometry.set_update_mode(node_update_mode(pass, mine.first - (size_t)o));
 					call_mirror<outArity, anyArity>(call, outs, block, std::make_index_sequence<sizeof...(CallArgs)>{}, std::forward<CallArgs>(args)...);
@@ -434,7 +434,7 @@ namespace skepu
 				{
 					if (geometry.pool)
 					{
-						// (the sizes that the node-level skeleton wants: the windows must be in the input)
+						// the sizes that the node-level skeleton wants: the windows must be in the input
 						const size_t needed_size = (out_shape.d[k] - 1) * (size_t)geometry.stride[k] + (size_t)overlap[k];
 						if (in_shape.d[k] < needed_size)
 							SKEPU_ERROR("MapPool on distributed containers: the input is too small for the output: dimension " << k
@@ -472,9 +472,9 @@ namespace skepu
 				}
 				const std::vector<T> rows = exchange_rows(tile_data, in_distribution.unit, in_distribution, needed, "halo exchange", {input.getObjectID()});
 
-				// (a pass of the update modes Red and Black does not compute all the elements of the output: they keep their values)
+				// a pass of the update modes Red and Black does not compute all the elements of the output: they keep their values
 				if (pass != UpdateMode::Normal)
-					make_tiles_valid(std::make_index_sequence<outArity>{}, std::forward<CallArgs>(args)...); // (on every process: it can be a collective operation)
+					make_tiles_valid(std::make_index_sequence<outArity>{}, std::forward<CallArgs>(args)...); // on every process: it can be a collective operation
 
 				const size_t count = out_distribution.count(me);
 				if (count > 0)
@@ -499,7 +499,7 @@ namespace skepu
 					// The node-level skeleton works on the extended block without handling the edges
 					if (!geometry.pool)
 						set_edge(Edge::None);
-					// (the node-level skeleton counts the rows of the output from 0, and the first row of the output of this process is 'first')
+					// the node-level skeleton counts the rows of the output from 0, and the first row of the output of this process is 'first'
 					if (pass != UpdateMode::Normal)
 						geometry.set_update_mode(node_update_mode(pass, first));
 					call_overlap<outArity, anyArity>(call, block, std::make_index_sequence<sizeof...(CallArgs)>{}, std::forward<CallArgs>(args)...);
@@ -538,7 +538,7 @@ namespace skepu
 				geometry.set_update_mode = std::move(set_update_mode);
 				geometry.overlap = overlap;
 				geometry.edge = edge;
-				geometry.allow_mirror = true; // (in any dimension: the edge mode None with an input of the size of the output)
+				geometry.allow_mirror = true; // in any dimension: the edge mode None with an input of the size of the output
 				return distributed_window<outArity, anyArity>(call, set_edge, geometry, pad, std::forward<CallArgs>(args)...);
 			}
 
@@ -587,7 +587,7 @@ namespace skepu
 			SKEPU_CHAIN(setOverlap, Base)
 			SKEPU_CHAIN(setOverlapMode, Base)
 			SKEPU_CHAIN(setEdgeMode, Base)
-			// (a pad that is a braced list is converted to the type of the pad)
+			// a pad that is a braced list is converted to the type of the pad
 			template<typename U = decltype(std::declval<const Base &>().getPad())>
 			auto &setPad(U value)
 			{
@@ -610,7 +610,7 @@ namespace skepu
 			}
 
 		private:
-			// (a 1D overlap of a matrix is along its rows or its columns)
+			// a 1D overlap of a matrix is along its rows or its columns
 			template<typename... CallArgs>
 			const char *pattern_of(CallArgs&&... args)
 			{
@@ -621,7 +621,6 @@ namespace skepu
 					return "MapOverlap 1D";
 			}
 
-			// (the id of the random numbers that the call uses, for its event)
 			int random_id()
 			{
 #ifdef SKEPU_TRACING
@@ -685,7 +684,7 @@ namespace skepu
 				auto &input = get<outArity>(std::forward<CallArgs>(args)...);
 				if (first_out.total_rows() != input.total_rows())
 					SKEPU_ERROR("Non-matching container sizes: the rows of the output and of the input");
-				// (in mirror mode, and with the update modes Red and Black, some elements of the output keep their values: the tiles of the results must have them)
+				// in mirror mode, and with the update modes Red and Black, some elements of the output keep their values: the tiles of the results must have them
 				if (mpi_detail::is_mirror_call(this->getEdgeMode(), first_out, input) || this->getUpdateMode() != UpdateMode::Normal)
 					mpi_detail::make_tiles_valid(std::make_index_sequence<outArity>{}, std::forward<CallArgs>(args)...);
 				if (first_out.local_size() > 0)
@@ -711,7 +710,7 @@ namespace skepu
 			SKEPU_CHAIN_SKELETON_SETTERS(Base)
 			SKEPU_CHAIN(setOverlap, Base)
 			SKEPU_CHAIN(setEdgeMode, Base)
-			// (a pad that is a braced list is converted to the type of the pad)
+			// a pad that is a braced list is converted to the type of the pad
 			template<typename U = decltype(std::declval<const Base &>().getPad())>
 			auto &setPad(U value)
 			{
@@ -734,7 +733,6 @@ namespace skepu
 			}
 
 		private:
-			// (the id of the random numbers that the call uses, for its event)
 			int random_id()
 			{
 #ifdef SKEPU_TRACING
@@ -759,7 +757,7 @@ namespace skepu
 			{
 				if constexpr (MapOverlapFunc::usesPRNG)
 				{
-					// (the elements of the output are used in the order of the memory)
+					// the elements of the output are used in the order of the memory
 					auto &first_out = get<0>(std::forward<CallArgs>(args)...);
 					if (mpi_detail::is_mirror_call(this->getEdgeMode(), first_out, get<outArity>(std::forward<CallArgs>(args)...)))
 						SKEPU_ERROR("A MapOverlap with the edge mode None and an input of the size of the output (mirror mode) and random numbers does not work on distributed containers yet");
@@ -798,7 +796,7 @@ namespace skepu
 			SKEPU_CHAIN_SKELETON_SETTERS(Base)
 			SKEPU_CHAIN(setOverlap, Base)
 			SKEPU_CHAIN(setEdgeMode, Base)
-			// (a pad that is a braced list is converted to the type of the pad)
+			// a pad that is a braced list is converted to the type of the pad
 			template<typename U = decltype(std::declval<const Base &>().getPad())>
 			auto &setPad(U value)
 			{
@@ -821,7 +819,6 @@ namespace skepu
 			}
 
 		private:
-			// (the id of the random numbers that the call uses, for its event)
 			int random_id()
 			{
 #ifdef SKEPU_TRACING
@@ -846,7 +843,7 @@ namespace skepu
 			{
 				if constexpr (MapOverlapFunc::usesPRNG)
 				{
-					// (the elements of the output are used in the order of the memory)
+					// the elements of the output are used in the order of the memory
 					auto &first_out = get<0>(std::forward<CallArgs>(args)...);
 					if (mpi_detail::is_mirror_call(this->getEdgeMode(), first_out, get<outArity>(std::forward<CallArgs>(args)...)))
 						SKEPU_ERROR("A MapOverlap with the edge mode None and an input of the size of the output (mirror mode) and random numbers does not work on distributed containers yet");
@@ -879,7 +876,7 @@ namespace skepu
 			SKEPU_CHAIN_SKELETON_SETTERS(Base)
 			SKEPU_CHAIN(setOverlap, Base)
 			SKEPU_CHAIN(setEdgeMode, Base)
-			// (a pad that is a braced list is converted to the type of the pad)
+			// a pad that is a braced list is converted to the type of the pad
 			template<typename U = decltype(std::declval<const Base &>().getPad())>
 			auto &setPad(U value)
 			{
@@ -902,7 +899,6 @@ namespace skepu
 			}
 
 		private:
-			// (the id of the random numbers that the call uses, for its event)
 			int random_id()
 			{
 #ifdef SKEPU_TRACING
@@ -927,7 +923,7 @@ namespace skepu
 			{
 				if constexpr (MapOverlapFunc::usesPRNG)
 				{
-					// (the elements of the output are used in the order of the memory)
+					// the elements of the output are used in the order of the memory
 					auto &first_out = get<0>(std::forward<CallArgs>(args)...);
 					if (mpi_detail::is_mirror_call(this->getEdgeMode(), first_out, get<outArity>(std::forward<CallArgs>(args)...)))
 						SKEPU_ERROR("A MapOverlap with the edge mode None and an input of the size of the output (mirror mode) and random numbers does not work on distributed containers yet");
@@ -972,7 +968,6 @@ namespace skepu
 			}
 
 		private:
-			// (the id of the random numbers that the call uses, for its event)
 			int random_id()
 			{
 #ifdef SKEPU_TRACING
@@ -997,7 +992,7 @@ namespace skepu
 			{
 				if constexpr (MapOverlapFunc::usesPRNG)
 				{
-					// (the elements of the output are used in the order of the memory)
+					// the elements of the output are used in the order of the memory
 					auto &first_out = get<0>(std::forward<CallArgs>(args)...);
 					mpi_detail::PrngShift shift(this->m_prng, first_out.local_offset() * MapOverlapFunc::randomCount, first_out.size() * MapOverlapFunc::randomCount);
 					return this->run_distributed(std::forward<CallArgs>(args)...);
@@ -1047,7 +1042,6 @@ namespace skepu
 			}
 
 		private:
-			// (the id of the random numbers that the call uses, for its event)
 			int random_id()
 			{
 #ifdef SKEPU_TRACING
@@ -1072,7 +1066,7 @@ namespace skepu
 			{
 				if constexpr (MapOverlapFunc::usesPRNG)
 				{
-					// (the elements of the output are used in the order of the memory)
+					// the elements of the output are used in the order of the memory
 					auto &first_out = get<0>(std::forward<CallArgs>(args)...);
 					mpi_detail::PrngShift shift(this->m_prng, first_out.local_offset() * MapOverlapFunc::randomCount, first_out.size() * MapOverlapFunc::randomCount);
 					return this->run_distributed(std::forward<CallArgs>(args)...);
@@ -1122,7 +1116,6 @@ namespace skepu
 			}
 
 		private:
-			// (the id of the random numbers that the call uses, for its event)
 			int random_id()
 			{
 #ifdef SKEPU_TRACING
@@ -1147,7 +1140,7 @@ namespace skepu
 			{
 				if constexpr (MapOverlapFunc::usesPRNG)
 				{
-					// (the elements of the output are used in the order of the memory)
+					// the elements of the output are used in the order of the memory
 					auto &first_out = get<0>(std::forward<CallArgs>(args)...);
 					mpi_detail::PrngShift shift(this->m_prng, first_out.local_offset() * MapOverlapFunc::randomCount, first_out.size() * MapOverlapFunc::randomCount);
 					return this->run_distributed(std::forward<CallArgs>(args)...);

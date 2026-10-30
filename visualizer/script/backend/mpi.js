@@ -74,7 +74,7 @@ function callEntry(rank, clock, e, local) {
 function callSummary(entries) {
     const present = entries.filter(Boolean);
     const at = f => entries.map(x => x ? f(x) : null);
-    // (a rank that did no work counts as zero: the mean is over all ranks, so that a call that one rank does alone is as unbalanced as it is)
+    // a rank that did no work counts as zero: the mean is over all ranks, so that a call that one rank does alone is as unbalanced as it is
     const work = stats(at(x => x.work_start != null ? x.work_end - x.work_start : 0));
     return {
         interval: { start: Math.min(...present.map(x => x.start)), end: Math.max(...present.map(x => x.end)) },
@@ -192,7 +192,7 @@ export function mergeMpiTraces(files) {
     const events = full.events.map(e => ({ ...e }));
     const seenCalls = new Set(), seenComms = new Set();
     for (const e of events) {
-        // (an skepu::external call is one too: rank 0 runs the code, and the others wait for it)
+        // an skepu::external call is one too: rank 0 runs the code, and the others wait for it
         if ((e.type === 'skeleton_call' || e.type === 'external') && e.seq != null && e.mpi) {
             const pattern = e.pattern ?? 'external';
             seenCalls.add(e.seq);
@@ -244,8 +244,8 @@ export function mergeMpiTraces(files) {
     if (worstSpread > Math.max(20000, 20 * uncertainty))
         warnings.push(`The collectives end up to ${Math.round(worstSpread)} us apart on the clock of rank ${detail}: the clocks are not well aligned (measured to within ${Math.round(uncertainty)} us)`);
 
-    // The source files of the trace: those of the process with the trace first, and the files that the other processes name (a lean process has
-    // none, one that ran on another machine can have another version of a file: the hashes would not be the ones of the file that the editor has)
+    // The trace's source files: those of the process with the trace first, then the files the other processes name (a lean process has none; one on
+    // another machine can have another version of a file, so its hashes would differ from the editor's file)
     const sourceFiles = { ...(full.header.files ?? {}) };
     const differing = new Set();
     for (const f of [...byRank.values()].sort((a, b) => a.header.mpi.rank - b.header.mpi.rank))

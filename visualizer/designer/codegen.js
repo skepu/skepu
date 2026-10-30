@@ -24,7 +24,6 @@ export function containerPlacement(program) {
     return { before, start };
 }
 
-/** Calls fn(call, path) for each call, with the step path to it. */
 function walkCalls(steps, path, fn) {
     for (const step of steps) {
         const here = [...path, step];
@@ -126,11 +125,9 @@ export const skeletonTypeName = (s, call) => s.pattern === 'Reduce' ? ((call ? c
 /** Whether a skeleton is created at its call: its own setting, else the program option (never for host blocks). */
 export const isAnonymous = (s, options) => !PATTERNS[s.pattern]?.host && (s.anonymous ?? options.skeletonInstancing === 'anonymous');
 
-/** Whether a text property is set (not empty). */
 const given = v => String(v ?? '').trim() !== '';
-/** Whether a numeric text is set and not zero (the default value). */
+/** Zero is the default. */
 const nonzero = v => given(v) && parseFloat(String(v).trim()) !== 0;
-/** Whether a Map or MapReduce has a stride other than 1. */
 const strided = call => stridesOf(call.skeleton, call.pattern === 'Map' ? 1 + call.elwise.length : call.elwise.length).some(x => x !== 1);
 
 /** The trace name of an anonymous skeleton: the type and the call site. */
@@ -172,7 +169,7 @@ export function emitCpp(program, options = {}) {
     w.line('skepu::setGlobalBackendSpec(spec);');
     w.line();
     const declareContainer = c => {
-        if (c.kind === 'PRNG') {                       // seed (if any), then the name
+        if (c.kind === 'PRNG') {
             const seed = String(c.init ?? '').trim(), label = c.label.replace(/"/g, '\\"');
             const args = [...(seed ? [seed] : []), ...(c.label === c.name ? [] : [`"${label}"`])];
             w.line(args.length ? `skepu::PRNG ${c.name}(${args.join(', ')});` : `skepu::PRNG ${c.name};`, ...c.nodes);
@@ -210,7 +207,7 @@ export function emitCpp(program, options = {}) {
             w.line(last ? `})${tail}` : '},', id);
             if (last) chainLines();
         });
-        function chainLines() {            // settings and call of an anonymous skeleton, one per line
+        function chainLines() {
             w.depth++;
             for (const [text, ...ids] of chain) w.line(text, id, ...ids);
             w.depth--;
@@ -314,7 +311,7 @@ export function emitCpp(program, options = {}) {
             ? [call.out.name, call.vertical.name, call.horizontal.name, ...names(call.proxies), ...uniforms(call)]
             : call.scalar ? args : [call.out.name, ...args];
         const scalar = call.scalar ? `${call.elementType} ${call.name}_result = ` : '';
-        if (isAnonymous(call.skeleton, options)) {                       // anonymous: created and called here
+        if (isAnonymous(call.skeleton, options)) {
             const { head, settings } = skeletonParts(call);
             const fns = program.functions.filter(f => f.call === call), invoke = `(${callArgs.join(', ')});`;
             if (settings.length) declare(`${scalar}${head}`, fns, id, '', [...settings.map(([text, ...ids]) => [`.${text}`, ...ids]), [invoke]]);
@@ -511,5 +508,4 @@ export function emitPython(program, options = {}) {
     return w.result();
 }
 
-/** The emitters by language; each takes the program and the options. */
 export const EMITTERS = { cpp: emitCpp, python: emitPython };

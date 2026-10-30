@@ -1,9 +1,9 @@
-// context_menu.js — the context menu of a graph node (right click), in HTML: the items are { label, onClick, disabled? }, or elements.
-// The menu closes on a click, Escape, a scroll or a resize.
+// context_menu.js — the HTML context menu of a graph node (right click). Items are { label, onClick, disabled? } or elements.
+// It closes on a click, Escape, a scroll or a resize.
 
 var _menu = null;
 
-/** The menu element, made the first time (a click anywhere, Escape, a resize or a scroll closes it). */
+/** Created on first use. */
 function menuElement() {
   if (_menu) return _menu;
   _menu = document.createElement('div');
@@ -11,7 +11,7 @@ function menuElement() {
   _menu.className = 'dropdown context-menu';
   _menu.setAttribute('role', 'menu');
   document.body.appendChild(_menu);
-  _menu.addEventListener('contextmenu', function(event) { event.preventDefault(); });   // (macOS sends it on the press, when the menu is already under the pointer)
+  _menu.addEventListener('contextmenu', function(event) { event.preventDefault(); });   // macOS sends it on the press, with the menu already under the pointer
   document.addEventListener('click', hideContextMenu);
   document.addEventListener('keydown', function(event) { if (event.key === 'Escape') hideContextMenu(); });
   window.addEventListener('resize', hideContextMenu);
@@ -20,10 +20,10 @@ function menuElement() {
   return _menu;
 }
 
-/** A button that has the look of the items of a menu: for `{ label, onClick, disabled }`. */
+/** A menu-styled button for `{ label, onClick, disabled }`. */
 function makeItem(spec) {
   var button = document.createElement('button');
-  button.className = 'menu-action';   // (the look of the items of the menu bar, dark mode included)
+  button.className = 'menu-action';   // the menu bar item style, dark mode included
   button.setAttribute('role', 'menuitem');
   button.textContent = spec.label;
   button.disabled = !!spec.disabled;
@@ -33,8 +33,8 @@ function makeItem(spec) {
 }
 
 /**
- * Show the menu with its corner at the pointer (x, y in the window), moved in if it would be outside it. `items` are elements or
- * `{ label, onClick, disabled }`. Returns the buttons, in the order of the items (a caller can enable or disable one when it knows more).
+ * Shows the menu at the pointer (x, y in window coordinates), moved inside the window if needed. `items`: elements or `{ label, onClick, disabled }`.
+ * Returns the buttons in item order, for callers that enable or disable one later.
  */
 export function showContextMenu(x, y, items) {
   var menu = menuElement();

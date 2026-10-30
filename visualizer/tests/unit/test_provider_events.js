@@ -24,7 +24,7 @@ describe('the events of the provider', () => {
         const used = new Map();   // event -> the files that use it
         for (const file of scripts(join(ROOT, 'script'))) {
             const text = readFileSync(file, 'utf8');
-            // (a provider is named provider, _provider, State.provider or _attachedProvider in the scripts)
+            // a provider is named provider, _provider, State.provider or _attachedProvider in the scripts
             for (const m of text.matchAll(/[pP]rovider\.(?:on|off|_emit)\(\s*'(\w+)'/g))
                 used.set(m[1], [...(used.get(m[1]) ?? []), file.slice(ROOT.length + 1)]);
         }

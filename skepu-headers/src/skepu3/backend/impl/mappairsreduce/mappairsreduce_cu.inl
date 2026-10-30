@@ -18,7 +18,7 @@ namespace skepu
 			if (this->m_mode == ReduceMode::ColWise)
 				std::swap(Vsize, Hsize);
 			
-			// (the sizes of the containers: after the swap Vsize is the size of the reduced dimension (the major one), whatever the mode)
+			// the sizes of the containers: after the swap Vsize is the size of the reduced dimension (the major one), whatever the mode
 			const size_t vertSize = (this->m_mode == ReduceMode::ColWise) ? Hsize : Vsize;
 			const size_t horSize = (this->m_mode == ReduceMode::ColWise) ? Vsize : Hsize;
 			const size_t numRowsPerSlice = Vsize / numDevices;
@@ -50,7 +50,7 @@ namespace skepu
 				const size_t numThreads = std::min(this->m_selected_spec->GPUThreads(), closestPow2(Hsize));
 				const size_t numBlocks = std::min(Vsize, this->m_selected_spec->GPUBlocks());
 				const size_t baseIndex = startIdx + i * numRowsPerSlice * Hsize;
-				const size_t sharedMemSize = sizeof(Ret) * numThreads * outArity; // (one reduction buffer for each output)
+				const size_t sharedMemSize = sizeof(Ret) * numThreads * outArity; // one reduction buffer for each output
 				
 				DEBUG_TEXT_LEVEL1("CUDA MapPairsReduce kernel: device " << i << ", numBlocks = " << numBlocks << ", numThreads = " << numThreads);
 				
@@ -59,7 +59,7 @@ namespace skepu
 				helwiseMemP[i] = std::make_tuple(std::get<HEI-Varity-outArity>(heArgs).getParent().updateDevice_CU((std::get<HEI-Varity-outArity>(heArgs) + startIdx).getAddress(), horSize, i, AccessMode::Read)...);
 				anyMemP[i]    = std::make_tuple(std::get<AI-Varity-Harity-outArity>(aArgs).getParent().cudaProxy(i, MapPairsFunc::anyAccessMode[AI-Varity-Harity-outArity], std::get<AI-Varity-Harity-outArity>(proxy_tags), Index1D{0})...);
 				
-				size_t threads = Vsize * Hsize; // (one number for each pair)
+				size_t threads = Vsize * Hsize; // one number for each pair
 				auto random = this->template prepareRandom<MapPairsFunc::randomCount>(Vsize * Hsize, threads);
 				auto randomMemP = random.updateDevice_CU(random.getAddress(), threads, i, AccessMode::ReadWrite);
 				

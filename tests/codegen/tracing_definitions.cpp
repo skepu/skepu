@@ -7,7 +7,7 @@
 #include <fstream>
 #include <skepu>
 
-// (a function for each skeleton: the precompiler does not take a function that two skeletons share)
+// a function for each skeleton: the precompiler does not take a function that two skeletons share
 float twice(float x) { return 2 * x; }
 static const int line_twice = __LINE__ - 1;
 float spread(float x)
@@ -72,7 +72,7 @@ TEST_CASE("The trace says where the instances and the user functions are defined
 	int line_anonymous = __LINE__ + 1;
 	skepu::Map<1>(anonymous_f)(out, in);
 
-	auto unused = skepu::Map<1>(unused_f); // (an instance that makes no call is not in the table)
+	auto unused = skepu::Map<1>(unused_f); // an instance that makes no call is not in the table
 
 	json table = instances();
 	std::string file = __FILE__;

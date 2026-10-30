@@ -84,9 +84,8 @@ ostream &&operator<<(ostream &&s, C &arg)
 
 
 
-// Input. A value is read as a standard stream reads it. A container is read with as many values, separated by white space, as it has
-// elements, in the order of its elements (a matrix by rows): the container is written by the host, as with skepu::external, so that the
-// backends have the values afterwards.
+// Input. A value is read as a standard stream reads it. A container is read with as many white-space-separated values as it has elements, in element
+// order (a matrix by rows): the host writes it, as with skepu::external, so the backends have the values afterwards.
 template<typename T, typename = std::enable_if_t<!is_skepu_io_container<T>::value>>
 istream &operator>>(istream &s, T &arg)
 {
@@ -104,7 +103,7 @@ istream &operator>>(istream &s, C &arg)
   return s;
 }
 
-// (inline: one stream for the whole program, not one for each translation unit)
+// inline: one stream per program, not per translation unit
 inline ostream cout{std::cout};
 inline istream cin{std::cin};
 

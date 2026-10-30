@@ -47,7 +47,7 @@
 #define SKEPU_EXTERNAL_SOURCE_LOCATION_FILE loc.file_name()
 #define SKEPU_EXTERNAL_SOURCE_LOCATION_LINE loc.line()
 #else
-// (before C++20 the place of the call is made by the compiler: __builtin_FILE and __builtin_LINE as default arguments, as for SKEPU_CALL_SITE_PARAM)
+// Before C++20 the compiler provides the call location: __builtin_FILE and __builtin_LINE as default arguments, as for SKEPU_CALL_SITE_PARAM
 #define SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM , const char *skepu_loc_file = __builtin_FILE(), int skepu_loc_line = __builtin_LINE()
 #define SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER , const char *skepu_loc_file, int skepu_loc_line
 #define SKEPU_EXTERNAL_SOURCE_LOCATION_FORWARD_ARG , skepu_loc_file, skepu_loc_line
@@ -72,7 +72,7 @@ namespace skepu
 	{
 	SKEPU_TRACING_VARIANT_BEGIN
 		using TraceID = UniqueIdentifier::ID;
-		// (microseconds since the first event, defined in tracing.hpp: the backends read the clock too)
+		// microseconds since the first event, defined in tracing.hpp: the backends read the clock too
 		inline unsigned long timestamp_now();
 		static const std::string defaultTraceFilename = "skepu_trace.json";
 		static const std::string defaultSnapshotDir = "./";
@@ -89,9 +89,8 @@ namespace skepu
 #define SKEPU_TRACE_SNAPSHOT_DIR_NAME SKEPU_STRINGIFY_NESTED(SKEPU_TRACE_SNAPSHOT_DIR)
 #endif
 
-// The times of a call that runs on OpenCL devices come from the profiling of the devices (see backend/tracing_opencl.h), and nothing waits
-// for the devices at the call: SKEPU_TRACE_DEVICE_BEGIN_CL(handle) after the start of the event, SKEPU_TRACE_DEVICE_END_CL(handle) after the
-// work on the devices and before the call is traced.
+// OpenCL call times come from device profiling (backend/tracing_opencl.h); nothing waits for the devices at the call. SKEPU_TRACE_DEVICE_BEGIN_CL(handle)
+// goes after the start of the event, SKEPU_TRACE_DEVICE_END_CL(handle) after the work on the devices and before the call is traced.
 #if defined(SKEPU_TRACING) && defined(SKEPU_OPENCL)
 	#define SKEPU_TRACE_DEVICE_BEGIN_CL(handle) (handle).m_device = std::make_shared<skepu::tracing::OpenClDeviceTimer>(), (handle).m_time = skepu::tracing::timestamp_now(), skepu::tracing::registerDeviceTimer((handle).m_device);
 	#define SKEPU_TRACE_DEVICE_END_CL(handle) if (auto skepu_timer = std::static_pointer_cast<skepu::tracing::OpenClDeviceTimer>((handle).m_device)) skepu_timer->recordEnd();
@@ -100,14 +99,13 @@ namespace skepu
 	#define SKEPU_TRACE_DEVICE_END_CL(handle)
 #endif
 
-// The times of a call that runs on a CUDA device come from events of the device (see tracing_cuda.hpp), and nothing waits for the device
-// at the call: SKEPU_TRACE_DEVICE_BEGIN_CU(handle) after the start of the event, SKEPU_TRACE_DEVICE_END_CU(handle, device) after the
-// work on the device (once for each device) and before the call is traced.
+// CUDA call times come from device events (tracing_cuda.hpp); nothing waits for the device at the call. SKEPU_TRACE_DEVICE_BEGIN_CU(handle) goes after
+// the start of the event, SKEPU_TRACE_DEVICE_END_CU(handle, device) after the work on the device (once per device) and before the call is traced.
 #if defined(SKEPU_TRACING) && defined(SKEPU_CUDA)
 #define SKEPU_TRACE_DEVICE_BEGIN_CU(handle) (handle).m_device = std::make_shared<skepu::tracing::CudaDeviceTimer>(), (handle).m_time = skepu::tracing::timestamp_now(), skepu::tracing::registerDeviceTimer((handle).m_device);
 #define SKEPU_TRACE_DEVICE_END_CU(handle, device) if (auto skepu_timer = std::static_pointer_cast<skepu::tracing::CudaDeviceTimer>((handle).m_device)) skepu_timer->recordEnd(device);
-// The whole call in a function with several returns: the arguments are those of SKEPU_TRACE_CALL after the handle, with the environment and the
-// number of devices that the call may use before them. The call is traced when the scope ends.
+// The whole call in a function with several returns: the arguments are those of SKEPU_TRACE_CALL after the handle, preceded by the environment and the
+// number of devices the call may use. The call is traced when the scope ends.
 #define SKEPU_TRACE_CALL_SCOPE_CU(environment, max_devices, ...) skepu::tracing::CudaCallScope skepu_call_scope(environment, max_devices, __VA_ARGS__);
 #else
 #define SKEPU_TRACE_DEVICE_BEGIN_CU(handle)
@@ -120,17 +118,17 @@ namespace skepu
 #define SKEPU_TRACE_CALL(...) skepu::tracing::tracer().call(__VA_ARGS__)
 #define SKEPU_TRACE_EXTERNAL(...) skepu::tracing::tracer().external(__VA_ARGS__)
 #define SKEPU_TRACE_SCOPE(label) skepu::tracing::Scope scope(label)
-// (what skepu-tool adds at the start of the functions of a program, see AutoRegion)
+// what skepu-tool adds at the start of the functions of a program, see AutoRegion
 #define SKEPU_TRACE_AUTO_REGION(label, file, line) skepu::tracing::AutoRegion skepu_trace_auto_region(label, file, line)
 #define SKEPU_CALL_SITE_PARAM , const char *skepu_site_file = __builtin_FILE(), int skepu_site_line = __builtin_LINE()
 #define SKEPU_CALL_SITE_PARAM_ONLY const char *skepu_site_file = __builtin_FILE(), int skepu_site_line = __builtin_LINE()
-// (the place that a function got, to a function of the library that it calls)
+// Forwards a function's call site to the library function it calls
 #define SKEPU_CALL_SITE_FORWARD_ARG , skepu_site_file, skepu_site_line
 #define SKEPU_CALL_SITE_FORWARD_ARG_ONLY skepu_site_file, skepu_site_line
 #define SKEPU_TRACE_API(label) skepu::tracing::ApiScope skepu_api_scope(label, skepu_site_file, skepu_site_line)
-// (for a function that cannot take the place of its call: it has a pack of arguments, or is an operator; the region has no place)
+// For a function that cannot take its call site (a pack of arguments, or an operator): the region has no location
 #define SKEPU_TRACE_API_NO_SITE(label) skepu::tracing::ApiScope skepu_api_scope(label, nullptr, 0)
-// (the place in the program where the container was declared: the allocation event is where it was made)
+// The location where the container was declared: the allocation event is placed where it was made
 #define SKEPU_TRACE_PLACE(...) skepu::tracing::tracer().place(__VA_ARGS__)
 #define SKEPU_TRACE_REGION_BEGIN(...) skepu::tracing::tracer().beginRegion(__VA_ARGS__)
 #define SKEPU_TRACE_REGION_END() skepu::tracing::tracer().endRegion()
@@ -144,7 +142,7 @@ namespace skepu
 #define SKEPU_TRACE_COPY(...) skepu::tracing::tracer().copy(__VA_ARGS__)
 #define SKEPU_TRACE_SCALAR_IO(...) skepu::tracing::tracer().scalar_io(__VA_ARGS__)
 #define SKEPU_TRACE_SCALAR_VALUE(...) skepu::tracing::tracer().scalar_value(__VA_ARGS__)
-// (a snapshot writes the contents of a container to a file each time: it is taken only if SKEPU_TRACING_SNAPSHOTS is defined too)
+// a snapshot writes the contents of a container to a file each time: it is taken only if SKEPU_TRACING_SNAPSHOTS is defined too
 #ifdef SKEPU_TRACING_SNAPSHOTS
 #define SKEPU_TRACE_SNAPSHOT(...) skepu::tracing::tracer().data_snapshot(__VA_ARGS__)
 #else
@@ -250,15 +248,13 @@ namespace skepu
 #endif
 		};
 
-		// The times of a call of which the work runs on a device and is not waited for (a CUDA kernel): the device measures the work
-		// itself, and the times are asked for when the event is replayed, so that the program is not made to wait for the device at the call.
-		// The times are microseconds, as those of the host (timestamp_now); hostStart is the time when the call was started on the host,
-		// hostEnd when the host was done with it.
+		// Times of a call whose work runs on a device without being waited for (a CUDA kernel): the device measures the work, and the times are requested when
+		// the event is replayed, so the program never waits at the call. Times are microseconds, as the host's (timestamp_now); hostStart is when the call started
+		// on the host, hostEnd when the host finished with it.
 		//
-		// A timer holds objects of the device (events, markers) until it has read the times of them. It does so as soon as the device has
-		// done the work, without waiting for it (poll, which the tracer calls for the oldest timers whenever a new call is traced), so that
-		// the objects of the device that are live are those of the work that is still going on, and not those of all the calls that have
-		// not been written to the trace yet. When the trace is written the times have mostly been read already.
+		// A timer holds device objects (events, markers) until it has read their times. It reads them as soon as the device is done, without waiting (poll, which
+		// the tracer calls for the oldest timers whenever a new call is traced), so the live device objects are those of work still running, not of every call not
+		// yet written to the trace. When the trace is written, most times have been read.
 		class DeviceTimer
 		{
 		public:
@@ -296,8 +292,7 @@ namespace skepu
 		protected:
 			// Is all the work of the call done? (False if the end of the call has not been recorded yet.)
 			virtual bool ready() = 0;
-			// Reads the times of the start and of the end of the work (0 if the device cannot say) into m_start and m_end, waiting for the
-			// device if need be, and releases the objects of the device
+			// Reads the start and end times of the work (0 if the device cannot say) into m_start and m_end, waiting if needed, and releases the device objects
 			virtual void read() = 0;
 
 			unsigned long m_start = 0, m_end = 0;
@@ -309,12 +304,11 @@ namespace skepu
 			bool m_resolved = false;
 		};
 
-		// The timers that have not been read yet, the oldest first (the devices do their work in order). Called when a call that a device
-		// runs is started: the timers that are done are read and let go, and if the host is far ahead of the devices the oldest are waited for,
-		// so that the number of the objects of the devices that are live is bounded.
+		// The unread timers, oldest first (devices work in order). Called when a device call starts: finished timers are read and released, and if the host is
+		// far ahead of the devices the oldest are waited for, which bounds the live device objects.
 		inline void registerDeviceTimer(std::shared_ptr<DeviceTimer> timer);
 		inline size_t pendingDeviceTimers();
-		// (the limit can be changed: the tests of it use a small one)
+		// the limit can be changed: the tests of it use a small one
 		inline size_t &maxPendingDeviceTimers() { static size_t limit = 1024; return limit; }
 
 		struct EventHandle
@@ -324,7 +318,7 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			UniqueIdentifier::ID m_id;
 			unsigned long m_time;
-			std::shared_ptr<DeviceTimer> m_device; // (null if the host measures the call)
+			std::shared_ptr<DeviceTimer> m_device; // null if the host measures the call
 #endif
 		};
 
@@ -335,9 +329,9 @@ namespace skepu
 		};
 
 #ifdef SKEPU_TRACING
-		// The region of a call of a function of the program: skepu-tool puts SKEPU_TRACE_AUTO_REGION at the start of the functions that can
-		// make events (they use skeletons or containers, or call such functions), so that the trace has the structure of the program without
-		// regions that the programmer has marked. A region that is not needed is not in the trace: see Tracer::beginAutoRegion.
+		// The region of a call to a program function: skepu-tool puts SKEPU_TRACE_AUTO_REGION at the start of every function that can make events (it uses
+		// skeletons or containers, or calls such a function), so the trace follows the program's structure without hand-marked regions. A region that is not
+		// needed is left out of the trace: see Tracer::beginAutoRegion.
 		struct AutoRegion
 		{
 			AutoRegion(const char *label, const char *file, int line);
@@ -375,9 +369,8 @@ namespace skepu
 		// itself marks (regions, snapshots, virtual datasets, the elements it reads)
 		enum class CaptureKind { Node, Region, Raw };
 
-		// A field of an event, for Tracer::record: the key and a copy of the value, which is written when the event is replayed. It is made
-		// by assigning to a key (Schema::Keys, as Key::LABEL = label), or to a key that is conditional (Key::ERROR.when(!ok) = error:
-		// the field is left out if the condition is false).
+		// A field of an event, for Tracer::record: the key and a copy of the value, written when the event is replayed. Made by assigning to a key
+		// (Schema::Keys, as Key::LABEL = label) or to a conditional key (Key::ERROR.when(!ok) = error: the field is left out if the condition is false).
 		template<typename V>
 		struct [[nodiscard]] Field { const std::string &key; V value; bool present; };
 
@@ -418,11 +411,11 @@ namespace skepu
 			~AllowScope();
 		};
 
-		// The skeleton instance whose OpenCL kernels are being built, for the events of the builds (SkeletonBase::prepareOpenCL has one while
-		// the kernels are built): without one a build is the library's own.
-		// A build runs from the start of its program to the start of the next one, or to the end of the scope: the kernel object is made after the
-		// build (on some platforms the program is not compiled before that), and the time of it is the time of the build. The events are made
-		// when the scope ends (finish() does it earlier, for a build that ends the program).
+		// The skeleton instance whose OpenCL kernels are being built, for the build events (SkeletonBase::prepareOpenCL has one while building): without
+		// one a build is the library's own.
+		// A build runs from the start of its program to the start of the next one, or to the end of the scope: the kernel object is made after the build
+		// (on some platforms the program is not compiled before that), and its time is the build's time. The events are made when the scope ends
+		// (finish() makes them earlier, for a build that ends the program).
 		struct CompileScope
 		{
 			CompileScope(TraceID instance, std::string const& label)
@@ -493,7 +486,7 @@ namespace skepu
 				std::vector<TraceID> &&proxy_inputs = {},
 				std::vector<TraceID> &&scalar_inputs = {},
 				TraceID prng = UniqueIdentifier::null(),
-				Parameters const *extra = nullptr); // (fields that are added to the event as they are)
+				Parameters const *extra = nullptr);
 
 			void call(
 				std::string pattern,
@@ -557,11 +550,11 @@ namespace skepu
 			void flush();
 
 			void beginRegion(std::string const& label SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM);
-			// (with an explicit place, for programs that are not C++: SkePY says where in its source)
+			// with an explicit place, for programs that are not C++: SkePY says where in its source
 			void beginRegion(std::string const& label, std::string const& file, int line);
 			void endRegion();
-			// A region that skepu-tool has marked (see AutoRegion): it is in the trace only if it has two events or more. The events of one that has
-			// none or one are not changed, except that they are in the region around it
+			// A region marked by skepu-tool (see AutoRegion) is in the trace only if it has at least two events. The events of one with fewer are unchanged, except
+			// that they belong to the enclosing region
 			void beginAutoRegion(std::string const& label, std::string const& file, int line);
 			void region(std::string const& label,
 				std::function<void(void)> &&work_func SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM);
@@ -570,10 +563,9 @@ namespace skepu
 			void push_capture(std::function<void()> &&capture, CaptureKind kind = CaptureKind::Node);
 
 #ifdef SKEPU_TRACING
-			// Every event is recorded with one of these. The event is made when it is replayed, in the order of the trace: its type (one of
-			// Schema::Values::Types) and the region that it is in, then the fields. record_with is for an event that needs the state of the tracer
-			// when it is replayed (the region stack, the header): the body gets the event after its type and region, and the event is
-			// written when the body returns.
+			// Every event is recorded with one of these. The event is made when replayed, in trace order: its type (one of Schema::Values::Types) and its region, then
+			// the fields. record_with is for an event that needs the tracer's state when replayed (the region stack, the header): the body gets the event after its type
+			// and region, and the event is written when the body returns.
 			template<typename... Fs>
 			void record(CaptureKind kind, const std::string &type, Fs... fields);
 			template<typename... Fs>
@@ -584,9 +576,9 @@ namespace skepu
 
 #ifdef SKEPU_TRACING
 			std::mutex m_mutex; // guards m_captures
-			// The events are written to the file as they are replayed. The newest ones (the window) are kept as JSON objects, as relabel can still rename
-			// them; an event that leaves the window is written as one line of text, and its object is gone. The file is complete after each flush: the
-			// events of the window and the end of the file (the header) are written after the committed ones, and written again by the next flush.
+			// Events are written to the file as they are replayed. The newest (the window) stay JSON objects, since relabel can still rename them; an event leaving the
+			// window is written as a line of text and its object is dropped. The file is complete after each flush: the window's events and the end of the file (the
+			// header) are written after the committed ones, and written again by the next flush.
 			static constexpr size_t kEditableEvents = 1024;      // the size of the window
 			static constexpr size_t kAutoFlushCaptures = 16384;  // the captured events that make the tracer replay and write them (the closures take memory until then)
 			std::deque<nlohmann::json> m_window;
@@ -600,8 +592,8 @@ namespace skepu
 			void writeFile();
 			nlohmann::json m_header = nlohmann::json::object();
 			void collectSourceFiles(); // the files that the events name, with the hashes of their contents, to the header
-			// What a call tells the header, when it is replayed: the hash of its source file (made by the precompiler: the program as it was compiled), once
-			// per file, and where its instance and the user functions of it are defined, once per instance
+			// What a call tells the header when replayed: the hash of its source file (made by the precompiler: the program as compiled), once per file, and where its
+			// instance and its user functions are defined, once per instance
 			void noteSourceFile(std::string const& file, std::string const& hash);
 			void noteInstance(TraceID id, std::string const& label);
 			std::map<TraceID, nlohmann::json> m_definitions; // of the instances that have made a call (guarded by m_mutex)
@@ -611,9 +603,8 @@ namespace skepu
 			// stack of the thread that recorded it.
 			struct Capture { std::thread::id thread; std::function<void()> work; };
 			std::vector<Capture> m_captures;
-			// The regions that are open on a thread, innermost last. A region that skepu-tool has marked is not written until it has a second event
-			// (a committed region); one that is not committed holds the event that it has had (if any). The ones that are not committed are the
-			// innermost ones. An event is in the innermost committed region.
+			// The regions open on a thread, innermost last. A region marked by skepu-tool is not written until it has a second event (committed); an uncommitted
+			// one holds the event it has had, if any. The uncommitted regions are the innermost. An event belongs to the innermost committed region.
 			struct RegionEntry
 			{
 				std::string label;

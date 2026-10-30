@@ -42,7 +42,6 @@ export const heading = t => el('div', { className: 'info-section', textContent: 
 
 export const note = t => el('div', { className: 'info-note', textContent: t });
 
-/** A tooltip on a control or a row. */
 export const tip = (text, node) => { node.title = text; return node; };
 
 export function renderInspector(force = false) {

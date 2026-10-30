@@ -112,7 +112,7 @@ export function buildSpectrumMenu(container, onPick) {
   });
 }
 
-/** The menu of the colour spectra at a place of the window (a click on the colour bar of the legend): the items of the menu of the menu bar, the current one checked. */
+/** The spectrum menu at a position: the menu bar's items, the current one checked. */
 export function showSpectrumMenu(x, y, current, onPick) {
   var holder = document.createElement('div');
   buildSpectrumMenu(holder, onPick);
@@ -121,8 +121,7 @@ export function showSpectrumMenu(x, y, current, onPick) {
 }
 
 /**
- * A menu of choices at a place of the window (a right click on the colour bar of the legend): one item for each of the buttons of a menu of the
- * menu bar, with the text of it, checked if `isCurrent(button)`. An item does what its button does.
+ * A menu at a position, with one item per button of a menu-bar menu: the button's text and action, checked if `isCurrent(button)`.
  */
 export function showChoiceMenu(x, y, buttons, isCurrent) {
   var items = Array.prototype.slice.call(buttons).map(function(source) {

@@ -34,7 +34,7 @@ RandomAccessAndScalarsResult handleRandomAccessAndUniforms_CU(
 	std::stringstream& SSMapFuncArgs,
 	std::stringstream& SSKernelParamList,
 	bool &first,
-	bool elementIndexIsLinear = false // (Map: skepu_i is the position in the output and the kernel has skepu_base and skepu_w2, as the OpenCL kernels)
+	bool elementIndexIsLinear = false // Map: skepu_i is the position in the output and the kernel has skepu_base and skepu_w2, as the OpenCL kernels
 );
 
 void handleRandomParam_CU(

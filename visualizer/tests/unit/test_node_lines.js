@@ -111,7 +111,7 @@ describe('the lines of the nodes that the viewer puts badges at', () => {
         expect(linesOfNode({ ...call, type: 'snapshot', line: 12 }, FILE, false, [])).toEqual([11, 11]);
         expect(linesOfNode({ ...call, type: 'region', line: 20 }, FILE, false, [])).toEqual([19, 19]);
         expect(linesOfNode({ ...call, type: 'snapshot', file: '/examples/other.cpp' }, FILE, false, [])).toBeNull();
-        expect(linesOfNode({ ...call, type: 'snapshot', file: '', line: 0 }, FILE, false, [])).toBeNull(); // (a snapshot made without C++20)
+        expect(linesOfNode({ ...call, type: 'snapshot', file: '', line: 0 }, FILE, false, [])).toBeNull(); // a snapshot made without C++20
     });
 
     it('are of the same types as the badges of the viewer (script/badges.js), and the regions are left out by the same rule', () => {

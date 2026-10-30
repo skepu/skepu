@@ -69,7 +69,6 @@ export function renderCode() {
 
 export const linesOf = (program, ids) => (program?.lines ?? []).flatMap((line, i) => line.some(id => ids.has(id)) ? [i + 1] : []);
 
-/** The trace lines of the events about the nodes with these ids. */
 export const traceLines = ids => {
     const trace = S.programs?.trace, lines = [];
     trace?.ids.forEach((nodes, i) => { if (nodes.some(id => ids.has(id))) for (let l = trace.ranges[i]?.[0]; l <= trace.ranges[i]?.[1]; l++) lines.push(l); });
@@ -94,14 +93,12 @@ export function markLines({ scroll = false } = {}) {
     S.source.highlightLines(json ? traceLines(ids) : linesOf(program, ids), { scroll, target: site?.line });
 }
 
-/** Creates the code view and binds tabs, line clicks and buttons. */
 export function initCode() {
     S.source = new SourceCodeView({ tabBarEl: $('#cpp_tab_bar'), tabPanesEl: $('#cpp_tab_panes'), hljsThemeLinkEl: $('#hljs-theme'), initialTheme: readAppearance().hljsTheme,
                                     onThemeChange: theme => writeAppearance({ hljsTheme: theme }),
                                     onBadgeClick: id => selectById(id.replace(/#trace$/, ''), 'code') });
     S.source.restoreTheme(readAppearance().hljsTheme);
 
-    // a click on a line selects its node
     $('#cpp_tab_bar').addEventListener('click', () => setTimeout(() => { markLines({ scroll: true }); if (S.inspected && S.inspected !== 'none' && S.inspected !== 'many') renderInspector(true); }, 0));
     $('#cpp_tab_panes').addEventListener('click', e => {
         const code = e.target.closest('.hljs-ln-code[data-line-number]');
@@ -112,7 +109,6 @@ export function initCode() {
             : (activeLanguage() === 'py' ? S.programs?.python : S.programs?.cpp)?.lines[line - 1]?.[0];
         if (id) selectById(id, 'code');
     });
-    // name and text of the shown tab
     const shownText = () => { const f = activeFile(); return { name: f === 'json' ? S.programs?.trace.name : S.files[f], text: (f === 'py' ? S.programs?.python : f === 'json' ? S.programs?.trace : S.programs?.cpp)?.text ?? '' }; };
     $('#copy-code').onclick = async () => {
         try { await navigator.clipboard.writeText(shownText().text); say('Copied.'); } catch { say('Copy failed.'); }

@@ -68,7 +68,7 @@ TEST_CASE("MapOverlap 1D on matrices with rows and columns longer than a thread 
 				const bool row_wise = mode == skepu::Overlap::RowWise;
 				const bool none = edge == skepu::Edge::None;
 				if (none && (row_wise ? cols : rows) <= (size_t)(2 * overlap))
-					continue; // (no output)
+					continue;
 				const size_t out_rows = (none && !row_wise) ? rows - 2 * overlap : rows;
 				const size_t out_cols = (none && row_wise) ? cols - 2 * overlap : cols;
 				skepu::Matrix<int> out(out_rows, out_cols, -12345);

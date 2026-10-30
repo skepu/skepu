@@ -35,7 +35,7 @@ export function registerSkeletonHover(): vscode.Disposable {
 			const skeleton = afterSkepuNamespace(before) ? (skeletonAnchor(word) ? word : undefined) : await skeletonOfInstance(document, word, range.start.line);
 			if (skeleton) contents.push(trusted(guideHoverMarkdown(skeletonAnchor(skeleton)!, skeleton)));
 
-			// (the calls on this line if there are, else all the calls of the instance: at its declaration, say)
+			// the calls on this line if there are, else all the calls of the instance: at its declaration, say
 			for (const { sessionId, calls } of SkevuEditorProvider.current?.callsOfInstance(document.fileName, word) ?? []) {
 				const here = calls.filter(call => call.line === range.start.line + 1);
 				const shown = here.length ? here : calls;

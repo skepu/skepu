@@ -37,7 +37,7 @@ describe('the snapshot nodes', () => {
     it('are there only if the snapshots are shown', () => {
         expect(snapshotNodes(graph(true)).length).toBe(2);
         expect(snapshotNodes(graph(false)).length).toBe(0);
-        // (the data of the update nodes has them either way)
+        // the data of the update nodes has them either way
         expect(graph(false).getAllNodes().filter(n => n instanceof UpdateNode && n.hasSnapshot).length).toBe(2);
     });
 

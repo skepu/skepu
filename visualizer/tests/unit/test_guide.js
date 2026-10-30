@@ -42,9 +42,9 @@ describe('a page of the book in a webview', () => {
         expect(page).toContain("default-src 'none'");
         expect(page).toContain("script-src https://x.test 'unsafe-inline'");
         expect(page).toContain("type: 'link'");
-        expect(page.indexOf("addEventListener('error'")).toBeLessThan(page.indexOf('<title>'));   // (the reports come first, before the scripts of the book)
+        expect(page.indexOf("addEventListener('error'")).toBeLessThan(page.indexOf('<title>'));
         expect(page).toContain("'securitypolicyviolation'");
-        expect(page).toContain('event.stopPropagation();');   // (the webview opens the links that it sees in the browser)
+        expect(page).toContain('event.stopPropagation();');   // the webview opens the links that it sees in the browser
         expect(page).toContain("hasAttribute('data-bs-toggle')");
         expect(page).toContain('var page = "src/lsp.html";');
         expect(page.indexOf('<script>')).toBeLessThan(page.indexOf('</body>'));
@@ -84,7 +84,7 @@ describe('a link in a page of the book', () => {
     it('goes to the web only by https', () => {
         expect(resolveGuideLink('index.html', 'https://quarto.org')).toEqual({ kind: 'external', url: 'https://quarto.org' });
         expect(resolveGuideLink('index.html', 'http://quarto.org').kind).toBe('none');
-        expect(resolveGuideLink('index.html', 'https://file+.vscode-resource.vscode-cdn.net/x/guide/src/lsp.html').kind).toBe('none');   // (the webview's own address)
+        expect(resolveGuideLink('index.html', 'https://file+.vscode-resource.vscode-cdn.net/x/guide/src/lsp.html').kind).toBe('none');   // the webview's own address
         expect(resolveGuideLink('index.html', 'https://abc.vscode-cdn.net/index.html').kind).toBe('none');
         expect(resolveGuideLink('index.html', 'javascript:alert(1)').kind).toBe('none');
         expect(resolveGuideLink('index.html', 'command:skevu.openGuide').kind).toBe('none');
@@ -92,10 +92,10 @@ describe('a link in a page of the book', () => {
     });
 
     it('does not leave the book, or open what is not a page', () => {
-        expect(resolveGuideLink('src/lsp.html', '../../../etc/passwd.html')).toEqual({ kind: 'page', page: 'etc/passwd.html', fragment: '' });   // (still inside the book's directory: a URL stops at the root)
+        expect(resolveGuideLink('src/lsp.html', '../../../etc/passwd.html')).toEqual({ kind: 'page', page: 'etc/passwd.html', fragment: '' });   // still inside the book's directory: a URL stops at the root
         expect(resolveGuideLink('index.html', 'search.json').kind).toBe('none');
         expect(resolveGuideLink('index.html', 'a b.html').kind).toBe('none');
-        expect(resolveGuideLink('index.html', '').kind).toBe('none');   // (an empty link is the page itself)
+        expect(resolveGuideLink('index.html', '').kind).toBe('none');   // an empty link is the page itself
         expect(resolveGuideLink('index.html', '#x').kind).toBe('none');
     });
 
@@ -106,15 +106,15 @@ describe('a link in a page of the book', () => {
 });
 
 describe('where a link in a page points (classifyLink, which is put into the page)', () => {
-    const root = 'https://file+.vscode-resource.vscode-cdn.net/Users/me/ext/guide/';   // (with the slash at the end, as the page has it)
+    const root = 'https://file+.vscode-resource.vscode-cdn.net/Users/me/ext/guide/';   // with the slash at the end, as the page has it
     const base = root + 'src/';
     const here = 'https://abc.vscode-cdn.net/index.html?id=1';
     const classify = (href, resolved) => classifyLink(href, resolved ?? new URL(href, base).href, base, here, root);
 
     it('is in the page for a link to a section, written as Quarto writes them or not', () => {
         expect(classify('#sec-map')).toEqual({ kind: 'anchor', id: 'sec-map' });
-        expect(classify(base + '#sec-reduce')).toEqual({ kind: 'anchor', id: 'sec-reduce' });   // ("On this page" of Quarto)
-        expect(classify('https://file%2B.vscode-resource.vscode-cdn.net/Users/me/ext/guide/src/#sec-scan')).toEqual({ kind: 'anchor', id: 'sec-scan' });   // (the same address written another way)
+        expect(classify(base + '#sec-reduce')).toEqual({ kind: 'anchor', id: 'sec-reduce' });   // "On this page" of Quarto
+        expect(classify('https://file%2B.vscode-resource.vscode-cdn.net/Users/me/ext/guide/src/#sec-scan')).toEqual({ kind: 'anchor', id: 'sec-scan' });   // the same address written another way
     });
 
     it('is to a page of the book for a link under its directory, with the path from the root of the book', () => {

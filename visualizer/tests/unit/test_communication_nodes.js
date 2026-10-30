@@ -21,7 +21,7 @@ const merged = mergeMpiTraces(['skepu_trace.json', 'skepu_trace.rank1.json', 'sk
 const nodesOf = (g, type) => g.getAllNodes().filter(n => n.type === type);
 const edgesBetween = (g, a, b) => g.getAllEdges?.().filter(e => e.source === a && e.target === b) ?? [];
 const sourcesOf = n => n.getIncomingEdges().map(e => e.source);
-// (the container updates that follow a call are between it and what reads its results)
+// the container updates that follow a call are between it and what reads its results
 const reads = (n, producer) => sourcesOf(n).some(s => s === producer || sourcesOf(s).includes(producer));
 
 function graphOf(events, tweak = () => {}) {
@@ -36,7 +36,7 @@ describe('the collectives of a call', () => {
     const external = { ...b.external('fill', { outs: [1] }), seq: 1 };
     const events = [
         b.alloc(1, 'A'),
-        b.comm([1], { operation: 'allgather', seq: 1, phase: 'before', comm_seq: 1 }),   // (the container is gathered before the code writes it)
+        b.comm([1], { operation: 'allgather', seq: 1, phase: 'before', comm_seq: 1 }),   // the container is gathered before the code writes it
         b.comm([1], { operation: 'scatter', reason: 'skepu::external: the container is given to its owners', seq: 1, phase: 'after', comm_seq: 2 }),
         external,
         b.comm([], { operation: 'allgather', reason: 'the partial results are combined', seq: 2, phase: 'after', comm_seq: 3 }),
@@ -68,8 +68,8 @@ describe('a communication node', () => {
         b.alloc(1, 'A'), b.alloc(2, 'B'), b.alloc(3, 'C'),
         b.call('produce', { outs: [1] }),
         b.comm([1], { operation: 'allgather' }),
-        b.call('consume', { proxy: [1], outs: [2] }),          // (random access: it reads the gathered copy)
-        b.call('elementwise', { ins: [1], outs: [3] }),        // (it reads the tiles, which the gather did not change)
+        b.call('consume', { proxy: [1], outs: [2] }),          // random access: it reads the gathered copy
+        b.call('elementwise', { ins: [1], outs: [3] }),        // it reads the tiles, which the gather did not change
     ];
 
     it('reads the container and is what the readers of the gathered copy read it from', () => {
@@ -80,7 +80,7 @@ describe('a communication node', () => {
         expect(comm).toBeInstanceOf(CommunicationNode);
         expect(comm.label).toBe('allgather: A');
         expect(sourcesOf(comm).some(n => n === produce || sourcesOf(n).includes(produce))).toBe(true);
-        expect(sourcesOf(consume).includes(comm)).toBe(true);        // (not on the producer directly)
+        expect(sourcesOf(consume).includes(comm)).toBe(true);        // not on the producer directly
         expect(comm.start).toBeLessThan(comm.end);
         expect(comm.totalOrder).toBeGreaterThan(produce.totalOrder);
         expect(comm.totalOrder).toBeLessThan(consume.totalOrder);
@@ -151,11 +151,11 @@ describe('a communication node', () => {
         const [cyNodes, cyEdges] = graph.toCytoscape();
         const node = cyNodes.find(n => n.data.type === 'communication');
         expect(node.data.operation).toBe('allgather');
-        expect(cyEdges.some(e => e.data.target === node.data.id)).toBe(true);   // (the edges of the views too)
+        expect(cyEdges.some(e => e.data.target === node.data.id)).toBe(true);   // the edges of the views too
     });
 
     it('is a setting of the views: show_communications', () => {
-        expect(graphSettings({}).communications).toBe(true);       // (a program that has none is not changed by it)
+        expect(graphSettings({}).communications).toBe(true);       // a program that has none is not changed by it
         expect(graphSettings({ show_communications: false }).communications).toBe(false);
         const off = buildDisplayGraph(trace(events), { show_communications: false }).graph;
         expect(nodesOf(off, 'communication')).toHaveLength(0);
@@ -241,7 +241,7 @@ describe('the example of the splash page (Coulombic on 4 MPI processes)', () => 
         expect(io.label).toBe('I/O');
         const comm = sourcesOf(io).find(n => n.type === 'communication');
         expect(comm).toBeDefined();
-        expect(comm.operation).toBe('gather');                      // (to the process that runs the code: the others do not need it)
+        expect(comm.operation).toBe('gather');                      // to the process that runs the code: the others do not need it
         expect(comm.reason).toMatch(/skepu::external/);
         expect(sourcesOf(comm).some(n => n.type === 'skeleton_call' || sourcesOf(n).some(p => p.type === 'skeleton_call'))).toBe(true);
     });
@@ -262,13 +262,13 @@ describe('the imbalance of the calls of an MPI program', () => {
     it('is on the nodes the views get, with the slowest rank and the communication', () => {
         for (const n of [...calls, ...externals]) {
             const d = n.toCytoscape();
-            if (d.imbalance !== null) expect(d.imbalance).toBeGreaterThanOrEqual(1);       // (null: no work was measured: it took less than a microsecond)
+            if (d.imbalance !== null) expect(d.imbalance).toBeGreaterThanOrEqual(1);       // null: no work was measured: it took less than a microsecond
             expect(d.slowest_rank).toBeGreaterThanOrEqual(0);
             expect(d).toHaveProperty('comm_bytes');
         }
-        const last = calls.at(-1).toCytoscape();                    // (the MatRow call: 4, 1 and 0 elements)
+        const last = calls.at(-1).toCytoscape();                    // the MatRow call: 4, 1 and 0 elements
         expect(last.imbalance).toBeGreaterThan(1.2);
-        expect(externals[0].toCytoscape().imbalance).toBeCloseTo(3, 6);               // (the code of an external runs on one rank)
+        expect(externals[0].toCytoscape().imbalance).toBeCloseTo(3, 6);               // the code of an external runs on one rank
     });
 
     it('is in the info panel with the work of every rank', () => {

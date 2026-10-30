@@ -87,22 +87,22 @@ export function classifyLink(href: string, resolved: string, base: string, here:
 	if (href.charAt(0) === '#') return { kind: 'anchor', id: decode(href.slice(1)) };
 	if (url.hash && (path === decode(new URL(base).pathname) || path === decode(new URL(here).pathname))) return { kind: 'anchor', id: decode(url.hash.slice(1)) };
 	const all = decode(url.href), top = decode(root);
-	// (a link to a directory, the book's own or one in it, is to the first page there: Quarto writes the link to index.html so)
+	// a link to a directory, the book's own or one in it, is to the first page there: Quarto writes the link to index.html so
 	if (all.indexOf(top) === 0) return { kind: 'page', rel: all.slice(top.length) || 'index.html' };
 	return { kind: 'web' };
 }
 
 /** The page of the book that has the link (`page`, such as src/lsp.html) and the link's address (`href`) make: another page of the book, with the fragment. */
 export function resolveGuideLink(page: string, href: string): GuideLink {
-	// (an address of the webview itself is never for the browser)
+	// an address of the webview itself is never for the browser
 	if (/^https:\/\/[^/]*(vscode-cdn\.net|vscode-resource)/i.test(href)) return { kind: 'none' };
 	if (/^https:\/\//i.test(href)) return { kind: 'external', url: href };
 	if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//') || href.startsWith('#') || !href) return { kind: 'none' };
 	let url: URL;
 	try { url = new URL(href, 'https://guide.invalid/' + page); } catch { return { kind: 'none' }; }
 	let target = decodeURIComponent(url.pathname).replace(/^\/+/, '');
-	if (target === '' || target.endsWith('/')) target += 'index.html';   // (a link to a directory is to its first page)
-	// (only the pages of the book: no way out of it by .., which a URL does not leave at the top either, and nothing but .html)
+	if (target === '' || target.endsWith('/')) target += 'index.html';   // a link to a directory is to its first page
+	// only the pages of the book: no way out of it by .., which a URL does not leave at the top either, and nothing but .html
 	if (!/^[A-Za-z0-9_./-]+\.html$/.test(target) || target.split('/').includes('..')) return { kind: 'none' };
 	return { kind: 'page', page: target, fragment: url.hash.replace(/^#/, '') };
 }
@@ -142,11 +142,11 @@ export function buildGuideHtml(pageHtml: string, page: GuidePage): string {
 		`script-src ${page.cspSource} 'unsafe-inline' 'unsafe-eval' ${web}`,
 		`connect-src ${page.cspSource}`,
 		`worker-src blob:`,
-		`frame-src ${page.cspSource}`,   // (a figure that is a PDF is an <embed>)
+		`frame-src ${page.cspSource}`,   // a figure that is a PDF is an <embed>
 		`object-src ${page.cspSource}`,
 	].join('; ') + ';';
 	const json = (text: string) => JSON.stringify(text).replace(/</g, '\\u003c');
-	// (first in the page, before the scripts of the book: what goes wrong in the page is reported to the extension, which logs it: View > Output > SkeVU Guide)
+	// first in the page, before the scripts of the book: what goes wrong in the page is reported to the extension, which logs it: View > Output > SkeVU Guide
 	const early = `<script>
 (function() {
   var vscode = window.guideVscode = acquireVsCodeApi();
@@ -170,7 +170,7 @@ export function buildGuideHtml(pageHtml: string, page: GuidePage): string {
   document.addEventListener('click', function(event) {
     var a = event.target.closest && event.target.closest('a[href]');
     if (!a || event.defaultPrevented) return;
-    if (a.hasAttribute('data-bs-toggle')) return;   // (a button of the page: it is not a link, and its script is to see it)
+    if (a.hasAttribute('data-bs-toggle')) return;   // a button of the page: it is not a link, and its script is to see it
     var href = a.getAttribute('href');
     // The click is ours: the webview has a listener of its own that opens every link in the browser, which must not see it.
     event.preventDefault();
@@ -186,7 +186,7 @@ export function buildGuideHtml(pageHtml: string, page: GuidePage): string {
   window.addEventListener('load', function() { scrollTo(${json(page.fragment)}); });
 })();
 </script>`;
-	// (the polyfill is for old browsers, and a script of the web that is not deferred holds the page up until it is there)
+	// the polyfill is for old browsers, and a script of the web that is not deferred holds the page up until it is there
 	const html = pageHtml.replace(/<script\b[^>]*\bsrc="https:\/\/cdnjs\.cloudflare\.com\/polyfill[^>]*><\/script>\s*/gi, '');
 	return html.replace(/<head>/i, `<head>\n${head}`).replace(/<\/body>/i, `${script}\n</body>`);
 }

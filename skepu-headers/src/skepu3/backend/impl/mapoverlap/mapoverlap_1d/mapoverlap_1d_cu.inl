@@ -31,9 +31,9 @@ namespace skepu
 			size_t n = numElem + std::min(startIdx, overlap);
 			size_t out_offset = std::min(startIdx, overlap);
 
-			// (mirror mode: the output is as long as the input, only the elements that have the whole overlap are computed)
+			// mirror mode: the output is as long as the input, only the elements that have the whole overlap are computed
 			if (this->m_edge == skepu::Edge::None && !this->m_mirror_mode && numElem <= overlap * 2)
-				return; // (no output)
+				return;
 			size_t out_numelements;
 			if (this->m_edge != skepu::Edge::None || this->m_mirror_mode)
 				out_numelements = numElem;
@@ -90,7 +90,7 @@ namespace skepu
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).cudaProxy(deviceID, MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])...);
 		
 			// PRNG support
-			// (one number for each element of the output; mirror mode: the elements near the edges are not computed and their numbers are skipped)
+			// one number for each element of the output; mirror mode: the elements near the edges are not computed and their numbers are skipped
 			const size_t computed = this->m_mirror_mode ? out_numelements - 2 * overlap : out_numelements;
 			size_t prng_threads = computed;
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(computed, prng_threads);
@@ -239,7 +239,7 @@ namespace skepu
 				auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).cudaProxy(i, MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])...);
 			
 				// PRNG support
-				size_t prng_threads = numElem; // (one number for each element of the output)
+				size_t prng_threads = numElem; // one number for each element of the output
 				auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(numElem, prng_threads);
 				auto randomMemP = random.updateDevice_CU(random.getAddress(), prng_threads, i, AccessMode::ReadWrite);
 				
@@ -386,7 +386,7 @@ namespace skepu
 			const size_t numCols = arg.total_cols();
 			// Every column is cut into tiles of numThreads output elements, one block for each tile (the kernel loops if there are more tiles than blocks)
 			if (this->m_edge == Edge::None && !this->m_mirror_mode && colWidth <= 2 * overlap)
-				return; // (no output)
+				return;
 			const size_t outColWidth = (this->m_edge == Edge::None && !this->m_mirror_mode) ? colWidth - 2 * overlap : colWidth;
 			size_t numThreads = std::min<size_t>(this->m_selected_spec->GPUThreads(), outColWidth);
 			if (!sharedMemAvailable_CU<T>(numThreads, deviceID) && numThreads < 1)
@@ -404,7 +404,7 @@ namespace skepu
 			
 			// Copy elements to device and allocate output memory.
 			auto in_mem_p = arg.updateDevice_CU(arg.getAddress(), n, deviceID, AccessMode::Read, false);
-			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_numelements, deviceID, (this->m_mirror_mode || p != Parity::None) ? AccessMode::ReadWrite : AccessMode::Write, false)...); // (some elements may not be computed: the output keeps their values)
+			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_numelements, deviceID, (this->m_mirror_mode || p != Parity::None) ? AccessMode::ReadWrite : AccessMode::Write, false)...); // some elements may not be computed: the output keeps their values
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).cudaProxy(deviceID, MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])...);
 		
 			// PRNG support (one number for each element of the output; mirror mode: the elements near the edges are not computed and their numbers are skipped)
@@ -673,7 +673,7 @@ namespace skepu
 			
 			// Every row is cut into tiles of numThreads output elements, one block for each tile (the kernel loops if there are more tiles than blocks)
 			if (this->m_edge == Edge::None && !this->m_mirror_mode && rowWidth <= 2 * overlap)
-				return; // (no output)
+				return;
 			const size_t outRowWidth = (this->m_edge == Edge::None && !this->m_mirror_mode) ? rowWidth - 2 * overlap : rowWidth;
 			size_t numThreads = std::min(maxThreads, outRowWidth);
 			if (!sharedMemAvailable_CU<T>(numThreads, deviceID) && numThreads < 1)
@@ -689,7 +689,7 @@ namespace skepu
 			
 			// Copy elements to device and allocate output memory.
 			auto in_mem_p = arg.updateDevice_CU(arg.getAddress(), n, deviceID, AccessMode::Read, false);
-			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_numelements, deviceID, (this->m_mirror_mode || p != Parity::None) ? AccessMode::ReadWrite : AccessMode::Write, false)...); // (some elements may not be computed: the output keeps their values)
+			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_numelements, deviceID, (this->m_mirror_mode || p != Parity::None) ? AccessMode::ReadWrite : AccessMode::Write, false)...); // some elements may not be computed: the output keeps their values
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).cudaProxy(deviceID, MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])...);
 		
 			// PRNG support (one number for each element of the output; mirror mode: the elements near the edges are not computed and their numbers are skipped)
@@ -823,7 +823,7 @@ namespace skepu
 				auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).cudaProxy(i, MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])...);
 			
 				// PRNG support
-				size_t prng_threads = numElems; // (one number for each element of the output)
+				size_t prng_threads = numElems; // one number for each element of the output
 				auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(numElems, prng_threads);
 				auto randomMemP = random.updateDevice_CU(random.getAddress(), prng_threads, i, AccessMode::ReadWrite);
 				

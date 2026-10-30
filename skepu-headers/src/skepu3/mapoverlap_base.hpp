@@ -69,9 +69,9 @@ namespace skepu
                     SKEPU_ERROR("MapOverlap: the update modes Red, Black and RedBlack cannot be used with a user function that uses random numbers");
             }
 
-            // The checks of a call, first of all: the combination of the update mode and the random numbers (above), and, in the normal update mode,
-            // an output that is also an input. The elements are computed in an order that the backend decides (and in parallel), so a stencil that reads
-            // what it writes has no defined result: only the update modes Red, Black and RedBlack, that are made for it, are in place.
+            // Checks first of all: the combination of update mode and random numbers (above), and, in the normal update mode, an output that is also an input.
+            // The backend computes elements in its own order (and in parallel), so a stencil that reads what it writes has no defined result; only the update
+            // modes Red, Black and RedBlack are made for in-place use.
             template<size_t... OI, size_t... EI, size_t... AI, typename... CallArgs>
             void checkUpdateMode(size_t random_count, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, CallArgs&&... args) const
             {

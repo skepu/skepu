@@ -151,7 +151,7 @@ namespace skepu
 		// Has the container a label that was set, by the program or the precompiler (not the default one)?
 		bool hasLabel() const
 		{
-			return this->m_label != nullptr && !this->m_label->empty(); // (a container of a derived class can have an empty label)
+			return this->m_label != nullptr && !this->m_label->empty(); // a container of a derived class can have an empty label
 		}
 
 		std::string getLabel() const
@@ -159,7 +159,7 @@ namespace skepu
 			if (this->m_label)
 				return *this->m_label;
 
-			// (a name that the same program gets again: not the address of the data)
+			// a name that the same program gets again: not the address of the data
 			return skepu::debug.getObjectName(this->getAddress(), "Vector #" + std::to_string(this->m_object_id));
 		}
 
@@ -168,7 +168,6 @@ namespace skepu
 			return this->m_object_id;
 		}
 
-		// (removed: the random fills are in skepu-lib/randomize.hpp)
 		void randomize(int = 0, int = RAND_MAX) { static_assert(sizeof(T) == 0, "Vector::randomize is removed: use skepu::randomize::uniform (skepu-lib/randomize.hpp)"); }
 		void save(const std::string& filename, const std::string& delimiter=" ");
 		void load(const std::string& filename, size_type numElements = 0);
@@ -288,9 +287,9 @@ namespace skepu
 	public: //-- Additions to interface --//
 
 #if defined(SKEPU_OPENCL) && defined(SKEPU_CUDA)
-		// CUDA and OpenCL in the same program: the container keeps the device copies of each of them separately. Before a backend uses the
-		// container, the changes that the other backend has made are brought to the host, and the copies of the other backend are
-		// invalidated if this use may write (a transfer through the host memory, which the trace and the debug log show)
+		// CUDA and OpenCL in the same program: the container keeps separate device copies for each. Before a backend uses the container, the other
+		// backend's changes are brought to the host, and the other backend's copies are invalidated if the use may write (a transfer through host memory,
+		// shown in the trace and the debug log)
 		void syncCUDAbeforeOpenCL(bool mayWrite) const;
 		void syncOpenCLbeforeCUDA(bool mayWrite) const;
 #endif

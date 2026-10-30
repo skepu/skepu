@@ -2,7 +2,7 @@
 
 #include "../../external/catch2/catch.hpp"
 #define SKEPU_ARGS_THROW
-#define SKEPU_ENABLE_EXCEPTIONS // (the errors of the program, such as a declaration of the same name with another type, are thrown)
+#define SKEPU_ENABLE_EXCEPTIONS // the errors of the program, such as a declaration of the same name with another type, are thrown
 #include <skepu>
 #include <skepu-lib/args.hpp>
 #include <test_helper_automatic_setup.hpp>
@@ -190,7 +190,7 @@ TEST_CASE("args: a name that is declared again is the same argument")
 	CommandLine line({"7", "8", "cpu", "--frames", "12", "--adam", "--out=pic"});
 	skepu::args::Parser args(line.argc(), line.argv());
 	auto n = args.get<size_t>("n");
-	auto n_again = args.get<size_t>("n"); // (not the next positional argument)
+	auto n_again = args.get<size_t>("n"); // not the next positional argument
 	auto m = args.get<int>("m", 0);
 	auto m_again = args.get<int>("m", 0);
 	auto frames = args.named<size_t>("frames", 0);
@@ -198,14 +198,14 @@ TEST_CASE("args: a name that is declared again is the same argument")
 	bool adam = args.flag("adam");
 	bool other = args.flag("other");
 	args.backend();
-	// (after backend(): the arguments that are known are still there, so a function can take the parser and read what it needs)
+	// after backend(): the arguments that are known are still there, so a function can take the parser and read what it needs
 	CHECK(n == 7);
 	CHECK(n_again == 7);
 	CHECK(m == 8);
 	CHECK(m_again == 8);
 	CHECK(args.get<size_t>("n") == 7);
 	CHECK(args.get<int>("m", 0) == 8);
-	CHECK(args.get<int>("m") == 8); // (it has a default: not an error to read it as one that is required)
+	CHECK(args.get<int>("m") == 8); // it has a default: not an error to read it as one that is required
 	CHECK(args.named<size_t>("frames", 0) == 12);
 	CHECK(args.named<std::string>("out", "") == "pic");
 	CHECK(args.flag("adam") == adam);
@@ -240,7 +240,7 @@ TEST_CASE("args: a name that is declared again with another type, kind or defaul
 	CHECK_THROWS(args.named<int>("n", 0));
 	CHECK_THROWS(args.flag("frames"));
 	CHECK_THROWS(args.named<unsigned>("frames", 0));
-	CHECK_THROWS(args.named<int>("frames", 5)); // (another default)
+	CHECK_THROWS(args.named<int>("frames", 5)); // another default
 	CHECK(args.named<int>("frames", 0) == 2);
 	args.done();
 }

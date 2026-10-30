@@ -257,7 +257,7 @@ public:
 					if(skeleton == nullptr || Invocation == nullptr)
 						continue;
 
-					// (only the return types are compared here)
+					// only the return types are compared here
 					if(Invocation->retType.isNull())
 					{
 						//clangd::log("Invocation ret is null");
@@ -308,7 +308,7 @@ public:
 			for (const InlineInstance &instance : InlineInstances)
 				HandleInlineInstance(instance);
 
-			// (-no-trace-regions, or -DSKEPU_NO_TRACE_REGIONS in the options of the compiler, for a frontend that has regions of its own: SkePY)
+			// -no-trace-regions (or -DSKEPU_NO_TRACE_REGIONS in the compiler options): for a frontend that has its own regions, such as SkePY
 			if (!NoTraceRegions && !getCompilerInstance().getPreprocessor().isMacroDefined("SKEPU_NO_TRACE_REGIONS"))
 				PlantAutoRegions();
 
@@ -419,14 +419,14 @@ bool SkepuMatcher::runMatcher()
 	std::vector<std::string> flags = {
 		"-std=c++20",
 		"-Wno-expansion-to-defined",
-		"-I" + headerPath, // (Clang's own headers: stdarg.h and others of the system headers need them, and a program that is not next to a lib/clang does not find them itself)
+		"-I" + headerPath, // Clang's own headers: stdarg.h and others of the system headers need them, and a program that is not next to a lib/clang does not find them itself
 		argIncludeSkepu,
 		argSkepu
 	};
 
-	// Where the headers of the system are (the standard library: <memory> is in skepu). The editor knows, from the compile command of the file;
-	// the matcher does not look for them itself, as a parse that cannot find <memory> stops and finds nothing (an editor started from a desktop
-	// does not have the environment of a terminal, SDKROOT for one).
+	// Where the system headers are (the standard library: <memory> is in skepu). The editor knows, from the file's compile command; the matcher does not
+	// search for them itself, since a parse that cannot find <memory> stops and finds nothing (an editor started from a desktop lacks the terminal's
+	// environment, SDKROOT for one).
 	flags.insert(flags.end(), SystemFlags.begin(), SystemFlags.end());
 
 	clang::tooling::FixedCompilationDatabase Compilations(".", flags);

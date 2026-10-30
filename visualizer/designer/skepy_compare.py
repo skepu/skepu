@@ -7,7 +7,7 @@ import pathlib, re, subprocess, sys, types
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'shedskin' / 'tests' / 'skepu'))
-import run_tests as rt          # (the build of SkePY's own tests)
+import run_tests as rt          # the build of SkePY's own tests
 
 args = [a for a in sys.argv[1:] if not a.startswith('--')]
 numbers_only = '--numbers' in sys.argv
@@ -29,7 +29,7 @@ if py.returncode:
     print(f'{name}: the Python exits with {py.returncode}\n' + (py.stdout + py.stderr)[-600:]); sys.exit(3)
 
 def words(text):
-    # (SkePU prints a tensor with a header and SkePY with another layout: only the numbers of a tensor are compared)
+    # SkePU prints a tensor with a header and SkePY with another layout: only the numbers of a tensor are compared
     text = re.sub(r'Tensor[34]: \([0-9 x]+\)', '', text)
     ws = " ".join(l for l in text.splitlines() if not l.startswith(rt.NOISE)).split()
     return [w for w in ws if re.fullmatch(r'[-+]?[0-9.]+(?:[eE][-+]?[0-9]+)?', w)] if numbers_only else ws

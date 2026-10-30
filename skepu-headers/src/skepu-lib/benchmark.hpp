@@ -150,7 +150,7 @@ namespace skepu
 				SKEPU_ERROR("benchmark::measureMedian: the number of repetitions must be at least 1");
 			std::vector<TimeSpan> durations(repeats);
 			for (auto &duration : durations)
-				duration = measure(f, args...);   // (the arguments are used again: they are not forwarded)
+				duration = measure(f, args...);   // the arguments are reused, so not forwarded
 			return median(durations);
 		}
 
@@ -280,7 +280,7 @@ namespace skepu
 			std::string name, Skeleton &instance, size_t minSize, size_t maxSize, size_t repeats,
 			BenchmarkFunc f, UpdateFunc update, Callback callback SKEPU_CALL_SITE_PARAM)
 		{
-			// (the one region is that of the call of the program: the call below is for the same library function)
+			// the one region is that of the call of the program: the call below is for the same library function
 			SKEPU_TRACE_API("benchmark.fullBenchmark");
 			auto tuple = std::make_tuple(&instance);
 			return fullBenchmark(name, tuple, minSize, maxSize, repeats, f, update, callback SKEPU_CALL_SITE_FORWARD_ARG);

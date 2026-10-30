@@ -63,7 +63,7 @@ namespace skepu
 				{
 					this->m_label = label;
 					if (this->m_identity.live)
-						this->m_identity.name = label; // (the later events of the container, the deallocation)
+						this->m_identity.name = label; // the later events of the container, the deallocation
 					SKEPU_TRACE_RELABEL(this->m_identity.id, label);
 				}
 				bool hasLabel() const { return !this->m_label.empty(); }
@@ -130,7 +130,7 @@ namespace skepu
 
 				ExternalState external_begin() const
 				{
-					// (the code runs on the first process, which is the only one that needs the container)
+					// the code runs on the first process, which is the only one that needs the container
 					if (!this->m_root_only && !this->m_mirror_valid && !this->m_mirror_at_root)
 						this->gather_for_external();
 					this->m_external_listed = true;
@@ -158,7 +158,7 @@ namespace skepu
 
 					if (changed)
 					{
-						// (the first process has the new data in its gathered copy: it keeps it)
+						// the first process has the new data in its gathered copy: it keeps it
 						std::unique_ptr<T[]> kept = std::move(this->m_mirror);
 						this->reshape_from_extents({{(size_t)extents[0], (size_t)extents[1], (size_t)extents[2], (size_t)extents[3]}});
 						this->m_mirror = std::move(kept);
@@ -203,8 +203,8 @@ namespace skepu
 					other.ensure_tile();
 					this->m_dist = other.m_dist;
 					if (other.m_identity.live)
-						this->trace_allocation(other.m_identity.kind); // (the copy is a container of its own)
-					// (a node-level container cannot be empty, so a process without elements has an empty tile of no shape)
+						this->trace_allocation(other.m_identity.kind); // the copy is a container of its own
+					// a node-level container cannot be empty, so a process without elements has an empty tile of no shape
 					this->m_tile.reset(other.local_size() > 0 ? new Tile(*other.m_tile) : new Tile());
 					this->m_tile->setIndexOrigin(this->local_first_offset());
 					this->m_fill_pending = other.m_fill_pending;
@@ -260,7 +260,7 @@ namespace skepu
 					this->m_root_only = false;
 					this->m_mirror_at_root = false;
 					this->m_tile.reset(new Tile());
-					this->trace_allocation(this->kind()); // (called from the constructor or init of the derived class)
+					this->trace_allocation(this->kind()); // called from the constructor or init of the derived class
 				}
 
 				void tile_ready()
@@ -375,7 +375,7 @@ namespace skepu
 
 				void ensure_mirror(const char *reason = "host access: the container is gathered") const
 				{
-					if (this->m_root_only && mpi::external_depth() == 0) // (the code of an external call is on the first process, which has it)
+					if (this->m_root_only && mpi::external_depth() == 0) // the code of an external call is on the first process, which has it
 					{
 						// The first process gives every process a copy; the tiles are then made from it, where they are needed
 						if (mpi::rank() != 0)
@@ -408,7 +408,7 @@ namespace skepu
 
 					if (this->m_fill_pending && this->size() > 0)
 					{
-						// (nothing has been written: every process has the value, and makes its copy without communication)
+						// nothing has been written: every process has the value, and makes its copy without communication
 						this->m_mirror.reset(new T[this->size()]);
 						std::fill(this->m_mirror.get(), this->m_mirror.get() + this->size(), this->m_fill_value);
 					}
@@ -439,7 +439,7 @@ namespace skepu
 					}
 					if (this->m_fill_pending)
 					{
-						this->ensure_mirror(); // (every process knows it: no communication)
+						this->ensure_mirror(); // every process knows it: no communication
 						return;
 					}
 					if (mpi::rank() == 0)
@@ -472,7 +472,7 @@ namespace skepu
 						mpi::scatter_from_root(this->m_mirror.get(), this->local_size() > 0 ? this->m_tile->getAddress() : nullptr, this->m_dist);
 						this->m_root_only = false;
 						this->m_tile_valid = true;
-						// (the gathered copy of the first process goes: all the processes must agree on whether there is one, as a gather is collective)
+						// the gathered copy of the first process goes: all the processes must agree on whether there is one, as a gather is collective
 						this->m_mirror.reset();
 						this->m_mirror_valid = false;
 						this->m_mirror_at_root = false;

@@ -29,7 +29,7 @@ namespace skepu
 		{
 			this->init(l.size());
 			std::copy(l.begin() + this->local_offset(), l.begin() + this->local_offset() + this->local_size(), this->tile().getAddress());
-			this->tile_written(); // (the elements are not the value of the initialization)
+			this->tile_written(); // the elements are not the value of the initialization
 		}
 
 		// The host data is the same on all processes. (The vector does not take over the ownership of the data.)
@@ -37,7 +37,7 @@ namespace skepu
 		{
 			this->init(num);
 			std::copy(ptr + this->local_offset(), ptr + this->local_offset() + this->local_size(), this->tile().getAddress());
-			this->tile_written(); // (the elements are not the value of the initialization)
+			this->tile_written(); // the elements are not the value of the initialization
 		}
 
 		Vector(const Vector &) = default;
@@ -79,7 +79,6 @@ namespace skepu
 		T &operator[](size_type index) { return this->write_access()[index]; }
 		const T &operator[](size_type index) const { return this->read_access()[index]; }
 
-		// (removed: the random fills are in skepu-lib/randomize.hpp)
 		void randomize(int = 0, int = RAND_MAX) { static_assert(sizeof(T) == 0, "Vector::randomize is removed: use skepu::randomize::uniform (skepu-lib/randomize.hpp)"); }
 
 		// The whole vector, to be read, on every process (not a copy)

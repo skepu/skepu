@@ -95,7 +95,7 @@ namespace randomize {
 		// How a floating-point number from 0 up to 1 is made of the two draws of 31 bits (high and low): the high one
 		// shifted right, times a scale, plus the low one shifted right, times a scale. The type gets the bits of its
 		// mantissa: float 24 (all from the high draw), double 53 (31 from the high draw, 22 from the low one).
-		// (32-bit integers only: Apple's OpenCL compiler fails on conversions of 64-bit integers to float)
+		// 32-bit integers only: Apple's OpenCL compiler fails on conversions of 64-bit integers to float
 		template<typename T>
 		struct real_bits
 		{
@@ -134,7 +134,7 @@ namespace randomize {
 
 
 		// ---------------- the user functions ----------------
-		// (62 bits are made of two draws of 31 bits)
+		// 62 bits are made of two draws of 31 bits
 
 		template<typename T>
 		T uniform_integer_uf(skepu::Random<2> &random, T min, size_t span)
@@ -178,7 +178,7 @@ namespace randomize {
 			return mean + deviation * sqrt((T)-2 * log(a)) * cos((T)6.283185307179586 * b);
 		}
 
-		// (the threshold is compared as the two draws of 31 bits that it is made of, so that no 64-bit integer is passed on)
+		// the threshold is compared as the two draws of 31 bits that it is made of, so that no 64-bit integer is passed on
 		template<typename T>
 		T bernoulli_uf(skepu::Random<2> &random, unsigned int threshold_high, unsigned int threshold_low)
 		{

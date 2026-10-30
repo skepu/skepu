@@ -10,7 +10,7 @@ function pane(name) {
   return {
     name, classes, _scroll: 0,
     classList: { add: c => classes.add(c), remove: c => classes.delete(c), contains: c => classes.has(c) },
-    // (the browser: a pane that is not shown has no scroll position)
+    // the browser: a pane that is not shown has no scroll position
     get scrollTop() { return classes.has('active') ? this._scroll : 0; },
     set scrollTop(v) { if (classes.has('active')) this._scroll = v; },
     _hide() { this._scroll = 0; },
@@ -33,7 +33,7 @@ describe('switching source tabs', () => {
     v.switchTab(tabs[0], 0);
     a.scrollTop = 420;
     v.switchTab(tabs[1], 1);
-    expect(a.scrollTop).toBe(0);         // (not shown)
+    expect(a.scrollTop).toBe(0);
     b.scrollTop = 80;
     v.switchTab(tabs[0], 0);
     expect(a.scrollTop).toBe(420);

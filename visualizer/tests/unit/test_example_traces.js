@@ -1,6 +1,6 @@
-// test_example_traces.js — the built-in examples (examples/examples.json): every trace is a well-formed trace of the current tracer, and goes with the
-// source files that the example ships. The regions nest as their depths say, each event is in a region that was opened before it, an event that
-// has a file has its hash in the header, and the hash of a source file of the example is that of the file (the trace is of this version of the program).
+// test_example_traces.js — the built-in examples (examples/examples.json): every trace is well-formed for the current tracer and matches the example's shipped
+// sources: regions nest as their depths say, each event is in a region opened before it, an event with a file has its hash in the header, and a shipped
+// source's hash is that of the file.
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -22,7 +22,7 @@ const sha = path => createHash('sha256').update(readFileSync(path)).digest('hex'
 for (const example of examples) {
     const sources = files(example.cpp_files).filter(f => /\.(cpp|hpp|h)$/.test(f));
     for (const [backend, entry] of Object.entries(example.trace)) {
-        // (the trace of the first process of an MPI program; the others have their own tests)
+        // the trace of the first process of an MPI program; the others have their own tests
         const path = Array.isArray(entry) ? entry[0] : entry;
         if (typeof path !== 'string' || !existsSync(join(ROOT, path))) continue;
         describe(`${example.title}, ${backend}`, () => {
@@ -41,7 +41,7 @@ for (const example of examples) {
                     if (e.type === 'region') {
                         expect(e.region_depth).toBeGreaterThanOrEqual(1);
                         stack.length = Math.min(stack.length, e.region_depth - 1);
-                        // (the region around it is the one that is open at that depth)
+                        // its region is the one open at that depth
                         if (e.region_depth > 1) expect(e.region).toBe(stack[e.region_depth - 2]);
                         else expect(e.region).toBeUndefined();
                         stack[e.region_depth - 1] = e.label;

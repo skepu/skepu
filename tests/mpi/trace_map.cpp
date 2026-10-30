@@ -50,9 +50,9 @@ int main()
 		idx(c, a, b);
 	}
 
-	scale(a, c, b.elem(2)); // (an element of a container as a uniform argument)
-	std::cout << "element: " << c[3] << " " << c[n - 1] << "\n"; // (the host reads: c is gathered)
-	skepu::external([&] { c(0) = 42; }, skepu::write(c));      // (and written: c goes back to the owners)
+	scale(a, c, b.elem(2));
+	std::cout << "element: " << c[3] << " " << c[n - 1] << "\n"; // the host reads: c is gathered
+	skepu::external([&] { c(0) = 42; }, skepu::write(c));      // and written: c goes back to the owners
 
 	skepu::Matrix<int> m(12, 40, "m");
 	skepu::external([&] { for (size_t i = 0; i < 12; ++i) for (size_t j = 0; j < 40; ++j) m(i, j) = (int)((i + j) % 9); }, skepu::write(m));
@@ -62,7 +62,7 @@ int main()
 	rows(few, m);
 	std::cout << "rows: " << few[4] << "\n";
 
-	// (a skeleton that is declared over several lines: what comes after it keeps its line numbers, which the trace has: check_trace.py)
+	// a skeleton that is declared over several lines: what comes after it keeps its line numbers, which the trace has: check_trace.py
 	auto multi_line = skepu::Map<1>([](int a)
 	{
 		return a + 3;
@@ -98,9 +98,9 @@ int main()
 	const int squares = sum_squares(a);
 	const int by_index = sum_index();
 	prefix(scanned, a);
-	SKEPU_TRACE_SNAPSHOT(scanned); // (a snapshot of a distributed container: gathered, and written by the first process)
+	SKEPU_TRACE_SNAPSHOT(scanned); // a snapshot of a distributed container: gathered, and written by the first process
 	SKEPU_TRACE_SNAPSHOT(m);
-	// (tensors too: the heat diffusion example snapshots a container of any dimension)
+	// tensors too: the heat diffusion example snapshots a container of any dimension
 	skepu::Tensor3<int> volume(6, 2, 3, "volume", 5);
 	skepu::Tensor4<int> hypervolume(5, 2, 2, 3, "hypervolume", 6);
 	SKEPU_TRACE_SNAPSHOT(volume);
@@ -114,7 +114,7 @@ int main()
 	skepu::Vector<int> fresh(40, "fresh", 7), cold(30, "cold");
 	skepu::Matrix<int> fresh_matrix(4, 5, "fresh_matrix", 3);
 	std::cout << "fresh: " << fresh[3] << " " << fresh_matrix(2, 2) << " " << cold[1] << "\n";
-	skepu::external([&] { cold(0) = 42; cold(29) = 43; }, skepu::write(cold)); // (the old content of what is written is not needed)
+	skepu::external([&] { cold(0) = 42; cold(29) = 43; }, skepu::write(cold)); // the old content of what is written is not needed
 	std::cout << "cold: " << cold[0] << " " << cold[1] << " " << cold[29] << "\n";
 	std::cout << "reductions: " << total << " " << row_totals[3] << " " << col_totals[5] << " " << whole << " " << squares << " " << by_index
 		<< " " << scanned[n - 1] << "\n";
@@ -131,7 +131,7 @@ int main()
 	pairs_reduce.setLabel("pairs_reduce");
 	pairs_reduce.setReduceMode(skepu::ReduceMode::RowWise)(row_totals, vertical, horizontal);
 	pairs_reduce.setReduceMode(skepu::ReduceMode::ColWise)(col_totals, vertical, horizontal);
-	pairs_out.flush(); // (operator() reads the host copy)
+	pairs_out.flush(); // operator() reads the host copy
 	std::cout << "pairs: " << pairs_out(11, 39) << " " << row_totals[3] << " " << col_totals[5] << "\n";
 
 	// the overlap and pool skeletons: a vector, the rows and columns of a matrix, matrices, tensors

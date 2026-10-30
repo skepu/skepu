@@ -66,7 +66,7 @@ describe('lowering a design', () => {
         // w1 writes a; w2 reads it and writes the next update of the same data (a2); rd reads a too, so it must come before w2
         const { d, id } = make([['a'], ['a2', 'Vector', undefined, 'a'], ['r']], [['w1', 'Map'], ['rd', 'Map'], ['w2', 'Map']],
             [['w1', 'a', 'out'], ['a', 'rd', 'elwise'], ['rd', 'r', 'out'], ['a', 'w2', 'elwise'], ['w2', 'a2', 'out']]);
-        d.positions[id.rd].y = 500;                     // (below w2 by place: the data decides)
+        d.positions[id.rd].y = 500;                     // below w2 by place: the data decides
         d.positions[id.w2].y = 200;
         const r = lower(d);
         expect(r.errors).toEqual([]);
@@ -90,7 +90,7 @@ describe('lowering a design', () => {
         const { d, id } = make([['a'], ['a2', 'Vector', undefined, 'a']], [['f', 'Map']], [['a', 'f', 'elwise'], ['f', 'a2', 'out']]);
         const r = lower(d);
         expect(r.errors).toEqual([]);
-        expect(r.versions).toEqual({ [id.a2]: { version: 1, count: 1 } });             // (one update: no number)
+        expect(r.versions).toEqual({ [id.a2]: { version: 1, count: 1 } });             // one update: no number
         expect(r.program.calls[0]).toMatchObject({ name: 'f' });
         expect(r.warnings.map(w => w.msg).join()).not.toMatch(/undetermined/);
     });
@@ -115,7 +115,7 @@ describe('lowering a design', () => {
         expect(r.program.containers.map(c => [c.name, c.nodes.length])).toEqual([['a', 2], ['b', 1], ['c', 1]]);
         const text = emitCpp(r.program).text;
         expect(text.match(/skepu::Vector<float> a\(/g)).toHaveLength(1);
-        expect(r.program.calls[0].out.id).toBe(id.a2);                                 // (the node that is written is the update)
+        expect(r.program.calls[0].out.id).toBe(id.a2);
     });
 
     it('keeps the calls of a loop together, whatever their places', () => {
@@ -361,7 +361,7 @@ describe('the lines of a program that a trace has nodes for', () => {
 
 describe('in place', () => {
     const warnings = (pattern, role = 'elwise') => {
-        const { d } = make([['a'], ['a2', 'Vector', undefined, 'a']], [['f', pattern]], [['a', 'f', role], ['f', 'a2', 'out']]);        // (an update of what it reads)
+        const { d } = make([['a'], ['a2', 'Vector', undefined, 'a']], [['f', pattern]], [['a', 'f', role], ['f', 'a2', 'out']]);        // an update of what it reads
         return lower(d).warnings.map(w => w.msg).filter(m => /place|proxy/.test(m));
     };
     it('is fine for a Map', () => expect(warnings('Map')).toEqual([]));
@@ -442,7 +442,7 @@ describe('random streams', () => {
         const cpp = emitCpp(program).text;
         expect(cpp).toContain('skepu::PRNG noise(7);');
         const { d: plain } = withStream();
-        expect(emitCpp(lower(plain).program).text).toContain('skepu::PRNG noise;');          // (no seed: the default one, and the name)
+        expect(emitCpp(lower(plain).program).text).toContain('skepu::PRNG noise;');          // no seed: the default one, and the name
         expect(emitCpp(lower(plain).program).text).not.toContain('SKEPU_RAND_DEFAULT_SEED');
         expect(cpp).toContain('gen.setPRNG(noise);');
         expect(cpp).toContain('gen2.setPRNG(noise);');
@@ -621,7 +621,7 @@ describe('I/O blocks', () => {
         const cpp = emitCpp(r.program).text, py = emitPython(r.program).text;
         expect(cpp).toContain('skepu::io::cout << b << "\\n";');
         expect(cpp).toContain('skepu::io::cout << "total: " << total_result << "\\n";');
-        expect(cpp.match(/skepu::io::cout << "total: "/g)).toHaveLength(1);          // (printed by the block, not by the call too)
+        expect(cpp.match(/skepu::io::cout << "total: "/g)).toHaveLength(1);          // printed by the block, not by the call too
         expect(cpp).not.toContain('skepu::external("show"');
         expect(py).toContain('print(b)');
         expect(py.match(/print\("total:"/g)).toHaveLength(1);
@@ -631,7 +631,7 @@ describe('I/O blocks', () => {
     it('print a result only when it is connected to them, and come after the call that makes the result', () => {
         const { d, id } = design();
         d.edges = d.edges.filter(e => e.role !== 'scalar');
-        expect(emitCpp(lower(d).program).text).not.toContain('total: ');          // (the call does not print it)
+        expect(emitCpp(lower(d).program).text).not.toContain('total: ');          // the call does not print it
         d.edges.push({ id: 'sc', from: id.total, to: id.show, role: 'scalar' });
         d.positions[id.show].y = -500; d.positions[id.total].y = 900;
         const r = lower(d);
@@ -951,7 +951,7 @@ describe('random designs', () => {
                 expect(emitCpp(r.program).text).toContain('int main');
                 expect(emitPython(r.program).text).toContain('def main');
                 const trace = synthesizeTrace(r.program, { dir: '/x', file: 'a.cpp', lines: [], sites: [] });
-                if (!trace.truncated) expect(compareTrace(r.program, trace.events)).toEqual([]);      // (a trace that has the first iterations of the loops is not all of the program)
+                if (!trace.truncated) expect(compareTrace(r.program, trace.events)).toEqual([]);      // a trace that has the first iterations of the loops is not all of the program
             }
     });
 
@@ -1133,7 +1133,7 @@ describe('where the containers are declared', () => {
         const before = (lines, name) => lines.findIndex(l => new RegExp(`skepu::Vector<float> ${name}\\(`).test(l));
         const loop = emitCpp(lower(design('loop').d).program, firstUse).text.split('\n');
         const forAt = loop.findIndex(l => l.includes('for (size_t'));
-        for (const name of ['a', 'b', 'c']) expect(before(loop, name)).toBeLessThan(forAt);          // (a loop makes its own again for each iteration)
+        for (const name of ['a', 'b', 'c']) expect(before(loop, name)).toBeLessThan(forAt);          // a loop makes its own again for each iteration
 
         const lines = emitCpp(lower(design('scope').d).program, firstUse).text.split('\n');
         const open = lines.findIndex(l => l.includes('SKEPU_TRACE_SCOPE'));
@@ -1163,7 +1163,7 @@ describe('where the containers are declared', () => {
         expect(order.indexOf('+b')).toBeGreaterThan(order.indexOf('{Group'));
         expect(order.indexOf('+c')).toBeLessThan(order.indexOf('{Group'));               // c is before it
         expect(order.indexOf('-b')).toBeLessThan(order.indexOf('h'));                     // a and b are freed at the end of the scope
-        expect(order.slice(-2)).toEqual(['-noise', '-unused']);        // (freed in the reverse of the order that they were made)
+        expect(order.slice(-2)).toEqual(['-noise', '-unused']);        // freed in the reverse of the order that they were made
         expect(compareTrace(r.program, trace.events)).toEqual([]);
         const grouped = synthesizeTrace(r.program, { dir: '/x', file: 'a.cpp', lines: cpp.lines, sites: cpp.sites }).events.filter(e => e.type === 'allocation');
         expect(grouped).toHaveLength(6);
@@ -1210,7 +1210,7 @@ describe('where the skeletons are declared', () => {
         const loop = emitCpp(lower(design('loop')).program, first).text.split('\n');
         const forAt = at(loop, /for \(size_t/);
         expect(at(loop, /auto f =/)).toBeLessThan(forAt);
-        expect(at(loop, /auto g =/)).toBeLessThan(forAt);               // (both are in the loop: before it)
+        expect(at(loop, /auto g =/)).toBeLessThan(forAt);               // both are in the loop: before it
         const scope = emitCpp(lower(design('scope')).program, first).text.split('\n');
         const open = at(scope, /SKEPU_TRACE_SCOPE/);
         expect(at(scope, /auto f =/)).toBeGreaterThan(open);
@@ -1249,7 +1249,7 @@ describe('whitespace', () => {
         expect(comments(py, '#')).toEqual(['# mixing']);
         expect(cpp).not.toMatch(/TODO|generated by the SkeVU designer/);
         expect(py).not.toMatch(/TODO|generated by the SkeVU designer/);
-        expect(py).toMatch(/with skepu\.external\(read=prefix, write=summary, label="inspect"\):\n {8}pass\n/);       // (an empty body needs a pass)
+        expect(py).toMatch(/with skepu\.external\(read=prefix, write=summary, label="inspect"\):\n {8}pass\n/);       // an empty body needs a pass
         expect(cpp).toMatch(/skepu::external\("inspect", skepu::read\(prefix\), \[&\]\n\t\{\n\t\}, skepu::write\(summary\)\);/);
         expect(cpp.split('\n').length).toBeLessThan(emitCpp(r.program).text.split('\n').length);
     });
@@ -1276,7 +1276,7 @@ describe('whitespace', () => {
     it('keeps the containers before their first use with the call when it is readable', () => {
         const text = emitCpp(program(), { whitespace: 'readable', containerPlacement: 'first-use' }).text, lines = text.split('\n');
         const at = re => lines.findIndex(l => re.test(l));
-        expect(lines[at(/Vector<float> ramp\(/) - 1]).toBe('\t// the program');           // (the first fragment follows the name of the section)
+        expect(lines[at(/Vector<float> ramp\(/) - 1]).toBe('\t// the program');           // the first fragment follows the name of the section
         expect(lines[at(/Vector<float> noise\(/) - 1]).toBe('');                          // the next is apart
         expect(lines[at(/Vector<float> ramp\(/) + 1]).toMatch(/^\tramp_up\(ramp\);/);       // the container is with the call that needs it
         expect(lines[at(/Vector<float> table\(/) + 1]).toMatch(/Vector<float> values\(/);   // two containers for one call: together
@@ -1358,7 +1358,7 @@ describe('objects: data nodes that are updates of the same data', () => {
         expect(detachNode(d, node(d, id.c))).toBe('a_2');
         expect(node(d, id.c)).toMatchObject({ label: 'a_2' });
         expect(objectKey(node(d, id.c))).not.toBe(objectKey(node(d, id.a)));
-        expect(detachNode(d, node(d, id.c))).toBeNull();                                 // (it is one already)
+        expect(detachNode(d, node(d, id.c))).toBeNull();                                 // it is one already
     });
 
     it('have one format: what is edited is the format of all the nodes', () => {
@@ -1390,7 +1390,7 @@ describe('objects: data nodes that are updates of the same data', () => {
         const trace = synthesizeTrace(r.program, { dir: '/x', file: 'a.cpp', lines: cpp.lines, sites: cpp.sites });
         expect(trace.events.filter(e => e.type === 'allocation').map(e => e.label)).toEqual(['a', 'z']);
         expect(trace.events.filter(e => e.type === 'transfer').map(e => [e.label, e.direction])).toEqual([['a', 'host-to-device'], ['a', 'device-to-host']]);
-        expect(transfers(r.program).map(t => [t.container, t.consumer])).toEqual([[id.a, id.f], [id.a2, id.g]]);      // (by the node that is read)
+        expect(transfers(r.program).map(t => [t.container, t.consumer])).toEqual([[id.a, id.f], [id.a2, id.g]]);      // by the node that is read
         expect(compareTrace(r.program, trace.events)).toEqual([]);
     });
 });
@@ -1410,7 +1410,7 @@ describe('anonymous skeletons and lambdas for single functions', () => {
         expect(cpp).toMatch(/\tskepu::Map<1>\(sq_f\)\n\t\t\.setBackend\(skepu::BackendSpec\{"cpu"\}\)\n\t\t\(b, a\);/);
         expect(cpp).toMatch(/float total_result = skepu::MapReduce<1>\(total_map, total_reduce\)\(b\);/);
         expect(cpp).toMatch(/\tskepu::Scan\(sm_f\)\n\t\t\.setScanMode\(skepu::ScanMode::Exclusive\)\n\t\t\(c, b\);/);
-        expect(cpp).toContain('float sq_f(float a)');                        // (a function that is not a lambda is before main, as before)
+        expect(cpp).toContain('float sq_f(float a)');                        // not a lambda: before main
     });
 
     it('have a lambda in the expression of the call, and are named by the call in the trace', () => {
@@ -1431,10 +1431,10 @@ describe('anonymous skeletons and lambdas for single functions', () => {
         expect(cpp).toMatch(/auto total = skepu::MapReduce<1>\(total_map, \[\]\(float a, float b\) -> float/);
         expect(cpp).toContain('float total_map(float a)');
         expect(cpp).not.toContain('float total_reduce(');
-        expect(emitCpp(lower(design().d).program, { userFunctions: 'lambdas' }).text).not.toContain('float sq_f(');      // (the option is the default)
+        expect(emitCpp(lower(design().d).program, { userFunctions: 'lambdas' }).text).not.toContain('float sq_f(');      // the option applies as the default
         const off = design().d;
         off.skeletons.find(s => s.label === 'sq').lambda = { _f: false };
-        expect(emitCpp(lower(off).program, { userFunctions: 'lambdas' }).text).toContain('float sq_f(float a)');         // (and what a skeleton says wins)
+        expect(emitCpp(lower(off).program, { userFunctions: 'lambdas' }).text).toContain('float sq_f(float a)');         // the skeleton's setting wins
     });
 });
 
@@ -1472,7 +1472,7 @@ describe('MapPool and the modes of Reduce', () => {
 
     it('have a pool with its own stride, a pool that does not fit, and a reduction of the wrong sort of data, said', () => {
         const d = poolingDesign();
-        d.containers.find(c => c.label === 'pooled').auto = false;          // (an automatic output has the size that the pool makes)
+        d.containers.find(c => c.label === 'pooled').auto = false;          // auto: the size is the pool's
         const pool = d.skeletons.find(s => s.label === 'pool');
         pool.params.stride = [3, 1];
         const found = lower(d);
@@ -1571,7 +1571,7 @@ describe('skeleton instancing: the option of the program, and what a skeleton sa
         const anon = emitCpp(r.program, { skeletonInstancing: 'anonymous' }).text;
         expect(anon).not.toContain('auto f =');
         expect(anon).toContain('skepu::Map<1>(f_f)(b, a);');
-        expect(emitPython(r.program, { skeletonInstancing: 'anonymous' }).text).toContain('f = skepu.Map(f_f)');          // (SkePY declares it)
+        expect(emitPython(r.program, { skeletonInstancing: 'anonymous' }).text).toContain('f = skepu.Map(f_f)');          // SkePY declares it
     });
 
     it('is what the skeleton sets, when it sets one, and never for a host block', () => {

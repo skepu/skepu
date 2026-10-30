@@ -245,7 +245,7 @@ TEST_CASE("BLAS level 3 floating point")
 	using TestType = float;
 	size_t m = n + 2;
 	size_t k = n + 1;
-	skepu::Matrix<TestType> C(m, n), A(m, k), B(n, k); // (B is transposed)
+	skepu::Matrix<TestType> C(m, n), A(m, k), B(n, k); // B is transposed
 
 	fill_random(A, 0, 10);
 	fill_random(B, 0, 10);

@@ -1,7 +1,6 @@
-// The times of the calls of the CUDA and OpenCL backends come from the devices (CUDA events, profiling of OpenCL markers): the host
-// does not wait for the device at a call. A kernel that
-// takes long is queued several times: the host is back from the calls before the kernels are done, and the trace has the time of
-// the device for each call (a time of the host would be that of the launch), one after the other, as they run in the stream.
+// CUDA and OpenCL call times come from the devices (CUDA events, profiling of OpenCL markers): the host does not wait for the device at a call. A kernel
+// that takes long is queued several times: the host is back before the kernels are done, and the trace has the device time of each call (a host time
+// would be that of the launch), one after the other, as they run in the stream.
 #include "../../external/catch2/catch.hpp"
 #include "../../external/nlohmann/json.hpp"
 
@@ -35,14 +34,14 @@ TEST_CASE("the trace has the time of the device for calls that are not waited fo
 	skepu::Vector<float> in(n, "in", 0.5f), out(n, "out");
 	heavy_map.setBackend(skepu::BackendSpec{kBackend});
 	heavy_map.setLabel("heavy_map");
-	heavy_map(out, in); // (the first use of the device: its context, the code of the kernel)
+	heavy_map(out, in); // the first use of the device: its context, the code of the kernel
 	out.flush();
 
 	const auto host_start = clock::now();
 	for (size_t i = 0; i < calls; ++i)
 		heavy_map(out, in);
 	const double host_us = std::chrono::duration<double, std::micro>(clock::now() - host_start).count();
-	out.flush(); // (the program waits for the device here)
+	out.flush(); // the program waits for the device here
 	const double total_us = std::chrono::duration<double, std::micro>(clock::now() - host_start).count();
 
 	skepu::tracing::tracer().flush();
@@ -56,7 +55,7 @@ TEST_CASE("the trace has the time of the device for calls that are not waited fo
 		if (e.value("type", "") == "skeleton_call" && e.value("label", "") == "heavy_map")
 			intervals.emplace_back(e["start"].get<unsigned long>(), e["end"].get<unsigned long>());
 	REQUIRE(intervals.size() == calls + 1);
-	intervals.erase(intervals.begin()); // (the first call, which started the device)
+	intervals.erase(intervals.begin()); // the first call, which started the device
 
 	// the host did not wait for the kernels: it is back long before they are done
 	CHECK(host_us < total_us / 2);

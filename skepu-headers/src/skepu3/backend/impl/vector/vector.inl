@@ -261,7 +261,7 @@ namespace skepu
 		}
 		else
 	  {
-	    // (memory that the vector does not own: its life ends)
+	    // memory that the vector does not own: its life ends
 	    if (this->m_data)
 	      SKEPU_TRACE_DEALLOCATION(this->getObjectID(), this->getLabel(), __LINE__);
 	    DEBUG_TEXT_LEVEL1("Vector: Note, did not deallocate data.");
@@ -431,7 +431,7 @@ namespace skepu
 		
 		if (m_size < other.m_size)
 		{
-			// (a vector that is empty, or was moved from, gets its memory here: its life starts)
+			// a vector that is empty, or was moved from, gets its memory here: its life starts
 			const bool first = !m_data;
 			if (m_data && m_deallocEnabled)
 				backend::deallocateHostMemory<T>(m_data);

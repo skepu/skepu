@@ -79,7 +79,7 @@ namespace skepu
 					baseIndex + startIdx,
 					(this->m_mode == ReduceMode::ColWise) ? 1 : 0,
 					this->m_row_origin,
-					sizeof(Ret) * numThreads * outArity  // (the shared memory of the reduction: a part for each output)
+					sizeof(Ret) * numThreads * outArity
 				);
 				
 				// Make sure the data is marked as changed by the device

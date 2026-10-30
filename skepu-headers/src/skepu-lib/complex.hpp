@@ -380,7 +380,7 @@ complex<T> operator*(T lhs, complex<T> rhs)
 
 // OPERATOR /
 
-// (Smith's algorithm, which does not overflow in the denominator)
+// Smith's algorithm, which does not overflow in the denominator
 template<typename T>
 #ifdef SKEPU_CUDA
 	__host__ __device__

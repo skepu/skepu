@@ -12,7 +12,7 @@ html.dark-mode {
 }
 
 body, html {
-  font-family: sans-serif;   /* (what the menu bar, the info window and the rest have: the dialogs, the tour and the context menu are outside them, and have this) */
+  font-family: sans-serif;   /* the dialogs, tour and context menu are outside the elements that set a font */
   padding: 0; margin: 0;
   display: flex;
   flex-flow: column;
@@ -243,7 +243,7 @@ html.dark-mode .menu-field input { border-color: #4a4660; }
   min-width: 170px;
   z-index: 2000;
   font-family: sans-serif;
-  font-size: 0.88em;   /* (the items of a menu of the menu bar: 1.1em of the 0.8em of the bar) */
+  font-size: 0.88em;   /* as the menu bar items: 1.1em of the bar's 0.8em */
 }
 
 .context-menu.open
@@ -390,7 +390,7 @@ html.dark-mode .shortcuts-foot { border-color: #3a3848; }
 html.dark-mode .shortcuts-tour:hover, html.dark-mode .welcome-tour-btn:hover { background: #464359; }
 
 /* The guided tour (script/tour.js): a layer over the page, a hole of light where the step is, and the text */
-/* (the layer is not in the way: the light is a hole in the dimmed page, and what is in it can be used; the dimmed page and the text are not) */
+/* the layer is not in the way: the light is a hole in the dimmed page, and what is in it can be used; the dimmed page and the text are not */
 .tour-layer { position: fixed; inset: 0; z-index: 2000; pointer-events: none; }
 .tour-layer.tour-dim { background: rgba(0, 0, 0, 0.55); pointer-events: auto; }
 .tour-spot {
@@ -661,22 +661,21 @@ html.dark-mode #sim-progress-handle   { background: #e8720c; }
   transition: background-color 0.1s;
 }
 
-/* The entry of what the pointer is over in the graph: orange with dark text, which stands out in both modes (lighter and softer on the light panel, deeper and stronger on the dark one; the orange of the graph is LEGEND_MATCH in graph_style.js). */
+/* Hovered or locked legend entry: orange with dark text, lighter on the light panel, deeper on the dark one. The graph's orange is LEGEND_MATCH in graph_style.js. */
 .legend-item-hovered,
 .legend-item-locked,
 .legend-interactive:not(.legend-locked) .legend-item[data-legend-key]:hover {
   background-color: #fbc48a;
 }
 
-/* An entry that marks its nodes and edges in the graph (LegendView hoverGraph) answers the pointer: the same orange, and a pointer. */
+/* Entries that mark graph elements (LegendView hoverGraph) show a pointer */
 .legend-interactive .legend-item[data-legend-key] {
   cursor: pointer;
 }
 
-/* While an entry is kept (a click on it: the mark stays in the graph until a click on it again, or on another entry) the other entries only show that they can be
-   clicked, by the pointer: the orange is the entry that is kept. */
+/* While an entry is locked, the other entries show only the pointer; the orange is the locked entry. */
 
-/* (!important: the text of an entry has its colour in a style attribute, which LegendView makes for the mode) */
+/* !important: LegendView sets the text colour in a style attribute */
 .legend-item-hovered,
 .legend-item-hovered span,
 .legend-item-locked,
@@ -738,8 +737,8 @@ html.dark-mode .legend-interactive:not(.legend-locked) .legend-item[data-legend-
   background: white;   /* opaque base so the snapshot overlay (background:inherit) is solid */
 }
 
-/* The panes that open and close slide the same way: the timeline by its height (the transition is always there), the legend and the source pane
-   by panes.js (the class pane-sliding is on a pane only while it slides). */
+/* Panes that open and close slide alike: the timeline by its height (its transition is always on), the legend and source pane via panes.js (class
+   pane-sliding only while sliding). */
 :root { --pane-slide: 0.15s ease; --reveal-fade: 0.3s ease; }
 
 .pane-closed { display: none !important; }
@@ -750,7 +749,7 @@ html.dark-mode .legend-interactive:not(.legend-locked) .legend-item[data-legend-
   transition: max-height var(--pane-slide), max-width var(--pane-slide), padding var(--pane-slide), border-width var(--pane-slide);
 }
 
-/* Not on the first load of a trace: the panes are in place before the graph is seen (early.js sets the class, ui.js takes it away) */
+/* Not on the first trace load: the panes are in place before the graph shows (early.js sets the class, ui.js removes it) */
 html.no-pane-anim #gantt-pane { transition: none; }
 
 @media (prefers-reduced-motion: reduce)
@@ -759,14 +758,14 @@ html.no-pane-anim #gantt-pane { transition: none; }
   :root { --reveal-fade: 0.01s; }
 }
 
-/* From the splash to the viewer (reveal.js): a curtain. While the first trace is drawn the panes are in their places under the splash, which is
-   opaque and the only thing that changes: it fades out, and what is under it is as it will be. (Fading the panes in as well would let the page
-   behind them show through both while they cross.) */
+/* Splash to viewer (reveal.js): a curtain. While the first trace is drawn the panes sit in place under the splash, which is opaque and the only thing
+   that changes: it fades out and what is under it is already final. Fading the panes in too would let the page behind show through both while they
+   cross. */
 #welcome-panel { transition: opacity var(--reveal-fade); }
 #welcome-panel.fading { opacity: 0; pointer-events: none; }
-/* The splash that is held while the first trace is drawn: out of the layout (reveal.js gives it the pixels of the place and size that it had),
-   above the panes. Its background goes on to the bottom of the window, over the legend and the timeline that are under the place that it had. */
-/* (no splash: where a trace is on its way, or in an editor: the panel is a plain curtain, see early.js) */
+/* The splash held while the first trace is drawn: out of the layout (reveal.js gives it the pixels of its old place and size), above the panes. Its
+   background extends to the bottom of the window, over the legend and timeline under its old place. */
+/* No splash (a trace is on its way, or in an editor): the panel is a plain curtain; see early.js */
 html.no-splash .welcome-card { visibility: hidden; }
 #welcome-panel.welcome-overlay { position: fixed; inset: auto; z-index: 500; overflow: visible; box-sizing: border-box; pointer-events: none; }
 #welcome-panel.welcome-overlay::before { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 100vh; background: inherit; }
@@ -1330,7 +1329,7 @@ body.hljs-theme-dark .hljs-ln tr:hover
 }
 
 
-/* The badges of the graph before the one that is being drawn: they stay until the new ones can replace them at once, dimmed if it takes a while */
+/* Badges of the previous graph: kept until the new ones replace them at once, dimmed if that takes a while */
 #cpp_tab_panes.badges-stale .badge
 {
   opacity: 0.45;
@@ -1660,7 +1659,7 @@ html.dark-mode .cpp-tab:hover {
   position: absolute;
   inset: 0;
   z-index: 5;
-  overflow-y: auto;      /* (only if the window is too small for the card even with its list at the least height) */
+  overflow-y: auto;      /* only if the window is too small for the card even with its list at the least height */
   display: flex;
   padding: 3em 1em;
   background: #f5f5f7;
@@ -1672,7 +1671,7 @@ html.dark-mode .cpp-tab:hover {
   background: #fff;
   border-radius: 0.8em;
   padding: 3em 4em;
-  max-width: calc(520px + 8em);   /* (520px of text between the paddings: the card has box-sizing border-box, for its max-height) */
+  max-width: calc(520px + 8em);   /* 520px of text between the paddings: the card has box-sizing border-box, for its max-height */
   width: 100%;
   box-shadow: 0 2px 12px rgba(0,0,0,0.07);
   font-family: monospace;
@@ -1683,7 +1682,7 @@ html.dark-mode .cpp-tab:hover {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;      /* (only if even the least list does not fit: a window that is far too small) */
+  overflow-y: auto;      /* only if even the least list does not fit: a window that is far too small */
 }
 .welcome-card > * { flex: 0 0 auto; }
 /* The section shrinks, but not below its heading, the language control and a few rows of the list (a height: the automatic minimum is that of the
@@ -1694,10 +1693,10 @@ html.dark-mode .cpp-tab:hover {
   flex: 0 1 auto;
   min-height: 11em;
 }
-/* (only the list gives way: the heading and the language control keep their height) */
+/* only the list gives way: the heading and the language control keep their height */
 #welcome-examples-section > :not(#welcome-examples-list) { flex: 0 0 auto; }
 
-/* The heading with the control for the language on its right, in the same row, above the line of the heading */
+/* Heading with the language control at its right */
 .welcome-examples-head {
   display: flex;
   align-items: center;
@@ -1785,9 +1784,9 @@ html.dark-mode .logo.logo-dark { display: block; }
   gap: 0.5em;
   margin-top: 0.4em;
   flex: 1 1 auto;
-  min-height: 0;         /* (the section has the least height: heading, control and about two rows of pills) */
+  min-height: 0;         /* the section has the least height: heading, control and about two rows of pills */
   overflow-y: auto;
-  padding-right: 0.3em;  /* (the scroll bar does not cover the pills) */
+  padding-right: 0.3em;  /* the scroll bar does not cover the pills */
 }
 
 /* The language of the examples (C++ or Python): a segmented control */
@@ -1901,7 +1900,7 @@ body.welcome-mode #split-gutter { display: none !important; }
 html.editor [data-only="web"], html:not(.editor) [data-only="editor"] { display: none !important; }
 html.editor #cpp_container, html.editor #info-resizer { display: none; }
 
-/* The colour bar of the legend opens the menu of the colour spectra */
+/* The colour bar opens the spectrum menu */
 .legend-clickable {
   cursor: pointer;
 }

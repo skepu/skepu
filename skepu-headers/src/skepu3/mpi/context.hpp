@@ -20,7 +20,7 @@
 [[noreturn]] inline void skepu_mpi_abort()
 {
 	std::cerr.flush();
-	skepu::mpi::trace::abort_flush(); // (the events that there are)
+	skepu::mpi::trace::abort_flush();
 	MPI_Abort(MPI_COMM_WORLD, 1);
 	std::abort();
 }
@@ -64,7 +64,7 @@ namespace skepu
 					MPI_Comm_size(comm, &size);
 
 #ifdef SKEPU_TRACING
-					// (the tracer is made before this is done, so that it is destroyed after: the trace is written when MPI ends)
+					// the tracer is made before this is done, so that it is destroyed after: the trace is written when MPI ends
 					::skepu_node::tracing::tracer();
 #endif
 					trace::init(comm, rank, size);
@@ -84,7 +84,7 @@ namespace skepu
 					int finalized = 0;
 					MPI_Finalized(&finalized);
 					if (!finalized)
-						trace::finish(comm); // (the clock again and the trace file: every process does this before MPI ends)
+						trace::finish(comm); // the clock again and the trace file: every process does this before MPI ends
 					if (owned && !finalized)
 						MPI_Finalize();
 				}

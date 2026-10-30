@@ -50,14 +50,12 @@ export const kindOf = id => S.design.containers.some(c => c.id === id) ? 'contai
 
 export const effective = id => effectiveContainers(S.design).find(c => c.id === id);
 
-/** Persists the design (JSON) in the page storage. */
 export function save() { const text = JSON.stringify(S.design); try { localStorage.setItem(STORAGE, text); } catch { /* private window: it is only not remembered */ } return text; }
 
 export const shownTransfers = () => transfers((S.result.ok ? S.result : S.lastGood)?.program ?? { steps: [], containers: [], calls: [] });
 
 export const descendantOf = (id, ancestor) => { for (let p = find(id)?.parent; p; p = find(p)?.parent) if (p === ancestor) return true; return false; };
 
-/** Shows a message in the menu bar for a few seconds. */
 export function say(message) {
     $('#message').textContent = message;
     clearTimeout(say.timer);
@@ -78,12 +76,12 @@ export function download(name, content, type) {
 export const S = {
     design: restore() ?? sampleDesign(),
     result: null,                // lower(design): { ok, errors, warnings, program, dataRegion }
-    lastGood: null,              // the last error-free result
+    lastGood: null,
     cy: null, legend: null, source: null,                    // graph, legend, code view
     connecting: null,            // null, or { source: id | null }
     adding: null,                // null, or the type a canvas click adds
     lastAdd: stored('skevu-designer-add', 'Map'),       // the last added type (what `A` returns to)
-    inspected: null,             // what the inspector shows
+    inspected: null,
     programs: null,              // { cpp, python }: what the emitters made, { text, lines, sites }; and `trace`: { text, name, events, ids, ranges } (the trace that it could have)
     /**
      * The origin of the current selection: 'graph' (click or edit: the code scrolls), 'code' (line, badge or problem: the graph pans and zooms) or
@@ -97,7 +95,6 @@ export const S = {
 S.result = lower(S.design);
 S.lastGood = S.result.ok ? S.result : null;
 
-/** Undo and redo steps (history.js). */
 export const history = new History(JSON.stringify(S.design));
 
 /** The reactions to a design change, registered by the modules: rebuild, syncData, markProblems, renderCode, renderProblems, renderStatus, updateMenu, renderInspector. */

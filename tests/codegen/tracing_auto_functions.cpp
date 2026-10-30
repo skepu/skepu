@@ -71,7 +71,7 @@ int main()
 	};
 	CHECK(count("pipeline") == 1);
 	CHECK(count("stage") == 2);
-	// (the regions around a region that is in the trace are in it, also if they hold nothing else; main has none)
+	// the regions around a region that is in the trace are in it, also if they hold nothing else; main has none
 	CHECK(count("app::Runner::run") == 1 && count("main") == 0);
 	CHECK(count("single") == 0);
 	CHECK(count("plain") == 0 && count("calls_plain") == 0 && count("helper") == 0 && count("scale") == 0);

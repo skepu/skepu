@@ -44,14 +44,14 @@ describe('a pane that the user opens', () => {
     it('slides from nothing to the size it has: the class goes at once, the limit is 0 and then the size, and everything is clean when it is done', () => {
         const el = pane({ closed: true, scrollHeight: 120 });
         const seen = [];
-        // (what the limit is when the browser first sees the pane open: this is where the transition starts from)
+        // what the limit is when the browser first sees the pane open: this is where the transition starts from
         Object.defineProperty(el, 'offsetWidth', { get() { seen.push(el.style.maxHeight); return 380; } });
         setPaneOpen(el, true, 'height', true);
         expect(el.classes.has('pane-closed')).toBe(false);
         expect(el.classes.has('pane-sliding')).toBe(true);
-        expect(seen).toEqual(['0px']);                                        // (the reflow came while the limit was 0)
-        expect(el.style.maxHeight).toBe('120px');                             // (and then it is the size that it has)
-        expect(el.style.paddingTop).toBe('');                                 // (the padding is its own again: it comes back with the transition)
+        expect(seen).toEqual(['0px']);                                        // the reflow came while the limit was 0
+        expect(el.style.maxHeight).toBe('120px');
+        expect(el.style.paddingTop).toBe('');                                 // the padding is its own again: it comes back with the transition
         vi.advanceTimersByTime(PANE_SLIDE_MS + 60);
         expect(el.classes.has('pane-sliding')).toBe(false);
         expect(inline(el)).toEqual({});
@@ -69,14 +69,14 @@ describe('a pane that the user closes', () => {
     it('slides to nothing and is closed (display none) only when that is done', () => {
         const el = pane({ offsetHeight: 90 });
         setPaneOpen(el, false, 'height', true);
-        expect(el.classes.has('pane-closed')).toBe(false);                    // (still there: it is sliding)
-        expect(isPaneOpen(el)).toBe(false);                                   // (but it is not open: it is going)
-        expect(el.style.maxHeight).toBe('0px');                               // (from 90px, the size it had)
+        expect(el.classes.has('pane-closed')).toBe(false);                    // still there: it is sliding
+        expect(isPaneOpen(el)).toBe(false);                                   // but it is not open: it is going
+        expect(el.style.maxHeight).toBe('0px');                               // from 90px, the size it had
         expect([el.style.paddingTop, el.style.paddingBottom, el.style.borderTopWidth]).toEqual(['0px', '0px', '0px']);
         vi.advanceTimersByTime(PANE_SLIDE_MS + 60);
         expect(el.classes.has('pane-closed')).toBe(true);
         expect(el.classes.has('pane-sliding')).toBe(false);
-        expect(el.style.maxHeight).toBe('');                                  // (and its sizes are its own again, for the next time)
+        expect(el.style.maxHeight).toBe('');                                  // and its sizes are its own again, for the next time
         expect(isPaneOpen(el)).toBe(false);
     });
 
@@ -92,12 +92,12 @@ describe('a pane that the user closes', () => {
 describe('a slide that is not finished', () => {
     it('is ended by the next change of the pane, which then goes on from the pane as it was to be', () => {
         const el = pane();
-        setPaneOpen(el, false, 'height', true);          // (closing)
-        setPaneOpen(el, true, 'height', true);           // (the user changes their mind: open again)
+        setPaneOpen(el, false, 'height', true);
+        setPaneOpen(el, true, 'height', true);           // the user changes their mind: open again
         expect(el.classes.has('pane-closed')).toBe(false);
         expect(isPaneOpen(el)).toBe(true);
         vi.advanceTimersByTime(PANE_SLIDE_MS * 3);
-        expect(el.classes.has('pane-closed')).toBe(false);                    // (the closing that was waiting did not close it)
+        expect(el.classes.has('pane-closed')).toBe(false);                    // the closing that was waiting did not close it
         expect(el.style.maxHeight).toBe('');
     });
 

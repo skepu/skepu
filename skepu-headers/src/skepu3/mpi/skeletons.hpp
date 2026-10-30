@@ -71,7 +71,7 @@ namespace skepu
 							proxies.push_back(arg.getObjectID());
 					}
 				};
-				// (only the uniform arguments can be scalars: the others are given as an int that is not one)
+				// only the uniform arguments can be scalars: the others are given as an int that is not one
 				auto uniform = [&](auto index, auto &&arg) -> decltype(auto)
 				{
 					constexpr size_t K = decltype(index)::value;
@@ -99,7 +99,7 @@ namespace skepu
 				PrngShift(PRNG *&slot, size_t skip_uses, size_t total_uses): m_slot(slot), m_user(slot), m_total(total_uses)
 				{
 					if (!m_user)
-						return; // (the node-level skeleton says that there is no stream)
+						return; // the node-level skeleton says that there is no stream
 					m_local.reset(new PRNG(*m_user));
 					m_local->forward(skip_uses);
 					m_slot = m_local.get();
@@ -350,7 +350,6 @@ namespace skepu
 				return first;
 			}
 
-			// (the id of the random numbers that the call uses, for its event)
 			int random_id()
 			{
 #ifdef SKEPU_TRACING
@@ -400,7 +399,7 @@ namespace skepu
 
 			SKEPU_CHAIN_SKELETON_SETTERS(Base)
 			SKEPU_CHAIN(setReduceMode, Base)
-			// (a value that is a braced list is converted to the type of the start value)
+			// a value that is a braced list is converted to the type of the start value
 			template<typename U = T>
 			auto &setStartValue(U value)
 			{
@@ -425,7 +424,7 @@ namespace skepu
 				const size_t rows = arg.total_rows(), cols = arg.total_cols();
 				const mpi::BlockDistribution distribution{rows, mpi::size()};
 				const size_t local_rows = distribution.count(mpi::rank());
-				// (on every process, also on one that has no rows: making the tiles can be a collective operation)
+				// on every process, also on one that has no rows: making the tiles can be a collective operation
 				arg.tile_for_read();
 				auto traced = [&]
 				{
@@ -532,7 +531,7 @@ namespace skepu
 			using Base::Base;
 
 			SKEPU_CHAIN_SKELETON_SETTERS(Base)
-			// (a value that is a braced list is converted to the type of the start value)
+			// a value that is a braced list is converted to the type of the start value
 			template<typename U = Ret>
 			auto &setStartValue(U value)
 			{
@@ -540,7 +539,7 @@ namespace skepu
 				return *this;
 			}
 
-			// (the node-level skeleton does not let us read the default size)
+			// the node-level skeleton does not let us read the default size
 			auto &setDefaultSize(size_t i, size_t j = 0, size_t k = 0, size_t l = 0)
 			{
 				this->m_default_size = {{i, j, k, l}};
@@ -761,7 +760,6 @@ namespace skepu
 				return result;
 			}
 
-			// (the id of the random numbers that the call uses, for its event)
 			int random_id()
 			{
 #ifdef SKEPU_TRACING
@@ -917,7 +915,7 @@ namespace skepu
 				};
 				if constexpr (MapPairsFunc::usesPRNG)
 				{
-					// (the elements are in the order of the rows)
+					// the elements are in the order of the rows
 					mpi_detail::PrngShift shift(this->m_prng, layout.mine().first * first.distribution().unit * MapPairsFunc::randomCount, first.size() * MapPairsFunc::randomCount);
 					run();
 				}
@@ -930,7 +928,6 @@ namespace skepu
 				return first;
 			}
 
-			// (the id of the random numbers that the call uses, for its event)
 			int random_id()
 			{
 #ifdef SKEPU_TRACING
@@ -991,7 +988,7 @@ namespace skepu
 				};
 				if constexpr (MapPairsFunc::usesPRNG)
 				{
-					// (the elements are in the order of the rows)
+					// the elements are in the order of the rows
 					mpi_detail::PrngShift shift(this->m_prng, first.local_offset() * MapPairsFunc::randomCount, first.size() * MapPairsFunc::randomCount);
 					run();
 				}
@@ -1050,7 +1047,7 @@ namespace skepu
 			using Base::Base;
 
 			SKEPU_CHAIN_SKELETON_SETTERS(Base)
-			// (a value that is a braced list is converted to the type of the start value)
+			// a value that is a braced list is converted to the type of the start value
 			template<typename U = Ret>
 			auto &setStartValue(U value)
 			{
@@ -1058,7 +1055,7 @@ namespace skepu
 				return *this;
 			}
 
-			// (the node-level skeleton does not let us read what it was given)
+			// the node-level skeleton does not let us read what it was given
 			auto &setDefaultSize(size_t i, size_t j = 0)
 			{
 				this->m_default_i = i;
@@ -1164,7 +1161,6 @@ namespace skepu
 				return out;
 			}
 
-			// (the id of the random numbers that the call uses, for its event)
 			int random_id()
 			{
 #ifdef SKEPU_TRACING
@@ -1295,7 +1291,7 @@ namespace skepu
 
 			SKEPU_CHAIN_SKELETON_SETTERS(Base)
 			SKEPU_CHAIN(setReduceMode, Base)
-			// (a value that is a braced list is converted to the type of the start value)
+			// a value that is a braced list is converted to the type of the start value
 			template<typename U = T>
 			auto &setStartValue(U value)
 			{
@@ -1328,7 +1324,7 @@ namespace skepu
 				const int me = mpi::rank();
 				const size_t local_rows = distribution.count(me);
 				const T start = this->m_start;
-				arg.tile_for_read(); // (on every process, also on one that has no rows: making the tiles can be a collective operation)
+				arg.tile_for_read(); // on every process, also on one that has no rows: making the tiles can be a collective operation
 
 				// The results of the reductions that this process has: of its rows, or of its columns
 				std::vector<T> results;
@@ -1402,7 +1398,7 @@ namespace skepu
 
 			SKEPU_CHAIN_SKELETON_SETTERS(Base)
 
-			// (the node-level skeleton does not let us read what it was given)
+			// the node-level skeleton does not let us read what it was given
 			auto &setScanMode(ScanMode mode)
 			{
 				this->m_scan_mode = mode;

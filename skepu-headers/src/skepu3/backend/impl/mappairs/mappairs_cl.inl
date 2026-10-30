@@ -65,7 +65,7 @@ namespace skepu
 					get<CI>(std::forward<CallArgs>(args)...)...,
 					numElem,
 					Vsize, Hsize,
-					// (the base of the indices that the kernel computes; the data is at baseIndex + startIdx)
+					// the base of the indices that the kernel computes; the data is at baseIndex + startIdx
 					baseIndex + startIdx + get<0>(std::forward<CallArgs>(args)...).linearIndexOrigin(),
 					this->m_in_place ? 1 : 0
 				);

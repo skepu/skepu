@@ -218,7 +218,7 @@ typename Matrix<T>::device_pointer_type_cu Matrix<T>::updateDevice_CU(T* start, 
    {
       tempCopy = result->second;
 #ifdef SKEPU_TRACING
-      tempCopy->m_nameVerbose = this->getLabel(); // (the container may have got a label since the copy was made)
+      tempCopy->m_nameVerbose = this->getLabel(); // the container may have got a label since the copy was made
       tempCopy->m_container_id = this->getObjectID();
 #endif
 
@@ -247,7 +247,7 @@ typename Matrix<T>::device_pointer_type_cu Matrix<T>::updateDevice_CU(T* start, 
    {
       tempCopy = result->second;
 #ifdef SKEPU_TRACING
-      tempCopy->m_nameVerbose = this->getLabel(); // (the container may have got a label since the copy was made)
+      tempCopy->m_nameVerbose = this->getLabel(); // the container may have got a label since the copy was made
       tempCopy->m_container_id = this->getObjectID();
 #endif
 

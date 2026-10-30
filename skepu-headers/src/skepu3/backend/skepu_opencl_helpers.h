@@ -360,8 +360,8 @@ namespace skepu
 			}
 			
 			
-			// Builds an OpenCL program for a device. With tracing the build is an event: of the skeleton instance that SkeletonBase::prepareOpenCL
-			// is building the kernels of (a library kernel has none), and `qualifier` says which one of its kernels it is (empty if it has one).
+			// Builds an OpenCL program for a device. With tracing the build is an event of the skeleton instance whose kernels SkeletonBase::prepareOpenCL
+			// is building (a library kernel has none); `qualifier` says which of its kernels it is (empty if it has one).
 			inline cl_program buildProgram(Device_CL *device, const std::string &source, const std::string &options = "", size_t deviceID = 0, const std::string &qualifier = "")
 			{
 				cl_int err;
@@ -379,7 +379,7 @@ namespace skepu
 				
 				err = clBuildProgram(program, 0, NULL, opt, NULL, NULL);
 #ifdef SKEPU_TRACING
-				// (the build log of a failed build is what the event says)
+				// the build log of a failed build is what the event says
 				std::string buildLog;
 				if (err != CL_SUCCESS)
 				{
@@ -402,7 +402,7 @@ namespace skepu
 				if (err != CL_SUCCESS)
 				{
 #ifdef SKEPU_TRACING
-					// (the build is an error that ends the program: the events are written first)
+					// the build is an error that ends the program: the events are written first
 					if (tracing::CompileScope *scope = tracing::CompileScope::current()) scope->finish();
 					SKEPU_TRACE_FLUSH();
 #endif

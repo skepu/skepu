@@ -73,8 +73,7 @@
       "properties": {
         "skevu.run.make": {
           "type": "string",
-          "default": "make",
-          "description": "The make program."
+          "default": "make"
         }
       }
     }

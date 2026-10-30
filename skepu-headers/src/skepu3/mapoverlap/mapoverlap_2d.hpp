@@ -165,7 +165,7 @@ namespace skepu
 				this->m_mirror_mode = mirror;
 				if (!mirror)
 					checkMatrixSizes(this->out_indices, std::forward<CallArgs>(args)...);
-				else if (this->mirrorHasNoInterior(out_size_i, out_size_j)) // (nothing to compute: only the random numbers are used)
+				else if (this->mirrorHasNoInterior(out_size_i, out_size_j)) // nothing to compute: only the random numbers are used
 				{
 					this->template prepareRandom<randomCount>(out_size_i * out_size_j);
 					return;

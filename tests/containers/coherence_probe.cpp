@@ -93,7 +93,7 @@ struct Scenario { std::string name, description; std::function<std::string()> ru
 static std::vector<Scenario> scenarios()
 {
 	std::vector<Scenario> s;
-	auto E = [](size_t i, int k) { return (int)i + k; }; // (the value at i after k increments of an initial value of i)
+	auto E = [](size_t i, int k) { return (int)i + k; }; // the value at i after k increments of an initial value of i
 
 	// ---- Controls: one backend, and the host as the meeting point
 	s.push_back({"c01_cuda_chain", "a -> b -> c on CUDA only", [=]
@@ -233,9 +233,9 @@ static std::vector<Scenario> scenarios()
 	s.push_back({"p04_stale_cuda_copy", "CUDA reads v, OpenCL then updates v in place, CUDA reads v again", [=]
 	{
 		skepu::Vector<int> v(N), w(N), w2(N); init(v, 0);
-		on(inc, "cuda")(w, v);       // (CUDA has a copy of v)
-		on(inc, "opencl")(v, v);     // (v is now i+1; the CUDA copy of v is stale)
-		on(inc, "cuda")(w2, v);      // (expected i+2)
+		on(inc, "cuda")(w, v);       // CUDA has a copy of v
+		on(inc, "opencl")(v, v);     // v is now i+1; the CUDA copy of v is stale
+		on(inc, "cuda")(w2, v);      // expected i+2
 		return verify(w2, [&](size_t i) { return E(i, 2); });
 	}});
 	s.push_back({"p05_stale_opencl_copy", "OpenCL reads v, CUDA then updates v in place, OpenCL reads v again", [=]
@@ -327,7 +327,7 @@ static std::vector<Scenario> scenarios()
 	handoff("h01_updateHost", "CUDA writes b, b.updateHost(), OpenCL reads b", [](skepu::Vector<int> &b) { b.updateHost(); });
 	handoff("h02_flush", "CUDA writes b, b.flush(), OpenCL reads b", [](skepu::Vector<int> &b) { b.flush(); });
 	handoff("h03_updateHostAndInvalidate", "CUDA writes b, b.updateHostAndInvalidateDevice(), OpenCL reads b", [](skepu::Vector<int> &b) { b.updateHostAndInvalidateDevice(); });
-	// (by contract these two throw the changes on the device away: the OpenCL backend then reads the old contents of the host, 0 + 1 = 1)
+	// by contract these two throw the changes on the device away: the OpenCL backend then reads the old contents of the host, 0 + 1 = 1
 	auto discard = [&s](const char *name, const char *description, std::function<void(skepu::Vector<int> &)> between)
 	{
 		s.push_back({name, description, [=]

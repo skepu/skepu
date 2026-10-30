@@ -197,7 +197,7 @@ namespace skepu
 				// Create a command-queue on the GPU device
 				cl_int err;
 				#ifdef SKEPU_TRACING
-				// (the times of the calls come from the profiling of the device: see tracing_opencl.h)
+				// the times of the calls come from the profiling of the device: see tracing_opencl.h
 				m_queue = clCreateCommandQueue(m_context, m_device, CL_QUEUE_PROFILING_ENABLE, &err);
 #else
 				m_queue = clCreateCommandQueue(m_context, m_device, 0, &err);

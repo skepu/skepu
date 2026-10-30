@@ -89,7 +89,7 @@ namespace skepu
 		
 #ifdef SKEPU_OPENCL
 			{
-				// (the start of the program is often this: the platforms, the devices, the queues and the build of the first kernels)
+				// the start of the program is often this: the platforms, the devices, the queues and the build of the first kernels
 				SKEPU_TRACE_START_EVENT(trace_handle);
 				init_CL();
 				createOpenCLProgramForMatrixTranspose();
@@ -100,7 +100,7 @@ namespace skepu
 		
 #ifdef SKEPU_CUDA
 			{
-				// (the context of the driver is created here, which can take a long time: it is the gap before the first call in a trace)
+				// the context of the driver is created here, which can take a long time: it is the gap before the first call in a trace
 				SKEPU_TRACE_START_EVENT(trace_handle);
 				init_CU();
 				SKEPU_TRACE_EXTERNAL(trace_handle, "CUDA initialization", __FILE__, __LINE__, {}, {});

@@ -1,8 +1,8 @@
 // Minimal loader for the CIFAR-10 binary version (https://www.cs.toronto.edu/~kriz/cifar.html).
 // Each record is 3073 bytes: 1 label byte followed by 3 x 1024 pixel bytes in channel-first (R, G, B) order.
 // Images are returned in the layout used by SkePU-DNN, (n, 32, 32, 3) (height, width, channel), as floats in [0, 1].
-// (The standardization of the channels is made by skeletons in the program, dnn_cifar10.cpp: skeletons are precompiled in the file
-// of the program, and the statistics must be known by every process of an MPI program, which the code of skepu::external is not.)
+// The channels are standardized by skeletons in the program (dnn_cifar10.cpp): skeletons are precompiled in the program's file, and every process of an
+// MPI program must know the statistics, which skepu::external code does not provide.
 #pragma once
 
 #include <cstdint>

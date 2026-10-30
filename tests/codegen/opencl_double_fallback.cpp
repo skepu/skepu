@@ -6,9 +6,9 @@
 #include <skepu-lib/util.hpp>
 #include <test_helper_automatic_setup.hpp>
 
-// Skeletons with double precision on the OpenCL backend: on a device that has it they run there, on one that does not (as the Apple GPUs) they run on another backend,
-// with a message on stderr, and the kernels that cannot be built for such a device are not built. Skeletons without doubles are not affected. With the environment variable
-// SKEPU_STRICT_BACKEND set, the skeleton that would change backend is an error instead. Built for OpenCL only (see CMakeLists.txt).
+// Skeletons with double precision on the OpenCL backend: on a device that has it they run there; on one that lacks it (Apple GPUs) they run on another
+// backend with a message on stderr, and their kernels are not built. Skeletons without doubles are unaffected. With SKEPU_STRICT_BACKEND set, a skeleton
+// that would change backend is an error instead. Built for OpenCL only (see CMakeLists.txt).
 
 double doubled(double x) { return 2 * x; }
 float halved(float x) { return x / 2; }
@@ -104,7 +104,7 @@ TEST_CASE("With SKEPU_STRICT_BACKEND set, a skeleton that cannot run on the Open
 
 	setenv("SKEPU_STRICT_BACKEND", "1", 1);
 	if (skepu::backend::openclSupportsDouble())
-		REQUIRE_NOTHROW(double_skeleton(out, in));                // (nothing to change)
+		REQUIRE_NOTHROW(double_skeleton(out, in));
 	else
 		REQUIRE_THROWS(double_skeleton(out, in));
 	REQUIRE_NOTHROW(float_skeleton(fout, fin));

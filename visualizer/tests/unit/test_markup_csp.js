@@ -1,6 +1,6 @@
-// test_markup_csp.js — the page has no inline handlers, and no script that is not a file, in the part that an editor's webview shares
-// (a content security policy with a nonce for the scripts does not run them): a control says what it does with data-click / data-input
-// (script/actions.js), and every action that the markup names is there.
+// test_markup_csp.js — in the part of the page an editor's webview shares there are no inline handlers and no script that is not a file (a content
+// security policy with a script nonce blocks them): a control says what it does with data-click / data-input (script/actions.js), and every action the
+// markup names exists.
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';

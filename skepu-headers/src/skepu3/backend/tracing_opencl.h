@@ -1,11 +1,9 @@
-// The times of the calls of the OpenCL backend, from the profiling of the devices. A kernel is enqueued and the host goes on: to
-// find when it was done the program would have to wait for the device at every call (clFinish, clWaitForEvents), which changes the
-// behaviour that the trace is to show. Instead a call enqueues a marker on the queue of each device before its work and one after
-// it, which costs almost nothing while the devices run, and the times are read from the markers when the trace is written (the
-// events of the trace are replayed then: see Tracer::flush). A marker is done when everything before it in the queue is done (the
-// queues are in order), and its profiling gives the time of the device (in nanoseconds, on the clock of the device). That time is
-// put on the clock of the host with one marker for each device that is enqueued and waited for once: the time of the host when it
-// was done, plus the time between that marker and the others.
+// Times of the OpenCL backend's calls, from device profiling. A kernel is enqueued and the host goes on; waiting for the device at every call
+// (clFinish, clWaitForEvents) would change the behaviour that the trace shows. Instead each call enqueues a marker on the queue of each device before
+// its work and one after it, which costs almost nothing while the devices run. The times are read from the markers when the trace is written (events are
+// replayed then: see Tracer::flush). A marker is done when everything before it in the in-order queue is done, and its profiling gives the device time
+// (nanoseconds, device clock). That time is put on the host clock with one marker per device, enqueued and waited for once: the host time when it was
+// done, plus the time between that marker and the others.
 //
 // The queues have the profiling enabled when the program is traced (see Device_CL).
 #pragma once
@@ -57,7 +55,6 @@ namespace skepu
 			}
 
 		protected:
-			// (not before the end of the call has been recorded)
 			bool ready() override
 			{
 				std::lock_guard<std::mutex> lock(m_events_mutex);
@@ -73,7 +70,7 @@ namespace skepu
 				return true;
 			}
 
-			// (this waits for the devices if their work is not done: only when the trace is written, or when the host is far ahead of the devices)
+			// this waits for the devices if their work is not done: only when the trace is written, or when the host is far ahead of the devices
 			void read() override
 			{
 				std::lock_guard<std::mutex> lock(m_events_mutex);
@@ -112,7 +109,7 @@ namespace skepu
 			// The reference of a device: the time of a marker of it that has happened, and the time of the host just after
 			static const Anchor &anchor(backend::Device_CL *device)
 			{
-				// (not destroyed: the trace is written when the program exits, after the statics of this function)
+				// not destroyed: the trace is written when the program exits, after the statics of this function
 				static std::mutex &mutex = *new std::mutex;
 				static std::map<cl_device_id, Anchor> &anchors = *new std::map<cl_device_id, Anchor>;
 				std::lock_guard<std::mutex> lock(mutex);

@@ -119,10 +119,10 @@ describe('the worker loads { header, data }', () => {
     });
 
     it('a compact trace: the ranges of the file are for the editor, and the code view gets a formatted copy with its own ranges', async () => {
-        const text = JSON.stringify({ header: { files: {} }, data: events });   // (one line: how a tracer can write it)
+        const text = JSON.stringify({ header: { files: {} }, data: events });   // one line: how a tracer can write it
         const loaded = await call('load', { traceJson: text });
-        expect(loaded.traceJsonRaw).toBe(text);                                 // (the file as it is)
-        expect(loaded.traceLineRanges).toEqual([[1, 1], [1, 1]]);               // (its events are on the one line)
+        expect(loaded.traceJsonRaw).toBe(text);
+        expect(loaded.traceLineRanges).toEqual([[1, 1], [1, 1]]);
         expect(loaded.traceDisplayText).not.toBe(text);
         expect(JSON.parse(loaded.traceDisplayText)).toEqual(JSON.parse(text));
         const shown = loaded.traceDisplayText.split('\n');
@@ -167,7 +167,7 @@ describe('the examples', () => {
             expect(loaded.mpi.ranks).toBe(ex.trace.mpi.length);
             expect(loaded.warnings, ex.title).toEqual([]);
             expect(loaded.divergence).toBeNull();
-            expect(loaded.traceFilename).toBe(ex.trace.mpi[0].split('/').pop()); // (the trace of rank 0 is what the trace pane shows)
+            expect(loaded.traceFilename).toBe(ex.trace.mpi[0].split('/').pop()); // the trace of rank 0 is what the trace pane shows
             const gid = 'g' + ex.title;
             await globalThis.self.onmessage({ data: { id: gid, type: 'graph' } });
             expect(replies[gid].nodes.length).toBeGreaterThan(0);
@@ -185,7 +185,7 @@ describe('the table of the instances in the header', () => {
 
     it('is a Map by the id of the instance, with the lines of the instance and of the functions', () => {
         const instances = headerInstances({ '/a.cpp': 'hash', instances: table });
-        expect([...instances.keys()]).toEqual([7, 8]);   // (the entry without lines is left out)
+        expect([...instances.keys()]).toEqual([7, 8]);   // the entry without lines is left out
         expect(instances.get(7).instance).toEqual({ file: '/a.cpp', line: 12, end_line: 13 });
         expect(instances.get(7).user_functions.map(f => [f.name, f.kind, f.line, f.end_line])).toEqual([['mult', 'function', 4, 6], ['', 'lambda', 12, 12]]);
         expect(instances.get(8).instance).toEqual({ file: '/a.cpp', line: 30, end_line: 30, anonymous: true });

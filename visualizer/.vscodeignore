@@ -1,5 +1,5 @@
-# What goes into the .vsix of the extension (npm run package): only what the extension and its webview read. Everything is excluded first, then
-# what is needed is let back in (a name that is let back in is in the package, whatever the lines after it say: so the lines are narrow).
+# What goes into the .vsix (npm run package): only what the extension and its webview read. Everything is excluded first and the needed files let back
+# in; a name let back in stays in the package whatever later lines say, so the patterns are narrow.
 **
 **/.DS_Store
 
@@ -27,6 +27,6 @@
 !static/highlight/**
 !static/highlight-line-numbers/**
 !static/skepu-lib/**
-# (of ELK its bundle and its license, not its repository files)
+# of ELK its bundle and its license, not its repository files
 !static/cytoscape.js-elk-2.3.0/dist/elk.bundled.js
 !static/cytoscape.js-elk-2.3.0/LICENSE

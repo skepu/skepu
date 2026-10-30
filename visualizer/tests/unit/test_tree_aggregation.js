@@ -1,6 +1,6 @@
-// test_tree_aggregation.js — the program tree mode merges the iterations of a loop into the same nodes as the dependence DAG does (what differs is the root
-// region, the edges, and how the nodes are shown): the merged nodes, each as its type, label and the trace events that it joins, are the same set. A node that
-// is under different regions is not merged with another (the nested regions of a region belong to it only: the root region does not have them too).
+// test_tree_aggregation.js — program tree mode merges loop iterations into the same nodes as the dependence DAG (only the root region, the edges and the display
+// differ): the merged nodes, each as type, label and joined trace events, are the same set. A node under different regions is not merged with another (nested
+// regions belong to their region only, not also to the root).
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -81,7 +81,7 @@ describe('the tree', () => {
         const parentOf = name => label.get(parents.get(graph.nodes.find(({ data }) => data.label === name).data.id)[0]);
         expect(parentOf('horner_eval')).toBe('[global]');
         expect(parentOf('Iteration')).toBe('horner_eval');
-        expect(parentOf('muladd')).toBe('Iteration');   // (the first event of the chain of the region: the region itself is above it)
+        expect(parentOf('muladd')).toBe('Iteration');   // first event of the region's chain: the region is above it
     });
 });
 
@@ -111,6 +111,6 @@ describe('the ids of the regions', () => {
         const merged = await iterations(true), separate = await iterations(false);
         expect(merged).toHaveLength(1);
         expect(merged[0].persistent_region_ids.slice().sort()).toEqual(separate.map(d => d.persistent_region_id).sort());
-        expect(merged[0].persistent_region_id).toBe(separate[0].persistent_region_id);   // (the first of them is the node)
+        expect(merged[0].persistent_region_id).toBe(separate[0].persistent_region_id);   // the first of them is the node
     });
 });

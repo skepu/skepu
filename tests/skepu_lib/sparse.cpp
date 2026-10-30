@@ -1,9 +1,8 @@
 // The SparseMatrix container (compressed sparse rows) and its use in skeletons and in the sparse BLAS routines:
 // as a random access argument (a row proxy), as the stored values (Map, MapReduce, Reduce) with the index of each entry,
 // as the input of row-wise reductions, with inputs of different patterns (union, intersection), and in csrmv and csrmm.
-// (CPU and OpenMP backends)
 
-// (an error is an exception, which the tests of the checks catch)
+// an error is an exception, which the tests of the checks catch
 #define SKEPU_ENABLE_EXCEPTIONS
 #include "../../external/catch2/catch.hpp"
 #include <skepu>
@@ -121,7 +120,7 @@ TEST_CASE("sparse: construction, conversion and access")
 	SparseMatrix<float> A = SparseMatrix<float>::from_coo(3, 3, entries);
 	REQUIRE(A.rows() == 3);
 	REQUIRE(A.cols() == 3);
-	REQUIRE(A.nnz() == 4); // (the two values of the place (0, 2) are added)
+	REQUIRE(A.nnz() == 4); // the two values of the place (0, 2) are added
 	REQUIRE(A(0, 0) == 2.f);
 	REQUIRE(A(0, 1) == 0.f);
 	REQUIRE(A(0, 2) == 1.5f);
@@ -135,7 +134,7 @@ TEST_CASE("sparse: construction, conversion and access")
 	SparseMatrix<float> B = SparseMatrix<float>::from_dense(dense);
 	REQUIRE(B.nnz() == 4);
 	REQUIRE(B.pattern()->equals(*A.pattern()));
-	REQUIRE(B.pattern() != A.pattern()); // (the same pattern, but not the same object)
+	REQUIRE(B.pattern() != A.pattern()); // the same pattern, but not the same object
 
 	// the pattern is shared, the values are copied
 	SparseMatrix<float> C(A.pattern());
@@ -147,7 +146,6 @@ TEST_CASE("sparse: construction, conversion and access")
 	REQUIRE(A(0, 0) == 2.f);
 	REQUIRE(D(0, 0) == 99.f);
 
-	// arrays
 	const skepu::SparseIndex offsets[] = {0, 2, 2, 4};
 	const skepu::SparseIndex columns[] = {0, 2, 0, 1};
 	const float values[] = {2.f, 1.5f, 4.f, 3.f};
@@ -155,16 +153,14 @@ TEST_CASE("sparse: construction, conversion and access")
 	REQUIRE(E.pattern()->equals(*A.pattern()));
 	REQUIRE(E(2, 1) == 3.f);
 
-	// the transpose
 	SparseMatrix<float> T = A.transposed();
 	REQUIRE(T.rows() == 3);
 	for (size_t r = 0; r < 3; ++r)
 		for (size_t c = 0; c < 3; ++c)
 			REQUIRE(T(r, c) == A(c, r));
 	SparseMatrix<float> T2 = A.transposed();
-	REQUIRE(T2.pattern() == T.pattern()); // (the pattern of the transpose is made once)
+	REQUIRE(T2.pattern() == T.pattern()); // the pattern of the transpose is made once
 
-	// a matrix with no pattern
 	SparseMatrix<float> empty;
 	REQUIRE(!empty.has_pattern());
 	REQUIRE(empty.nnz() == 0);
@@ -191,7 +187,7 @@ TEST_CASE("sparse: a MatrixMarket file")
 	SparseMatrix<float> A = SparseMatrix<float>::read_matrix_market(name);
 	std::remove(name);
 	REQUIRE(A.rows() == 3);
-	REQUIRE(A.nnz() == 6); // (the entries off the diagonal are mirrored)
+	REQUIRE(A.nnz() == 6); // the entries off the diagonal are mirrored
 	REQUIRE(A(0, 0) == 2.f);
 	REQUIRE(A(1, 0) == -1.f);
 	REQUIRE(A(0, 1) == -1.f);
@@ -245,7 +241,6 @@ TEST_CASE("sparse: Map over the stored values")
 		for (size_t c = 0; c < cols; ++c)
 			REQUIRE(B(r, c) == (float)(2 * dense[r * cols + c]));
 
-	// in place
 	skepu::Map<1>(scale_value)(B, B, 0.5f);
 	for (size_t r = 0; r < rows; ++r)
 		for (size_t c = 0; c < cols; ++c)
@@ -261,7 +256,6 @@ TEST_CASE("sparse: Map over the stored values")
 			else
 				REQUIRE(I(r, c) == 0.f);
 
-	// two inputs of the same pattern
 	SparseMatrix<float> S;
 	skepu::Map<2>(add_values)(S, A, B);
 	for (size_t r = 0; r < rows; ++r)
@@ -366,7 +360,7 @@ TEST_CASE("sparse: Reduce by rows")
 				smallest = std::min(smallest, dense[r * cols + c]);
 			}
 		REQUIRE(close(hs[r], sum));
-		REQUIRE(close(hm[r], smallest)); // (an empty row gives the start value)
+		REQUIRE(close(hm[r], smallest)); // an empty row gives the start value
 	}
 	REQUIRE_THROWS(add(wrong, A));
 }
@@ -462,7 +456,6 @@ TEST_CASE("sparse: Map of the union and the intersection of the patterns")
 	// an output that is an input of another pattern would be overwritten
 	REQUIRE_THROWS(sum(A, A, B));
 
-	// different sizes
 	SparseMatrix<float> small = sparse_of(random_dense(rows - 1, cols, 3, 0.2), rows - 1, cols), R;
 	REQUIRE_THROWS(sum(R, A, small));
 }
@@ -488,7 +481,7 @@ TEST_CASE("sparse: csrmv")
 					const auto hx = host(x), hy = host(y);
 					if (ab.second == 0.f)
 						for (size_t i = 0; i < leny; ++i)
-							y[i] = NAN; // (not read)
+							y[i] = NAN;   // a NaN here must not reach the result
 
 					blas::sparse::csrmv(op, ab.first, A, x, incx, ab.second, y, 1);
 					const auto r = host(y);

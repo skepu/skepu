@@ -179,7 +179,7 @@ namespace skepu
 				s.active = false;
 			}
 
-			// (the events of a process that stops: the file is written, without the clock at the end)
+			// the events of a process that stops: the file is written, without the clock at the end
 			inline void abort_flush()
 			{
 				State &s = state();
@@ -216,7 +216,7 @@ namespace skepu
 				unsigned long long seq = 0;
 				tr::EventHandle handle;
 				long long work_start = 0, work_end = 0;
-				bool work_done = false; // (the node-level skeleton has run, or would have on a process that has no elements)
+				bool work_done = false; // the node-level skeleton has run, or would have on a process that has no elements
 				CommTotals comm;
 				CallScope *previous = nullptr;
 
@@ -272,7 +272,7 @@ namespace skepu
 						std::move(proxies), std::move(scalars), prng);
 				}
 
-				// ('elements' are the sizes of the call as the skeleton has them: {n}, or {rows, columns})
+				// 'elements' are the sizes of the call as the skeleton has them: {n}, or {rows, columns}
 				template<typename Skeleton>
 				void finish(Skeleton *skeleton, std::vector<size_t> &&elements, size_t local_elements,
 					std::vector<int> &&outputs, std::vector<int> &&elwise, std::vector<int> &&proxies, std::vector<int> &&scalars, int prng)
@@ -281,7 +281,7 @@ namespace skepu
 					if (!s.active)
 						return;
 					auto *base = static_cast<::skepu_node::backend::SkeletonBase *>(skeleton);
-					// (what the processes must agree on for a call: its pattern and the label of the skeleton. Not the "hash" of an event, which is the hash of a source file.)
+					// what the processes must agree on for a call: its pattern and the label of the skeleton. Not the "hash" of an event, which is the hash of a source file.
 					const unsigned long long signature = (unsigned long long)std::hash<std::string>{}(std::string(this->pattern) + "|" + base->getLabel());
 					const long long end = now_us();
 					json local = json{{"rank", s.rank}, {"ranks", s.size}, {"local_elements", local_elements},
@@ -319,7 +319,7 @@ namespace skepu
 			}
 
 			// A collective operation: the interval of this process in it, and what it moved. 'reason' says why the program makes it.
-			// (Bytes are the payload that goes to other processes and comes from them, not the copy within a process.)
+			// Bytes are the payload that goes to other processes and comes from them, not the copy within a process.
 			class CommScope
 			{
 			public:
@@ -352,7 +352,7 @@ namespace skepu
 					json entry = json{{"comm_seq", this->m_comm_seq}, {"seq", call}, {"operation", this->m_operation}, {"reason", this->m_reason},
 						{"start", this->m_start}, {"end", end}, {"bytes_sent", this->m_sent}, {"bytes_received", this->m_received}};
 					if (s.current)
-						entry["phase"] = s.current->work_done ? "after" : "before"; // (of the call it is in)
+						entry["phase"] = s.current->work_done ? "after" : "before";
 					if (s.rank == 0)
 					{
 						entry["type"] = "communication";

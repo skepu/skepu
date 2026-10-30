@@ -8,7 +8,7 @@
 import { globalUtil } from './util.js';
 import { COMPOUND_SEP_SCALE, LAYOUT_NODE_SEP, LAYOUT_RANK_SEP } from './layout_options.js';
 
-// One ELK instance per page is correct: the ELK worker is expensive to spawn.
+// One ELK instance per page: the worker is expensive to spawn.
 var _sharedElk    = null;
 var _sharedElkUrl = null;
 

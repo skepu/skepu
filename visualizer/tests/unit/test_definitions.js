@@ -81,7 +81,7 @@ describe('the badge nodes and the sites of the definitions', () => {
     const events = trace([
         b.alloc(1, 'A'),
         { ...b.call('dotp', { outs: [1] }), object_id: 7 },
-        { ...b.call('dotp', { ins: [1] }), object_id: 7 },      // (a second call of the instance)
+        { ...b.call('dotp', { ins: [1] }), object_id: 7 },
         { ...b.call('Map@a.cpp:30', { ins: [1] }), object_id: 8 },
         { ...b.call('other', { ins: [1] }), object_id: 99 },
     ]);
@@ -99,7 +99,7 @@ describe('the badge nodes and the sites of the definitions', () => {
         const { sites } = collectBadges(badgeNodes, []);
         const at = (role, line) => sites.find(s => s.role === role && s.line === line);
         expect(sites.map(s => `${s.role}:${s.line}`).sort()).toEqual(['function:12', 'function:2', 'function:4', 'instance:12', 'instance:30']);
-        expect(at('instance', 12).ids).toHaveLength(2);                // (the two calls of the instance dotp: two nodes)
+        expect(at('instance', 12).ids).toHaveLength(2);
         expect(at('function', 4)).toMatchObject({ file: '/src/a.cpp', end_line: 6 });
         expect(at('instance', 30).ids).toHaveLength(1);
     });
@@ -107,7 +107,7 @@ describe('the badge nodes and the sites of the definitions', () => {
     it('sitesAt finds the sites that cover a line of a file, by the basename', () => {
         const { sites } = collectBadges(badgeNodes, []);
         expect(sitesAt(sites, '/other/dir/a.cpp', 5).map(s => `${s.role}:${s.line}`)).toEqual(['function:4']);
-        expect(sitesAt(sites, 'a.cpp', 12).map(s => s.role).sort()).toEqual(['function', 'instance']);   // (a lambda on the line of the instance)
+        expect(sitesAt(sites, 'a.cpp', 12).map(s => s.role).sort()).toEqual(['function', 'instance']);   // a lambda on the line of the instance
         expect(sitesAt(sites, 'a.cpp', 20)).toEqual([]);
         expect(sitesAt(sites, 'b.hpp', 2).map(s => s.role)).toEqual(['function']);
     });
@@ -126,7 +126,7 @@ describe('the marks and the shortcuts of a call', () => {
 
     it('the instance, and the user functions one after the other', () => {
         expect(definitionPlace(d, 'instance').line).toBe(12);
-        expect([0, 1, 2, 3].map(i => definitionPlace(d, 'function', i).line)).toEqual([4, 12, 4, 12]);   // (it wraps around)
+        expect([0, 1, 2, 3].map(i => definitionPlace(d, 'function', i).line)).toEqual([4, 12, 4, 12]);   // it wraps around
         expect(definitionPlace({ ...d, user_functions: [] }, 'function')).toBeNull();
         expect(definitionPlace(undefined, 'instance')).toBeNull();
     });
@@ -169,7 +169,7 @@ describe('the info of the data nodes that a call made', () => {
         expect(scalar).toMatchObject({ File: '/p.cpp', Line: 31 });
         expect(scalar.definitions.instance).toEqual({ file: '/p.cpp', line: 12, end_line: 12 });
         const updates = infos.container_update.filter(i => i.Line != null);
-        expect(updates.map(i => i.Line).sort()).toEqual([30]);            // (the update that the map made; the container v has no call)
+        expect(updates.map(i => i.Line).sort()).toEqual([30]);            // the update that the map made; the container v has no call
         expect(updates[0].definitions.user_functions[0].name).toBe('add');
     });
 });

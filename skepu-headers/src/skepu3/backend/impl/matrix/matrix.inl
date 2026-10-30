@@ -289,7 +289,7 @@ Matrix<T>::~Matrix()
   }
   else
   {
-    // (memory that the matrix does not own: its life ends)
+    // memory that the matrix does not own: its life ends
     if (this->m_data)
       SKEPU_TRACE_DEALLOCATION(this->getObjectID(), this->getLabel(), __LINE__);
     DEBUG_TEXT_LEVEL1("Matrix: Note, did not deallocate data.");
@@ -312,7 +312,7 @@ Matrix<T>& Matrix<T>::operator=(const Matrix<T>& other)
    other.updateHost();
    invalidateDeviceData();
 
-   // (the memory is copied, as for a vector)
+   // the memory is copied, as for a vector
    if (!m_data || m_rows * m_cols != other.m_rows * other.m_cols)
    {
       const bool first = !m_data;
@@ -539,7 +539,7 @@ T& Matrix<T>::at(size_type row, size_type col)
 template <typename T>
 Matrix<T>& Matrix<T>::operator=(const T& elem)
 {
-   invalidateDeviceData();   // (the elements on a device are not the elements any more)
+   invalidateDeviceData();
    SKEPU_TRACE_START_EVENT(trace_handle);
    for (size_type i = 0; i < size(); i++)
    {

@@ -186,7 +186,7 @@ namespace skepu
 				this->m_mirror_mode = !this->isPool && this->m_edge == Edge::None && out_size_i == arg.size_i() && out_size_j == arg.size_j() && out_size_k == arg.size_k();
 				if (!this->m_mirror_mode)
 					checkTensor3Sizes(this->out_indices, std::forward<CallArgs>(args)...);
-				else if (this->mirrorHasNoInterior(out_size_i, out_size_j, out_size_k)) // (nothing to compute: only the random numbers are used)
+				else if (this->mirrorHasNoInterior(out_size_i, out_size_j, out_size_k)) // nothing to compute: only the random numbers are used
 				{
 					this->template prepareRandom<randomCount>(out_size_i * out_size_j * out_size_k);
 					return;

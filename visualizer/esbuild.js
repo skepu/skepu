@@ -23,7 +23,7 @@ async function build() {
 			bundle: true,
 			format: 'iife',
 			outfile: 'dist/visualizer.js',
-			// (the worker is given the URLs it needs: the ones from import.meta are the defaults of the page)
+			// the worker is given the URLs it needs: the ones from import.meta are the defaults of the page
 			logOverride: { 'empty-import-meta': 'silent' }
 		}),
 
@@ -32,7 +32,7 @@ async function build() {
 			bundle: true,
 			format: 'iife',
 			outfile: 'dist/skevu.js',
-			// (the URLs that use import.meta are the defaults of the page: the extension gives its own, in window.skevu)
+			// the URLs that use import.meta are the defaults of the page: the extension gives its own, in window.skevu
 			logOverride: { 'empty-import-meta': 'silent' }
 		})
 	])

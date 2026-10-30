@@ -16,7 +16,7 @@ namespace skepu
 	template<typename T>
 	inline void snapshot_serializer(Vector<T> &data, std::string &fname)
 	{
-		data.flush(); // (the gather)
+		data.flush(); // the gather
 		if (mpi::rank() != 0)
 			return;
 		const Vector<T> &view = data;
@@ -29,7 +29,7 @@ namespace skepu
 	template<typename T>
 	inline void snapshot_serializer(Matrix<T> &data, std::string &fname)
 	{
-		data.flush(); // (the gather)
+		data.flush(); // the gather
 		if (mpi::rank() != 0)
 			return;
 		const Matrix<T> &view = data;
@@ -43,7 +43,7 @@ namespace skepu
 	template<typename T>
 	inline void snapshot_serializer(Tensor3<T> &data, std::string &fname)
 	{
-		data.flush(); // (the gather)
+		data.flush(); // the gather
 		if (mpi::rank() != 0)
 			return;
 		const Tensor3<T> &view = data;
@@ -58,7 +58,7 @@ namespace skepu
 	template<typename T>
 	inline void snapshot_serializer(Tensor4<T> &data, std::string &fname)
 	{
-		data.flush(); // (the gather)
+		data.flush(); // the gather
 		if (mpi::rank() != 0)
 			return;
 		const Tensor4<T> &view = data;

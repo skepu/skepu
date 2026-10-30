@@ -160,7 +160,7 @@ add_executable(skepu-tool IMPORTED GLOBAL)
 add_dependencies(skepu-tool skepu-tool-llvm)
 add_executable(SkePU::skepu-tool IMPORTED GLOBAL)
 add_dependencies(SkePU::skepu-tool skepu-tool-llvm)
-# (the program is built by the external project: the targets are there for the order of the build, and a location is what CMP0111 wants)
+# the program is built by the external project: the targets are there for the order of the build, and a location is what CMP0111 wants
 set_target_properties(skepu-tool SkePU::skepu-tool PROPERTIES IMPORTED_LOCATION ${SKEPU_EXECUTABLE})
 # We don't have a native skepu-tool target, but the binary position is known,
 # so we install it as a program.
@@ -215,8 +215,8 @@ install(DIRECTORY ${SKEPU_CLANG_RESOURCE_HEADERS}/
 	DESTINATION lib/SkePU/clang-headers/)
 # TODO: We should probably install the clang licence in that directory.
 
-# A package (skepu-tool, the headers, the language server if it is built, and skepu.mk) in one tar file, for a course, lab or tutorial: packaging/make-package.sh,
-# which this target runs on what has been built. SKEPU_PACKAGE_OVERLAY is the directory with what is particular to the course, that is added to the package.
+# A package (skepu-tool, the headers, the language server if built, and skepu.mk) in one tar file for a course, lab or tutorial: packaging/make-package.sh,
+# which this target runs on the build. SKEPU_PACKAGE_OVERLAY is the directory with the course's own files, added to the package.
 set(SKEPU_PACKAGE_OVERLAY "" CACHE PATH "What is added to the package that the target skepu-package makes: the programs, Makefiles and data of a course")
 set(_package_args --no-build --build-dir ${CMAKE_BINARY_DIR} --output ${CMAKE_BINARY_DIR})
 if(SKEPU_PACKAGE_OVERLAY)

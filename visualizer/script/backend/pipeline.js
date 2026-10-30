@@ -142,10 +142,9 @@ export function buildDisplayGraph(events, options = {}) {
 
     if (graph.settings.regions) graph.pruneEmptyRegions();
 
-    // The tree of the program tree mode, of the graph as it is shown: when the iterations are merged, a merged region is the child of the region that its
-    // iterations were in (the key path of a node is the path of the regions around it, so the nodes that are merged are those with the same path:
-    // the children of merged regions are compared, and those of a region that is alone are compared with each other), and the chain of a region has each
-    // merged node once, where its first occurrence was.
+    // The program tree of the graph as shown. With merged iterations, a merged region is the child of the region its iterations were in. A node's key path is the
+    // path of its enclosing regions, so merged nodes are those with the same path: the children of merged regions are compared, and those of a lone region with
+    // each other. A region's chain has each merged node once, at its first occurrence.
     if (graph.settings.mode === 'program-tree') graph.buildProgramTree();
 
     graph.createVirtualAliasEdges(show_virtual_alias);

@@ -634,7 +634,7 @@ matrices) and a `Vector` of the values of the entries, which is `A.values()`.
 ```cpp
 skepu::SparseMatrix<float> A(rows, cols, row_offsets, col_indices, values); // CSR (copied)
 auto B = skepu::SparseMatrix<float>::from_dense(dense_matrix);
-auto C = skepu::SparseMatrix<float>::from_coo(rows, cols, triplets);       // (row, column, value)
+auto C = skepu::SparseMatrix<float>::from_coo(rows, cols, triplets);       // row, column, value
 auto D = skepu::SparseMatrix<float>::read_matrix_market("matrix.mtx");
 skepu::SparseMatrix<float> E(A.pattern());  // the pattern of A is shared, the values are new
 ```

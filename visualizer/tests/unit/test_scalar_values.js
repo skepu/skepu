@@ -75,7 +75,7 @@ describe('the values of the scalars on the scalar nodes', () => {
     });
 
     it('are the later value of a scalar that has the id of another one', async () => {
-        // (as blas::nrm2: the sum, and its square root with the same id)
+        // as blas::nrm2: the sum, and its square root with the same id
         const infos = await scalarInfos(iterations(3, { error: i => (i + 1) ** 2, derived: i => i + 1 }));
         expect(seriesOf(infos)).toEqual([[1, 2, 3]]);
     });
@@ -125,7 +125,7 @@ describe('the plot of the values', () => {
     it('draws a point for each number, the line broken at the others, and nothing for fewer than two numbers', () => {
         const svg = scalarPlotSvg([1, 'nan', 3, 4]);
         expect((svg.match(/<circle/g) || []).length).toBe(3);
-        expect((svg.match(/M/g) || []).length).toBe(2);              // (two pieces of the line)
+        expect((svg.match(/M/g) || []).length).toBe(2);              // two pieces of the line
         expect(svg).toContain('Iteration 4: 4');
         expect(scalarPlotSvg([1])).toBe('');
         expect(scalarPlotSvg([1, 'nan', 'inf'])).toBe('');
@@ -135,8 +135,8 @@ describe('the plot of the values', () => {
         const ys = svg => [...svg.matchAll(/cy="([0-9.]+)"/g)].map(m => +m[1]);
         const linear = ys(scalarPlotSvg([1, 10, 100], {}));
         const log = ys(scalarPlotSvg([1, 10, 100], { log: true }));
-        expect(log[1]).toBeCloseTo((log[0] + log[2]) / 2, 0);        // (10 is halfway on a log scale)
-        expect(linear[1]).toBeGreaterThan(log[1]);                    // (and low on the linear one)
+        expect(log[1]).toBeCloseTo((log[0] + log[2]) / 2, 0);        // 10 is halfway on a log scale
+        expect(linear[1]).toBeGreaterThan(log[1]);                    // and low on the linear one
         expect(ys(scalarPlotSvg([-1, 1, 3], { log: true }))).toEqual(ys(scalarPlotSvg([-1, 1, 3], {})));
         const flat = ys(scalarPlotSvg([5, 5, 5]));
         expect(new Set(flat).size).toBe(1);
@@ -149,11 +149,11 @@ describe('the log scale checkbox', () => {
         const values = [1, 0.1, 0.01, 0.001, 0.0001];
         expect(scalarPlotHtml(values, true)).toContain('type="checkbox" checked');
         expect(scalarPlotHtml(values, false)).not.toContain('checked');
-        expect(scalarPlotHtml([1, -1, 2], false)).not.toContain('checkbox');     // (no log scale for numbers that are not above 0)
+        expect(scalarPlotHtml([1, -1, 2], false)).not.toContain('checkbox');     // no log scale for numbers that are not above 0
     });
 
     it('switches the scale every time it is clicked', () => {
-        const values = [1, 0.1, 0.01, 0.001, 0.0001];                           // (starts logarithmic)
+        const values = [1, 0.1, 0.01, 0.001, 0.0001];                           // starts logarithmic
         const container = {
             style: {}, _html: '', box: null,
             get innerHTML() { return this._html; },
@@ -165,10 +165,10 @@ describe('the log scale checkbox', () => {
         const logY = ys();
         expect(container.box.checked).toBe(true);
         for (let click = 1; click <= 4; click++) {
-            container.box.checked = !container.box.checked;                      // (what the click does to the box, then its change handler)
+            container.box.checked = !container.box.checked;                      // what the click does to the box, then its change handler
             container.box.onchange();
             const expectLog = click % 2 === 0;
-            expect(container.box.checked, 'click ' + click).toBe(expectLog);     // (the redraw has the checkbox in the state of the scale)
+            expect(container.box.checked, 'click ' + click).toBe(expectLog);     // the redraw has the checkbox in the state of the scale
             expect(ys(), 'click ' + click).toEqual(expectLog ? logY : ys());
             if (!expectLog) expect(ys()).not.toEqual(logY);
         }

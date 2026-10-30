@@ -53,16 +53,16 @@ async function _buildExamplesUI() {
 }
 
 // ── The link of an example (permalink.js) ─────────────────────────────────────
-// The address says which example and backend are shown (#example=horner&backend=openmp), so that it can be kept and sent. It is not the
-// state of the view: the settings are the reader's own. A page opened on a link loads the example the way a click on it does.
+// The address says which example and backend are shown (#example=horner&backend=openmp), so it can be kept and sent. It is not the view state: the
+// settings are the reader's own. A page opened on a link loads the example as a click on it does.
 
 var _examples    = null;
 
 /** The splash is for a blank session (early.js keeps it away where a trace is on its way): when the trace does not come, it is shown. */
 function _showSplash() {
-    if (window.skevu?.vscode || typeof acquireVsCodeApi === 'function') return;   // (an editor has never a blank session: no splash)
+    if (window.skevu?.vscode || typeof acquireVsCodeApi === 'function') return;   // an editor has never a blank session: no splash
     document.documentElement.classList.remove('no-splash');
-    try { sessionStorage.removeItem('skevu-upload-kept'); } catch (e) { /* (no storage) */ }
+    try { sessionStorage.removeItem('skevu-upload-kept'); } catch (e) { /* no storage */ }
 }
 var _initialHash = window.location.hash;
 // A link named an example: if it cannot be loaded there is a splash after all (a page that is restoring files has no link)
@@ -70,16 +70,16 @@ var _exampleNamed = /[#&]example=/.test(window.location.hash) || /[?&]example=/.
 
 /** Puts the example (null: a trace of files) in the address, without a history entry. */
 function _setLink(slug, backend) {
-    if (window.skevu?.vscode || typeof acquireVsCodeApi === 'function') return;   // (an editor's page has no address of its own: replaceState throws there)
+    if (window.skevu?.vscode || typeof acquireVsCodeApi === 'function') return;   // an editor's page has no address of its own: replaceState throws there
     var hash = encodePermalink({ slug: slug, backend: backend });
-    try { history.replaceState(null, '', window.location.pathname + window.location.search + hash); } catch (e) { /* (a page that may not change its address) */ }
+    try { history.replaceState(null, '', window.location.pathname + window.location.search + hash); } catch (e) { /* a page that may not change its address */ }
 }
 
 function _openFromHash() {
     var state = decodePermalink(_initialHash);
-    if (!state) return;   // (no link, or the old kind: loaded below)
+    if (!state) return;   // no link, or the old kind: loaded below
     var idx = findExample(_examples, state.slug);
-    if (idx < 0) { _showSplash(); return; }   // (a link to an example that is not there)
+    if (idx < 0) { _showSplash(); return; }   // a link to an example that is not there
     // After the page has made itself, as a click would be.
     var open = function() { setTimeout(function() { window.loadExample(idx, state.backend); }, 0); };
     if (document.readyState === 'complete') open(); else window.addEventListener('load', open, { once: true });
@@ -126,9 +126,8 @@ function _buildExamplesMenu(examples) {
 }
 
 /**
- * Populate the welcome-panel examples: a segmented control for the language of the programs (C++ or Python, if there are examples
- * of both; the one that was chosen last is remembered), and one pill for each example of it: at first only its title, which slides out
- * the backends [title | backend | backend ...] when it is clicked (and slides in those of the pill that was open).
+ * Populates the welcome-panel examples: a language control (C++ or Python, if both exist; the last choice is remembered) and one pill per example,
+ * showing its title. Clicking a pill slides out its backends [title | backend | ...] and slides in those of the open pill.
  */
 function _buildWelcomeExamples(examples) {
     var list    = document.getElementById('welcome-examples-list');
@@ -137,7 +136,7 @@ function _buildWelcomeExamples(examples) {
     if (!list || !section) return;
 
     var remembered = null;
-    try { remembered = localStorage.getItem('skevu-example-language'); } catch (e) { /* (no storage: the default) */ }
+    try { remembered = localStorage.getItem('skevu-example-language'); } catch (e) { /* no storage: the default */ }
     var language  = initialLanguage(examples, remembered);
     var languages = exampleLanguages(examples);
 
@@ -205,12 +204,12 @@ function _buildWelcomeExamples(examples) {
             b.setAttribute('role', 'tab');
             b.onclick = function() {
                 language = l;
-                try { localStorage.setItem('skevu-example-language', l); } catch (e) { /* (no storage) */ }
+                try { localStorage.setItem('skevu-example-language', l); } catch (e) { /* no storage */ }
                 showList();
             };
             control.appendChild(b);
         });
-        control.style.display = languages.length > 1 ? '' : 'none';   // (one language: nothing to choose)
+        control.style.display = languages.length > 1 ? '' : 'none';
     }
 
     showList();
@@ -253,23 +252,23 @@ var _sessionStore = null;
 try {
     if (!window.skevu?.vscode && typeof indexedDB !== 'undefined')
         _sessionStore = createSessionStore(indexedDB, sessionId(sessionStorage, function() { return crypto.randomUUID(); }));
-} catch (e) { /* (no storage: no session) */ }
+} catch (e) { /* no storage: no session */ }
 
-// (whether files are kept is in sessionStorage too, where early.js can read it before the page is painted: IndexedDB cannot be)
+// whether files are kept is in sessionStorage too, where early.js can read it before the page is painted: IndexedDB cannot be
 function _keepUploads(files) {
     if (!_sessionStore) return;
     _sessionStore.save(files).then(function(failed) {
         if (failed === null) return;
-        try { sessionStorage.setItem('skevu-upload-kept', '1'); } catch (e) { /* (no storage) */ }
+        try { sessionStorage.setItem('skevu-upload-kept', '1'); } catch (e) { /* no storage */ }
     });
 }
 function _forgetUploads() {
-    try { sessionStorage.removeItem('skevu-upload-kept'); } catch (e) { /* (no storage) */ }
+    try { sessionStorage.removeItem('skevu-upload-kept'); } catch (e) { /* no storage */ }
     if (_sessionStore) _sessionStore.forget();
 }
 
 (async function _restoreUploads() {
-    if (decodePermalink(_initialHash) || new URLSearchParams(window.location.search).has('example')) return;   // (an example is on its way)
+    if (decodePermalink(_initialHash) || new URLSearchParams(window.location.search).has('example')) return;   // an example is on its way
     if (!_sessionStore) { _showSplash(); return; }
     var saved = await _sessionStore.restore();
     if (!saved || !saved.trace) { _showSplash(); return; }
@@ -318,7 +317,7 @@ window.loadTourExample = async function loadTourExample() {
     var backend = backends.indexOf('openmp') >= 0 ? 'openmp' : backends[0];
     var drawn = new Promise(function(resolve) {
         var done = function() {
-            if (!State._traceLoaded) return;   // (the empty render that the page makes before any trace is not it)
+            if (!State._traceLoaded) return;   // the empty render that the page makes before any trace is not it
             State.provider.off('rendersettled', done);
             resolve();
         };
@@ -328,7 +327,7 @@ window.loadTourExample = async function loadTourExample() {
     await window.loadExample(idx, backend);
     if (!State._traceLoaded) return false;
     await drawn;
-    await new Promise(function(r) { setTimeout(r, 500); });   // (the splash fades out)
+    await new Promise(function(r) { setTimeout(r, 500); });   // the splash fades out
     return true;
 };
 
@@ -356,7 +355,7 @@ export async function loadFiles(data, saved) {
         var cppFiles  = {};
 
         if (window.skevu?.vscode && data) {
-            // (the extension has the source files, and checks their hashes against the ones of the trace)
+            // the extension has the source files, and checks their hashes against the ones of the trace
             const parsed = JSON.parse(data);
             for (let [fileName, hash] of Object.entries(headerSourceFiles(Array.isArray(parsed) ? null : parsed.header)))
                 window.skevu.vscode.postMessage({
@@ -402,7 +401,7 @@ export async function loadFiles(data, saved) {
         if (!data && !saved) _keepUploads(picked);
     } catch (e) {
         _setLoadingState(false);
-        if (saved) { _forgetUploads(); _showSplash(); }   // (what is kept does not load: it is not tried again at each reload)
+        if (saved) { _forgetUploads(); _showSplash(); }   // what is kept does not load: it is not tried again at each reload
         console.error('[worker-loader] loadFiles failed:', e);
         if (typeof showAlert === 'function') showAlert('Failed to load trace: ' + e.message);
     }
@@ -437,7 +436,6 @@ function _applyLoadResult(result) {
     if (State.sourceView)
         State.sourceView.rebuild(
             result.cppFiles    || {},
-            // (the text that the code view shows: a trace that is compact is formatted; the ranges are those of that text)
             result.traceDisplayText ?? result.traceJsonRaw ?? null,
             result.traceFilename || 'trace.json',
             result.traceDisplayRanges ?? result.traceLineRanges ?? [],

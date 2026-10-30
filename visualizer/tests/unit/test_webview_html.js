@@ -1,6 +1,5 @@
-// test_webview_html.js — the page of an editor's webview is index.html with what an editor needs (src/webviewHtml.ts): the content security
-// policy, the folder of the extension as the base of the URLs, a nonce on every script, the script of the viewer, and without the parts of the page
-// that are for a browser.
+// test_webview_html.js — an editor webview page is index.html adapted by src/webviewHtml.ts: the content security policy, the extension folder as the
+// URL base, a nonce on every script, the viewer script, and no browser-only parts.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

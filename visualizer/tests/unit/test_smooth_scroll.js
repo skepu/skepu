@@ -54,7 +54,7 @@ describe('the scroll of a pane', () => {
       expect(pane.scrollTop).toBe(to);
       const lo = Math.min(from, to), hi = Math.max(from, to);
       for (const s of seen) { expect(s).toBeGreaterThanOrEqual(lo - 1e-9); expect(s).toBeLessThanOrEqual(hi + 1e-9); }
-      // (monotonic: it moves one way)
+      // monotonic: it moves one way
       for (let i = 1; i < seen.length; i++) expect(to > from ? seen[i] >= seen[i - 1] : seen[i] <= seen[i - 1]).toBe(true);
     }
   });
@@ -68,19 +68,19 @@ describe('the scroll of a pane', () => {
     expect(pane.scrollTop).toBe(0);
   });
   it('can go further than the pane allows now, as far as it will when the pane has got smaller (the info pane slides up), and says where it goes', () => {
-    const { pane, env, run } = setup(100);   // (the end is at 1600)
+    const { pane, env, run } = setup(100);   // the end is at 1600
     expect(smoothScrollTo(pane, 1700, { extraRange: 150 }, env)).toBe(1700);
-    pane.clientHeight = 250;                 // (the pane has got smaller: the end is at 1750)
+    pane.clientHeight = 250;                 // the pane has got smaller: the end is at 1750
     run(1000);
     expect(pane.scrollTop).toBe(1700);
-    expect(smoothScrollTo(pane, 99999, {}, env)).toBe(1750);   // (without the range: the end of the pane that is now)
+    expect(smoothScrollTo(pane, 99999, {}, env)).toBe(1750);   // without the range: the end of the pane that is now
   });
   it('jumps when it is not to animate, or there is nothing to move', () => {
     const { pane, env } = setup(100);
     smoothScrollTo(pane, 700, { animate: false }, env);
     expect(pane.scrollTop).toBe(700);
     smoothScrollTo(pane, 700.4, {}, env);
-    expect(pane.scrollTop).toBeCloseTo(700.4, 5);   // (less than a pixel away: nothing to animate)
+    expect(pane.scrollTop).toBeCloseTo(700.4, 5);   // less than a pixel away: nothing to animate
     expect(pane._scrollAnim).toBeFalsy();
   });
   it('is taken over by the next one, from where the pane is at that moment', () => {
@@ -91,7 +91,7 @@ describe('the scroll of a pane', () => {
     expect(mid).toBeGreaterThan(0); expect(mid).toBeLessThan(1000);
     smoothScrollTo(pane, 0, {}, env);
     run(16);
-    expect(pane.scrollTop).toBeLessThanOrEqual(mid);   // (it turns from mid, it does not jump to the top or to 1000 first)
+    expect(pane.scrollTop).toBeLessThanOrEqual(mid);   // it turns from mid, it does not jump to the top or to 1000 first
     run(1000);
     expect(pane.scrollTop).toBe(0);
   });
@@ -99,7 +99,7 @@ describe('the scroll of a pane', () => {
     const { pane, env, run } = setup(600);
     smoothScrollTo(pane, 1200, {}, env);
     run(96);
-    pane.scrollTop = 0;   // (something resets the pane)
+    pane.scrollTop = 0;   // something resets the pane
     run(16);
     expect(pane.scrollTop).toBeGreaterThan(600);   // the next frame puts it back on the path
     run(1000);
@@ -163,13 +163,13 @@ describe('whether the lines are in view already', () => {
   it('is no for a line outside, or at the very edge (cut off, or too close to it)', () => {
     expect(linesInView([line(700)], line(700), view)).toBe(false);
     expect(linesInView([line(40)], line(40), view)).toBe(false);
-    expect(linesInView([line(104)], line(104), view)).toBe(false);      // (4 px from the top)
-    expect(linesInView([line(590)], line(590), view)).toBe(false);      // (cut off at the bottom)
-    expect(linesInView([line(100 + 48)], line(100 + 48), view)).toBe(true);   // (just inside the margin)
+    expect(linesInView([line(104)], line(104), view)).toBe(false);      // 4 px from the top
+    expect(linesInView([line(590)], line(590), view)).toBe(false);      // cut off at the bottom
+    expect(linesInView([line(100 + 48)], line(100 + 48), view)).toBe(true);   // just inside the margin
   });
   it('needs all of a range of lines that fits in the pane', () => {
     const range = [line(300), line(312), line(560)];
-    expect(linesInView(range, range[0], view)).toBe(false);   // (the last one is within the margin of the bottom)
+    expect(linesInView(range, range[0], view)).toBe(false);   // the last one is within the margin of the bottom
     expect(linesInView([line(300), line(330)], line(300), view)).toBe(true);
   });
   it('needs only the target line of a range that is more than the pane shows', () => {
@@ -208,7 +208,7 @@ describe('a line that the info pane is going to cover', () => {
   it('is in view if it stays above the info pane, with a margin', () => {
     const line = { top: 100, bottom: 116 };
     expect(linesInView([line], line, settledView)).toBe(true);
-    const near = { top: 270, bottom: 286 };   // (the margin is 15% of the pane: 45 px)
+    const near = { top: 270, bottom: 286 };   // the margin is 15% of the pane: 45 px
     expect(linesInView([near], near, settledView)).toBe(false);
   });
 });
@@ -222,7 +222,7 @@ describe('where the line that is scrolled to goes in the pane', () => {
     expect(480 - offset - line).toBeGreaterThanOrEqual(3 * line);
   });
   it('has at least three lines above, and three below the end of a range of lines', () => {
-    const view = 300, span = 80;   // (five lines)
+    const view = 300, span = 80;   // five lines
     const offset = scrollOffset(view, line, span);
     expect(offset).toBeGreaterThanOrEqual(3 * line);
     expect(view - offset - span).toBeGreaterThanOrEqual(3 * line);

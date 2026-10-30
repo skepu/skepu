@@ -39,7 +39,7 @@ describe('colours', () => {
     it('are the same for the graph and the legend: regions get darker blue by depth, brown in the dark mode', () => {
         expect(regionColor(0, false)).toBe('rgb(225,240,255)');
         expect(regionColor(0, true)).toBe('rgb(42,31,16)');
-        expect(regionColor(9, false)).toBe('rgb(20,185,255)');                 // (the limits)
+        expect(regionColor(9, false)).toBe('rgb(20,185,255)');                 // the limits
         expect(COLORS.data.fill).toBe('lightgray');
         expect(COLORS.edge).toHaveLength(2);
     });
@@ -76,6 +76,6 @@ describe('the pages', () => {
     }
     it('do not load jQuery any more, and no script uses it', () => {
         for (const page of ['index.html', 'designer.html', 'embed-test.html']) expect(readFileSync(join(root, page), 'utf8')).not.toMatch(/jquery/i);
-        for (const file of ['SourceCodeView.js', 'InfoView.js', 'GraphView.js', 'TimelineView.js', 'ui.js', 'graph.js']) expect(readFileSync(join(root, 'script', file), 'utf8'), file).not.toMatch(/jQuery|(^|[^.\w])\$\(|\)\.scrollTo\(/m);          // (cy.$() is Cytoscape's)
+        for (const file of ['SourceCodeView.js', 'InfoView.js', 'GraphView.js', 'TimelineView.js', 'ui.js', 'graph.js']) expect(readFileSync(join(root, 'script', file), 'utf8'), file).not.toMatch(/jQuery|(^|[^.\w])\$\(|\)\.scrollTo\(/m);          // cy.$() is Cytoscape's
     });
 });

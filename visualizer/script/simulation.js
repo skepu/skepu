@@ -67,12 +67,12 @@ export class SimulationEngine {
     provider.on('select', function(ev) {
       self._selection = {
         id:        ev.focusId != null ? ev.focusId : ev.nodeId,
-        iterIdx:   ev.iterIdx,                                    // (undefined: the node as a whole, as a click in the graph says)
-        ambiguous: !!(ev.allIds && ev.allIds.length > 1),         // (a gutter badge of several nodes)
+        iterIdx:   ev.iterIdx,                                    // undefined: the node as a whole, as a click in the graph says
+        ambiguous: !!(ev.allIds && ev.allIds.length > 1),         // a gutter badge of several nodes
       };
       self._refreshPreview();
     });
-    // (a click in the canvas, outside of every item, deselects: that also ends a simulation, which is the way to stop it)
+    // a click in the canvas, outside of every item, deselects: that also ends a simulation, which is the way to stop it
     provider.on('clear',      function(ev) {
       self._selection = null;
       if (ev && ev.background && self.isActive) self.stop(); else self._refreshPreview();
@@ -84,7 +84,6 @@ export class SimulationEngine {
 
   // ── Public read-only state ──────────────────────────────────────────────────
 
-  // Show or hide the progress bar (a setting; it is on when a simulation has started, until the user turns it off).
   setProgressBarEnabled(on) {
     this._barEnabled = !!on;
     this._refreshPreview();
@@ -136,7 +135,7 @@ export class SimulationEngine {
     this._paused  = false;
     this._entries = [];
     this._index   = 0;
-    this._refreshPreview();   // (the bar then says where the selected node is, if there is one)
+    this._refreshPreview();
     this._syncMenuIcons();
   }
 
@@ -165,7 +164,7 @@ export class SimulationEngine {
     var at = this._uniqueEntry(this._selection);
     var target = at + delta;
     if (at < 0 || target < 0 || target >= this._entries.length) { this._entries = []; return false; }
-    this._index   = at + 1;   // (the selection is the one that is shown)
+    this._index   = at + 1;   // the selection is the one that is shown
     this._paused  = true;
     this._activated();
     this._syncMenuIcons();
@@ -190,7 +189,6 @@ export class SimulationEngine {
 
   // ── Private machinery ───────────────────────────────────────────────────────
 
-  // The simulation has started: the page shows the progress bar.
   _activated() {
     if (this._onActivate) this._onActivate();
   }
@@ -320,7 +318,7 @@ export class SimulationEngine {
 
     bar.addEventListener('mousedown', function(e) {
       if (!self.isActive) {
-        // (the bar is shown without a simulation, with the selected node on it: a click or a drag on it starts one, paused)
+        // the bar is shown without a simulation, with the selected node on it: a click or a drag on it starts one, paused
         self._buildNodeList();
         if (!self._entries.length) return;
         self._index  = 0;

@@ -296,7 +296,7 @@ _timelineView.attachProvider(_provider);
 // outside the individual view classes: the InfoView and State tracking.
 _provider.on('select', function(ev) {
   State._ganttSelectedNodeId = ev.nodeId;
-  State._selectedRank = ev.rank != null ? ev.rank : null;   // (the rank whose bar was clicked, for the trace pane)
+  State._selectedRank = ev.rank != null ? ev.rank : null;
   // traceIdx is the raw trace-file index used by InfoView for line highlighting.
   // It is distinct from iterIdx (0-based iteration) and is only present in
   // events emitted by simulation.js. (An iteration number is not a trace index.)
@@ -398,7 +398,7 @@ _simEngine = new SimulationEngine(_provider, {
   handleEl:    document.getElementById('sim-progress-handle'),
   ticksEl:     document.getElementById('sim-ticks'),
   playPauseEl: document.getElementById('sim-btn-playpause'),
-  // (the progress bar is shown when a simulation starts: the page has the setting and the menu item)
+  // the progress bar is shown when a simulation starts: the page has the setting and the menu item
   onActivate:  function() { if (!State._progressBar && typeof window.setProgressBar === 'function') window.setProgressBar(true); },
 });
 State.simEngine = _simEngine;

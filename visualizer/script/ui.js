@@ -96,7 +96,7 @@ export function fetchViewDataAndRender() {
   if (State.graphView) State.graphView.render();
 }
 
-/** The panes slide when the user opens or closes them, not for the first trace that is drawn (early.js puts the class on, and this takes it away). */
+/** Panes slide only when the user opens or closes them, not for the first trace (early.js sets the class; this removes it). */
 export function enablePaneAnimation() {
   document.documentElement.classList.remove('no-pane-anim');
 }
@@ -104,7 +104,7 @@ export function enablePaneAnimation() {
 /** The page of an editor (VS Code): the source is in the editor's own files, so the right pane is only the info pane. */
 export const inEditor = () => document.documentElement.classList.contains('editor');
 
-// `animate` (true only): the pane slides. The panes as they were left, and the defaults that are restored, are put in place at once.
+// `animate` (true only): the pane slides; restored panes and defaults are set at once.
 export function openSourcePane(animate) {
   State._sourcePaneOpen = true;
   setPaneOpen(document.getElementById('right_pane'),  true, 'width', animate === true);
@@ -125,7 +125,7 @@ export function closeSourcePane(animate) {
 export function setInfoEnabled(on) {
   State._infoEnabled = !!on;
   if (!State._infoEnabled) closePopup();
-  else if (State._ganttSelectedNodeId && State.infoView) State.infoView.open(State._ganttSelectedNodeId, 'info-panel');   // (the selection that is there now)
+  else if (State._ganttSelectedNodeId && State.infoView) State.infoView.open(State._ganttSelectedNodeId, 'info-panel');
   if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
   saveSettings();
 }
@@ -141,7 +141,7 @@ export function toggleSourcePane() {
 export function closePopup()
 {
   document.getElementById('info_window').style.flex = '0 0 0em';
-  if (inEditor()) {   // (the right pane is only the info pane there: it closes, unless a selection that follows at once opens it again)
+  if (inEditor()) {   // the right pane is only the info pane there: it closes, unless a selection that follows at once opens it again
     clearTimeout(_closeInfoTimer);
     _closeInfoTimer = setTimeout(function() { if (State._sourcePaneOpen) closeSourcePane(true); }, 120);
   }
@@ -183,7 +183,7 @@ export function settingChanged() {
 }
 
 export function toggleDarkMode() {
-  if (inEditor()) return;   // (the theme of the editor decides: theme_vscode.js)
+  if (inEditor()) return;   // the theme of the editor decides: theme_vscode.js
   setDarkMode(!State._darkMode);
 }
 
@@ -241,7 +241,7 @@ export function toggleLegend()
   enablePaneAnimation();
   State._legendOpen = !State._legendOpen;
   var el = document.getElementById('legend');
-  if (State._legendOpen) renderLegend();      // (before it slides open: what it slides to is its height with the legend in it)
+  if (State._legendOpen) renderLegend();      // before it slides open: what it slides to is its height with the legend in it
   setPaneOpen(el, State._legendOpen, 'height', true);
   if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
   saveSettings();
@@ -263,20 +263,20 @@ export function load()
   loadSettings();
   if (State.simEngine) State.simEngine.setProgressBarEnabled(State._progressBar);
 
-  // The panes slide from the first trace that has been drawn: it is drawn with the panes in place.
+  // Sliding starts after the first trace is drawn, which happens with the panes already in place.
   if (State.provider) {
     var panel = document.getElementById('welcome-panel');
     State.provider.on('rendersettled', function() {
-      // (the page makes a render before there is a trace: that is not the first trace that is drawn)
+      // the page makes a render before there is a trace: that is not the first trace that is drawn
       if (!State._traceLoaded) return;
       var go = function() {
-        reveal(document.documentElement, panel);       // (the splash fades out: reveal.js; nothing if it is not held)
-        requestAnimationFrame(enablePaneAnimation);    // (after the frame that has the panes in place: nothing that is pending slides)
+        reveal(document.documentElement, panel);       // the splash fades out: reveal.js; nothing if it is not held
+        requestAnimationFrame(enablePaneAnimation);    // after the frame that has the panes in place: nothing that is pending slides
       };
-      // (the badges of the source pane are put in a little after the render: they would come in while the splash is half gone)
+      // the badges of the source pane are put in a little after the render: they would come in while the splash is half gone
       if (State.sourceView) State.sourceView.whenPlaced(go); else go();
     });
-    // (a first trace that fails to be drawn is no reason to keep the splash)
+    // a first trace that fails to be drawn is no reason to keep the splash
     State.provider.on('error', function() { reveal(document.documentElement, panel); });
   }
 
@@ -296,7 +296,7 @@ export function load()
   // Apply legend visibility now that #legend is in the DOM (_legendOpen was set by loadSettings).
   setPaneOpen(document.getElementById('legend'), State._legendOpen, 'height', false);
   syncSpectrumMenuIcons();   // paint the legend gradient bar with the restored spectrum
-  if (inEditor()) State._sourcePaneOpen = false;   // (it opens with the first selection: openInfoPane)
+  if (inEditor()) State._sourcePaneOpen = false;   // it opens with the first selection: openInfoPane
   if (!State._sourcePaneOpen) closeSourcePane();
   if (State._ganttPaneOpen) openGanttPane();
 
@@ -329,7 +329,7 @@ export function load()
     // Don't steal keypresses from inputs, and ignore modifier combos.
     if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
     if (event.altKey || event.ctrlKey || event.metaKey) return;
-    // (while the shortcuts are shown the keys are not for the viewer: ? closes them, Esc is shortcuts.js)
+    // while the shortcuts are shown the keys are not for the viewer: ? closes them, Esc is shortcuts.js
     if (shortcutsOpen()) { if (event.key === "?") toggleShortcuts(); return; }
 
     if (event.key === "?") { toggleShortcuts(); }
@@ -354,7 +354,7 @@ export function load()
     else if (event.key === "z") { zoomGanttToMeasuredInterval(); }
     else if (event.key === "g") { toggleGanttPane(); }
     else if (event.key === "m") { toggleDarkMode(); }
-    else if (event.key === "s") { if (!inEditor()) toggleSourcePane(); }   // (the editor has no source pane)
+    else if (event.key === "s") { if (!inEditor()) toggleSourcePane(); }   // no source pane in the editor
     else if (event.key === "o") { toggleInfoPanel(); }
     else if (event.key === "p") { if (State.simEngine) State.simEngine.toggle(); }
     else if (event.key === "Tab") {
@@ -441,7 +441,7 @@ export function setRegionsOf(node, collapsed, recursive) { _setRegions([node], c
 function _setAllRegions(collapsed) {
   if (!_regionsAreShown()) return;
   var pids = State._allRegionPids || Object.keys(State._collapsedNodes);
-  pids.forEach(function(pid) { if (pid !== 'region_global') State._collapsedNodes[pid] = collapsed; });   // (the root of the program tree mode is never collapsed)
+  pids.forEach(function(pid) { if (pid !== 'region_global') State._collapsedNodes[pid] = collapsed; });
   fetchViewDataAndRender();
 }
 
@@ -466,7 +466,7 @@ function _setAllFusions(collapsed) {
 // ── Which of the Actions would do something now ──────────────────────────────
 
 // Set when the Actions menu opens (menu.js says 'menuopen'): an item that would do nothing is disabled, and its title says what it needs.
-// (The actions themselves still tell the same, if they are called some other way.)
+// The actions themselves still tell the same, if they are called some other way.
 var ACTION_NEEDS = {
   trace:     { has: function() { return State._traceLoaded; },
                why: 'Load a trace first' },
@@ -501,7 +501,6 @@ export function expandAllFusions()            { _setAllFusions(false); }
 
 // ── Menu icons and the info pane (called by the other modules through window) ────
 
-/** Show in the menu which of the panes and modes are on. */
 export function syncExternalMenuIcons() {
   function mark(id, on) {
     var b = document.getElementById(id);
@@ -524,10 +523,10 @@ export function syncExternalMenuIcons() {
 
 /** Open the info pane to the height that was remembered, or a default one. */
 export function openInfoPane() {
-  if (!State._infoEnabled) return;   // (View > Info Panel is off: a selection does not open it)
+  if (!State._infoEnabled) return;
   var rightEl = document.getElementById('right_pane');
   var infoEl  = document.getElementById('info_window');
-  if (inEditor()) {   // (the right pane is the info pane: it opens with the first selection and has the whole pane)
+  if (inEditor()) {   // the right pane is the info pane: it opens with the first selection and has the whole pane
     clearTimeout(_closeInfoTimer);
     if (!State._sourcePaneOpen) openSourcePane(true);
     infoEl.style.flex = '1 1 auto';

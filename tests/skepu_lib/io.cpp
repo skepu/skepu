@@ -49,7 +49,7 @@ TEST_CASE("io: cout writes a container that a skeleton made")
 	skepu::Vector<int> in(4), out(4);
 	for (size_t i = 0; i < 4; ++i)
 		in(i) = int(i) + 1;
-	skepu::Map<1>(plus_one)(out, in);   // (the elements of out are on the device of the backend)
+	skepu::Map<1>(plus_one)(out, in);   // the elements of out are on the device of the backend
 
 	CaptureCout capture;
 	skepu::io::cout << out;
@@ -74,14 +74,14 @@ TEST_CASE("io: cin reads a vector, which the backend then has")
 	FeedCin feed("10 20 30 99");
 	skepu::Vector<int> v(3), out(3);
 	skepu::io::cin >> v;
-	skepu::Map<1>(plus_one)(out, v);   // (the skeleton must see the values that were read)
+	skepu::Map<1>(plus_one)(out, v);   // the skeleton must see the values that were read
 
 	out.updateHost();
 	CHECK(out(0) == 11);
 	CHECK(out(1) == 21);
 	CHECK(out(2) == 31);
 
-	int next = 0;   // (only as many values as the vector has elements are read)
+	int next = 0;   // only as many values as the vector has elements are read
 	skepu::io::cin >> next;
 	CHECK(next == 99);
 }

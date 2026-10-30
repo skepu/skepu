@@ -32,7 +32,7 @@ foreach(_case vector matrix matrix_real)
 	target_compile_definitions(randomize_removed_${_case} PRIVATE CASE_${_define})
 	add_test(NAME randomize_removed_${_case}
 		COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target randomize_removed_${_case})
-	# (the build fails with the message of the static assertion; a build that succeeds does not match)
+	# the build fails with the message of the static assertion; a build that succeeds does not match
 	set_tests_properties(randomize_removed_${_case} PROPERTIES
 		PASS_REGULAR_EXPRESSION "is removed: use skepu::randomize::uniform"
 		RUN_SERIAL TRUE)
@@ -98,7 +98,7 @@ skepu_add_test(blas_checked EXCLUDE hybrid_opencl hybrid_cuda)
 
 # ------------------------------------------------
 #   BLAS library, checked complex and mixed precision routines (blas_complex, blas_mixed_precision, blas_complex_triangle: one program)
-#   (not on OpenCL: the kernels of the complex numbers are not complete there)
+# not on OpenCL: the kernels of the complex numbers are not complete there
 # ------------------------------------------------
 
 skepu_add_test(blas_complex BACKENDS sequential cpu openmp)
@@ -106,7 +106,7 @@ skepu_add_test(blas_complex BACKENDS sequential cpu openmp)
 
 # ------------------------------------------------
 #   Sparse matrices (skepu::SparseMatrix) and the sparse BLAS routines
-#   (only the sequential, CPU and OpenMP backends so far)
+# only the sequential, CPU and OpenMP backends so far
 # ------------------------------------------------
 
 skepu_add_test(sparse BACKENDS sequential cpu openmp)

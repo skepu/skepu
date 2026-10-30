@@ -143,7 +143,7 @@ export class GraphView {
 
     this._cyEl = document.createElement('div');
     this._cyEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
-    // (what the layout fits the graph to is the size of this element then: the legend and the timeline that come after change it)
+    // what the layout fits the graph to is the size of this element then: the legend and the timeline that come after change it
     this._fit = new FitKeeper(this._cyEl, LAYOUT_FIT_PAD);
 
     this._overlayEl = document.createElement('div');
@@ -565,14 +565,13 @@ export class GraphView {
           self._cy.once('render', function() {
             if (mySeq !== self._renderSeq) return;
             stats.renderingMs = Date.now() - renderStart;
-            // The legend comes in now (and the timeline, if it is still opening): they change the size of this element, and the layout was
-            // fitted to the size before.
+            // The legend (and the timeline, if still opening) appears now and changes this element's size, which the layout was fitted to.
             if (self._onRenderEnd) self._onRenderEnd(stats);
             // Notify listeners (e.g. SourceCodeView) that the layout and first
             // Cytoscape frame are complete.
             self._provider._emit('renderend', stats);
-            // The overlay stays, with the snapshot of the graph before, until the size of the element is still: the graph is then fitted to the
-            // size that it keeps, and is seen only then (a fit after the overlay has faded is seen as the graph that jumps).
+            // The overlay, with the previous graph's snapshot, stays until the element's size is still: the graph is then fitted to its final size and
+            // first seen only then (a fit after the overlay fades would show as a jump).
             self._fit.whenSettled(function() {
               if (mySeq !== self._renderSeq) return;
               // Remove the snapshot canvas before fading the overlay so the
@@ -580,7 +579,7 @@ export class GraphView {
               var snap = self._overlayEl.querySelector('.gv-snap');
               if (snap) snap.remove();
               self._hideOverlay();
-              // The graph is fitted to the size that it keeps and is in view (ui.js: the panes slide from the first one on).
+              // The graph is fitted to its final size and in view (ui.js: panes slide from here on).
               self._provider._emit('rendersettled', stats);
             });
           });
@@ -616,8 +615,8 @@ export class GraphView {
     var cy   = this._cy;
 
     // ── Background click: broadcast 'clear' to all attached views ───────────
-    // (a click on a node or an edge reaches this too, before its own handler: `background` says that it was the canvas that was clicked, which also
-    // ends a simulation)
+    // a click on a node or an edge reaches this too, before its own handler: `background` says that it was the canvas that was clicked, which also
+    // ends a simulation
     cy.on('click', function(event) {
       self._provider._emit('clear', { background: event.target === cy });
     });
@@ -652,28 +651,27 @@ export class GraphView {
     });
 
     // ── Region double-click: toggle collapsed/expanded and re-render ─────────
-    // (in the program tree mode a region is a node of the tree, that stands for it: the same toggles what is below it, which is hidden or shown)
+    // In the program tree mode a region is a tree node standing for it: toggling it hides or shows what is below
     cy.on('dblclick', 'node[type="region"], node[type="tree-region"]', function(event) {
       event.stopPropagation();
       if (event.target.hasClass('layout-phantom')) return;
       var pid = event.target.data('persistent_region_id');
-      if (!pid || pid === 'region_global') return;   // (the root of the program tree mode is not collapsed)
+      if (!pid || pid === 'region_global') return;
       var collapsed = self._provider.collapsedNodes;
       var collapse = (collapsed[pid] === false);
-      // (a node that the iterations of a loop are merged into is all of them: they are what is collapsed when the iterations are shown one by one)
+      // A node that merges loop iterations stands for all of them: they are what is collapsed when iterations are shown one by one
       (event.target.data('persistent_region_ids') || [pid]).forEach(function(id) { collapsed[id] = collapse; });
       self.render();
     });
 
     // ── Right click: the menu of the node ─────────────────────────────────────
-    // Clears the views, then selects `ele`, as a click does (for the items of a menu that show the node: opening the menu selects nothing).
+    // Selects `ele` as a click does, for menu items that show the node (opening the menu selects nothing).
     function chooseNode(ele, reveal) {
       self._provider._emit('clear', { background: false });
       selectNode(ele, reveal);
     }
-    // A region has the collapse and expand items of Actions > Selected Node, for that region (the root of the program tree has no menu); a call has
-    // Show call, Show instance and Show user function. They open when the button is pressed, as menus do on macOS. The browser's own menu is
-    // suppressed over the graph.
+    // A region has the collapse and expand items of Actions > Selected Node (not the root of the program tree); a call has Show call, Show instance and
+    // Show user function. Menus open on press, as on macOS. The browser's menu is suppressed over the graph.
     cy.container().addEventListener('contextmenu', function(event) { event.preventDefault(); });
     cy.on('cxttapstart', 'node[type="region"], node[type="tree-region"]', function(event) {
       if (event.target.hasClass('layout-phantom') || event.target.data('persistent_region_id') === 'region_global') return;
@@ -692,7 +690,6 @@ export class GraphView {
         { label: 'Show instance',      onClick: reveal('instance') },
         { label: 'Show user function', onClick: reveal('function') },
       ]);
-      // Turn off the items for definitions that the call does not have.
       self._provider.fetchNodeData(ele.data('id')).then(function(data) {
         buttons[1].disabled = !definitionPlace(data.definitions, 'instance');
         buttons[2].disabled = !definitionPlace(data.definitions, 'function');
@@ -734,7 +731,7 @@ export class GraphView {
     });
 
     // ── Scroll / pinch-zoom (trackpad / touch): shared with the designer ─────
-    if (this._unbindPanZoom) this._unbindPanZoom();            // (the element stays when the graph is made again: its listeners of the old graph go)
+    if (this._unbindPanZoom) this._unbindPanZoom();            // the element stays when the graph is made again: its listeners of the old graph go
     this._unbindPanZoom = bindPanZoom(cy, this._cyEl);
 
     // ── Hover tooltip + border highlight + legend highlight (graph_interaction.js, tooltip.js) ────
@@ -860,7 +857,7 @@ export class GraphView {
   // ── Layout workers ────────────────────────────────────────────────────────────
   // Self-contained: spacing constants are defined locally above.
 
-  // (the layout is layout.js, the one of the designer too: ELK for a trace with regions, dagre in a worker otherwise)
+  // layout.js, shared with the designer: ELK for graphs with regions, else dagre in a worker
   _startLayoutWorker(layoutSeq, layoutOpts, onPositions) {
     var self = this;
     var layout = startLayout(this._cy, layoutOpts, { dagre: this._dagreWorkerUrl, elk: this._elkWorkerUrl }, this._provider.allRegionPids.length > 0);
@@ -889,7 +886,7 @@ export class GraphView {
     this._cy.nodes().not(':parent').forEach(function(n) {
       var depth  = n.data('dag_depth') || 0;
       var index  = rows[depth] = (rows[depth] || 0) + 1;
-      var along  = depth * (LAYOUT_RANK_SEP + 40);            // (room for the height of a node, and the distance)
+      var along  = depth * (LAYOUT_RANK_SEP + 40);            // room for the height of a node, and the distance
       var across = (index - 1) * (LAYOUT_NODE_SEP + 100);
       positions[n.id()] = vertical ? { x: across, y: along } : { x: along, y: across };
     });

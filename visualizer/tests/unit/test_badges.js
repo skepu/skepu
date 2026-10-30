@@ -68,12 +68,12 @@ describe('the badge data of a coalesced node', () => {
 describe('the badges of the regions', () => {
     it('are not shown while the regions are not shown, and the others stay', async () => {
         const nodes = (await badgesOf(loop([10], 2), { collapse_iteration: false })).map(data => ({ data }));
-        expect(nodes.some(n => n.data.type === 'region')).toBe(true);               // (the backend sends them)
+        expect(nodes.some(n => n.data.type === 'region')).toBe(true);               // the backend sends them
 
         const hidden = badgeNodesToShow(nodes, false);
         expect(hidden.some(n => n.data.type === 'region')).toBe(false);
         expect(hidden.filter(n => n.data.type === 'skeleton_call')).toHaveLength(2);
-        expect(Object.keys(collectBadges(hidden, []).badges)).toEqual(['prog.cpp:10']);          // (not prog.cpp:3, the line of the region)
+        expect(Object.keys(collectBadges(hidden, []).badges)).toEqual(['prog.cpp:10']);          // not prog.cpp:3, the line of the region
 
         const shown = badgeNodesToShow(nodes, true);
         expect(shown).toHaveLength(nodes.length);

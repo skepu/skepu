@@ -52,7 +52,7 @@ function onWheel(selector) {   // the wheel or a pinch on an element
     return function() { e.removeEventListener('wheel', done); e.removeEventListener('gesturechange', done); };
   };
 }
-/** Nothing selected (what a selection shows can then be seen coming). */
+/** Clears the selection, so that what a selection shows can be seen appearing. */
 function clearSelection() {
   if (State.graphView && State.graphView._cy) State.graphView._cy.nodes().removeClass('selected_gutter');
   if (State.provider) State.provider._emit('clear');
@@ -119,7 +119,7 @@ let _active = null;   // { steps, index, layer, spot, card, ... } while the tour
 export function tourActive() { return !!_active; }
 
 function readStorage() { try { return localStorage.getItem(STORAGE_KEY); } catch (e) { return null; } }
-function writeStorage(v) { try { localStorage.setItem(STORAGE_KEY, v); } catch (e) { /* (no storage) */ } }
+function writeStorage(v) { try { localStorage.setItem(STORAGE_KEY, v); } catch (e) { /* no storage */ } }
 
 /** Sets the text of a task, with the word before the first colon in bold. */
 function setTask(taskEl, text) {
@@ -142,7 +142,6 @@ function targetElement(step) {
   return t && t.getBoundingClientRect().width > 0 ? t : null;
 }
 
-/** The window below the menu bar. */
 function contentArea() {
   const bar = document.getElementById('menubar');
   const top = bar ? bar.getBoundingClientRect().bottom : 0;
@@ -154,14 +153,14 @@ function position() {
   const step = _active.steps[_active.index];
   const viewport = { width: window.innerWidth, height: window.innerHeight };
   const target = targetElement(step);
-  const area = step.region ? step.region() : null;   // (a step can light up a part of the window that is not one element: the spotlight is exactly it)
+  const area = step.region ? step.region() : null;   // a step may spotlight a region that is not one element
   const rect = area ? spotRect(area, 0, viewport) : (target ? spotRect(target.getBoundingClientRect(), PAD, viewport) : null);
   const spot = _active.spot;
   if (rect) {
     spot.hidden = false;
     spot.style.left = rect.left + 'px'; spot.style.top = rect.top + 'px';
     spot.style.width = rect.width + 'px'; spot.style.height = rect.height + 'px';
-    // (the page around the spotlight is dimmed by four panels: a shadow that is larger than the screen is not drawn everywhere)
+    // the page around the spotlight is dimmed by four panels: a shadow that is larger than the screen is not drawn everywhere
     const [top, bottom, left, right] = _active.dims;
     const box = (e, l, t, w, h) => { e.style.left = l + 'px'; e.style.top = t + 'px'; e.style.width = Math.max(0, w) + 'px'; e.style.height = Math.max(0, h) + 'px'; e.hidden = false; };
     box(top, 0, 0, viewport.width, rect.top);
@@ -172,7 +171,7 @@ function position() {
     spot.hidden = true;
     _active.dims.forEach(d => { d.hidden = true; });
   }
-  _active.layer.classList.toggle('tour-dim', !rect);   // (without a spotlight the layer itself dims the page)
+  _active.layer.classList.toggle('tour-dim', !rect);
   const card = _active.card;
   const size = { width: card.offsetWidth, height: card.offsetHeight };
   // `cardAt`: the card goes in the bottom-left corner of that element.
@@ -197,7 +196,7 @@ async function show(index) {
   card.classList.add('tour-swapping');
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   await Promise.all([wait(still ? 0 : SWAP_MS), step.prepare ? step.prepare() : null]);
-  if (!_active || token !== _active.token) return;   // (the user went on while the step was being prepared)
+  if (!_active || token !== _active.token) return;   // the user went on while the step was being prepared
   card.querySelector('.tour-title').textContent = step.title;
   card.querySelector('.tour-text').textContent = step.text;
   card.querySelector('.tour-count').textContent = (index + 1) + ' / ' + _active.steps.length;
@@ -210,7 +209,7 @@ async function show(index) {
   if (step.task) {
     setTask(taskEl, step.task.text);
     stopTask();
-    // (what the user does while the text is on the screen; once is enough)
+    // what the user does while the text is on the screen; once is enough
     _active.stop = step.task.listen(function() {
       if (!_active || token !== _active.token || taskEl.classList.contains('tour-task-done')) return;
       taskEl.classList.add('tour-task-done');
@@ -234,7 +233,7 @@ function go(delta) {
 
 function onKey(event) {
   if (!_active) return;
-  // (the viewer is in use while the tour runs, so its keys work: the tour has Esc, and the arrows when its own buttons have the focus)
+  // the viewer is in use while the tour runs, so its keys work: the tour has Esc, and the arrows when its own buttons have the focus
   const k = event.key, inCard = _active.card.contains(document.activeElement);
   if (k === 'Escape') endTour(false);
   else if (inCard && k === 'ArrowRight') go(1);
@@ -248,7 +247,7 @@ function build() {
   const layer = el('div', 'tour-layer');
   layer.setAttribute('role', 'dialog');
   layer.setAttribute('aria-label', 'Guided tour');
-  // (a click on the text or on the dimmed page is not for the page: it closes no menu, which a step may have opened; a click in the light is)
+  // a click on the text or on the dimmed page is not for the page: it closes no menu, which a step may have opened; a click in the light is
   const dims = [0, 1, 2, 3].map(function() { return el('div', 'tour-dimmer'); });
   layer.addEventListener('click', function(e) { if (e.target !== layer || layer.classList.contains('tour-dim')) e.stopPropagation(); });
   const spot = el('div', 'tour-spot');
@@ -279,10 +278,10 @@ function restore(found) {
   if (found.source && !State._sourcePaneOpen) openSourcePane(false);
   if (!found.timeline && State._ganttPaneOpen) closeGanttPane();
   if (!found.legend && State._legendOpen) toggleLegend();
-  // (those functions save the settings: what was saved before is written back last)
+  // those functions save the settings: what was saved before is written back last
   try {
     if (found.stored === null) localStorage.removeItem(SETTINGS_KEY); else localStorage.setItem(SETTINGS_KEY, found.stored);
-  } catch (e) { /* (no storage) */ }
+  } catch (e) { /* no storage */ }
 }
 
 export function endTour(finished) {
@@ -306,7 +305,7 @@ export async function startTour() {
     if (typeof window.loadTourExample !== 'function' || !(await window.loadTourExample())) return false;
   }
   let stored = null;
-  try { stored = localStorage.getItem(SETTINGS_KEY); } catch (e) { /* (no storage) */ }
+  try { stored = localStorage.getItem(SETTINGS_KEY); } catch (e) { /* no storage */ }
   _found = { source: !!State._sourcePaneOpen, timeline: !!State._ganttPaneOpen, legend: !!State._legendOpen, stored };
   const ctx = { vscode: !!(window.skevu && window.skevu.vscode) || typeof acquireVsCodeApi === 'function' };
   const steps = visibleSteps(STEPS, ctx);

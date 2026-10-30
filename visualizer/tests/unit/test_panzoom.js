@@ -54,7 +54,7 @@ describe('the wheel', () => {
 
     it('pans sideways with Shift for a wheel that only goes up and down', () => {
         expect(wheelPan(wheel({ deltaY: 40, shiftKey: true }), 500)).toEqual({ x: -60, y: -0 });
-        expect(wheelPan(wheel({ deltaX: 8, deltaY: 40, shiftKey: true }), 500)).toEqual({ x: -12, y: -60 }); // (a swipe already has its sideways)
+        expect(wheelPan(wheel({ deltaX: 8, deltaY: 40, shiftKey: true }), 500)).toEqual({ x: -12, y: -60 }); // a swipe already has its sideways
     });
 
     it('zooms around the pointer with Ctrl or Cmd (the pinch of Chromium and Firefox)', () => {
@@ -65,8 +65,8 @@ describe('the wheel', () => {
             expect(cy.calls).toHaveLength(1);
             const [name, arg] = cy.calls[0];
             expect(name).toBe('zoom');
-            expect(arg.renderedPosition).toEqual({ x: 100, y: 100 });   // (clientX - left, clientY - top)
-            expect(arg.level).toBeCloseTo(2 * Math.exp(0.1), 10);        // (toward the screen: in)
+            expect(arg.renderedPosition).toEqual({ x: 100, y: 100 });   // clientX - left, clientY - top
+            expect(arg.level).toBeCloseTo(2 * Math.exp(0.1), 10);        // toward the screen: in
         }
     });
 
@@ -77,7 +77,7 @@ describe('the wheel', () => {
         expect(wheelZoomFactor(-100)).toBeLessThan(1.4);
         expect(wheelZoomFactor(100)).toBeGreaterThan(0.7);
         expect(wheelZoomFactor(0)).toBe(1);
-        expect(wheelZoomFactor(-1000)).toBe(wheelZoomFactor(-100));   // (cut)
+        expect(wheelZoomFactor(-1000)).toBe(wheelZoomFactor(-100));
     });
 
     it('counts lines and pages of a wheel (Firefox) in pixels', () => {
@@ -124,24 +124,24 @@ describe('a highlight in another view moves the graph only if the node is not cl
     });
 
     it('is not when any part is outside the view, or close to an edge', () => {
-        expect(isClearlyInView(box(-10, 250, 80, 60), view)).toBe(false);   // (left of the view)
-        expect(isClearlyInView(box(960, 250, 80, 60), view)).toBe(false);   // (half out on the right)
-        expect(isClearlyInView(box(400, 570, 80, 60), view)).toBe(false);   // (below)
-        expect(isClearlyInView(box(5, 250, 80, 60), view)).toBe(false);     // (inside, but at the edge)
+        expect(isClearlyInView(box(-10, 250, 80, 60), view)).toBe(false);   // left of the view
+        expect(isClearlyInView(box(960, 250, 80, 60), view)).toBe(false);   // half out on the right
+        expect(isClearlyInView(box(400, 570, 80, 60), view)).toBe(false);   // below
+        expect(isClearlyInView(box(5, 250, 80, 60), view)).toBe(false);     // inside, but at the edge
         expect(isClearlyInView(box(400, 10, 80, 60), view)).toBe(false);
-        expect(isClearlyInView(box(400, 300, 2000, 60), view)).toBe(false); // (bigger than the view)
+        expect(isClearlyInView(box(400, 300, 2000, 60), view)).toBe(false); // bigger than the view
     });
 
     it('is not when it is too small to see what it is: in pixels and against the view', () => {
         expect(isClearlyInView(box(400, 250, 10, 8), view)).toBe(false);
-        expect(isClearlyInView(box(400, 250, 27, 8), view)).toBe(false);    // (the least is 28 pixels, or 3% of the shorter side, 600: 18)
-        expect(isClearlyInView(box(400, 250, 28, 8), view)).toBe(true);     // (the longer side counts)
-        expect(isClearlyInView(box(400, 250, 44, 44), { width: 1400, height: 900 })).toBe(true);     // (a node of the normal size at the normal zoom)
-        expect(isClearlyInView(box(400, 250, 40, 40), { width: 4000, height: 2400 })).toBe(false);   // (small against a big view: 3% of 2400 is 72)
+        expect(isClearlyInView(box(400, 250, 27, 8), view)).toBe(false);    // the least is 28 pixels, or 3% of the shorter side, 600: 18
+        expect(isClearlyInView(box(400, 250, 28, 8), view)).toBe(true);     // the longer side counts
+        expect(isClearlyInView(box(400, 250, 44, 44), { width: 1400, height: 900 })).toBe(true);     // a node of the normal size at the normal zoom
+        expect(isClearlyInView(box(400, 250, 40, 40), { width: 4000, height: 2400 })).toBe(false);   // small against a big view: 3% of 2400 is 72
     });
 
     it('is clearly in view at the edge of a graph that was just fitted (Reset View leaves 30 px: its first and last nodes must not move it)', () => {
-        // (a fit makes a small graph as big as the view allows: the nodes of a big view are big)
+        // a fit makes a small graph as big as the view allows: the nodes of a big view are big
         for (const [v, size] of [[{ width: 1000, height: 600 }, 44], [{ width: 1400, height: 900 }, 44], [{ width: 4000, height: 2400 }, 100]]) {
             const pad = 30;
             expect(isClearlyInView(box(pad, pad, size, size), v), `top left, ${v.width}x${v.height}`).toBe(true);
@@ -203,7 +203,7 @@ describe('the graph stays fitted when the element it is in changes size', () => 
         let resized = null, stopped = false;
         const fit = new FitKeeper({}, padding, (el, callback) => { resized = callback; return () => { stopped = true; }; });
         fit.attach(cy);
-        // (`resize`: the size changes and then stays as it is, so that what waits for it is done; `change`: it changes, and what waits goes on waiting)
+        // `resize`: the size changes and then stays as it is, so that what waits for it is done; `change`: it changes, and what waits goes on waiting
         return { cy, fit, resize: () => { resized(); vi.advanceTimersByTime(FIT_SETTLE_MS); }, change: () => resized(), stopped: () => stopped };
     }
     const names = cy => cy.log.map(c => c[0]);
@@ -211,15 +211,15 @@ describe('the graph stays fitted when the element it is in changes size', () => 
     it('fits again with the same padding when the element changes size after the graph was fitted (the legend and the timeline come in)', () => {
         const { cy, fit, resize } = keeper(30);
         fit.fit();
-        resize();                      // (the timeline has opened: the element is smaller)
-        resize();                      // (and the legend)
+        resize();                      // the timeline has opened: the element is smaller
+        resize();                      // and the legend
         expect(cy.log).toEqual([['fit', 30], ['resize'], ['fit', 30], ['resize'], ['fit', 30]]);
     });
 
     it('tells the graph of the new size, but leaves the view, when the user has panned or zoomed since', () => {
         const { cy, fit, resize } = keeper();
         fit.fit();
-        cy.panBy();                    // (the user, a highlight, a pinch: anything that is not the fit)
+        cy.panBy();                    // the user, a highlight, a pinch: anything that is not the fit
         cy.log.length = 0;
         resize();
         expect(names(cy)).toEqual(['resize']);
@@ -229,7 +229,7 @@ describe('the graph stays fitted when the element it is in changes size', () => 
         const { cy, fit, resize } = keeper();
         fit.fit();
         cy.panBy();
-        fit.fit();                     // (Reset View)
+        fit.fit();                     // Reset View
         cy.log.length = 0;
         resize();
         expect(names(cy)).toEqual(['resize', 'fit']);
@@ -240,7 +240,7 @@ describe('the graph stays fitted when the element it is in changes size', () => 
         fit.fit();
         resize();
         resize();
-        expect(names(cy).filter(n => n === 'fit')).toHaveLength(3);   // (it stayed the fitted view through its own events)
+        expect(names(cy).filter(n => n === 'fit')).toHaveLength(3);   // it stayed the fitted view through its own events
     });
 
     it('does not fit a graph that was never fitted (the first size of the element, before the layout)', () => {
@@ -258,7 +258,7 @@ describe('the graph stays fitted when the element it is in changes size', () => 
         expect(names(next)).toEqual(['resize']);
         fit.fit();
         expect(names(next)).toEqual(['resize', 'fit']);
-        expect(names(cy)).toEqual(['fit']);                         // (nothing more for the old one)
+        expect(names(cy)).toEqual(['fit']);                         // nothing more for the old one
     });
 
     it('stops watching the element, and does nothing for a graph that is not there', () => {
@@ -275,10 +275,10 @@ describe('the graph stays fitted when the element it is in changes size', () => 
         const { cy, fit, change } = keeper();
         fit.fit();
         cy.log.length = 0;
-        for (let i = 0; i < 20; i++) { change(); vi.advanceTimersByTime(16); }   // (a drag: 20 changes, a frame apart)
-        expect(cy.log).toEqual([]);                                            // (no resize and no fit while it moves)
+        for (let i = 0; i < 20; i++) { change(); vi.advanceTimersByTime(16); }   // a drag: 20 changes, a frame apart
+        expect(cy.log).toEqual([]);                                            // no resize and no fit while it moves
         vi.advanceTimersByTime(FIT_SETTLE_MS);
-        expect(cy.log).toEqual([['resize'], ['fit', 30]]);                     // (one, when it has stopped)
+        expect(cy.log).toEqual([['resize'], ['fit', 30]]);                     // one, when it has stopped
     });
 
     it('waits for the last change: the wait starts again with each', () => {
@@ -314,7 +314,7 @@ describe('the graph stays fitted when the element it is in changes size', () => 
             vi.advanceTimersByTime(FIT_QUIET_MS - 1);
             expect(done).toEqual([]);
             vi.advanceTimersByTime(40);
-            expect(done).toEqual(['resize,fit']);                  // (the graph was told and fitted before the callback: what is seen is fitted)
+            expect(done).toEqual(['resize,fit']);                  // the graph was told and fitted before the callback: what is seen is fitted
         });
 
         it('waits while the size goes on changing (the timeline opens), then fits once and calls back', () => {
@@ -323,14 +323,14 @@ describe('the graph stays fitted when the element it is in changes size', () => 
             cy.log.length = 0;
             let calledAt = null; const t0 = Date.now();
             fit.whenSettled(() => { calledAt = Date.now() - t0; });
-            for (let i = 0; i < 10; i++) { vi.advanceTimersByTime(16); change(); }     // (an animation of 160 ms: a change each frame)
+            for (let i = 0; i < 10; i++) { vi.advanceTimersByTime(16); change(); }     // an animation of 160 ms: a change each frame
             expect(calledAt).toBe(null);
-            expect(cy.log).toEqual([]);                                            // (nothing is done to the graph meanwhile)
+            expect(cy.log).toEqual([]);                                            // nothing is done to the graph meanwhile
             vi.advanceTimersByTime(FIT_QUIET_MS + 20);
             expect(calledAt).toBeGreaterThanOrEqual(160 + FIT_QUIET_MS);
-            expect(names(cy)).toEqual(['resize', 'fit']);                          // (once)
+            expect(names(cy)).toEqual(['resize', 'fit']);                          // once
             vi.advanceTimersByTime(FIT_SETTLE_MS * 3);
-            expect(names(cy)).toEqual(['resize', 'fit']);                          // (the ordinary refit that was waiting does not come on top)
+            expect(names(cy)).toEqual(['resize', 'fit']);                          // the ordinary refit that was waiting does not come on top
         });
 
         it('does not wait for ever for a size that never settles', () => {

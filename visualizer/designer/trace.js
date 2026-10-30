@@ -43,7 +43,7 @@ export function synthesizeTrace(program, where) {
     const object = new Map();
     const regions = [];
     const scope = () => (regions.length ? { region: regions[regions.length - 1] } : {});
-    // (the updates of an object are one object of the trace: one allocation, one id)
+    // the updates of an object are one object of the trace: one allocation, one id
     const allocate = c => {
         object.set(c.object, nextId++);
         push({ type: 'allocation', label: c.label, object_id: object.get(c.object), time: ++clock, ...(declared(c.id) ? { line: declared(c.id) } : {}), ...scope() }, c.nodes);
@@ -177,7 +177,7 @@ export function synthesizeTrace(program, where) {
                 regions.push(step.label);
                 const inner = [];
                 run(step.steps, depth + 1, inner);
-                free(inner);                                 // freed at the end of the scope
+                free(inner);
                 regions.pop();
             }
         }

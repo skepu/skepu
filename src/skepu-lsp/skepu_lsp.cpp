@@ -38,7 +38,7 @@ namespace {
 /// A copy of the parts of what SkepuMatcher found in a file that the features use (the matcher deletes its objects on its next run).
 struct SkepuInfo
 {
-	/// The parse of the matcher reported errors and it found nothing: not known to have nothing, so asked again (a few times)
+	/// The matcher's parse had errors and found nothing: that is not "nothing there", so it is asked again (a few times)
 	bool Failed = false;
 
 	struct Skeleton
@@ -96,12 +96,12 @@ struct CacheEntry
 	int Attempts = 0;
 };
 
-/// How many times an analysis that failed is made again, before the result of it (nothing) is kept until the file changes
+/// How many times a failed analysis is retried before its result (nothing) is kept until the file changes
 constexpr int MaxAnalysisAttempts = 3;
 std::map<std::string, CacheEntry> InfoCache;
 
-/// The flags that say where the headers of the system are for the file that the editor has parsed: the sysroot and the directories of
-/// includes, which are made absolute (the matcher does not run in the directory of the compile command).
+/// The flags that locate the system headers for the file the editor parsed: the sysroot and the include directories, made absolute (the matcher does
+/// not run in the compile command's directory).
 std::vector<std::string> systemFlagsOf(const Preprocessor &PP)
 {
 	std::vector<std::string> Flags;
@@ -195,8 +195,8 @@ std::shared_ptr<const SkepuInfo> analyze(llvm::StringRef File, std::vector<std::
 
 /// What is known about File (found when it is first asked for, and again when the file has changed on the disk: the matcher reads the file, not the
 /// buffer of the editor)
-/// \p PP is the preprocessor of the file as the editor parsed it: it says where the headers of the system are. An analysis that failed is made
-/// again at the next request, a few times: it is not the same as a file that has nothing.
+/// \p PP is the preprocessor of the file as the editor parsed it; it says where the system headers are. A failed analysis is retried at the next
+/// request, a few times: it is not the same as a file with nothing.
 std::shared_ptr<const SkepuInfo> infoFor(llvm::StringRef File, const Preprocessor &PP)
 {
 	if (File.empty())
@@ -404,7 +404,7 @@ void handleMap(const std::string& QualName, std::vector<std::string>& output, co
 void handleMapReduce(const std::string& QualName, std::vector<std::string>& output, const std::string& potentialContainerType, std::string& retType)
 {
 	std::vector<std::string> templateParameters = getTemplateParameters(QualName);
-	retType = templateParameters[3]; // (the return type of the reduction)
+	retType = templateParameters[3];
 	std::vector<SkepuParam> functionParameters;
 	std::string container = "";
 	size_t paramCount = std::stoi(templateParameters[0]);

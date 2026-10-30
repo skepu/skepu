@@ -30,7 +30,7 @@ namespace skepu
 		{
 			this->init(rows, cols);
 			std::copy(ptr + this->local_offset(), ptr + this->local_offset() + this->local_size(), this->tile().getAddress());
-			this->tile_written(); // (the elements are not the value of the initialization)
+			this->tile_written(); // the elements are not the value of the initialization
 		}
 
 		Matrix(const Matrix &) = default;
@@ -69,7 +69,6 @@ namespace skepu
 		T &operator[](size_type index) { return this->write_access()[index]; }
 		const T &operator[](size_type index) const { return this->read_access()[index]; }
 
-		// (removed: the random fills are in skepu-lib/randomize.hpp)
 		void randomize(int = 0, int = RAND_MAX) { static_assert(sizeof(T) == 0, "Matrix::randomize is removed: use skepu::randomize::uniform (skepu-lib/randomize.hpp)"); }
 		void randomizeReal(double = 0, double = 1) { static_assert(sizeof(T) == 0, "Matrix::randomizeReal is removed: use skepu::randomize::uniform (skepu-lib/randomize.hpp)"); }
 

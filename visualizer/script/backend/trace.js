@@ -161,15 +161,14 @@ export function computeTraceLineRanges(jsonText) {
 }
 
 // ── The trace as the code view shows it ──────────────────────────────────────────────────────────────────────────
-// A trace can be written compactly (the tracer writes one event on each line, or a whole trace on one line), which is not a text to read in
-// the code view. The view shows a formatted copy of the text instead, and the line ranges of the events in that copy. The formatting changes
-// white space only: every string and number is copied as it is written, so the values are the ones of the file.
+// A compact trace (one event per line, or the whole trace on one line) is not readable in the code view, which then shows a formatted copy and the line
+// ranges of the events in that copy. Formatting changes only whitespace: strings and numbers are copied as written, so the values are the file's.
 
-/** Text with lines that are longer than this on average is not read as it is: it is formatted for the view. */
+/** Text whose average line is longer than this is formatted for the view. */
 export const READABLE_AVERAGE_LINE = 120;
-/** A text longer than this is shown as it is (a copy of it, formatted, would be much larger and take a long time). */
+/** Text longer than this is shown as is: a formatted copy would be much larger and slow. */
 export const MAX_FORMATTED_CHARS = 64 * 1024 * 1024;
-/** An array of values (no objects or arrays in it) that is shorter than this is kept on one line. */
+/** Arrays of plain values shorter than this stay on one line. */
 const INLINE_ARRAY_CHARS = 100;
 
 function lineCount(text) {
@@ -184,7 +183,7 @@ const isSpace = code => code === 32 || code === 10 || code === 13 || code === 9;
 function stringEnd(text, at) {
     for (let i = at + 1; i < text.length; i++) {
         const code = text.charCodeAt(i);
-        if (code === 92) i++;                 // (a backslash: the next character is part of the string)
+        if (code === 92) i++;                 // a backslash: the next character is part of the string
         else if (code === 34) return i + 1;
     }
     throw new SyntaxError('Unterminated JSON string at offset ' + at);
@@ -249,8 +248,8 @@ export function prettyPrintJson(text) {
 }
 
 /**
- * The text of a trace for the code view and the line ranges of its events in that text: the text as it is if it is readable, formatted
- * otherwise (a text that cannot be formatted, or is very large, is shown as it is).
+ * The text of a trace for the code view and the line ranges of its events in that text: as is if readable, formatted otherwise (as is also when it cannot
+ * be formatted or is very large).
  */
 export function formatTraceForDisplay(text) {
     let shown = text;

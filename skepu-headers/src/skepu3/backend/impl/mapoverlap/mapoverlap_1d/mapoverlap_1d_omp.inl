@@ -24,7 +24,7 @@ namespace skepu
 			arg.updateHost();
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateHost(hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
-			// (with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values)
+			// with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values
 			if (p != Parity::None || this->m_mirror_mode)
 				pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().updateHost(), 0)...);
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
@@ -34,11 +34,11 @@ namespace skepu
 			const size_t size = arg.size();
 			const size_t stride = 1;
 			
-			auto random_pre = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0); // (no edge elements are computed with Edge::None)
+			auto random_pre = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0);
 			size_t threads = std::min<size_t>(size - 2*overlap, omp_get_max_threads());
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(size - 2*overlap, threads);
-			auto random_post = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0); // (no edge elements are computed with Edge::None)
-			if (this->m_mirror_mode) // (mirror mode: the elements near the edges are not computed: their numbers are skipped)
+			auto random_post = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0);
+			if (this->m_mirror_mode) // mirror mode: the elements near the edges are not computed: their numbers are skipped
 				this->template prepareRandom<MapOverlapFunc::randomCount>(2 * overlap);
 			
 			if (this->m_edge != Edge::None)
@@ -107,7 +107,7 @@ namespace skepu
 
 			else // Edge::None
 			{
-				const size_t first = this->m_mirror_mode ? overlap : 0; // (mirror mode: the output keeps its values near the edges)
+				const size_t first = this->m_mirror_mode ? overlap : 0;
 #pragma omp parallel for schedule(runtime)
 				for (size_t i = 0; i < size - overlap * 2; ++i)
 				{
@@ -144,7 +144,7 @@ namespace skepu
 			arg.updateHost();
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateHost(hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
-			// (with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values)
+			// with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values
 			if (p != Parity::None || this->m_mirror_mode)
 				pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().updateHost(), 0)...);
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
@@ -163,10 +163,10 @@ namespace skepu
 			
 			for (size_t row = 0; row < colWidth; ++row)
 			{
-				auto random_pre = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0); // (no edge elements are computed with Edge::None)
+				auto random_pre = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0);
 				size_t threads = std::min<size_t>(rowWidth - 2*overlap, omp_get_max_threads());
 				auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(rowWidth - 2*overlap, threads);
-				auto random_post = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0); // (no edge elements are computed with Edge::None)
+				auto random_post = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0);
 				
 				inputEnd = inputBegin + rowWidth;
 				
@@ -232,7 +232,7 @@ namespace skepu
 				else // Edge::None
 				{
 					size_t out_cols = get<0>(std::forward<CallArgs>(args)...).total_cols();
-					const size_t first = this->m_mirror_mode ? overlap : 0; // (mirror mode: the output keeps its values near the edges)
+					const size_t first = this->m_mirror_mode ? overlap : 0;
 #pragma omp parallel for schedule(runtime)
 					for (size_t i = 0; i < out_cols - 2 * first; ++i)
 					{
@@ -247,7 +247,7 @@ namespace skepu
 				
 				inputBegin += rowWidth;
 			}
-			if (this->m_mirror_mode) // (mirror mode: the elements near the edges are not computed: their numbers are skipped)
+			if (this->m_mirror_mode) // mirror mode: the elements near the edges are not computed: their numbers are skipped
 				this->template prepareRandom<MapOverlapFunc::randomCount>(colWidth * 2 * overlap);
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap RowWise", this, {colWidth, rowWidth},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
@@ -273,7 +273,7 @@ namespace skepu
 			arg.updateHost();
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateHost(hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
-			// (with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values)
+			// with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values
 			if (p != Parity::None || this->m_mirror_mode)
 				pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().updateHost(), 0)...);
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
@@ -292,10 +292,10 @@ namespace skepu
 
 			for (size_t col = 0; col < arg.total_cols(); ++col)
 			{
-				auto random_pre = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0); // (no edge elements are computed with Edge::None)
+				auto random_pre = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0);
 				size_t threads = std::min<size_t>(colWidth - 2*overlap, omp_get_max_threads());
 				auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(colWidth - 2*overlap, threads);
-				auto random_post = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0); // (no edge elements are computed with Edge::None)
+				auto random_post = this->template prepareRandom<MapOverlapFunc::randomCount>(this->m_edge != Edge::None ? overlap : 0);
 				
 				inputEnd = inputBegin + (rowWidth * (colWidth-1));
 				
@@ -364,7 +364,7 @@ namespace skepu
 				else // Edge::None
 				{
 					size_t out_rows = get<0>(std::forward<CallArgs>(args)...).total_rows();
-					const size_t first = this->m_mirror_mode ? overlap : 0; // (mirror mode: the output keeps its values near the edges)
+					const size_t first = this->m_mirror_mode ? overlap : 0;
 #pragma omp parallel for schedule(runtime)
 					for (size_t i = 0; i < out_rows - 2 * first; ++i)
 					{
@@ -379,7 +379,7 @@ namespace skepu
 				
 				inputBegin += 1;
 			}
-			if (this->m_mirror_mode) // (mirror mode: the elements near the edges are not computed: their numbers are skipped)
+			if (this->m_mirror_mode) // mirror mode: the elements near the edges are not computed: their numbers are skipped
 				this->template prepareRandom<MapOverlapFunc::randomCount>(arg.total_cols() * 2 * overlap);
 			SKEPU_TRACE_CALL(trace_handle, "MapOverlap ColWise", this, {colWidth, rowWidth},
 				{get<OI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},

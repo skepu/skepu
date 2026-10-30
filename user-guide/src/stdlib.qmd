@@ -144,7 +144,7 @@ auto model = SequentialModel(Dimensions{batch_size, 28, 28, 1})
 model.init();
 model.configure(Loss::CategoricalCrossEntropy, Opt::Adam);
 model.fit(train_x, train_y, epochs, learning_rate);        // skepu::Tensor4<float> data
-auto score = model.evaluate(test_x, test_y);               // (loss, accuracy)
+auto score = model.evaluate(test_x, test_y);               // loss, accuracy
 ```
 
 The layers are `Dense`, `Conv2D`, `Conv1D`, `MaxPooling2D`, `AvgPooling2D`, `MaxPooling1D`,

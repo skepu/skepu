@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { History } from '../../designer/history.js';
 
-const tick = () => Promise.resolve();            // (the changes of one task are one step: a microtask ends the task)
+const tick = () => Promise.resolve();            // the changes of one task are one step: a microtask ends the task
 
 describe('the history of the designer', () => {
     it('has a step for each change of the design, and goes back and forth through them', async () => {
@@ -28,7 +28,7 @@ describe('the history of the designer', () => {
 
     it('makes one step of what is done in several calls in the same task', async () => {
         const h = new History('a');
-        h.commit('b'); h.commit('c'); h.commit('d');          // (an action that calls changed more than once)
+        h.commit('b'); h.commit('c'); h.commit('d');          // an action that calls changed more than once
         await tick();
         expect(h.undo()).toBe('a');
         expect(h.canUndo()).toBe(false);
@@ -39,9 +39,9 @@ describe('the history of the designer', () => {
         const h = new History('a', 100, () => t);
         for (const [text, at] of [['k1', 0], ['k12', 200], ['k123', 500]]) { t = at; h.commit(text, { merge: 'body:s1' }); await tick(); }
         expect(h.past).toEqual(['a']);                                   // one step for the three
-        t = 3000; h.commit('k1234', { merge: 'body:s1' }); await tick();      // (a pause: a step of its own)
+        t = 3000; h.commit('k1234', { merge: 'body:s1' }); await tick();      // a pause: a step of its own
         expect(h.past).toEqual(['a', 'k123']);
-        t = 3100; h.commit('moved', { merge: 'move' }); await tick();         // (another kind)
+        t = 3100; h.commit('moved', { merge: 'move' }); await tick();         // another kind
         expect(h.past).toEqual(['a', 'k123', 'k1234']);
         t = 3200; h.commit('moved again', { merge: 'move', window: 400 }); await tick();
         expect(h.past).toEqual(['a', 'k123', 'k1234']);

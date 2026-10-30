@@ -817,7 +817,7 @@ TEST_CASE("mapoverlap_tuple: MapOverlap 1D with variadic return")
 					m(y, x) = i++;
 		}, skepu::write(m));
 		
-		// (the value of m at (y, x) is y * size + x)
+		// the value of m at (y, x) is y * size + x
 		for (auto overlap : {skepu::Overlap::RowWise, skepu::Overlap::ColWise})
 		{
 			const bool rowwise = overlap == skepu::Overlap::RowWise;

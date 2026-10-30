@@ -49,7 +49,7 @@
 //                           iterIdx  — 0-based iteration index (optional; drives
 //                                      TimelineView.scrollToInterval when > 0)
 //                           traceIdx — raw trace-file index for InfoView highlight
-//                                      (optional; falls back to iterIdx when absent)
+// optional; falls back to iterIdx when absent
 //                           Each view ignores events where source matches its
 //                           own identity, preventing echo-back to the originator.
 //
@@ -138,7 +138,7 @@ function _mm(minmax, key, value) {
 export function buildMinmax(nodes, edges) {
   var minmax = {};
   nodes.forEach(function(node) {
-    // (the calls, the external blocks and the transfers: they are coloured on one scale)
+    // calls, external blocks and transfers share one colour scale
     if (node.data.type !== 'skeleton_call' && node.data.type !== 'external' && node.data.type !== 'transfer') return;
     var durs = (node.data.durations && node.data.durations.length)
       ? node.data.durations : [node.data.duration];
@@ -224,7 +224,7 @@ export class TraceDataProvider {
 
   /**
    * Register a listener for an event.
-   * @param {'fetchstart'|'data'|'renderend'|'rendersettled'|'select'|'clear'|'error'} event   (an event that is not one of these is ignored)
+   * @param {'fetchstart'|'data'|'renderend'|'rendersettled'|'select'|'clear'|'error'} event   other events are ignored
    * @param {Function} handler
    * @returns {TraceDataProvider}  this (chainable)
    */
@@ -497,7 +497,7 @@ export class TraceDataProvider {
     else if (mode === 'fan-in')              value = d.fan_in  || 0;
     else if (mode === 'fan-out')             value = d.fan_out || 0;
     else if (mode === 'duration-cv')         value = d.duration_cv || 0;
-    else if (mode === 'imbalance')           value = d.imbalance;      // (null for a call that is not of an MPI program: the default colour)
+    else if (mode === 'imbalance')           value = d.imbalance;      // null for a call that is not of an MPI program: the default colour
     else if (mode === 'comm-bytes')          value = d.comm_bytes;
     else if (mode === 'elements') {
       value = (d.elements || [1]).reduce(function(a, b) { return a * b; }, 1);

@@ -22,9 +22,9 @@ export class GuidePanel {
 				return;
 			}
 			const panel = vscode.window.createWebviewPanel('skepu.guide', 'SkePU User Guide', vscode.ViewColumn.Beside,
-				{ enableScripts: true, localResourceRoots: [guideDir], retainContextWhenHidden: true });   // (a page is not loaded again when the tab is shown again)
+				{ enableScripts: true, localResourceRoots: [guideDir], retainContextWhenHidden: true });   // a page is not loaded again when the tab is shown again
 			panel.onDidDispose(() => { GuidePanel.panel = undefined; GuidePanel.page = ''; });
-			// (a link in a page of the book: another page, or the web)
+			// a link in a page of the book: another page, or the web
 			panel.webview.onDidReceiveMessage(message => {
 				if (message?.type === 'report') {
 					GuidePanel.log.appendLine(`${new Date().toISOString().slice(11, 23)} ${message.what}: ${String(message.detail).slice(0, 500)}`);

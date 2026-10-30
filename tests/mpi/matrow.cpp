@@ -118,7 +118,7 @@ int main()
 {
 	run(12, 12, 40);  // as many rows as elements: nothing moves
 	run(5, 12, 40);   // fewer elements than rows: the elements move
-	run(9, 31, 3);    // (a narrow matrix)
+	run(9, 31, 3);    // a narrow matrix
 	run(2, 40, 17);   // fewer elements than processes
 	run(1, 1, 6);
 	run(30, 30, 1);

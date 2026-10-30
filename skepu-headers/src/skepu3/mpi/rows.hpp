@@ -73,8 +73,8 @@ namespace skepu
 
 			// Every process gets the rows that it needs (needed[r] for the process r), from the processes that have them. The
 			// result is the rows of the ranges of this process, one after the other, in the order of the ranges.
-			// ('distribution' says which rows each process has in 'tile': offset(r) and count(r))
-			// ('reason' and 'ids' say why, for the trace)
+			// 'distribution' says which rows each process has in 'tile': offset(r) and count(r)
+			// 'reason' and 'ids' say why, for the trace
 			template<typename T, typename Distribution>
 			std::vector<T> exchange_rows(const T *tile, size_t unit, const Distribution &distribution,
 				const std::vector<std::vector<RowRange>> &needed, const char *reason = "row exchange", std::vector<int> ids = {})
@@ -280,7 +280,7 @@ namespace skepu
 						best_cost = c;
 					}
 				}
-				// (SKEPU_MPI_TRACE_LAYOUT=1: which layout a call has, and the bytes that it moves)
+				// SKEPU_MPI_TRACE_LAYOUT=1: which layout a call has, and the bytes that it moves
 				if (std::getenv("SKEPU_MPI_TRACE_LAYOUT") && mpi::rank() == 0)
 					std::cerr << "[SkePU MPI] " << n << " elements: " << (best == 0 ? "the blocks of the results" : "the blocks of a matrix")
 						<< ", " << best_cost << " bytes move\n";

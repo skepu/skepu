@@ -61,14 +61,14 @@ TEST_CASE("Container variables are named in the trace")
 	skepu::Vector<float> renamed(2);
 	renamed.setLabel("later");
 
-	// (these cannot be named, and must still compile and run: a const container, a reference, a declaration in a condition and in a loop header)
+	// these cannot be named, and must still compile and run: a const container, a reference, a declaration in a condition and in a loop header
 	const skepu::Vector<float> constant(2);
 	skepu::Vector<float> &reference = first;
 	if (skepu::Vector<float> in_condition(2); in_condition.size() == 2)
 		reference(0) = 1.f;
 	for (skepu::Vector<float> in_header(2); in_header.size() > 2; ) {}
 	int line = __LINE__; skepu::Vector<float>
-		over_lines(2); // (the next line is the next line)
+		over_lines(2);
 	CHECK(__LINE__ == line + 2);
 
 	first.flush();
@@ -93,7 +93,7 @@ TEST_CASE("The allocation event of a container is at its declaration")
 {
 	const int line = __LINE__ + 1;
 	skepu::Vector<float> located(3); skepu::Matrix<float> also_located(2, 2);
-	skepu::Vector<float> constructed_in_place = skepu::Vector<float>(2);   // (named, and located, as a variable)
+	skepu::Vector<float> constructed_in_place = skepu::Vector<float>(2);   // named, and located, as a variable
 	located.flush();
 
 	SKEPU_TRACE_FLUSH();
@@ -102,7 +102,7 @@ TEST_CASE("The allocation event of a container is at its declaration")
 	json trace = json::parse(file);
 	std::map<std::string, std::pair<std::string, int>> places;
 	for (auto const& e : trace.is_object() ? trace["data"] : trace)
-		if (e["type"] == "allocation" && e.contains("file"))   // (the containers that the program does not declare have the place of the header)
+		if (e["type"] == "allocation" && e.contains("file"))   // the containers that the program does not declare have the place of the header
 			places[e["label"].get<std::string>()] = {e["file"].get<std::string>(), e["line"].get<int>()};
 
 	const std::string name = "tracing_container_labels.cpp";

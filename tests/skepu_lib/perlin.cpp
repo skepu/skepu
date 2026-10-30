@@ -130,7 +130,7 @@ namespace
 		make_gradients(grid);
 		skepu::Matrix<float> noise(rows, cols, "noise", 0.f);
 		skepu::Map<1>(perlin_2d)(noise, noise, grid, cell_size, amplitude);
-		noise.updateHost(); // (the element access of a container does not synchronize with the device)
+		noise.updateHost(); // the element access of a container does not synchronize with the device
 		return noise;
 	}
 

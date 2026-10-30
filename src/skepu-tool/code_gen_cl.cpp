@@ -1036,7 +1036,7 @@ std::string generateOpenCLMultipleReturn(UserFunction &UF)
 		{
 			replaceTextInString(type, "struct ", "");
 			const std::string memberType = multipleMemberTypeCL(type);
-			type = transformToCXXIdentifier(type);        // (the name of the struct is made of the escaped names)
+			type = transformToCXXIdentifier(type);        // the struct's name is made of the escaped names
 			std::string divider = (ctr != UF.multipleReturnTypes.size() - 1) ? ", " : "";
 			SSmultiReturnType << "_" << type;
 			SSmultiReturnTypeDef << memberType << " e" << ctr << ";\n";

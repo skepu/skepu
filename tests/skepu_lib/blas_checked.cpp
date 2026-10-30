@@ -1,6 +1,6 @@
 // Each part is in its own namespace; its test cases are prefixed with its name.
 
-// (an error of a routine is an exception, which the tests of the checks of the arguments catch)
+// an error of a routine is an exception, which the tests of the checks of the arguments catch
 #define SKEPU_ENABLE_EXCEPTIONS
 #include "../../external/catch2/catch.hpp"
 #include "blas_check.hpp"
@@ -154,7 +154,7 @@ TEST_CASE("blas_level1: BLAS level 1: dot, nrm2, asum, iamax")
 			REQUIRE(close(blas::dotu(n, x, inc, y, inc), dot));
 			REQUIRE(close(blas::nrm2(n, x, inc), std::sqrt(sumsq)));
 			REQUIRE(close(blas::asum(n, x, inc), asum));
-			// (with ties the first maximum is the BLAS answer; the values have some)
+			// with ties the first maximum is the BLAS answer; the values have some
 			size_t got = blas::iamax(n, x, inc);
 			REQUIRE(std::fabs(hx[got * inc]) == best);
 			(void)arg;
@@ -441,7 +441,7 @@ TEST_CASE("blas_semantics: BLAS level 1: scal, nrm2, asum and iamax on n element
 				}
 				REQUIRE(close(blas::nrm2(n, x, inc), std::sqrt(sumsq)));
 				REQUIRE(close(blas::asum(n, x, inc), asum));
-				REQUIRE(blas::iamax(n, x, inc) == arg); // (the first of equal values)
+				REQUIRE(blas::iamax(n, x, inc) == arg); // the first of equal values
 
 				blas::scal(n, 2.f, x, inc);
 				const auto r = to_host(x);
@@ -706,7 +706,7 @@ TEST_CASE("blas_phase1: iamin and axpby")
 		for (size_t i = 0; i < n; ++i)
 			x[i] = (i % 4 == 2) ? -0.5f : 3.f + (float)(i % 5);
 		REQUIRE(blas::iamin(n, x, 1) == 2);
-		REQUIRE(blas::iamax(n, x, 1) == 4); // (the first of the largest: 7 at i = 4, 9, ...)
+		REQUIRE(blas::iamax(n, x, 1) == 4); // the first of the largest: 7 at i = 4, 9, ...
 	}
 	Vector<float> none(3);
 	REQUIRE(blas::iamin(0, none, 1) == 0);
@@ -723,7 +723,7 @@ TEST_CASE("blas_phase1: iamin and axpby")
 				const auto hx = to_host(x), hy = to_host(y);
 				if (beta == 0.f)
 					for (size_t i = 0; i < n; ++i)
-						y[pos(i, n, incy)] = NAN; // (not read)
+						y[pos(i, n, incy)] = NAN;   // a NaN here must not reach the result
 				blas::axpby(n, 2.f, x, incx, beta, y, incy);
 				const auto r = to_host(y);
 				for (size_t i = 0; i < r.size(); ++i)
@@ -1047,7 +1047,7 @@ TEST_CASE("blas_phase1: trmm and trsm")
 						for (size_t j = 0; j < n; ++j)
 							X[i * n + j] = rx[i * B1.size_j() + j];
 					const auto Q = (side == Side::Left) ? ref::mul(T, m, m, X, n) : ref::mul(X, m, n, T, n);
-					// (the part of B outside the m x n part is as it was)
+					// the part of B outside the m x n part is as it was
 					for (size_t i = 0; i < B1.size_i(); ++i)
 						for (size_t j = 0; j < B1.size_j(); ++j)
 							if (i >= m || j >= n)

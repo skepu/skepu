@@ -131,7 +131,7 @@ namespace skepu
 				
 				checkVectorSizes(this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
-				if (this->mirrorHasNoInterior(get<0>(std::forward<CallArgs>(args)...).size())) // (mirror mode with nothing to compute: only the random numbers are used)
+				if (this->mirrorHasNoInterior(get<0>(std::forward<CallArgs>(args)...).size())) // mirror mode with nothing to compute: only the random numbers are used
 				{
 					this->template prepareRandom<randomCount>(get<0>(std::forward<CallArgs>(args)...).size());
 					return;
@@ -145,7 +145,7 @@ namespace skepu
 				if (p == Parity::Odd && size % 2 == 1) random_size += 1;
 				auto random = this->template prepareRandom<randomCount>(random_size);
 				auto random_post = this->template prepareRandom<randomCount>(edge_prng_size);
-				if (this->m_mirror_mode) // (the elements near the edges are not computed: their numbers are skipped)
+				if (this->m_mirror_mode) // the elements near the edges are not computed: their numbers are skipped
 					this->template prepareRandom<randomCount>(2 * overlap);
 
 				if (this->m_edge != Edge::None)
@@ -319,7 +319,7 @@ namespace skepu
 				checkMatrixSizes(this->expectedInputSize(firstOutputRows, 0), firstOutputCols,
 								 generateColwiseCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
-				if (this->mirrorHasNoInterior(firstOutputRows)) // (mirror mode with nothing to compute: only the random numbers are used)
+				if (this->mirrorHasNoInterior(firstOutputRows)) // mirror mode with nothing to compute: only the random numbers are used
 				{
 					this->template prepareRandom<randomCount>(firstOutputRows * firstOutputCols);
 					return;
@@ -426,7 +426,7 @@ namespace skepu
 
 					inputBegin += 1;
 				}
-				if (this->m_mirror_mode) // (the elements near the edges are not computed: their numbers are skipped)
+				if (this->m_mirror_mode) // the elements near the edges are not computed: their numbers are skipped
 					this->template prepareRandom<randomCount>(arg.total_cols() * 2 * overlap);
 			}
 
@@ -451,7 +451,7 @@ namespace skepu
 				checkMatrixSizes(firstOutputRows, this->expectedInputSize(firstOutputCols, 0),
 								 generateRowwiseCallMetadata(), this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
-				if (this->mirrorHasNoInterior(firstOutputCols)) // (mirror mode with nothing to compute: only the random numbers are used)
+				if (this->mirrorHasNoInterior(firstOutputCols)) // mirror mode with nothing to compute: only the random numbers are used
 				{
 					this->template prepareRandom<randomCount>(firstOutputRows * firstOutputCols);
 					return;
@@ -553,7 +553,7 @@ namespace skepu
 
 					inputBegin += rowWidth;
 				}
-				if (this->m_mirror_mode) // (the elements near the edges are not computed: their numbers are skipped)
+				if (this->m_mirror_mode) // the elements near the edges are not computed: their numbers are skipped
 					this->template prepareRandom<randomCount>(arg.total_rows() * 2 * overlap);
 			}
 

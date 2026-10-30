@@ -398,7 +398,7 @@ TEST_CASE("mvmult: Matrix vector multiplication")
 
 	skepu::randomize::uniform(m, 0, RAND_MAX);
 	skepu::randomize::uniform(v, 0, RAND_MAX);
-	m.flush();   // (directMV reads the elements on the host)
+	m.flush();   // directMV reads the elements on the host
 	v.flush();
 
 	directMV(v, m, expected);

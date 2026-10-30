@@ -297,7 +297,7 @@ set_tests_properties(tracing_scalar_values PROPERTIES
 
 # ------------------------------------------------
 #   What skepu-tool refuses
-#   (run the tool on a source and check its status and its message; needs the tool to be built)
+# run the tool on a source and check its status and its message; needs the tool to be built
 # ------------------------------------------------
 
 # Clang's headers go between the C++ library headers and the SDK headers, as in skepu_precompile
@@ -322,7 +322,6 @@ endfunction()
 # A user constant is put into the kernels from its initializer: it must be constexpr, and have one
 skepu_add_tool_error_test(tool_userconstant_not_constexpr userconstant_not_constexpr.cpp "must be declared constexpr")
 skepu_add_tool_error_test(tool_userconstant_no_initializer userconstant_no_initializer.cpp "must be declared constexpr")
-# (and one that is as it must be is accepted)
 skepu_add_tool_error_test(tool_userconstant_valid userconstant_valid.cpp "")
 
 # The standard library has no counterpart in OpenCL C, only the math functions (see AllowedFunctionNamesCalledInUFs) have

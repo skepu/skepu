@@ -32,7 +32,7 @@ const newSeed = () => Math.random().toString(36).slice(2, 8);
 
 // ── Biases ───────────────────────────────────────────────────────────────────
 
-const CALLS = { small: [4, 6], medium: [14, 22], large: [40, 52] };           // call counts (about as many containers)
+const CALLS = { small: [4, 6], medium: [14, 22], large: [40, 52] };           // about as many containers
 /** Weights for the number of inputs of an elementwise call: 1, 2, 3, … */
 const INPUTS = { small: [0.72, 0.24, 0.04], large: [0.05, 0.3, 0.3, 0.2, 0.15] };
 const SHAPE = {
@@ -146,7 +146,6 @@ export function randomDesign({ size = 'medium', arity = 'small', shape = 'balanc
         }
         return chosen;
     };
-    /** Proxies and uniforms of a call, per the arity. */
     const extras = (s, taken) => {
         const proxies = large ? int(0, 2) : (chance(0.12) ? 1 : 0);
         const avoid = new Set(taken.map(c => c.id));

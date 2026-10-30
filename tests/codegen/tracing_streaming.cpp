@@ -1,9 +1,8 @@
-// The trace is written as the events are replayed (see tracing_streaming in CMakeLists.txt, which counts the events of the final file):
-//  - the file is complete after a flush, with every event so far in the order they were recorded, also when the tracer replayed and wrote
-//    events by itself (it does when many wait), and the next flush adds to it;
-//  - a container that is renamed gets the name in its events that are among the newest (the window of kEditableEvents events that can still be
-//    changed), and not in older ones;
-//  - several threads recording at once, while the tracer replays: none lost, and the events of a thread stay in their order.
+// The trace is written as events are replayed (see tracing_streaming in CMakeLists.txt, which counts the events of the final file):
+//  - the file is complete after a flush, with every event so far in recorded order, also when the tracer replayed and wrote events by itself (it does when
+//    many wait), and the next flush adds to it;
+//  - a renamed container gets its name in the newest events (the window of kEditableEvents events that can still change), not in older ones;
+//  - several threads recording at once while the tracer replays: none lost, and each thread's events stay in order.
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -37,7 +36,7 @@ static const nlohmann::json *find(const nlohmann::json &data, unsigned long id)
 int main()
 {
 	// 1. Many events, flushed in the middle of the run
-	const int first = 40000;   // (more than the tracer holds before it replays by itself, and than the window)
+	const int first = 40000;   // more than the tracer holds before it replays by itself, and than the window
 	for (int i = 0; i < first; ++i)
 		SKEPU_TRACE_ALLOCATION(1000000 + i, "event " + std::to_string(i), i);
 	SKEPU_TRACE_FLUSH();
@@ -54,7 +53,7 @@ int main()
 	for (int i = 0; i < 500; ++i)
 		SKEPU_TRACE_ALLOCATION(3000000 + i, "filler", i);
 	SKEPU_TRACE_RELABEL(2000000, "late name");
-	SKEPU_TRACE_RELABEL(1000000, "too late");   // (its event is 40000 events back: out of the window)
+	SKEPU_TRACE_RELABEL(1000000, "too late");   // its event is 40000 events back: out of the window
 	SKEPU_TRACE_FLUSH();
 	trace = readTrace();
 	CHECK(trace["data"].size() == static_cast<size_t>(first + 1 + 500));
@@ -94,5 +93,5 @@ int main()
 	for (int t = 0; t < threads; ++t)
 		CHECK(count[t] == perThread);
 
-	return failures;   // (the events of the final file are counted by the test that follows)
+	return failures;   // the events of the final file are counted by the test that follows
 }

@@ -41,7 +41,7 @@ namespace skepu
                 parameters.add("overlap", overlap, dimensions);
                 if (std::any_of(strides, strides + dimensions, [](int s) { return s != 1; }))
                     parameters.add("stride", strides, dimensions);
-                if (this->m_edge != Edge::Duplicate)     // (the default)
+                if (this->m_edge != Edge::Duplicate)     // the default
                     parameters.add("edge", to_string(this->m_edge));
                 if (this->m_edge == Edge::Pad)
                     parameters.addNumber("pad", this->m_pad);

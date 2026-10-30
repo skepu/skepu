@@ -1,5 +1,5 @@
-# Generated data and vendored code: kept out of the diffs (git diff says "Binary files differ", for the generated data that is hard to read;
-# GitHub collapses these files and leaves them out of the language statistics). `git diff --text` shows such a diff when it is wanted.
+# Generated data and vendored code: left out of diffs (git diff reports "Binary files differ"; GitHub collapses them and excludes them from language
+# statistics). `git diff --text` shows the diff.
 
 # SkeVU: the traces of the examples and their snapshots (made again by running the examples), and the digests of the golden tests
 visualizer/examples/**/trace_*.json   -diff linguist-generated

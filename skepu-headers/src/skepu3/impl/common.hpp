@@ -80,7 +80,6 @@ namespace skepu
 			this->objectNames[object] = name;
 		}
 
-		// (the name that a program registered for an object, or the fallback)
 		std::string getObjectName(const void *object, std::string const& fallback)
 		{
 			auto it = this->objectNames.find(object);
@@ -371,7 +370,7 @@ namespace skepu
 	template<> inline std::string getDataTypeCL<unsigned int>  () { return "unsigned int";   }
 	template<> inline std::string getDataTypeCL<long>          () { return "long";           }
 	template<> inline std::string getDataTypeCL<unsigned long> () { return "unsigned long";  }
-	// (OpenCL C has no long long: its long is 64 bits)
+	// OpenCL C has no long long: its long is 64 bits
 	template<> inline std::string getDataTypeCL<long long>          () { return "long";           }
 	template<> inline std::string getDataTypeCL<unsigned long long> () { return "unsigned long";  }
 	template<> inline std::string getDataTypeCL<float>         () { return "float";          }

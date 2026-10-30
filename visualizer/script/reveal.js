@@ -5,21 +5,21 @@
 // first render has settled it fades out and is hidden. Without a splash (a second trace) nothing is held.
 
 export const REVEAL_FADE_MS     = 300;    // as --reveal-fade in main.css
-/** The splash does not stay for ever if the first render never settles (a trace that takes very long, or fails). */
+/** Upper bound on holding the splash if the first render never settles (a very slow or failed trace). */
 export const REVEAL_MAX_WAIT_MS = 8000;
 
 var _timer = null;
 
 /**
- * The first trace is being drawn: keep the splash, and the panes transparent, until `reveal`. Returns whether it is held (there is a splash).
- * Call it before the panes take their places (before welcome mode is left): the splash is measured as it is now.
+ * Holds the splash and keeps the panes transparent until `reveal`, while the first trace is drawn. Returns whether a splash is held.
+ * Call before the panes take their places (before welcome mode is left): the splash is measured as it is now.
  * @param {HTMLElement} html   the page (document.documentElement)
  * @param {HTMLElement} panel  the welcome panel
  * @param {HTMLElement} body   where the panel goes as an overlay (document.body)
  */
 export function holdForReveal(html, panel, body) {
   if (!panel || panel.classList.contains('hidden')) return false;
-  // (pixels: the overlay does not follow the layout that is to change)
+  // pixels: the overlay does not follow the layout that is to change
   var box = panel.getBoundingClientRect();
   panel.style.top    = box.top    + 'px';
   panel.style.left   = box.left   + 'px';
@@ -34,8 +34,8 @@ export function holdForReveal(html, panel, body) {
 }
 
 /**
- * Fades the splash out, to show the viewer that is under it (if the splash is held: otherwise nothing happens). The splash is hidden when its
- * fade has ended (transitionend), not after a time that the fade could be late for when the page is busy; the time is for when no transition runs.
+ * Fades the splash out to show the viewer under it; does nothing if no splash is held. The splash is hidden on transitionend, not after a fixed time
+ * that a busy page could overrun; the time is only the fallback when no transition runs.
  */
 export function reveal(html, panel) {
   clearTimeout(_timer);

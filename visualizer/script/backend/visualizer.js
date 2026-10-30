@@ -38,16 +38,16 @@ let _cppFiles        = {};     // { basename: content }
 let _traceFilename   = null;
 let _traceJsonRaw    = null;   // original file text (verbatim for source pane)
 let _traceLineRanges = [];     // [[startLine, endLine], …] per top-level event
-let _traceDisplayText = null;   // the text of the trace as the code view shows it (formatted if the file is not readable), and the line ranges of the events in it
+let _traceDisplayText = null;   // the code view's text of the trace (formatted if the file is unreadable) and the line ranges of its events
 let _traceDisplayRanges = [];
 let _snapshotFiles   = {};     // { basename: text } — extracted by main thread
 let _graph           = null;   // DirectedGraph from the most recent 'graph' call
 
 // Base URL for fetching examples and library files — one level above this
 // script, i.e. the visualizer root.
-// (the bundle that an editor runs as a worker has no import.meta: no base, and it is given the URLs it needs)
+// the bundle that an editor runs as a worker has no import.meta: no base, and it is given the URLs it needs
 const _BASE_URL     = import.meta.url ? new URL('..', import.meta.url).href : '';
-// (the page, or the extension that hosts it, can set where the library headers are)
+// the page, or the extension that hosts it, can set where the library headers are
 let _LIB_ROOT_URL = _BASE_URL + '../static/skepu-lib/';
 let _LIB_DNN_URL  = _BASE_URL + '../static/skepu-lib/dnn/';
 
@@ -60,9 +60,9 @@ export function setLibDNNUrl(url) {
 }
 
 // ── How the worker gets a file by its URL ─────────────────────────────────────
-// By fetch, in a browser. A worker in the webview of an editor cannot: it is made of a copy of this script (a blob), and the requests of such a
-// worker are not served by the webview, they wait for 30 seconds and fail (408). There the page fetches, for the worker: the request goes to the
-// page as a message { type: 'fetch', fetchId, url }, and the reply is { type: 'fetched', fetchId, ok, status, statusText, text }.
+// By fetch in a browser. A worker in an editor's webview cannot: it is made of a copy of this script (a blob), and the webview does not serve such a
+// worker's requests: they wait 30 seconds and fail (408). There the page fetches for the worker: the request goes to the page as the message
+// { type: 'fetch', fetchId, url }, and the reply is { type: 'fetched', fetchId, ok, status, statusText, text }.
 let _fetch = url => fetch(url);
 const _fetchesOfPage = new Map();   // fetchId → resolve
 let _fetchSeq = 0;
@@ -165,7 +165,7 @@ function _installTraces(files) {
     _instances       = headerInstances(_traceHeader);
     _traceJsonRaw    = primary.text;
     _traceFilename   = primary.name;
-    // (the ranges of the file are for the editor, which shows the file; the code view of the page shows a formatted copy of a trace that is compact)
+    // the ranges of the file are for the editor, which shows the file; the code view of the page shows a formatted copy of a trace that is compact
     const display = _formatTraceForDisplay(primary.text);
     _traceDisplayText   = display.text;
     _traceDisplayRanges = display.ranges;
@@ -180,7 +180,7 @@ function _rankTraces(parsed, primary, events) {
     const out = [];
     for (const f of parsed) {
         if (f === primary) continue;
-        const shown = _formatTraceForDisplay(f.text);   // (these files are only shown, in the trace pane: the text and the ranges are those of the formatted copy)
+        const shown = _formatTraceForDisplay(f.text);   // these files are only shown, in the trace pane: the text and the ranges are those of the formatted copy
         const lines = shown.ranges;
         const calls = new Map(), comms = new Map();
         f.events.forEach((e, i) => {
@@ -248,7 +248,7 @@ async function _handleLoadExample({ index, backend }) {
     if (!(chosen in traceDict))
         throw new Error('Backend not available for this example: ' + chosen);
 
-    // (the trace files of an MPI program are an array of paths)
+    // the trace files of an MPI program are an array of paths
     const traceRelPaths = [].concat(traceDict[chosen]);
     const traceFiles = await Promise.all(traceRelPaths.map(async rel => {
         const url = new URL('../examples/' + rel, _BASE_URL).href;
@@ -260,7 +260,7 @@ async function _handleLoadExample({ index, backend }) {
     _snapshotFiles   = {};
 
     // Fetch accompanying source files.
-    // (the source files: one list, or a list for each backend, with "default" for the others: the MPI version of a program can differ)
+    // the source files: one list, or a list for each backend, with "default" for the others: the MPI version of a program can differ
     const cppList = Array.isArray(ex.cpp_files) ? ex.cpp_files : (ex.cpp_files?.[chosen] ?? ex.cpp_files?.default ?? []);
     for (const relPath of cppList) {
         const url = new URL('../examples/' + relPath, _BASE_URL).href;
@@ -455,7 +455,7 @@ function _handleGetData({ id, nodeId }) {
         const siblingLabels = siblings.map(ns => ns[0].label);
 
         if (hasSnapshots && siblings.length > 0) {
-            // (each container's snapshots in execution order: [total_order, file] pairs)
+            // each container's snapshots in execution order: [total_order, file] pairs
             const fileLists = siblings.map(ns => ns
                 .flatMap(n => n.snapshotDataFiles ?? [])
                 .sort((a, b) => (a[0] == null ? 1 : 0) - (b[0] == null ? 1 : 0)

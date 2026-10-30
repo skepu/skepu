@@ -83,7 +83,7 @@ namespace skepu
 		}
 	}
 
-	// (the single node library does not record the call of an external that has no label and no container)
+	// the single node library does not record the call of an external that has no label and no container
 	template<typename OP>
 	void inline external(OP &&op)
 	{

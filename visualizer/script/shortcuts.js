@@ -44,7 +44,7 @@ export function collectShortcuts(root, editor) {
     const menu = key.closest('.menu');
     const title = menu && menu.querySelector(':scope > .menu-title');
     if (!button || !title) return;
-    const only = button.closest('[data-only]');   // (an item for the browser, or for the editor, only)
+    const only = button.closest('[data-only]');
     if (only && only.dataset.only !== variant) return;
     items.push({ group: text(title), keys: key.textContent.trim(), label: text(button) });
   });

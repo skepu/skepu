@@ -37,7 +37,7 @@ for k, name in enumerate(names):
     files.append(t)
 
 full = files[0]["data"]
-calls0 = [e for e in full if e["type"] in ("skeleton_call", "external") and "seq" in e]   # (an external is a call too)
+calls0 = [e for e in full if e["type"] in ("skeleton_call", "external") and "seq" in e]   # an external is a call too
 comms0 = [e for e in full if e["type"] == "communication"]
 allocs = {e["object_id"]: e for e in full if e["type"] == "allocation"}
 if not calls0:
@@ -83,7 +83,7 @@ for c in calls0:
         fail("call %d: start after end" % seq)
     for key in ("outputs", "elwise_inputs", "proxy_inputs"):
         if key == "outputs" and c.get("pattern") in ("Reduce 1D-Full", "MapReduce"):
-            continue   # (the outputs are the ids of scalars, which are not allocated)
+            continue   # the outputs are the ids of scalars, which are not allocated
         for i in c[key]:
             if i not in allocs:
                 fail("call %d: %s has the id %d, which was not allocated" % (seq, key, i))
@@ -122,7 +122,7 @@ for k in range(1, P):
     if len(lean_comms[k - 1]) != len(comms0):
         fail("rank %d has %d collectives, rank 0 has %d" % (k, len(lean_comms[k - 1]), len(comms0)))
 
-# (with SKEPU_TRACE_TEST_SKEW_US the clocks of the processes start at different times: the raw times are far apart, the aligned ones are not)
+# with SKEPU_TRACE_TEST_SKEW_US the clocks of the processes start at different times: the raw times are far apart, the aligned ones are not
 skew = int(os.environ.get("SKEPU_TRACE_TEST_SKEW_US", "0"))
 if skew > 0 and P > 1:
     raw = []

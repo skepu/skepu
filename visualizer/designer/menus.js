@@ -88,16 +88,14 @@ export function contextMenus() {
     });
 }
 
-/** Binds the menus. */
 export function initMenus() {
     addMenu();
     const name = $('#design-name');
     name.value = S.design.name;
     name.onchange = e => { S.design.name = e.target.value || 'design'; changed(); };
-    name.onclick = e => e.stopPropagation();                // (a click in the text entry does not close the menu)
+    name.onclick = e => e.stopPropagation();                // a click in the text entry does not close the menu
     name.onkeydown = e => { if (e.key === 'Enter') { name.blur(); document.querySelectorAll('.menu.open').forEach(m => m.classList.remove('open')); } e.stopPropagation(); };
 
-    // Design menu
     $('#new').onclick = () => { if (confirm('Start an empty design?')) replace(emptyDesign()); };
     $('#sample').onclick = () => { if (confirm('Replace the design with the Smoothing example?')) replace(sampleDesign()); };
     $('#pooling').onclick = () => { if (confirm('Replace the design with the Pooling and reductions example?')) replace(poolingDesign()); };
@@ -111,7 +109,6 @@ export function initMenus() {
         e.target.value = '';
     };
 
-    // View menu
     const colors = () => document.querySelectorAll('[data-color]').forEach(b => setChecked(b, b.dataset.color === settings['node-color-call']));
     document.querySelectorAll('[data-color]').forEach(b => {
         b.onclick = () => { settings['node-color-call'] = b.dataset.color; store('skevu-designer-color', b.dataset.color); colors(); S.cy.style().update(); renderLegend(); };
@@ -134,12 +131,11 @@ export function initMenus() {
         const on = !darkNow();
         showDarkMode(on);
         writeAppearance({ darkMode: on });
-        S.source.setTheme(on ? HLJS_THEME_DEFAULT_DARK : HLJS_THEME_DEFAULT_LIGHT);        // the code theme follows the mode
+        S.source.setTheme(on ? HLJS_THEME_DEFAULT_DARK : HLJS_THEME_DEFAULT_LIGHT);
         setChecked($('#menu-dark'), on);
         S.cy.style().update();
         renderLegend();
     };
-    // code theme and color spectrum menus
     buildThemeMenu($('#hljs-theme-menu'), theme => S.source.setTheme(theme));
     S.source.syncThemeIcons();
     const pickSpectrum = name => {

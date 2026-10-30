@@ -102,7 +102,7 @@ void ReducePartialResultsOnDevice(size_t n, size_t maxBlocks, size_t maxThreads,
 			launch(s, threads, blocks, src, src);
 		else
 		{
-			// (the other buffer is the one that this pass does not read: d_data at the first pass, then each in turn)
+			// the other buffer is the one that this pass does not read: d_data at the first pass, then each in turn
 			T *dst = (src == d_data) ? tmp : d_data;
 			if (src == d_data && !tmp)
 			{

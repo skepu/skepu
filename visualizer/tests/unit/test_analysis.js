@@ -122,7 +122,7 @@ describe('the DNN CIFAR-10 trace (OpenCL)', () => {
         expect(r.total_us).toBeLessThan(r.work_us);
         expect(r.parallelism).toBeGreaterThan(1);
         const shares = r.path.reduce((s, n) => s + n.share, 0);
-        expect(shares).toBeLessThanOrEqual(1 + r.path.length * 0.00005 + 1e-9);   // (each share is rounded to 4 decimals)
+        expect(shares).toBeLessThanOrEqual(1 + r.path.length * 0.00005 + 1e-9);   // each share is rounded to 4 decimals
     });
 
     it('does not change the events', () => {

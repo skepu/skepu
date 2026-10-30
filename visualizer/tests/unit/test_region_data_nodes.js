@@ -26,7 +26,7 @@ describe('the allocations and deallocations in a region', () => {
     it('are nested in the region, as the call is', () => {
         const g = graph();
         expect(g.getAllNodes().some(n => n instanceof RegionNode && n.label === 'Octave')).toBe(true);
-        // (the labels of the regions: a failed comparison of the nodes themselves would print the whole graph)
+        // the labels of the regions: a failed comparison of the nodes themselves would print the whole graph
         expect(find(g, AllocationNode, 'inside').region?.label).toBe('Octave');
         expect(find(g, DeallocationNode, 'inside').region?.label).toBe('Octave');
         expect(g.getAllNodes().find(n => n.label === 'k').region?.label).toBe('Octave');

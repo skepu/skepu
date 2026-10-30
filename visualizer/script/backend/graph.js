@@ -197,7 +197,7 @@ export class DirectedGraph {
         this.readFromID(id, node, backend);
         const e = this._producerEntry(id);
         e['ANY'] = node;
-        e[REPLICA] = null;   // (the gathered copy of an MPI program is out of date)
+        e[REPLICA] = null;   // the gathered copy of an MPI program is out of date
         if (backend === 'ALL') {
             for (const ms of ALL_MEMSPACES) e[ms] = node;
         } else {
@@ -285,10 +285,10 @@ export class DirectedGraph {
     }
 
     /**
-     * The tree of the program tree mode. The root is the region around the program; an inner node is a region. The events of a region form
-     * chains that start at the region, in trace order. A nested region ends the current chain, so the events after it start a new chain from
-     * the region: visiting the tree depth first, children in order, replays the trace. Each node's parent is in treeParents.
-     * A fusion group is not a region here: a fusion node is an event of the region its calls are in.
+     * The tree of the program tree mode. The root is the region around the program; inner nodes are regions. The events of a region form chains that
+     * start at the region, in trace order; a nested region ends the current chain, so later events start a new chain from the region. Visiting depth
+     * first, children in order, replays the trace. Parents are in treeParents.
+     * A fusion group is not a region here: a fusion node is an event of the region of its calls.
      */
     buildProgramTree() {
         const root = this.getRootRegion();
@@ -297,9 +297,9 @@ export class DirectedGraph {
             while (r && !(r instanceof RegionNode)) r = r.region;
             return r ?? root;
         };
-        const position = new Map(this._nodes.map((n, i) => [n, i]));   // (a fusion node is made after its calls: it goes where the first of them is)
+        const position = new Map(this._nodes.map((n, i) => [n, i]));   // a fusion node is made after its calls; it goes where the first of them is
         const ordered = [...this._nodes].sort((a, b) => a.totalOrder - b.totalOrder || position.get(a) - position.get(b));
-        const tail = new Map();   // region -> the last node of its chain that is going on (the region itself, at the start of a chain)
+        const tail = new Map();   // region -> last node of its current chain (the region itself at the start)
         for (const n of this._nodes) n.treeParents = [];
         for (const n of ordered) {
             if (n === root) continue;
@@ -307,7 +307,7 @@ export class DirectedGraph {
             if (n instanceof RegionNode) {
                 if (region) {
                     n.treeParents.push(region);
-                    tail.delete(region);   // (the next event of the region starts a chain from the region: after this region, in the order of the trace)
+                    tail.delete(region);   // the next event of the region starts a new chain from the region
                 }
                 continue;
             }
@@ -752,7 +752,7 @@ export class DirectedGraph {
                     }
                 }
             }
-            // (an skepu::external call is a call too, and gives its containers back to their owners after it)
+            // an skepu::external call is a call too, and gives its containers back to their owners after it
             else if (t === 'skeleton_call')     { const call = new CallNode(g, ev, order); setUp(call, ev); callMade(call, ev, order); }
             else if (t === 'external')          callMade(new ExternalNode(g, ev, order), ev, order);
             else if (t === 'allocation')        new AllocationNode(g, ev, order);
@@ -773,7 +773,7 @@ export class DirectedGraph {
             else if (t === 'snapshot')          { g.attachSnapshot(ev.object_id, ev.data_file, order); new SnapshotNode(g, ev, order); }
             else if (t === 'virtual_container') g.registerVirtualContainer(ev.virtual_id, ev.label, ev.object_ids);
         }
-        // (collectives of a call that is not in the trace)
+        // collectives of a call that is not in the trace
         for (const list of after.values())
             for (const [c, ci] of list) makeCommunication(c, ci, (ci + 1) * 100);
 
@@ -794,7 +794,6 @@ export class DirectedGraph {
         const collapsedPids = expandAll ? new Set() : new Set(allPids.filter(p => !pidSet.has(p)));
         const collapsedFusions = new Set(collapsedFusionPids ?? []);
 
-        // The root region is never collapsed.
         const collapsedNode = r =>
             (r instanceof RegionNode && r !== this._rootRegionNode && collapsedPids.has(r.persistentRegionId)) ||
             (r instanceof FusedNode && collapsedFusions.has(r.persistentFusionId));
@@ -892,8 +891,7 @@ export class DirectedGraph {
               item.data.type = "tree-region";
           }
   
-          // The tree (buildProgramTree): an edge from the parent of a node, if both are shown (the parents are more than one after the
-          // iterations of a loop are merged: the same edge once)
+          // Tree edge (buildProgramTree) from the parent of a node, if both are shown (merged loop iterations give several parents: one edge)
           const seenTree = new Set();
           for (const node of this._nodes) {
             if (!visibleIds.has(node.id)) continue;

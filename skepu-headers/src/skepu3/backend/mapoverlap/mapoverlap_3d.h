@@ -230,7 +230,7 @@ namespace skepu
 
 				{
 					auto &first_output = get<0>(std::forward<CallArgs>(args)...);
-					if (this->mirrorHasNoInterior(first_output.size_i(), first_output.size_j(), first_output.size_k())) // (mirror mode with nothing to compute: only the random numbers are used)
+					if (this->mirrorHasNoInterior(first_output.size_i(), first_output.size_j(), first_output.size_k())) // mirror mode with nothing to compute: only the random numbers are used
 					{
 						this->template prepareRandom<MapOverlapFunc::randomCount>(first_output.size());
 						return first_output;

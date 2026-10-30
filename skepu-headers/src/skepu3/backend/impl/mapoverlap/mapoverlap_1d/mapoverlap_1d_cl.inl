@@ -69,7 +69,7 @@ namespace skepu
 					.getAddress(), get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
 			auto outMemP    = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getAddress() + startIdx, out_numelements, device, this->m_mirror_mode || p != Parity::None)...);
 			
-			// (one number for each element of the output: not for those of the input; mirror mode: the elements near the edges are not computed and their numbers are skipped)
+			// one number for each element of the output: not for those of the input; mirror mode: the elements near the edges are not computed and their numbers are skipped
 			const size_t computed = this->m_mirror_mode ? out_numelements - 2 * overlap : out_numelements;
 			size_t threads = std::min<size_t>(computed, numBlocks * numThreads);
 			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(computed, threads);
@@ -87,7 +87,7 @@ namespace skepu
 				get<0>(std::forward<CallArgs>(args)...).getParent().size_info(),
 				&wrap_mem_p,
 				n, overlap, out_offset, out_numelements, _poly, _pad,
-				get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first element, in the whole container)
+				get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),
 				parity_cl(p, startIdx),
 				sharedMemSize
 			);
@@ -190,7 +190,7 @@ namespace skepu
 					get<0>(std::forward<CallArgs>(args)...).getParent().size_info(),
 					&wrap_mem_p,
 					n, overlap, out_offset, out_numelements, _poly, _pad,
-					get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first element, in the whole container)
+					get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),
 					parity_cl(p, startIdx + i * numElemPerSlice),
 					sharedMemSize
 				);
@@ -381,7 +381,7 @@ namespace skepu
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(),
 				get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
 				
-			// (one number for each element of the output; mirror mode: the elements near the edges are not computed and their numbers are skipped)
+			// one number for each element of the output; mirror mode: the elements near the edges are not computed and their numbers are skipped
 			const size_t computed = this->m_mirror_mode ? res.total_rows() * (res.total_cols() - 2 * overlap) : out_numelements;
 			size_t threads = std::min<size_t>(computed, numBlocks * numThreads);
 			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(computed, threads);
@@ -671,7 +671,7 @@ namespace skepu
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(),
 				get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
 					
-			// (one number for each element of the output; mirror mode: the elements near the edges are not computed and their numbers are skipped)
+			// one number for each element of the output; mirror mode: the elements near the edges are not computed and their numbers are skipped
 			const size_t computed = this->m_mirror_mode ? (res.total_rows() - 2 * overlap) * res.total_cols() : out_numelements;
 			size_t threads = std::min<size_t>(computed, numBlocks * numThreads);
 			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(computed, threads);
@@ -690,7 +690,7 @@ namespace skepu
 				&wrapMemP,
 				n, overlap, out_offset, out_numelements, _poly, _pad,
 				blocksPerCol, numcols, colWidth,
-				get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first row, in the whole matrix)
+				get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),
 				parity_cl(p),
 				sharedMemSize
 			);
@@ -864,7 +864,7 @@ namespace skepu
 					numElems, overlap, in_offset,
 					numElems, _poly, _deviceType[i], _pad,
 					blocksPerCol[i], numCols, numRows,
-					get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first row, in the whole matrix)
+					get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),
 					parity_cl(p, i * numRowsPerSlice),
 					sharedMemSize
 				);

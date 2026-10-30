@@ -20,7 +20,7 @@ namespace skepu
 			pack_expand((get<EI>(std::forward<CallArgs>(args)...).getParent().updateHost(), 0)...);
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().updateHost(hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
-			// (with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values)
+			// with the update modes Red and Black, and in mirror mode, some elements of the output are not computed: they keep their values
 			if (p != Parity::None || this->m_mirror_mode)
 				pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().updateHost(), 0)...);
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
@@ -50,7 +50,7 @@ namespace skepu
 			size_t final_size = out_size_i * out_size_j * out_size_k;
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(final_size);
 			
-			// (mirror mode: the edge mode None with an input of the size of the output; only the interior of the output is computed, the elements near the edges keep their values and their random numbers are skipped)
+			// mirror mode: the edge mode None with an input of the size of the output; only the interior of the output is computed, the elements near the edges keep their values and their random numbers are skipped
 			const size_t first_i = this->m_mirror_mode ? this->m_overlap[0] : 0, first_j = this->m_mirror_mode ? this->m_overlap[1] : 0, first_k = this->m_mirror_mode ? this->m_overlap[2] : 0;
 			for (size_t i = first_i; i + first_i < out_size_i; i++)
 				for (size_t j = first_j; j + first_j < out_size_j; j++)

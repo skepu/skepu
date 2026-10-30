@@ -480,7 +480,7 @@ export class TimelineView {
         ? n.data.region_intervals : [[n.data.region_start, n.data.region_end]];
       ivs.forEach(function(iv) { minT = Math.min(minT, iv[0]); maxT = Math.max(maxT, iv[1]); });
     });
-    // (what the other ranks did can be outside the interval of rank 0)
+    // what the other ranks did can be outside the interval of rank 0
     var extent = segmentExtent(timedBars);
     if (extent) { minT = Math.min(minT, extent[0]); maxT = Math.max(maxT, extent[1]); }
     timedComms.forEach(function(n) {
@@ -488,7 +488,7 @@ export class TimelineView {
         if (s && s.interval) { minT = Math.min(minT, s.interval.start); maxT = Math.max(maxT, s.interval.end); }
       });
     });
-    var ranks = rankCount(timedBars);   // (0: a trace that is not from an MPI program: the rows are those of one process)
+    var ranks = rankCount(timedBars);   // 0: a trace that is not from an MPI program: the rows are those of one process
     var range = Math.max(maxT - minT, 1);
     this._timeRange = { minT: minT, maxT: maxT, range: range };
 
@@ -507,7 +507,7 @@ export class TimelineView {
     var COMM_RH     = timedComms.length     > 0 ? RH : 0;
     var EVENT_RH    = timedMarkers.length   > 0 ? RH : 0;
     var SVG_W = Math.max(container.clientWidth || 400, 200) * this._scale;
-    // (the collectives can be opened up: every rank then has a row for what it did in them: click on "Comm.")
+    // the collectives can be opened up: every rank then has a row for what it did in them: click on "Comm."
     var rankComm = ranks > 0 && COMM_RH > 0 && !!this._commExpanded;
     var L = layoutRows({ ranks: ranks, backends: backends, regionH: REGION_RH, rowH: RH, headerH: _HEADER_H,
       transferH: TRANSFER_RH, compileH: COMPILE_RH, commH: COMM_RH, eventH: EVENT_RH, axisH: AH, rankComm: rankComm });
@@ -921,7 +921,7 @@ export class TimelineView {
         } else if (d.type === 'deallocation') {
           pts = starPoints(cx, evCY, HS, HS * 0.42); fill = 'black'; stroke = '#ddd'; strokeW = 1;
         } else if (d.type === 'snapshot') {
-          pts = starPoints(cx, evCY, HS, HS * 0.42); fill = '#ffd43b'; stroke = '#a67c00'; strokeW = 1;   // (a yellow star, as in the graph)
+          pts = starPoints(cx, evCY, HS, HS * 0.42); fill = '#ffd43b'; stroke = '#a67c00'; strokeW = 1;   // a yellow star, as in the graph
         } else {
           pts = diamondPoints(cx, evCY, HS); fill = 'purple'; stroke = 'rgba(0,0,0,0.25)'; strokeW = 0.5;
         }
@@ -1120,7 +1120,7 @@ export class TimelineView {
     }
 
     // ── Size the pane ─────────────────────────────────────────────────────────
-    // (many ranks make a tall timeline: the pane is not taller than 45% of the window, and scrolls)
+    // many ranks make a tall timeline: the pane is not taller than 45% of the window, and scrolls
     if (this._paneEl) this._paneEl.style.setProperty('--gantt-height', Math.min(H, Math.max(160, Math.round(window.innerHeight * 0.45))) + 'px');
 
     // ── Update gantt bar count display ────────────────────────────────────────

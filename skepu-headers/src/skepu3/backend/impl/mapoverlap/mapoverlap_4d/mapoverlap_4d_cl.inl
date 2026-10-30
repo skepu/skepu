@@ -39,7 +39,7 @@ namespace skepu
 			std::vector<T> wrap(1);
 			
 			auto elwiseMemP = std::make_tuple(get<EI>(std::forward<CallArgs>(args)...).updateDevice_CL(get<EI>(std::forward<CallArgs>(args)...).getAddress(), in_size_i * in_size_j * in_size_k * in_size_l, device, true)...);
-			// (in mirror mode and with the update modes Red and Black some elements are not computed: the output keeps their values, so it is copied to the device)
+			// in mirror mode and with the update modes Red and Black some elements are not computed: the output keeps their values, so it is copied to the device
 			auto outMemP = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CL(get<OI>(std::forward<CallArgs>(args)...).getParent().getAddress(), out_size_i * out_size_j * out_size_k * out_size_l, device, this->m_mirror_mode || p != Parity::None)...);
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).getParent().updateDevice_CL(get<AI>(std::forward<CallArgs>(args)...).getAddress(),
 				get<AI>(std::forward<CallArgs>(args)...).getParent().size(), device, hasReadAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity]))...);
@@ -106,7 +106,7 @@ namespace skepu
 				<< "[(" << numThreads_0a << ") " << numThreads[0] << " x " << numThreads[1] << " x " << numThreads[2] << "]" 
 				<< ", numBlocks = " << "[(" << numBlocks_0a << ") " << numBlocks[0] << " x " << numBlocks[1] << " x " << numBlocks[2] << "], shmem = " << sharedMemSize);
 				
-			// (in mirror mode only the inner elements are computed, they get the numbers one after the other; the stream is advanced over all the elements)
+			// in mirror mode only the inner elements are computed, they get the numbers one after the other; the stream is advanced over all the elements
 			const size_t computed = this->m_mirror_mode ? (out_size_i - 2 * this->m_overlap[0]) * (out_size_j - 2 * this->m_overlap[1]) * (out_size_k - 2 * this->m_overlap[2]) * (out_size_l - 2 * this->m_overlap[3]) : out_size_i * out_size_j * out_size_k * out_size_l;
 			size_t threads = std::min<size_t>(computed, numBlocks[0] * numBlocks[1] * numBlocks[2] * numThreads[0] * numThreads[1] * numThreads[2]);
 			auto random = this->template prepareRandom_CL<MapOverlapFunc::randomCount>(computed, threads);
@@ -130,7 +130,7 @@ namespace skepu
 				sharedI, sharedJ, sharedK, sharedL,
 				numThreads_0a, numBlocks_0a,
 				(int)(this->isPool ? 1 : 0), edge, pad, &wrapMemP,
-				get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first element, in the whole container)
+				get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),
 				parity_cl(p),
 				sharedMemSize
 			);
@@ -209,7 +209,7 @@ namespace skepu
 					outRows, out_cols,
 					this->m_overlap_y, this->m_overlap_x,
 					in_cols, sharedRows, sharedCols,
-					get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),  // (the index of the first element, in the whole container)
+					get<0>(std::forward<CallArgs>(args)...).getParent().indexOrigin(),
 					sharedMemSize
 				);
 				

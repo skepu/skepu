@@ -58,7 +58,7 @@ namespace skepu
 				std::make_tuple(&get<AI>(std::forward<CallArgs>(args)...).getParent(), std::get<AI-arity>(anyMemP))...,
 				get<CI>(std::forward<CallArgs>(args)...)...,
 				size_info(defaultDim{}, this->default_size_i, this->default_size_j, this->default_size_k, this->default_size_l, get<EI>(std::forward<CallArgs>(args)...)...),
-				// (the base of the indices that the kernel computes; the data is at startIdx)
+				// the base of the indices that the kernel computes; the data is at startIdx
 				size, startIdx + index_base_of_first_elwise<sizeof...(EI)>(std::forward<CallArgs>(args)...) + this->m_default_origin, this->m_strides,
 				sizeof(Ret) * numThreads
 			);

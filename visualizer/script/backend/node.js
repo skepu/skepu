@@ -216,7 +216,7 @@ export class ComputationNode extends Node {
             } else {
                 graph.writeToID(id, this, this.hasScalarOutput() ? 'ALL' : this.backend);
             }
-            // (what host code writes is in the gathered copy of the first process, until it is given to the owners)
+            // what host code writes is in the gathered copy of the first process, until it is given to the owners
             if (host) graph.writeReplica(id, graph.producerForID(id));
         }
 
@@ -243,7 +243,7 @@ export class ComputationNode extends Node {
             line:        this.line,
             backend:     this.backend,
             duration_cv: _durationCV(this.durations),
-            ...(this._rankStats() ?? {}),        // (imbalance, slowest_rank, comm_bytes: a call of an MPI program)
+            ...(this._rankStats() ?? {}),        // imbalance, slowest_rank, comm_bytes: a call of an MPI program
         };
     }
 
@@ -337,7 +337,7 @@ export class CallNode extends ComputationNode {
     }
 
     hasScalarOutput() {
-        // (a reduction of rows or columns, 'Reduce 1D-Partial', has a vector)
+        // a reduction of rows or columns, 'Reduce 1D-Partial', has a vector
         return ['Reduce', 'Reduce 1D-Full', 'Reduce 2D', 'MapReduce'].includes(this.pattern);
     }
 
@@ -349,7 +349,7 @@ export class CallNode extends ComputationNode {
         return { ...super.toTimeline(), pattern: this.pattern, elements: this.elements };
     }
 
-    // (the badge nodes also say where the instance and the user functions of the call are, for the marks in the source panes)
+    // the badge nodes also say where the instance and the user functions of the call are, for the marks in the source panes
     toSourceBadge() {
         const badge = super.toSourceBadge();
         const d = badge && this.instanceId != null ? this.graph.instances?.get(this.instanceId) : null;
@@ -392,7 +392,7 @@ export class ExternalNode extends ComputationNode {
 // copy (REPLICA in graph.js). A gather or a broadcast makes the copy and leaves the tiles as they were, so what
 // reads the tiles (the elements of a skeleton) does not depend on it, and what reads the copy (the host, a random
 // access argument) does. A scatter, and the exchange after a call, make the tiles. A write makes the copy out of date.
-// (A trace of a single node has none.)
+// A trace of a single node has none.
 
 export class CommunicationNode extends ComputationNode {
     constructor(graph, jsonData, totalOrder) {
@@ -403,18 +403,18 @@ export class CommunicationNode extends ComputationNode {
             region:       jsonData.region,
             start:        jsonData.start,
             end:          jsonData.end,
-            backend:      'ANY',                      // (reads what is there, in whichever memory space)
+            backend:      'ANY',                      // reads what is there, in whichever memory space
             proxy_inputs: ids,
-            // (a gather reads the tiles; a broadcast and what gives the data of the first process to the owners read the gathered copy)
+            // a gather reads the tiles; a broadcast and what gives the data of the first process to the owners read the gathered copy
             replica_inputs: jsonData.operation === 'bcast' || jsonData.operation === 'scatter',
-            rank_data:    jsonData.rank_data,         // (what each rank did in it, for the timeline)
+            rank_data:    jsonData.rank_data,         // what each rank did in it, for the timeline
         }, totalOrder);
 
         this.type        = 'communication';
         this.operation   = jsonData.operation;
         this.reason      = jsonData.reason ?? null;
         this.commSeq     = jsonData.comm_seq ?? null;
-        this.callSeq     = jsonData.seq || null;     // (the call it is made in; 0 or none for host code)
+        this.callSeq     = jsonData.seq || null;     // the call it is made in; 0 or none for host code
         this.phase       = jsonData.phase ?? null;   // before or after the work of that call
         this.bytesSent   = jsonData.bytes_sent ?? 0;
         this.bytesReceived = jsonData.bytes_received ?? 0;
@@ -426,7 +426,7 @@ export class CommunicationNode extends ComputationNode {
         this.file = null;
         this.line = null;
 
-        // (it is on the side of the host that made it, for the edges)
+        // it is on the side of the host that made it, for the edges
         this.backend = this._incoming[0]?.source.backend ?? 'CPU';
         // What the container is after it: a gather or a broadcast makes a gathered copy, and the tiles are as they were. What gives the data to
         // the owners (the scatter, and the exchange after a call that puts its results in their places) makes the tiles. The exchange before
@@ -456,7 +456,7 @@ export class CommunicationNode extends ComputationNode {
     }
 
     toTimeline() {
-        // (the collective that the processes make: when they arrived and when they left, in rank_summary, for each iteration)
+        // the collective that the processes make: when they arrived and when they left, in rank_summary, for each iteration
         return { ...super.toTimeline(), operation: this.operation, ...(this.rankSummary ? { rank_summaries: this.rankSummaries } : {}) };
     }
 
@@ -499,7 +499,7 @@ export class RegionNode extends Node {
         if (parentLabel) {
             const parentRegion = graph.getNodeByLabel(parentLabel);
             if (parentRegion instanceof RegionNode) {
-                // (the constructor of Node has put it in the root region: it is in the region that it is in, and only there)
+                // the Node constructor put it in the root region; it belongs only to its own region
                 if (this.region?.nestedNodes) {
                     const i = this.region.nestedNodes.indexOf(this);
                     if (i !== -1) this.region.nestedNodes.splice(i, 1);
@@ -520,10 +520,10 @@ export class RegionNode extends Node {
         this.file = jsonData.file ?? null;
         this.line = jsonData.line ?? null;
 
-        // The id of a region is what the viewer keeps whether it is collapsed by, so that it means the same region in every mode of the graph: the root
-        // region of the program tree mode has an id of its own and is not counted (the others are numbered as in the dependence graph)
+        // The viewer keys a region's collapsed state by its id, so it means the same region in every graph mode: the program tree's root region has its own id and
+        // is not counted (the others are numbered as in the dependence graph)
         this.persistentRegionId = graph._rootPhase ? 'region_global' : 'region_' + graph.nextRegionNumber();
-        // (the regions that the iterations of a loop are merged into one region from: the viewer collapses or expands them all together)
+        // the regions merged into this one (loop iterations): the viewer collapses or expands them together
         this.memberRegionIds = [this.persistentRegionId];
     }
 
@@ -540,7 +540,7 @@ export class RegionNode extends Node {
             } else if (node instanceof ComputationNode) {
                 starts.push(node.start);
                 ends.push(node.end);
-                // (of an MPI program: what the other ranks did in the call, which can be later than rank 0 did)
+                // of an MPI program: what the other ranks did in the call, which can be later than rank 0 did
                 for (const summary of node.rankSummaries ?? []) {
                     if (!summary?.interval) continue;
                     starts.push(summary.interval.start);
@@ -860,7 +860,7 @@ export class UpdateNode extends DataNode {
         super(graph, label, totalOrder, region);
         this.type              = 'container_update';
         this.version           = graph.newVersionNumberForID(id);
-        this._versionsOfGraph  = graph.update_versions;    // (how many versions the container has, when the graph is complete)
+        this._versionsOfGraph  = graph.update_versions;    // how many versions the container has, when the graph is complete
         this.backend           = backend;
         this.elements          = elements;
         this.isLive            = [];
@@ -904,9 +904,9 @@ export class ScalarNode extends DataNode {
         const label = jsonData.label + '[' + jsonData.index + ']';
         if (graph.settings.scalars) {
             const node = new ScalarNode(graph, label, totalOrder, region);
-            node.keypathDiscriminator = `${jsonData.file ?? ''}:${jsonData.line ?? ''}`;   // (where the program read the element)
+            node.keypathDiscriminator = `${jsonData.file ?? ''}:${jsonData.line ?? ''}`;   // where the program read the element
             node._takeValue(jsonData.object_id, totalOrder);
-            new ScalarEdge(graph, label, jsonData.source, node, true);   // (the host reads the gathered copy)
+            new ScalarEdge(graph, label, jsonData.source, node, true);   // the host reads the gathered copy
             graph.readFromID(jsonData.source, node, 'ALL');
             graph.writeToID(jsonData.object_id, node, 'ALL');
         } else {
@@ -985,7 +985,7 @@ export class TransferNode extends DataNode {
         this.start     = jsonData.start;
         this.end       = jsonData.end;
         this.duration  = this.end - this.start;
-        this.durations = [this.duration];          // (the iterations of a transfer that is coalesced add theirs)
+        this.durations = [this.duration];          // coalesced iterations append theirs
         this.intervals = [[this.start, this.end]];
         this.timestamp = jsonData.time ?? null;
         this.depth     = graph.depthByLabel(jsonData.label) + 1;

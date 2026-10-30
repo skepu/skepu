@@ -1,5 +1,4 @@
-// test_menu.js — the menus of the menu bar open when the button is pressed on a title; releasing the button over an item activates it, on the title
-// keeps the menu open, and outside the menus closes them.
+// test_menu.js — menus open when the button is pressed on a title; releasing over an item activates it, on the title keeps the menu open, outside closes them.
 import { describe, it, expect } from 'vitest';
 import { releaseOutcome } from '../../script/menu.js';
 

@@ -67,13 +67,13 @@ describe('the tree', () => {
         const labels = id => (children.get(id) ?? []).map(child => byId.get(child).label);
         // the chains (an event, and what follows it) and the regions, in the order of the program
         expect(labels(roots[0])).toEqual(['Read coeffs', 'generate', 'I/O', 'horner_eval', 'I/O']);
-        // (each chain is one event here: no event follows another before a region)
+        // each chain is one event: no event follows another before a region
         for (const id of children.get(roots[0])) if (byId.get(id).type !== 'tree-region') expect(children.get(id)?.length ?? 0).toBeLessThanOrEqual(1);
     });
 
     it('never has its root collapsed, whatever is asked', async () => {
         await call('load', { traceJson: readFileSync(join(ROOT, 'examples/horner/trace_horner_openmp.json'), 'utf-8'), traceFilename: 't.json', cppFiles: {}, snapshotFiles: {} });
-        // (nothing is expanded: every region but the root is collapsed)
+        // nothing is expanded: every region but the root is collapsed
         const graph = await call('graph', { mode: 'program-tree', show_regions: true, expand_all_regions: false, expanded_regions: '' });
         const root = graph.nodes.find(({ data }) => data.persistent_region_id === 'region_global').data;
         expect(root.collapsed).toBeFalsy();

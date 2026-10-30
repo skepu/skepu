@@ -80,10 +80,10 @@ namespace skepu
 			std::deque<std::shared_ptr<DeviceTimer>> timers;
 		};
 
-		// (inline: one list for all translation units of a program)
+		// inline: one list for all translation units of a program
 		inline PendingDeviceTimers &pendingTimers()
 		{
-			static PendingDeviceTimers *pending = new PendingDeviceTimers; // (not destroyed: the devices may be gone before the static objects are)
+			static PendingDeviceTimers *pending = new PendingDeviceTimers; // not destroyed: the devices may be gone before the static objects are
 			return *pending;
 		}
 
@@ -112,7 +112,7 @@ namespace skepu
 			return pending.timers.size();
 		}
 
-		// (inline: one origin of time for all translation units of a program)
+		// inline: one origin of time for all translation units of a program
 		inline unsigned long timestamp_now()
 		{
 			static unsigned long start_time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
@@ -216,7 +216,6 @@ namespace skepu
 		{
 			this->flush();
 #ifdef SKEPU_TRACING
-			// (a region of the program that did not end, and has an event that waits)
 			this->settleRegions();
 			this->writeFile();
 #endif
@@ -256,7 +255,7 @@ namespace skepu
 				return;
 			nlohmann::json definition;
 			{
-				std::lock_guard<std::mutex> lock(this->m_mutex);   // (the definitions are made when calls are recorded)
+				std::lock_guard<std::mutex> lock(this->m_mutex);   // the definitions are made when calls are recorded
 				definition = this->m_definitions[id];
 			}
 			if (definition.is_null())
@@ -302,9 +301,9 @@ namespace skepu
 			}
 		}
 
-		// The file is { "data": [ one event on each line ], "header": { ... } }: the header is last, as it is complete only at the end of the run. The
-		// committed events are written where the last write left them; after them the events of the window, and the end of the file, which the next
-		// write replaces (a write costs the new events, the window and the header, not the whole trace). A reader reads this as any { header, data }.
+		// The file is { "data": [ one event per line ], "header": { ... } }: the header is last, as it is complete only at the end of the run. Committed events are
+		// written where the last write left them; after them come the window's events and the end of the file, which the next write replaces (a write costs the new
+		// events, the window and the header, not the whole trace). A reader reads it as any { header, data }.
 		inline void Tracer::writeFile()
 		{
 			if (!this->m_file_started)
@@ -330,7 +329,7 @@ namespace skepu
 			if (end < this->m_file_end)
 			{
 				std::error_code ignored;
-				std::filesystem::resize_file(this->m_file_name, end, ignored);   // (what the last write had after this one's end)
+				std::filesystem::resize_file(this->m_file_name, end, ignored);   // what the last write had after this one's end
 			}
 			this->m_file_end = end;
 		}
@@ -353,11 +352,11 @@ namespace skepu
 		inline void Tracer::relabel(TraceID id, std::string const& label, bool instance)
 		{
 #ifdef SKEPU_TRACING
-			// (the events are written in order, and a container is named right after its declaration: the
+			// the events are written in order, and a container is named right after its declaration: the
 			// events of the container are the last ones, which are still in the window of the events that can be changed (kEditableEvents); a
 			// container that is named later than that keeps the name that its older events have; a Raw capture is also kept in the traces of the other processes of an MPI program.
 			// A skeleton instance can be named again and again, for example by the layers of a network that share one: only the events
-			// before its first call, the builds of its kernels, get the name; its calls keep the name that it had at the call)
+			// before its first call, the builds of its kernels, get the name; its calls keep the name that it had at the call
 			auto capture = [=]{
 			this->forRecentEvents([&](nlohmann::json &event)
 			{
@@ -394,7 +393,7 @@ namespace skepu
 		template<typename Visit>
 		inline void Tracer::forRecentEvents(Visit visit)
 		{
-			// (the events that wait in the regions that are not written are the newest)
+			// the events that wait in the regions that are not written are the newest
 			for (auto &stack : this->m_region_stacks)
 				for (auto entry = stack.second.rbegin(); entry != stack.second.rend(); ++entry)
 					if (!entry->buffered.is_null() && visit(entry->buffered))
@@ -566,7 +565,7 @@ namespace skepu
 #endif
 		}
 
-		// (the events come from any thread that runs a skeleton or touches a container)
+		// the events come from any thread that runs a skeleton or touches a container
 		inline int &allow_depth()
 		{
 			static thread_local int depth = 0;
@@ -620,7 +619,7 @@ namespace skepu
 		template<typename Body>
 		inline void Tracer::record_with(CaptureKind kind, const std::string &type, Body body)
 		{
-			// (type is a constant of Schema::Values::Types: the closure refers to it)
+			// type is a constant of Schema::Values::Types: the closure refers to it
 			this->push_capture([this, type = &type, body = std::move(body)]{
 				nlohmann::json entry;
 				entry[Schema::Keys::TYPE] = *type;
@@ -653,7 +652,7 @@ namespace skepu
 				many = this->m_captures.size() >= kAutoFlushCaptures;
 			}
 			if (many)
-				this->flush();   // (the closures take memory until they are replayed: this keeps it bounded, and the file is complete after it)
+				this->flush();   // the closures take memory until they are replayed: this keeps it bounded, and the file is complete after it
 #endif
 		}
 
@@ -690,13 +689,13 @@ namespace skepu
 			const BackendSpec *backend = skel_instance->m_selected_spec;
 			UniqueIdentifier::ID id = skel_instance->getObjectID();
 			std::string label = skel_instance->getLabel();
-			// (the backend that the call used: the type of an automatic choice is the default)
+			// the backend that the call used: the type of an automatic choice is the default
 			const Backend::Type type = backend ? backend->type() : Backend::Type::Auto;
 			const size_t threads = backend ? backend->CPUThreads() : 0, devices = skel_instance->traceDevices();
 			Parameters parameters;
 			skel_instance->traceParameters(parameters);
-			// (an instance says where it is defined with its first call, also when that event is not recorded: the call
-			// of a skeleton that an MPI skeleton makes on its node is not, but the call of the MPI skeleton is)
+			// an instance says where it is defined with its first call, also when that event is not recorded: the call
+			// of a skeleton that an MPI skeleton makes on its node is not, but the call of the MPI skeleton is
 			{
 				std::lock_guard<std::mutex> lock(this->m_mutex);
 				if (!this->m_definitions.count(id))
@@ -710,7 +709,7 @@ namespace skepu
 			if (parameters.values.value("pool", false) && pattern.compare(0, 10, "MapOverlap") == 0)
 				pattern.replace(0, 10, "MapPool");
 
-			// (what the skeleton adds to the call, and what runs it: the backend, the threads of the host and the devices that a call used)
+			// what the skeleton adds to the call, and what runs it: the backend, the threads of the host and the devices that a call used
 			nlohmann::json more = extra_fields;
 			if (backend)
 			{
@@ -730,7 +729,7 @@ namespace skepu
 				Key::OBJECT_ID = id,
 				Key::PATTERN = pattern,
 				Key::LABEL = label,
-				// (the times of work on a device that was not waited for are asked of the device when the event is replayed)
+				// the times of work on a device that was not waited for are asked of the device when the event is replayed
 				lazy(Key::START, [device = h.m_device, start = h.m_time] { return device ? device->startTime(start) : start; }),
 				lazy(Key::END, [device = h.m_device, start = h.m_time, now] { return device ? device->endTime(start, now) : now; }),
 				Key::ELEMENTS = elements,
@@ -877,7 +876,7 @@ namespace skepu
 			SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER
 		)
 		{
-			// (a string: the overload that takes the place, not this one)
+			// a string: the overload that takes the place, not this one
 			this->data_snapshot(data, std::string(SKEPU_EXTERNAL_SOURCE_LOCATION_FILE), SKEPU_EXTERNAL_SOURCE_LOCATION_LINE);
 		}
 
@@ -920,7 +919,7 @@ namespace skepu
 			SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER
 		)
 		{
-			// (a string: the overload that takes the place, not this one)
+			// a string: the overload that takes the place, not this one
 			this->virtual_dataset(label, data1, data2, std::string(SKEPU_EXTERNAL_SOURCE_LOCATION_FILE), SKEPU_EXTERNAL_SOURCE_LOCATION_LINE);
 		}
 
@@ -949,7 +948,7 @@ namespace skepu
 
 		inline void Tracer::beginRegion(std::string const& label SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER)
 		{
-			// (a string: the overload that takes the place, not this one)
+			// a string: the overload that takes the place, not this one
 			this->beginRegion(label, std::string(SKEPU_EXTERNAL_SOURCE_LOCATION_FILE), SKEPU_EXTERNAL_SOURCE_LOCATION_LINE);
 		}
 
@@ -990,7 +989,6 @@ namespace skepu
 				this->m_regions().push_back(RegionEntry{std::move(label), false, std::move(entry), nullptr});
 				return;
 			}
-			// (the regions around a region that is written are written: the trace has them first)
 			this->commitRegions();
 			auto &stack = this->m_regions();
 			entry[Schema::Keys::DEPTH] = stack.size() + 1;
@@ -1007,7 +1005,7 @@ namespace skepu
 				return;
 			RegionEntry region = std::move(stack.back());
 			stack.pop_back();
-			// (the one event of a region that is not written is in the region around it)
+			// the one event of a region that is not written is in the region around it
 			if (!region.committed && !region.buffered.is_null())
 				this->submit(std::move(region.buffered));
 		}
@@ -1072,14 +1070,14 @@ namespace skepu
 		inline void Tracer::region(std::string const& label, std::function<void(void)> &&work_func SKEPU_EXTERNAL_SOURCE_LOCATION_PARAM_INNER)
 		{
 			this->beginRegion(label SKEPU_EXTERNAL_SOURCE_LOCATION_FORWARD_ARG);
-			struct End { Tracer &tracer; ~End() { tracer.endRegion(); } } end{*this};   // (also if work_func throws)
+			struct End { Tracer &tracer; ~End() { tracer.endRegion(); } } end{*this};   // also if work_func throws
 			work_func();
 		}
 
 		// One default tracer for the whole program (an inline function's local static is shared by
 		// all translation units), created on first use: a container that traces its allocation
 		// is then destroyed before the tracer, which writes the trace file when it is destroyed.
-		// (The trace file name is the one of the translation unit that gets here first.)
+		// The trace file name is the one of the translation unit that gets here first.
 		inline Tracer &internal_defaultGlobalTracer()
 		{
 			static Tracer defaultTracer(SKEPU_TRACE_FILE_NAME);
@@ -1138,7 +1136,7 @@ namespace skepu
 			{
 				file = site.file;
 				line = site.line;
-				site.file = nullptr;   // (the calls inside this one are in the library)
+				site.file = nullptr;   // the calls inside this one are in the library
 			}
 			calls.push_back(label);
 			m_active = true;

@@ -14,21 +14,17 @@
 //
 //   auto spec = args.backend();   // the backend, as a positional argument or --backend NAME (-b NAME); sets it as the global backend
 //
-// The positional arguments come first on the command line, then the options and the flags. The value of a declaration is
-// returned at once, and the declarations are made in the order of the positional arguments on the command line.
-// A name that is declared again is the same argument, not a new one: the call gets the value that was read the first time (also after
-// backend()), so a function can take the parser and read the arguments it needs, instead of getting them one by one. The same name
-// with another type or default value is an error.
+// The positional arguments come first on the command line, then the options and the flags. A declaration returns its value at once; declarations are made
+// in positional order. Declaring a name again gives the same argument and the value read the first time (also after backend()), so a function can take the
+// parser and read what it needs; the same name with another type or default is an error.
 //
-// The parser ends the program itself when the command line is wrong: a missing positional argument, a value that is not of
-// the type (a number is not read as 0 when it is not a number) and, when the declarations are complete, an unknown option or an
-// argument too many are errors that print the message and the usage and exit with status 1 (a call to skepu_mpi_abort under MPI).
-// --help (-h) prints the usage, which is made from the declarations, and exits with status 0. (With SKEPU_ARGS_THROW defined the
-// parser throws skepu::args::Exit instead of ending the program, with the text in what() and the status.)
+// The parser ends the program on a wrong command line: a missing positional argument, a value that is not of the type (a number is not read as 0 when it is
+// not a number) and, once the declarations are complete, an unknown option or an extra argument. It prints the message and the usage and exits with status 1
+// (skepu_mpi_abort under MPI). --help (-h) prints the usage, built from the declarations, and exits with status 0. With SKEPU_ARGS_THROW defined the parser
+// throws skepu::args::Exit instead, with the text in what() and the status.
 //
-// The declarations are complete when backend() or done() is called, or, as a last resort, when the parser is destroyed. So
-// backend() should be the last of the declarations (or done() if the program has no backend). The messages are printed with
-// skepu::io::cout, that is by the first process of an MPI program only.
+// The declarations are complete when backend() or done() is called, or, as a last resort, when the parser is destroyed. So backend() should be the last
+// declaration (done(), if the program has no backend). Messages are printed with skepu::io::cout, that is, by the first process of an MPI program only.
 
 #include <cctype>
 #include <cerrno>
@@ -219,7 +215,7 @@ public:
 	std::tuple<T, U, Rest...> get(const std::string &first, const std::string &second, const Names &... names)
 	{
 		static_assert(sizeof...(Names) == sizeof...(Rest), "get needs one name for each type");
-		return std::tuple<T, U, Rest...>{get<T>(first), get<U>(second), get<Rest>(names)...}; // (evaluated in this order)
+		return std::tuple<T, U, Rest...>{get<T>(first), get<U>(second), get<Rest>(names)...}; // evaluated in this order
 	}
 
 	// A named option: --name value or --name=value

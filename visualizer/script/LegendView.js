@@ -12,12 +12,12 @@
 //   legend.highlightFor(ele);                 // the entry for a node or an edge that the pointer is over (legend.clearHighlight() when it leaves)
 //
 // options (all optional):
-//   hoverGraph  () -> the Cytoscape instance: the pointer over an entry of the legend marks the nodes or edges of that kind in the graph
-//               (class legend-match, styled in graph_style.js). Leave it out, or set HIGHLIGHT_GRAPH_ON_LEGEND_HOVER to false, for no such mark.
-//   clearHighlight   () -> (): the page lets go of its own highlight (the selection of a node...): called when a click on an entry keeps the mark of the entry
-//   onSelect         (callback) -> (): the page calls the callback when it highlights something (a selection); the mark that a click kept then ends
-//   onSpectrumClick  (x, y) -> (): a click on the colour bar (the spectrum that the calls are coloured by) asks for the menu of the spectra, at the place of the click
-//   onColorByClick   (x, y) -> (): a right click on it asks for the menu of what the calls are coloured after
+//   hoverGraph       () -> cytoscape: hovering an entry marks the nodes or edges of that kind in the graph (class legend-match, graph_style.js).
+//                    Omit it, or set HIGHLIGHT_GRAPH_ON_LEGEND_HOVER to false, for no mark.
+//   clearHighlight   () -> (): clears the page's own highlight (a node selection); called when a click locks the mark of an entry
+//   onSelect         (callback) -> (): the page calls the callback when it highlights something; that ends a locked mark
+//   onSpectrumClick  (x, y) -> (): click on the colour bar; opens the spectrum menu at the click
+//   onColorByClick   (x, y) -> (): right click on the colour bar; opens the colour-by menu
 //   labels      { key: text }: another name for an entry (the key is its data-legend-key: 'container_update', ...)
 //   extraNodes  [{ key, label, icon(dark) -> svg markup, present() -> bool }]: kinds of nodes that only the page has
 //   typeKeys    { node type: key }: the entry of such a kind of node, for highlightFor
@@ -25,14 +25,14 @@
 import { COLORS, regionColor } from './graph_style.js';
 import { BACKEND_ORDER, PATTERN_ORDER, basePattern } from './TraceDataProvider.js';
 
-/** What the calls are coloured after, as the legend names it (the entries of Nodes > Color, shorter). */
+/** Colour-by names, shorter than the entries of Nodes > Color. */
 export const COLOR_BY_LABELS = {
   'duration-total': 'total time', 'elements': 'elements', 'duration-per-element': 'time/element', 'iterations': 'iterations',
   'duration-cv': 'variance', 'imbalance': 'imbalance', 'comm-bytes': 'comm. bytes', 'dag-depth': 'DAG depth', 'nesting-level': 'nesting',
   'fan-in': 'fan-in', 'fan-out': 'fan-out', 'total-order': 'sequence', 'pattern': 'pattern', 'backend': 'backend',
 };
 
-/** The master switch of the mark in the graph (see the option hoverGraph): false turns it off for every graph that has a legend. */
+/** false disables the hover mark for every graph. */
 export const HIGHLIGHT_GRAPH_ON_LEGEND_HOVER = true;
 
 export class LegendView {
@@ -56,18 +56,18 @@ export class LegendView {
       var page = this;
       legendEl.addEventListener('click', function(event) {
         if (event.target.closest && event.target.closest('.legend-spectrum-section')) {
-          event.stopPropagation();           // (the click that opens the menu is not one that closes it)
+          event.stopPropagation();           // the click must not also close the menu
           page._options.onSpectrumClick(event.clientX, event.clientY);
         }
       });
     }
-    this._hoverKey   = null; // the entry that the pointer is over (hoverGraph)
-    this._lockedKey  = null; // the entry that a click keeps marked, while the pointer goes to the graph (a click on it again, or on another entry, ends it)
-    this._hoverFrame = 0;    // the frame that marks the graph
-    // (the entries are made again by render(): one listener on the panel, not one for each entry)
+    this._hoverKey   = null;
+    this._lockedKey  = null; // locked entry; a click toggles it
+    this._hoverFrame = 0;
+    // render() recreates the entries: one listener on the panel
     if (legendEl && this._options.hoverGraph && HIGHLIGHT_GRAPH_ON_LEGEND_HOVER) {
       var self = this;
-      legendEl.classList.add('legend-interactive');      // (the entries answer the pointer: main.css)
+      legendEl.classList.add('legend-interactive');      // main.css
       var keyOf = function(event) { var item = event.target.closest && event.target.closest('[data-legend-key]'); return item ? item : null; };
       legendEl.addEventListener('mouseover', function(event) {
         var item = keyOf(event);
@@ -82,22 +82,21 @@ export class LegendView {
     }
   }
 
-  // The pointer is over the entry with this key (or none): a lock is not moved by it
+  // A lock is not moved by hover
   _hoverGraph(key) {
     if (key === this._hoverKey) return;
     this._hoverKey = key;
     this._markSoon();
   }
 
-  // A click on an entry keeps its mark when the pointer leaves; on the entry that is kept, it lets go; on another, it is that one that is kept.
+  // Toggles the lock on an entry
   _lock(key) {
     this._lockedKey = this._lockedKey === key ? null : key;
-    if (this._lockedKey && this._options.clearHighlight) this._options.clearHighlight();      // (the mark of the entry and a selection are not both in the graph)
+    if (this._lockedKey && this._options.clearHighlight) this._options.clearHighlight();      // the entry mark and a selection are exclusive
     this._showLock();
     this._markSoon();
   }
 
-  // The mark that a click kept ends (nothing happens when there is none)
   _unlock() {
     if (!this._lockedKey) return;
     this._lockedKey = null;
@@ -105,8 +104,7 @@ export class LegendView {
     this._markSoon();
   }
 
-  // What the user does in the graph (a click on a node, an edge or the background, a node that is dragged, a box that is drawn) ends the mark that a click kept: it
-  // is a mark to look at while the graph is panned or zoomed, and not one to keep when there is something else to look at. (Not the pan, the zoom and the hover.)
+  // Any graph interaction except pan, zoom and hover ends the lock: it is a mark to look at while panning or zooming
   _bindRelease(cy) {
     if (this._releaseCy === cy) return;
     var self = this;
@@ -116,7 +114,7 @@ export class LegendView {
     cy.on('tap cxttapstart grab boxstart', this._release);
   }
 
-  // The entry that is kept has a class (main.css), and so has the panel while there is one (an entry that is not it answers the pointer less).
+  // Classes for the locked entry and the panel (main.css)
   _showLock() {
     var self = this;
     this._legendEl.classList.toggle('legend-locked', !!this._lockedKey);
@@ -125,8 +123,7 @@ export class LegendView {
     });
   }
 
-  // The nodes and edges of the entry that is kept, or else of the one that the pointer is over (what keyFor and swatchKeyFor say of them), marked at
-  // the next frame: a pointer that crosses the legend makes one change for each frame at most, and a change is one batch (one style pass, one redraw).
+  // Marks the elements of the locked entry, else the hovered one, on the next frame: at most one style pass per frame while the pointer crosses the legend
   _markSoon() {
     var self = this;
     if (this._hoverFrame) cancelAnimationFrame(this._hoverFrame);
@@ -152,7 +149,7 @@ export class LegendView {
     if (entry) entry.title = matches.length + ' in the graph. Click to ' + (key === this._lockedKey ? 'let go of the mark.' : 'keep the mark.');
   }
 
-  /** Marks nothing in the graph, and lets go of what a click kept (the graph was made again). */
+  /** Called when the graph is rebuilt. */
   clearGraphMark() {
     this._hoverKey = null;
     this._lockedKey = null;
@@ -297,16 +294,14 @@ export class LegendView {
         '</div></div>';
     }
 
-    // What the colour of a call means: the measure that it is coloured after, on the spectrum (a gradient, with the ends of it); or, when the calls are
-    // coloured by pattern or by backend, the patterns or backends that the calls in the graph have, on the colours that the spectrum has for them (a bar of
-    // one colour for each, and no ends: it is not a scale)
+    // A measure: the spectrum with its ends. Pattern or backend: one block per category present, no ends (not a scale).
     var mode = this.settings['node-color-call'];
     var classBased = mode === 'pattern' || mode === 'backend';
     var swatches = '', classColors = null;
     if (classBased) {
       var provider = gv._provider;
       var order = mode === 'pattern' ? PATTERN_ORDER : BACKEND_ORDER;
-      var names = gv.callCategories(mode).slice().sort(function(a, b) {        // (in the order of the spectrum, the others last)
+      var names = gv.callCategories(mode).slice().sort(function(a, b) {        // in the order of the spectrum, the others last
         var ia = order.indexOf(a), ib = order.indexOf(b);
         return (ia < 0 ? order.length : ia) - (ib < 0 ? order.length : ib);
       });
@@ -330,7 +325,7 @@ export class LegendView {
     // Populate the freshly-inserted #color-bar gradient.
     this._updateColorBar();
 
-    // an entry that a click kept is still kept if the graph has what it stands for; the marks are of the elements that the graph has now
+    // A lock survives if the graph still has its entry
     if (this._lockedKey && !this._legendEl.querySelector('[data-legend-key="' + this._lockedKey + '"]')) this._lockedKey = null;
     if (this._legendEl.classList.contains('legend-interactive')) { this._showLock(); this._markSoon(); }
   }
@@ -406,7 +401,7 @@ export class LegendView {
     // Sample the active spectrum at 20 evenly-spaced points to produce a smooth
     // linear-gradient.  This avoids importing COLOR_SPECTRUMS directly and keeps
     // the gradient in sync with whatever spectrum the provider currently uses.
-    if (this._classColors) {      // (one block for each colour that is sampled)
+    if (this._classColors) {
       var n = this._classColors.length, blocks = [];
       this._classColors.forEach(function(c, k) { blocks.push(c + ' ' + (100 * k / n) + '%', c + ' ' + (100 * (k + 1) / n) + '%'); });
       bar.style.background = 'linear-gradient(to right,' + blocks.join(',') + ')';

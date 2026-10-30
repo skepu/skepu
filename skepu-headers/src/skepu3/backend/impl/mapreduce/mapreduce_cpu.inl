@@ -21,7 +21,7 @@ namespace skepu
 			SKEPU_TRACE_START_EVENT(trace_handle);
 			auto random = this->template prepareRandom<MapFunc::randomCount>(size);
 
-			// (an element that is given no index is numbered in the whole container, for a MatRow: a part of a distributed container has an origin)
+			// an element that is given no index is numbered in the whole container, for a MatRow: a part of a distributed container has an origin
 			size_t element_origin = 0;
 			if constexpr (sizeof...(EI) > 0)
 				element_origin = get<0>(std::forward<CallArgs>(args)...).getParent().linearIndexOrigin();

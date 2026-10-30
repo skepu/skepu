@@ -92,7 +92,7 @@ function sizeFits(A, B) {
     // A MapPairs is traced as (Hsize, Vsize), and a Map over a matrix as its element count.
     if (baseOf(A.pattern) === 'MapPairs' && A.elements?.length === 2) {
         if (B.elements?.length === 2) return sameElements(A, B) || (A.elements[0] === B.elements[1] && A.elements[1] === B.elements[0]);
-        if (B.elements?.length === 1) return A.elements[0] * A.elements[1] === B.elements[0];     // (a Map over a matrix)
+        if (B.elements?.length === 1) return A.elements[0] * A.elements[1] === B.elements[0];     // a Map over a matrix
     }
     return sameElements(A, B);
 }
@@ -110,7 +110,7 @@ function accessOf(e) {
             if (e.prng != null) { reads.add(e.prng); writes.add(e.prng); }   // the state of the stream
             break;
         case 'copy':           reads.add(e.source); writes.add(e.object_id); break;
-        case 'communication':  for (const id of e.object_ids ?? []) { reads.add(id); writes.add(id); } break;   // (a move: nothing can be fused across it)
+        case 'communication':  for (const id of e.object_ids ?? []) { reads.add(id); writes.add(id); } break;   // a move: nothing can be fused across it
         case 'transfer':
         case 'snapshot':       reads.add(e.object_id); break;
         case 'element_access': reads.add(e.source);    break;

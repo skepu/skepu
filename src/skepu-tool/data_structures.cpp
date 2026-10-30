@@ -183,7 +183,7 @@ public:
 
 		if (auto *userType = HandleUserType(decl))
 		{
-			// (the visitor may visit a node more than once)
+			// the visitor may visit a node more than once
 			const SourceRange range = tl.getSourceRange();
 			for (auto &ref : this->UTReferences)
 				if (ref.first == range)
@@ -203,7 +203,7 @@ public:
 		if (var && var->hasAttr<SkepuUserConstantAttr>() && ref->hasQualifier() && !ref->getBeginLoc().isMacroID())
 		{
 			const SourceRange range = ref->getSourceRange();
-			// (the visitor may visit a node more than once)
+			// the visitor may visit a node more than once
 			for (auto &known : this->ConstantReferences)
 				if (known.first == range)
 					return true;
@@ -331,7 +331,7 @@ UserType::UserType(const CXXRecordDecl *t)
 		if (GenCL)
 		{
 			std::string typeNameFunc = RunTimeTypeNameFunc;
-			// (in an MPI program the node-level library is skepu_node: these are functions of it)
+			// in an MPI program the node-level library is skepu_node: these are functions of it
 			replaceTextInString(typeNameFunc, "{{NAMESPACE}}", GenMPI ? "skepu_node" : "skepu");
 			replaceTextInString(typeNameFunc, "{{QUALIFIED_NAME}}", resolvedTypeName);
 			replaceTextInString(typeNameFunc, "{{ESCAPED_NAME}}", this->typeNameOpenCL);
@@ -416,7 +416,7 @@ UserFunction::Param::Param(const clang::ParmVarDecl *p)
 	replaceTextInString(this->resolvedTypeName, "struct ", "");
 
 	if (	this->rawTypeName != "unsigned long"
-		&&	this->rawTypeName != "unsigned char") // (the other built-in types are made identifiers: unsigned int is unsigned_int)
+		&&	this->rawTypeName != "unsigned char") // the other built-in types are made identifiers: unsigned int is unsigned_int
 		this->escapedTypeName = transformToCXXIdentifier(this->resolvedTypeName);
 	else
 		this->escapedTypeName = this->rawTypeName;
@@ -703,8 +703,8 @@ std::string UserFunction::Param::typeNameOpenCL() const
 	
 	// A user type is defined in the kernel under its escaped qualified name (see generateUserTypeCode_CL);
 	// the qualified C++ name (skepu::filter::RGBPixel) is not an identifier in OpenCL C.
-	// (the type of a container argument is a record too, MatRow<signed char>, so that the name tells: a name that has no namespace and is not a template
-	// is a type that OpenCL C has, or a user type that is defined under its own name, and is not changed)
+	// the type of a container argument is a record too, MatRow<signed char>, so that the name tells: a name that has no namespace and is not a template
+	// is a type that OpenCL C has, or a user type that is defined under its own name, and is not changed
 	if (this->type && this->type->getAs<clang::RecordType>() && this->resolvedTypeName.find_first_of(":<") != std::string::npos)
 		return this->escapedTypeName;
 	
@@ -756,8 +756,8 @@ size_t UserFunction::RandomAccessParam::numKernelArgsCL() const
 	{
 		case ContainerType::Vector:
 			return 2;
-		case ContainerType::MatRow: // (data, cols, the number of the first row)
-		case ContainerType::MatCol: // (data, rows, cols)
+		case ContainerType::MatRow: // data, cols, the number of the first row
+		case ContainerType::MatCol: // data, rows, cols
 		case ContainerType::Matrix:
 			return 3;
 		case ContainerType::Tensor3:
@@ -855,7 +855,7 @@ UserFunction::UserFunction(clang::FunctionDecl *f)
 					if (value[0] == '-')
 						value = "(" + value + ")";
 
-					// (an unnamed parameter, e.g. a SFINAE condition, has nothing to replace in the code)
+					// an unnamed parameter, e.g. a SFINAE condition, has nothing to replace in the code
 					if (!valueParam->getNameAsString().empty())
 						this->templateArguments.emplace_back(valueParam->getNameAsString(), value, value, valueType);
 					std::string nameValue = value;
@@ -1006,7 +1006,7 @@ UserFunction::UserFunction(clang::FunctionDecl *f)
 
 	// Set requires double precision: from the signature, that is the type of the result (or the results of a skepu::multiple) and of every
 	// argument, including the element type of a container or a region (MatRow<double>), from the user types and from the functions that it calls.
-	// (Not from the body: a local variable or a cast to double is not seen, and a kernel with one is not built for a device without double precision.)
+	// Not from the body: a local variable or a cast to double is not seen, and a kernel with one is not built for a device without double precision.
 	auto mentionsDouble = [](const clang::QualType &type)
 	{
 		const std::string name = type.getCanonicalType().getAsString();
@@ -1174,8 +1174,8 @@ void UserFunction::updateArgLists(size_t arity, size_t Harity)
 			ReferencedUTs.insert(userType);
 	};
 
-	// (a user type that only appears as the return type, e.g. in a compound literal,
-	// has no variable or parameter that would refer to it)
+	// a user type that only appears as the return type, e.g. in a compound literal,
+	// has no variable or parameter that would refer to it
 	if (this->multipleReturnTypes.empty())
 		scanForType(this->astDeclNode->getReturnType().getTypePtr());
 	else if (const auto *templateType = this->astDeclNode->getReturnType().getTypePtr()->getAs<clang::TemplateSpecializationType>())
@@ -1217,7 +1217,7 @@ std::string Skeleton::getDetails() const
 			oss << ", ";
 		first = false;
 		
-		// (a parameter that was not resolved is a null pointer: the language server asks for the details of whatever the user is typing)
+		// a parameter that was not resolved is a null pointer: the language server asks for the details of whatever the user is typing
 		oss << (param ? param->resolvedReturnTypeName : "<null>");
 	}
 

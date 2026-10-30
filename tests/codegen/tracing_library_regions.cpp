@@ -53,7 +53,7 @@ TEST_CASE("Calls of the library functions are regions at the lines of the calls"
 	auto first = skepu::dnn::take(data, 2);
 	skepu::Vector<int> classes(4, 1);
 	const int one_hot_line = __LINE__ + 1;
-	auto labels = skepu::dnn::one_hot(classes, 3);   // (calls the overload that fills a tensor: no region of its own)
+	auto labels = skepu::dnn::one_hot(classes, 3);   // calls the overload that fills a tensor: no region of its own
 	(void) first; (void) labels;
 
 	auto trace = read_trace();
@@ -74,7 +74,7 @@ TEST_CASE("A frontend gives the place of a call with a CallSite")
 {
 	skepu::Vector<float> x(8, 1.f), y(8, 2.f);
 	{
-#ifdef SKEPU_TRACING   // (the tool that precompiles this file does not see tracing)
+#ifdef SKEPU_TRACING   // the tool that precompiles this file does not see tracing
 		skepu::tracing::CallSite site("program.py", 42);
 #endif
 		skepu::blas::scal(8, 3.f, x, 1);
@@ -101,8 +101,8 @@ TEST_CASE("The benchmark functions are regions")
 	REQUIRE(basic.size() == 1);
 	REQUIRE(is_this_file(basic[0].first));
 	REQUIRE(basic[0].second == basic_line);
-	// (they have no place: their arguments are a pack. measure: one for each of the three repetitions of basicBenchmark, the call of the program, and the two
-	// repetitions of measureMedian, which is a region of its own around them)
+	// no place: their arguments are a pack. measure: one per repetition of basicBenchmark (three), the program's call, and the two repetitions of measureMedian,
+	// which has a region of its own around them
 	REQUIRE(regions(trace, "benchmark.measure").size() == 6);
 	REQUIRE(regions(trace, "benchmark.measureMedian").size() == 1);
 }

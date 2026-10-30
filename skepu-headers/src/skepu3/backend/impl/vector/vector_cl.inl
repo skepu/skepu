@@ -19,7 +19,7 @@ namespace skepu
 	typename Vector<T>::device_pointer_type_cl Vector<T>::updateDevice_CL(T* start, size_type numElements, backend::Device_CL* device, bool copy)
 	{
 #ifdef SKEPU_CUDA
-		syncCUDAbeforeOpenCL(true); // (the use may write: OpenCL says it only in the copy flag)
+		syncCUDAbeforeOpenCL(true); // the use may write: OpenCL says it only in the copy flag
 #endif
 		T* root = &m_data[0];
 		std::pair<cl_device_id, const T*> key(device->getDeviceID(), root);
@@ -194,7 +194,7 @@ namespace skepu
 
 		m_deviceMemPointers_CL.clear();
 
-		// (the copies of the const overload are not changed by OpenCL, but the data they hold is old after a write of another backend or of the host)
+		// the copies of the const overload are not changed by OpenCL, but the data they hold is old after a write of another backend or of the host
 		for (auto &memptr : this->m_deviceConstMemPointers_CL)
 			delete memptr.second;
 
@@ -202,8 +202,8 @@ namespace skepu
 	}
 
 #ifdef SKEPU_CUDA
-	// CUDA and OpenCL in the same program (see the declarations in the class). The backends do not know of each other's copies, so
-	// without this the one that uses the vector second would read the stale host memory, or an old copy of its own.
+	// CUDA and OpenCL in the same program (see the class declarations). The backends do not know each other's copies; without this, the second user
+	// of the vector would read stale host memory or its own old copy.
 	template <typename T>
 	void Vector<T>::syncCUDAbeforeOpenCL(bool mayWrite) const
 	{
@@ -213,7 +213,7 @@ namespace skepu
 			<< (m_valid ? ", CUDA has no changes" : ", CUDA has changes that are transferred to the host") << (mayWrite ? ", the CUDA copies are invalidated" : ""));
 		if (!m_valid)
 		{
-			updateHost_CU(); // (the transfers are traced by the CUDA device pointers)
+			updateHost_CU(); // the transfers are traced by the CUDA device pointers
 			m_valid = true;
 		}
 		if (mayWrite)
@@ -230,7 +230,7 @@ namespace skepu
 			return; // OpenCL has no copy
 		DEBUG_TEXT_LEVEL1("BACKEND SWITCH OpenCL -> CUDA, label: " << this->getLabel() << ": the vector goes through the host memory"
 			<< (mayWrite ? ", the OpenCL copies are released" : ""));
-		updateHost_CL(); // (only copies that OpenCL has changed are transferred)
+		updateHost_CL();
 		if (mayWrite)
 			releaseDeviceAllocations_CL();
 	}

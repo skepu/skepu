@@ -1,4 +1,4 @@
-// Which lines of a file a node of the graph marks. No editor in it, so that it can be tested (tests/unit/test_node_lines.js).
+// Which lines of a file a graph node marks. Editor-free, for tests (tests/unit/test_node_lines.js).
 
 export interface NodeData {
 	id: string;
@@ -42,7 +42,7 @@ export function traceSuffix(path: string): string {
 	return (normal.startsWith('/') ? '/' : '') + parts.join('/');
 }
 
-/** Whether the path of a file ends with the path of a source file of the trace, at the start of a name (o.cpp is not the end of foo.cpp). */
+/** Whether a file path ends with a trace source path at a name boundary (o.cpp is not the end of foo.cpp). */
 export function pathEndsWith(path: string, end: string): boolean {
 	const p = path.replace(/\\/g, '/'), e = end.replace(/\\/g, '/');
 	if (!e || !p.endsWith(e)) return false;
@@ -50,9 +50,9 @@ export function pathEndsWith(path: string, end: string): boolean {
 }
 
 /**
- * The first and the last line (from 0) that a node marks in the file, or null if it marks none. In the file of the trace, the lines of the event
- * that the node is of. In a source file, the line of the node (of a call of a skeleton or an `external`, a region, a snapshot) that is in that file:
- * an event may have no file or no line (an `external` made without C++20 has neither), and then it is in no file.
+ * The first and last line (0-based) a node marks in the file, or null if none. In the trace file: the lines of the node's event. In a source file: the
+ * line of the node (a skeleton call, an `external`, a region or a snapshot) in that file; an event may have no file or line (an `external` made without
+ * C++20 has neither) and is then in no file.
  */
 export function linesOfNode(data: NodeData, fileName: string, isTraceFile: boolean, traceLineRanges: number[][]): [number, number] | null {
 	if (isTraceFile) {

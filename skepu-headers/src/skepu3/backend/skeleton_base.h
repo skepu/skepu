@@ -16,20 +16,19 @@ namespace skepu
 {
 	namespace backend
 	{
-		// Whether a user function struct that the precompiler made says that it needs double precision (a double in its signature, or in the signature of a
-		// function that it calls): false for one that does not say it
+		// Whether a precompiler-made user function struct says it needs double precision (a double in its signature or in that of a function it calls);
+		// false if it says nothing
 		template<typename F, typename = void>
 		struct uf_requires_double: std::false_type {};
 
 		template<typename F>
 		struct uf_requires_double<F, std::void_t<decltype(F::requiresDouble)>>: std::integral_constant<bool, F::requiresDouble> {};
 
-		// Whether any of the user functions of a skeleton needs double precision
 		template<typename... Fs>
 		struct any_uf_requires_double: std::integral_constant<bool, (uf_requires_double<Fs>::value || ...)> {};
 
-		// Whether an OpenCL device can run double precision: the skeletons whose user functions have doubles cannot be run on the OpenCL backend (and their kernels
-		// cannot be built) if no device can; they run on another backend
+		// Whether an OpenCL device can run double precision. If none can, skeletons whose user functions have doubles cannot run on the OpenCL backend (their
+		// kernels cannot be built); they run on another backend
 		inline bool openclSupportsDouble()
 		{
 #ifdef SKEPU_OPENCL
@@ -73,7 +72,7 @@ namespace skepu
 			{
 #ifdef SKEPU_TRACING
 				this->m_label = label;
-				SKEPU_TRACE_RELABEL(this->m_object_id, this->m_label, true);   // (the builds of its kernels, before its first call, have the name; its calls keep theirs)
+				SKEPU_TRACE_RELABEL(this->m_object_id, this->m_label, true);   // the builds of its kernels, before its first call, have the name; its calls keep theirs
 #endif
 			}
 
@@ -151,8 +150,8 @@ namespace skepu
 			//		? this->m_user_spec
 			//		: &this->m_execPlan->find(size);
 #ifdef SKEPU_OPENCL
-				// A skeleton with double precision cannot run on OpenCL devices that do not have it: it uses the OpenMP (or the CPU) backend instead,
-				// and says so once; with the environment variable SKEPU_STRICT_BACKEND set (not 0) it is an error instead
+				// A skeleton needing double precision cannot run on OpenCL devices without it: it uses the OpenMP (or CPU) backend and says so once; with
+				// SKEPU_STRICT_BACKEND set (not 0) it is an error instead
 				if (this->m_needs_double && this->m_environment->numDoubleDevices_CL() == 0)
 				{
 					const Backend::Type type = this->m_selected_spec->type();
@@ -170,7 +169,7 @@ namespace skepu
 			}
 
 		protected:
-			// Builds the OpenCL kernels of the skeleton, unless it needs double precision and no OpenCL device has it (the build fails for it, and the skeleton does not run there)
+			// Builds the skeleton's OpenCL kernels, unless it needs double precision and no OpenCL device has it (the build would fail, and the skeleton does not run there)
 			template<typename CLKernel>
 			void prepareOpenCL(bool needsDouble)
 			{
@@ -178,7 +177,7 @@ namespace skepu
 				this->m_needs_double = needsDouble;
 				if (!needsDouble || this->m_environment->numDoubleDevices_CL() > 0)
 				{
-					// (with tracing, the builds are events of this instance)
+					// with tracing, the builds are events of this instance
 					tracing::CompileScope compile_scope(this->getObjectIDForTrace(), this->getLabel());
 					CLKernel::initialize();
 				}

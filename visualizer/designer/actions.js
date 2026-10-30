@@ -26,14 +26,13 @@ export function addContainer(kind, at) {
 
 export function addSkeleton(pattern, at, parent) {
     const n = S.design.skeletons.filter(s => s.pattern === pattern).length + 1;
-    const label = pattern === 'IO' ? (n === 1 ? 'I/O' : `I/O ${n}`) : `${pattern.toLowerCase()}${n}`;           // I/O blocks are labelled "I/O"
+    const label = pattern === 'IO' ? (n === 1 ? 'I/O' : `I/O ${n}`) : `${pattern.toLowerCase()}${n}`;
     add({ ...defaultSkeleton(pattern, nextId('s'), label), ...(parent ? { parent } : {}) }, S.design.skeletons, at);
 }
 
 /** The types the Add menu offers: data kinds, skeletons and regions. */
 export const ADDABLE = [...CONTAINER_KINDS, 'PRNG', ...Object.keys(PATTERNS), 'Region'];
 
-/** Adds a node of `type` at `at`, in `region` if given. */
 export function addNode(type, at, region = null) {
     if (CONTAINER_KINDS.includes(type) || type === 'PRNG') addContainer(type, at);
     else if (type === 'Region') addRegion(at, region);
@@ -188,7 +187,6 @@ export function groupNodes(scope) {
 
 export const groupInLoop = () => groupNodes(false);
 
-/** Add > Region: an empty region. */
 export function addRegion(at, parent = null) {
     const labels = new Set(S.design.loops.map(l => l.label));
     let n = S.design.loops.filter(l => l.scope).length + 1;
@@ -221,7 +219,6 @@ export function ungroup() {
     changed({ structure: true });
 }
 
-/** Enables the Edit items that apply. */
 export function updateMenu() {
     const enable = enableMenuItem;
     const nodes = S.design.containers.length + S.design.skeletons.length + S.design.loops.length;
@@ -315,7 +312,6 @@ export function replace(next) {
     S.cy.fit(undefined, 40);
 }
 
-/** Binds the graph clicks, the Edit menu and the keys. */
 export function initActions() {
     S.cy.on('tap', 'node', evt => {                         // connect mode: source, then target
         if (!S.connecting) return;

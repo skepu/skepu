@@ -48,7 +48,6 @@ export const iterationsOf = l => l.scope ? 1 : Math.max(1, +l.count || 1);
 /** The region of a data node: that of its writer. */
 export const regionOfData = id => { const r = S.result.dataRegion?.[id]; return r && S.design.loops.some(l => l.id === r) ? r : undefined; };
 
-/** A region without contents. */
 export const isEmpty = id => !S.design.skeletons.some(s => s.parent === id) && !S.design.loops.some(l => l.parent === id);
 
 export const loopDepth = id => { let d = 0; for (let l = S.design.loops.find(x => x.id === find(id)?.parent); l; l = S.design.loops.find(x => x.id === l.parent)) d++; return d; };
@@ -76,7 +75,7 @@ export function elements() {
     for (const c of S.design.containers) {
         const v = S.result.versions?.[c.id] ?? { version: 1, count: 1 };
         nodes.push({ data: { id: c.id, type: c.kind === 'PRNG' || !written.has(c.id) ? 'allocation' : 'container_update', is_prng: c.kind === 'PRNG' || undefined, label: c.label, version: v.version, version_count: v.count, iteration_count: 1,
-                             parent: regionOfData(c.id) },        // data is in its writer's region
+                             parent: regionOfData(c.id) },
                     position: S.design.positions[c.id] });
     }
     for (const s of S.design.skeletons)
@@ -175,7 +174,6 @@ export function storePositions() {
 
 // ── Legend ───────────────────────────────────────────────────────────────────
 
-/** Renders the legend. */
 export function renderLegend() { S.legend.render(darkNow()); }
 
 /**
@@ -201,7 +199,6 @@ export function focusGraph() {
     animateFit(S.cy, eles, eles.length === 1 && eles[0].data('type') !== 'region' ? roomAround(S.cy) : ZOOM_FIT_PAD);
 }
 
-/** Creates the graph and its legend, and binds pointer and selection handling. */
 export function initGraph() {
     S.cy = window.cytoscape({ container: $('#cy'), elements: [], style: stylesheet(), ...PAN_ZOOM_OPTIONS, boxSelectionEnabled: true });
     bindPanZoom(S.cy, $('#cy'));                              // wheel pans, pinch zooms

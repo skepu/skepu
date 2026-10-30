@@ -31,7 +31,7 @@ namespace skepu
 		{
 			this->init(si, sj, sk);
 			std::copy(ptr + this->local_offset(), ptr + this->local_offset() + this->local_size(), this->tile().getAddress());
-			this->tile_written(); // (the elements are not the value of the initialization)
+			this->tile_written(); // the elements are not the value of the initialization
 		}
 
 		Tensor3(const Tensor3 &) = default;
@@ -70,7 +70,6 @@ namespace skepu
 		T &operator[](size_type index) { return this->write_access()[index]; }
 		const T &operator[](size_type index) const { return this->read_access()[index]; }
 
-		// (removed: the random fills are in skepu-lib/randomize.hpp)
 		void randomize(int = 0, int = RAND_MAX) { static_assert(sizeof(T) == 0, "Tensor::randomize is removed: use skepu::randomize::uniform (skepu-lib/randomize.hpp)"); }
 
 		::skepu_node::Tensor3<T> replicated_view() const
@@ -114,7 +113,7 @@ namespace skepu
 		{
 			this->init(si, sj, sk, sl);
 			std::copy(ptr + this->local_offset(), ptr + this->local_offset() + this->local_size(), this->tile().getAddress());
-			this->tile_written(); // (the elements are not the value of the initialization)
+			this->tile_written(); // the elements are not the value of the initialization
 		}
 
 		Tensor4(const Tensor4 &) = default;
@@ -161,7 +160,6 @@ namespace skepu
 		T &operator[](size_type index) { return this->write_access()[index]; }
 		const T &operator[](size_type index) const { return this->read_access()[index]; }
 
-		// (removed: the random fills are in skepu-lib/randomize.hpp)
 		void randomize(int = 0, int = RAND_MAX) { static_assert(sizeof(T) == 0, "Tensor::randomize is removed: use skepu::randomize::uniform (skepu-lib/randomize.hpp)"); }
 
 		::skepu_node::Tensor4<T> replicated_view() const

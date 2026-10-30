@@ -60,7 +60,7 @@ namespace skepu
 				std::get<EI>(elwiseMemP)->getDeviceDataPointer()...,
 				std::get<AI-arity>(anyMemP).second...,
 				std::get<CI-arity-anyArity>(scArgs)...,
-				(arity == 0) ? this->default_size_j : elwise_j(eArgs), (arity == 0) ? this->default_size_k : elwise_k(eArgs), (arity == 0) ? this->default_size_l : elwise_l(eArgs), // (without containers the sizes are the default sizes)
+				(arity == 0) ? this->default_size_j : elwise_j(eArgs), (arity == 0) ? this->default_size_k : elwise_k(eArgs), (arity == 0) ? this->default_size_l : elwise_l(eArgs),
 				size, startIdx, this->m_strides
 			);
 			
@@ -167,7 +167,7 @@ namespace skepu
 					std::get<EI>(elwiseMemP[i])->getDeviceDataPointer()...,
 					std::get<AI-arity>(anyMemP[i]).second...,
 					std::get<CI-arity-anyArity>(scArgs)...,
-					(arity == 0) ? this->default_size_j : elwise_j(eArgs), (arity == 0) ? this->default_size_k : elwise_k(eArgs), (arity == 0) ? this->default_size_l : elwise_l(eArgs), // (without containers the sizes are the default sizes)
+					(arity == 0) ? this->default_size_j : elwise_j(eArgs), (arity == 0) ? this->default_size_k : elwise_k(eArgs), (arity == 0) ? this->default_size_l : elwise_l(eArgs),
 					numElem, baseIndex, this->m_strides
 				);
 				
@@ -300,7 +300,7 @@ namespace skepu
 						std::get<EI>(elwiseMemP[i][j])->getDeviceDataPointer()...,
 						std::get<AI-arity>(anyMemP[i][j]).second...,
 						std::get<CI-arity-anyArity>(scArgs)...,
-						(arity == 0) ? this->default_size_j : elwise_j(eArgs), (arity == 0) ? this->default_size_k : elwise_k(eArgs), (arity == 0) ? this->default_size_l : elwise_l(eArgs), // (without containers the sizes are the default sizes)
+						(arity == 0) ? this->default_size_j : elwise_j(eArgs), (arity == 0) ? this->default_size_k : elwise_k(eArgs), (arity == 0) ? this->default_size_l : elwise_l(eArgs),
 						numElem, baseIndex, this->m_strides
 					);
 					
@@ -407,7 +407,7 @@ namespace skepu
 					std::get<EI>(elwiseMemP[i])->getDeviceDataPointer()...,
 					std::get<AI-arity>(anyMemP[i]).second...,
 					std::get<CI-arity-anyArity>(scArgs)...,
-					(arity == 0) ? this->default_size_j : elwise_j(eArgs), (arity == 0) ? this->default_size_k : elwise_k(eArgs), (arity == 0) ? this->default_size_l : elwise_l(eArgs), // (without containers the sizes are the default sizes)
+					(arity == 0) ? this->default_size_j : elwise_j(eArgs), (arity == 0) ? this->default_size_k : elwise_k(eArgs), (arity == 0) ? this->default_size_l : elwise_l(eArgs),
 					numElem, baseIndex, this->m_strides
 				);
 				

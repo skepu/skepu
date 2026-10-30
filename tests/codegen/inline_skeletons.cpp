@@ -59,7 +59,6 @@ namespace
 	}
 }
 
-// (a named instance beside the anonymous ones)
 auto named_square = skepu::Map<1>(square);
 
 TEST_CASE("inline_skeletons: Anonymous Map")
@@ -140,7 +139,7 @@ TEST_CASE("inline_skeletons: Anonymous Reduce with a start value")
 	const size_t size{10};
 	auto a = iota(size);
 
-	// (a Scalar is not comparable in Catch)
+	// a Scalar is not comparable in Catch
 	const float plain = skepu::Reduce(add)(a);
 	const float started = skepu::Reduce(add).setStartValue(100.f)(a);
 	CHECK(plain == 45.f);
@@ -164,7 +163,7 @@ TEST_CASE("inline_skeletons: Anonymous MapReduce with a lambda for one of its fu
 {
 	auto a = iota(10);
 
-	// (the sum of the squares of 0 to 9 is 285)
+	// the sum of the squares of 0 to 9 is 285
 	const float lambda_map = skepu::MapReduce<1>([](float x) -> float { return x * x; }, add)(a);
 	const float lambda_reduction = skepu::MapReduce<1>(square, [](float x, float y) -> float { return x + y; })(a);
 	const float both_lambdas = skepu::MapReduce<1>([](float x) -> float { return x * x; }, [](float x, float y) -> float { return x + y; })(a);

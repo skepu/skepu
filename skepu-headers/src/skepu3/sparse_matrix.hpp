@@ -455,7 +455,7 @@ namespace skepu
 		size_t nnz() const { return this->m_pattern ? this->m_pattern->nnz() : 0; }
 		size_t size() const { return this->nnz(); }
 
-		// (the names of the earlier container)
+		// names of the earlier container
 		size_t total_rows() const { return this->rows(); }
 		size_t total_cols() const { return this->cols(); }
 		size_t total_nnz() const { return this->nnz(); }
@@ -576,7 +576,7 @@ namespace skepu
 		}
 
 	private:
-		// (a Vector has at least one element)
+		// a Vector has at least one element
 		static Vector<T> make_values(size_t count)
 		{
 			return count > 0 ? Vector<T>(count) : Vector<T>();
@@ -736,7 +736,7 @@ namespace skepu
 			size_t k = 0;
 			(sparse_detail::collect<OutArity, InArity>(k++, args, inputs, outputs), ...);
 			if (inputs.empty() && outputs.empty())
-				return guard; // (the sparse arguments are only read through their proxies)
+				return guard; // the sparse arguments are only read through their proxies
 
 			for (SparseMatrixBase *in : inputs)
 				if (!in->has_pattern())

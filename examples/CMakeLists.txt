@@ -54,10 +54,9 @@ endif()
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 add_library(lodepng STATIC lodepng.cpp)
 
-# What a program needs besides SkePU is, by default, a property of the program and not of the backend: the sequential, parallel and MPI versions are built
-# from the same source, so they link the same libraries. The libraries are found from the source (a program that includes lodepng.h links lodepng), and
-# this function is called for each version of each program, so that no backend is forgotten. A library that only some backends need can be added to those
-# targets after the call.
+# A program's extra libraries are a property of the program, not of the backend: the sequential, parallel and MPI versions are built from the same source and
+# link the same libraries. They are found from the source (a program that includes lodepng.h links lodepng). This function is called for each version of each
+# program, so that no backend is forgotten; a library that only some backends need can be added to those targets afterwards.
 function(skepu_example_dependencies target example)
 	file(READ ${CMAKE_CURRENT_LIST_DIR}/${example}.cpp _source)
 	if(_source MATCHES "#include[ \t]+[\"<]lodepng\\.h[\">]")

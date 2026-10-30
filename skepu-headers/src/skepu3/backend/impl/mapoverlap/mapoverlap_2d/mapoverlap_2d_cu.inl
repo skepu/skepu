@@ -32,7 +32,7 @@ namespace skepu
 			cudaSetDevice(deviceID);
 			
 			auto in_mem_p = arg.updateDevice_CU(arg.getAddress(), in_size_i * in_size_j, deviceID, AccessMode::Read, true);
-			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_size_i * out_size_j, deviceID, (this->m_mirror_mode || p != Parity::None) ? AccessMode::ReadWrite : AccessMode::Write, true)...); // (in mirror mode and with the update modes some elements are not computed: the output keeps their values)
+			auto out_mem_p = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).updateDevice_CU(get<OI>(std::forward<CallArgs>(args)...).getAddress(), out_size_i * out_size_j, deviceID, (this->m_mirror_mode || p != Parity::None) ? AccessMode::ReadWrite : AccessMode::Write, true)...); // in mirror mode and with the update modes some elements are not computed: the output keeps their values
 			
 			dim3 numBlocks, numThreads;
 
@@ -48,7 +48,7 @@ namespace skepu
 			auto anyMemP = std::make_tuple(get<AI>(std::forward<CallArgs>(args)...).cudaProxy(deviceID, MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])...);
 		
 			// PRNG support
-			// (in mirror mode only the inner elements are computed, they get the numbers one after the other; the stream is advanced over all the elements)
+			// in mirror mode only the inner elements are computed, they get the numbers one after the other; the stream is advanced over all the elements
 			const size_t computed = this->m_mirror_mode ? (out_size_i - 2 * this->m_overlap[0]) * (out_size_j - 2 * this->m_overlap[1]) : out_size_i * out_size_j;
 			size_t prng_threads = std::min<size_t>(computed, numBlocks.x * numBlocks.y * numThreads.x * numThreads.y);
 			auto random = this->template prepareRandom<MapOverlapFunc::randomCount>(computed, prng_threads);
@@ -62,7 +62,7 @@ namespace skepu
 			
             if (this->isPool)
 			{
-                const cudaDeviceProp &properties = this->m_environment->m_devices_CU.at(deviceID)->getDeviceProp(); // (cached: cudaGetDeviceProperties takes about 0.7 ms)
+                const cudaDeviceProp &properties = this->m_environment->m_devices_CU.at(deviceID)->getDeviceProp(); // cached: cudaGetDeviceProperties takes about 0.7 ms
 
 				bool should_use_global_memory = (this->m_overlap[0] == 0 || this->m_overlap[0] <= this->m_strides[0]) &&
                         						(this->m_overlap[1] == 0 || this->m_overlap[1] <= this->m_strides[1]);

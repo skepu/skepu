@@ -13,7 +13,7 @@ const FIXTURES_DIR = join(__dirname, '../tests/fixtures');
 const EXAMPLES_DIR = join(__dirname, '../examples');
 
 // Settings for the fixtures: no synthesized [global] region, so a graph has exactly the nodes of its events
-// (the root region is tested on its own)
+// the root region is tested on its own
 export function testSettings() {
     const s = new GraphSettings();
     s.synthesizeRootRegion = false;
@@ -32,7 +32,7 @@ export function loadFixture(name) {
 }
 
 export function graphFromFile(path, settings = testSettings()) {
-    const events = parseTrace(readFileSync(path, 'utf-8')).events; // (an array of events, or { header, data })
+    const events = parseTrace(readFileSync(path, 'utf-8')).events; // an array of events, or { header, data }
     return DirectedGraph.fromEvents(events, settings);
 }
 
@@ -142,7 +142,7 @@ function walkDir(dir, predicate, results = []) {
 export function collectExampleTraces() {
     return walkDir(
         EXAMPLES_DIR,
-        // (the lean files of the other processes of an MPI program, trace_x.rank1.json, are not traces of a program: they are merged into trace_x.json)
+        // the lean files of the other processes of an MPI program, trace_x.rank1.json, are not traces of a program: they are merged into trace_x.json
         name => name.startsWith('trace_') && name.endsWith('.json') && !/\.rank\d+\.json$/.test(name)
     ).sort();
 }

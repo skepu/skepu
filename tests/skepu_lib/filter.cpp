@@ -77,7 +77,7 @@ TEST_CASE("skepu::filter, a function of two pixels")
 	d.flush();
 	for (size_t i = 0; i < size; ++i)
 	{
-		// (255 minus the distance from the middle of the range, scaled; devices round differently)
+		// 255 minus the distance from the middle of the range, scaled; devices round differently
 		const float xf = (120 + i) / 255.f - 0.5f, yf = (135 - i) / 255.f - 0.5f;
 		const int expected = int(255 - std::sqrt(xf * xf + yf * yf) * 2 * 255);
 		CHECK(std::abs(int(d(i).intensity) - expected) <= 1);

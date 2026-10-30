@@ -3,5 +3,5 @@
 export const LAYOUT_NODE_SEP    = 15;
 export const LAYOUT_RANK_SEP    = 20;
 
-/** Dagre adds edges for the nesting of regions, which stretch the ranks: with regions in the graph the distances are scaled down to make up for it. */
+/** Dagre's edges for region nesting stretch the ranks; with regions the distances are scaled down. */
 export const COMPOUND_SEP_SCALE = 0.15;

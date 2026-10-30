@@ -38,11 +38,11 @@ describe('the first trace, with the splash on the page', () => {
         reveal(html, panel);
         expect(has(html, 'reveal-pending')).toEqual([false]);
         expect(has(panel, 'fading', 'hidden')).toEqual([true, false]);
-        vi.advanceTimersByTime(REVEAL_FADE_MS + 60);                 // (a fade that is late, because the page is busy: it is not cut short)
+        vi.advanceTimersByTime(REVEAL_FADE_MS + 60);                 // a fade that is late, because the page is busy: it is not cut short
         expect(has(panel, 'hidden')).toEqual([false]);
         panel.endTransition();
         expect(has(panel, 'hidden', 'fading')).toEqual([true, false]);
-        expect(panel.listeners.size).toBe(0);                        // (and the listener is gone)
+        expect(panel.listeners.size).toBe(0);                        // and the listener is gone
     });
 
     it('does not take the end of another transition, or of the transition of something in the panel, for the end of the fade', () => {
@@ -62,7 +62,7 @@ describe('the first trace, with the splash on the page', () => {
         expect(has(panel, 'hidden')).toEqual([false]);
         vi.advanceTimersByTime(1);
         expect(has(panel, 'hidden', 'fading')).toEqual([true, false]);
-        panel.endTransition();                                       // (a late end of the fade does nothing more)
+        panel.endTransition();                                       // a late end of the fade does nothing more
         expect(has(panel, 'hidden')).toEqual([true]);
     });
 
@@ -81,7 +81,7 @@ describe('the first trace, with the splash on the page', () => {
         holdForReveal(html, panel, body);
         reveal(html, panel);
         panel.endTransition();
-        panel.classList.remove('hidden');                       // (if it were done again, it would hide this panel)
+        panel.classList.remove('hidden');                       // if it were done again, it would hide this panel
         reveal(html, panel);
         vi.advanceTimersByTime(REVEAL_MAX_WAIT_MS * 2);
         expect(has(panel, 'hidden', 'fading')).toEqual([false, false]);
@@ -98,7 +98,7 @@ describe('the splash that is held is an overlay, out of the layout', () => {
 
     it('does not follow the layout that changes afterwards (the panes take their places: the graph area gets smaller, and the splash must not)', () => {
         holdForReveal(html, panel, body);
-        panel.box = { left: 0, top: 58, width: 880, height: 420 };         // (the area that it was in, after the right pane and the timeline came)
+        panel.box = { left: 0, top: 58, width: 880, height: 420 };         // the area that it was in, after the right pane and the timeline came
         expect(panel.style).toEqual({ top: '58px', left: '0px', width: '1280px', height: '600px' });
     });
 

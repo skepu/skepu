@@ -37,7 +37,6 @@ jobs:
           mkdir -p _stage/visualizer _stage/user-guide
           cp -r visualizer/. _stage/visualizer/
           cp -r user-guide/_book/. _stage/user-guide/
-          # (the root of the project site, …/skepu/, has no page of its own: it goes to the site above)
           cp .github/pages/index.html _stage/index.html
 
       - name: Upload Pages artifact

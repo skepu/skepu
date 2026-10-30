@@ -8,7 +8,7 @@
 #include <map>
 #include <skepu>
 
-// (a function for each skeleton: the precompiler does not take a function that two skeletons share)
+// a function for each skeleton: the precompiler does not take a function that two skeletons share
 float map_add(float a, float b) { return a + b; }
 float reduce_add(float a, float b) { return a + b; }
 float cols_add(float a, float b) { return a + b; }
@@ -35,7 +35,7 @@ namespace
 		std::ifstream file(std::getenv("SKEPU_TRACE_FILE"));
 		REQUIRE(file.good());
 		json trace = json::parse(file);
-		return trace.is_object() ? trace["data"] : trace;    // (with a header, the events are the data)
+		return trace.is_object() ? trace["data"] : trace;    // with a header, the events are the data
 	}
 
 	// The container labels of a list of object ids
@@ -69,7 +69,7 @@ namespace
 #endif
 }
 
-// (the skeleton instances are global: the precompiler does not take them inside a TEST_CASE)
+// the skeleton instances are global: the precompiler does not take them inside a TEST_CASE
 auto map2 = skepu::Map<2>(map_add);
 auto map_strided = skepu::Map<1>(inc);
 auto map_random = skepu::Map<0>(random_f);
@@ -310,7 +310,7 @@ TEST_CASE("the trace of the lifetime of containers")
 		REQUIRE(of_mat.size() == 2);
 		CHECK(of_mat[0]["elements"] == 6);
 		CHECK(of_mat[1]["object_id"] == id_of("mat_assigned"));
-		CHECK(allocated[id_of("mat_assigned")] == 1);   // (it had memory: not born by the assignment)
+		CHECK(allocated[id_of("mat_assigned")] == 1);   // it had memory: not born by the assignment
 	}
 
 	SECTION("no container is born twice or dies twice, and those of the inner block are dead")
@@ -330,13 +330,13 @@ TEST_CASE("the trace of the lifetime of containers")
 		bool born_in_assignment = false;
 		for (auto const& e : trace)
 			if (e["type"] == "copy" && e["source"] == id_of("original") && e["object_id"] == id_of("assigned") && allocated[id_of("assigned")] == 1)
-				born_in_assignment = true;    // (the precompiler names it after the variable)
+				born_in_assignment = true;    // the precompiler names it after the variable
 		CHECK(born_in_assignment);
 	}
 
 	SECTION("memory that a container wraps: it is born, and the end of the container is its death")
 	{
-		for (auto const& name : {"wrapped", "copy"})    // (named after the variables by the precompiler)
+		for (auto const& name : {"wrapped", "copy"})    // named after the variables by the precompiler
 		{
 			CHECK(allocated[id_of(name)] == 1);
 			CHECK(freed[id_of(name)] == 1);

@@ -1,7 +1,7 @@
 // Each part is in its own namespace; its test cases are prefixed with its name.
 
 #include "../../external/catch2/catch.hpp"
-#define SKEPU_ENABLE_EXCEPTIONS   // (a Reduce with containers of the wrong sizes is an error that the test catches)
+#define SKEPU_ENABLE_EXCEPTIONS   // a Reduce with containers of the wrong sizes is an error that the test catches
 #include <skepu>
 #include <skepu-lib/randomize.hpp>
 #include <stdlib.h>
@@ -165,14 +165,14 @@ TEST_CASE("reduce_matrix: rows, columns and the whole matrix")
     CHECK(columns(c) == int(3 * c + 30));
 
   const int whole = sum_int(m);
-  CHECK(whole == 138);   // (6 + 46 + 86)
+  CHECK(whole == 138);   // 6 + 46 + 86
 }
 
 TEST_CASE("reduce_matrix: a result vector of the wrong size is an error, and is not written")
 {
   skepu::Matrix<int> m = make_matrix();
 
-  skepu::Vector<int> few(2, -1), many(5, -1);   // (the matrix has 3 rows and 4 columns)
+  skepu::Vector<int> few(2, -1), many(5, -1);   // the matrix has 3 rows and 4 columns
   sum_int.setReduceMode(skepu::ReduceMode::RowWise);
   CHECK_THROWS(sum_int(few, m));
   CHECK_THROWS(sum_int(many, m));
@@ -180,7 +180,7 @@ TEST_CASE("reduce_matrix: a result vector of the wrong size is an error, and is 
   CHECK(few(1) == -1);
   CHECK(many(0) == -1);
 
-  skepu::Vector<int> three(3, -1);   // (the number of the rows is not that of the columns)
+  skepu::Vector<int> three(3, -1);   // the number of the rows is not that of the columns
   sum_int.setReduceMode(skepu::ReduceMode::ColWise);
   CHECK_THROWS(sum_int(three, m));
   CHECK(three(0) == -1);

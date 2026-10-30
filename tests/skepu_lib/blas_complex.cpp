@@ -124,7 +124,7 @@ namespace blas_mixed_precision_part
 {
 // BLAS routines in one program with float and double operands (and a mix of the two): the skeleton in each
 // routine is instantiated with different types, which gives it different user functions and kernels.
-// (Not built for OpenCL: not all devices have double precision.)
+// Not built for OpenCL: not all devices have double precision.
 
 namespace blas = skepu::blas;
 using skepu::Vector;

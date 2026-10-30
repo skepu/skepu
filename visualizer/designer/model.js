@@ -45,23 +45,21 @@ export const PATTERNS = {
                  doc: 'Prints the connected data and scalar results (skepu::io::cout).' },
 };
 
-/** Container kinds by rank (1D–4D). A MapOverlap or MapPool of `dims` dimensions takes the kind of that rank. */
+/** A MapOverlap or MapPool of `dims` dimensions takes the kind of that rank. */
 export const CONTAINER_KINDS = ['Vector', 'Matrix', 'Tensor3', 'Tensor4'];
 export const rankOf = kind => CONTAINER_KINDS.indexOf(kind) + 1;
 export const defaultSize = kind => ({ Vector: [1024], Matrix: [32, 32], Tensor3: [16, 16, 16], Tensor4: [8, 8, 8, 8] })[kind] ?? [1024];
 export const INDEX_TYPES = ['Index1D', 'Index2D', 'Index3D', 'Index4D'];
-/** MapOverlap dimensions (1–4) and the radius in each (default 1). */
 export const dimsOf = s => [1, 2, 3, 4].includes(+s.params?.dims) ? +s.params.dims : 1;
 export const overlapOf = s => Array.from({ length: dimsOf(s) }, (_, i) => s.params.overlap?.[i] ?? 1);
-/** MapPool size and stride per dimension (the stride defaults to the pool size). */
-/** The strides of a Map (the output, then each input) or a MapReduce (each input), `n` of them; 1 where not set. */
+/** Map: the output stride, then each input's; MapReduce: each input's. 1 where not set. */
 export const stridesOf = (s, n) => Array.from({ length: n }, (_, i) => Math.max(1, Math.floor(+s.params?.strides?.[i]) || 1));
 export const UPDATE_MODES = ['Normal', 'RedBlack', 'Red', 'Black'];
 export const poolOf = s => Array.from({ length: dimsOf(s) }, (_, i) => Math.max(1, +s.params.pool?.[i] || 2));
 export const strideOf = s => Array.from({ length: dimsOf(s) }, (_, i) => Math.max(1, +s.params.stride?.[i] || poolOf(s)[i]));
-/** The output size of a MapPool for an input of `size`; undefined if no window fits. */
+/** Undefined if no window fits. */
 export const pooledSize = (s, size) => { const out = size.map((n, i) => Math.floor((n - poolOf(s)[i]) / strideOf(s)[i]) + 1); return out.every(n => n >= 1) ? out : undefined; };
-/** Whether a call has a scalar result: a MapReduce, or a Reduce without an output container. */
+/** A MapReduce, or a Reduce without an output container. */
 export const hasScalar = (design, s) => { const p = PATTERNS[s.pattern]; return !!p?.scalar && !(p.partial && design.edges.some(e => e.from === s.id && e.role === 'out')); };
 
 export const defaultSkeleton = (pattern, id, label) => ({
@@ -79,20 +77,18 @@ export const defaultContainer = (id, label, kind = 'Vector') => ({
     id, label, kind, type: 'float', size: defaultSize(kind), init: '0',
 });
 
-/** A random stream (skepu::PRNG); `init` is the seed. */
+/** `init` is the seed. */
 export const defaultPrng = (id, label) => ({ id, label, kind: 'PRNG', type: '', size: [], init: '' });
 
 export const emptyDesign = () => ({ version: 1, name: 'design', containers: [], skeletons: [], edges: [], loops: [], positions: {} });
 
 // ── Objects ──────────────────────────────────────────────────────────────────
 
-/** The object key of a container node. */
 export const objectKey = c => c.object ?? c.id;
 
-/** The nodes of an object, in design order. */
 export const membersOf = (design, key) => design.containers.filter(c => objectKey(c) === key);
 
-/** The objects of a design: Map(key -> nodes), in design order. */
+/** Map of key to nodes, in design order. */
 export function objectsOf(design) {
     const objects = new Map();
     for (const c of design.containers) (objects.get(objectKey(c)) ?? objects.set(objectKey(c), []).get(objectKey(c))).push(c);
@@ -104,7 +100,7 @@ const freshKey = design => {
     for (let n = 1; ; n++) if (!used.has(`o${n}`)) return `o${n}`;
 };
 
-/** A label not used by another object (`except` is ignored): `label`, `label_2`, … */
+/** `label`, `label_2`, … ; the object `except` is ignored. */
 export function freeLabel(design, label, except = null) {
     const taken = new Set(design.containers.filter(c => objectKey(c) !== except).map(c => c.label));
     let name = label;
@@ -112,7 +108,6 @@ export function freeLabel(design, label, except = null) {
     return name;
 }
 
-/** Gives the nodes of the object of `node` the name and format of `node`. */
 export function syncObject(design, node) {
     for (const c of membersOf(design, objectKey(node)))
         if (c !== node) Object.assign(c, { label: node.label, kind: node.kind, type: node.type, size: [...node.size], init: node.init });
@@ -132,9 +127,7 @@ function join(design, node, target) {
     }
 }
 
-/**
- * Renames the object of `node`. An existing name joins that object. Returns { merged } or { refused }.
- */
+/** An existing name joins that object. Returns { merged } or { refused }. */
 export function renameObject(design, node, label) {
     label = String(label);
     const other = design.containers.find(c => c.label === label && objectKey(c) !== objectKey(node));
@@ -293,7 +286,6 @@ export function lower(design) {
     // what each skeleton reads and writes
     const ins = {}, outs = {};
     for (const s of design.skeletons) { ins[s.id] = []; outs[s.id] = []; }
-    // random chains: a stream and each call of its chain have one outgoing random edge
     const randomIn = {}, randomOut = {};
     const scalarIn = {};                 // an I/O block -> the edges from the calls whose scalar results it prints
     design.edges.forEach((e, i) => {
@@ -352,7 +344,7 @@ export function lower(design) {
             vertical: of('vertical')[0], horizontal: of('horizontal')[0], out: spec.host ? null : o[0] ?? null };
         if (spec.host) Object.assign(call, { host: true, reads: of('read'), writes: o });
         if (spec.io) call.io = true;
-        call.scalar = hasScalar(design, s);                    // MapReduce, or a Reduce without output
+        call.scalar = hasScalar(design, s);
         call.partial = !!spec.partial && !call.scalar;         // Reduce to a vector
         call.second = s.pattern === 'Reduce' && !!s.params.second && call.scalar;      // Reduce with two functions
         calls[s.id] = call;
@@ -446,7 +438,6 @@ export function lower(design) {
             warn(s.id, `${s.label}: ${call.out.label} is read and written in place; ${s.pattern} is not elementwise.`);
     }
 
-    // scalar results printed by I/O blocks
     for (const s of design.skeletons) if (calls[s.id]?.io) calls[s.id].scalars = (scalarIn[s.id] ?? []).filter(e => {
         if (calls[e.from]?.scalar === false) { err(e.id, `${calls[e.from].skeleton.label} has a vector result: connect its data to ${s.label}.`); return false; }
         return true;
@@ -458,10 +449,8 @@ export function lower(design) {
         if (writers.length > 1) err(c.id, `${c.label}: written by ${writers.map(w => w.label).join(' and ')}; an update has one writer.`);
     }
 
-    // call order: data flow first, then vertical position; a loop keeps its calls together
     const { order, cycles, conflicts, versions, unordered } = orderCalls(design, calls);
     for (const s of cycles) warn(s.id, `${s.label}: dependence cycle, ordered by position.`);
-    // versions of an object: the written nodes in order; an unwritten node is the allocation
     const writerOf = new Map();                          // node id -> the call that writes it
     for (const s of design.skeletons) if (calls[s.id]) for (const c of writesOf(calls[s.id])) if (!writerOf.has(c.id)) writerOf.set(c.id, s);
     for (const { a, b } of unordered)
@@ -523,7 +512,6 @@ export function lower(design) {
     // the user functions
     const functions = [];
     for (const s of order) functions.push(...userFunctions(calls[s.id], names, used));
-    // the objects as declared: the format of the first node, and its updates
     const program = {
         name: design.name,
         containers: [...objects.entries()].map(([key, nodes]) => {
@@ -568,7 +556,7 @@ export function orderCalls(design, calls) {
         return reached.get(a);
     };
     const writerOf = node => (writers.get(node) ?? [])[0];
-    const earlier = (u, v) => !!writerOf(u) && !!writerOf(v) && reach(writerOf(u)).has(writerOf(v));       // (u is written before v)
+    const earlier = (u, v) => !!writerOf(u) && !!writerOf(v) && reach(writerOf(u)).has(writerOf(v));
     const versions = new Map(), unordered = [];
     const objects = new Map();
     for (const c of design.containers) (objects.get(c.object ?? c.id) ?? objects.set(c.object ?? c.id, []).get(c.object ?? c.id)).push(c.id);
@@ -584,7 +572,6 @@ export function orderCalls(design, calls) {
         }
         ordered.slice(1).forEach((b, i) => { const a = ordered[i]; if (!earlier(a, b) && writerOf(a) !== writerOf(b)) unordered.push({ a, b }); });
         versions.set(key, [...bare, ...ordered]);
-        // a read of an update precedes the next write
         const all = versions.get(key);
         for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) {
             const later = writerOf(all[j]);
@@ -595,7 +582,6 @@ export function orderCalls(design, calls) {
         }
     }
 
-    // per level: the items (calls and loops) and their precedence
     const levels = new Map();         // loop id (or null) -> { items: Set, edges: Map(item -> Set(item)) }
     const level = id => levels.get(id) ?? levels.set(id, { items: new Set(), edges: new Map() }).get(id);
     for (const s of list) { const chain = chainOf(s.id); chain.forEach((id, k) => level(k === 0 ? null : chain[k - 1]).items.add(id)); }

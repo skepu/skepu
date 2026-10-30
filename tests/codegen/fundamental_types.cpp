@@ -444,7 +444,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	
 	
 	
-	// exp
 	REQUIRE_NOTHROW(skepu_exp(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -453,7 +452,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// exp2
 	REQUIRE_NOTHROW(skepu_exp2(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -462,7 +460,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// sqrt
 	REQUIRE_NOTHROW(skepu_sqrt(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -471,7 +468,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// abs
 	REQUIRE_NOTHROW(skepu_abs(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -480,7 +476,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// fabs
 	REQUIRE_NOTHROW(skepu_fabs(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -489,7 +484,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// max
 	REQUIRE_NOTHROW(skepu_max(res, in, (float)0.5));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -498,7 +492,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// fmax
 	REQUIRE_NOTHROW(skepu_fmax(res, in, (float)0.5));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -507,7 +500,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// pow
 	REQUIRE_NOTHROW(skepu_pow(res, in, 2));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -516,7 +508,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// log
 	REQUIRE_NOTHROW(skepu_log(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -525,7 +516,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// log2
 	REQUIRE_NOTHROW(skepu_log2(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -534,7 +524,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// log10
 	REQUIRE_NOTHROW(skepu_log10(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -543,7 +532,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// sin
 	REQUIRE_NOTHROW(skepu_sin(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -552,7 +540,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// sinh
 	REQUIRE_NOTHROW(skepu_sinh(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -561,7 +548,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// asin
 	REQUIRE_NOTHROW(skepu_asin(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -570,7 +556,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// asinh
 	REQUIRE_NOTHROW(skepu_asinh(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -579,7 +564,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// cos
 	REQUIRE_NOTHROW(skepu_cos(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -588,7 +572,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// cosh
 	REQUIRE_NOTHROW(skepu_cosh(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -597,7 +580,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// acos
 	REQUIRE_NOTHROW(skepu_acos(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -606,7 +588,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// acosh
 	REQUIRE_NOTHROW(skepu_acosh(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -615,7 +596,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// tan
 	REQUIRE_NOTHROW(skepu_tan(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -624,7 +604,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// tanh
 	REQUIRE_NOTHROW(skepu_tanh(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -633,7 +612,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// atan
 	REQUIRE_NOTHROW(skepu_atan(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -642,7 +620,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// atanh
 	REQUIRE_NOTHROW(skepu_atanh(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -651,7 +628,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// round
 	REQUIRE_NOTHROW(skepu_round(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -660,7 +636,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// ceil
 	REQUIRE_NOTHROW(skepu_ceil(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -669,7 +644,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// floor
 	REQUIRE_NOTHROW(skepu_floor(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -678,7 +652,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// erf
 	REQUIRE_NOTHROW(skepu_erf(res, in));
 	skepu::external(skepu::read(res, in), [&]
 	{
@@ -687,7 +660,6 @@ TEST_CASE("builtins: Test built-in math functions")
 	});
 	
 	
-	// printf
 	REQUIRE_NOTHROW(skepu_printf(res, in, 0));
 	skepu::external(skepu::read(res, in), [&]
 	{

@@ -403,8 +403,8 @@ bool SkePUASTVisitor::VisitVarDecl(clang::VarDecl *d)
 	else if (d->hasAttr<clang::SkepuUserConstantAttr>())
 	{
 		SkePULog() << "Found user constant: " << d->getNameAsString() << "\n";
-		// The constant is put into the kernels from its initializer, so it must be one that the compiler knows: constexpr, with an initializer.
-		// The language server, which shares this visitor, must not end: it does not register the constant.
+		// The constant is put into the kernels from its initializer, so the compiler must know it: constexpr, with an initializer.
+		// The language server, which shares this visitor, must not exit: it does not register the constant.
 		if (!(d->isConstexpr() && d->hasDefinition() == clang::VarDecl::Definition))
 		{
 			#ifndef SKEPU_LSP
@@ -466,14 +466,14 @@ bool SkePUASTVisitor::VisitCompoundStmt(clang::CompoundStmt *block)
 				auto *d = clang::dyn_cast<clang::VarDecl>(decl);
 				if (d && !d->isInvalidDecl() && !d->getType().isConstQualified() && IsContainerType(d->getType()))
 				{
-					// (with the place of the declaration: the allocation event is where the container was made, not in the header that makes it)
+					// with the place of the declaration: the allocation event is where the container was made, not in the header that makes it
 					const clang::SourceLocation place = SM.getSpellingLoc(d->getLocation());
 					calls += " skepu::trace_label(" + d->getNameAsString() + ", \"" + d->getNameAsString() + "\", \""
 						+ CStringLiteral(SM.getFilename(place).str()) + "\", " + std::to_string(SM.getSpellingLineNumber(place)) + ");";
 				}
 			}
 
-			// (a block in a function template is visited once, but the same statement can be reached again)
+			// a block in a function template is visited once, but the same statement can be reached again
 			if (!calls.empty() && labelledStatements.insert(end.getRawEncoding()).second)
 			{
 				SkePULog() << "Naming containers after their variables:" << calls << "\n";
@@ -485,8 +485,8 @@ bool SkePUASTVisitor::VisitCompoundStmt(clang::CompoundStmt *block)
 }
 
 #ifndef SKEPU_LSP
-// The functions of the program that get a trace region, and why (PlantAutoRegions). A function is known by the declaration that is the same for
-// all its declarations and, for a template, for the pattern.
+// The program's functions that get a trace region, and why (PlantAutoRegions). A function is identified by one canonical declaration: the same for all
+// its declarations and, for a template, for its pattern.
 static const clang::FunctionDecl *NormalizedFunction(const clang::FunctionDecl *f)
 {
 	if (const clang::FunctionDecl *pattern = f->getTemplateInstantiationPattern())
@@ -518,8 +518,8 @@ static bool MentionsContainer(clang::QualType type)
 }
 #endif
 
-// A function that can have a region: a function of the program, defined in the file that is being processed, that is not main (the
-// program itself), a constructor, a destructor, a constexpr function or a function of a lambda
+// A function that can have a region: defined in the file being processed, and not main, a constructor, a destructor, a constexpr function or a lambda's
+// function
 bool SkePUASTVisitor::VisitFunctionDecl(clang::FunctionDecl *f)
 {
 	#ifndef SKEPU_LSP
@@ -628,12 +628,12 @@ void PlantAutoRegions()
 					}
 	}
 
-	// (a function that a user function calls runs once for each element: it has no region)
+	// a function that a user function calls runs once for each element: it has no region
 	std::set<const clang::FunctionDecl *> userFunctions;
 	for (auto &entry : UserFunctions)
 		userFunctions.insert(NormalizedFunction(entry.first));
 
-	// (in the order of the source: the places of the edits do not depend on the addresses of the declarations)
+	// in the order of the source: the places of the edits do not depend on the addresses of the declarations
 	std::vector<const ScopeCandidate *> planted;
 	for (const clang::FunctionDecl *function : makesEvents)
 		if (!userFunctions.count(function))
@@ -649,7 +649,7 @@ void PlantAutoRegions()
 		auto *body = clang::dyn_cast<clang::CompoundStmt>(f->getBody());
 		const std::string file = SM.getFilename(SM.getSpellingLoc(f->getLocation())).str();
 		const unsigned line = SM.getSpellingLineNumber(f->getLocation());
-		// (on the line of the brace: the line numbers stay)
+		// on the line of the brace: the line numbers stay
 		GlobalRewriter.InsertTextAfterToken(body->getLBracLoc(), " SKEPU_TRACE_AUTO_REGION(\"" + CStringLiteral(f->getQualifiedNameAsString())
 			+ "\", \"" + CStringLiteral(file) + "\", " + std::to_string(line) + ");");
 		SkePULog() << "Trace region for " << f->getQualifiedNameAsString() << "\n";
@@ -764,7 +764,7 @@ bool SkePUASTVisitor::VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr *c)
 					std::string instance_name = vardecl->getNameAsString();
 					SkePULog() << "Calling instance of name: " << instance_name << "\n";
 
-					// (a call in a function template is visited once per instantiation)
+					// a call in a function template is visited once per instantiation
 					static std::set<unsigned> rewrittenCalls;
 					if (!rewrittenCalls.insert(c->getSourceRange().getBegin().getRawEncoding()).second)
 						continue;
@@ -772,7 +772,6 @@ bool SkePUASTVisitor::VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr *c)
 					std::string file_name = this->Context->getSourceManager().getFilename(c->getSourceRange().getBegin()).str();
 					unsigned line_nr = this->Context->getSourceManager().getSpellingLineNumber(c->getSourceRange().getBegin());
 
-					// (the instance as the call names it, with its qualifier if it is in a namespace)
 					std::string written_name = clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(arg->getSourceRange()), this->Context->getSourceManager(), this->Context->getLangOpts()).str();
 					if (written_name.empty() || written_name.find_first_of("()[]{} ,") != std::string::npos)
 						written_name = instance_name;

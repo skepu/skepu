@@ -63,7 +63,7 @@ class SkevuSession {
 	textDocuments: Map<string, SkePUTextDocument> = new Map();
 	relevantTextDocuments: Map<string, SkePUTextDocumentData> = new Map();
 	cppFileContent: string = "";
-	/** The file of the trace that the editor shows: it has the lines of the events, which the nodes highlight. */
+	/** The trace file the editor shows: it holds the event lines that nodes highlight. */
 	traceFileName: string = "";
 	traceLineRanges: Array<Array<number>> = [];
 	/** The graph that the viewer drew last (what the badges are made of). */
@@ -93,7 +93,6 @@ class SkevuSession {
 		public readonly id: number
 	) { }
 
-	/** Show the trace that is the text of the document, in the panel. */
 	public async open(
 		document: vscode.TextDocument,
 		webviewPanel: vscode.WebviewPanel
@@ -236,23 +235,23 @@ class SkevuSession {
 			await vscode.workspace.fs.stat(vscode.Uri.file(path));
 			return true;
 		} catch {
-			return false; // (not there)
+			return false;
 		}
 	}
 
 	/**
-	 * The source file of the trace that has this hash. The path in the trace is where the program was compiled: it is the file if it is there with
-	 * that hash. Only if it is not (the trace is from another machine, or the file moved) is the workspace searched, by the name of the file: a big
-	 * workspace takes seconds to search, which a file at its path does not have to wait for. A trace without a hash takes the file at the path.
-	 * Nothing is highlighted in a file that has changed since the trace was made.
+	 * The source file of the trace with this hash. The trace's path is where the program was compiled: it is the file if it exists there with that
+	 * hash. Only otherwise (the trace is from another machine, or the file moved) is the workspace searched by file name: a big workspace takes seconds
+	 * to search, which a file at its path need not wait for. A trace without a hash takes the file at the path. Nothing is highlighted in a file changed
+	 * since the trace was made.
 	 */
 	private async registerSourceFile(fileName: string, hash?: string) {
 		const found: string[] = [];
 		if (await this.isSourceFile(fileName, hash)) {
 			found.push(fileName);
 		} else {
-			// (the files of the workspace that are the file: with the hash, and the ones that have the path of the trace at their end come first and
-			// are all used, as a header can be in the workspace twice, as a copy, and the nodes are of the file that has the path)
+			// Workspace files with the hash; those whose path ends like the trace's come first and are all used (a header can be in the workspace twice,
+			// as a copy, and the nodes belong to the file with the trace's path)
 			const suffix = traceSuffix(fileName);
 			const same: string[] = [], others: string[] = [];
 			for (const uri of await vscode.workspace.findFiles(`**/${basename(fileName)}`, '**/node_modules/**', 20))
@@ -270,7 +269,7 @@ class SkevuSession {
 			output.appendLine(`source file ${fileName}: ${path === fileName ? 'at its path' : 'found at ' + path}${hash ? ' (hash ' + hash.slice(0, 12) + ' matches)' : ''}`);
 			this.addTextDocumentToHighlight(path).hash = hash;
 		}
-		// (the badges of the graph that is shown were made without this file, if the graph came first)
+		// the badges of the graph that is shown were made without this file, if the graph came first
 		if (this.lastGraph) this.buildDocuments(this.lastGraph);
 	}
 
@@ -521,7 +520,7 @@ export class SkevuEditorProvider implements vscode.CustomTextEditorProvider {
 		SkevuEditorProvider.current = provider;
 		return [
 			vscode.window.registerCustomEditorProvider(SkevuEditorProvider.viewType, provider),
-			// (a badge in a source file has the session that made it: a command is registered once, not for each editor)
+			// a badge in a source file has the session that made it: a command is registered once, not for each editor
 			vscode.commands.registerCommand('skevu.highlightNode', (fileName: string, line: number, nodeIDs: string[], sessionId: number) =>
 				provider.sessions.get(sessionId)?.highlightNode(fileName, line, nodeIDs)),
 		];

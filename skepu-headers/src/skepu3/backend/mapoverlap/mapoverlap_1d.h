@@ -271,7 +271,7 @@ namespace skepu
 
 				this->checkVectorSizes(this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
-				if (this->mirrorHasNoInterior(get<0>(std::forward<CallArgs>(args)...).size())) // (mirror mode with nothing to compute: only the random numbers are used)
+				if (this->mirrorHasNoInterior(get<0>(std::forward<CallArgs>(args)...).size())) // mirror mode with nothing to compute: only the random numbers are used
 				{
 					this->template prepareRandom<MapOverlapFunc::randomCount>(get<0>(std::forward<CallArgs>(args)...).size());
 					return get<0>(std::forward<CallArgs>(args)...);
@@ -392,7 +392,7 @@ namespace skepu
 					checkMatrixSizes(firstOutputRows, this->expectedInputSize(firstOutputCols, 0), generateRowwiseCallMetadata(),
 									 this->out_indices, this->elwise_indices, std::forward<CallArgs>(args)...);
 
-				if (this->mirrorHasNoInterior(this->m_overlapPolicy == Overlap::ColWise ? firstOutputRows : firstOutputCols)) // (mirror mode with nothing to compute: only the random numbers are used)
+				if (this->mirrorHasNoInterior(this->m_overlapPolicy == Overlap::ColWise ? firstOutputRows : firstOutputCols)) // mirror mode with nothing to compute: only the random numbers are used
 				{
 					this->template prepareRandom<MapOverlapFunc::randomCount>(firstOutput.size());
 					return get<0>(std::forward<CallArgs>(args)...);

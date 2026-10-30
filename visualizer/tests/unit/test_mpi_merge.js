@@ -25,7 +25,7 @@ describe('clock alignment', () => {
         expect(alignedTime(clock, 0)).toBe(100);
         expect(alignedTime(clock, 500)).toBe(650);
         expect(alignedTime(clock, 1000)).toBe(1200);
-        expect(alignedTime(clock, 2000)).toBe(2300); // (the drift goes on)
+        expect(alignedTime(clock, 2000)).toBe(2300); // the drift goes on
     });
     it('is constant with one sample, and the identity without', () => {
         expect(alignedTime({ start: { local_us: 5, offset_us: 7 } }, 50)).toBe(57);
@@ -65,7 +65,7 @@ describe('merging the fixture', () => {
         for (const c of calls) {
             expect(c.rank_data).toHaveLength(3);
             expect(c.rank_data.map(r => r.rank)).toEqual([0, 1, 2]);
-            expect(c.rank_data[0].start).toBe(c.start);          // (rank 0 is the clock)
+            expect(c.rank_data[0].start).toBe(c.start);          // rank 0 is the clock
             const elements = c.rank_data.reduce((s, r) => s + r.local_elements, 0);
             expect(elements).toBe(c.elements[0]);
             const s = c.rank_summary;
@@ -73,11 +73,11 @@ describe('merging the fixture', () => {
                 expect(r.start).toBeGreaterThanOrEqual(s.interval.start);
                 expect(r.end).toBeLessThanOrEqual(s.interval.end);
             }
-            expect(s.arrival_spread_us).toBeLessThan(50000);     // (not the 100 ms of the clocks: they are aligned)
+            expect(s.arrival_spread_us).toBeLessThan(50000);     // not the 100 ms of the clocks: they are aligned
             expect(s.work.max).toBeGreaterThanOrEqual(s.work.mean);
             expect(s.slowest_rank).toBe(s.work.argmax);
             expect(s.imbalance).toBeGreaterThanOrEqual(1);
-            // (the elements are in blocks of the same size, but for a call with a MatRow matrix: see below)
+            // the elements are in blocks of the same size, but for a call with a MatRow matrix: see below
             if (!c.proxy_inputs.length) expect(s.local_elements.max - s.local_elements.min).toBeLessThanOrEqual(1);
         }
     });
@@ -87,14 +87,14 @@ describe('merging the fixture', () => {
         const c = calls[calls.length - 1];
         expect(c.proxy_inputs).toHaveLength(1);
         expect(c.rank_data.map(r => r.local_elements)).toEqual([4, 1, 0]);
-        expect(c.rank_data[2].work_start).toBeNull();            // (the third process did nothing)
+        expect(c.rank_data[2].work_start).toBeNull();            // the third process did nothing
         expect(c.rank_summary.local_elements.argmax).toBe(0);
-        expect(c.rank_summary.work.min).toBe(0);                  // (a rank that did no work counts as zero)
+        expect(c.rank_summary.work.min).toBe(0);                  // a rank that did no work counts as zero
         // 4 elements on rank 0 and 1 on rank 1: how much longer than the mean over the three ranks the busiest worked
         const w = c.rank_data.map(r => r.work_start != null ? r.work_end - r.work_start : 0);
         expect(c.rank_summary.imbalance).toBeCloseTo(Math.max(...w) / (w.reduce((a, b) => a + b, 0) / 3), 6);
         expect(c.rank_summary.slowest_rank).toBe(w.indexOf(Math.max(...w)));
-        expect(c.rank_summary.comm_bytes.max).toBeGreaterThan(0); // (and the rows and results moved)
+        expect(c.rank_summary.comm_bytes.max).toBeGreaterThan(0); // and the rows and results moved
     });
 
     it('has the collectives of every rank, ending together', () => {
@@ -193,12 +193,12 @@ describe('an skepu::external call in the merged trace', () => {
         expect(externals.length).toBeGreaterThan(0);
         for (const e of externals) {
             expect(e.rank_data).toHaveLength(3);
-            expect(e.rank_data[0].work_start).not.toBeNull();         // (the code runs on rank 0)
+            expect(e.rank_data[0].work_start).not.toBeNull();         // the code runs on rank 0
             expect(e.rank_data[1].work_start).toBeNull();
             expect(e.rank_data[2].work_start).toBeNull();
             expect(e.rank_summary.slowest_rank).toBe(0);
             expect(e.rank_summary.local_elements.max).toBe(0);
-            // (the code runs on one of the three ranks: as unbalanced as it can be; the work is measured in microseconds, and an external of less than one has none)
+            // the code runs on one of the three ranks: as unbalanced as it can be; the work is measured in microseconds, and an external of less than one has none
             if (e.rank_data[0].work_end - e.rank_data[0].work_start > 0) expect(e.rank_summary.imbalance).toBeCloseTo(3, 6);
             else expect(e.rank_summary.imbalance).toBeNull();
         }
@@ -208,7 +208,7 @@ describe('an skepu::external call in the merged trace', () => {
     it('has the gather before it and the scatter after it', () => {
         const comms = merged.events.filter(e => e.type === 'communication' && e.seq === externals[0].seq);
         expect(comms.length).toBeGreaterThan(0);
-        // (the containers that it writes are gathered too: the code may change some of the elements only, and the processes get them all back)
+        // the containers that it writes are gathered too: the code may change some of the elements only, and the processes get them all back
         expect(new Set(comms.map(c => c.phase))).toEqual(new Set(['before', 'after']));
         expect(comms.filter(c => c.phase === 'before').every(c => c.operation === 'allgather')).toBe(true);
         expect(comms.filter(c => c.phase === 'after').every(c => c.operation === 'scatter')).toBe(true);

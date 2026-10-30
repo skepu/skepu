@@ -625,7 +625,7 @@ protected:
 	std::vector<std::shared_ptr<Layer<T>>> m_layers{};
 	size_t m_layers_count = 0;
 	// Heap-allocated so that the pointer given to the layers stays valid when the model is moved
-	// (models are usually built as temporaries and moved into place)
+	// models are usually built as temporaries and moved into place
 	std::unique_ptr<skepu::PRNG> m_prng = std::make_unique<skepu::PRNG>(0); // default seed
 
 	Dimensions m_input_size;
@@ -665,7 +665,7 @@ namespace skepu::dnn
 	//   layer MaxPooling2D kernel=2x2 activation=None
 	//   layer Flatten activation=None
 	//   layer Dense units=10 weights=Xavier_uniform biases=Zero activation=SoftMax
-//   (activation: None, ReLU, LeakyReLU, ELU, Sigmoid, TanH or SoftMax)
+// activation: None, ReLU, LeakyReLU, ELU, Sigmoid, TanH or SoftMax
 	//   params                                    (optional section)
 	//   block <layer index> / <count> / <values>  (one block per layer with parameters)
 	//

@@ -1,13 +1,12 @@
-// actions.js — the controls of the page in markup, without inline handlers (a page with a content security policy, such as the webview of an
-// editor, does not run them). An element says what a click on it does with `data-click="a b"`: the actions a and b, in this order; an element
-// that has a value says what a change of the value does with `data-input="a"` (the action is given the value). An action is a function of the
-// page (`window.name`, which is what the modules of the page make for the markup) or one of the few below. `bindActions(root)` makes the
-// elements of root (the document, or markup that was just made) do it; an element is bound once.
+// actions.js — the controls of the page in markup, without inline handlers (a page with a content security policy, such as an editor's webview, does
+// not run them). `data-click="a b"` says what a click does: actions a and b, in order; an element with a value says what a change does with
+// `data-input="a"` (the action receives the value). An action is a function of the page (`window.name`, made by the page's modules for the markup) or
+// one of the few below. `bindActions(root)` binds the elements of root (the document, or markup just made); an element is bound once.
 import { menuClose } from './menu.js';
 
 /** Actions that are not functions of the page by their name. The element and the event are the arguments. */
 export const ACTIONS = {
-  // (the click is not for the elements around: a menu stays open, as it is a click inside a field of it)
+  // the click is not for the elements around: a menu stays open, as it is a click inside a field of it
   stop: function(el, event) { event.stopPropagation(); },
   menuClose: function() { menuClose(); },
   // the settings of a control: the control is the argument
@@ -35,7 +34,6 @@ function run(names, el, event, withValue) {
 
 var _bound = new WeakSet();
 
-/** Make the elements with `data-click` and `data-input` in root do their actions. */
 export function bindActions(root) {
   (root || document).querySelectorAll('[data-click], [data-input]').forEach(function(el) {
     if (_bound.has(el)) return;

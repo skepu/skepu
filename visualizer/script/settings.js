@@ -44,13 +44,13 @@ if (typeof document !== 'undefined' && document.documentElement.classList.contai
 
 
 /**
- * The width that the source pane has, or is sliding to: its flex-basis, which is set inline (a drag of the gutter, the stored width). Its
- * offsetWidth is the width at this moment, which is not what is wanted while the pane slides open (it is 0 at the start).
+ * The source pane's width, or the width it is sliding to: its inline flex-basis (a gutter drag, the stored width). offsetWidth is the width now, which
+ * is wrong while the pane slides open (0 at the start).
  */
 function paneWidth(el) {
   var m = /(\d+(?:\.\d+)?)px\s*$/.exec(el.style.flex || '');
   var w = m ? Math.round(+m[1]) : el.offsetWidth;
-  return w > 0 ? w : DEFAULTS.layout['right-pane-width'];   // (a pane that is not shown has no width: that is not a width to keep)
+  return w > 0 ? w : DEFAULTS.layout['right-pane-width'];   // a pane that is not shown has no width: that is not a width to keep
 }
 
 export function saveSettings(layoutOverrides) {
@@ -98,8 +98,7 @@ export function saveSettings(layoutOverrides) {
 }
 
 /**
- * The options of the source view that are kept in State. The view is made with the defaults before the settings are read, so it is told
- * the values that were read.
+ * The source view options kept in State. The view is created with defaults before settings load, so it is told the loaded values.
  */
 function applyToSourceView() {
   if (!State.sourceView) return;

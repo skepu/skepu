@@ -85,7 +85,7 @@ static void matrices(const size_t rows, const size_t cols)
 	skepu::Matrix<int> shrunk(rows - 2, cols - 4);
 	skepu::MapOverlap(stencil2d).setOverlap(1, 2).setEdgeMode(skepu::Edge::None)(shrunk, in);
 	std::cout << " none: " << checksum(shrunk) << "\n";
-	// (in place is valid only with the red-black update mode, also on a single node)
+	// in place is valid only with the red-black update mode, also on a single node
 }
 
 int main()

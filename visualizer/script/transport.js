@@ -61,7 +61,7 @@ export function initWorkerBackend(worker) {
         _pending.delete(data.id);
         if (data.type === 'error') handler.reject(new Error(data.error));
         else {
-            // (the id belongs to the message, not to the result: the info pane shows every key of a node's data)
+            // the id belongs to the message, not to the result: the info pane shows every key of a node's data
             const { id: _id, ...result } = data;
             handler.resolve(result);
         }

@@ -61,9 +61,8 @@ struct InlineInstance
 };
 extern std::vector<InlineInstance> InlineInstances;
 
-// A function of the program (defined in the file) that can get a trace region of its own, and what decides if it does: a function
-// that makes events (it uses skeletons or containers, or calls a function of SkePU), or calls such a function that is in the file
-// (see PlantAutoRegions). A function that is called from a user function is never one.
+// A function of the program, defined in the file, that can get a trace region, and what decides it: it makes events (uses skeletons or containers, or calls
+// a SkePU function) or calls such a function in the file (see PlantAutoRegions). A function called from a user function never gets one.
 struct ScopeCandidate
 {
 	const clang::FunctionDecl *definition;
@@ -119,7 +118,7 @@ inline std::string templateString(std::string templ, std::vector<std::pair<std::
 // The name of a built-in type in OpenCL C: it has no long long (its long is 64 bits) and no long double
 inline std::string openCLBuiltinTypeName(std::string type)
 {
-	replaceTextInString(type, "long double", "double");       // (as CUDA treats it)
+	replaceTextInString(type, "long double", "double");       // as CUDA treats it
 	replaceTextInString(type, "unsigned long long", "unsigned long");
 	replaceTextInString(type, "long long", "long");
 	return type;
@@ -183,8 +182,8 @@ namespace library_markers
 class SkepuMatcher
 {
 public:
-    /// \p SystemFlags: the flags that say where the headers of the system are for the file (-isysroot, -isystem, -I, ...), as the editor has them
-    /// for it. Without them the parse has only what the driver finds from the environment (SDKROOT, say), which an editor may not have.
+    /// \p SystemFlags: the flags that locate the system headers for the file (-isysroot, -isystem, -I, ...), as the editor has them. Without them the
+    /// parse has only what the driver finds in the environment (SDKROOT, say), which an editor may lack.
     SkepuMatcher(llvm::StringRef File, std::vector<std::string> SystemFlags = {});
 
     bool runMatcher();

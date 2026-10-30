@@ -3,7 +3,6 @@ import { objectsOf, PATTERNS } from './model.js';
 import { $, S, el, hooks } from './state.js';
 import { selectById } from './actions.js';
 
-/** Fills the statistics of the ⓘ menu. */
 export function renderStatus() {
     const set = (id, value) => { $(`#stat-${id}`).textContent = String(value); };
     const prng = S.design.containers.filter(c => c.kind === 'PRNG').length, externals = S.design.skeletons.filter(s => PATTERNS[s.pattern]?.host).length;

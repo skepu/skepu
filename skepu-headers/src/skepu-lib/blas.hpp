@@ -157,16 +157,14 @@ namespace blas {
 // ================================================================================
 // ================================================================================
 //
-// Vectors: a routine on n elements of a vector x with the increment incx works on the elements x[0], x[incx], ..., x[(n-1) * incx]
-// of the Vector. A negative increment starts from the far end (the first element of the operation is x[(n-1) * |incx|]), as in
-// the reference BLAS. The Vector must have at least 1 + (n-1) * |incx| elements, and may have more. The routines that are not
-// defined for a negative increment in the reference BLAS (scal, nrm2, asum, iamax) do nothing for one.
+// Vectors: a routine on n elements of a vector x with increment incx works on x[0], x[incx], ..., x[(n-1) * incx]. A negative increment starts from the far end
+// (the first element is x[(n-1) * |incx|]), as in the reference BLAS. The Vector needs at least 1 + (n-1) * |incx| elements and may have more. The routines that
+// the reference BLAS does not define for a negative increment (scal, nrm2, asum, iamax) do nothing for one.
 //
-// Matrices: the matrices are row-major SkePU Matrix containers, with their own leading dimension (the number of columns), so that
-// lda (ldb, ldc) must be the number of columns of the Matrix. A routine on a matrix of m rows and n columns works on its
-// leading m x n part, which is the whole Matrix when it has m rows and n columns.
+// Matrices: row-major SkePU Matrix containers; lda (ldb, ldc) must be the number of columns. A routine on m rows and n columns works on the leading m x n part,
+// which is the whole Matrix when it has exactly m rows and n columns.
 //
-// Zero sizes: a routine with a size of zero does nothing, and a scalar result is zero. Index results (iamax) are zero-based.
+// Zero sizes: a routine with size zero does nothing and a scalar result is zero. Index results (iamax) are zero-based.
 
 
 // ----------------------------------------------------------
@@ -260,7 +258,7 @@ public:
 		check_vector(routine, name, x.size(), n, inc);
 		if (!m_direct)
 		{
-			// (an empty Vector makes no allocation and no event: only a view that needs a copy has one)
+			// an empty Vector makes no allocation and no event: only a view that needs a copy has one
 			m_copy = Vector<T>(n, std::string(name) + " (gathered)");
 			if (read)
 				gather(m_copy, m_src, m_first, m_inc);
@@ -354,7 +352,7 @@ void scal(
 	if (n == 0 || incx <= 0)
 		return;
 	vec_view<TX> vx("scal", "x", x, n, incx, true, true);
-	// (the user function is the same for a plain and a Scalar<> alpha, so those instantiations share a kernel)
+	// the user function is the same for a plain and a Scalar<> alpha, so those instantiations share a kernel
 	auto skel = Map<1>(scal_uf<TX, scalar_type<TX, unwrap_scalar_t<TS>>>);
 	skel.setStride(vx.stride(), vx.stride());
 	skel.setLabel("SCAL");
@@ -434,8 +432,7 @@ void axpy(
 //   DOT
 // ----------------------------------------------------------
 
-// (the operands are converted to the type of the sum before they are multiplied: it is the type of the result of the product,
-// unless the sum is of a higher precision)
+// the operands are converted to the type of the sum before they are multiplied: the type of the product's result, unless the sum has higher precision
 template<typename TX, typename TY, typename TR = scalar_type<TX, TY>>
 TR dot_uf_1(TX x, TY y)
 {
@@ -593,7 +590,7 @@ Scalar<real_type<T>> nrm2(
 	auto skel = MapReduce<1>(nrm2_uf_1<T>, nrm2_uf_2<R>);
 	skel.setStride(vx.stride());
 	skel.setLabel("NRM2");
-	// (the square root of the sum is done on the host: the result is a Scalar with the ids of the sum, so that the trace knows what it came from)
+	// the square root of the sum is done on the host: the result is a Scalar with the ids of the sum, so that the trace knows what it came from
 	auto sum = skel(vx.vec());
 
 	// The sum of squares is the norm squared, unless it has overflowed or its small terms have underflowed (or an element is not a number)
@@ -713,7 +710,7 @@ size_type iamin(
 	auto skel = MapReduce<1>(iamax_uf_1<T>, iamin_uf_2<H>);
 	skel.setStride(vx.stride());
 	skel.setLabel("IAMIN");
-	// (the start value of a reduction is zero, which is the smallest value)
+	// the start value of the reduction is zero, the smallest value
 	H start;
 	start.val = std::numeric_limits<real_type<T>>::max();
 	start.index = std::numeric_limits<size_t>::max();
@@ -1130,7 +1127,6 @@ void gemv(
 
 	if (alpha == zero)
 	{
-		// (the terms are not read: only y is scaled)
 		auto scale = Map<1>(gemv_scale_uf<TY, TS>);
 		scale.setStride(vy.stride(), vy.stride());
 		scale.setLabel("GEMV scale");
@@ -1381,7 +1377,7 @@ void trmv(
 		return;
 	check_matrix("trmv", "A", A, n, n, lda);
 
-	// (the product goes to a new vector, since each element of it needs all of x)
+	// the product goes to a new vector, since each element needs all of x
 	Vector<TX> result(n);
 	vec_view<TX> vx("trmv", "x", x, n, incx, true, false);
 	auto skel = Map<1>(triangle_mv_uf<TA, TX, TX>);
@@ -1716,7 +1712,7 @@ void rank_k(const char *routine, int kind, bool two, Uplo uplo, Op trans, size_t
 		SKEPU_ERROR("blas::" << routine << ": trans must be NoTrans or ConjTrans");
 	if (n == 0)
 		return;
-	const bool t = (trans != Op::NoTrans); // (for a symmetric update ConjTrans is the same as Trans for real matrices)
+	const bool t = (trans != Op::NoTrans); // for a symmetric update ConjTrans is the same as Trans for real matrices
 	check_matrix(routine, "A", A, t ? k : n, t ? n : k, lda);
 	if (two)
 		check_matrix(routine, "B", B, t ? k : n, t ? n : k, ldb);
@@ -1799,7 +1795,7 @@ void trmm(Side side, Uplo uplo, blas::Op trans, Diag diag, size_type m, size_typ
 	check_matrix("trmm", "A", A, k, k, lda);
 	check_matrix("trmm", "B", B, m, n, ldb);
 
-	// (the product goes to a new matrix, since each element of it needs a whole row or column of B)
+	// the product goes to a new matrix, since each element needs a whole row or column of B
 	Matrix<TB> result(m, n);
 	auto skel = Map<0>(trmm_uf<TA, TB>);
 	skel.setLabel("TRMM");

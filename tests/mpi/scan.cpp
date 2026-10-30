@@ -48,7 +48,7 @@ static void vectors(const size_t n)
 	skepu::Vector<int> copy(in);
 	skepu::Scan(add)(copy, copy);
 	std::cout << " in place: " << checksum(copy) << "\n";
-	// (an exclusive scan in place is not defined on a single node: it reads what it has written)
+	// an exclusive scan in place is not defined on a single node: it reads what it has written
 }
 
 int main()

@@ -95,7 +95,7 @@ namespace skepu
 			std::string m_nameVerbose;
 // #endif   
 #ifdef SKEPU_TRACING
-			UniqueIdentifier::ID m_container_id = UniqueIdentifier::generate(); // (set by the container: the trace event of a transfer names the container; a buffer of the backend has an id of its own)
+			UniqueIdentifier::ID m_container_id = UniqueIdentifier::generate(); // set by the container: the trace event of a transfer names the container; a buffer of the backend has an id of its own
 #endif
 
 			size_t m_pitch;

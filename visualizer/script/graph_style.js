@@ -30,7 +30,7 @@ export function regionColor(depth, dark) {
     : 'rgb(' + Math.max(20, 225 - depth * 34) + ',' + Math.max(185, 240 - depth * 9) + ',255)';
 }
 
-/** The orange of the entry of the legend that the pointer is over, and of what it stands for in the graph (light, dark: as in main.css). */
+/** Legend hover orange for the entry and its graph elements (light, dark); matches main.css. */
 export const LEGEND_MATCH = ['#ff9a2e', '#ff8c1a'];
 
 export const NODE_SIZE_SCALE = 100;
@@ -158,7 +158,7 @@ export function buildGraphStyle(self, minmax) {
           if (!node_labels) return '';
           return ele.data('iteration_count') > 1
             ? ele.data('label') + ' ×' + ele.data('iteration_count')
-            : ele.data('label') + (ele.data('version_count') > 1 ? toSubscript(ele.data('version')) : '');   // (no subscript for the only version)
+            : ele.data('label') + (ele.data('version_count') > 1 ? toSubscript(ele.data('version')) : '');
         },
         'text-valign':      'center',
         'shape':            'rectangle',
@@ -270,7 +270,7 @@ export function buildGraphStyle(self, minmax) {
       }
     },
     {
-      // (a region of the program tree mode whose contents are hidden: double-clicking it shows them; it is paler, as something that is off)
+      // A collapsed program tree region: double-click shows its contents; paler, as something that is off
       selector: 'node[type="tree-region"][collapsed]',
       style: {
         'border-style':     'dashed',
@@ -450,7 +450,7 @@ export function buildGraphStyle(self, minmax) {
       selector: 'edge.cy-hovered',
       style: { 'width': 4 }
     },
-    // What the pointer is over in the legend (LegendView): the nodes and edges of that kind, in the orange of the legend entry
+    // Legend hover (LegendView): elements of the hovered kind, in the entry's orange
     {
       selector: 'node.legend-match',
       style: { 'underlay-color': function() { return LEGEND_MATCH[dark() ? 1 : 0]; }, 'underlay-padding': 7, 'underlay-opacity': 0.9, 'underlay-shape': 'round-rectangle' }
