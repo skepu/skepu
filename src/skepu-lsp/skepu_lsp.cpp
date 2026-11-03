@@ -757,7 +757,12 @@ void skepuSignatureHelp(Sema &S, unsigned CurrentArg, CodeCompleteConsumer::Over
 			SignatureInformation Sig2{Sig};
 			Sig.label = generateParameterString(Sig, type, all, "");
 			SigHelp.signatures.push_back(std::move(Sig));
-			all.back() = "skepu::Matrix<" + inType + ">& Input";
+			for (std::string& param : all)
+				if (param.find("skepu::Vector<" + inType + ">& Input") != std::string::npos)
+				{
+					param = "skepu::Matrix<" + inType + ">& Input";
+					break;
+				}
 			Sig2.label = generateParameterString(Sig2, type, all, "");
 			Sig2.documentation.value = "Performs a rowwise or colwise MapOverlap from Matrix to Vector";
 			SigHelp.signatures.push_back(std::move(Sig2));

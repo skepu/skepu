@@ -9,12 +9,13 @@ format:
 # Introduction {#sec-intro}
 
 SkePU is a skeleton programming framework for multicore and multi-GPU
-systems with a C++11 interface. It includes data-parallel skeletons such
+systems with a C++ interface. It includes data-parallel skeletons such
 as `Map` and `Reduce` generalized to a flexible programming interface.
-SkePU emphasizes and improves on flexibility, type-safety and syntactic
-clarity over its predecessor, while retaining efficient parallel
-algorithms and smart data movement for high-performance and
-energy-efficient computation.
+SkePU emphasizes on ease of use and portability. A key feature is therefore 
+that you only need to write a single main file, which can then be compiled
+and executed on different backends such as OpenMP and CUDA. This main file
+can also be written in a sequential manner, leaving the underlying framework
+to handle the parallel execution.
 
 SkePU is structured around a source-to-source translator (precompiler)
 built on top of Clang libraries, and thus requires the LLVM and Clang
@@ -30,7 +31,7 @@ implicit for all symbols in this document.
 We will introduce the SkePU syntax with an example, see
 @lst-lcg.
 
-```{#lst-lcg .cpp lst-cap="SkePU Example"}
+```{#lst-lcg .cpp lst-cap="SkePU Example - PPMC"}
 #include <iostream>
 #include <cmath>
 #include <skepu>
@@ -86,19 +87,20 @@ int main()
 ```
 
 The function `ppmcc` calculates a statistical test on two vectors `x`
-and `y`. It creates three skeleton instances: `sum` as a reduction over
-ordinary floatingpoint addition; `sumSquare` as a fused map and reduce
-computing the sum of squares of an operand data-container; and
-`dotProduct` as another `MapReduce` instantiation with ordinary
-multiplication and addition, realizing a dot product. After their
-construction, these skeleton instances can be invoked on SkePU
-data-container operands like ordinary hand-written C++ functions.
+and `y`. It creates three skeleton instances:
 
-### Seeing it run {#sec-seeing-it-run}
+1. `sum` --- a reduction over the elements of the input container;
+2. `sumSquare` --- a fused map and reduce computing the sum of squares of the elements of the input container;
+3. `dotProduct` --- another `MapReduce` skeleton that performs a dot product between the two input containers.
 
-SkeVU (@sec-skevu) visualizes what happens when a SkePU program runs. This is a trace of
-a dot product, a smaller program of the kind above, on the OpenMP backend: the graph shows the
-skeleton calls and data they exchange, next to the source code and a timeline. Click a node to
+After their construction, these skeleton instances can be invoked on SkePU
+containers such as `Vector` and `Matrix`.
+
+### Visualization {#sec-visualization}
+
+SkeVU (@sec-skevu) visualizes what happens when a SkePU program runs. Below is the trace of
+a dot product program (not to be confused with the ppmc program above). The graph shows the
+skeleton calls and data they exchange next to the source code and a timeline. Click a node to
 see its details.
 
 {{< trace-embed
@@ -111,8 +113,7 @@ see its details.
     opt-regions="false"
 >}}
 
-The next example is a complete SkePU program, compiled to WebAssembly so that it runs in your
-browser. Press *Run*, and its trace is visualized after the run.
+The next example is a complete SkePU program, compiled to WebAssembly so that it can run in the browser. Press *Run*, and its trace is visualized after the run.
 
 {{< trace-wasm
     js="demos/wasm/map_squaring.js"

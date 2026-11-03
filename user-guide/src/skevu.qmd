@@ -37,23 +37,23 @@ for instance the SkePU-DNN layers.
 
 ## Generating Execution Traces {#sec-tracing}
 
-Tracing is enabled by compiling the program, for the precompiler and the C++ compiler, with
-`-DSKEPU_TRACING`. When the program exits, it writes a JSON trace of the skeleton calls,
+Tracing is enabled by compiling adding the `-DSKEPU_TRACING` to the precompiler and comnpiler.
+When the SkePU program exits, it writes a JSON trace of the skeleton calls,
 container operations and data transfers it performed. The file is named `skepu_trace.json` in
 the current directory unless another name is given with `-DSKEPU_TRACE_FILE="name.json"` when
-compiling (the value is stringified by the preprocessor, so `-DSKEPU_TRACE_FILE=trace/horner.json`
-works), or in the `SKEPU_TRACE_FILE` environment variable when running.
+compiling (the value is stringified by the preprocessor, so something like `-DSKEPU_TRACE_FILE=trace/horner.json`
+also works), or in the `SKEPU_TRACE_FILE` environment variable when running.
 
 A program can also take *snapshots* of the contents of containers, with
 `SKEPU_TRACE_SNAPSHOT(container)`, which SkeVU can show as heat maps. Snapshots are only taken if
 the program is also compiled with `-DSKEPU_TRACING_SNAPSHOTS` (in addition to `-DSKEPU_TRACING`);
 otherwise `SKEPU_TRACE_SNAPSHOT` does nothing. Each snapshot is a file with the whole contents of
-the container, so a program that takes them in a loop can write a lot of data and run much more
-slowly. The snapshot files are written to the directory given by `-DSKEPU_TRACE_SNAPSHOT_DIR=dir`;
+the container, so a program that takes them in a loop will write a lot of data to disk and therefore run significantly slower.
+The snapshot files are written to the directory given by `-DSKEPU_TRACE_SNAPSHOT_DIR=dir`;
 archive its files as a `.zip` to load them.
 
-The example programs of SkePU can be built with tracing as follows; their traces are written
-to a `trace/` directory:
+The example programs of SkePU can be built with tracing as follows (their traces are written
+to a `trace/` directory):
 
 - with `make` in `examples/`: the programs are built with tracing (`TRACE` in
   `examples/programs.mk`; `make/skepu.mk` has the rules); add `TRACE_SNAPSHOTS=1` to the `make`
@@ -71,8 +71,8 @@ Open the **Files** menu in the menu bar.
 | Field | Description |
 |---|---|
 | **Trace File** | A SkePU JSON trace file (`.json`). Required. |
-| **Source File(s)** | One or more `.cpp` / `.hpp` source files. Optional; enables source-line highlighting and gutter badges. |
-| **Snapshots (zip)** | A zip archive of container snapshot data files. Optional; enables heatmap visualization in the info pane. |
+| **Source File(s)** | One or more `.cpp` / `.hpp` source files. Optional, enables source-line highlighting. |
+| **Snapshots (zip)** | A zip archive of container snapshot data files. Optional, enables heatmap visualization in the info pane. |
 
 Click **Load Trace** to load the files. The graph is rendered immediately with the current
 settings.
@@ -120,31 +120,40 @@ The source panel and timeline can each be hidden independently (see
 ## The Graph View {#sec-graph}
 
 The graph view shows the data-flow DAG of the SkePU execution. Nodes represent
-events; directed edges represent data dependencies between them.
+events, and directed edges represent data dependencies between them.
 
 ### Node types
 
-| Type | Description |
-|---|---|
-| **Skeleton Call** | Execution of a SkePU skeleton (Map, Reduce, MapReduce, MapOverlap, …). Shown as a rounded rectangle coloured by the selected metric. |
-| **External** | An external (non-SkePU) access to a container. |
-| **Container Update** | A write to a SkePU container after a skeleton call. |
-| **Allocation** | Container allocation event. |
-| **Deallocation** | Container deallocation event. |
-| **Transfer** | A device↔host data transfer. |
-| **Region** | An instrumented code region (e.g. a loop body or function). Acts as a compound container for the nodes inside it; can be collapsed and expanded (see [Regions](#sec-regions)). |
-| **Fusion** | A suggested skeleton fusion group, shown as a compound container. |
+| Type | Description | Example |
+|---|---|---|
+| **Skeleton Call** | Execution of a SkePU skeleton (Map, Reduce, MapReduce, MapOverlap, …). | ![](../figures/skevu/skeleton_call.png){#skeleton-call fig-alt="Image of a skeleton call node." width=50%} |
+| **External** | An external (non-SkePU) access to a container. | ![](../figures/skevu/skepu_external.png){#skepu-external fig-alt="Image of an external node." width=50%} |
+| **Container Update** | A write to a SkePU container after a skeleton call. | ![](../figures/skevu/container_update.png){#container-update fig-alt="Image of a container update." width=50%} |
+| **Allocation** | Container allocation event. | ![](../figures/skevu/container_allocation.png){#container-allocation fig-alt="Image of a container allocation." width=50%} |
+| **Deallocation** | Container deallocation event. | ![](../figures/skevu/container_deallocation.png){#container-deallocation fig-alt="Image of a container deallocation." width=50%} |
+| **Transfer** | A device↔host data transfer. | ![](../figures/skevu/transfer_to_gpu.png){#transfer-to-gpu fig-alt="Image of a transfer to gpu." width=48%} ![](../figures/skevu/transfer_to_cpu.png){#transfer-to-cpu fig-alt="Image of a transfer to cpu." width=48%} |
+| **Snapshot** | A snapshot of the data in a container at a point in time. | ![](../figures/skevu/snapshot_node.png){#snapshot-node fig-alt="Image of a snapshot node." width=50%} |
+| **Kernel Build** | Run-time GPU kernel builds. | ![](../figures/skevu/kernel_build.png){#kernel-build fig-alt="Kernel Build." width=50%} |
+| **MPI Communication** | MPI calls for communication. | ![](../figures/skevu/mpi_communication_node.png){#mpi-communication-node fig-alt="MPI communication node." width=50%} |
+| **Scalar** | A scalar value, e.g. produced by `Reduce`. | ![](../figures/skevu/scalar_node.png){#scalar-node fig-alt="Image of a scalar node." width=50%} |
+| **Region** | An instrumented code region (e.g. a loop body or function). Acts as a compound container for the nodes inside it; can be collapsed and expanded (see [Regions](#sec-regions)). | ![](../figures/skevu/skevu_region.png){#skevu-region fig-alt="SkeVU Region." width=100%} |
+| **Fusion** | A suggested skeleton fusion group, shown as a compound container. | ![](../figures/skevu/skevu_fusion.png){#skevu-fusion fig-alt="SkeVU Fusion." width=100%} |
+
+: {tbl-colwidths="[20,50,30]"}
 
 ### Edge types
 
-| Type | Description |
-|---|---|
-| **Element-wise** | An element-wise data dependence between a producer and a consumer. |
-| **Proxy** | A proxy (read-only) dependence. |
-| **Scalar** | A scalar data flow. |
-| **Anti-dependence** | A write-after-read dependence (shown in red). Visible only when **Edges › Anti-Dependences** is enabled. |
-| **PRNG** | A sequential dependency through a shared random-number generator state. Shown as a zigzag. |
-| **Virtual Alias** | A decorative link between container-update nodes that belong to the same virtual container group. Visible only when **Edges › Virtual Datasets** is enabled. |
+| Type | Description | Example |
+|---|---|---|
+| **Element-wise** | An element-wise data dependence between a producer and a consumer. | ![](../figures/skevu/elwise_edge.png){#elwise-edge fig-alt="Element-wise Edge." width=100%} |
+| **Proxy** | A proxy (read-only) dependence. | ![](../figures/skevu/proxy_edge.png){#proxy-edge fig-alt="Proxy Edge." width=100%} |
+| **Scalar** | A scalar data flow. | ![](../figures/skevu/scalar_edge.png){#scalar-edge fig-alt="Scalar Edge." width=100%} |
+| **Anti-dependence** | A write-after-read dependence (shown in red). Visible only when **Edges › Anti-Dependences** is enabled. | ![](../figures/skevu/antidependence_edge.png){#antidependence-edge fig-alt="Anti-dependence Edge." width=100%} |
+| **PRNG** | A sequential dependency through a shared random-number generator state. Shown as a zigzag. | ![](../figures/skevu/prng_edge.png){#prng-edge fig-alt="PRNG Edge." width=100%} |
+| **Virtual Alias** | A decorative link between container-update nodes that belong to the same virtual container group. Visible only when **Edges › Virtual Datasets** is enabled. | ![](../figures/skevu/virtual_dataset_edge.png){#virtual-dataset-edge fig-alt="Virtual Alias Edge." width=100%} |
+| **Kernel Build** | A dependence between the run-time compilation of a GPU kernel and its related skeleton call. | ![](../figures/skevu/kernel_build_edge.png){#kernel-build-edge fig-alt="Kernel Build Edge." width=100%} |
+
+: {tbl-colwidths="[20,50,30]"}
 
 Pairs of edges running in opposite directions between the same two nodes are merged
 into a single bidirectional edge (arrows on both ends) to reduce visual clutter.
@@ -156,8 +165,9 @@ Similarly, multiple parallel edges with the same type are grouped into one label
 | Action | Effect |
 |---|---|
 | **Scroll wheel** | Pan horizontally and vertically. |
+| **(Ctrl/⌘/⊞Win/Super)+Scroll wheel** | Zoom in / out at the cursor position. |
 | **Two-finger pinch** (trackpad) | Zoom in / out around the pinch centre. |
-| **Click empty canvas** | Deselect all; close the info pane. |
+| **Click empty canvas** | Deselect all and close the info pane. |
 | **Space** | Re-apply current settings and re-render the graph. |
 
 **View › Reset View** (or re-applying settings) re-runs the automatic layout and
@@ -184,8 +194,8 @@ code region are nested inside the corresponding region node.
 | Action | Effect |
 |---|---|
 | **Double-click** a region node | Toggle collapsed / expanded. |
-| **Actions › Selected Node › Collapse Recursive** (`c`) | Collapse the selected region and all nested regions. |
-| **Actions › Selected Node › Expand Recursive** (`e`) | Expand the selected region and all nested regions. |
+| **Actions › Selected Node › Collapse Recursive** (`C`) | Collapse the selected region and all nested regions. |
+| **Actions › Selected Node › Expand Recursive** (`E`) | Expand the selected region and all nested regions. |
 | **Actions › Selected Node › Collapse Once** (`-`) | Collapse the selected region without affecting nested ones. |
 | **Actions › Selected Node › Expand Once** (`+`) | Expand the selected region one level. |
 | **Actions › All Regions › Collapse** | Collapse all regions at once. |
@@ -214,6 +224,8 @@ will look similar whether regions are displayed or not.
 Hovering over a node or edge shows a tooltip with a brief summary (label, type,
 duration, backend, etc.).
 
+![](../figures/skevu/hover_example.png){#hover-example style="border: 2px solid black;" fig-alt="Hover example." width=30%}
+
 ---
 
 ## Menu Bar {#sec-menus}
@@ -226,16 +238,43 @@ See [Loading a Trace](#sec-loading).
 
 | Item | Description |
 |---|---|
+| **Graph Mode** | Choose graph mode. |
 | **Apply Settings** (`Space`) | Re-fetch the graph from the trace worker with the current settings and re-run layout. |
-| **Restore Defaults** | Reset all settings to their factory defaults and re-render. |
+| **Restore Defaults** | Reset all settings to their defaults and re-render the graph. |
 | **Reset View** | Re-run layout and fit the graph to the window without changing settings. |
 | **Save Image** | Export the graph as a PNG. |
 | **Legend** | Show or hide the colour legend below the graph. |
-| **Timeline** (`g`) | Show or hide the Gantt chart at the bottom of the window. |
-| **Source Panel** (`s`) | Show or hide the source code / info area on the right. |
+| **Timeline** (`G`) | Show or hide the Gantt chart at the bottom of the window. |
+| **Source Panel** (`S`) | Show or hide the source code / info area on the right. |
+| **Info Panel** | Show or hide the info panel that appears at the bottom of the source panel when a node is highlighted. |
+| **Progress Bar** | Shows how far in the graph the highlighted node is situation. Also used in the simulation (see [Simulation Mode](#sec-simulation)). |
+| **Code Paths** | Show or hide arrows indicating execution order in the source code view. |
+| **Definitions** | Highlight in the source vode view where skeletons are defined. |
 | **Timeline Scale** | A slider (1× – 20×) that stretches the Gantt chart horizontally. Useful for inspecting dense regions. |
 | **Source Code Theme** | Choose a syntax-highlighting colour theme for the source panel. |
-| **Dark mode** (`m`) | Toggle between light and dark mode. |
+| **Colour Spectrum** | Choose a color to be used for the nodes and Gantt bars (see [Color](#sec-nodes-color)). |
+:::: {.columns}
+::: {.column width="76%"}
+* **Red–Green** *(default)* --- Low = green, high = red.
+* **Viridis** --- Perceptually uniform; good for colour-blind users.
+* **Plasma** --- High-contrast sequential.
+* **Inferno** --- Dark-background sequential.
+* **Cividis** --- Colour-blind-safe sequential.
+* **Cool–Warm** --- Diverging blue–red.
+* **Grayscale** --- Monochrome.
+* **Rainbow** --- Rainbow.
+:::
+::: {.column width="24%"}
+![](../figures/skevu/colors.png){#skevu-colors fig-alt="Colors." width=100%}
+:::
+::::
+
+|  |  |
+|---|---|
+| **Dark mode** (`M`) | Toggle between light and dark mode. |
+| **Scroll Behaviour** | Select action for scrolling without using a modifier key. |
+
+
 
 ### Nodes {#sec-nodes-menu}
 
@@ -243,17 +282,19 @@ Controls which node types are included in the graph.
 
 | Toggle | Key | Description |
 |---|---|---|
-| **Updates** | `u` | Container write nodes (shown after skeleton calls when data-flow edges are disabled). |
-| **Allocations** | `a` | Container allocation events. |
-| **Deallocations** | `d` | Container deallocation events. |
-| **Transfers** | `t` | Device↔host data transfers. |
+| **Updates** | `U` | Container write nodes (shown after skeleton calls when data-flow edges are disabled). |
+| **Allocations** | `A` | Container allocation events. |
+| **Deallocations** | `D` | Container deallocation events. |
+| **Snapshots** | `K` | Container snapshots. |
+| **Transfers** | `T` | Device↔host data transfers. |
+| **Kernel Builds** | — | Run-time GPU kernel builds. |
+| **Communications** | — | MPI calls (e.g. bcast, gather.) |
 | **Element Accesses** | — | Scalar element-access nodes. |
-| **Regions** | `r` | Show instrumented region nodes as compound containers. |
+| **Regions** | `R` | Show instrumented region nodes as compound containers. |
 
-#### Color
+#### Color {#sec-nodes-color}
 
 Controls the metric mapped to skeleton-call and external-access node colour.
-The colour scale is set globally by the [Colors menu](#sec-colors-menu).
 
 | Mode | Description |
 |---|---|
@@ -261,6 +302,8 @@ The colour scale is set globally by the [Colors menu](#sec-colors-menu).
 | **Elements** | Number of elements processed (product of all dimensions). |
 | **Time/element** | Execution time per element. |
 | **Iterations** | Number of times this node was executed (relevant with [Aggregate Iteration](#sec-advanced) on). |
+| **Duration Variance** | The variance in duration of the same skeleton call if aggregate iteration is enabled. |
+| **Rank Imbalance (MPI)** | The variance in execution time between identical skeleton calls across different MPI ranks. |
 | **DAG depth** | Longest-path depth in the dependency graph. |
 | **Program Sequence** | Execution order (total_order) in the trace. |
 | **Pattern** | SkePU skeleton pattern (Map, Reduce, …); each pattern gets a fixed colour. |
@@ -277,6 +320,7 @@ Controls the metric mapped to node size.
 | **Elements** | Larger nodes processed more elements. |
 | **Time/element** | Larger nodes had higher per-element cost. |
 | **Iterations** | Larger nodes were executed more times. |
+| **Duration Variance** | The variance in duration of the same skeleton call if aggregate iteration is enabled. |
 
 ### Edges {#sec-edges-menu}
 
@@ -298,7 +342,7 @@ Both **Width** and **Opacity** support the same set of modes:
 | **Iterations** | Scaled by the number of times the edge was traversed. |
 | **Program Order Span** | Scaled by the gap in program-order sequence number between the source and target nodes. Wider / more opaque edges connect events that are far apart in execution order, helping reveal long-range dependencies. |
 | **Critical Path** | Edges on the critical path are drawn thick / fully opaque; all others are thin / faded. Useful for visually tracing the bottleneck chain through the graph. |
-| **Cross-Backend** | Edges that cross a backend boundary (e.g. CPU → OpenCL) are highlighted in orange; same-backend edges are drawn in grey. Quickly reveals inter-backend communication overhead. |
+| **Cross-Backend** | Edges that cross a backend boundary (e.g. CPU → OpenCL) are drawn thick / fully opaque; same-backend edges are thin / faded. Quickly reveals inter-backend communication overhead. |
 
 ### Actions {#sec-actions-menu}
 
@@ -326,26 +370,19 @@ Collapse/expand the currently selected region node. See [Regions](#sec-regions).
 
 Collapse or expand every region (or fusion group) in the graph at once.
 
-### Colors {#sec-colors-menu}
-
-Selects the colour spectrum used for node (and Gantt bar) colouring.
-
-| Spectrum | Character |
-|---|---|
-| **Red–Green** *(default)* | Low = green, high = red. |
-| **Viridis** | Perceptually uniform; good for colour-blind users. |
-| **Plasma** | High-contrast sequential. |
-| **Inferno** | Dark-background sequential. |
-| **Cividis** | Colour-blind-safe sequential. |
-| **Cool–Warm** | Diverging blue–red. |
-| **Grayscale** | Monochrome. |
-
 ### Advanced {#sec-advanced}
 
 | Item | Key | Description |
 |---|---|---|
 | **Aggregate iteration** | `i` | Merge all iterations of the same skeleton call into a single node. The merged node shows accumulated timing statistics. Useful for programs with many iterations of the same loop body. |
+| **Aggregate by** | - | Choose how the **Aggregate iteration** should be performed. |
 | **Fusion analysis** | `f` | Analyse the task graph for skeleton calls that could be fused into a single kernel pass. Detected groups are highlighted as compound Fusion nodes in the graph. See [Fusion Analysis](#sec-fusion) for details. |
+
+### ? Help button
+
+Show the available shortcuts, and access to the **Guided Tour** button
+
+![](../figures/skevu/info_screen.png){#info-screen style="border: 2px solid black;" fig-alt="Info screen." width=50%}
 
 ### ⓘ Info button
 
@@ -437,7 +474,7 @@ position. A labelled vertical line marks the time offset from the start of the
 trace. Click again to move it.
 
 **Hover** — a second *hover cursor line* tracks the mouse. When the locked cursor
-is set, a double-headed arrow and a Δt label appear between the two lines,
+is set, a double-headed arrow and a value appears between the two lines,
 measuring the elapsed time between them.
 
 **Zoom to Measured Interval** (`z` or **Actions › Zoom to Measured Interval**) —
@@ -457,7 +494,7 @@ and the trace JSON, each in its own tab. Source code is syntax-highlighted.
 ### Tabs
 
 - One tab per loaded source file (`.cpp` / `.hpp`).
-- A final tab showing the raw SkePU trace JSON (`trace_filename`).
+- A final tab showing the raw SkePU trace JSON (`.json` / `.skevu`).
 
 Switch tabs with the tab buttons, or with the `Tab` / `Shift+Tab` keyboard
 shortcuts (or **Actions › Next Source Tab**).
@@ -474,7 +511,9 @@ the source panel automatically:
 If the **trace JSON tab** is currently active, the selection instead highlights
 the lines of the JSON entry that produced the selected node.
 
-### Source badges {#sec-badges}
+### ![](../figures/skevu/skevu_badge.png){#skevu-badge fig-alt="Badge." width=2%} Source badges {#sec-badges}
+
+
 
 After the graph is rendered, numbered badge pills appear in the line-number gutter
 of each source file next to lines that correspond to one or more trace events.
@@ -515,9 +554,13 @@ Displayed fields depend on node type and may include:
 | **Region / Nesting Level** | Enclosing region and its depth (for nested nodes). |
 | **Version** | Write version for container-update nodes. |
 | **Direction** | Transfer direction (device-to-host / host-to-device). |
+| **Instance** | The location of the skeleton instance construction. |
+| **User function** | The location of the user funtion(s) used in the skeleton. |
 | **Fusion pattern** | The skeleton pattern of the sink stage in a fusion group (Map, Reduce, MapReduce, or MapOverlap). Shown on Fusion nodes when **Fusion analysis** is enabled. |
 
 ### Duration plot
+
+![](../figures/skevu/iteration_durations.png){#iteratio-durations style="border: 2px solid black;" fig-alt="Duration plot." width=50%}
 
 For skeleton-call and external nodes executed more than once (aggregated
 iteration mode), the info pane shows a horizontal bar chart of per-iteration
@@ -530,6 +573,8 @@ corresponding iteration interval.
 
 ### Container snapshot heatmap {#sec-heatmap}
 
+![](../figures/skevu/content_snapshot.png){#content-snapshot style="border: 2px solid black;" fig-alt="Container snapshot." width=50%}
+
 If snapshot data files were loaded, selecting a **Container Update** node that has
 an associated snapshot displays a 2D heatmap of the container contents at that
 point in the execution.
@@ -538,7 +583,7 @@ point in the execution.
   which slice to display.
 - For nodes with multiple snapshots (multiple iterations), an **iteration bar**
   at the bottom selects which snapshot to view.
-- `←` / `→` navigate between slices or snapshots while the heatmap is active.
+- `←` / `→` on the keyboard or in the visualizer (see figure above) to navigate between slices or snapshots while the heatmap is active.
 
 ---
 

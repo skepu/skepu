@@ -168,6 +168,10 @@ applied in the transition from SkePU-2 to SkePU-3 (as of May 2020):
 
 - New StarPU-MPI backend (available for some skeletons at this time).
 
+- The addition of SkePU-LSP, a `clangd`-based LSP designed to handle SkePU skeletons (see @sec-lsp).
+
+- The extension of SkeVU to also function as a VSCode extension.
+
 Several of these design changes are the result of feedback from
 application partners in the running H2020 FETHPC project EXA2PRO.
 
@@ -182,9 +186,6 @@ been added:
   training and inference with a PyTorch-like API implemented on top of
   SkePU skeletons;
 
-- The SkeVU interactive visualization tool for SkePU program execution
-  traces.
-
 - SkePU-Streaming[@SkePU-Streaming], a two-layer programming model for
   specifying complex stream-processing pipeline workflows for native
   execution in distributed heterogeneous parallel systems, with native
@@ -192,8 +193,12 @@ been added:
   standard library has been extended to provide access to ingoing and
   outgoing stream ports and for container serialization/deserialization.
   SkePU-Streaming is available at
-  <https://github.com/skepu/skepu-streaming/releases/tag/IJPP-experiments>;
+  <https://github.com/skepu/skepu-streaming>;
   it requires SkePU as a subpackage.
+
+- Fault-tolerance for SkePU Streaming applications.
+
+- SkePU-Streaming Monitoring Unit, a visualizer for SkePU Streaming based on SkeVU.
 
 ### Repository and License Changes
 

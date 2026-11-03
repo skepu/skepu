@@ -9,9 +9,3 @@ University.
 We also thank the National Supercomputer Centre (NSC) and SNIC/NAISS for
 providing access to HPC resources used for performance testing (SNIC
 2016/5-6, NAISS 2025/22-60, LiU-gpu-2023-05).
-
-## References
-
-::: {#refs}
-:::
-

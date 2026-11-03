@@ -9,6 +9,7 @@ book:
     - "August Ernstsson"
     - "Johan Ahlqvist"
     - "Christoph Kessler"
+    - "David Berntsson"
   chapters:
     - index.qmd
     - src/installation.qmd
@@ -16,13 +17,13 @@ book:
     - src/stdlib.qmd
     - src/skevu.qmd
     - src/lsp.qmd
-    - src/streaming.qmd
     - src/blas.qmd
     - src/changelog.qmd
     - src/acknowledgements.qmd
 
 bibliography: bibliography.bib
 csl: ieee.csl
+reference-section-title: References
 
 format:
   html:

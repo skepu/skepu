@@ -47,7 +47,13 @@ started from somewhere else, everything of `clangd` works but the SkePU-specific
 
 Point the editor's `clangd` setting to `build/llvm/bin/clangd`:
 
-* **Visual Studio Code**, with the clangd extension: the setting `clangd.path`.
+* **Visual Studio Code**, with the clangd extension: the setting `clangd.path`:
+  ```json
+  "clangd.path": "/path/to/skepu/build/llvm/bin/clangd"
+  ```
+  or in the GUI:
+    
+  ![](../figures/lsp/clangd_path.png){#clangd-path fig-alt="Clangd path." width=50%}
 * **Zed**, in `settings.json`:
 
   ```json
@@ -80,6 +86,10 @@ All examples use this program (a sum of squares, a three-point average, and a pr
 ```cpp
 #include <skepu>
 
+struct Pixel {
+    unsigned char r, g, b;
+};
+
 [[skepu::userconstant]] constexpr float SCALE = 1.0f;
 
 float square(float x)
@@ -90,6 +100,14 @@ float square(float x)
 float add(float a, float b)
 {
     return a + b;
+}
+
+unsigned char toGrayscale(Pixel in)
+{
+    int red = ((int)in.r);
+	int green = ((int)in.g);
+	int blue = ((int)in.b);
+	return (unsigned char)(0.2126 * red + 0.7152 * green + 0.0727 * blue);
 }
 
 float average(skepu::Region1D<float> r, float scale)
@@ -103,6 +121,8 @@ int main()
     auto sum    = skepu::Reduce(add);
     auto smooth = skepu::MapOverlap(average);
     auto scan   = skepu::Scan(add);
+    auto map = skepu::Map(toGrayscale);
+    
 
     skepu::Vector<float> v(100), w(100);
     float s = sumsq(v);
@@ -120,13 +140,41 @@ which skeletons it has and which functions are user functions, without reading a
 The outline view of the editor (the symbol list of a file) groups the symbols by their role in the
 program (a group that would be empty is not shown):
 
-| Group | Contains | In the example |
-|---|---|---|
-| Skeletons | The skeleton instances, with the skeleton and the types of its user functions | `sumsq` (`MapReduce(float, float)`), `sum` (`Reduce1D(float)`), `smooth` (`MapOverlap1D(float)`), `scan` (`Scan(float)`) |
-| User Constants | The constants declared with `[[skepu::userconstant]]` | `SCALE` |
-| Userfunctions | The functions that are used as user functions, with their signatures | `square`, `add`, `average` |
-| User Types | The structures used by user functions | (none) |
-| Various | Everything else | `main` |
+![](../figures/lsp/lsp_outline.png){#lsp-outline fig-alt="SkePU-LSP Outline." width=30%}
+
+::: {.list-table tbl-colwidths="[20,45,35]"}
+- - Group
+  - Contains
+  - In the example
+
+- - Skeletons
+  - The skeleton instances, with the skeleton and the types of its user functions
+  - `sumsq` (`MapReduce(float, float)`)
+
+    `sum` (`Reduce1D(float)`)
+
+    `smooth` (`MapOverlap1D(float)`)
+    
+    `scan` (`Scan(float)`)
+
+    `map` (`Map(unsigned char)`)
+
+- - User Constants
+  - The constants declared with `[[skepu::userconstant]]`
+  - `SCALE`
+
+- - Userfunctions
+  - The functions that are used as user functions, with their signatures
+  - `square`, `add`, `average`, `toGreyscale`
+
+- - User Types
+  - The structures used by user functions
+  - `Pixel`
+
+- - Various
+  - Everything else
+  - `main`
+:::
 
 Selecting a symbol goes to it. A file always has the group *Various*, also when it has no
 skeletons.
@@ -138,19 +186,9 @@ skeletons.
 Hovering over the name of a skeleton instance, `sumsq` in `auto sumsq = …` or at a call, shows the
 return type and the parameters, derived from the user functions, and what the skeleton is:
 
-```
-variable sumsq
+![](../figures/lsp/sumsq_hover.png){#sumsq-hover fig-alt="sumsq hover info." width=50%}
 
-→ float
-
-Parameters:
-
-- float x | (Can be skepu container of float type)
-
-Skeleton of MapReduce: Efficient chaining of Map and Reduce.
-```
-
-The parameters are those of the *call* of the instance, not of the user functions: the `x` of
+The parameter is that of the *call* of the instance, not of the user functions: the `x` of
 `square` is one element of the container that the call takes. A `Map`, `MapPairs`,
 `MapPairsReduce` or `MapOverlap` instance has its output containers first
 (`Return: float& Return0 | (Can be skepu container)`), a reduction returns a value. Containers of
@@ -170,16 +208,16 @@ in terms of SkePU: containers instead of the elements of the user function.
 
 | Call | Signature help |
 |---|---|
-| `sumsq(` | `skepu::MapReduce(skepu::container<float>& Input0) -> float` |
-| `smooth(` | `skepu::MapOverlap1D(skepu::Vector<float>& Return0, skepu::Vector<float>& Input, float Scalar0)` and `skepu::MapOverlap1D(skepu::Vector<float>& Return0, skepu::Vector<float>& Input, skepu::Matrix<float>& Input)` |
-| `sum(` | `skepu::Reduce1D(skepu::container<float>& Input) -> float` and `skepu::Reduce1D(skepu::Vector<float>& Return, skepu::Matrix<float>& Input) -> skepu::Vector<float>` |
-| `scan(` | `skepu::Scan(skepu::container<float>& Return, skepu::container<float>& Input)` and the version for iterators (`…containerIterator<float>& Return iterator begin`, …) |
+| `sumsq(` | ![](../figures/lsp/sumsq_call.png){#sumsq-call fig-alt="sumsq call signature info." width=100%} |
+| `smooth(` | ![](../figures/lsp/smooth_call_1.png){#smooth-call-1 fig-alt="smooth call signature info option 1." width=100%} ![](../figures/lsp/smooth_call_2.png){#smooth-call-2 fig-alt="smooth call signature info option 2." width=100%} |
+| `sum(` | ![](../figures/lsp/sum_call_1.png){#sum-call-1 fig-alt="sum call signature info option 1." width=100%} ![](../figures/lsp/sum_call_2.png){#sum-call-2 fig-alt="sum call signature info option 2." width=100%} |
+| `scan(` | ![](../figures/lsp/scan_call_1.png){#scan-call-1 fig-alt="scan call signature info option 1." width=100%} ![](../figures/lsp/scan_call_2.png){#scan-call-2 fig-alt="scan call signature info option 2." width=100%} |
 
-Where a skeleton has more than one form of call, as the reduction of a vector or of the rows of a
-matrix and the scan of containers or iterators, the forms are listed as overloads, and the editor
-lets you step between them. `skepu::container` stands for a `skepu::Vector`, `skepu::Matrix` or
-tensor of the element type (its dimension is that of the container that you pass; an instance that
-takes an index parameter shows the exact container).
+When a skeleton has more than one form of call, as the reduction of a `Vector` or of the rows of a
+`Matrix` and the scan of containers or iterators, the forms are listed as overloads, and the editor
+lets you step between them. `skepu::container` represents either `skepu::Vector`, `skepu::Matrix`, `skepu::Tensor3`, or `skepu::Tensor4`
+if more than one fits within the skeleton call (e.g. `Map`, which can take any of the four containers). If the index is specified in the user function, or where
+there only is one option (e.g. `MapOverlap2D`), it will show the specific containers rather than the generic `skepu::container`.
 
 ### Creating a skeleton {#sec-lsp-create}
 
@@ -187,13 +225,10 @@ takes an index parameter shows the exact container).
 
 Signature help for the creation of a skeleton shows how many user functions it takes, and what it is:
 
-```
-skepu::MapReduce((*func0)(), (*func1)()) -> auto
-Efficient chaining of Map and Reduce.
-```
+![](../figures/lsp/map_reduce_signature.png){#map-reduce-signature fig-alt="MapReduce signature." width=70%}
 
 The highlighted parameter follows the argument that you are on (map function, then reduction
-function). This is shown for `skepu::Map`, `skepu::MapReduce`, `skepu::Scan`, `skepu::MapPairs` and
+function). This functionality has been implemented for `skepu::Map`, `skepu::MapReduce`, `skepu::Scan`, `skepu::MapPairs` and
 `skepu::MapPairsReduce`; for the other skeletons, the usual `clangd` signatures of the creation
 function are shown.
 

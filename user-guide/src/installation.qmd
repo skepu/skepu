@@ -28,15 +28,15 @@ August Ernstsson[^1] is the current maintainer of SkePU.
 
 ## Dependencies and Requirements {#sec-requirements}
 
-SkePU is fundamentally structured around C++11 features and thus
-requires a mature C++11 compiler. It has been tested with relatively
+The current version of SkePU is fundamentally structured around C++11 features and thus
+requires a mature C++ compiler. Do note, however, that SkePU also supports C++ versions up to C++20[^2]. It has been tested with relatively
 recent versions of Clang and GCC, and NVCC version 9.
 
-It also uses the STL, including C++11 additions. It has been tested with
+It also uses the STL, including C++11 additions such as templates. It has been tested with
 `libstdc++` and `libc++`. SkePU does not depend on other libraries.
 
 SkePU requires the LLVM and Clang source when building the
-source-to-source translator. The translator produces valid C++11, OpenCL
+source-to-source translator. The translator produces valid C++, OpenCL
 and/or CUDA source code and can thus be used on a separate system than
 the target if necessary (\"cross-precompilation\").
 
@@ -47,17 +47,17 @@ other backends.
 ## Installation {#sec-install}
 
 This section explains how to build and install the clang-based version
-of the SkePU pre-compiler, SkePU-tool.
+of the SkePU pre-compiler: `skepu-tool`.
 
 []{#sec-clanginst label="subsec:clanginst"}
 
-There are three steps to do when building skepu-tool from source:
+There are three steps to do when building `skepu-tool` from source:
 
 - Getting the source
 
-- Build skepu-tool
+- Build `skepu-tool`
 
-- Install skepu-tool
+- Install `skepu-tool`
 
 #### Getting the source {#getting-the-source .unnumbered}
 
@@ -84,10 +84,10 @@ LLVM repository is large.
 
 #### Building skepu-tool {#building-skepu-tool .unnumbered}
 
-SkePU-tool uses a CMake-based build procedure. The CMake scripts
+`skepu-tool` uses a CMake-based build procedure. The CMake scripts
 requires CMake version 3.13 or later. Best practice is to create an out
 of source build folder. In the following code snippet, we will use
-$<$src$>$/build. The following commands will build skepu-tool:
+<*skepu\_root*>/build. The following commands will build `skepu-tool`:
 
     	mkdir build && cd build
     	cmake -DCMAKE_BUILD_TYPE=Release ..
@@ -122,15 +122,15 @@ The source-to-source translator tool `skepu-tool` accepts as arguments:
 - any combination of backends to be generated: `-cuda -opencl -openmp`.
 
 A complete list of supported flags, and further instructions, can be
-found by running `skepu-tool -help` on the clang based skepu-tool.
+found by running `skepu-tool -help` on the clang based `skepu-tool`.
 
 Note that code for the sequential backend is always generated.
 
 SkePU programs (source files) are written as if a sequential
-implementation---without source translation---was targeted. In fact,
+implementation, without source translation, was targeted. In fact,
 such an implementation exists and is automatically selected if
 non-transformed source files are compiled directly. Make sure to
-`#include` header `skepu`, which contains all of the SkePU library[^2].
+`#include` header `skepu`, which contains all of the SkePU library[^3].
 
 We recommend to take a look at the included example SkePU programs and
 `Makefile`s to get an idea of how everything works in practice.
@@ -149,8 +149,7 @@ remaining arguments should be passed directly to the underlying Clang
 engine. These arguments are formatted as standard Clang arguments. The
 required arguments are as follows:
 
-- the language standard used for the program, e.g. `-std=c++17` as in
-  the examples;
+- the language standard used for the program, e.g. `-std=c++17`;
 
 - include path to Clang's compiler-specific C++ headers: the resource directory of the
   Clang that built `skepu-tool`, `-I <path_to_skepu>/build/llvm/lib/clang/<version>/include`
@@ -199,9 +198,9 @@ setting: it runs on the first process only, with the containers it lists
 gathered and scattered. Writing to a file is one example of code that
 must not be run by all processes.
 
-### Clang skepu-tool and CMake
+### Clang-based skepu-tool and CMake
 
-The clang skepu-tool offers a CMake function to automatically configure
+The clang-based `skepu-tool` offers a CMake function to automatically configure
 the precompilation step. The syntax is as follows:
 
     skepu_add_executable(<name> [EXCLUDE_FROM_ALL]
@@ -223,7 +222,7 @@ aware of, one adds the argument `HINTS <skepu_prefix>` to find_package.
 
 ### SkePU general
 
-C++ purists, please do not use `const` with SkePU. SkePU is not
+Do not use `const` with SkePU. SkePU is not
 `const`-correct, due to technical issues.
 
 Known limitations:
@@ -235,12 +234,8 @@ Known limitations:
 
 Reported for earlier releases and not re-checked for this one:
 
-- MapOverlap (3D, 4D) code generation is disabled for CUDA (@sec-mapoverlap).
-
 - MapPairsReduce code generation is disabled for CUDA and OpenCL
   (@sec-mappairsreduce).
-
-- Multi-valued return (@sec-multireturn) is not implemented for MapOverlap.
 
 - Scan is missing OpenMP backend selection parameters (thread count,
   scheduling mode).
@@ -262,7 +257,7 @@ The following are known limitations of the MPI backend:
 ### Clang SkePU tool
 
 In addition, not all combinations of skeleton features are
-implemented/tested for this release.
+currently implemented/tested.
 
 ## Example programs included in the SkePU repository {#sec-examplecollection}
 
@@ -348,5 +343,7 @@ DNN examples read.
 
 [^1]: august.ernstsson@liu.se
 
-[^2]: Almost everything in SkePU is templates, so there is no penalty
+[^2]: SkePU will likely not work for C++14 specifically.
+
+[^3]: Almost everything in SkePU is templates, so there is no penalty
     from including skeletons etc., which are not used.

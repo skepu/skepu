@@ -245,8 +245,6 @@ namespace skepu
 			RedFunc colRedFunc;
 			Reduce2D(RedFunc rowRed, RedFunc colRed) : Reduce1D<T>(rowRed), colRedFunc(colRed) {}
 
-			T m_start{};
-
 			friend Reduce2D<T> ReduceWrapper<T>(RedFunc, RedFunc);
 		};
 	}
