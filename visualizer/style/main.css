@@ -168,6 +168,13 @@ html.dark-mode .menu-field input { border-color: #4a4660; }
   color: #333;
 }
 
+/* As in a macOS menu: if any item has the check column, items without one leave room for it so the text lines up */
+.dropdown:has(> button > .menu-icon) > button:not(:has(> .menu-icon)),
+.dropdown:has(> button > .menu-icon) > .submenu > .submenu-title:not(:has(> .menu-icon))
+{
+  padding-left: calc(0.75em + 1.3em + 0.3em);
+}
+
 /* Color-spectrum dropdown — wider to fit swatch + note */
 .dropdown-spectrum
 {
@@ -433,7 +440,7 @@ html.dark-mode .tour-foot button:not(:disabled):not(.tour-next):hover { backgrou
 
 /* The offer of the tour, once */
 .tour-offer {
-  position: fixed; right: 16px; bottom: 16px; z-index: 900; max-width: 340px;
+  position: fixed; right: 16px; bottom: 16px; z-index: 1500; max-width: 340px;
   display: flex; flex-wrap: wrap; align-items: center; gap: 0.6em;
   background: white; color: #222; border-radius: 8px; padding: 0.8em 1em; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
 }
@@ -1395,7 +1402,7 @@ path.badge-arrow-hover
 
 .line-selected
 {
-  background-color: var(--highlight-alpha) !important;
+  background-color: var(--source-hl, var(--highlight-alpha)) !important;
 }
 
 /* Where the instance and the user functions of the selected call are defined: the colour of the selection, with less opacity than
@@ -1407,7 +1414,7 @@ path.badge-arrow-hover
 
 .def-function, .def-pin-function, .def-instance, .def-pin-instance, .def-call
 {
-  background-color: var(--highlight-alpha-soft);
+  background-color: var(--source-hl-soft, var(--highlight-alpha-soft));
 }
 
 .hljs-ln-n.def-site
@@ -1709,16 +1716,39 @@ html.dark-mode .cpp-tab:hover {
 .welcome-card .welcome-examples-head h3 { margin: 0; border: none; padding: 0; }
 .welcome-examples-head .welcome-language { margin-top: 0; }
 
-.welcome-logo {
-  display: block;
+.welcome-brand {
   margin: 0 auto 1em;
   width: 60%;
+  container-type: inline-size;
+}
+.welcome-logo {
+  display: block;
+  width: 100%;
   height: auto;
 }
+/* Name under the logo, as in the artwork: type is 130/3147 of the logo width, spaced out, filling the line in any font. A line wider than the logo (large
+   page zoom) extends equally on both sides. */
+.welcome-brand-name {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.4cqw;
+  font: 4.13cqw "Helvetica Neue", Helvetica, Arial, sans-serif;
+  letter-spacing: 0.2cqw;
+  text-transform: uppercase;
+  color: #000;
+}
+.welcome-brand-name > span {
+  flex: none;
+  min-width: 100%;
+  white-space: nowrap;
+  text-align: justify;
+  text-align-last: justify;
+}
+html.dark-mode .welcome-brand-name { color: #fff; }
 /* A short window: the logo and the padding of the card are smaller, so that more of the list shows */
 @media (max-height: 760px) {
   .welcome-card { padding-top: 1.5em; padding-bottom: 1.5em; }
-  .welcome-logo { width: 38%; margin-bottom: 0.5em; }
+  .welcome-brand { width: 38%; margin-bottom: 0.5em; }
 }
 
 .logo-small
@@ -1897,6 +1927,7 @@ body.welcome-mode #split-gutter { display: none !important; }
 }
 
 /* The editor (VS Code) shows the source in its own editors: the webview has no source pane, and what is for the browser is left out. */
+[data-mpi][hidden] { display: none !important; }
 html.editor [data-only="web"], html:not(.editor) [data-only="editor"] { display: none !important; }
 html.editor #cpp_container, html.editor #info-resizer { display: none; }
 

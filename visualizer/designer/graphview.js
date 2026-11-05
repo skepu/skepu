@@ -3,6 +3,7 @@
 import { PATTERNS, hasScalar } from './model.js';
 import { anonymousLabel, isAnonymous } from './codegen.js';
 import { TraceDataProvider } from '../script/TraceDataProvider.js';
+import { appSettings } from '../script/settings_model.js';
 import { buildGraphStyle } from '../script/graph_style.js';
 import { PAN_ZOOM_OPTIONS, bindPanZoom, ZOOM_FIT_PAD, roomAround, animateFit } from '../script/panzoom.js';
 import { readAppearance } from '../script/appearance.js';
@@ -18,8 +19,7 @@ import { updateMenu } from './actions.js';
 
 export const darkNow = () => document.documentElement.classList.contains('dark-mode');
 
-export const settings = { 'node-labels': true, 'edge-labels': false, 'show_regions': true, 'node-color-call': stored('skevu-designer-color', 'pattern'), 'node-size-call': 'fixed',
-                   'edge-width': 'fixed', 'edge-opacity': 'fixed' };
+export const settings = appSettings({ 'show_regions': true, 'node-color-call': stored('skevu-designer-color', 'pattern') });
 
 export const provider = new TraceDataProvider({ fetchGraph: () => Promise.reject(new Error('the designer has no trace')), settings,
                                          colorSpectrum: readAppearance().colorSpectrum });

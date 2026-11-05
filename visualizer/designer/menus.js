@@ -109,9 +109,9 @@ export function initMenus() {
         e.target.value = '';
     };
 
-    const colors = () => document.querySelectorAll('[data-color]').forEach(b => setChecked(b, b.dataset.color === settings['node-color-call']));
+    const colors = () => document.querySelectorAll('[data-color]').forEach(b => setChecked(b, b.dataset.color === settings.get('node-color-call')));
     document.querySelectorAll('[data-color]').forEach(b => {
-        b.onclick = () => { settings['node-color-call'] = b.dataset.color; store('skevu-designer-color', b.dataset.color); colors(); S.cy.style().update(); renderLegend(); };
+        b.onclick = () => { settings.set('node-color-call', b.dataset.color); store('skevu-designer-color', b.dataset.color); colors(); S.cy.style().update(); renderLegend(); };
     });
     colors();
     const legendOn = stored('skevu-designer-legend', true);
@@ -119,9 +119,9 @@ export function initMenus() {
     $('#menu-legend').onclick = () => showLegend($('#legend').hidden);
     showLegend(legendOn);
     const labels = stored('skevu-designer-edge-labels', false);
-    const showEdgeLabels = on => { settings['edge-labels'] = on; setChecked($('#menu-edge-labels'), on); store('skevu-designer-edge-labels', on); S.cy.style(stylesheet()); };
+    const showEdgeLabels = on => { settings.set('edge-labels', on); setChecked($('#menu-edge-labels'), on); store('skevu-designer-edge-labels', on); S.cy.style(stylesheet()); };
     showEdgeLabels(labels);
-    $('#menu-edge-labels').onclick = () => showEdgeLabels(!settings['edge-labels']);
+    $('#menu-edge-labels').onclick = () => showEdgeLabels(!settings.get('edge-labels'));
     const paths = stored('skevu-designer-paths', true);
     S.source.setCodePaths(paths);
     setChecked($('#menu-paths'), paths);
@@ -130,6 +130,7 @@ export function initMenus() {
     $('#menu-dark').onclick = () => {
         const on = !darkNow();
         showDarkMode(on);
+        S.source.refreshSelectionColors();
         writeAppearance({ darkMode: on });
         S.source.setTheme(on ? HLJS_THEME_DEFAULT_DARK : HLJS_THEME_DEFAULT_LIGHT);
         setChecked($('#menu-dark'), on);
@@ -146,7 +147,7 @@ export function initMenus() {
         renderLegend();
     };
     buildSpectrumMenu($('#spectrum-menu'), pickSpectrum);
-    hooks.colorByMenu = (x, y) => showChoiceMenu(x, y, document.querySelectorAll('[data-color]'), b => b.dataset.color === settings['node-color-call']);      // right click on the color bar
+    hooks.colorByMenu = (x, y) => showChoiceMenu(x, y, document.querySelectorAll('[data-color]'), b => b.dataset.color === settings.get('node-color-call'));      // right click on the color bar
     hooks.spectrumMenu = (x, y) => showSpectrumMenu(x, y, provider.colorSpectrum, pickSpectrum);          // click on the color bar
     markChoice('.spectrum-radio', 'spectrum', provider.colorSpectrum);
 

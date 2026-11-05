@@ -20,7 +20,6 @@
 !style/*.css
 !script/early.js
 !SkeVU logo*.png
-!SkeVU logo*.svg
 !static/cytoscape/**
 !static/cytoscape-dagre/**
 !static/dagre/**

@@ -19,6 +19,7 @@ import { InfoView }                                     from './InfoView.js';
 import { SourceCodeView }                               from './SourceCodeView.js';
 import { TimelineView }                                 from './TimelineView.js';
 import { SimulationEngine }                             from './simulation.js';
+import { showDarkMode } from './appearance.js';
 
 // ── Menubar render indicator ──────────────────────────────────────────────────
 // Touches only #render-indicator in the menu bar.  GraphView manages its own
@@ -53,7 +54,7 @@ var _provider = new TraceDataProvider({
   fetchGraph:    fetchGraph,
   fetchNodeData: fetchGetData,
   settings:      State.settings,      // shared reference — settings are always in sync
-  colorSpectrum: State._colorSpectrum,
+  colorSpectrum: State.settings.get('color-spectrum'),
 });
 
 // Sync State data caches immediately when new data arrives so that Gantt,
@@ -94,7 +95,7 @@ var _view = new GraphView(document.getElementById('cy'), {
     // TimelineView renders from the 'data' event (no Cytoscape dependency).
     // Source-pane highlight clearing and badge placement are driven by the provider's
     // 'fetchstart' and 'renderend' events via _sourceView.attachProvider(_provider).
-    _legendView.render(State._darkMode);
+    _legendView.render(State.settings.get('dark-mode'));
 
     // Hide the menubar spinner.
     hideMenubarIndicator();
@@ -159,7 +160,7 @@ State._collapsedNodes = _provider.collapsedNodes;
 
 var _legendView = new LegendView(document.getElementById('legend'), _view, { hoverGraph: function() { return _view._cy; },
   clearHighlight: function() { _view._provider._emit('clear', { background: false }); },
-  onSelect: function(callback) { _view._provider.on('select', callback); }, onColorByClick: function(x, y) { showChoiceMenu(x, y, document.querySelectorAll('[data-ctrl="node-color-call"]'), function(b) { return State.settings['node-color-call'] === b.dataset.value; }); }, onSpectrumClick: function(x, y) { showSpectrumMenu(x, y, State._colorSpectrum, function(name) { window.colorSpectrumChanged(name); }); } });
+  onSelect: function(callback) { _view._provider.on('select', callback); }, onColorByClick: function(x, y) { showChoiceMenu(x, y, document.querySelectorAll('[data-ctrl="node-color-call"]'), function(b) { return State.settings.get('node-color-call') === b.dataset.value; }); }, onSpectrumClick: function(x, y) { showSpectrumMenu(x, y, State.settings.get('color-spectrum'), function(name) { window.colorSpectrumChanged(name); }); } });
 _legendView.settings = State.settings;  // same reference as _view.settings
 
 // Wire the legend back into the graph view so hover events can highlight entries.
@@ -167,17 +168,17 @@ _view.legendView = _legendView;
 
 // Expose to ui.js (syncSpectrumMenuIcons) and settings.js (window.renderLegend).
 State.legendView = _legendView;
-window.renderLegend = function() { _legendView.render(State._darkMode); };
+window.renderLegend = function() { _legendView.render(State.settings.get('dark-mode')); };
 
 // ── SourceCodeView singleton ──────────────────────────────────────────────────
 
 var _sourceView = new SourceCodeView({
-  initialTheme: State._hljsTheme,
-  codePaths:    State._codePaths,
-  pinDefinitions: State._pinDefinitions,
+  initialTheme: State.settings.get('hljs-theme'),
+  codePaths:    State.settings.get('code-paths'),
+  pinDefinitions: State.settings.get('pin-definitions'),
 
   onThemeChange: function(theme) {
-    State._hljsTheme = theme;
+    State.settings.set('hljs-theme', theme);
     if (typeof saveSettings === 'function') saveSettings();
   },
 
@@ -271,8 +272,8 @@ var _timelineView = new TimelineView(
     scaleSliderEl:   document.getElementById('gantt-scale'),
     scaleLabelEl:    document.getElementById('gantt-scale-label'),
     countEl:         document.getElementById('gantt-count'),
-    initialScale:    State._ganttScale,
-    initialOpen:     State._ganttPaneOpen,
+    initialScale:    State.settings.get('gantt-scale'),
+    initialOpen:     State.settings.get('gantt-open'),
     onPaneToggle:    function() { if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons(); },
     onSettingsChange: function() { if (typeof saveSettings === 'function') saveSettings(); },
     onSimBarClick:   function(nodeId, iterIdx) {
@@ -314,70 +315,26 @@ _provider.on('clear', function() {
   if (typeof closePopup === 'function') closePopup();
 });
 
-// ── Forward State._ganttPaneOpen writes to TimelineView ──────────────────────
-// settings.js loadSettings() writes State._ganttPaneOpen directly (before calling
-// openGanttPane / closeGanttPane) so TimelineView._paneOpen must be kept in sync
-// to avoid rendering into a visually-closed pane.
-var _ganttPaneOpenStore = State._ganttPaneOpen;
-Object.defineProperty(State, '_ganttPaneOpen', {
-  get: function()    { return _ganttPaneOpenStore; },
-  set: function(val) {
-    _ganttPaneOpenStore = val;
-    _timelineView._paneOpen = val;
-    // When the pane is being closed by a direct State write (not via close()),
-    // collapse it visually immediately — open/close calls handle this themselves.
-    if (!val && _timelineView._paneEl)
-      _timelineView._paneEl.style.setProperty('--gantt-height', 0);
-  },
-  configurable: true,
-  enumerable:   true,
-});
-
-// ── Forward State._ganttScale writes to TimelineView ─────────────────────────
-// settings.js loadSettings() sets State._ganttScale + updates DOM sliders directly
-// without going through ganttScaleChanged.  Sync the internal scale so the next
-// render uses the correct value.
-var _ganttScaleStore = State._ganttScale;
-Object.defineProperty(State, '_ganttScale', {
-  get: function()    { return _ganttScaleStore; },
-  set: function(val) {
-    _ganttScaleStore = parseFloat(val);
-    _timelineView._scale = _ganttScaleStore;
-  },
-  configurable: true,
-  enumerable:   true,
-});
-
-// ── Forward State._darkMode writes to the view ───────────────────────────────
-// ui.js toggleDarkMode() and settings.js applyStoredLayout() write State._darkMode.
-var _darkModeStore = State._darkMode;
-Object.defineProperty(State, '_darkMode', {
-  get: function()    { return _darkModeStore; },
-  set: function(val) {
-    _darkModeStore = val;
-    _view.darkMode = val;
-    // TimelineView re-renders so dark-mode colour palette updates immediately.
+// ── The views follow the settings ─────────────────────────────────────────────
+// A setting change reaches the views whoever makes it (menu, loadSettings, Restore Defaults).
+State.settings.onChange(function(keys) {
+  var get = function(key) { return State.settings.get(key); };
+  if (keys.includes('gantt-open')) {
+    _timelineView._paneOpen = get('gantt-open');
+    // closed by the setting alone, not by close(): collapsed at once
+    if (!get('gantt-open') && _timelineView._paneEl) _timelineView._paneEl.style.setProperty('--gantt-height', 0);
+  }
+  if (keys.includes('gantt-scale')) _timelineView._scale = parseFloat(get('gantt-scale'));
+  if (keys.includes('dark-mode')) {
+    showDarkMode(get('dark-mode'));   // the timeline reads the class
+    _view.darkMode = get('dark-mode');
+    _sourceView.refreshSelectionColors();   // the accent changed
     if (_timelineView._paneOpen) _timelineView.reRenderPreservingScroll();
-  },
-  configurable: true,
-  enumerable:   true,
-});
-
-// ── Forward State._colorSpectrum writes to provider + view ───────────────────
-// ui.js colorSpectrumChanged() sets State._colorSpectrum = name then calls settingChanged() which
-// debounces into a full re-render.  The provider setter updates the data-layer
-// spectrum (used in next spectrumColor() call); the view setter triggers an
-// immediate Cytoscape style update so the graph recolours before the re-render.
-var _colorSpectrumStore = State._colorSpectrum;
-Object.defineProperty(State, '_colorSpectrum', {
-  get: function()    { return _colorSpectrumStore; },
-  set: function(val) {
-    _colorSpectrumStore      = val;
-    _provider.colorSpectrum  = val;   // data layer — read by spectrumColor()
-    _view.setColorSpectrum(val);      // triggers cy.style().update()
-  },
-  configurable: true,
-  enumerable:   true,
+  }
+  if (keys.includes('color-spectrum')) {
+    _provider.colorSpectrum = get('color-spectrum');   // read by spectrumColor()
+    _view.setColorSpectrum(get('color-spectrum'));     // restyles now; the re-render follows
+  }
 });
 
 // ── Forward State.opaqueNodes writes to the view ─────────────────────────────
@@ -399,12 +356,12 @@ _simEngine = new SimulationEngine(_provider, {
   ticksEl:     document.getElementById('sim-ticks'),
   playPauseEl: document.getElementById('sim-btn-playpause'),
   // the progress bar is shown when a simulation starts: the page has the setting and the menu item
-  onActivate:  function() { if (!State._progressBar && typeof window.setProgressBar === 'function') window.setProgressBar(true); },
+  onActivate:  function() { if (!State.settings.get('progress-bar') && typeof window.setProgressBar === 'function') window.setProgressBar(true); },
 });
 State.simEngine = _simEngine;
 
 export function renderImage() {
-  _view.zoomToFit(id);
+  _view.exportImage('graph.png');
 }
 
 export function stopRendering() {

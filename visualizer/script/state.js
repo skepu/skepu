@@ -1,6 +1,8 @@
 // state.js — Shared mutable state and constants, exported as an ES module.
 // All modules import { State } from here; HTML inline scripts access window.State.
 
+import { appSettings } from './settings_model.js';
+
 export const State = {
   // Cytoscape instance — set by graph.js after each render.
   cy:               null,
@@ -8,33 +10,7 @@ export const State = {
 
   provider: null,
 
-  // Render settings — source of truth for all checkbox/select settings.
-  settings: {
-    // checkboxes
-    'container-updates':       false,
-    'container-allocations':   false,
-    'container-deallocations': false,
-    'container-snapshots':     true,
-    'container-transfers':     false,
-    'kernel-compiles':         false,
-    'communications':          true,
-    'element-accesses':        false,
-    'anti-deps':               false,
-    'virtual-alias-edges':     false,
-    'edge-labels':             false,
-    'node-labels':             true,
-    'show_regions':            false,
-    'collapse_iteration':      false,
-    'fusion_analysis':         false,
-    // selects
-    'graph-mode':      'dependence-dag',
-    'node-color-call': 'duration-total',
-    'node-size-call':  'fixed',
-    'direction':       'vertical',
-    'edge-width':      'fixed',
-    'edge-opacity':    'fixed',
-    'aggregate_by':    'name',
-  },
+  settings: appSettings(undefined, { editor: typeof document !== 'undefined' && document.documentElement.classList.contains('editor') }),
 
   // Node / edge state
   opaqueNodes:      [],   // node IDs to show at full opacity; others are dimmed
@@ -56,33 +32,9 @@ export const State = {
   _lastMinmax:        null,   // min/max ranges for colour normalisation
 
   // Gantt state
-  _ganttPaneOpen:       true,  // overridden by loadSettings
-  _ganttPaneRatio:      0,     // unused — kept for settings compatibility
-  _ganttScale:          1,     // x-axis scale multiplier
   _ganttSelectedNodeId: null,
   _ganttLockedTime:     null,  // time of the locked cursor line (survives re-renders)
   _ganttHoverTime:      null,  // time under the hover cursor (null when off-chart)
-
-  // Source pane + legend
-  _sourcePaneOpen: true,  // overridden by loadSettings
-  _legendOpen:     true,  // overridden by loadSettings
-  _codePaths:      true,  // overridden by loadSettings
-  _infoEnabled:    true,  // the info panel opens with a selection (View > Info Panel); overridden by loadSettings
-  _wheelZoom:      false, // a plain wheel zooms the graph instead of panning it (for a mouse); overridden by loadSettings
-  _progressBar:    false, // the progress bar of the simulation is shown (on when a simulation starts); overridden by loadSettings
-  _pinDefinitions: false, // the marks of all the definitions of the instances and user functions stay in the source; overridden by loadSettings
-
-  // Colour spectrum — active key into COLOR_SPECTRUMS; overridden by loadSettings
-  _colorSpectrum:  'default',
-
-  // Dark mode
-  _darkMode: false,
-
-  // Highlight.js code theme (filename without .css extension)
-  _hljsTheme: 'default',
-
-  // Info pane
-  _infoPaneRatio:  0,     // last-known open height as fraction of right pane; 0 = default
 
   // Debounce handles
   _settingChangedTimer: null,
@@ -90,6 +42,9 @@ export const State = {
   // Set to true by worker-loader.js after the first trace is loaded.
   // Controls whether the menubar render indicator is shown.
   _traceLoaded: false,
+
+  // from the trace headers
+  _isMpi: false,
 };
 
 // ── Edge-grouping bookkeeping ─────────────────────────────────────────────────

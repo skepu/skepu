@@ -42,6 +42,7 @@ import { showTooltip, hideTooltip, positionTooltip, nodeTooltipText, edgeTooltip
 import { highlightSelection, bindHover } from './graph_interaction.js';
 import { basePattern } from './TraceDataProvider.js';
 import { badgeNodesToShow } from './badges.js';
+import { toSettings } from './settings_model.js';
 import { showContextMenu, hideContextMenu } from './context_menu.js';
 import { definitionPlace } from './badges.js';
 import { LAYOUT_NODE_SEP, LAYOUT_RANK_SEP } from './layout_options.js';
@@ -52,31 +53,6 @@ import { startLayout } from './layout.js';
 const LAYOUT_FIT_PAD     = 30;
 const HIGHLIGHT_LIGHT    = '#0055cc';
 const HIGHLIGHT_DARK     = '#e8720c';
-
-const DEFAULT_SETTINGS = {
-  'container-updates':       false,
-  'container-allocations':   false,
-  'container-deallocations': false,
-  'container-snapshots':     true,
-  'container-transfers':     false,
-  'kernel-compiles':         false,
-  'communications':          true,
-  'element-accesses':        false,
-  'anti-deps':               false,
-  'virtual-alias-edges':     false,
-  'edge-labels':             false,
-  'node-labels':             true,
-  'show_regions':            false,
-  'collapse_iteration':      false,
-  'fusion_analysis':         false,
-  'graph-mode':      'dependence-dag',
-  'node-color-call': 'duration-total',
-  'node-size-call':  'fixed',
-  'direction':       'vertical',
-  'edge-width':      'fixed',
-  'edge-opacity':    'fixed',
-  'aggregate_by':    'name',
-};
 
 // ── GraphView class ───────────────────────────────────────────────────────────
 
@@ -113,7 +89,7 @@ export class GraphView {
     // Settings: always start from defaults so callers that pass a partial object
     // (or {}) still get all keys.  graph.js overwrites this with State.settings
     // after construction to establish the shared reference.
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, options.settings || {});
+    this.settings = toSettings(options.settings);
 
     // Appearance.
     this._darkMode = (options.darkMode !== undefined)
@@ -298,10 +274,19 @@ export class GraphView {
     animateFit(this._cy, items, ZOOM_FIT_PAD);
   }
 
+  /** The first opaque background up the tree, so a saved image has the theme's. */
+  _backgroundColor() {
+    for (var el = this._cyEl; el && el.nodeType === 1; el = el.parentElement) {
+      var c = getComputedStyle(el).backgroundColor;
+      if (c && c !== 'transparent' && !/^rgba\(.*,\s*0\)$/.test(c)) return c;
+    }
+    return 'white';
+  }
+
   /** Download the current graph as a high-resolution PNG. */
   exportImage(filename) {
     if (!this._cy) return;
-    var png64 = this._cy.png({ scale: 4, bg: 'white' });
+    var png64 = this._cy.png({ scale: 4, bg: this._backgroundColor() });
     var a = document.createElement('a');
     a.href     = png64;
     a.download = filename || 'graph.png';
@@ -319,13 +304,13 @@ export class GraphView {
     var mySeq = this._renderSeq;
     this._showOverlay();
     this._cy.resize();
-    var dag_direction = this.settings['direction'] === 'vertical' ? 'TB' : 'LR';
+    var dag_direction = this.settings.get('direction') === 'vertical' ? 'TB' : 'LR';
     var daglayout = {
       directed: true, name: 'dagre',
       nodeSep: LAYOUT_NODE_SEP, rankSep: LAYOUT_RANK_SEP,
       rankDir: dag_direction, nodeDimensionsIncludeLabels: true,
       ranker: 'longest-path', acyclicer: 'greedy', elkOptions: {},
-      algorithm: (this.settings['graph-mode'] == 'dependence-dag') ? 'layered' : 'mrtree',
+      algorithm: (this.settings.get('graph-mode') == 'dependence-dag') ? 'layered' : 'mrtree',
     };
     this._startLayoutWorker(mySeq, daglayout, function(positions) {
       if (!self._cy) return;
@@ -495,7 +480,7 @@ export class GraphView {
   _startCytoscapeRender(rawData, nodes, edges, minmax, mySeq) {
     var self = this;
 
-    var dag_direction = this.settings['direction'] === 'vertical' ? 'TB' : 'LR';
+    var dag_direction = this.settings.get('direction') === 'vertical' ? 'TB' : 'LR';
     var daglayout = {
       directed: true, name: 'dagre',
       nodeSep: LAYOUT_NODE_SEP, rankSep: LAYOUT_RANK_SEP,
@@ -503,7 +488,7 @@ export class GraphView {
       nodeDimensionsIncludeLabels: true,
       ranker: 'longest-path', acyclicer: 'greedy',
       elkOptions: {},
-      algorithm: (this.settings['graph-mode'] == 'dependence-dag') ? 'layered' : 'mrtree',
+      algorithm: (this.settings.get('graph-mode') == 'dependence-dag') ? 'layered' : 'mrtree',
     };
 
     var renderStart = Date.now();
@@ -517,7 +502,7 @@ export class GraphView {
       renderingMs:   null,
       timelineNodes: rawData.timeline_nodes || [],
       graphNodes:    nodes,
-      badgeNodes:    badgeNodesToShow(rawData.badge_nodes || nodes, !!this.settings['show_regions']),
+      badgeNodes:    badgeNodesToShow(rawData.badge_nodes || nodes, this.settings.get('show_regions')),
       lastMinmax:    minmax,
     };
 
@@ -544,7 +529,7 @@ export class GraphView {
 
       // Mark region nodes as phantoms when region display is off — they stay
       // in the graph for ELK's hierarchical layout but are invisible.
-      if (!self.settings['show_regions']) {
+      if (!self.settings.get('show_regions')) {
         self._cy.nodes('[type="region"]').addClass('layout-phantom');
       }
 

@@ -102,8 +102,13 @@ export function roomAround(cy) {
   return Math.min(cy.width(), cy.height()) / ZOOM_NODE_DIVISOR;
 }
 
-/** Pans and zooms the graph smoothly so that `eles` fill the view with `padding` around them. */
+/**
+ /**
+  * Pans and zooms smoothly so that `eles` fill the view with `padding`. A new request replaces one under way and continues from the current view
+  * (Cytoscape would queue it, stacking requests when stepping through a large graph).
+  */
 export function animateFit(cy, eles, padding) {
+  cy.stop(true);
   cy.animate({ fit: { eles: eles, padding: padding } }, { duration: ANIM_ZOOM_MS });
 }
 

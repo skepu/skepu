@@ -66,6 +66,8 @@
 
 'use strict';
 
+import { toSettings } from './settings_model.js';
+
 // ── Color spectrums ────────────────────────────────────────────────────────────
 // Canonical definition.  LegendView (LegendView.js) uses the provider's
 // spectrumColor / spectrumColorDark methods rather than importing these directly.
@@ -146,9 +148,6 @@ export function buildMinmax(nodes, edges) {
     _mm(minmax, 'dag-depth',     node.data.dag_depth);
     _mm(minmax, 'total-order',   node.data.total_order);
     _mm(minmax, 'iterations',    node.data.iteration_count || 1);
-    _mm(minmax, 'nesting-level', node.data.nesting_level   || 0);
-    _mm(minmax, 'fan-in',        node.data.fan_in          || 0);
-    _mm(minmax, 'fan-out',       node.data.fan_out         || 0);
     _mm(minmax, 'duration-cv',   node.data.duration_cv     || 0);
     if (node.data.imbalance != null) _mm(minmax, 'imbalance', node.data.imbalance);
     if (node.data.comm_bytes != null) _mm(minmax, 'comm-bytes', node.data.comm_bytes);
@@ -192,7 +191,7 @@ export class TraceDataProvider {
     // Optional — required only when InfoView (or another node-detail consumer) is used.
     this._fetchNodeData = options.fetchNodeData || null;
     // Shared reference — both provider and views read the same dict.
-    this.settings = options.settings || {};
+    this.settings = toSettings(options.settings);
 
     // Colour spectrum.
     this._colorSpectrum = options.colorSpectrum || 'default';
@@ -304,23 +303,25 @@ export class TraceDataProvider {
 
     var self = this;
     return this._fetchGraph({
-      mode:                    this.settings['graph-mode'],
-      container_allocations:   this.settings['container-allocations'],
-      container_deallocations: this.settings['container-deallocations'],
-      container_snapshots:     this.settings['container-snapshots'],
-      container_transfers:     this.settings['container-transfers'],
-      kernel_compiles:         this.settings['kernel-compiles'],
-      show_communications:     this.settings['communications'],
-      show_scalars:            this.settings['element-accesses'],
-      anti_deps:               this.settings['anti-deps'],
-      data_as_edges:           !this.settings['container-updates'],
+      mode:                    this.settings.get('graph-mode'),
+      container_allocations:   this.settings.get('container-allocations'),
+      container_deallocations: this.settings.get('container-deallocations'),
+      container_snapshots:     this.settings.get('container-snapshots'),
+      container_transfers:     this.settings.get('container-transfers'),
+      kernel_compiles:         this.settings.get('kernel-compiles'),
+      show_communications:     this.settings.get('communications'),
+      show_scalars:            this.settings.get('element-accesses'),
+      anti_deps:               this.settings.get('anti-deps'),
+      data_as_edges:           this.settings.get('data_as_edges'),
       show_regions:            true,
-      expand_all_regions:      !this.settings['show_regions'],
+      expand_all_regions:      this.settings.get('expand_all_regions'),
       first_load:              this._firstLoad,
-      collapse_iteration:      this.settings['collapse_iteration'],
-      aggregate_by:            this.settings['aggregate_by'],
-      fusion_analysis:         this.settings['fusion_analysis'],
-      show_virtual_alias:      this.settings['virtual-alias-edges'],
+      collapse_iteration:      this.settings.get('collapse_iteration'),
+      aggregate_by:            this.settings.get('aggregate_by'),
+      fusion_analysis:         this.settings.get('fusion_analysis'),
+      fusion_ignore_regions:   this.settings.get('fusion-ignore-regions'),
+      fusion_ignore_snapshots: this.settings.get('fusion-ignore-snapshots'),
+      show_virtual_alias:      this.settings.get('virtual-alias-edges'),
       expanded_regions:        expandedPids.join(','),
       collapsed_fusions:       collapsedFusions.join(','),
     }, this._fetchAbort.signal)
@@ -457,7 +458,7 @@ export class TraceDataProvider {
   //   normFromData  — extracts the value from a plain node-data object
   //   normFromEle   — extracts the value from a Cytoscape element via ele.data()
   //
-  // All three read this.settings[settingsKey] to determine which property to use.
+  // All three read this.settings.get(settingsKey) to determine which property to use.
   // An optional minmax override is accepted; falls back to this.lastMinmax.
 
   /**
@@ -486,16 +487,13 @@ export class TraceDataProvider {
    * @returns {number}
    */
   normFromData(key, d, minmax) {
-    var mode = this.settings[key];
+    var mode = this.settings.get(key);
     if (mode === 'fixed') return NORM_FIXED;
     var value;
     if      (mode === 'duration-total')      value = d.duration || 0;
     else if (mode === 'dag-depth')           value = d.dag_depth || 0;
     else if (mode === 'total-order')         value = d.total_order || 0;
     else if (mode === 'iterations')          value = d.iteration_count || 1;
-    else if (mode === 'nesting-level')       value = d.nesting_level || 0;
-    else if (mode === 'fan-in')              value = d.fan_in  || 0;
-    else if (mode === 'fan-out')             value = d.fan_out || 0;
     else if (mode === 'duration-cv')         value = d.duration_cv || 0;
     else if (mode === 'imbalance')           value = d.imbalance;      // null for a call that is not of an MPI program: the default colour
     else if (mode === 'comm-bytes')          value = d.comm_bytes;
@@ -520,16 +518,13 @@ export class TraceDataProvider {
    * @returns {number}
    */
   normFromEle(key, ele, minmax) {
-    var mode = this.settings[key];
+    var mode = this.settings.get(key);
     if (mode === 'fixed') return NORM_FIXED;
     var value;
     if      (mode === 'duration-total')      value = ele.data('duration');
     else if (mode === 'dag-depth')           value = ele.data('dag_depth');
     else if (mode === 'total-order')         value = ele.data('total_order');
     else if (mode === 'iterations')          value = ele.data('iteration_count') || 1;
-    else if (mode === 'nesting-level')       value = ele.data('nesting_level')   || 0;
-    else if (mode === 'fan-in')              value = ele.data('fan_in')          || 0;
-    else if (mode === 'fan-out')             value = ele.data('fan_out')         || 0;
     else if (mode === 'duration-cv')         value = ele.data('duration_cv')     || 0;
     else if (mode === 'imbalance')           value = ele.data('imbalance');
     else if (mode === 'comm-bytes')          value = ele.data('comm_bytes');

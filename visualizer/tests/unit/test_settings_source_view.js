@@ -25,45 +25,45 @@ beforeEach(() => {
     for (const k of Object.keys(store)) delete store[k];
     view = { codePaths: true, pin: false, setCodePaths(v) { this.codePaths = !!v; }, setPinDefinitions(v) { this.pin = !!v; } };
     State.sourceView = view;
-    State._codePaths = true;
-    State._pinDefinitions = false;
+    State.settings.set('code-paths', true);
+    State.settings.set('pin-definitions', false);
 });
 
 describe('Code Paths and Definitions after the page is loaded', () => {
     it('are given to the source view when they are read from the stored settings', () => {
         store[KEY] = JSON.stringify({ layout: { 'code-paths': false, 'pin-definitions': true } });
         loadSettings();
-        expect(State._codePaths).toBe(false);
-        expect(State._pinDefinitions).toBe(true);
+        expect(State.settings.get('code-paths')).toBe(false);
+        expect(State.settings.get('pin-definitions')).toBe(true);
         expect(view.codePaths).toBe(false);   // it was left at true: the arrows were drawn while the menu said no
         expect(view.pin).toBe(true);
     });
 
     it('keep what was saved: save, load again, the same', () => {
-        State._codePaths = false;
-        State._pinDefinitions = true;
+        State.settings.set('code-paths', false);
+        State.settings.set('pin-definitions', true);
         saveSettings();
-        State._codePaths = true;
-        State._pinDefinitions = false;
+        State.settings.set('code-paths', true);
+        State.settings.set('pin-definitions', false);
         loadSettings();
-        expect([State._codePaths, State._pinDefinitions, view.codePaths, view.pin]).toEqual([false, true, false, true]);
+        expect([State.settings.get('code-paths'), State.settings.get('pin-definitions'), view.codePaths, view.pin]).toEqual([false, true, false, true]);
         expect(JSON.parse(store[KEY]).layout['code-paths']).toBe(false);
     });
 
     it('stay as they are (the defaults) without stored settings', () => {
         loadSettings();
-        expect([State._codePaths, view.codePaths, State._pinDefinitions, view.pin]).toEqual([true, true, false, false]);
+        expect([State.settings.get('code-paths'), view.codePaths, State.settings.get('pin-definitions'), view.pin]).toEqual([true, true, false, false]);
     });
 });
 
 describe('Restore Defaults', () => {
     it('also restores Code Paths and Definitions, in State, in the view and in what is stored', () => {
-        State._codePaths = false;
-        State._pinDefinitions = true;
+        State.settings.set('code-paths', false);
+        State.settings.set('pin-definitions', true);
         view.codePaths = false;
         view.pin = true;
         menuRestoreDefaults();
-        expect([State._codePaths, State._pinDefinitions]).toEqual([true, false]);
+        expect([State.settings.get('code-paths'), State.settings.get('pin-definitions')]).toEqual([true, false]);
         expect([view.codePaths, view.pin]).toEqual([true, false]);
         const layout = JSON.parse(store[KEY]).layout;
         expect([layout['code-paths'], layout['pin-definitions']]).toEqual([true, false]);
@@ -76,7 +76,7 @@ describe('the width of the source pane that is stored', () => {
         right.offsetWidth = 0;                       // a pane that has just begun to slide open
         right.style.flex = '0 0 420px';
         elements.right_pane = right;
-        State._sourcePaneOpen = true;
+        State.settings.set('source-open', true);
         State._traceLoaded = true;
         saveSettings();
         expect(JSON.parse(store[KEY]).layout['right-pane-width']).toBe(420);
@@ -87,7 +87,7 @@ describe('the width of the source pane that is stored', () => {
         const right = element();
         right.offsetWidth = 377;
         elements.right_pane = right;
-        State._sourcePaneOpen = true;
+        State.settings.set('source-open', true);
         State._traceLoaded = true;
         saveSettings();
         expect(JSON.parse(store[KEY]).layout['right-pane-width']).toBe(377);

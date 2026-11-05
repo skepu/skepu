@@ -97,18 +97,17 @@
           <div class="menu">
             <button class="menu-title">View</button>
             <div class="dropdown">
-                <div class="submenu">
-                    <div class="submenu-title">Graph Mode<span class="menu-arrow">▸</span></div>
-                    <div class="dropdown">
-                        <button class="menu-radio" data-ctrl="graph-mode" data-value="dependence-dag"        data-click="menuSelectRadio"><span class="menu-icon">✓</span>Dependence DAG</button>
-                        <button class="menu-radio" data-ctrl="graph-mode" data-value="program-tree"        data-click="menuSelectRadio"><span class="menu-icon"></span>Program Tree</button>
-                    </div>
-                </div>
+              <button class="menu-radio" data-ctrl="graph-mode" data-value="dependence-dag" data-click="menuSelectRadio"><span class="menu-icon">✓</span>Dependence DAG</button>
+              <button class="menu-radio" data-ctrl="graph-mode" data-value="program-tree"   data-click="menuSelectRadio"><span class="menu-icon"></span>Program Tree</button>
               <div class="menu-sep"></div>
-              <button class="menu-action" data-click="fetchViewDataAndRender menuClose">Apply Settings<span class="menu-key">Space</span></button>
-              <button class="menu-action" data-click="menuRestoreDefaults fetchViewDataAndRender">Restore Defaults</button>
               <button class="menu-action" data-click="recenterGraph menuClose">Reset View</button>
-              <button class="menu-action" data-click="renderImage menuClose">Save Image</button>
+              <div class="submenu">
+                <div class="submenu-title">Scroll Behaviour<span class="menu-arrow">▸</span></div>
+                <div class="dropdown">
+                  <button id="menu-radio-scroll-pan"  class="menu-radio" data-click="setScrollPan menuClose"  title="The wheel and a two-finger swipe pan the graph; Shift+wheel pans sideways; Ctrl or ⌘+wheel and pinch zoom"><span class="menu-icon"></span>Pan (best for trackpads)</button>
+                  <button id="menu-radio-scroll-zoom" class="menu-radio" data-click="setScrollZoom menuClose" title="The wheel and a two-finger swipe zoom the graph; Shift+wheel pans sideways; pinch zooms"><span class="menu-icon"></span>Zoom (best for mice)</button>
+                </div>
+              </div>
               <div class="menu-sep"></div>
               <button id="menu-check-legend"   class="menu-check" data-click="toggleLegend menuClose"><span class="menu-icon"></span>Legend</button>
               <button id="menu-check-timeline" class="menu-check" data-click="toggleGanttPane menuClose"><span class="menu-icon"></span>Timeline<span class="menu-key">G</span></button>
@@ -116,31 +115,34 @@
               <button id="menu-check-info"     class="menu-check" data-only="editor" data-click="toggleInfoPanel menuClose" title="Whether the info panel opens when a node is selected"><span class="menu-icon"></span>Info Panel<span class="menu-key">O</span></button>
               <button id="menu-check-info-web" class="menu-check" data-only="web" data-click="toggleInfoPanel menuClose" title="Whether the info panel opens when a node is selected"><span class="menu-icon"></span>Info Panel<span class="menu-key">O</span></button>
               <button id="menu-check-progress" class="menu-check" data-click="toggleProgressBar menuClose" title="Where the selected node, or the simulation, is in the run"><span class="menu-icon"></span>Progress Bar</button>
-              <button id="menu-check-code-paths" class="menu-check" data-only="web" data-click="toggleCodePaths menuClose"><span class="menu-icon"></span>Code Paths</button>
-              <button id="menu-check-definitions" class="menu-check" data-only="web" data-click="toggleDefinitions menuClose" title="Mark where all the skeleton instances and user functions are defined"><span class="menu-icon"></span>Definitions</button>
-              <div class="menu-sep"></div>
-              <div class="menu-form-row" data-click="stop" style="padding:0.35em 0.75em">
-                <label style="font-size:0.85em;color:#666">Timeline Scale: <span id="gantt-scale-label">1×</span></label>
-                <input type="range" id="gantt-scale" min="1" max="20" step="1" value="1"
-                  data-input="ganttScaleChanged" style="width:100%">
-              </div>
               <div class="menu-sep"></div>
               <div class="submenu" data-only="web">
-                <button class="submenu-title menu-action">Source Code Theme<span class="menu-arrow">▶</span></button>
-                <div class="dropdown" id="hljs-theme-menu"></div>
-              </div>
-              <div class="submenu">
-                <button class="submenu-title menu-action">Color Spectrum<span class="menu-arrow">▶</span></button>
-                <div class="dropdown dropdown-spectrum" id="spectrum-menu"></div>
-              </div>
-              <button id="menu-check-dark" class="menu-check" data-only="web" data-click="toggleDarkMode menuClose"><span class="menu-icon"></span>Dark mode<span class="menu-key">M</span></button>
-              <div class="submenu">
-                <button class="submenu-title menu-action">Scroll Behaviour<span class="menu-arrow">▶</span></button>
+                <div class="submenu-title">Source Code<span class="menu-arrow">▸</span></div>
                 <div class="dropdown">
-                  <button id="menu-radio-scroll-pan"  class="menu-radio" data-click="setScrollPan menuClose"  title="The wheel and a two-finger swipe pan the graph; Shift+wheel pans sideways; Ctrl or ⌘+wheel and pinch zoom"><span class="menu-icon"></span>Pan (best for trackpads)</button>
-                  <button id="menu-radio-scroll-zoom" class="menu-radio" data-click="setScrollZoom menuClose" title="The wheel and a two-finger swipe zoom the graph; Shift+wheel pans sideways; pinch zooms"><span class="menu-icon"></span>Zoom (best for mice)</button>
+                  <button id="menu-check-code-paths" class="menu-check" data-only="web" data-click="toggleCodePaths menuClose"><span class="menu-icon"></span>Code Paths</button>
+                  <button id="menu-check-definitions" class="menu-check" data-only="web" data-click="toggleDefinitions menuClose" title="Mark where all the skeleton instances and user functions are defined"><span class="menu-icon"></span>Definitions</button>
+                  <div class="menu-sep"></div>
+                  <div class="submenu">
+                    <div class="submenu-title">Theme<span class="menu-arrow">▸</span></div>
+                    <div class="dropdown" id="hljs-theme-menu"></div>
+                  </div>
                 </div>
               </div>
+              <div class="submenu">
+                <div class="submenu-title">Timeline Scale<span class="menu-arrow">▸</span></div>
+                <div class="dropdown">
+                  <div class="menu-form-row" data-click="stop" style="padding:0.35em 0.75em">
+                    <label style="font-size:0.85em;color:#666">Scale: <span id="gantt-scale-label">1×</span></label>
+                    <input type="range" id="gantt-scale" min="1" max="20" step="1" value="1"
+                      data-input="ganttScaleChanged" style="width:100%">
+                  </div>
+                </div>
+              </div>
+              <div class="menu-sep"></div>
+              <button id="menu-check-dark" class="menu-check" data-only="web" data-click="toggleDarkMode menuClose"><span class="menu-icon"></span>Dark mode<span class="menu-key">M</span></button>
+              <div class="menu-sep"></div>
+              <button class="menu-action" data-click="fetchViewDataAndRender menuClose">Apply Settings<span class="menu-key">Space</span></button>
+              <button class="menu-action" data-click="menuRestoreDefaults fetchViewDataAndRender">Restore Defaults</button>
             </div>
           </div>
 
@@ -148,16 +150,33 @@
           <div class="menu">
             <button class="menu-title">Nodes</button>
             <div class="dropdown">
+              <div class="submenu">
+                <div class="submenu-title">Aggregate<span class="menu-key">I</span><span class="menu-arrow">▸</span></div>
+                <div class="dropdown">
+                  <button class="menu-radio" data-ctrl="aggregate" data-value="none"          title="Every call and every iteration of a loop is a node of its own" data-click="menuSelectRadio"><span class="menu-icon">✓</span>Off</button>
+                  <button class="menu-radio" data-ctrl="aggregate" data-value="name"          title="Operations of one region with the same name are one, wherever in the source they are called" data-click="menuSelectRadio"><span class="menu-icon"></span>By Name</button>
+                  <button class="menu-radio" data-ctrl="aggregate" data-value="name-location" title="Operations with the same name are one only if they are called from the same line" data-click="menuSelectRadio"><span class="menu-icon"></span>By Name and Location</button>
+                </div>
+              </div>
+              <div class="menu-sep"></div>
               <button class="menu-check" data-ctrl="container-updates"      data-click="menuToggleCheck"><span class="menu-icon"></span>Updates<span class="menu-key">U</span></button>
               <button class="menu-check" data-ctrl="container-allocations"  data-click="menuToggleCheck"><span class="menu-icon"></span>Allocations<span class="menu-key">A</span></button>
               <button class="menu-check" data-ctrl="container-deallocations" data-click="menuToggleCheck"><span class="menu-icon"></span>Deallocations<span class="menu-key">D</span></button>
               <button class="menu-check" data-ctrl="container-snapshots"    data-click="menuToggleCheck"><span class="menu-icon"></span>Snapshots<span class="menu-key">K</span></button>
               <button class="menu-check" data-ctrl="container-transfers"    data-click="menuToggleCheck"><span class="menu-icon"></span>Transfers<span class="menu-key">T</span></button>
               <button class="menu-check" data-ctrl="kernel-compiles"        data-click="menuToggleCheck"><span class="menu-icon"></span>Kernel Builds</button>
-              <button class="menu-check" data-ctrl="communications"         data-click="menuToggleCheck"><span class="menu-icon"></span>Communications</button>
+              <button data-mpi class="menu-check" data-ctrl="communications"         data-click="menuToggleCheck"><span class="menu-icon"></span>Communications</button>
               <button class="menu-check" data-ctrl="element-accesses"       data-click="menuToggleCheck"><span class="menu-icon"></span>Element Accesses</button>
               <div class="menu-sep"></div>
               <button class="menu-check" data-ctrl="show_regions"           data-click="menuToggleCheck"><span class="menu-icon"></span>Regions<span class="menu-key">R</span></button>
+              <button class="menu-check" data-ctrl="fusion_analysis"        title="Mark the chains of calls that could be fused into one" data-click="menuToggleCheck"><span class="menu-icon"></span>Fusion Candidates<span class="menu-key">F</span></button>
+              <div class="submenu">
+                <div class="submenu-title">Fusion Options<span class="menu-arrow">▸</span></div>
+                <div class="dropdown">
+                  <button class="menu-check" data-ctrl="fusion-ignore-regions"   title="Fuse calls across the regions of the program: regions are tracing, which a production run does not have" data-click="menuToggleCheck"><span class="menu-icon"></span>Ignore Regions</button>
+                  <button class="menu-check" data-ctrl="fusion-ignore-snapshots" title="A snapshot of a container does not stop its fusion: snapshots are tracing, which a production run does not have" data-click="menuToggleCheck"><span class="menu-icon"></span>Ignore Snapshots</button>
+                </div>
+              </div>
               <div class="menu-sep"></div>
               <div class="submenu">
                 <div class="submenu-title">Color<span class="menu-arrow">▸</span></div>
@@ -167,12 +186,9 @@
                   <button class="menu-radio" data-ctrl="node-color-call" data-value="duration-per-element"  data-click="menuSelectRadio"><span class="menu-icon"></span>Time/element</button>
                   <button class="menu-radio" data-ctrl="node-color-call" data-value="iterations"            data-click="menuSelectRadio"><span class="menu-icon"></span>Iterations</button>
                   <button class="menu-radio" data-ctrl="node-color-call" data-value="duration-cv"           data-click="menuSelectRadio"><span class="menu-icon"></span>Duration Variance</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="imbalance"             data-click="menuSelectRadio"><span class="menu-icon"></span>Rank Imbalance (MPI)</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="comm-bytes"            data-click="menuSelectRadio"><span class="menu-icon"></span>Communication Bytes (MPI)</button>
+                  <button data-mpi class="menu-radio" data-ctrl="node-color-call" data-value="imbalance"             data-click="menuSelectRadio"><span class="menu-icon"></span>Rank Imbalance (MPI)</button>
+                  <button data-mpi class="menu-radio" data-ctrl="node-color-call" data-value="comm-bytes"            title="Bytes sent plus received by the rank that moves the most, mean over the iterations of a call; only calls of an MPI program have a value" data-click="menuSelectRadio"><span class="menu-icon"></span>Busiest Rank's Bytes (MPI)</button>
                   <button class="menu-radio" data-ctrl="node-color-call" data-value="dag-depth"             data-click="menuSelectRadio"><span class="menu-icon"></span>DAG Depth</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="nesting-level"         data-click="menuSelectRadio"><span class="menu-icon"></span>Nesting Level</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="fan-in"                data-click="menuSelectRadio"><span class="menu-icon"></span>Fan-In</button>
-                  <button class="menu-radio" data-ctrl="node-color-call" data-value="fan-out"               data-click="menuSelectRadio"><span class="menu-icon"></span>Fan-Out</button>
                   <button class="menu-radio" data-ctrl="node-color-call" data-value="total-order"           data-click="menuSelectRadio"><span class="menu-icon"></span>Program Sequence</button>
                   <button class="menu-radio" data-ctrl="node-color-call" data-value="pattern"               data-click="menuSelectRadio"><span class="menu-icon"></span>Pattern</button>
                   <button class="menu-radio" data-ctrl="node-color-call" data-value="backend"               data-click="menuSelectRadio"><span class="menu-icon"></span>Backend</button>
@@ -187,10 +203,11 @@
                   <button class="menu-radio" data-ctrl="node-size-call" data-value="duration-per-element" data-click="menuSelectRadio"><span class="menu-icon"></span>Time/element</button>
                   <button class="menu-radio" data-ctrl="node-size-call" data-value="iterations"          data-click="menuSelectRadio"><span class="menu-icon"></span>Iterations</button>
                   <button class="menu-radio" data-ctrl="node-size-call" data-value="duration-cv"         data-click="menuSelectRadio"><span class="menu-icon"></span>Duration Variance</button>
-                  <button class="menu-radio" data-ctrl="node-size-call" data-value="nesting-level"       data-click="menuSelectRadio"><span class="menu-icon"></span>Nesting Level</button>
-                  <button class="menu-radio" data-ctrl="node-size-call" data-value="fan-in"              data-click="menuSelectRadio"><span class="menu-icon"></span>Fan-In</button>
-                  <button class="menu-radio" data-ctrl="node-size-call" data-value="fan-out"             data-click="menuSelectRadio"><span class="menu-icon"></span>Fan-Out</button>
                 </div>
+              </div>
+              <div class="submenu">
+                <div class="submenu-title">Color Spectrum<span class="menu-arrow">▸</span></div>
+                <div class="dropdown dropdown-spectrum" id="spectrum-menu"></div>
               </div>
             </div>
           </div>
@@ -242,6 +259,7 @@
               <button id="sim-btn-playpause" class="menu-action" data-needs="trace" data-click="simToggle menuClose" title="Play the run as an animation, node by node (the arrow keys step)">Simulate<span class="menu-key">P</span></button>
               <div class="menu-sep"></div>
               <button class="menu-action" data-needs="trace" data-click="zoomGanttToMeasuredInterval menuClose">Zoom to Measured Interval<span class="menu-key">Z</span></button>
+              <button class="menu-action" data-needs="trace" data-click="renderImage menuClose">Save Graph as Image</button>
               <button class="menu-action" data-only="web" data-needs="tabs" data-click="nextSourceFile menuClose">Next Source Tab<span class="menu-key">Tab</span></button>
               <div class="menu-sep"></div>
               <div class="submenu">
@@ -268,22 +286,6 @@
                   <button class="menu-action" data-needs="fusions" data-click="expandAllFusions menuClose">Expand</button>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <!-- Advanced menu -->
-          <div class="menu">
-            <button class="menu-title">Advanced</button>
-            <div class="dropdown">
-              <button class="menu-check" data-ctrl="collapse_iteration" data-click="menuToggleCheck"><span class="menu-icon"></span>Aggregate iteration<span class="menu-key">I</span></button>
-              <div class="submenu">
-                <div class="submenu-title">Aggregate by<span class="menu-arrow">▸</span></div>
-                <div class="dropdown">
-                  <button class="menu-radio" data-ctrl="aggregate_by" data-value="name"          title="Operations of one region with the same name are one, wherever in the source they are called" data-click="menuSelectRadio"><span class="menu-icon">✓</span>Name</button>
-                  <button class="menu-radio" data-ctrl="aggregate_by" data-value="name-location" title="Operations with the same name are one only if they are called from the same line" data-click="menuSelectRadio"><span class="menu-icon"></span>Name and Location</button>
-                </div>
-              </div>
-              <button class="menu-check" data-ctrl="fusion_analysis"    data-click="menuToggleCheck"><span class="menu-icon"></span>Fusion analysis<span class="menu-key">F</span></button>
             </div>
           </div>
 
@@ -340,8 +342,11 @@
                Hidden by worker-loader.js after a successful load. -->
           <div id="welcome-panel">
             <div class="welcome-card">
-              <img src="./SkeVU logo.svg" alt="SkePU logo" class="logo welcome-logo">
-              <img src="./SkeVU logo-white.svg" alt="SkePU logo" class="logo welcome-logo logo-dark">
+              <div class="welcome-brand">
+                <img src="./SkeVU logo.png" alt="SkePU logo" class="logo welcome-logo">
+                <img src="./SkeVU logo-white.png" alt="SkePU logo" class="logo welcome-logo logo-dark">
+                <div class="welcome-brand-name"><span>Algorithmic Skeleton Visualization Unit</span></div>
+              </div>
               <h1>SkeVU — SkePU Visualizer</h1>
               <p class="welcome-subtitle">Performance visualizer for <a href="https://skepu.github.io" target="_blank">SkePU</a> programs</p>
 

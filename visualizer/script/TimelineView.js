@@ -417,7 +417,7 @@ export class TimelineView {
     var provider  = this._provider;
 
     // The regions are in the data always (see timelineNodesToShow): the chart has a row for them only if they are shown.
-    cyNodes = timelineNodesToShow(cyNodes, !!(provider && provider.settings['show_regions']));
+    cyNodes = timelineNodesToShow(cyNodes, !!provider && provider.settings.get('show_regions'));
 
     // ── Categorise nodes ──────────────────────────────────────────────────────
     var timedBars = cyNodes.filter(function(n) {
@@ -551,7 +551,7 @@ export class TimelineView {
     // Resolve bar colour from provider (spectrum / backend / pattern modes).
     function _callColor(d) {
       if (!provider) return '#778';
-      var mode = provider.settings['node-color-call'];
+      var mode = provider.settings.get('node-color-call');
       if (d.type === 'skeleton_call') {
         if (mode === 'backend') {
           return provider.backendColor(d.backend) || '#778';

@@ -61,9 +61,9 @@ function hasSelection() { return !!(State.graphView && State.graphView._cy && St
 
 /** The panes as the tour found them (to put them back). */
 let _found = null;
-function ensureSource() { if (!State._sourcePaneOpen) openSourcePane(false); }
-function ensureTimeline() { if (!State._ganttPaneOpen) openGanttPane(); }
-function ensureLegend() { if (!State._legendOpen) toggleLegend(); }
+function ensureSource() { if (!State.settings.get('source-open')) openSourcePane(false); }
+function ensureTimeline() { if (!State.settings.get('gantt-open')) openGanttPane(); }
+function ensureLegend() { if (!State.settings.get('legend-open')) toggleLegend(); }
 
 // ── The steps ─────────────────────────────────────────────────────────────────
 // target: a selector or a function that gives the element (no target: the text is in the middle); prepare: puts the viewer in the state of the
@@ -274,10 +274,10 @@ function build() {
 /** The panes and the saved settings as they were, put back (the tour makes no lasting change). */
 function restore(found) {
   closeMenus();
-  if (!found.source && State._sourcePaneOpen) closeSourcePane(false);
-  if (found.source && !State._sourcePaneOpen) openSourcePane(false);
-  if (!found.timeline && State._ganttPaneOpen) closeGanttPane();
-  if (!found.legend && State._legendOpen) toggleLegend();
+  if (!found.source && State.settings.get('source-open')) closeSourcePane(false);
+  if (found.source && !State.settings.get('source-open')) openSourcePane(false);
+  if (!found.timeline && State.settings.get('gantt-open')) closeGanttPane();
+  if (!found.legend && State.settings.get('legend-open')) toggleLegend();
   // those functions save the settings: what was saved before is written back last
   try {
     if (found.stored === null) localStorage.removeItem(SETTINGS_KEY); else localStorage.setItem(SETTINGS_KEY, found.stored);
@@ -306,7 +306,7 @@ export async function startTour() {
   }
   let stored = null;
   try { stored = localStorage.getItem(SETTINGS_KEY); } catch (e) { /* no storage */ }
-  _found = { source: !!State._sourcePaneOpen, timeline: !!State._ganttPaneOpen, legend: !!State._legendOpen, stored };
+  _found = { source: !!State.settings.get('source-open'), timeline: !!State.settings.get('gantt-open'), legend: !!State.settings.get('legend-open'), stored };
   const ctx = { vscode: !!(window.skevu && window.skevu.vscode) || typeof acquireVsCodeApi === 'function' };
   const steps = visibleSteps(STEPS, ctx);
   const ui = build();

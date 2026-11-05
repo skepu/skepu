@@ -150,9 +150,10 @@ describe('a highlight in another view moves the graph only if the node is not cl
     });
 
     function graphOf(b, viewSize = view) {
-        const calls = [];
+        const calls = [], stops = [];
         return {
-            calls, width: () => viewSize.width, height: () => viewSize.height,
+            calls, stops, width: () => viewSize.width, height: () => viewSize.height,
+            stop: (...args) => stops.push(args),
             animate: (...args) => calls.push(args),
             eles: { renderedBoundingBox: (opts) => { calls.push(['box', opts]); return b; } },
         };
@@ -172,6 +173,13 @@ describe('a highlight in another view moves the graph only if the node is not cl
             expect(animate).toHaveLength(1);
             expect(animate[0][0]).toEqual({ fit: { eles: cy.eles, padding: 100 } });
         }
+    });
+
+    it('replaces an animation that is under way instead of queueing behind it', () => {
+        const cy = graphOf(box(-200, 250, 80, 60));
+        animateFitUnlessInView(cy, cy.eles, 100);
+        animateFitUnlessInView(cy, cy.eles, 100);
+        expect(cy.stops).toEqual([[true], [true]]);   // the queue is cleared, the running one is not jumped to its end
     });
 
     it('looks at the node itself, not at its labels or the overlay of a hover', () => {

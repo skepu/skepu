@@ -26,7 +26,7 @@ document.addEventListener('click', () => {
 // The graph that the viewer has drawn is what the extension needs to put the badges at the lines of the sources (and of the trace).
 State.provider?.on('data', (rawData) => {
 	// the regions have badges only if they are shown, as in the viewer: badgeNodesToShow
-	vscode.postMessage({ type: 'build_documents', rawData, showRegions: !!State.settings['show_regions'] });
+	vscode.postMessage({ type: 'build_documents', rawData, showRegions: State.settings.get('show_regions') });
 });
 
 function updateContent(/** @type {string} */ text) {

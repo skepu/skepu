@@ -7,42 +7,6 @@ import { setWheelZooms } from './panzoom.js';
 
 var STORAGE_KEY = SETTINGS_KEY;
 
-var SETTING_CHECKBOXES = [
-  'container-updates', 'container-allocations', 'container-deallocations', 'container-snapshots',
-  'container-transfers', 'kernel-compiles', 'communications', 'element-accesses', 'anti-deps', 'virtual-alias-edges',
-  'edge-labels', 'node-labels', 'show_regions', 'collapse_iteration', 'fusion_analysis',
-];
-var SETTING_SELECTS = [
-  'graph-mode', 'node-color-call', 'node-size-call', 'direction', 'edge-width', 'edge-opacity',
-  'aggregate_by',
-];
-
-var DEFAULTS = {
-  checkboxes: {
-    'container-updates': false, 'container-allocations': false,
-    'container-deallocations': false, 'container-snapshots': true, 'container-transfers': false, 'kernel-compiles': false, 'communications': true,
-    'element-accesses': false, 'anti-deps': false, 'virtual-alias-edges': false,
-    'edge-labels': false, 'node-labels': true, 'show_regions': false,
-    'collapse_iteration': false, 'fusion_analysis': false,
-  },
-  selects: {
-    'graph-mode': 'dependence-dag', 'node-color-call': 'duration-total', 'node-size-call': 'fixed',
-    'direction': 'vertical', 'edge-width': 'fixed', 'edge-opacity': 'fixed', 'aggregate_by': 'name',
-  },
-  layout: {
-    'right-pane-width': 500, 'source-open': true, 'info-pane-ratio': 0,
-    'gantt-open': false, 'gantt-scale': 1, 'legend-open': false,
-    'color-spectrum': 'default', 'dark-mode': false, 'hljs-theme': 'default',
-    'code-paths': true, 'pin-definitions': false, 'progress-bar': false, 'wheel-zoom': false, 'info-enabled': true,
-  },
-};
-
-// In an editor (VS Code) the source is in the editor's own files: the right pane (the info pane) opens with a selection, and the timeline and
-// the legend start open. The dark mode is the editor's theme (theme_vscode.js).
-if (typeof document !== 'undefined' && document.documentElement.classList.contains('editor'))
-  Object.assign(DEFAULTS.layout, { 'source-open': false, 'gantt-open': true, 'legend-open': true });
-
-
 /**
  * The source pane's width, or the width it is sliding to: its inline flex-basis (a gutter drag, the stored width). offsetWidth is the width now, which
  * is wrong while the pane slides open (0 at the start).
@@ -50,206 +14,153 @@ if (typeof document !== 'undefined' && document.documentElement.classList.contai
 function paneWidth(el) {
   var m = /(\d+(?:\.\d+)?)px\s*$/.exec(el.style.flex || '');
   var w = m ? Math.round(+m[1]) : el.offsetWidth;
-  return w > 0 ? w : DEFAULTS.layout['right-pane-width'];   // a pane that is not shown has no width: that is not a width to keep
+  return w > 0 ? w : 0;
 }
 
-export function saveSettings(layoutOverrides) {
-  var s = { checkboxes: {}, selects: {}, layout: {} };
-  SETTING_CHECKBOXES.forEach(function(id) { s.checkboxes[id] = State.settings[id]; });
-  SETTING_SELECTS.forEach(function(id)    { s.selects[id]    = State.settings[id]; });
-  // Source pane width: preserve stored value when closed or in welcome mode
-  // (welcome mode hides #right_pane via CSS so offsetWidth would be 0).
-  if (State._sourcePaneOpen && State._traceLoaded) {
-    var rightEl = document.getElementById('right_pane');
-    if (rightEl) s.layout['right-pane-width'] = paneWidth(rightEl);
-  } else {
-    var prev = {};
-    try { prev = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) {}
-    s.layout['right-pane-width'] = (prev.layout && prev.layout['right-pane-width'] > 0)
-      ? prev.layout['right-pane-width'] : DEFAULTS.layout['right-pane-width'];
+/** Pane sizes are read from the page into the settings; a hidden pane has none and keeps the stored one. */
+function measurePanes() {
+  var rightEl = document.getElementById('right_pane');
+  var infoEl  = document.getElementById('info_window');
+  if (State.settings.get('source-open') && State._traceLoaded && rightEl) {
+    var w = paneWidth(rightEl);
+    if (w > 0) State.settings.set('right-pane-width', w);
   }
-  s.layout['source-open'] = State._sourcePaneOpen;
-  if (layoutOverrides && 'info-pane-ratio' in layoutOverrides) {
-    s.layout['info-pane-ratio'] = layoutOverrides['info-pane-ratio'];
-  } else {
-    var infoEl  = document.getElementById('info_window');
-    var rightEl = document.getElementById('right_pane');
-    if (infoEl && rightEl && infoEl.offsetHeight > 40 && State._traceLoaded) {
-      s.layout['info-pane-ratio'] = infoEl.offsetHeight / rightEl.offsetHeight;
-    } else {
-      var prev = {};
-      try { prev = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) {}
-      s.layout['info-pane-ratio'] = (prev.layout && prev.layout['info-pane-ratio'] != null)
-        ? prev.layout['info-pane-ratio'] : DEFAULTS.layout['info-pane-ratio'];
-    }
-  }
-  s.layout['gantt-open']     = State._ganttPaneOpen;
-  s.layout['gantt-scale']    = State._ganttScale;
-  s.layout['legend-open']    = State._legendOpen;
-  s.layout['color-spectrum'] = State._colorSpectrum;
-  s.layout['dark-mode']      = State._darkMode;
-  s.layout['hljs-theme']     = State._hljsTheme;
-  s.layout['code-paths']     = State._codePaths;
-  s.layout['pin-definitions'] = State._pinDefinitions;
-  s.layout['progress-bar']    = State._progressBar;
-  s.layout['wheel-zoom']      = State._wheelZoom;
-  s.layout['info-enabled']    = State._infoEnabled;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  if (infoEl && rightEl && infoEl.offsetHeight > 40 && State._traceLoaded)
+    State.settings.set('info-pane-ratio', infoEl.offsetHeight / rightEl.offsetHeight);
 }
 
-/**
- * The source view options kept in State. The view is created with defaults before settings load, so it is told the loaded values.
- */
+export function saveSettings() {
+  measurePanes();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(State.settings.persisted()));
+}
+
+/** The source view is created before the settings load, so it is told their values. */
 function applyToSourceView() {
   if (!State.sourceView) return;
-  State.sourceView.setCodePaths(State._codePaths);
-  State.sourceView.setPinDefinitions(State._pinDefinitions);
+  State.sourceView.setCodePaths(State.settings.get('code-paths'));
+  State.sourceView.setPinDefinitions(State.settings.get('pin-definitions'));
 }
 
 export function loadSettings() {
   var stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) {
-    if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
-    return;
-  }
   var s;
-  try { s = JSON.parse(stored); } catch(e) {
-    if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
-    return;
-  }
-  SETTING_CHECKBOXES.forEach(function(id) {
-    if (!s.checkboxes || !(id in s.checkboxes)) return;
-    State.settings[id] = s.checkboxes[id];
-    var btn = document.querySelector('.menu-check[data-ctrl="' + id + '"]');
-    if (btn) btn.querySelector('.menu-icon').textContent = State.settings[id] ? '✓' : '';
-  });
-  SETTING_SELECTS.forEach(function(id) {
-    if (!s.selects || !(id in s.selects)) return;
-    State.settings[id] = s.selects[id];
-    document.querySelectorAll('.menu-radio[data-ctrl="' + id + '"]').forEach(function(b) {
-      b.querySelector('.menu-icon').textContent = b.dataset.value === State.settings[id] ? '✓' : '';
+  try { s = stored && JSON.parse(stored); } catch(e) { s = null; }
+  if (s) {
+    var kept = {};
+    [['check', s.checkboxes], ['select', s.selects], ['layout', s.layout]].forEach(function(section) {
+      State.settings.keys(section[0]).forEach(function(id) {
+        if (section[1] && section[1][id] != null) kept[id] = section[1][id];
+      });
     });
-  });
-  if (s.layout) {
-    if (s.layout['info-pane-ratio'] != null) State._infoPaneRatio  = s.layout['info-pane-ratio'];
-    if (s.layout['source-open']     != null) State._sourcePaneOpen = s.layout['source-open'];
-    if (s.layout['gantt-open']      != null) State._ganttPaneOpen  = s.layout['gantt-open'];
-    if (s.layout['legend-open']     != null) State._legendOpen     = s.layout['legend-open'];
-    if (s.layout['color-spectrum']  != null) State._colorSpectrum  = s.layout['color-spectrum'];
-    if (s.layout['gantt-scale']     != null) {
-      State._ganttScale = s.layout['gantt-scale'];
-      var sl = document.getElementById('gantt-scale');
-      if (sl) sl.value = State._ganttScale;
-      var lb = document.getElementById('gantt-scale-label');
-      if (lb) lb.textContent = parseFloat(State._ganttScale).toFixed(0) + '×';
-    }
-    if (s.layout['dark-mode'] != null) {
-      State._darkMode = s.layout['dark-mode'];
-      document.documentElement.classList.toggle('dark-mode', State._darkMode);
-    }
-    if (s.layout['hljs-theme'] != null) {
-      State._hljsTheme = knownTheme(s.layout['hljs-theme']);
-      if (typeof _applyHljsTheme === 'function') _applyHljsTheme(State._hljsTheme);
-    }
-    if (s.layout['code-paths'] != null) {
-      State._codePaths = s.layout['code-paths'];
-    }
-    if (s.layout['progress-bar'] != null) State._progressBar = s.layout['progress-bar'];
-    if (s.layout['info-enabled'] != null) State._infoEnabled = s.layout['info-enabled'];
-    if (s.layout['wheel-zoom'] != null) { State._wheelZoom = s.layout['wheel-zoom']; setWheelZooms(State._wheelZoom); }
-    if (s.layout['pin-definitions'] != null) {
-      State._pinDefinitions = s.layout['pin-definitions'];
-    }
+    // predates the single Aggregate setting: an on/off check plus the key to aggregate by
+    if (s.checkboxes && 'collapse_iteration' in s.checkboxes && !(s.selects && 'aggregate' in s.selects))
+      kept.aggregate = s.checkboxes.collapse_iteration ? ((s.selects && s.selects.aggregate_by) || 'name') : 'none';
+    // a choice the menu no longer offers (a removed colour scheme) is dropped
+    State.settings.keys('select').forEach(function(id) {
+      var items = Array.from(document.querySelectorAll('.menu-radio[data-ctrl="' + id + '"]'));
+      if (id in kept && items.length && !items.some(function(b) { return b.dataset.value === kept[id]; })) delete kept[id];
+    });
+    if ('hljs-theme' in kept) kept['hljs-theme'] = knownTheme(kept['hljs-theme']);
+    State.settings.update(kept);
+    if (typeof _applyHljsTheme === 'function') _applyHljsTheme(State.settings.get('hljs-theme'));
   }
+  syncSettingsMenu();
   applyToSourceView();
   if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
   if (typeof syncSpectrumMenuIcons === 'function') syncSpectrumMenuIcons();
 }
 
-export function applyStoredLayout() {
-  var stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return;
-  var s;
-  try { s = JSON.parse(stored); } catch(e) { return; }
-  if (!s.layout) return;
-  if (s.layout['right-pane-width'] > 0) {
-    var rightEl = document.getElementById('right_pane');
-    if (rightEl) rightEl.style.flex = '0 0 ' + s.layout['right-pane-width'] + 'px';
+/** Applies a layout setting to the page, whoever changed it. */
+State.settings.onChange(function(keys) {
+  var get = function(key) { return State.settings.get(key); };
+  if (keys.includes('gantt-scale')) {
+    var sl = document.getElementById('gantt-scale');
+    if (sl) sl.value = get('gantt-scale');
+    var lb = document.getElementById('gantt-scale-label');
+    if (lb) lb.textContent = parseFloat(get('gantt-scale')).toFixed(0) + '×';
   }
+  if (keys.includes('wheel-zoom')) setWheelZooms(get('wheel-zoom'));
+  if (keys.includes('progress-bar') && State.simEngine) State.simEngine.setProgressBarEnabled(get('progress-bar'));
+  if (keys.includes('code-paths') || keys.includes('pin-definitions')) applyToSourceView();
+  if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
+});
+
+/** `data-mpi` items show for MPI traces; a choice already made stays shown. */
+function syncMpiItems() {
+  document.querySelectorAll('[data-mpi]').forEach(function(btn) {
+    var chosen = btn.classList.contains('menu-radio') && State.settings.get(btn.dataset.ctrl) === btn.dataset.value;
+    btn.hidden = !State._isMpi && !chosen;
+  });
+}
+
+/**
+ /** Menu state from the settings: effective values of checks and radios; an overridden setting is disabled with the reason as tooltip. Runs on every effective change. */
+export function syncSettingsMenu() {
+  var settings = State.settings;
+  syncMpiItems();
+  settings.keys('check').forEach(function(id) {
+    var btn = document.querySelector('.menu-check[data-ctrl="' + id + '"]');
+    if (!btn) return;
+    var lock = settings.lock(id);
+    btn.querySelector('.menu-icon').textContent = settings.get(id) ? '✓' : '';
+    btn.disabled = !!lock;
+    if (lock) { btn.title = lock; btn.dataset.locked = '1'; }
+    else if (btn.dataset.locked) { btn.title = ''; delete btn.dataset.locked; }
+  });
+  settings.keys('select').forEach(function(id) {
+    document.querySelectorAll('.menu-radio[data-ctrl="' + id + '"]').forEach(function(b) {
+      b.querySelector('.menu-icon').textContent = b.dataset.value === settings.get(id) ? '✓' : '';
+    });
+  });
+}
+State.settings.onChange(syncSettingsMenu);
+
+export function applyStoredLayout() {
+  var rightEl = document.getElementById('right_pane');
+  if (rightEl) rightEl.style.flex = '0 0 ' + State.settings.get('right-pane-width') + 'px';
 }
 
 export function toggleSetting(id) {
-  State.settings[id] = !State.settings[id];
-  var btn = document.querySelector('.menu-check[data-ctrl="' + id + '"]');
-  if (btn) btn.querySelector('.menu-icon').textContent = State.settings[id] ? '✓' : '';
+  if (!State.settings.toggle(id)) return;
   saveSettings();
   if (typeof settingChanged === 'function') settingChanged();
 }
 
 export function menuToggleCheck(btn) {
-  var id = btn.dataset.ctrl;
-  State.settings[id] = !State.settings[id];
-  btn.querySelector('.menu-icon').textContent = State.settings[id] ? '✓' : '';
+  if (!State.settings.toggle(btn.dataset.ctrl)) return;
   saveSettings();
   if (typeof menuClose === 'function') menuClose();
   if (typeof settingChanged === 'function') settingChanged();
 }
 
 export function menuSelectRadio(btn) {
-  var ctrlId = btn.dataset.ctrl;
-  var value  = btn.dataset.value;
-  State.settings[ctrlId] = value;
-  document.querySelectorAll('.menu-radio[data-ctrl="' + ctrlId + '"]').forEach(function(b) {
-    b.querySelector('.menu-icon').textContent = b.dataset.value === value ? '✓' : '';
-  });
+  State.settings.set(btn.dataset.ctrl, btn.dataset.value);
   saveSettings();
   if (typeof menuClose === 'function') menuClose();
   if (typeof settingChanged === 'function') settingChanged();
 }
 
 export function menuRestoreDefaults() {
-  SETTING_CHECKBOXES.forEach(function(id) {
-    State.settings[id] = DEFAULTS.checkboxes[id];
-    var btn = document.querySelector('.menu-check[data-ctrl="' + id + '"]');
-    if (btn) btn.querySelector('.menu-icon').textContent = State.settings[id] ? '✓' : '';
-  });
-  SETTING_SELECTS.forEach(function(id) {
-    State.settings[id] = DEFAULTS.selects[id];
-    document.querySelectorAll('.menu-radio[data-ctrl="' + id + '"]').forEach(function(b) {
-      b.querySelector('.menu-icon').textContent = b.dataset.value === DEFAULTS.selects[id] ? '✓' : '';
-    });
-  });
-  var rightEl = document.getElementById('right_pane');
-  if (rightEl) rightEl.style.flex = '0 0 ' + DEFAULTS.layout['right-pane-width'] + 'px';
-  State._sourcePaneOpen = DEFAULTS.layout['source-open'];
-  State._infoPaneRatio  = DEFAULTS.layout['info-pane-ratio'];
-  State._ganttPaneOpen  = DEFAULTS.layout['gantt-open'];
-  State._legendOpen     = DEFAULTS.layout['legend-open'];
-  State._colorSpectrum  = DEFAULTS.layout['color-spectrum'];
-  State._codePaths      = DEFAULTS.layout['code-paths'];
-  State._pinDefinitions = DEFAULTS.layout['pin-definitions'];
-  State._progressBar    = DEFAULTS.layout['progress-bar'];
-  State._infoEnabled    = DEFAULTS.layout['info-enabled'];
-  State._wheelZoom      = DEFAULTS.layout['wheel-zoom'];
-  setWheelZooms(State._wheelZoom);
-  if (State.simEngine) State.simEngine.setProgressBarEnabled(State._progressBar);
-  applyToSourceView();
+  State.settings.restoreDefaults();
+  var get = function(key) { return State.settings.get(key); };
+  syncSettingsMenu();
+  applyStoredLayout();
   document.getElementById('info_window').style.flex = '0 0 0em';
-  setPaneOpen(document.getElementById('legend'), State._legendOpen, 'height', false);
-  if (typeof setHljsTheme === 'function') setHljsTheme(DEFAULTS.layout['hljs-theme']);
-  if (State._sourcePaneOpen) { if (typeof openSourcePane === 'function') openSourcePane(); }
+  setPaneOpen(document.getElementById('legend'), get('legend-open'), 'height', false);
+  if (typeof setHljsTheme === 'function') setHljsTheme(get('hljs-theme'));
+  if (get('source-open')) { if (typeof openSourcePane === 'function') openSourcePane(); }
   else { if (typeof closeSourcePane === 'function') closeSourcePane(); }
-  if (State._ganttPaneOpen) { if (typeof openGanttPane === 'function') openGanttPane(); }
+  if (get('gantt-open')) { if (typeof openGanttPane === 'function') openGanttPane(); }
   else { if (typeof closeGanttPane === 'function') closeGanttPane(); }
-  if (typeof ganttScaleChanged === 'function') ganttScaleChanged(DEFAULTS.layout['gantt-scale']);
-  if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons();
+  if (typeof ganttScaleChanged === 'function') ganttScaleChanged(get('gantt-scale'));
   if (typeof syncSpectrumMenuIcons === 'function') syncSpectrumMenuIcons();
-  saveSettings({ 'info-pane-ratio': DEFAULTS.layout['info-pane-ratio'] });
+  saveSettings();
   if (typeof menuClose === 'function') menuClose();
 }
 
 // ── Global exposure ───────────────────────────────────────────────────────────
 window.saveSettings        = saveSettings;
+window.syncSettingsMenu    = syncSettingsMenu;
 window.loadSettings        = loadSettings;
 window.applyStoredLayout   = applyStoredLayout;
 window.toggleSetting       = toggleSetting;

@@ -23,6 +23,7 @@
 //   src.clearBadges();
 //   src.placeBadges(badgeNodes);
 
+import { parseColor, mix, selectionBackground, cssColor } from './source_highlight.js';
 import { smoothScrollTo, cancelScroll, linesInView, flexBasisPx, scrollOffset } from './smooth_scroll.js';
 
 import { collectBadges, definitionMarks, sitesAt } from './badges.js';
@@ -57,6 +58,11 @@ export class SourceCodeView {
     this._tabPanesEl      = options.tabPanesEl      || document.getElementById('cpp_tab_panes');
     this._hljsThemeLinkEl = options.hljsThemeLinkEl || document.getElementById('hljs-theme');
     this._themeTargetEl   = options.themeTargetEl   || document.body;
+    // the theme's colours are known once its stylesheet has loaded
+    if (this._hljsThemeLinkEl) {
+      this._hljsThemeLinkEl.addEventListener('load', this.refreshSelectionColors.bind(this));
+      if (this._hljsThemeLinkEl.sheet) this.refreshSelectionColors();
+    }
     this._hljsTheme       = options.initialTheme    || 'default';
     this._onThemeChange   = options.onThemeChange   || null;
     this._onBadgeClick    = options.onBadgeClick    || null;
@@ -284,6 +290,32 @@ export class SourceCodeView {
       link.href = base + theme + '.css';
     }
     this._themeTargetEl.classList.toggle('hljs-theme-dark', isDarkTheme(theme));
+  }
+
+  /**
+   /**
+      * Sets `--source-hl` (selected lines) and `--source-hl-soft` (definitions shown with them) from the theme (source_highlight.js).
+      * Call when the theme or the accent changes.
+      */
+  refreshSelectionColors() {
+    var probe = document.createElement('div');
+    probe.className = 'hljs';
+    probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none';
+    var kinds = ['keyword', 'string', 'number', 'comment', 'title', 'built_in', 'type', 'literal', 'meta', 'variable', 'attr', 'symbol', 'params'];
+    probe.innerHTML = kinds.map(function(k) { return '<span class="hljs-' + k + '">x</span>'; }).join('');
+    document.body.appendChild(probe);
+    var root = document.documentElement;
+    try {
+      var bg = parseColor(getComputedStyle(probe).backgroundColor);
+      var accent = parseColor(getComputedStyle(root).getPropertyValue('--highlight'));
+      var texts = [probe].concat(Array.from(probe.children)).map(function(el) { return parseColor(getComputedStyle(el).color, bg); });
+      if (!bg || !accent || texts.some(function(c) { return !c; })) return;
+      var sel = selectionBackground(bg, texts, accent);
+      root.style.setProperty('--source-hl', cssColor(sel.color));
+      root.style.setProperty('--source-hl-soft', cssColor(mix(accent, bg, sel.fraction / 2)));
+    } finally {
+      probe.remove();
+    }
   }
 
   /** Update the ✓ checkmarks in the Source Code Theme submenu. */

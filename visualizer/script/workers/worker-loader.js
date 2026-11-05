@@ -430,6 +430,8 @@ function _applyLoadResult(result) {
 
     // Mark trace as loaded so the menubar render indicator activates.
     State._traceLoaded = true;
+    State._isMpi = !!result.mpi;
+    if (typeof window.syncSettingsMenu === 'function') window.syncSettingsMenu();
 
     // SourceCodeView.rebuild() stores traceLineRanges and keeps window.skevu.traceLineRanges
     // in sync, then rebuilds tabs and triggers hljs highlighting.

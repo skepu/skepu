@@ -28,8 +28,8 @@ import { BACKEND_ORDER, PATTERN_ORDER, basePattern } from './TraceDataProvider.j
 /** Colour-by names, shorter than the entries of Nodes > Color. */
 export const COLOR_BY_LABELS = {
   'duration-total': 'total time', 'elements': 'elements', 'duration-per-element': 'time/element', 'iterations': 'iterations',
-  'duration-cv': 'variance', 'imbalance': 'imbalance', 'comm-bytes': 'comm. bytes', 'dag-depth': 'DAG depth', 'nesting-level': 'nesting',
-  'fan-in': 'fan-in', 'fan-out': 'fan-out', 'total-order': 'sequence', 'pattern': 'pattern', 'backend': 'backend',
+  'duration-cv': 'variance', 'imbalance': 'imbalance', 'comm-bytes': 'busiest rank bytes', 'dag-depth': 'DAG depth',
+  'total-order': 'sequence', 'pattern': 'pattern', 'backend': 'backend',
 };
 
 /** false disables the hover mark for every graph. */
@@ -235,7 +235,7 @@ export class LegendView {
     if (inGraph('node[type="snapshot"]'))
       nodeEntries.push([nodeIcon('<polygon points="' + STAR + '" fill="' + COLORS.snapshot.fill + '" stroke="' + COLORS.snapshot.stroke + '" stroke-width="1"/>'),
        'Snapshot', 'snapshot']);
-    if (this.settings['show_regions'] && inGraph('node[type="region"]'))
+    if (this.settings.get('show_regions') && inGraph('node[type="region"]'))
       nodeEntries.push([nodeIcon('<rect x="1" y="3" width="18" height="14" rx="2" fill="' + regionF + '" stroke="' + regionS + '" stroke-width="1.5"/>'),
        'Instrumented Region', 'region']);
     if (inGraph('node[type="fusion"]'))
@@ -295,7 +295,7 @@ export class LegendView {
     }
 
     // A measure: the spectrum with its ends. Pattern or backend: one block per category present, no ends (not a scale).
-    var mode = this.settings['node-color-call'];
+    var mode = this.settings.get('node-color-call');
     var classBased = mode === 'pattern' || mode === 'backend';
     var swatches = '', classColors = null;
     if (classBased) {
@@ -319,7 +319,7 @@ export class LegendView {
       '<div class="legend-spectrum-row">' + ends('min') + '<span id="color-bar"></span>' + ends('max') + '</div></div>' + swatches;
 
     // The program tree mode has no dependences, so it has no Dependences section.
-    var dependences = this.settings['graph-mode'] === 'program-tree' ? '' : section('Dependences', edgeEntries);
+    var dependences = this.settings.get('graph-mode') === 'program-tree' ? '' : section('Dependences', edgeEntries);
     this._legendEl.innerHTML = colourSection + section('Nodes', nodeEntries) + dependences;
 
     // Populate the freshly-inserted #color-bar gradient.
@@ -369,7 +369,7 @@ export class LegendView {
 
   /** The data-legend-key of the swatch (the pattern or the backend) that a call is coloured by, or null. */
   swatchKeyFor(ele) {
-    var mode = this.settings['node-color-call'];
+    var mode = this.settings.get('node-color-call');
     if (ele.data('type') !== 'skeleton_call' || (mode !== 'pattern' && mode !== 'backend')) return null;
     return 'swatch:' + (mode === 'pattern' ? basePattern(ele.data('pattern')) : ele.data('backend'));
   }

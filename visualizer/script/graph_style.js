@@ -37,8 +37,8 @@ export const NODE_SIZE_SCALE = 100;
 export const NODE_SIZE_MIN   = 15;
 
 export function buildGraphStyle(self, minmax) {
-  var node_labels  = self.settings['node-labels'];
-  var edge_labels  = self.settings['edge-labels'];
+  var node_labels  = self.settings.get('node-labels');
+  var edge_labels  = self.settings.get('edge-labels');
   var transfer_map = { 'host-to-device': '↑', 'device-to-host': '↓' };
 
   function dark()     { return self._darkMode; }
@@ -196,7 +196,7 @@ export function buildGraphStyle(self, minmax) {
         'shape':      'ellipse',
         'text-valign': 'center',
         'background-color': function(ele) {
-          var mode = self.settings['node-color-call'];
+          var mode = self.settings.get('node-color-call');
           if (mode === 'backend') {
             return self._provider.backendColor(ele.data('backend')) || sc(norm('node-color-call', ele));
           }
@@ -207,7 +207,7 @@ export function buildGraphStyle(self, minmax) {
         },
         'border-width': 3,
         'border-color': function(ele) {
-          var mode = self.settings['node-color-call'];
+          var mode = self.settings.get('node-color-call');
           if (mode === 'backend') {
             return self._provider.backendColor(ele.data('backend'), true) || '#555';
           }
@@ -306,7 +306,7 @@ export function buildGraphStyle(self, minmax) {
         'color':  function() { return dark() ? 'white' : 'black'; },
         'font-size': '0.5em',
         'width': function(ele) {
-          var m = self.settings['edge-width'];
+          var m = self.settings.get('edge-width');
           if (m === 'critical-path' || m === 'cross-backend') {
             return (m === 'critical-path' ? ele.data('is_critical_path') : ele.data('cross_backend')) ? 5 : 1;
           }
@@ -338,7 +338,7 @@ export function buildGraphStyle(self, minmax) {
           // opaqueNodes dimming takes priority over all settings-based modes.
           if (self._opaqueNodes.length > 0 &&
               !self._opaqueNodes.includes(ele.data('id'))) return 0.2;
-          var m = self.settings['edge-opacity'];
+          var m = self.settings.get('edge-opacity');
           if (m === 'critical-path' || m === 'cross-backend') {
             return (m === 'critical-path' ? ele.data('is_critical_path') : ele.data('cross_backend')) ? 1 : 0.15;
           }

@@ -295,7 +295,7 @@ describe('the imbalance of the calls of an MPI program', () => {
         expect(provider.normFromData('node-color-call', { imbalance: 2 }, mm)).toBeCloseTo(0.5, 6);
         const degenerate = provider.normFromData('node-color-call', {}, mm);
         expect(degenerate).not.toBe(1);
-        provider.settings['node-color-call'] = 'comm-bytes';
+        provider.settings.set('node-color-call', 'comm-bytes');
         expect(provider.normFromData('node-color-call', { comm_bytes: 50 }, mm)).toBeCloseTo(0.5, 6);
         expect(data.some(d => d.imbalance != null)).toBe(true);
     });
