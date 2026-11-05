@@ -210,6 +210,10 @@ namespace skepu
 #endif
 			for (size_t at = this->m_file_name.find("%m"); at != std::string::npos; at = this->m_file_name.find("%m", at + module.size()))
 				this->m_file_name.replace(at, 2, module);
+#ifdef SKEPU_TRACING
+			std::error_code ignored;
+			this->m_start_dir = std::filesystem::current_path(ignored);
+#endif
         }
 
 		inline Tracer::~Tracer()
@@ -218,6 +222,7 @@ namespace skepu
 #ifdef SKEPU_TRACING
 			this->settleRegions();
 			this->writeFile();
+			this->finalizePaths();
 #endif
 		}
 
@@ -231,7 +236,8 @@ namespace skepu
 			{
 				if (this->m_header["files"].contains(name))
 					continue;
-				std::ifstream in(name, std::ios::binary);
+				const std::filesystem::path where = paths::locate(name, this->m_start_dir, paths::compileDirectories());
+				std::ifstream in(where.empty() ? std::filesystem::path(name) : where, std::ios::binary);
 				std::ostringstream contents;
 				if (!in || !(contents << in.rdbuf()))
 					continue; // not readable from here: no hash
@@ -244,6 +250,7 @@ namespace skepu
 #ifdef SKEPU_TRACING
 		inline void Tracer::noteSourceFile(std::string const& file, std::string const& hash)
 		{
+			this->notePath(file);
 			if (!file.empty() && !hash.empty() && !this->m_header["files"].contains(file))
 				this->m_header["files"][file] = hash;
 		}
@@ -261,7 +268,28 @@ namespace skepu
 			if (definition.is_null())
 				return;
 			definition[Schema::Keys::LABEL] = label;
+			this->notePaths(definition);
 			this->m_header["instances"][key] = std::move(definition);
+		}
+
+		inline void Tracer::notePath(std::string const& path)
+		{
+			if (!path.empty())
+				this->m_path_spellings.insert(path);
+		}
+
+		inline void Tracer::notePaths(nlohmann::json const& definition)
+		{
+			auto note = [this](nlohmann::json const& location)
+			{
+				if (location.is_object() && location.contains(Schema::Keys::FILE) && location[Schema::Keys::FILE].is_string())
+					this->notePath(location[Schema::Keys::FILE].get<std::string>());
+			};
+			if (definition.contains("instance"))
+				note(definition["instance"]);
+			if (definition.contains("user_functions") && definition["user_functions"].is_array())
+				for (auto const& function : definition["user_functions"])
+					note(function);
 		}
 #endif
 
@@ -291,7 +319,10 @@ namespace skepu
 		{
 			auto file = entry.find(Schema::Keys::FILE);
 			if (file != entry.end() && file->is_string() && !file->get<std::string>().empty())
+			{
 				this->m_event_files.insert(file->get<std::string>());
+				this->notePath(file->get<std::string>());
+			}
 			this->m_window.push_back(std::move(entry));
 			if (this->m_window.size() > kEditableEvents)
 			{
@@ -332,6 +363,77 @@ namespace skepu
 				std::filesystem::resize_file(this->m_file_name, end, ignored);   // what the last write had after this one's end
 			}
 			this->m_file_end = end;
+		}
+
+		// File names are written as given (relative to the compiler's directory, absolute, with "./" and "../"). At the end, with all paths known, each file gets one
+		// name without the host's shared directories (tracing_paths.hpp). The file is read and written by line: an event per line, the header last.
+		inline void Tracer::finalizePaths()
+		{
+			std::set<std::string> spellings = this->m_path_spellings;
+			if (this->m_header.contains("files"))
+				for (auto const& entry : this->m_header["files"].items())
+					spellings.insert(entry.key());
+			const std::map<std::string, std::string> names = paths::resolve(spellings, this->m_start_dir, paths::compileDirectories());
+			if (std::all_of(names.begin(), names.end(), [](auto const& name) { return name.first == name.second; }))
+				return;
+			auto rename = [&names](std::string const& spelling) { auto name = names.find(spelling); return name == names.end() ? spelling : name->second; };
+			auto renameFile = [&rename](nlohmann::json &location)
+			{
+				if (location.is_object() && location.contains(Schema::Keys::FILE) && location[Schema::Keys::FILE].is_string())
+					location[Schema::Keys::FILE] = rename(location[Schema::Keys::FILE].get<std::string>());
+			};
+
+			const std::string temporary = this->m_file_name + ".paths";
+			{
+				std::ifstream in(this->m_file_name, std::ios::binary);
+				std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
+				if (!in || !out)
+					return;
+				static const std::string headerStart = "],\"header\":", fileKey = "\"file\":\"";
+				std::string line;
+				while (std::getline(in, line))
+				{
+					if (line.compare(0, headerStart.size(), headerStart) == 0 && line.size() > headerStart.size() + 1)
+					{
+						nlohmann::json header = nlohmann::json::parse(line.substr(headerStart.size(), line.size() - headerStart.size() - 1), nullptr, false);
+						if (header.is_object())
+						{
+							if (header.contains("files") && header["files"].is_object())
+							{
+								nlohmann::json files = nlohmann::json::object();
+								for (auto const& entry : header["files"].items())
+									files[rename(entry.key())] = entry.value();
+								header["files"] = std::move(files);
+							}
+							if (header.contains("instances") && header["instances"].is_object())
+								for (auto &instance : header["instances"])
+								{
+									if (instance.contains("instance"))
+										renameFile(instance["instance"]);
+									if (instance.contains("user_functions") && instance["user_functions"].is_array())
+										for (auto &function : instance["user_functions"])
+											renameFile(function);
+								}
+							line = headerStart + header.dump() + "}";
+						}
+					}
+					else if (line.size() > 1 && line[0] == '{' && line.find(fileKey) != std::string::npos)
+					{
+						const bool comma = line.back() == ',';
+						nlohmann::json event = nlohmann::json::parse(comma ? line.substr(0, line.size() - 1) : line, nullptr, false);
+						if (event.is_object())
+						{
+							renameFile(event);
+							line = event.dump() + (comma ? "," : "");
+						}
+					}
+					out << line << '\n';
+				}
+			}
+			std::error_code error;
+			std::filesystem::rename(temporary, this->m_file_name, error);
+			if (error)
+				std::filesystem::remove(temporary, error);
 		}
 #endif
 
@@ -383,6 +485,7 @@ namespace skepu
 					return false;
 				event[Schema::Keys::FILE] = file;
 				event[Schema::Keys::LINE] = line;
+				this->notePath(file);
 				return true;
 			});
 			}; this->push_capture(std::move(capture), CaptureKind::Raw);
@@ -1191,6 +1294,11 @@ namespace skepu
 #endif
 	}
 }
+
+// A precompiled program records where the compiler ran (SKEPU_COMPILE_DIR); finalizePaths resolves relative paths from there.
+#if defined(SKEPU_TRACING) && defined(SKEPU_COMPILE_DIR)
+namespace { [[maybe_unused]] const bool skepu_compile_dir_noted = skepu::tracing::paths::noteCompileDirectory(SKEPU_COMPILE_DIR); }
+#endif
 
 #if defined(SKEPU_TRACING) && defined(SKEPU_CUDA)
 #include "tracing_cuda.hpp"

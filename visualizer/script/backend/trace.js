@@ -260,13 +260,14 @@ export function formatTraceForDisplay(text) {
 }
 
 // ── Utility: file path preprocessing ─────────────────────────────────────────
-// Mirrors preprocess_file_paths() in visualizer.py.
-// Strips the longest common directory prefix from all `file` fields so paths
-// shown in the UI are relative to the source tree root.
+// The tracer strips the directories all files share (skepu3/impl/tracing_paths.hpp). An older trace has absolute paths: the longest common directory
+// prefix is stripped from the events' `file` fields, so paths are relative to the source tree root.
+
+const isAbsolutePath = p => p.startsWith('/') || /^[A-Za-z]:[\\/]/.test(p);
 
 export function preprocessFilePaths(events) {
     const paths = events.map(e => e.file).filter(f => f && f !== '');
-    if (!paths.length) return;
+    if (!paths.length || !paths.some(isAbsolutePath)) return;
 
     // Character-by-character common prefix (matches Python os.path.commonprefix).
     let prefix = paths[0];

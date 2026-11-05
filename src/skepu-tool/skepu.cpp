@@ -279,6 +279,15 @@ public:
 			clang::SourceLocation SLStart = SM.getLocForStartOfFile(SM.getMainFileID());
 
 			GlobalRewriter.InsertText(SLStart, "#define SKEPU_PRECOMPILED 1\n");
+			{
+				// the tracer resolves relative compiler paths (__FILE__, std::source_location) from here
+				std::error_code ignored;
+				std::string compileDir = std::filesystem::current_path(ignored).string(), escaped;
+				for (char c : compileDir)
+					escaped += (c == '\\' || c == '"') ? std::string("\\") + c : std::string(1, c);
+				if (!compileDir.empty())
+					GlobalRewriter.InsertText(SLStart, "#define SKEPU_COMPILE_DIR \"" + escaped + "\"\n");
+			}
 			if (GenOMP)  GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENMP 1\n");
 			if (GenCL)   GlobalRewriter.InsertText(SLStart, "#define SKEPU_OPENCL 1\n");
 			if (GenCUDA) GlobalRewriter.InsertText(SLStart, "#define SKEPU_CUDA 1\n");

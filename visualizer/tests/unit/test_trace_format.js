@@ -1,7 +1,7 @@
 // test_trace_format.js — the trace as the code view shows it (script/backend/trace.js: formatTraceForDisplay): compact traces are formatted for reading,
 // with white space changes only, and the line ranges are those of the text that is shown.
 import { describe, it, expect } from 'vitest';
-import { prettyPrintJson, formatTraceForDisplay, computeTraceLineRanges, READABLE_AVERAGE_LINE } from '../../script/backend/trace.js';
+import { prettyPrintJson, formatTraceForDisplay, computeTraceLineRanges, preprocessFilePaths, READABLE_AVERAGE_LINE } from '../../script/backend/trace.js';
 
 const events = [
     { object_id: 5, type: 'allocation', label: 'v, with "quotes", [brackets] and {braces}: x', time: 12, line: 3 },
@@ -108,5 +108,18 @@ describe('the trace for the code view', () => {
         const took = performance.now() - started;
         expect(shown.ranges).toHaveLength(30000);
         expect(took).toBeLessThan(3000);
+    });
+});
+
+describe('the file paths of the events', () => {
+    const files = events => { preprocessFilePaths(events); return events.map(e => e.file); };
+
+    it('are left as the tracer wrote them: relative, without the directories that all the files are in', () => {
+        expect(files([{ file: 'examples/a.cpp' }, { file: 'examples/b.cpp' }])).toEqual(['examples/a.cpp', 'examples/b.cpp']);
+        expect(files([{ file: 'horner.cpp' }, { type: 'x' }])).toEqual(['horner.cpp', undefined]);
+    });
+
+    it('lose the directories that they have in common when the trace is from before that, with absolute paths', () => {
+        expect(files([{ file: '/home/u/p/examples/a.cpp' }, { file: '/home/u/p/lib/io.hpp' }])).toEqual(['/examples/a.cpp', '/lib/io.hpp']);
     });
 });

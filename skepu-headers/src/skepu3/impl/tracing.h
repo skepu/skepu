@@ -59,6 +59,7 @@
 #ifdef SKEPU_TRACING
 #include "../../external/nlohmann/json.hpp"
 #include "../../external/hash-library/sha256.hpp"
+#include "tracing_paths.hpp"
 #endif
 
 namespace skepu
@@ -584,6 +585,11 @@ namespace skepu
 			std::deque<nlohmann::json> m_window;
 			std::string m_committed_text;           // the events that left the window and are not in the file yet: a line each, with a comma at the end
 			std::set<std::string> m_event_files;    // the files that the events name (collectSourceFiles)
+			std::set<std::string> m_path_spellings; // every path as given, from events and the header (finalizePaths)
+			std::filesystem::path m_start_dir;      // relative paths are from here
+			void notePath(std::string const& path);
+			void notePaths(nlohmann::json const& locations);   // files of an instance and its user functions
+			void finalizePaths();                   // at the end: one name per file, without the shared directories (tracing_paths.hpp)
 			bool m_file_started = false;
 			std::streamoff m_commit_pos = 0;        // where the committed events end in the file
 			std::uintmax_t m_file_end = 0;          // the size of the file as it was written last

@@ -59,6 +59,11 @@ add_test(NAME tracing_multi_trace COMMAND ${CMAKE_COMMAND}
 	-DTRACE=${CMAKE_CURRENT_BINARY_DIR}/tracing_multi.json -DCALLS=2
 	-P ${CMAKE_CURRENT_LIST_DIR}/check_trace.cmake)
 set_tests_properties(tracing_multi_trace PROPERTIES FIXTURES_REQUIRED tracing_multi_run)
+# The files are named without the directories that all of them are in (the sources of the test are in one directory: their names are their file names)
+add_test(NAME tracing_multi_paths COMMAND ${CMAKE_COMMAND}
+	-DTRACE=${CMAKE_CURRENT_BINARY_DIR}/tracing_multi.json "-DFILES=tracing_multi_main.cpp;tracing_multi_other.cpp"
+	-P ${CMAKE_CURRENT_LIST_DIR}/check_trace_paths.cmake)
+set_tests_properties(tracing_multi_paths PROPERTIES FIXTURES_REQUIRED tracing_multi_run)
 
 # Events from several threads: the tracer must take all of them.
 find_package(Threads REQUIRED)
