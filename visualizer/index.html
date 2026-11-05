@@ -128,16 +128,6 @@
                   </div>
                 </div>
               </div>
-              <div class="submenu">
-                <div class="submenu-title">Timeline Scale<span class="menu-arrow">▸</span></div>
-                <div class="dropdown">
-                  <div class="menu-form-row" data-click="stop" style="padding:0.35em 0.75em">
-                    <label style="font-size:0.85em;color:#666">Scale: <span id="gantt-scale-label">1×</span></label>
-                    <input type="range" id="gantt-scale" min="1" max="20" step="1" value="1"
-                      data-input="ganttScaleChanged" style="width:100%">
-                  </div>
-                </div>
-              </div>
               <div class="menu-sep"></div>
               <button id="menu-check-dark" class="menu-check" data-only="web" data-click="toggleDarkMode menuClose"><span class="menu-icon"></span>Dark mode<span class="menu-key">M</span></button>
               <div class="menu-sep"></div>
@@ -258,7 +248,6 @@
             <div class="dropdown">
               <button id="sim-btn-playpause" class="menu-action" data-needs="trace" data-click="simToggle menuClose" title="Play the run as an animation, node by node (the arrow keys step)">Simulate<span class="menu-key">P</span></button>
               <div class="menu-sep"></div>
-              <button class="menu-action" data-needs="trace" data-click="zoomGanttToMeasuredInterval menuClose">Zoom to Measured Interval<span class="menu-key">Z</span></button>
               <button class="menu-action" data-needs="trace" data-click="renderImage menuClose">Save Graph as Image</button>
               <button class="menu-action" data-only="web" data-needs="tabs" data-click="nextSourceFile menuClose">Next Source Tab<span class="menu-key">Tab</span></button>
               <div class="menu-sep"></div>
@@ -408,7 +397,9 @@
       </div>
     </div>
 
+    <div id="gantt-resizer" hidden title="Drag to resize; double-click for automatic height"></div>
     <div id="gantt-pane">
+      <div id="gantt-zoom"></div>
       <div id="gantt-svg-container"></div>
     </div>
 

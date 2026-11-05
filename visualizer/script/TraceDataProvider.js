@@ -83,7 +83,8 @@ function hsl(h, s, l) {
 var RAINBOW = [280, 240, 200, 160, 120, 80, 40, 0].map(function(h) { return hsl(h, 0.72, 0.56); });
 
 export const COLOR_SPECTRUMS = {
-  'default':   { stops: [[0,255,0],[255,0,0]] },
+  // hue path green to red; an RGB blend goes through muddy olive
+  'default':   { stops: [120, 90, 60, 30, 0].map(function(h) { return hsl(h, 1, 0.5); }) },
   'viridis':   { stops: [[68,1,84],[72,40,120],[62,83,160],[42,120,142],
                           [34,168,132],[122,209,81],[189,223,38],[253,231,37]] },
   'plasma':    { stops: [[13,8,135],[83,2,163],[139,10,165],[184,50,137],

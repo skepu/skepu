@@ -269,13 +269,15 @@ export function setInfoViewOnShowSource(func) {
 var _timelineView = new TimelineView(
   document.getElementById('gantt-svg-container'), {
     paneEl:          document.getElementById('gantt-pane'),
-    scaleSliderEl:   document.getElementById('gantt-scale'),
-    scaleLabelEl:    document.getElementById('gantt-scale-label'),
+    zoomEl:          document.getElementById('gantt-zoom'),
+    resizerEl:       document.getElementById('gantt-resizer'),
+    initialHeight:   State.settings.get('gantt-height'),
     countEl:         document.getElementById('gantt-count'),
     initialScale:    State.settings.get('gantt-scale'),
     initialOpen:     State.settings.get('gantt-open'),
     onPaneToggle:    function() { if (typeof syncExternalMenuIcons === 'function') syncExternalMenuIcons(); },
     onSettingsChange: function() { if (typeof saveSettings === 'function') saveSettings(); },
+    onScaleChange:   function(scale) { State.settings.set('gantt-scale', scale); },
     onSimBarClick:   function(nodeId, iterIdx) {
       return !!(_simEngine && _simEngine.ganttClick(nodeId, iterIdx));
     },
@@ -322,9 +324,10 @@ State.settings.onChange(function(keys) {
   if (keys.includes('gantt-open')) {
     _timelineView._paneOpen = get('gantt-open');
     // closed by the setting alone, not by close(): collapsed at once
-    if (!get('gantt-open') && _timelineView._paneEl) _timelineView._paneEl.style.setProperty('--gantt-height', 0);
+    if (!get('gantt-open')) _timelineView.collapse();
   }
-  if (keys.includes('gantt-scale')) _timelineView._scale = parseFloat(get('gantt-scale'));
+  if (keys.includes('gantt-scale')) _timelineView.setScale(get('gantt-scale'));
+  if (keys.includes('gantt-height')) _timelineView.setPaneHeight(get('gantt-height'));
   if (keys.includes('dark-mode')) {
     showDarkMode(get('dark-mode'));   // the timeline reads the class
     _view.darkMode = get('dark-mode');

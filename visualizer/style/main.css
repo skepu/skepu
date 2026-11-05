@@ -186,10 +186,10 @@ html.dark-mode .menu-field input { border-color: #4a4660; }
 {
   display: inline-block;
   margin-left: auto;
-  padding-left: 0.6em;
+  border-left: 1.2em solid transparent;   /* room between label and gradient; the gradient is clipped to the padding box */
+  background-clip: padding-box;
   width: 3.5em;
   height: 1em;
-  border-radius: 2px;
   flex-shrink: 0;
 }
 
@@ -784,19 +784,26 @@ html.no-splash .welcome-card { visibility: hidden; }
   width: 100%;
   overflow: hidden;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   background: white;
-  border-top: 2px solid #aaa;
   min-height: 0;
   transition: flex-basis var(--pane-slide);
 }
 
+#gantt-pane.resizing { transition: none; user-select: none; }
+
+#gantt-resizer { flex: 0 0 5px; background-color: #bbb; cursor: ns-resize; }
+#gantt-resizer:hover { background-color: #999; }
+#gantt-resizer[hidden] { display: none; }
+
 
 #gantt-svg-container
 {
+  position: relative;
   flex: 1 1 auto;
-  overflow-x: auto;
-  overflow-y: auto;
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
   min-height: 0;
 }
 
@@ -804,8 +811,49 @@ html.no-splash .welcome-card { visibility: hidden; }
   display: block;
   font-family: monospace;
   font-size: 11px;
-  cursor: default;
+  cursor: inherit;
 }
+
+.tl-body { position: relative; display: flex; flex-direction: column; height: max(100%, var(--tl-h, 0px)); cursor: grab; -webkit-user-select: none; user-select: none; }
+.tl-over-lock .tl-body, .tl-over-lock .tl-axis svg { cursor: pointer; }
+.tl-panning, .tl-panning * { cursor: grabbing !important; }
+.tl-ranging, .tl-ranging * { cursor: col-resize !important; }
+.tl-range { position: absolute; top: 0; display: none; z-index: 2; pointer-events: none; box-sizing: border-box;
+  background: rgba(74, 144, 217, 0.18); border: 1px solid var(--highlight, #4a90d9); border-width: 0 1px; }
+.tl-labels { position: sticky; left: 0; z-index: 3; }
+.tl-rows { position: sticky; left: 0; pointer-events: none; }
+.tl-rows > div { position: absolute; left: 0; width: 100%; }
+.tl-sticky { position: sticky; left: 0; z-index: 2; overflow: hidden; pointer-events: none; }
+.tl-sticky > div { position: absolute; display: flex; align-items: center; box-sizing: border-box; overflow: hidden; white-space: nowrap; font: 11px monospace; }
+.tl-beyond { position: absolute; top: 0; pointer-events: none; }
+.tl-plot { position: absolute; top: 0; }
+.tl-axis { position: sticky; bottom: 0; margin-top: auto; z-index: 3; display: grid; grid-template-columns: minmax(0, 1fr); }
+.tl-axis > * { grid-area: 1 / 1; justify-self: start; }
+.tl-axis-bg { position: sticky; left: 0; box-sizing: border-box; pointer-events: none; }
+.tl-axis-svg { position: relative; z-index: 1; }
+.tl-corner { position: sticky; left: 0; z-index: 2; height: 100%; }
+.tl-toggle, .tl-click { cursor: pointer; }
+
+#gantt-zoom {
+  flex: 0 0 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 0 10px;
+  box-sizing: border-box;
+  border-right: 1px solid #ccc;
+  user-select: none;
+  touch-action: none;
+  cursor: ns-resize;
+  outline-offset: -2px;
+}
+.tl-zoom-track { position: relative; flex: 1 1 auto; width: 4px; border-radius: 2px; background: #ddd; }
+.tl-zoom-fill { position: absolute; left: 0; bottom: 0; width: 100%; border-radius: 2px; background: var(--highlight, #4a90d9); }
+.tl-zoom-thumb {
+  position: absolute; left: 50%; width: 14px; height: 6px; margin: 0 0 -3px -7px;
+  border-radius: 3px; background: #fff; border: 1px solid #888; box-sizing: border-box;
+}
+.tl-zoom-text { margin-bottom: 6px; font: 9px monospace; color: #666; }
 
 #timeline-no-events-msg {
   padding: 0.5em;
@@ -1483,11 +1531,13 @@ html.dark-mode #cy {
 html.dark-mode #gantt-pane,
 html.dark-mode #gantt-svg-container {
   background: rgb(26, 24, 31);
-  border-top-color: #3a3848;
 }
-html.dark-mode #gantt-svg-container svg {
-  background: rgb(26, 24, 31);
-}
+html.dark-mode #gantt-resizer { background: #3a3848; }
+html.dark-mode #gantt-resizer:hover { background: #4a4860; }
+html.dark-mode #gantt-zoom { border-right-color: #3a3848; }
+html.dark-mode .tl-zoom-track { background: #3a3848; }
+html.dark-mode .tl-zoom-thumb { background: #cfcbe0; border-color: #6a6480; }
+html.dark-mode .tl-zoom-text { color: #a09ab8; }
 
 /* Source / right pane */
 html.dark-mode #right_pane {

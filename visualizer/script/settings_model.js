@@ -39,7 +39,8 @@ export const SETTING_DEFS = {
     'info-pane-ratio':  { kind: 'layout', default: 0 },   // open height as a fraction of the right pane; 0: default height
   'source-open':      { kind: 'layout', default: true, editorDefault: false },
   'gantt-open':       { kind: 'layout', default: false, editorDefault: true },
-  'gantt-scale':      { kind: 'layout', default: 1 },   // x-axis multiplier
+    'gantt-height':     { kind: 'layout', default: 0 },   // px chosen by the user; 0 fits the trace
+    'gantt-scale':      { kind: 'layout', default: 1 },   // 1 fits the trace in the pane
   'legend-open':      { kind: 'layout', default: true },
     'info-enabled':     { kind: 'layout', default: true },   // the info panel opens on selection
   'code-paths':       { kind: 'layout', default: true },

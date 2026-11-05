@@ -1,18 +1,5 @@
-#gantt-timeline-scale-div {
-	padding: 0.35em 0.75em;
-}
-
-#gantt-timeline-scale-label {
-	font-size: 0.85em;
-	color: #666
-}
-
-#gantt-scale {
-	width: 100%;
-}
-
 #default-spectrum-background {
-	background: linear-gradient(to right,#00ff00,#ff0000);
+	background: linear-gradient(to right,#00ff00,#80ff00,#ffff00,#ff8000,#ff0000);
 }
 
 #viridis-spectrum-background {

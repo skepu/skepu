@@ -1,6 +1,6 @@
-// test_timeline_layout.js — the rows of the timeline for an MPI program: ranks on top, backends in each rank.
+// test_layout.js — the rows of the timeline for an MPI program: ranks on top, backends in each rank.
 import { describe, it, expect } from 'vitest';
-import { rankCount, layoutRows, rankSegments, segmentExtent, collectiveParts, commSegments } from '../../script/timeline_layout.js';
+import { rankCount, layoutRows, rankSegments, segmentExtent, collectiveParts, commSegments } from '../../../script/timeline/layout.js';
 
 const heights = { regionH: 0, rowH: 28, headerH: 18, transferH: 0, commH: 0, eventH: 0, axisH: 36 };
 

@@ -73,12 +73,6 @@ export function loadSettings() {
 /** Applies a layout setting to the page, whoever changed it. */
 State.settings.onChange(function(keys) {
   var get = function(key) { return State.settings.get(key); };
-  if (keys.includes('gantt-scale')) {
-    var sl = document.getElementById('gantt-scale');
-    if (sl) sl.value = get('gantt-scale');
-    var lb = document.getElementById('gantt-scale-label');
-    if (lb) lb.textContent = parseFloat(get('gantt-scale')).toFixed(0) + '×';
-  }
   if (keys.includes('wheel-zoom')) setWheelZooms(get('wheel-zoom'));
   if (keys.includes('progress-bar') && State.simEngine) State.simEngine.setProgressBarEnabled(get('progress-bar'));
   if (keys.includes('code-paths') || keys.includes('pin-definitions')) applyToSourceView();
@@ -152,7 +146,6 @@ export function menuRestoreDefaults() {
   else { if (typeof closeSourcePane === 'function') closeSourcePane(); }
   if (get('gantt-open')) { if (typeof openGanttPane === 'function') openGanttPane(); }
   else { if (typeof closeGanttPane === 'function') closeGanttPane(); }
-  if (typeof ganttScaleChanged === 'function') ganttScaleChanged(get('gantt-scale'));
   if (typeof syncSpectrumMenuIcons === 'function') syncSpectrumMenuIcons();
   saveSettings();
   if (typeof menuClose === 'function') menuClose();

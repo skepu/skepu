@@ -1,7 +1,7 @@
 // ui.js — Source pane, alerts, setting-changed debounce, legend, and page init.
 // Entry-point module: imports from all other modules and wires up window exports.
 import { descendantsOf, drawnCollapsed } from './nesting.js';
-import { State, SETTING_CHANGED_DEBOUNCE_MS, GANTT_RESIZE_DEBOUNCE_MS,
+import { State, SETTING_CHANGED_DEBOUNCE_MS,
          INFO_PANE_MIN_H, AUTO_RENDER_THRESHOLD,
          HLJS_THEME_DEFAULT_LIGHT, HLJS_THEME_DEFAULT_DARK } from './state.js';
 import { saveSettings, loadSettings, applyStoredLayout, toggleSetting } from './settings.js';
@@ -59,15 +59,6 @@ export function toggleGanttPane() {
   if (State.settings.get('gantt-open')) closeGanttPane(); else openGanttPane();
 }
 
-export function ganttScaleChanged(val) {
-  State.settings.set('gantt-scale', parseFloat(val));
-  if (State.timelineView) State.timelineView.setScale(State.settings.get('gantt-scale'));
-}
-
-export function zoomGanttToMeasuredInterval() {
-  if (State.timelineView) State.timelineView.zoomToMeasuredInterval();
-}
-
 function reRenderGanttPreservingScroll() {
   if (State.timelineView) State.timelineView.reRenderPreservingScroll();
 }
@@ -84,8 +75,6 @@ export function recenterGraph() {
 window.openGanttPane               = openGanttPane;
 window.closeGanttPane              = closeGanttPane;
 window.toggleGanttPane             = toggleGanttPane;
-window.ganttScaleChanged           = ganttScaleChanged;
-window.zoomGanttToMeasuredInterval = zoomGanttToMeasuredInterval;
 window.recenterGraph               = recenterGraph;
 
 // ── graph.js exposes render() via State.graphView; this local helper is used
@@ -310,6 +299,28 @@ export function load()
   });
 
 
+  var ganttPane = document.getElementById('gantt-pane');
+  var ganttBar  = document.getElementById('gantt-resizer');
+  if (ganttPane && ganttBar) {
+    attachResizer(ganttBar, {
+      axis: 'y', min: State.timelineView.minPaneHeight,
+      max:     function() { return State.timelineView.maxPaneHeight; },
+      size:    function() { return ganttPane.offsetHeight; },
+      setSize: function(px) { State.timelineView.setPaneHeight(px); },
+      onStart: function() { ganttPane.classList.add('resizing'); },
+      onEnd:   function() {
+        ganttPane.classList.remove('resizing');
+        State.settings.set('gantt-height', State.timelineView.chosenHeight);
+        saveSettings();
+      },
+    });
+    ganttBar.addEventListener('dblclick', function() {
+      State.timelineView.setPaneHeight(0);
+      State.settings.set('gantt-height', 0);
+      saveSettings();
+    });
+  }
+
   window.addEventListener("keydown", function(event) {
     // Don't steal keypresses from inputs, and ignore modifier combos.
     if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
@@ -336,7 +347,6 @@ export function load()
     else if (event.key === "-") { collapseSelected(); }
     else if (event.key === "i") { State.settings.set('aggregate', State.settings.get('aggregate') === 'none' ? 'name' : 'none'); saveSettings(); settingChanged(); }
     else if (event.key === "f") { toggleSetting('fusion_analysis'); }
-    else if (event.key === "z") { zoomGanttToMeasuredInterval(); }
     else if (event.key === "g") { toggleGanttPane(); }
     else if (event.key === "m") { toggleDarkMode(); }
     else if (event.key === "s") { if (!inEditor()) toggleSourcePane(); }   // no source pane in the editor
@@ -367,17 +377,6 @@ export function load()
     else if (event.key === "x" || event.key === "Escape") {
       closePopup();
     }
-  });
-
-  // Re-render Gantt on window resize (debounced) so the 1x scale is recomputed
-  // while keeping the current visible time range centred.
-  var _resizeTimer = null;
-  window.addEventListener('resize', function() {
-    clearTimeout(_resizeTimer);
-    _resizeTimer = setTimeout(function() {
-      if (State.settings.get('gantt-open') && State._lastGraphNodes.length)
-        reRenderGanttPreservingScroll();
-    }, GANTT_RESIZE_DEBOUNCE_MS);
   });
 }
 

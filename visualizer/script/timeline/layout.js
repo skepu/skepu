@@ -1,4 +1,4 @@
-// timeline_layout.js — the rows of the timeline, and what is drawn in them for an MPI program.  Pure: no DOM.
+// timeline/layout.js — the rows of the timeline, and what is drawn in them for an MPI program.  Pure: no DOM.
 //
 // A trace of a single node program has a row for each backend (the contents of "one rank"). In an MPI program the ranks are
 // the top level: each rank has a header and a row for each backend, so that the timeline looks like the hardware does. What

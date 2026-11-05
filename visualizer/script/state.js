@@ -94,7 +94,6 @@ export const ZOOM_NODE_DIVISOR = 2.3;  // cy.height() ÷ this = padding when fit
 
 // ── Debounce / placement delays (ms) ────────────────────────────────────────
 export const SETTING_CHANGED_DEBOUNCE_MS = 50;   // coalesce rapid setting-change calls
-export const GANTT_RESIZE_DEBOUNCE_MS    = 60;   // wait after resize before re-rendering Gantt
 export const BADGE_PLACEMENT_DELAY_MS    = 200;  // delay before inserting source-gutter badges
 
 // ── Info pane ────────────────────────────────────────────────────────────────

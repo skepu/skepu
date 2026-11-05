@@ -6,7 +6,7 @@ import { DirectedGraph } from '../../script/backend/graph.js';
 import { CompileNode } from '../../script/backend/node.js';
 import { SetupEdge } from '../../script/backend/edge.js';
 import { testSettings, allEdges } from '../helpers.js';
-import { layoutRows } from '../../script/timeline_layout.js';
+import { layoutRows } from '../../script/timeline/layout.js';
 
 function graphOf(events, compiles = true) {
     const settings = testSettings();

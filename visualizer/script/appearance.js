@@ -31,7 +31,7 @@ export function knownTheme(id) { return HLJS_THEMES.some(function(t) { return t.
 // ── The spectra of the colours ───────────────────────────────────────────────
 
 const SPECTRUM_LABELS = {
-  'default': 'Red–Green', 'viridis': 'Viridis', 'plasma': 'Plasma', 'inferno': 'Inferno',
+  'default': 'Green–Red', 'viridis': 'Viridis', 'plasma': 'Plasma', 'inferno': 'Inferno',
   'cividis': 'Cividis', 'cool-warm': 'Cool–Warm', 'grayscale': 'Grayscale', 'rainbow': 'Rainbow',
 };
 
@@ -105,7 +105,7 @@ export function buildSpectrumMenu(container, onPick) {
     var b = item('spectrum-radio', (SPECTRUM_LABELS[name] || name) + ' ', { spectrum: name });
     var swatch = document.createElement('span');
     swatch.className = 'spectrum-swatch';
-    swatch.style.background = spectrumGradient(COLOR_SPECTRUMS[name].stops);
+    swatch.style.backgroundImage = spectrumGradient(COLOR_SPECTRUMS[name].stops);
     b.append(swatch);
     b.onclick = function() { onPick(name); };
     container.append(b);
@@ -124,13 +124,18 @@ export function showSpectrumMenu(x, y, current, onPick) {
  * A menu at a position, with one item per button of a menu-bar menu: the button's text and action, checked if `isCurrent(button)`.
  */
 export function showChoiceMenu(x, y, buttons, isCurrent) {
-  var items = Array.prototype.slice.call(buttons).map(function(source) {
+  var items = shownChoices(buttons).map(function(source) {
     var b = item('menu-radio', Array.prototype.filter.call(source.childNodes, function(n) { return n.nodeType === Node.TEXT_NODE; }).map(function(n) { return n.textContent; }).join(''), {});
     b.querySelector('.menu-icon').textContent = isCurrent(source) ? '✓' : '';
     b.onclick = function() { source.click(); };
     return b;
   });
   showContextMenu(x, y, items);
+}
+
+/** The menu's shown choices; hidden items (MPI-only ones for other traces) are not offered. */
+export function shownChoices(buttons) {
+  return Array.prototype.slice.call(buttons).filter(function(source) { return !source.hidden; });
 }
 
 /** Mark the item of a menu whose `data-<key>` is `value` (a check by it, none by the others). */

@@ -20,7 +20,7 @@ globalThis.document = {
 const { State } = await import('../../script/state.js');
 const { toggleSetting, menuSelectRadio, menuRestoreDefaults, loadSettings, saveSettings, syncSettingsMenu } = await import('../../script/settings.js');
 const { TraceDataProvider } = await import('../../script/TraceDataProvider.js');
-const KEY = (await import('../../script/appearance.js')).SETTINGS_KEY;
+const { SETTINGS_KEY: KEY, shownChoices } = await import('../../script/appearance.js');
 
 const mode = value => menuSelectRadio({ dataset: { ctrl: 'graph-mode', value } });
 
@@ -141,6 +141,20 @@ describe('the items for an MPI program', () => {
         State.settings.set('node-color-call', 'duration-total');
         withItems([imbalance], () => { syncSettingsMenu(); });
         expect(imbalance.hidden).toBe(true);
+    });
+});
+
+describe('the colour menu of the legend', () => {
+    it('offers what the menu shows: the colours for an MPI program are not offered for a trace of another kind', () => {
+        const choices = [{ hidden: false, dataset: { value: 'duration-total' } }, { hidden: true, dataset: { value: 'imbalance' } }, { hidden: false, dataset: { value: 'dag-depth' } }];
+        expect(shownChoices(choices).map(c => c.dataset.value)).toEqual(['duration-total', 'dag-depth']);
+        choices[1].hidden = false;
+        expect(shownChoices(choices)).toHaveLength(3);
+    });
+
+    it('also takes a list of nodes, as querySelectorAll gives', () => {
+        const list = { 0: { hidden: true }, 1: { hidden: false }, length: 2 };
+        expect(shownChoices(list)).toEqual([{ hidden: false }]);
     });
 });
 

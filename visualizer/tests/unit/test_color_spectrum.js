@@ -46,3 +46,19 @@ describe('the rainbow spectrum', () => {
         expect(v.patternColor('Scan')).toBe(v.spectrumColor(3 / 7));
     });
 });
+
+describe('the default spectrum', () => {
+    const p = provider('default');
+
+    it('goes from green to red by hue, through yellow and orange, and not through the olive that a blend by RGB has', () => {
+        expect(p.spectrumColor(0)).toBe('rgb(0,255,0)');
+        expect(p.spectrumColor(0.5)).toBe('rgb(255,255,0)');
+        expect(p.spectrumColor(1)).toBe('rgb(255,0,0)');
+        const hues = Array.from({ length: 21 }, (_, i) => hue(rgb(p.spectrumColor(i / 20))));
+        for (let i = 1; i < hues.length; i++) expect(hues[i]).toBeLessThanOrEqual(hues[i - 1] + 1e-6);
+        expect(hues[0]).toBeCloseTo(120, 0);
+        expect(hues[20]).toBeCloseTo(0, 0);
+        // saturation does not dip in the middle, as an RGB blend's does
+        for (let i = 0; i <= 20; i++) { const c = rgb(p.spectrumColor(i / 20)); expect(Math.max(...c) - Math.min(...c)).toBeGreaterThanOrEqual(250); }
+    });
+});

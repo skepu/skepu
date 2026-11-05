@@ -12,6 +12,8 @@ export const EXTRA_SHORTCUTS = [
   { group: 'Mouse and trackpad', keys: 'Scroll, swipe', label: 'Pan' },
   { group: 'Mouse and trackpad', keys: 'Shift+scroll', label: 'Pan sideways' },
   { group: 'Mouse and trackpad', keys: 'Ctrl or ⌘+scroll, pinch', label: 'Zoom' },
+  { group: 'Mouse and trackpad', keys: 'Drag in the timeline', label: 'Pan' },
+  { group: 'Mouse and trackpad', keys: 'Shift+drag in the timeline', label: 'Zoom to the range' },
   { group: 'Mouse and trackpad', keys: 'Click a node', label: 'Show in info pane, timeline and source' },
   { group: 'Mouse and trackpad', keys: 'Shift+click a call', label: 'Also show the skeleton instance' },
   { group: 'Mouse and trackpad', keys: 'Alt+click a call', label: 'Also show a user function (repeat: the next)' },
