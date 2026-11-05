@@ -11,10 +11,10 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const names = g => g.calls.map(c => c.label);
 
 // X is read by A, which writes C; B reads C and writes Y. (Allocations first, so that the labels are known.)
-function chain(make) {
+function chain(make, options) {
     const b = builder();
     const events = [b.alloc(1, 'X'), b.alloc(2, 'C'), b.alloc(3, 'Y'), b.alloc(4, 'Z'), ...make(b)];
-    return fusionCandidates(trace(events));
+    return fusionCandidates(trace(events), options);
 }
 const reasonOf = r => r.blocked.map(x => x.reason);
 
@@ -51,6 +51,18 @@ describe('serial fusion', () => {
             expect(reasonOf(r)[0]).toBe('host-access');
             expect(r.serial_groups).toBe(0);
         }
+    });
+
+    it('fuses across a snapshot of the intermediate when snapshots are ignored', () => {
+        const make = b => [b.call('A', { ins: [1], outs: [2] }), b.snapshot(2), b.call('B', { ins: [2], outs: [3] })];
+        expect(chain(make).serial_groups).toBe(0);
+        expect(chain(make, { ignore_snapshots: true }).serial_groups).toBe(1);
+    });
+
+    it('has an intermediate for each pair of a chain that updates one container in place', () => {
+        const r = chain(b => [b.call('A', { ins: [1], outs: [2] }), b.call('B', { ins: [2], outs: [2] }), b.call('D', { ins: [2], outs: [2] })]);
+        expect(r.serial_groups).toBe(1);
+        expect(r.groups[0].intermediates.map(i => i.container)).toEqual(['C', 'C']);
     });
 
     it('does not fuse a consumer that reads the intermediate through a proxy', () => {

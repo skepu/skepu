@@ -98,7 +98,7 @@ function sizeFits(A, B) {
 }
 // ── What an event reads and writes ───────────────────────────────────────────
 
-function accessOf(e) {
+function accessOf(e, ignoreSnapshots = false) {
     const reads = new Set(), writes = new Set(), proxy = new Set(), elwise = new Set();
     switch (e.type) {
         case 'skeleton_call':
@@ -111,8 +111,8 @@ function accessOf(e) {
             break;
         case 'copy':           reads.add(e.source); writes.add(e.object_id); break;
         case 'communication':  for (const id of e.object_ids ?? []) { reads.add(id); writes.add(id); } break;   // a move: nothing can be fused across it
-        case 'transfer':
-        case 'snapshot':       reads.add(e.object_id); break;
+        case 'snapshot':       if (!ignoreSnapshots) reads.add(e.object_id); break;
+        case 'transfer':       reads.add(e.object_id); break;
         case 'element_access': reads.add(e.source);    break;
         case 'deallocation':   writes.add(e.object_id); break;
     }
@@ -120,13 +120,13 @@ function accessOf(e) {
 }
 
 class Index {
-    constructor(events) {
+    constructor(events, ignoreSnapshots = false) {
         this.events = events;
         this.access = new Map();            // idx -> access
         this.touch  = new Map();            // container -> [{ idx, read, write }] in trace order
         this.label  = new Map();            // container -> label
         for (const e of events) {
-            const a = accessOf(e);
+            const a = accessOf(e, ignoreSnapshots);
             this.access.set(e.idx, a);
             if (e.type === 'allocation' && e.label) this.label.set(e.object_id, e.label);
             const ids = new Set([...a.reads, ...a.writes]);
@@ -242,7 +242,7 @@ function serialPairs(ix, rules, blocked) {
 function serialGroups(ix, pairs, blocked) {
     const parent = new Map();                                  // union-find over call indices
     const find = x => { while (parent.get(x) !== x) { parent.set(x, parent.get(parent.get(x))); x = parent.get(x); } return x; };
-    const members = new Map(), inter = new Map();              // root -> Set of calls / Map container -> pair
+    const members = new Map(), inter = new Map();              // root -> Set of calls / Map (producer:container) -> pair; an in-place update makes a version of the container per pair
     const add = x => { if (!parent.has(x)) { parent.set(x, x); members.set(x, new Set([x])); inter.set(x, new Map()); } };
 
     // A pair is added to a group if the whole group can still be one call. A pair that cannot be
@@ -255,8 +255,8 @@ function serialGroups(ix, pairs, blocked) {
             add(pr.A.idx); add(pr.B.idx);
             const ra = find(pr.A.idx), rb = find(pr.B.idx);
             const set = new Set([...members.get(ra), ...members.get(rb)]);
-            const im = new Map([...inter.get(ra), ...inter.get(rb), [pr.C, pr]]);
-            if (!placement(ix, set, new Set(im.keys())).how) { failed.push(pr); continue; }
+            const im = new Map([...inter.get(ra), ...inter.get(rb), [`${pr.A.idx}:${pr.C}`, pr]]);
+            if (!placement(ix, set, new Set([...im.values()].map(p => p.C))).how) { failed.push(pr); continue; }
             if (ra !== rb) { parent.set(rb, ra); members.set(ra, set); }
             inter.set(ra, im);
             progress = true;
@@ -357,11 +357,12 @@ export const explainBlocked = (reason, container, patterns) => (REASON_TEXT[reas
  *   parallel [{ kind, placement, calls: [idx], pairs: [] }]
  *   blocked  [{ kind, reason, producer: idx, consumer: idx | null, container: id, ... }]
  *   ix       the index of the events (labelOf)
- * Options: rules, include_overlap, as for fusionCandidates().
+ * Options: rules, include_overlap, as for fusionCandidates(); ignore_snapshots: a snapshot is not a read of the container (snapshots are tracing,
+ * absent from a production run).
  */
-export function analyzeFusion(events, { rules = {}, include_overlap = false } = {}) {
+export function analyzeFusion(events, { rules = {}, include_overlap = false, ignore_snapshots = false } = {}) {
     const R = { allowRecompute: true, ...DEFAULT_RULES, ...rules };
-    const ix = new Index(events);
+    const ix = new Index(events, ignore_snapshots);
     const blocked = [];
     const serial = serialGroups(ix, serialPairs(ix, R, blocked), blocked).map(g => ({
         kind: 'serial', calls: g.calls, pairs: g.pairs,
@@ -383,8 +384,8 @@ export function analyzeFusion(events, { rules = {}, include_overlap = false } = 
  * aggregate (default true: equal groups, e.g. of the iterations of a loop, are one entry with the
  * number of occurrences, the times and launches summed; false: every group).
  */
-export function fusionCandidates(events, { rules = {}, blocked_limit = 30, include_overlap = false, aggregate: doAggregate = true } = {}) {
-    const { ix, rules: R, serial: serialRaw, parallel: parallelRaw, blocked } = analyzeFusion(events, { rules, include_overlap });
+export function fusionCandidates(events, { rules = {}, blocked_limit = 30, include_overlap = false, aggregate: doAggregate = true, ignore_snapshots = false } = {}) {
+    const { ix, rules: R, serial: serialRaw, parallel: parallelRaw, blocked } = analyzeFusion(events, { rules, include_overlap, ignore_snapshots });
 
     const serial = serialRaw.map(g => {
         const calls = g.calls.map(i => events[i]);

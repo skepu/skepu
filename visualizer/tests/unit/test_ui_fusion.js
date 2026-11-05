@@ -83,6 +83,50 @@ describe('fusion nodes in the graph', () => {
     });
 });
 
+describe('the versions of a container that a chain updates in place', () => {
+    it('are all inside the fusion node, except the one that the chain leaves', async () => {
+        const b = builder();
+        const events = [b.alloc(1, 'X'), b.alloc(2, 'C'),
+            b.call('A', { ins: [1], outs: [2] }), b.call('B', { ins: [2], outs: [2] }), b.call('D', { ins: [2], outs: [2] }), b.dealloc(2, 'C')];
+        const g = await graph(events, { fusion_analysis: true });
+        expect(g.fusions).toHaveLength(1);
+        const inside = g.nodes.filter(n => n.parent === g.fusions[0].id);
+        expect(inside.filter(n => n.label === 'C')).toHaveLength(2);   // versions written by A and B; the version of D is the result
+    });
+});
+
+describe('fusion nodes with the regions ignored', () => {
+    const across = () => {
+        const b = builder();
+        return [b.alloc(1, 'X'), b.alloc(2, 'C'), b.alloc(3, 'Y'),
+            { type: 'region', label: 'R1', region_depth: 1, time: 0 }, { ...b.call('A', { ins: [1], outs: [2] }), region: 'R1' },
+            { type: 'region', label: 'R2', region_depth: 1, time: 0 }, { ...b.call('B', { ins: [2], outs: [3] }), region: 'R2' }];
+    };
+    const opts = { fusion_analysis: true, show_regions: true, expand_all_regions: true };
+
+    it('are made across regions, in the innermost region that has all the calls', async () => {
+        const g = await graph(across(), { ...opts, fusion_ignore_regions: true });
+        expect(g.fusions).toHaveLength(1);
+        const members = g.nodes.filter(n => n.parent === g.fusions[0].id).map(n => n.label).sort();
+        expect(members).toEqual(['A', 'B', 'C']);
+        expect(g.fusions[0].parent).toBeFalsy();                             // no region has both calls
+        expect(g.byLabel('R1')).toHaveLength(0);                             // R1 is empty and removed
+    });
+
+    it('are not made across regions otherwise', async () => {
+        expect((await graph(across(), opts)).fusions).toHaveLength(0);
+    });
+});
+
+describe('fusion nodes with the snapshots ignored', () => {
+    const events = () => chain(b => [b.snapshot(2)]);
+
+    it('are made across a snapshot of the intermediate', async () => {
+        expect((await graph(events(), { fusion_analysis: true })).fusions).toHaveLength(0);
+        expect((await graph(events(), { fusion_analysis: true, fusion_ignore_snapshots: true })).fusions).toHaveLength(1);
+    });
+});
+
 describe('collapsing a fusion node', () => {
     const run = async (extra = {}) => {
         const g = await graph(chain(b => [b.call('Q', { ins: [1], outs: [4] })]), { fusion_analysis: true, ...extra });

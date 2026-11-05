@@ -316,7 +316,7 @@ function _handleLoadSnapshots({ snapshotFiles = {} }) {
 //   container_allocations, container_deallocations, container_snapshots, container_transfers, kernel_compiles,
 //   show_scalars, anti_deps, data_as_edges,
 //   show_regions, expand_all_regions, first_load,
-//   collapse_iteration, fusion_analysis, show_virtual_alias,
+//   collapse_iteration, fusion_analysis, fusion_ignore_regions, fusion_ignore_snapshots, show_virtual_alias,
 //   expanded_regions      — comma-separated persistent_region_id list
 //   collapsed_fusions     — comma-separated persistent_fusion_id list (fusion nodes start expanded)
 //   aggregate_by          — 'name' | 'name-location': what iterations are aggregated by (collapse_iteration)
@@ -343,6 +343,8 @@ function _handleGraph({
     first_load              = false,
     collapse_iteration      = false,
     fusion_analysis         = false,
+    fusion_ignore_regions   = false,
+    fusion_ignore_snapshots = false,
     show_virtual_alias      = false,
     expanded_regions        = '',
     collapsed_fusions       = '',
@@ -371,7 +373,7 @@ function _handleGraph({
     ({ graph: _graph, fusionHints } = buildDisplayGraph(_eventData, {
         mode, container_allocations, container_deallocations, container_snapshots, container_transfers, kernel_compiles, show_communications,
         show_scalars, anti_deps, data_as_edges, show_regions,
-        collapse_iteration, fusion_analysis, show_virtual_alias, aggregate_by, instances: _instances,
+        collapse_iteration, fusion_analysis, fusion_ignore_regions, fusion_ignore_snapshots, show_virtual_alias, aggregate_by, instances: _instances,
     }));
 
     const snapshotEvents = _eventData.filter(e => e.type === 'snapshot');
