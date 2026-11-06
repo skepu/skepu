@@ -18,7 +18,7 @@ skepu_add_test(complex)
 #   Random fundamentals, using namespace and the random fills of skepu-lib/randomize.hpp
 # ------------------------------------------------
 
-skepu_add_test(random)
+skepu_add_test(random DOUBLES)
 
 
 # ------------------------------------------------
@@ -73,15 +73,15 @@ skepu_add_test(skepu_external)
 
 # With the precompiler: the same tests on the other backends. The backend is selected with the
 # environment variable SKEPU_TEST_BACKEND (the test program runs on the sequential backend otherwise).
-skepu_add_test(dnn EXCLUDE hybrid_opencl hybrid_cuda)
+skepu_add_test(dnn EXCLUDE hybrid_opencl hybrid_cuda DOUBLES)
 if(TEST dnn_cpu)
-	set_tests_properties(dnn_cpu PROPERTIES ENVIRONMENT "SKEPU_TEST_BACKEND=CPU")
+	set_property(TEST dnn_cpu APPEND PROPERTY ENVIRONMENT "SKEPU_TEST_BACKEND=CPU")
 endif()
 if(TEST dnn_openmp)
-	set_tests_properties(dnn_openmp PROPERTIES ENVIRONMENT "SKEPU_TEST_BACKEND=OpenMP")
+	set_property(TEST dnn_openmp APPEND PROPERTY ENVIRONMENT "SKEPU_TEST_BACKEND=OpenMP")
 endif()
 if(TEST dnn_opencl)
-	set_tests_properties(dnn_opencl PROPERTIES ENVIRONMENT "SKEPU_TEST_BACKEND=OpenCL")
+	set_property(TEST dnn_opencl APPEND PROPERTY ENVIRONMENT "SKEPU_TEST_BACKEND=OpenCL")
 endif()
 
 # Regression test on the logs of the MNIST / CIFAR-10 / signal examples. Cases whose data sets

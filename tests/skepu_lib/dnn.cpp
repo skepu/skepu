@@ -571,7 +571,7 @@ TEST_CASE("DNN pretrained(csv): Dense parameters are read from a file, weights t
 	std::filesystem::remove(path);
 }
 
-TEST_CASE("DNN data set preparation: take, as_sequence, chw_to_hwc, channel_stats and standardize")
+TEST_CASE("DNN data set preparation: take, as_sequence, chw_to_hwc, channel_stats and standardize", "[fp64]")
 {
 	use_sequential_cpu();
 	// 4 images of 2 x 3 pixels with 2 channels, the value is 100 * sample + 10 * channel + 3 * row + column

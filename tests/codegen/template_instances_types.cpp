@@ -198,7 +198,7 @@ R dot_default(skepu::Vector<T> &x, skepu::Vector<T> &y)
 	return skel(x, y);
 }
 
-TEST_CASE("template_instances_types: Map in a function template, float and double")
+TEST_CASE("template_instances_types: Map in a function template, float and double", "[fp64]")
 {
 	const size_t size{16};
 	skepu::Vector<float> xf(size, 1.f), yf(size, 2.f);
@@ -215,7 +215,7 @@ TEST_CASE("template_instances_types: Map in a function template, float and doubl
 	}
 }
 
-TEST_CASE("template_instances_types: MapReduce in a function template, float and double")
+TEST_CASE("template_instances_types: MapReduce in a function template, float and double", "[fp64]")
 {
 	const size_t size{10};
 	skepu::Vector<float> xf(size, 2.f), yf(size, 3.f);

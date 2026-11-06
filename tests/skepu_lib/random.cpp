@@ -794,7 +794,7 @@ TEST_CASE("randomize: randomize::bernoulli and randomize::poisson, the moments")
 
 // Double precision: on an OpenCL device that does not have it, the skeletons with doubles run on another backend
 
-TEST_CASE("randomize: randomize::uniform, double precision")
+TEST_CASE("randomize: randomize::uniform, double precision", "[fp64]")
 {
 	const size_t n = 500;
 	skepu::PRNG stream(5), reference(5);
@@ -811,7 +811,7 @@ TEST_CASE("randomize: randomize::uniform, double precision")
 }
 
 
-TEST_CASE("randomize: randomize::normal, double precision")
+TEST_CASE("randomize: randomize::normal, double precision", "[fp64]")
 {
 	const size_t n = 100000;
 	skepu::PRNG stream(21);

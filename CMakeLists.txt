@@ -263,6 +263,11 @@ install(EXPORT SkePUTargets
 	NAMESPACE SkePU::
 	DESTINATION lib/cmake/SkePU)
 
+# What the host has, for the tests and the examples that need it
+if(SKEPU_ENABLE_TESTING OR SKEPU_BUILD_EXAMPLES)
+	include(SkePUCapabilities)
+endif()
+
 # Now add the tests
 if(SKEPU_ENABLE_TESTING)
 	add_subdirectory(tests)
@@ -272,6 +277,10 @@ endif()
 # This is for the future when the utility functions has been added.
 if(SKEPU_BUILD_EXAMPLES)
 	add_subdirectory(examples)
+endif()
+
+if(SKEPU_ENABLE_TESTING OR SKEPU_BUILD_EXAMPLES)
+	skepu_collect_capabilities()
 endif()
 
 configure_package_config_file(

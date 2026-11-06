@@ -115,6 +115,13 @@ macro(skepu_print_config)
     MPI            ${SKEPU_MPI}")
 	endif()
 
+	if(SKEPU_ENABLE_TESTING OR SKEPU_BUILD_EXAMPLES)
+		get_property(_skepu_capabilities_text GLOBAL PROPERTY SKEPU_CAPABILITIES_TEXT)
+		if(_skepu_capabilities_text)
+			message("${_skepu_capabilities_text}")
+		endif()
+	endif()
+
 	if(SKEPU_BUILD_EXAMPLES)
 		message("
     Examples
@@ -122,6 +129,10 @@ macro(skepu_print_config)
     Sequential  ${SKEPU_EXAMPLES_SEQ}
     Parallel    ${SKEPU_EXAMPLES_PAR}
     MPI         ${SKEPU_EXAMPLES_MPI}")
+		get_property(_skepu_examples_skipped_text GLOBAL PROPERTY SKEPU_EXAMPLES_SKIPPED_TEXT)
+		if(_skepu_examples_skipped_text)
+			message("${_skepu_examples_skipped_text}")
+		endif()
 	endif()
 	message("")
 endmacro(skepu_print_config)

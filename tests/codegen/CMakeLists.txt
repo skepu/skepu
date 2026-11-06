@@ -4,7 +4,7 @@
 # ------------------------------------------------
 
 # fundamental_types: fundamental_types, builtins (one program)
-skepu_add_test(fundamental_types EXCLUDE sequential)
+skepu_add_test(fundamental_types EXCLUDE sequential DOUBLES)
 
 
 # ------------------------------------------------
@@ -66,31 +66,40 @@ add_test(NAME tracing_multi_paths COMMAND ${CMAKE_COMMAND}
 set_tests_properties(tracing_multi_paths PROPERTIES FIXTURES_REQUIRED tracing_multi_run)
 
 # Events from several threads: the tracer must take all of them.
-find_package(Threads REQUIRED)
-skepu_add_executable(tracing_threads_test SKEPUSRC tracing_threads.cpp)
-target_compile_definitions(tracing_threads_test PRIVATE SKEPU_TRACING)
-target_link_libraries(tracing_threads_test PRIVATE Threads::Threads)
-add_test(NAME tracing_threads COMMAND tracing_threads_test)
-set_tests_properties(tracing_threads PROPERTIES
-	ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_threads.json"
-	FIXTURES_SETUP tracing_threads_run)
-add_test(NAME tracing_threads_trace COMMAND ${CMAKE_COMMAND}
-	-DTRACE=${CMAKE_CURRENT_BINARY_DIR}/tracing_threads.json -DTYPE=allocation -DCALLS=16000 -DEXACT=ON
-	-P ${CMAKE_CURRENT_LIST_DIR}/check_trace.cmake)
-set_tests_properties(tracing_threads_trace PROPERTIES FIXTURES_REQUIRED tracing_threads_run)
+skepu_gate(_gate_ok tracing_threads threads)
+if(NOT _gate_ok)
+	skepu_add_skipped_test(tracing_threads_trace threads)
+else()
+	skepu_add_executable(tracing_threads_test SKEPUSRC tracing_threads.cpp)
+	target_compile_definitions(tracing_threads_test PRIVATE SKEPU_TRACING)
+	target_link_libraries(tracing_threads_test PRIVATE Threads::Threads)
+	add_test(NAME tracing_threads COMMAND tracing_threads_test)
+	set_tests_properties(tracing_threads PROPERTIES
+		ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_threads.json"
+		FIXTURES_SETUP tracing_threads_run)
+	add_test(NAME tracing_threads_trace COMMAND ${CMAKE_COMMAND}
+		-DTRACE=${CMAKE_CURRENT_BINARY_DIR}/tracing_threads.json -DTYPE=allocation -DCALLS=16000 -DEXACT=ON
+		-P ${CMAKE_CURRENT_LIST_DIR}/check_trace.cmake)
+	set_tests_properties(tracing_threads_trace PROPERTIES FIXTURES_REQUIRED tracing_threads_run)
+endif()
 
 # The trace as it is written: complete after a flush, in order, renames in the window of the newest events, and the tracer replaying by itself while threads record.
-skepu_add_executable(tracing_streaming_test SKEPUSRC tracing_streaming.cpp)
-target_compile_definitions(tracing_streaming_test PRIVATE SKEPU_TRACING)
-target_link_libraries(tracing_streaming_test PRIVATE Threads::Threads)
-add_test(NAME tracing_streaming COMMAND tracing_streaming_test)
-set_tests_properties(tracing_streaming PROPERTIES
-	ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_streaming.json"
-	FIXTURES_SETUP tracing_streaming_run)
-add_test(NAME tracing_streaming_trace COMMAND ${CMAKE_COMMAND}
-	-DTRACE=${CMAKE_CURRENT_BINARY_DIR}/tracing_streaming.json -DTYPE=allocation -DCALLS=120501 -DEXACT=ON
-	-P ${CMAKE_CURRENT_LIST_DIR}/check_trace.cmake)
-set_tests_properties(tracing_streaming_trace PROPERTIES FIXTURES_REQUIRED tracing_streaming_run)
+skepu_gate(_gate_ok tracing_streaming threads)
+if(NOT _gate_ok)
+	skepu_add_skipped_test(tracing_streaming_trace threads)
+else()
+	skepu_add_executable(tracing_streaming_test SKEPUSRC tracing_streaming.cpp)
+	target_compile_definitions(tracing_streaming_test PRIVATE SKEPU_TRACING)
+	target_link_libraries(tracing_streaming_test PRIVATE Threads::Threads)
+	add_test(NAME tracing_streaming COMMAND tracing_streaming_test)
+	set_tests_properties(tracing_streaming PROPERTIES
+		ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_streaming.json"
+		FIXTURES_SETUP tracing_streaming_run)
+	add_test(NAME tracing_streaming_trace COMMAND ${CMAKE_COMMAND}
+		-DTRACE=${CMAKE_CURRENT_BINARY_DIR}/tracing_streaming.json -DTYPE=allocation -DCALLS=120501 -DEXACT=ON
+		-P ${CMAKE_CURRENT_LIST_DIR}/check_trace.cmake)
+	set_tests_properties(tracing_streaming_trace PROPERTIES FIXTURES_REQUIRED tracing_streaming_run)
+endif()
 
 # Regions that skepu-tool marks are in the trace only if they have two events or more
 skepu_add_executable(tracing_auto_regions_test SKEPUSRC tracing_auto_regions.cpp)
@@ -150,7 +159,7 @@ skepu_add_test(codegen_types EXCLUDE sequential)
 # ------------------------------------------------
 
 # template_instances_types: template_instances_types, multiple_return_types, template_instances, usertype_return (one program)
-skepu_add_test(template_instances_types EXCLUDE hybrid_opencl hybrid_cuda)
+skepu_add_test(template_instances_types EXCLUDE hybrid_opencl hybrid_cuda DOUBLES)
 
 
 # ------------------------------------------------
@@ -163,21 +172,26 @@ skepu_add_test(template_instances_types EXCLUDE hybrid_opencl hybrid_cuda)
 
 # User constants in the user functions of every skeleton, with several types
 # userconstants_element_types: userconstants, element_types (one program)
-skepu_add_test(userconstants_element_types)
+skepu_add_test(userconstants_element_types DOUBLES)
 
 
 # Regions of several threads that overlap in time: events belong to the region of their own thread.
-skepu_add_executable(tracing_regions_threads_test SKEPUSRC tracing_regions_threads.cpp)
-target_compile_definitions(tracing_regions_threads_test PRIVATE SKEPU_TRACING)
-target_link_libraries(tracing_regions_threads_test PRIVATE Threads::Threads)
-add_test(NAME tracing_regions_threads COMMAND tracing_regions_threads_test)
-set_tests_properties(tracing_regions_threads PROPERTIES
-	ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_regions_threads.json"
-	FIXTURES_SETUP tracing_regions_threads_run)
-add_test(NAME tracing_regions_threads_trace COMMAND ${CMAKE_COMMAND}
-	-DTRACE=${CMAKE_CURRENT_BINARY_DIR}/tracing_regions_threads.json -DREGIONS=4 -DEVENTS=200
-	-P ${CMAKE_CURRENT_LIST_DIR}/check_trace_regions.cmake)
-set_tests_properties(tracing_regions_threads_trace PROPERTIES FIXTURES_REQUIRED tracing_regions_threads_run)
+skepu_gate(_gate_ok tracing_regions_threads threads)
+if(NOT _gate_ok)
+	skepu_add_skipped_test(tracing_regions_threads_trace threads)
+else()
+	skepu_add_executable(tracing_regions_threads_test SKEPUSRC tracing_regions_threads.cpp)
+	target_compile_definitions(tracing_regions_threads_test PRIVATE SKEPU_TRACING)
+	target_link_libraries(tracing_regions_threads_test PRIVATE Threads::Threads)
+	add_test(NAME tracing_regions_threads COMMAND tracing_regions_threads_test)
+	set_tests_properties(tracing_regions_threads PROPERTIES
+		ENVIRONMENT "SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/tracing_regions_threads.json"
+		FIXTURES_SETUP tracing_regions_threads_run)
+	add_test(NAME tracing_regions_threads_trace COMMAND ${CMAKE_COMMAND}
+		-DTRACE=${CMAKE_CURRENT_BINARY_DIR}/tracing_regions_threads.json -DREGIONS=4 -DEVENTS=200
+		-P ${CMAKE_CURRENT_LIST_DIR}/check_trace_regions.cmake)
+	set_tests_properties(tracing_regions_threads_trace PROPERTIES FIXTURES_REQUIRED tracing_regions_threads_run)
+endif()
 
 # The trace file name of a module (SKEPU_TRACE_MODULE), %m in SKEPU_TRACE_FILE, and flushing the trace.
 foreach(_variant default_module env_module env_main)
@@ -209,22 +223,21 @@ endforeach()
 
 # What the trace says about each skeleton, on each backend (the elements, parameters and names are the same on all)
 foreach(_backend cpu openmp opencl cuda)
-	if(_backend STREQUAL openmp AND NOT SKEPU_OPENMP)
-		continue()
-	endif()
-	if(_backend STREQUAL opencl AND NOT SKEPU_OPENCL)
-		continue()
-	endif()
-	if(_backend STREQUAL cuda AND NOT SKEPU_CUDA)
-		continue()
-	endif()
 	set(_flags)
+	set(_needs)
 	if(_backend STREQUAL openmp)
 		set(_flags OpenMP)
+		set(_needs openmp)
 	elseif(_backend STREQUAL opencl)
 		set(_flags OpenCL)
+		set(_needs opencl opencl_device)
 	elseif(_backend STREQUAL cuda)
 		set(_flags CUDA)
+		set(_needs cuda)
+	endif()
+	skepu_gate(_gate_ok tracing_skeletons_${_backend} ${_needs})
+	if(NOT _gate_ok)
+		continue()
 	endif()
 	skepu_add_executable(tracing_skeletons_${_backend}_test ${_flags} SKEPUSRC tracing_skeletons.cpp)
 	target_link_libraries(tracing_skeletons_${_backend}_test PRIVATE catch2_main)
@@ -277,12 +290,13 @@ set_tests_properties(tracing_container_labels PROPERTIES
 # skepu::multiple of built-in types with names of several words (the precompiler removed the first letter of the names of the aliases it makes)
 
 # Skeletons with double precision on OpenCL devices that have it, and on those that do not (they run on another backend, or it is an error in strict mode)
-skepu_add_test(opencl_double_fallback BACKENDS opencl)
+skepu_add_test(opencl_double_fallback BACKENDS opencl LENIENT)
 
 # Elements of the types signed char and long long (the OpenCL names of the types), with rows and columns as arguments
 
 # The builds of the OpenCL kernels are events of their skeleton instances
-if(SKEPU_OPENCL)
+skepu_gate(_gate_ok tracing_compile opencl opencl_device)
+if(_gate_ok)
 	skepu_add_executable(tracing_compile_test OpenCL SKEPUSRC tracing_compile.cpp)
 	target_link_libraries(tracing_compile_test PRIVATE catch2_main)
 	target_compile_definitions(tracing_compile_test PRIVATE SKEPU_TRACING)
@@ -335,11 +349,15 @@ skepu_add_tool_error_test(tool_std_call_cpu std_call.cpp "")
 
 # The times of the CUDA and OpenCL backends are measured by the device without waiting for it at the calls (see tracing_cuda.hpp, tracing_opencl.h)
 foreach(_backend cuda opencl)
-	if(_backend STREQUAL cuda AND SKEPU_CUDA)
+	if(_backend STREQUAL cuda)
 		set(_flags CUDA)
-	elseif(_backend STREQUAL opencl AND SKEPU_OPENCL)
-		set(_flags OpenCL)
+		set(_needs cuda)
 	else()
+		set(_flags OpenCL)
+		set(_needs opencl opencl_device)
+	endif()
+	skepu_gate(_gate_ok tracing_${_backend}_timing ${_needs})
+	if(NOT _gate_ok)
 		continue()
 	endif()
 	skepu_add_executable(tracing_${_backend}_timing_test ${_flags} SKEPUSRC tracing_device_timing.cpp)

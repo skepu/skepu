@@ -57,11 +57,6 @@ TEST_CASE("fundamental_types: Basic types")
     rFloat.flush();
     is_similar(rFloat(0), 1.0f);
 
-    skepu::Vector<double> vDouble(1, 1.0), rDouble(1, 0.0);
-    mapDouble(rDouble, vDouble);
-    rDouble.flush();
-    is_similar(vDouble(0), 1.0);
-
     skepu::Vector<bool> vBool(1, true), rBool(1, false);
     mapBool(rBool, vBool);
     rBool.flush();
@@ -71,6 +66,14 @@ TEST_CASE("fundamental_types: Basic types")
     mapChar(rChar, vChar);
     rChar.flush();
     CHECK(rChar(0) == 'a');
+}
+
+TEST_CASE("fundamental_types: Double", "[fp64]")
+{
+    skepu::Vector<double> vDouble(1, 1.0), rDouble(1, 0.0);
+    mapDouble(rDouble, vDouble);
+    rDouble.flush();
+    is_similar(rDouble(0), 1.0);
 }
 
 
@@ -379,7 +382,7 @@ auto mapLongDouble = skepu::Map(uf_long_double);
 // The skeletons above should still be tested for code generation purposes.
 // Nor does OpenCL, where it is a double of 8 bytes: with a host long double of another size (x86: 80 bits) the elements of the containers do not match.
 #if !defined(SKEPU_CUDA) && (!defined(SKEPU_OPENCL) || __LDBL_MANT_DIG__ == __DBL_MANT_DIG__)
-TEST_CASE("fundamental_types: Long double")
+TEST_CASE("fundamental_types: Long double", "[fp64]")
 {
     skepu::Vector<long double> vLongDouble(1, 1.0l), rLongDouble(1, 0.0l);
     mapLongDouble(rLongDouble, vLongDouble);

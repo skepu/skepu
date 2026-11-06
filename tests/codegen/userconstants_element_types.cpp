@@ -237,7 +237,7 @@ void apply_template_double(skepu::Vector<T> &in, skepu::Vector<T> &out)
 auto skel_map = skepu::Map<1>(map_double);
 auto skel_mapreduce_double = skepu::MapReduce<1>(square_shifted, skepu::util::add<double>);
 
-TEST_CASE("userconstants: User constants of type double")
+TEST_CASE("userconstants: User constants of type double", "[fp64]")
 {
 	const size_t n{50};
 	skepu::Vector<double> x(n), y(n);
@@ -252,7 +252,7 @@ TEST_CASE("userconstants: User constants of type double")
 	REQUIRE((double)skel_mapreduce_double(x) == Approx(expected).epsilon(1e-12));
 }
 
-TEST_CASE("userconstants: User constants in a Map that is a template: float and double")
+TEST_CASE("userconstants: User constants in a Map that is a template: float and double", "[fp64]")
 {
 	const size_t n{20};
 	skepu::Vector<float> f(n), fr(n);
