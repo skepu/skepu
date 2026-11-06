@@ -56,7 +56,7 @@ namespace skepu
 			pack_expand((get<AI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(hasWriteAccess(MapOverlapFunc::anyAccessMode[AI-InArity-OutArity])), 0)...);
 			pack_expand((get<OI>(std::forward<CallArgs>(args)...).getParent().invalidateDeviceData(), 0)...);
 			
-			omp_set_nested(true);
+			SKEPU_OMP_ALLOW_NESTED();
 			
 #pragma omp parallel num_threads(2)
 			{
@@ -181,7 +181,7 @@ namespace skepu
 			const T *inputBegin = arg.getAddress() + gpuRows*rowWidth;
 			const T *inputEnd = inputBegin + cpuRows*rowWidth;
 			
-			omp_set_nested(true);
+			SKEPU_OMP_ALLOW_NESTED();
 			
 			// Let GPU take the _first_ gpuRows of the matrix, and the CPU the _last_ cpuRows.
 #pragma omp parallel num_threads(2)

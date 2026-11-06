@@ -253,6 +253,12 @@ target_compile_features(SkePU INTERFACE
 	cxx_rvalue_references
 	cxx_variadic_templates
 	cxx_template_template_parameters)
+# [[skepu::userconstant]] is read by the precompiler and unknown to the program's compiler, which warns. GCC 11 can exempt a namespace (-Wno-attributes=skepu::);
+# Clang and older GCC cannot. make/skepu.mk uses -Wno-attributes.
+target_compile_options(SkePU INTERFACE
+	"$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,11>>:-Wno-attributes=skepu::>"
+	"$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,11>>:-Wno-attributes>"
+	"$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang,AppleClang>>:-Wno-unknown-attributes>")
 target_include_directories(SkePU INTERFACE
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/skepu-headers/src>
 	$<INSTALL_INTERFACE:include>)

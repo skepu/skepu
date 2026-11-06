@@ -972,54 +972,54 @@ std::string generateUserFunctionCode_CL(UserFunction &Func, std::set<UserFunctio
 	}
 
 	SSFuncSource << transformedSource << "\n}\n\n";
-    if (UserFunction::RegionParam *param = Func.regionParam)
-        if (param->containerType == ContainerType::Pool2D ||
+	if (UserFunction::RegionParam *param = Func.regionParam)
+		if (param->containerType == ContainerType::Pool2D ||
 			param->containerType == ContainerType::Pool3D ||
 			param->containerType == ContainerType::Pool4D )
-        {
-            std::string dim = "";
+		{
+			std::string dim = "";
 
-            switch (param->containerType)
-            {
-                case ContainerType::Pool1D: // unsupported at the moment
-                    dim = "1";
-                    SkePUAbort("global access to OpenCL MapPool1D not implemented yet");
-                    break;
-                case ContainerType::Pool2D:
-                    dim = "2";
-                    break;
-                case ContainerType::Pool3D:
-                    dim = "3";
-                    break;
-                case ContainerType::Pool4D:
-                    dim = "4";
-                    break;
+			switch (param->containerType)
+			{
+				case ContainerType::Pool1D: // unsupported at the moment
+					dim = "1";
+					SkePUAbort("global access to OpenCL MapPool1D not implemented yet");
+					break;
+				case ContainerType::Pool2D:
+					dim = "2";
+					break;
+				case ContainerType::Pool3D:
+					dim = "3";
+					break;
+				case ContainerType::Pool4D:
+					dim = "4";
+					break;
 				default:
 					break;
-            }
-            
-            std::stringstream SSGlobalFuncSource;
-            SSGlobalFuncSource << "static ";
-            if (Func.multipleReturnTypes.size() > 0)
-                SSGlobalFuncSource << Func.multiReturnTypeNameGPU();
-            else
-                SSGlobalFuncSource << Func.returnTypeNameOpenCL();
-            
-            std::string original = "skepu_pool"+ dim + "d_" + transformToCXXIdentifier(param->resolvedTypeName);
-            std::string replacement = original + "_global";
-            std::string param_list = SSFuncParamList.str();
-            replaceTextInString(param_list, original, replacement);
+			}
+			
+			std::stringstream SSGlobalFuncSource;
+			SSGlobalFuncSource << "static ";
+			if (Func.multipleReturnTypes.size() > 0)
+				SSGlobalFuncSource << Func.multiReturnTypeNameGPU();
+			else
+				SSGlobalFuncSource << Func.returnTypeNameOpenCL();
+			
+			std::string original = "skepu_pool"+ dim + "d_" + transformToCXXIdentifier(param->resolvedTypeName);
+			std::string replacement = original + "_global";
+			std::string param_list = SSFuncParamList.str();
+			replaceTextInString(param_list, original, replacement);
 
-            SSGlobalFuncSource << " " << Func.uniqueName << "_global(" << param_list << ")\n{";
-            for (UserFunction::TemplateArgument &arg : Func.templateArguments)
-                SSGlobalFuncSource << (arg.valueType.empty() ? "typedef " + arg.rawTypeName + " " + arg.paramName + ";\n" : arg.alias(false));
-            
-            original = "skepu_pool_access_" + dim + "d_" + transformToCXXIdentifier(param->resolvedTypeName);
-            replacement = original + "_global";
-            replaceTextInString(transformedSource, original, replacement);
-            SSGlobalFuncSource << transformedSource << "\n}\n\n";
-            return SSFuncSource.str() + "\n" + SSGlobalFuncSource.str();
-        }
+			SSGlobalFuncSource << " " << Func.uniqueName << "_global(" << param_list << ")\n{";
+			for (UserFunction::TemplateArgument &arg : Func.templateArguments)
+				SSGlobalFuncSource << (arg.valueType.empty() ? "typedef " + arg.rawTypeName + " " + arg.paramName + ";\n" : arg.alias(false));
+			
+			original = "skepu_pool_access_" + dim + "d_" + transformToCXXIdentifier(param->resolvedTypeName);
+			replacement = original + "_global";
+			replaceTextInString(transformedSource, original, replacement);
+			SSGlobalFuncSource << transformedSource << "\n}\n\n";
+			return SSFuncSource.str() + "\n" + SSGlobalFuncSource.str();
+		}
 	return SSFuncSource.str();
 }
 

@@ -97,7 +97,7 @@ namespace skepu
 			// Process first element here
 			*res = (mode == ScanMode::Inclusive) ? *arg++ : initial;
 			
-			omp_set_nested(true);
+			SKEPU_OMP_ALLOW_NESTED();
 			
 			omp_lock_t gpuAddLock;
 			omp_init_lock(&gpuAddLock);
@@ -147,7 +147,11 @@ namespace skepu
 #pragma omp barrier
 						
 						// Let the master thread scan the partial result array
+#if SKEPU_OMP_HAS_MASKED
+#pragma omp masked
+#else
 #pragma omp master
+#endif
 						{
 							for (size_t i = 1; i < numCPUThreads; ++i) {
 								offset_array[i] = ScanFunc::OMP(offset_array[i-1], offset_array[i]);

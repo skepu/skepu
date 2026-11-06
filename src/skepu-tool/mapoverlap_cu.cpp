@@ -829,8 +829,8 @@ std::string createMapOverlapKernelProgramHelper_CU(SkeletonInstance &instance, U
 	
 	auto argsInfo = handleRandomAccessAndUniforms_CU(mapOverlapFunc, SSMapOverlapFuncArgs, SSKernelParamList, first);
 
-    if (!mapOverlapFunc.regionParam->isPool)
-        ss_perfect_mappool_args << SSMapOverlapFuncArgs.str();
+	if (!mapOverlapFunc.regionParam->isPool)
+		ss_perfect_mappool_args << SSMapOverlapFuncArgs.str();
 	
 	const std::string kernelName = instance + "_" + transformToCXXIdentifier(ResultName) + "_" + kernelTag + "_" + mapOverlapFunc.uniqueName;
 	std::ofstream FSOutFile {dir + "/" + kernelName + ".cu"};

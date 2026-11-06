@@ -890,8 +890,8 @@ std::string createMapOverlap2DKernelProgram_CL(SkeletonInstance &instance, UserF
 	proxyCodeGenHelper_CL(argsInfo.containerProxyTypes, sourceStream);
 	sourceStream << generateUserFunctionCode_CL(mapOverlapFunc) << MatrixConvol2D_CL;
 
-    if (!overlapParam.isPool)
-        perfect_mappool_proxy = argsInfo.proxyInitializer + proxy;
+	if (!overlapParam.isPool)
+		perfect_mappool_proxy = argsInfo.proxyInitializer + proxy;
 
 	const std::string kernelName = instance + "_" + transformToCXXIdentifier(ResultName) + "_Overlap2DKernel_" + mapOverlapFunc.uniqueName;
 	std::stringstream SSKernelArgCount;
@@ -1213,8 +1213,8 @@ std::string createMapOverlap3DKernelProgram_CL(SkeletonInstance &instance, UserF
 	proxyCodeGenHelper_CL(argsInfo.containerProxyTypes, sourceStream);
 	sourceStream << generateUserFunctionCode_CL(mapOverlapFunc) << MatrixConvol3D_CL;
 
-    if (!overlapParam.isPool)
-        perfect_mappool_proxy = argsInfo.proxyInitializer + proxy;
+	if (!overlapParam.isPool)
+		perfect_mappool_proxy = argsInfo.proxyInitializer + proxy;
 
 	const std::string kernelName = instance + "_" + transformToCXXIdentifier(ResultName) + "_Overlap3DKernel_" + mapOverlapFunc.uniqueName;
 	std::stringstream SSKernelArgCount;
@@ -1594,8 +1594,8 @@ std::string createMapOverlap4DKernelProgram_CL(SkeletonInstance &instance, UserF
 	proxyCodeGenHelper_CL(argsInfo.containerProxyTypes, sourceStream);
 	sourceStream << generateUserFunctionCode_CL(mapOverlapFunc) << MatrixConvol4D_CL;
 
-    if (!overlapParam.isPool)
-        perfect_mappool_proxy = argsInfo.proxyInitializer + proxy;
+	if (!overlapParam.isPool)
+		perfect_mappool_proxy = argsInfo.proxyInitializer + proxy;
 
 	const std::string kernelName = instance + "_" + transformToCXXIdentifier(ResultName) + "_Overlap4DKernel_" + mapOverlapFunc.uniqueName;
 	std::stringstream SSKernelArgCount;

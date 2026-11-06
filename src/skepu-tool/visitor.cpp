@@ -251,8 +251,8 @@ HandleSkeletonInstance(clang::VarDecl *d)
 
     clang::Expr *TempExpr = InitExpr;
 
-    if (clang::isa<clang::MaterializeTemporaryExpr>(TempExpr))
-        TempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(TempExpr)->getSubExpr();
+	if (clang::isa<clang::MaterializeTemporaryExpr>(TempExpr))
+		TempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(TempExpr)->getSubExpr();
 
 	if (clang::isa<clang::CXXBindTemporaryExpr>(TempExpr))
 		TempExpr = clang::dyn_cast<clang::CXXBindTemporaryExpr>(TempExpr)->getSubExpr();
@@ -260,8 +260,6 @@ HandleSkeletonInstance(clang::VarDecl *d)
 	clang::CallExpr *CExpr = clang::dyn_cast<clang::CallExpr>(TempExpr);
 	if (!CExpr)
 		SkePUAbort("Not a call expression");
-
-	const clang::FunctionDecl *Callee = CExpr->getDirectCallee();
 
 	std::string InstanceName = d->getNameAsString();
 	SkeletonInstancesString.insert(InstanceName);

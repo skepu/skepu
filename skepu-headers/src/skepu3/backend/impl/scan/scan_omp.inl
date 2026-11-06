@@ -47,7 +47,11 @@ namespace skepu
 #pragma omp barrier
 				
 				// Let the master thread scan the partial result array
+#if SKEPU_OMP_HAS_MASKED
+#pragma omp masked
+#else
 #pragma omp master
+#endif
 				for (size_t i = 1; i < nthr; ++i)
 				{
 					offset_array[i] = ScanFunc::OMP(offset_array[i-1], offset_array[i]);

@@ -78,9 +78,8 @@ inline std::string toString(ContainerType type) {
 			return "Pool3D";
 		case ContainerType::Pool4D:
 			return "Pool4D";
-		default:
-			return "Unknown";
 	}
+	return "Unknown";
 }
 
 class UserConstant

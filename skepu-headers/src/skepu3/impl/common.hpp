@@ -12,6 +12,22 @@
 #define VARIANT_OPENMP(block)
 #define VARIANT_CPU(block) block
 
+// omp_set_nested (deprecated in OpenMP 5.0) and the master construct (5.1) warn on newer compilers. SKEPU_OMP_ALLOW_NESTED() allows nested regions with
+// omp_set_max_active_levels (3.0); `#pragma omp masked` (5.1: GCC 12, Clang 13) is master without a filter clause (use when SKEPU_OMP_HAS_MASKED).
+// Without a known OpenMP version, the old forms.
+#if defined(_OPENMP) && _OPENMP >= 200805
+#include <climits>
+#define SKEPU_OMP_ALLOW_NESTED() omp_set_max_active_levels(INT_MAX)
+#else
+#define SKEPU_OMP_ALLOW_NESTED() omp_set_nested(true)
+#endif
+// GCC reports an older _OPENMP than it implements
+#if defined(_OPENMP) && (_OPENMP >= 202011 || (defined(__GNUC__) && __GNUC__ >= 12 && !defined(__clang__) && !defined(__INTEL_COMPILER) && !defined(__NVCOMPILER)))
+#define SKEPU_OMP_HAS_MASKED 1
+#else
+#define SKEPU_OMP_HAS_MASKED 0
+#endif
+
 // Convert macro values to C strings
 #define SKEPU_STRINGIFY(x) #x
 #define SKEPU_STRINGIFY_NESTED(x) SKEPU_STRINGIFY(x)
