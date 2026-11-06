@@ -1,0 +1,43 @@
+# The example programs, one per line: name, flags, arguments of `make run/<name>`. Read by CMake (examples/CMakeLists.txt) and Make (programs.mk);
+# a program not listed is built by neither.
+#
+#   flags      cpu-only   CPU backends only (sparse matrices lack OpenCL, CUDA and MPI support)
+#              mpi        supported by the MPI backend (others are not built in MPI mode)
+#              -          none; separate flags with commas, no spaces
+#   arguments  Make syntax: $(RUN_BACKEND), $(SIZE_BACKEND), $(RUN_DIR) from programs.mk; no semicolons (CMake reads the line)
+#
+# heat_diffusion: no red-black update mode or mirror mode in CUDA
+
+backend_switching          -
+blas_tour                  cpu-only  64 OpenMP
+cellular_automaton         mpi       2 256 10 0.1 $(RUN_BACKEND)
+cma                        mpi       $(SIZE_BACKEND) $(RUN_BACKEND)
+conjugate_gradient         mpi       256 $(RUN_BACKEND)
+conjugate_gradient_sparse  cpu-only  4096 OpenMP
+coulombic                  mpi       $(SIZE_BACKEND) $(RUN_BACKEND)
+dotproduct                 mpi       $(SIZE_BACKEND) $(RUN_BACKEND)
+edgedetect                 -         edge data/goose.png $(RUN_DIR)/result_edgedetect 2 $(RUN_BACKEND)
+fusion_patterns            -
+heat_diffusion             -         2 64 100 $(RUN_BACKEND) redblack
+horner                     mpi       3 1 2 3 4 $(SIZE_BACKEND) $(RUN_BACKEND)
+image_manip                -         $(RUN_BACKEND)
+mandelbrot                 mpi       256 256 $(RUN_BACKEND)
+maxmin                     mpi       $(SIZE_BACKEND) $(RUN_BACKEND)
+median                     -         data/goose.png $(RUN_DIR)/result_median 2 $(RUN_BACKEND)
+miller_rabin               mpi       $(RUN_BACKEND)
+mmmult                     mpi       128 64 32 $(RUN_BACKEND)
+mmmult_row_col             mpi       128 64 32 $(RUN_BACKEND)
+montecarlo                 mpi       $(SIZE_BACKEND) $(RUN_BACKEND)
+mvmult                     mpi       128 128 $(RUN_BACKEND)
+mvmult_row                 mpi       128 128 $(RUN_BACKEND)
+nbody                      mpi       100 100 $(RUN_BACKEND)
+nbody_mappairs             mpi       100 100 $(RUN_BACKEND)
+ode_fisher                 mpi       64 20 $(RUN_BACKEND)
+ode_lorenz                 mpi       $(SIZE_BACKEND) 40 $(RUN_BACKEND)
+ozaki_gemm                 mpi       48 7 $(RUN_BACKEND)
+perlin                     mpi       256 256 0.5 5 4 1 $(RUN_BACKEND) --out $(RUN_DIR)/result_perlin
+ppmcc                      mpi       $(SIZE_BACKEND) $(RUN_BACKEND)
+pso                        mpi       4096 32 200 $(RUN_BACKEND)
+psnr                       mpi       128 128 $(RUN_BACKEND)
+riemann_sum                mpi       0 1 $(SIZE_BACKEND) $(RUN_BACKEND)
+taylor                     mpi       0.1 $(SIZE_BACKEND) $(RUN_BACKEND)

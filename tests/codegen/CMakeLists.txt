@@ -34,11 +34,11 @@ skepu_add_test(inline_skeletons EXCLUDE sequential)
 #   Linking multiple precompiled files
 # ------------------------------------------------
 
-# TEST-ERROR: This does not work with the current tracing implementation.
+# Built without tracing; the tracing of a program of several precompiled files is tested below (tracing_multi).
 
 skepu_add_executable(linking_cpu_test SKEPUSRC linking-1.cpp linking-2.cpp)
 target_link_libraries(linking_cpu_test PRIVATE catch2_main)
-add_test(linking_cpu linking_cpu_test)
+add_test(NAME linking_cpu COMMAND linking_cpu_test)
 
 # ------------------------------------------------
 #   Tracing in a program of several source files
@@ -120,7 +120,7 @@ set_tests_properties(tracing_auto_functions PROPERTIES ENVIRONMENT "SKEPU_TRACE_
 skepu_add_executable(included_uf_cpu_test SKEPUSRC included_uf.cpp)
 target_link_libraries(included_uf_cpu_test PRIVATE catch2_main)
 target_include_directories(included_uf_cpu_test PRIVATE ./)
-add_test(included_uf included_uf_cpu_test)
+add_test(NAME included_uf COMMAND included_uf_cpu_test)
 
 # ------------------------------------------------
 #   Lambda expressions in skeleton instances

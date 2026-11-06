@@ -3,22 +3,18 @@
 #   SKEPU_EXAMPLE_<NAME>            build the program
 #   SKEPU_EXAMPLE_<NAME>_<BACKEND>  build it for the backend (CUDA, OPENCL, OPENMP, MPI)
 
-# Programs that are not built for these backends by default (the sparse matrices are not supported by the CUDA and OpenCL backends yet)
-set(_skepu_examples_no_cuda blas_tour conjugate_gradient_sparse)
-set(_skepu_examples_no_opencl blas_tour conjugate_gradient_sparse)
-set(_skepu_examples_mpi
-	cellular_automaton cma conjugate_gradient coulombic dotproduct horner mandelbrot maxmin miller_rabin
-	mmmult mmmult_row_col montecarlo mvmult mvmult_row nbody nbody_mappairs ode_fisher ode_lorenz ozaki_gemm perlin ppmcc pso psnr riemann_sum taylor)
+# The lists _skepu_examples, _skepu_examples_cpu_only (the sparse matrices are not supported by the CUDA and OpenCL backends yet) and _skepu_examples_mpi
+# come from programs.txt (see CMakeLists.txt).
 
 foreach(_example IN LISTS _skepu_examples)
 	string(TOUPPER ${_example} _uc)
 
 	set(_cuda ${SKEPU_CUDA})
-	if(_example IN_LIST _skepu_examples_no_cuda)
+	if(_example IN_LIST _skepu_examples_cpu_only)
 		set(_cuda OFF)
 	endif()
 	set(_opencl ${SKEPU_OPENCL})
-	if(_example IN_LIST _skepu_examples_no_opencl)
+	if(_example IN_LIST _skepu_examples_cpu_only)
 		set(_opencl OFF)
 	endif()
 	set(_mpi OFF)

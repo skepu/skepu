@@ -1,41 +1,35 @@
 project(skepu-examples LANGUAGES CXX)
 
-# The example programs. The same set as PROGS in the Makefile; keep them in step.
-set(_skepu_examples
-	backend_switching
-	blas_tour
-	cellular_automaton
-	cma
-	conjugate_gradient
-	conjugate_gradient_sparse
-	coulombic
-	dotproduct
-	edgedetect
-	fusion_patterns
-	heat_diffusion
-	horner
-	image_manip
-	mandelbrot
-	maxmin
-	median
-	miller_rabin
-	mmmult
-	mmmult_row_col
-	montecarlo
-	mvmult
-	mvmult_row
-	nbody
-	nbody_mappairs
-	ode_fisher
-	ode_lorenz
-	ozaki_gemm
-	perlin
-	ppmcc
-	pso
-	psnr
-	riemann_sum
-	taylor
-)
+# Programs and flags: examples/programs.txt, also read by programs.mk. The flags give _skepu_examples_cpu_only (no OpenCL, CUDA or MPI) and
+# _skepu_examples_mpi, used by CMake/example-options.cmake.
+set(_programs_table ${CMAKE_CURRENT_LIST_DIR}/programs.txt)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${_programs_table})
+file(STRINGS ${_programs_table} _program_rows REGEX "^[ \t]*[A-Za-z0-9_]")
+set(_skepu_examples)
+set(_skepu_examples_cpu_only)
+set(_skepu_examples_mpi)
+foreach(_row IN LISTS _program_rows)
+	if(NOT _row MATCHES "^[ \t]*([A-Za-z0-9_]+)([ \t]+([^ \t]+))?")
+		message(FATAL_ERROR "[SkePU] A row of ${_programs_table} that is not a program: ${_row}")
+	endif()
+	set(_program ${CMAKE_MATCH_1})
+	string(REPLACE "," ";" _flags "${CMAKE_MATCH_3}")
+	foreach(_flag IN LISTS _flags)
+		if(NOT _flag MATCHES "^(-|cpu-only|mpi)$")
+			message(FATAL_ERROR "[SkePU] ${_program} has a flag that is not known in ${_programs_table}: ${_flag}")
+		endif()
+	endforeach()
+	list(APPEND _skepu_examples ${_program})
+	if("cpu-only" IN_LIST _flags)
+		list(APPEND _skepu_examples_cpu_only ${_program})
+	endif()
+	if("mpi" IN_LIST _flags)
+		list(APPEND _skepu_examples_mpi ${_program})
+	endif()
+	if(NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/${_program}.cpp)
+		message(FATAL_ERROR "[SkePU] ${_programs_table} has ${_program}, which has no source: ${_program}.cpp")
+	endif()
+endforeach()
 
 include(CMake/example-options.cmake)
 
@@ -54,9 +48,8 @@ endif()
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 add_library(lodepng STATIC lodepng.cpp)
 
-# A program's extra libraries are a property of the program, not of the backend: the sequential, parallel and MPI versions are built from the same source and
-# link the same libraries. They are found from the source (a program that includes lodepng.h links lodepng). This function is called for each version of each
-# program, so that no backend is forgotten; a library that only some backends need can be added to those targets afterwards.
+# Extra libraries belong to the program, not the backend: all versions link the same ones, found from the source (lodepng.h links lodepng).
+# Called for each version of each program; a library only some backends need can be added to those targets afterwards.
 function(skepu_example_dependencies target example)
 	file(READ ${CMAKE_CURRENT_LIST_DIR}/${example}.cpp _source)
 	if(_source MATCHES "#include[ \t]+[\"<]lodepng\\.h[\">]")
@@ -64,13 +57,12 @@ function(skepu_example_dependencies target example)
 	endif()
 endfunction()
 
-# A program that selects a backend by its type in the source (skepu::Backend::Type::CUDA) does not work without it: it is built in the parallel version only
-# where the host has the backend (capabilities of CMake/SkePUCapabilities.cmake) and the program is built for it. The programs that take the name of the backend
-# from the command line, or use the default one, have no such requirement. <backends> are those that the parallel version is built for (CUDA, OpenCL, OpenMP);
-# <missing> gets the reasons that the program cannot be built, empty if it can.
+# A program that names a backend in the source (skepu::Backend::Type::CUDA) is built in the parallel version only where the host has that backend
+# (SkePUCapabilities.cmake). Programs that take the backend from the command line or use the default have no requirement. <backends>: those the parallel
+# version is built for (CUDA, OpenCL, OpenMP); <missing> gets the reasons it cannot be built, empty if it can.
 function(skepu_example_missing example backends missing)
 	file(READ ${CMAKE_CURRENT_LIST_DIR}/${example}.cpp _source)
-	# not what the comments say
+	# comments are stripped first
 	string(REGEX REPLACE "/\\*([^*]|\\*+[^*/])*\\*+/" "" _source "${_source}")
 	string(REGEX REPLACE "//[^\n]*" "" _source "${_source}")
 	string(REGEX MATCHALL "Backend::Type::[A-Za-z]+" _uses "${_source}")

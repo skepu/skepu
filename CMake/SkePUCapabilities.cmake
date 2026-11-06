@@ -1,22 +1,14 @@
-# SkePUCapabilities.cmake — what the build host has, for the tests and the examples that need it.
+# SkePUCapabilities.cmake — what the build host has, for the tests (skepu_gate, REQUIRES in SkePUTests.cmake) and the examples (examples/CMakeLists.txt).
+# Not installed.
 #
-# A capability is a name with a value (SKEPU_CAP_<name>, ON or OFF) and the reason that it is off (SKEPU_CAP_<name>_WHY). A test that needs capabilities
-# that the host lacks is not an error and not an expected failure: it is registered as a placeholder that ctest reports as skipped, with the reason, so that
-# what is not tested on this host is seen at every run.
+# A capability is SKEPU_CAP_<name> (ON or OFF) with the reason it is off in SKEPU_CAP_<name>_WHY.
 #
-#   skepu_gate(<ok> <test-name> <capability>...)   <ok> is TRUE if the host has all of them; otherwise the placeholder <test-name> is registered
-#   skepu_add_skipped_test(<test-name> <capabilities>...)
-#   skepu_collect_capabilities()                     the text of the capabilities for the configuration summary (skepu_print_config)
-#   skepu_note_skipped_example(<name> <build> <reasons>...)   an example that is not built, for the summary
+#   skepu_capability(<name> <available> <reason>)
+#   skepu_note_skipped_example(<name> <build> <reasons>...)
+#   skepu_collect_capabilities()   summary text, for skepu_print_config
 #
-# What can only be seen when the test runs (no device that works, a device that is too small) is for the test itself: it prints the reason and exits with 77
-# (SKEPU_TEST_SKIP in tests/helpers/skip.hpp); the tests of skepu_add_test have SKIP_RETURN_CODE 77.
-#
-# The capabilities: openmp, threads, opencl (the library), opencl_device (a GPU or accelerator that SkePU would use), opencl_fp64 (one with double
-# precision), cuda (a compiler), metal (the backend is built), metal_device and unified_memory (a Metal device, and memory shared with the CPU), metal_fp64
-# (never: Metal has no double), mpi (the compiler wrappers), mpi_run (and mpiexec). A CUDA device is not probed here: a test that needs one stops by itself.
-
-set(SKEPU_TEST_SKIP_CODE 77)
+# openmp, threads, opencl (library), opencl_device (GPU or accelerator), opencl_fp64, cuda (compiler), metal (backend built), metal_device, unified_memory,
+# metal_fp64 (never on), mpi (compiler wrappers), mpi_run (mpiexec). No CUDA device probe: such tests stop by themselves.
 
 function(skepu_capability name available why)
 	if(available)
@@ -28,18 +20,18 @@ function(skepu_capability name available why)
 	set_property(GLOBAL APPEND PROPERTY SKEPU_CAPABILITIES ${name})
 endfunction()
 
-skepu_capability(openmp "${SKEPU_OPENMP}" "OpenMP was not found")
+skepu_capability(openmp "${SKEPU_OPENMP}" "${SKEPU_OPENMP_WHY}")
 
 find_package(Threads QUIET)
 skepu_capability(threads "${Threads_FOUND}" "no thread library was found")
 
-skepu_capability(opencl "${SKEPU_OPENCL}" "OpenCL was not found")
+skepu_capability(opencl "${SKEPU_OPENCL}" "${SKEPU_OPENCL_WHY}")
 
-# The OpenCL devices: a program is run that asks for them as SkePU does. It is not run when cross-compiling, or when it does not build:
-# the devices are then assumed to be there, and the tests that need them stop by themselves.
+# Probe run as SkePU asks for devices. Skipped when cross-compiling or when it does not build: devices are then assumed,
+# and tests that need them stop by themselves.
 if(NOT SKEPU_OPENCL)
-	skepu_capability(opencl_device OFF "OpenCL was not found")
-	skepu_capability(opencl_fp64 OFF "OpenCL was not found")
+	skepu_capability(opencl_device OFF "${SKEPU_OPENCL_WHY}")
+	skepu_capability(opencl_fp64 OFF "${SKEPU_OPENCL_WHY}")
 else()
 	set(_skepu_cl_gpus 1)
 	set(_skepu_cl_fp64 1)
@@ -64,10 +56,10 @@ else()
 	set(SKEPU_CAP_opencl_fp64_NOTE "${_skepu_cl_fp64} of them${_skepu_cl_note}")
 endif()
 
-skepu_capability(cuda "${SKEPU_CUDA}" "no CUDA compiler was found")
+skepu_capability(cuda "${SKEPU_CUDA}" "${SKEPU_CUDA_WHY}")
 
-# Metal: whether the backend is built (SKEPU_METAL, set where the backend is), and what the host has: a device, and memory that the GPU shares with the CPU
-# (the backend uses the memory of the containers without copying it). A program is run that asks the device, as for OpenCL.
+# Metal: SKEPU_METAL says whether the backend is built; the probe asks the device, as for OpenCL. Unified memory is required because the
+# backend uses container memory without copying.
 set(_skepu_mtl_device 0)
 set(_skepu_mtl_unified 0)
 set(_skepu_mtl_why "Metal is only on Apple hardware")
@@ -89,7 +81,7 @@ if(APPLE)
 			set(_skepu_mtl_device ${CMAKE_MATCH_1})
 			set(_skepu_mtl_unified ${CMAKE_MATCH_2})
 		else()
-			# not probed: the tests that need them stop by themselves
+			# not probed: tests that need them stop by themselves
 			set(_skepu_mtl_device 1)
 			set(_skepu_mtl_unified 1)
 			set(_skepu_mtl_note " (not probed)")
@@ -105,81 +97,34 @@ skepu_capability(unified_memory "${_skepu_mtl_unified}" "${_skepu_mtl_why}")
 if(NOT _skepu_mtl_why)
 	set(SKEPU_CAP_unified_memory_WHY "the GPU does not share its memory with the CPU")
 endif()
-# the Metal Shading Language has no double: no device can have it, and nothing is probed
+# no device can have it; not probed
 skepu_capability(metal_fp64 OFF "the Metal Shading Language has no double precision")
 set(SKEPU_CAP_metal_device_NOTE "found${_skepu_mtl_note}")
 set(SKEPU_CAP_unified_memory_NOTE "shared with the CPU${_skepu_mtl_note}")
 
-skepu_capability(mpi "${SKEPU_MPI}" "MPI was not found")
+skepu_capability(mpi "${SKEPU_MPI}" "${SKEPU_MPI_WHY}")
 if(SKEPU_MPI AND MPIEXEC_EXECUTABLE)
 	skepu_capability(mpi_run ON "")
 elseif(SKEPU_MPI)
 	skepu_capability(mpi_run OFF "no mpiexec was found")
 else()
-	skepu_capability(mpi_run OFF "MPI was not found")
+	skepu_capability(mpi_run OFF "${SKEPU_MPI_WHY}")
 endif()
 
-# A placeholder for a test that cannot run on this host: ctest reports it as skipped, with the reason.
-function(skepu_add_skipped_test name)
-	set(_reasons)
-	foreach(_c IN LISTS ARGN)
-		list(APPEND _reasons "${_c}: ${SKEPU_CAP_${_c}_WHY}")
-	endforeach()
-	string(REPLACE ";" ", " _reasons "${_reasons}")
-	# the reason is $0 of the shell, so that nothing in it needs quoting
-	add_test(NAME ${name} COMMAND sh -c "echo \"SKIPPED: $0\"; exit ${SKEPU_TEST_SKIP_CODE}" "${_reasons}")
-	set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE ${SKEPU_TEST_SKIP_CODE} LABELS skipped)
-	string(REPLACE ";" "," _names "${ARGN}")
-	set_property(GLOBAL APPEND PROPERTY SKEPU_SKIPPED_TESTS "${name}|${_names}")
-endfunction()
-
-# <ok> is TRUE if the host has the capabilities, and FALSE after registering the placeholder if it lacks any.
-function(skepu_gate ok test)
-	set(_missing)
-	foreach(_c IN LISTS ARGN)
-		if(NOT DEFINED SKEPU_CAP_${_c})
-			message(FATAL_ERROR "skepu_gate(${test}): unknown capability '${_c}'")
-		endif()
-		if(NOT SKEPU_CAP_${_c})
-			list(APPEND _missing ${_c})
-		endif()
-	endforeach()
-	if(_missing)
-		skepu_add_skipped_test(${test} ${_missing})
-		set(${ok} FALSE PARENT_SCOPE)
-	else()
-		set(${ok} TRUE PARENT_SCOPE)
-	endif()
-endfunction()
-
-# The OpenCL backends use another backend for a skeleton with double precision on a device that has none, and say so on stderr: a test that passes that way
-# does not test the OpenCL backend. With SKEPU_STRICT_BACKEND set it is an error instead, and the tests are run so unless `_t_LENIENT` is set (the test is about
-# the fallback). A test that uses doubles is declared with DOUBLES (skepu_add_test), and is skipped on the OpenCL backends where no device has them.
-function(skepu_test_strict test)
-	if(NOT _t_LENIENT)
-		set_property(TEST ${test} APPEND PROPERTY ENVIRONMENT SKEPU_STRICT_BACKEND=1)
-	endif()
-endfunction()
-
-# An example that is not built, with the reasons, for the configuration summary (<build>: sequential, parallel or mpi).
+# <build>: sequential, parallel or mpi.
 function(skepu_note_skipped_example name build)
 	string(REPLACE ";" ", " _why "${ARGN}")
 	set_property(GLOBAL APPEND PROPERTY SKEPU_EXAMPLES_SKIPPED "${name}|${build}|${_why}")
 endfunction()
 
-# A test that stops with the skip code (see above) is reported as skipped.
-function(skepu_test_may_skip test)
-	set_tests_properties(${test} PROPERTIES SKIP_RETURN_CODE ${SKEPU_TEST_SKIP_CODE})
-endfunction()
-
-# "<title>" with a line of the same length under it, indented as the blocks of skepu_print_config are.
+# Title with an underline, indented like the blocks of skepu_print_config.
 function(skepu_summary_heading out title)
 	string(LENGTH "${title}" _length)
 	string(REPEAT "-" ${_length} _line)
 	set(${out} "\n    ${title}\n    ${_line}" PARENT_SCOPE)
 endfunction()
 
-# The text for the configuration summary (skepu_print_config), after the backends: the capabilities with what lacks, and how many tests are skipped for it.
+# Summary text for skepu_print_config: capabilities, and skipped tests per missing capability.
 function(skepu_collect_capabilities)
 	set(_width 16)
 	skepu_summary_heading(_text "Capabilities of this host")
@@ -223,7 +168,7 @@ function(skepu_collect_capabilities)
 			string(APPEND _text "\n    ${_c}${_gap}${SKEPU_SKIPPED_BY_${_c}}")
 		endforeach()
 	endif()
-	# the examples that are not built: printed after the summary of the examples
+	# printed after the examples summary
 	get_property(_examples GLOBAL PROPERTY SKEPU_EXAMPLES_SKIPPED)
 	list(LENGTH _examples _example_count)
 	set(_example_text "")
