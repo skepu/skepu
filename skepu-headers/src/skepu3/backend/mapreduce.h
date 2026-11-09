@@ -355,6 +355,10 @@ namespace skepu
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename ...CallArgs>
 			scalar_wrapper_t<Ret> mapReduceMultiStreamMultiGPU_CU(size_t useNumGPU, size_t startIdx, size_t size, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, Ret &res, CallArgs&&... args);
 
+			// the map function returns several values, which are reduced separately: one or more devices, no streams
+			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
+			scalar_wrapper_t<Ret> mapReduceMultipleValues_CU(size_t firstDevice, size_t numDevices, size_t startIdx, size_t size, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, Ret &res, CallArgs&&... args);
+
 #endif // SKEPU_CUDA
 
 #ifdef SKEPU_OPENCL

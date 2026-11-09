@@ -48,3 +48,16 @@ TEST_CASE("MapReduce with several values, fewer elements than threads")
 	CHECK(static_cast<float>(std::get<0>(result)) == 5.f);
 	CHECK(static_cast<int>(std::get<1>(result)) == 10);
 }
+
+TEST_CASE("MapReduce with several values, results below the start value of the threads without elements")
+{
+	// threads that have no element must not take part: the largest value is negative, as is the start value of the reduction
+	skepu::Vector<float> v(77);
+	for (size_t i = 0; i < 77; ++i)
+		v(i) = -static_cast<float>(i % 10 + 1);
+
+	largest.setStartValue(skepu::multiple<float, int>(-1000.f, -1000));
+	auto result = largest(v);
+	CHECK(static_cast<float>(std::get<0>(result)) == -1.f);
+	CHECK(static_cast<int>(std::get<1>(result)) == -2);
+}

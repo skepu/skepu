@@ -445,6 +445,111 @@ namespace skepu
 		}
 		
 		
+		// Each value that the map function returns has its own partial results on the device, from the kernel (one for each block) and from the second kernel (in
+		// place, one block). The kernel keeps an array of shared memory for each value, one after the other in the same buffer.
+		template<size_t arity, typename MapFunc, typename ReduceFunc, typename CUDAKernel, typename CUDAReduceKernel, typename CLKernel>
+		template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
+		scalar_wrapper_t<typename MapFunc::Ret> MapReduce<arity, MapFunc, ReduceFunc, CUDAKernel, CUDAReduceKernel, CLKernel>
+		::mapReduceMultipleValues_CU(size_t firstDevice, size_t numDevices, size_t startIdx, size_t size, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, Ret &res, CallArgs&&... args)
+		{
+			SKEPU_TRACE_START_EVENT(trace_handle);
+			SKEPU_TRACE_DEVICE_BEGIN_CU(trace_handle);
+			const size_t numElemPerSlice = size / numDevices;
+			const size_t rest = size % numDevices;
+			
+			auto eArgs  = std::forward_as_tuple(get<EI>(std::forward<CallArgs>(args)...)...);
+			auto aArgs  = std::forward_as_tuple(get<AI>(std::forward<CallArgs>(args)...)...);
+			auto scArgs = std::forward_as_tuple(get<CI>(std::forward<CallArgs>(args)...)...);
+			static constexpr auto proxy_tags = typename MapFunc::ProxyTags{};
+			
+			typename to_device_pointer_cu<decltype(eArgs)>::type elwiseMemP[MAX_GPU_DEVICES];
+			typename to_proxy_cu<typename MapFunc::ProxyTags, decltype(aArgs)>::type anyMemP[MAX_GPU_DEVICES];
+			
+			Ret result[MAX_GPU_DEVICES];
+			std::tuple<DeviceMemPointer_CU<typename return_type_index<Ret, OI>::type>*...> outMemP[MAX_GPU_DEVICES];
+			size_t numThreads[MAX_GPU_DEVICES];
+			size_t numBlocks[MAX_GPU_DEVICES];
+			
+			// The shared memory of threads threads: an array for each value, each aligned as the kernel does
+			auto sharedMemSize = [](size_t threads)
+			{
+				size_t bytes = 0;
+				pack_expand((bytes = (bytes + alignof(typename return_type_index<Ret, OI>::type) - 1) / alignof(typename return_type_index<Ret, OI>::type)
+					* alignof(typename return_type_index<Ret, OI>::type) + sizeof(typename return_type_index<Ret, OI>::type) * threads, 0)...);
+				return bytes;
+			};
+			
+			for (size_t i = 0; i < numDevices; ++i)
+			{
+				const size_t device = firstDevice + i;
+				const size_t numElem = numElemPerSlice + ((i == numDevices-1) ? rest : 0);
+				const size_t baseIndex = startIdx + i * numElemPerSlice;
+				std::tie(numThreads[i], numBlocks[i]) = getNumBlocksAndThreads(numElem, this->m_selected_spec->GPUBlocks(), this->m_selected_spec->GPUThreads());
+				
+				DEBUG_TEXT_LEVEL1("CUDA MapReduce (several values): device " << device << ", numElem = " << numElem << ", numBlocks = " << numBlocks[i] << ", numThreads = " << numThreads[i]);
+				
+				elwiseMemP[i] = std::make_tuple(std::get<EI>(eArgs).getParent().updateDevice_CU(std::get<EI>(eArgs).getAddress() + baseIndex, numElem * abs(this->m_strides[EI]), device, AccessMode::None)...);
+				anyMemP[i]    = std::make_tuple(std::get<AI-arity>(aArgs).cudaProxy(device, AccessMode::None, std::get<AI-arity>(proxy_tags), Index1D{i})...);
+				outMemP[i] = std::make_tuple(new DeviceMemPointer_CU<typename return_type_index<Ret, OI>::type>(&get_or_return<OI>(result[i]), numBlocks[i], this->m_environment->m_devices_CU[device], "Internal (reduce-temp)")...);
+			}
+			
+			for (size_t i = 0; i < numDevices; ++i)
+			{
+				const size_t device = firstDevice + i;
+				CHECK_CUDA_ERROR(cudaSetDevice(device));
+				const size_t numElem = numElemPerSlice + ((i == numDevices-1) ? rest : 0);
+				const size_t baseIndex = startIdx + i * numElemPerSlice;
+				
+				size_t prng_threads = std::min<size_t>(size, numBlocks[i] * numThreads[i]);
+				auto random = this->template prepareRandom<MapFunc::randomCount>(size, prng_threads);
+				auto randomMemP = random.updateDevice_CU(random.getAddress(), prng_threads, device, AccessMode::ReadWrite);
+				
+				elwiseMemP[i] = std::make_tuple(std::get<EI>(eArgs).getParent().updateDevice_CU(std::get<EI>(eArgs).getAddress() + baseIndex, numElem * abs(this->m_strides[EI]), device, AccessMode::Read)...);
+				anyMemP[i] = std::make_tuple(std::get<AI-arity>(aArgs).cudaProxy(device, MapFunc::anyAccessMode[AI-arity], std::get<AI-arity>(proxy_tags), Index1D{i})...);
+				
+				this->m_cuda_kernel<<<numBlocks[i], numThreads[i], sharedMemSize(numThreads[i])>>>
+				(
+					std::get<OI>(outMemP[i])->getDeviceDataPointer()...,
+					randomMemP->getDeviceDataPointer(),
+					std::get<EI>(elwiseMemP[i])->getDeviceDataPointer()...,
+					std::get<AI-arity>(anyMemP[i]).second...,
+					std::get<CI-arity-anyArity>(scArgs)...,
+					(arity == 0) ? this->default_size_j : elwise_j(eArgs), (arity == 0) ? this->default_size_k : elwise_k(eArgs), (arity == 0) ? this->default_size_l : elwise_l(eArgs),
+					numElem, baseIndex, this->m_strides
+				);
+				
+				// The partial results of the blocks, to one: a block, with as many threads as the partial results (a power of two, as the kernel needs)
+				const size_t reduceThreads = nextPow2(std::min<size_t>(numBlocks[i], this->m_selected_spec->GPUThreads()));
+				this->m_cuda_reduce_kernel<<<1, reduceThreads, sharedMemSize(reduceThreads)>>>(std::get<OI>(outMemP[i])->getDeviceDataPointer()..., numBlocks[i]);
+				
+				pack_expand((std::get<AI-arity>(anyMemP[i]).first->changeDeviceData(hasWriteAccess(MapFunc::anyAccessMode[AI-arity])), 0)...);
+				pack_expand((std::get<OI>(outMemP[i])->changeDeviceData(), 0)...);
+			}
+			
+			// The results of the devices are reduced on the host, from the start value
+			for (size_t i = 0; i < numDevices; ++i)
+			{
+				pack_expand((std::get<OI>(outMemP[i])->copyDeviceToHost(1), 0)...);
+				pack_expand((delete std::get<OI>(outMemP[i]), 0)...);
+				if (i == 0 && !this->m_apply_start)
+					res = result[0];
+				else
+					pack_expand((get_or_return<OI>(res) = ReduceFunc::CPU(get_or_return<OI>(res), get_or_return<OI>(result[i])), 0)...);
+			}
+			
+			CHECK_CUDA_ERROR(cudaSetDevice(this->m_environment->m_best_cuda_device_id));
+			
+			for (size_t d = 0; d < numDevices; ++d) { SKEPU_TRACE_DEVICE_END_CU(trace_handle, (int)(firstDevice + d)); }
+			auto scalar_result = scalar_wrapper_t<typename MapFunc::Ret>(res);
+			SKEPU_TRACE_CALL(trace_handle, "MapReduce", this, {size}, tracing::scalar_output_labels(scalar_result),
+				{get<EI>(std::forward<CallArgs>(args)...).getParent().getObjectID()...},
+				{get<AI>(std::forward<CallArgs>(args)...).getObjectID()...},
+				tracing::scalar_labels(get<CI>(std::forward<CallArgs>(args)...)...),
+				this->template randomID<MapFunc::randomCount>());
+			return scalar_result;
+		}
+		
+		
 		template<size_t arity, typename MapFunc, typename ReduceFunc, typename CUDAKernel, typename CUDAReduceKernel, typename CLKernel>
 		template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs> 
 		scalar_wrapper_t<typename MapFunc::Ret> MapReduce<arity, MapFunc, ReduceFunc, CUDAKernel, CUDAReduceKernel, CLKernel>
@@ -454,6 +559,15 @@ namespace skepu
 				<< ", maxBlocks = " << this->m_selected_spec->GPUBlocks() << ", maxThreads = " << this->m_selected_spec->GPUThreads());
 			
 			const size_t numDevices = std::min(this->m_selected_spec->devices(), this->m_environment->m_devices_CU.size());
+			
+			// the first member of the return type is not the return type itself if the map function returns several values
+			if constexpr (!std::is_same<typename return_type_index<Ret, 0>::type, Ret>::value)
+			{
+				const bool onlyBest = numDevices <= 1;
+				return mapReduceMultipleValues_CU(onlyBest ? this->m_environment->m_best_cuda_device_id : 0, onlyBest ? 1 : numDevices, startIdx, size, oi, ei, ai, ci, res, std::forward<CallArgs>(args)...);
+			}
+			else
+			{
 			
 #ifndef SKEPU_DEBUG_FORCE_MULTI_GPU_IMPL
 			
@@ -480,6 +594,7 @@ namespace skepu
 			
 #endif
 			return mapReduceSingleThreadMultiGPU_CU(numDevices, startIdx, size, oi, ei, ai, ci, res, std::forward<CallArgs>(args)...);
+			}
 		}
 	} // namespace backend
 } // namespace skepu

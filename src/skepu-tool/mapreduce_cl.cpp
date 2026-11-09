@@ -177,7 +177,7 @@ public:
 	{
 		cl_kernel skepu_kernel = kernels(skepu_deviceID, KERNEL_MAPREDUCE);
 		skepu::backend::cl_helpers::setKernelArgs(skepu_kernel, {{KERNEL_ARGS}} {{SIZE_ARGS}} {{STRIDE_ARGS}} skepu_n, skepu_base);
-		clSetKernelArg(skepu_kernel, {{KERNEL_ARG_COUNT}}, skepu_sharedMemSize, NULL);
+		{{LOCAL_ARGS}}
 		cl_int skepu_err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(skepu_deviceID)->getQueue(), skepu_kernel, 1, NULL, &skepu_globalSize, &skepu_localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(skepu_err, "Error launching MapReduce kernel");
 	}
@@ -194,7 +194,7 @@ public:
 		skepu::backend::cl_helpers::setKernelArgs(skepu_kernel,
 		//	skepu_input->getDeviceDataPointer(), skepu_output->getDeviceDataPointer(),
 			{{KERNEL_ARGS_REDUCE_ONLY}} skepu_n);
-		clSetKernelArg(skepu_kernel, /*3*/ {{KERNEL_ARG_COUNT_REDUCE_ONLY}}, skepu_sharedMemSize, NULL);
+		{{LOCAL_ARGS_REDUCE_ONLY}}
 		cl_int skepu_err = clEnqueueNDRangeKernel(skepu::backend::Environment<int>::getInstance()->m_devices_CL.at(skepu_deviceID)->getQueue(), skepu_kernel, 1, NULL, &skepu_globalSize, &skepu_localSize, 0, NULL, NULL);
 		CL_CHECK_ERROR(skepu_err, "Error launching MapReduce reduce-only kernel");
 	}
@@ -203,7 +203,7 @@ public:
 
 
 
-// Each returned value is reduced separately. The host passes one local buffer sized for all values per thread; the kernels split it per value.
+// Each returned value is reduced separately, in a local array of its own: a kernel argument for each value, sized by the host (see localArguments_CL).
 static std::string multiValueKernels_CL(UserFunction &mapFunc)
 {
 	std::vector<std::string> types;
@@ -220,15 +220,12 @@ static std::string multiValueKernels_CL(UserFunction &mapFunc)
 	auto name = [](const char *base, size_t k) { return std::string(base) + std::to_string(k); };
 
 	const std::string results = eachValue([&](size_t k, const std::string &type) { return "\t" + type + " " + name("skepu_result_", k) + ";\n"; });
-	const std::string arrays = "\tsize_t skepu_offset = 0;\n" + eachValue([&](size_t k, const std::string &type)
-	{
-		return "\tskepu_offset = (skepu_offset + sizeof(" + type + ") - 1) / sizeof(" + type + ") * sizeof(" + type + ");\n"
-			"\t__local " + type + " *" + name("skepu_sdata_", k) + " = (__local " + type + " *)(skepu_sdata_raw + skepu_offset);\n"
-			"\tskepu_offset += sizeof(" + type + ") * skepu_blockSize;\n";
-	});
+	std::string localParams;
+	for (size_t k = 0; k < types.size(); ++k)
+		localParams += "__local " + types[k] + " *" + name("skepu_sdata_", k) + (k + 1 < types.size() ? ", " : "");
 	std::string tree;
 	for (size_t half = 512; half >= 1; half /= 2)
-		tree += "\tif (skepu_blockSize >= " + std::to_string(2 * half) + ") { if (skepu_tid < " + std::to_string(half) + " && skepu_tid + " + std::to_string(half) + " < skepu_n) { "
+		tree += "\tif (skepu_blockSize >= " + std::to_string(2 * half) + ") { if (skepu_tid < " + std::to_string(half) + " && skepu_tid + " + std::to_string(half) + " < skepu_valid) { "
 			+ eachValue([&](size_t k, const std::string &) { return name("skepu_sdata_", k) + "[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(" + name("skepu_sdata_", k) + "[skepu_tid], "
 				+ name("skepu_sdata_", k) + "[skepu_tid + " + std::to_string(half) + "]); "; })
 			+ "} barrier(CLK_LOCAL_MEM_FENCE); }\n";
@@ -247,7 +244,7 @@ __kernel void {{KERNEL_NAME}}(
 	{{STRIDE_PARAMS}}
 	size_t skepu_n,
 	size_t skepu_base,
-	__local char *skepu_sdata_raw
+	)~~~" + localParams + R"~~~(
 )
 {
 	size_t skepu_global_prng_id = get_global_id(0);
@@ -256,9 +253,11 @@ __kernel void {{KERNEL_NAME}}(
 	size_t skepu_global_id = get_group_id(0) * skepu_blockSize + skepu_tid;
 	size_t skepu_i = get_group_id(0) * skepu_blockSize + skepu_tid;
 	size_t skepu_gridSize = skepu_blockSize * get_num_groups(0);
+	size_t skepu_blockStart = get_group_id(0) * skepu_blockSize;
+	size_t skepu_valid = (skepu_blockStart < skepu_n) ? ((skepu_n - skepu_blockStart < skepu_blockSize) ? skepu_n - skepu_blockStart : skepu_blockSize) : 0;
 	{{CONTAINER_PROXIES}}
 	{{STRIDE_INIT}}
-)~~~") + results + arrays + R"~~~(
+)~~~") + results + R"~~~(
 	if (skepu_i < skepu_n)
 	{
 		{{INDEX_INITIALIZER}}
@@ -286,14 +285,16 @@ __kernel void {{KERNEL_NAME}}(
 __kernel void {{KERNEL_NAME}}_ReduceOnly(
 	{{KERNEL_PARAMS_REDUCE_ONLY}}
 	size_t skepu_n,
-	__local char *skepu_sdata_raw
+	)~~~" + localParams + R"~~~(
 )
 {
 	size_t skepu_blockSize = get_local_size(0);
 	size_t skepu_tid = get_local_id(0);
 	size_t skepu_i = get_group_id(0) * skepu_blockSize + get_local_id(0);
 	size_t skepu_gridSize = skepu_blockSize * get_num_groups(0);
-)~~~" + results + arrays + R"~~~(
+	size_t skepu_blockStart = get_group_id(0) * skepu_blockSize;
+	size_t skepu_valid = (skepu_blockStart < skepu_n) ? ((skepu_n - skepu_blockStart < skepu_blockSize) ? skepu_n - skepu_blockStart : skepu_blockSize) : 0;
+)~~~" + results + R"~~~(
 	if (skepu_i < skepu_n)
 	{
 )~~~" + firstOnly + R"~~~(		skepu_i += skepu_gridSize;
@@ -310,6 +311,17 @@ __kernel void {{KERNEL_NAME}}_ReduceOnly(
 )~~~" + write + R"~~~(	}
 }
 )~~~";
+}
+
+// The local memory of a kernel: one buffer shared by the threads of a group, or a buffer for each value that the map function returns (as many elements as threads)
+static std::string localArguments_CL(UserFunction &mapFunc, const std::string &firstArgument)
+{
+	if (mapFunc.multipleReturnTypes.empty())
+		return "clSetKernelArg(skepu_kernel, " + firstArgument + ", skepu_sharedMemSize, NULL);";
+	std::string text;
+	for (size_t k = 0; k < mapFunc.multipleReturnTypes.size(); ++k)
+		text += "clSetKernelArg(skepu_kernel, " + firstArgument + " + " + std::to_string(k) + ", sizeof(" + mapFunc.multipleReturnTypes[k] + ") * skepu_localSize, NULL);\n\t\t";
+	return text;
 }
 
 std::string createMapReduceKernelProgram_CL(SkeletonInstance &instance, UserFunction &mapFunc, UserFunction &reduceFunc, std::string dir)
@@ -399,7 +411,9 @@ std::string createMapReduceKernelProgram_CL(SkeletonInstance &instance, UserFunc
 		{"{{KERNEL_ARGS_REDUCE_ONLY}}",            SSKernelArgsRO.str()},
 		{"{{KERNEL_PARAMS_REDUCE_ONLY}}",          SSKernelParamListRO.str()},
 		{"{{HOST_KERNEL_PARAMS_REDUCE_ONLY}}",     SSHostKernelParamListRO.str()},
-		{"{{KERNEL_ARG_COUNT_REDUCE_ONLY}}",       SSKernelArgCountRO.str()}
+		{"{{KERNEL_ARG_COUNT_REDUCE_ONLY}}",       SSKernelArgCountRO.str()},
+		{"{{LOCAL_ARGS}}",             localArguments_CL(mapFunc, SSKernelArgCount.str())},
+		{"{{LOCAL_ARGS_REDUCE_ONLY}}", localArguments_CL(mapFunc, SSKernelArgCountRO.str())}
 	});
 
 	return kernelName;
