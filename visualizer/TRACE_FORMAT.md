@@ -126,8 +126,8 @@ copied (a part of a container if a part was needed). `line` is the line in the S
 container element that the program read, a norm. It comes before the call that outputs the scalar (the scalar is made before the call is recorded).
 `value` is a number for the arithmetic types (integers exactly, a float as the shortest decimal number that reads back as it), and for a floating
 point number that is not finite the string `"nan"`, `"inf"` or `"-inf"`; other types have no event. A scalar that is made from one other scalar
-(`blas::nrm2`: the square root of the sum) has the id of that one, and the later value is the value of the id; a scalar of several ids (the result of an
-operation of two scalars) has no event. SkeVU puts the value on the scalar node of the call's result, so the iterations of a repeated call give a series
+with `LogValue::Yes` (`blas::nrm2`: the square root of the sum) has the id of that one, and the later value is the value of the id; the result of an
+operator (`sum / n`, a comparison, an operation of two scalars) has the ids of its operands and no event: the ids carry the dependences. SkeVU puts the value on the scalar node of the call's result, so the iterations of a repeated call give a series
 that the info pane plots by iteration (one value for each result of a call that has several). In an MPI program the first process records it.
 `external` (`label`, `file`, `line`, `start`, `end`, `outputs`, and the containers it reads as `proxy_inputs`): `skepu::external`, the output of a
 scalar, and the operations above that write a container. `snapshot` (`data_file`), `region` (`region_depth`) and `virtual_container` (`object_ids`) are as the macros of the same name.

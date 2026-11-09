@@ -16,6 +16,7 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 // CUDA generators
 std::string createMapReduceKernelProgram_CU(SkeletonInstance&, UserFunction &mapFunc, UserFunction &reduceFunc, size_t arity, std::string dir);
 std::string createMapKernelProgram_CU(SkeletonInstance&, UserFunction &mapFunc, size_t arity, std::string dir);
+std::string createMapPool1DKernelProgram_CU(SkeletonInstance&, UserFunction &poolFunc, std::string dir);
 std::string createMapPairsKernelProgram_CU(SkeletonInstance&, UserFunction &mapPairsFunc, std::string dir);
 std::string createMapPairsReduceKernelProgram_CU(SkeletonInstance&, UserFunction &mapFunc, UserFunction &reduceFunc, std::string dir);
 std::string createScanKernelProgram_CU(SkeletonInstance&, UserFunction &scanFunc, std::string dir);
@@ -30,6 +31,7 @@ std::string createMapOverlap4DKernelProgram_CU(SkeletonInstance&, UserFunction &
 // OpenCL generators
 std::string createMapReduceKernelProgram_CL(SkeletonInstance&, UserFunction &mapFunc, UserFunction &reduceFunc, std::string dir);
 std::string createMapKernelProgram_CL(SkeletonInstance&, UserFunction &mapFunc, std::string dir);
+std::string createMapPool1DKernelProgram_CL(SkeletonInstance&, UserFunction &poolFunc, std::string dir);
 std::string createMapPairsKernelProgram_CL(SkeletonInstance&, UserFunction &mapPairsFunc, std::string dir);
 std::string createMapPairsReduceKernelProgram_CL(SkeletonInstance&, UserFunction &mapPairsFunc, UserFunction &reduceFunc, std::string dir);
 std::string createScanKernelProgram_CL(SkeletonInstance&, UserFunction &scanFunc, std::string dir);

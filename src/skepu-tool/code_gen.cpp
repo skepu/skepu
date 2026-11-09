@@ -228,8 +228,8 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 			}
 		}
 
-	// The calls of standard library functions: OpenCL C has the math builtins under their plain names
-	if (backend == Backend::OpenCL)
+	// OpenCL C has the math builtins under plain names; no other library functions exist in kernels
+	if (backend == Backend::OpenCL || backend == Backend::CUDA)
 		if (const Stmt *body = f->getBody())
 		{
 			const SourceManager &SM = GlobalRewriter.getSourceMgr();
@@ -241,12 +241,13 @@ std::string replaceReferencesToOtherUFs(Backend backend, UserFunction &UF, std::
 				if (std::get<1>(ref).empty())
 				{
 #ifndef SKEPU_LSP
-					SkePUAbort("The user function " + UF.uniqueName + " calls std::" + std::get<2>(ref)
-						+ ", which has no equivalent in OpenCL C. Use a math function that OpenCL has (sin, sqrt, pow, fabs, ...) or a user function.");
+					SkePUAbort("The user function " + UF.uniqueName + " calls " + std::get<2>(ref) + ", a library function that kernels do not have. "
+						"Use a math function that they have (sin, sqrt, pow, fabs, ...) or a user function; -fnames names functions that the device provides.");
 #endif
 					continue;
 				}
-				R.ReplaceText(range, std::get<1>(ref));
+				if (backend == Backend::OpenCL)
+					R.ReplaceText(range, std::get<1>(ref));
 			}
 		}
 
@@ -923,8 +924,12 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			cuKernels = {KernelName_CU + "_ScanKernel", KernelName_CU + "_ScanUpdate", KernelName_CU + "_ScanAdd"};
 			break;
 
-		case Skeleton::Type::MapOverlap1D:
 		case Skeleton::Type::MapPool1D:
+			KernelName_CU = createMapPool1DKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
+			cuKernels = {KernelName_CU};
+			break;
+
+		case Skeleton::Type::MapOverlap1D:
 			KernelName_CU = createMapOverlap1DKernelProgram_CU(skeletonID, *FuncArgs[0], ResultDir);
 			cuKernels = {KernelName_CU + "_MapOverlapKernel_CU", KernelName_CU + "_MapOverlapKernel_CU_Matrix_Row",
 				KernelName_CU + "_MapOverlapKernel_CU_Matrix_Col", KernelName_CU + "_MapOverlapKernel_CU_Matrix_ColMulti"};
@@ -1019,8 +1024,11 @@ bool transformSkeletonInvocation(const Skeleton &skeleton, std::string InstanceN
 			KernelName_CL = createScanKernelProgram_CL(skeletonID, *FuncArgs[0], ResultDir);
 			break;
 
-		case Skeleton::Type::MapOverlap1D:
 		case Skeleton::Type::MapPool1D:
+			KernelName_CL = createMapPool1DKernelProgram_CL(skeletonID, *FuncArgs[0], ResultDir);
+			break;
+
+		case Skeleton::Type::MapOverlap1D:
 			KernelName_CL = createMapOverlap1DKernelProgram_CL(skeletonID, *FuncArgs[0], ResultDir);
 			break;
 

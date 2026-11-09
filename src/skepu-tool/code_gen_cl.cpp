@@ -246,7 +246,7 @@ static {{TYPE_CL}} skepu_region_access_4d_{{CONTAINED_TYPE_CL}}(skepu_region4d_{
 
 static const std::string OpenCLPool1DTemplate = R"~~~(
 typedef struct {
-	__local {{TYPE_CL}} *data;
+	__global {{TYPE_CL}} *data;
 	int si;
 	size_t stride;
 } skepu_pool1d_{{CONTAINED_TYPE_CL}};
@@ -764,11 +764,11 @@ void handleUserTypesConstantsAndPrecision_CL(std::vector<UserFunction const*> fu
 	sourceStream << generateOpenCLComplex();
 
 	// User constants as preprocessor macros
-	for (auto pair : UserConstants)
-		sourceStream << "#define " << pair.second->name << " (" << pair.second->definition << ") // " << pair.second->typeName << "\n";
+	for (UserConstant *constant : userConstantsInOrder())
+		sourceStream << "#define " << constant->name << " (" << constant->definition << ") // " << constant->typeName << "\n";
 	
   // User types
-  std::set<UserType*> referencedUTs{};
+  UserTypeSet referencedUTs{};
   for (UserFunction const* func : funcs)
     for (UserType *type : func->ReferencedUTs)
       referencedUTs.insert(type);
@@ -781,7 +781,7 @@ void handleUserTypesConstantsAndPrecision_CL(std::vector<UserFunction const*> fu
 
 // The type of a result of a skepu::multiple in OpenCL C: a user type is defined in the kernel under its escaped qualified name (the qualified name is
 // not an identifier), and a built-in type (signed char, unsigned int, long long) is itself, as for any other type
-static std::string multipleMemberTypeCL(std::string type)
+std::string multipleMemberTypeCL(std::string type)
 {
 	replaceTextInString(type, "struct ", "");
 	return type.find_first_of(":<") != std::string::npos ? transformToCXXIdentifier(type) : openCLBuiltinTypeName(type);

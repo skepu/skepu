@@ -45,3 +45,5 @@ skepu_add_test(mapoverlap_1d_wide EXCLUDE hybrid_opencl hybrid_cuda)
 # ------------------------------------------------
 
 skepu_add_test(mapoverlap_3d)
+
+skepu_add_test(mappool_1d)

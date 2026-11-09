@@ -619,24 +619,100 @@ namespace skepu
 		};
 
 		template<typename Ret, typename... Args>
-		class MapPool1D: public MapOverlap1D<Ret, Args...>
+		class MapPool1D: public SeqSkeletonBase
 		{
+		public:
+			SKEPU_CHAIN_SKELETON_SETTERS(SeqSkeletonBase)
+
+		private:
+			static constexpr bool indexed = is_indexed<Args...>::value;
+			static constexpr bool randomized = has_random<Args...>::value;
+			static constexpr size_t randomCount = get_random_count<Args...>::value;
+			static constexpr size_t OutArity = out_size<Ret>::value;
+			static constexpr size_t numArgs = sizeof...(Args) - (indexed ? 1 : 0) - (randomized ? 1 : 0) + OutArity;
+			static constexpr size_t anyCont = trait_count_all<is_skepu_container_proxy, Args...>::value;
+
+			using PoolType = typename pack_element<(indexed ? 1 : 0) + (randomized ? 1 : 0), Args...>::type;
+			using T = typename region_type<PoolType>::type;
+
+			static constexpr typename make_pack_indices<OutArity, 0>::type out_indices{};
+			static constexpr typename make_pack_indices<1 + OutArity, OutArity>::type elwise_indices{};
+			static constexpr typename make_pack_indices<1 + OutArity + anyCont, 1 + OutArity>::type any_indices{};
+			static constexpr typename make_pack_indices<numArgs, 1 + OutArity + anyCont>::type const_indices{};
+
 			using MapFunc = std::function<Ret(Args...)>;
+			using F = ConditionalIndexForwarder<indexed, randomized, MapFunc>;
+
+			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
+			void apply(size_t size, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args)
+			{
+				DEBUG_TEXT_LEVEL1("Native C++ MapPool1D: size = " << size);
+
+				auto out = std::make_tuple(get<OI>(std::forward<CallArgs>(args)...).begin()...);
+				const T *input = get<OutArity>(std::forward<CallArgs>(args)...).begin().getAddress();
+
+				SKEPU_TRACE_START_EVENT(trace_handle);
+
+				auto random = this->template prepareRandom<randomCount>(size);
+				for (size_t i = 0; i < size; ++i)
+				{
+					auto index = std::get<0>(out).getIndex();
+					Pool1D<T> pool(this->m_pool_size, 1, input + i * this->m_stride);
+					auto res = F::forward(mapFunc, index, random, pool,
+						get<AI>(std::forward<CallArgs>(args)...).hostProxy(typename pack_element<AI-OutArity-1 + (indexed ? 1 : 0) + (randomized ? 1 : 0) + 1, typename proxy_tag<Args>::type...>::type{}, index)...,
+						get<CI>(std::forward<CallArgs>(args)...)...
+					);
+					SKEPU_VARIADIC_RETURN(*std::get<OI>(out)++..., res);
+				}
+			}
 
 		public:
-			using SkepuChainBase = MapOverlap1D<Ret, Args...>;
-			SKEPU_CHAIN_SKELETON_SETTERS(SkepuChainBase)
-			SKEPU_CHAIN(setStride, SkepuChainBase)
-			void setOverlap(size_t) = delete;
-			void setEdgeMode(Edge) = delete;
-			void setUpdateMode(UpdateMode) = delete;
-
-			auto &setPoolSize(size_t p)
+			template<typename... CallArgs>
+			auto operator()(CallArgs&&... args) -> decltype(get<0>(std::forward<CallArgs>(args)...))
 			{
+				static_assert(sizeof...(CallArgs) == numArgs, "Number of arguments not matching MapPool function");
+				const size_t size = get<0>(std::forward<CallArgs>(args)...).size();
+				const size_t in_size = get<OutArity>(std::forward<CallArgs>(args)...).size();
+				if (size > 0 && in_size < this->m_pool_size + this->m_stride * (size - 1))
+					SKEPU_ERROR("MapPool1D: the input has " << in_size << " elements, the output of " << size << " elements needs at least "
+						<< this->m_pool_size + this->m_stride * (size - 1));
+				this->apply(size, out_indices, elwise_indices, any_indices, const_indices, std::forward<CallArgs>(args)...);
+				return get<0>(std::forward<CallArgs>(args)...);
+			}
+
+			auto &setPoolSize(int p)
+			{
+				if (p < 0)
+					SKEPU_ERROR("Pool size cannot be less than 0");
+				this->m_pool_size = p;
 				return *this;
 			}
 
-			MapPool1D(MapFunc map): MapOverlap1D<Ret, Args...>(map) {}
+			int getPoolSize() const { return this->m_pool_size; }
+
+			auto &setStride(int s)
+			{
+				if (s < 0)
+					SKEPU_ERROR("Stride cannot be less than 0");
+				this->m_stride = s;
+				return *this;
+			}
+
+			int getStride() const { return this->m_stride; }
+
+			auto &setPoolSizeAndStride(int p)
+			{
+				this->setPoolSize(p);
+				this->setStride(p);
+				return *this;
+			}
+
+			MapFunc mapFunc;
+			MapPool1D(MapFunc map): mapFunc(map) {}
+
+		private:
+			int m_pool_size = 1;
+			int m_stride = 1;
 		};
 
     } // impl

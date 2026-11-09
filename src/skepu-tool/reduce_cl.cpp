@@ -108,8 +108,8 @@ std::string createReduce1DKernelProgram_CL(SkeletonInstance &instance, UserFunct
 		sourceStream << "#pragma OPENCL EXTENSION cl_khr_fp64: enable\n";
 
 	// Include user constants as preprocessor macros
-	for (auto pair : UserConstants)
-		sourceStream << "#define " << pair.second->name << " (" << pair.second->definition << ") // " << pair.second->typeName << "\n";
+	for (UserConstant *constant : userConstantsInOrder())
+		sourceStream << "#define " << constant->name << " (" << constant->definition << ") // " << constant->typeName << "\n";
 
 	// check for extra user-supplied opencl code for custome datatype
 	for (UserType *RefType : reduceFunc.allReferencedUTs())
@@ -218,11 +218,11 @@ std::string createReduce2DKernelProgram_CL(SkeletonInstance &instance, UserFunct
 		sourceStream << "#pragma OPENCL EXTENSION cl_khr_fp64: enable\n";
 
 	// Include user constants as preprocessor macros
-	for (auto pair : UserConstants)
-		sourceStream << "#define " << pair.second->name << " (" << pair.second->definition << ") // " << pair.second->typeName << "\n";
+	for (UserConstant *constant : userConstantsInOrder())
+		sourceStream << "#define " << constant->name << " (" << constant->definition << ") // " << constant->typeName << "\n";
 
 	// check for extra user-supplied opencl code for custome datatype
-	std::set<UserType*> referencedUTs = rowWiseFunc.allReferencedUTs();
+	UserTypeSet referencedUTs = rowWiseFunc.allReferencedUTs();
 	for (UserType *type : colWiseFunc.allReferencedUTs())
 		referencedUTs.insert(type);
 

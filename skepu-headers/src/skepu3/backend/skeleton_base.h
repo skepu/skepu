@@ -320,8 +320,22 @@ public: // friend the tracer?
 				return &this->m_double_fallback_spec;
 			}
 
+			// a copy gets a new trace id
+			struct InstanceID
+			{
+				UniqueIdentifier::ID value = UniqueIdentifier::null();
+
+				InstanceID() = default;
+				InstanceID(const InstanceID &): value(UniqueIdentifier::generate()) {}
+				InstanceID(InstanceID &&) = default;
+				InstanceID &operator=(const InstanceID &) { this->value = UniqueIdentifier::generate(); return *this; }
+				InstanceID &operator=(InstanceID &&) = default;
+				InstanceID &operator=(UniqueIdentifier::ID id) { this->value = id; return *this; }
+				operator UniqueIdentifier::ID() const { return this->value; }
+			};
+
 			std::string m_label;
-			UniqueIdentifier::ID m_object_id;
+			InstanceID m_object_id;
 #ifdef SKEPU_TRACING
 			std::string m_file_name;
 			std::string m_file_content_hash;

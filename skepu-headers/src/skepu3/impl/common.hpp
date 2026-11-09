@@ -512,19 +512,15 @@ namespace skepu
 		template<size_t randomCount, REQUIRES(randomCount != SKEPU_NO_RANDOM)>
 		Random<randomCount> prepareRandom(size_t size)
 		{
-			if (this->m_prng == nullptr)
-				SKEPU_ERROR("No random stream set in skeleton instance");
-
-			return this->m_prng->template asRandom<randomCount>(size);
+			PRNG *use_prng = this->m_prng == nullptr ? &getGlobalPRNG() : this->m_prng;
+			return use_prng->template asRandom<randomCount>(size);
 		}
 
 		template<size_t randomCount, REQUIRES(randomCount != SKEPU_NO_RANDOM)>
 		skepu::Vector<Random<randomCount>> prepareRandom(size_t size, size_t copies)
 		{
-			if (this->m_prng == nullptr)
-				SKEPU_ERROR("No random stream set in skeleton instance");
-
-			return this->m_prng->template asRandom<randomCount>(size, copies);
+			PRNG *use_prng = this->m_prng == nullptr ? &getGlobalPRNG() : this->m_prng;
+			return use_prng->template asRandom<randomCount>(size, copies);
 		}
 
 		template<size_t randomCount, REQUIRES(randomCount == SKEPU_NO_RANDOM)>

@@ -31,7 +31,7 @@ llvm::cl::opt<bool> NoAddExtension("override-extension",  llvm::cl::desc("Do not
 
 llvm::cl::opt<bool> DoNotGenLineDirectives("no-preserve-lines", llvm::cl::desc("Do not try to preserve line numbers from source file"),   llvm::cl::cat(SkePUCategory));
 
-llvm::cl::opt<std::string> AllowedFuncNames("fnames", llvm::cl::desc("Function names which are allowed to be called from user functions (separated by space, e.g. -fnames \"conj csqrt\")"), llvm::cl::cat(SkePUCategory));
+llvm::cl::opt<std::string> AllowedFuncNames("fnames", llvm::cl::desc("Names of functions that the device provides and user functions may call (separated by space, e.g. -fnames \"conj csqrt\")"), llvm::cl::cat(SkePUCategory));
 
 
 // Derived
@@ -52,6 +52,15 @@ std::unordered_map<const clang::TypeDecl*, UserType*> UserTypes;
 
 // User functions, name maps to AST entry and indexed indicator
 std::unordered_map<const clang::VarDecl*, UserConstant*> UserConstants;
+
+std::vector<UserConstant*> userConstantsInOrder()
+{
+	std::vector<UserConstant*> constants;
+	for (auto &pair : UserConstants)
+		constants.push_back(pair.second);
+	std::sort(constants.begin(), constants.end(), DeclOrder{});
+	return constants;
+}
 
 #ifdef SKEPU_LSP
 std::vector<Skeleton*> Skeletons;
@@ -94,25 +103,7 @@ void clearGlobals()
 }
 #endif
 
-// Explicitly allowed functions to call from user functions
-std::unordered_set<std::string> AllowedFunctionNamesCalledInUFs
-{
-	"exp", "exp2", "exp2f",
-	"sqrt", "copysign", "copysignf",
-	"abs", "fabs",
-	"max", "fmax",
-	"min", "fmin",
-	"pow",
-	"log", "log2", "log10",
-	"sin", "sinh", "asin", "asinh",
-	"cos", "cosh", "acos", "acosh",
-	"tan", "tanh", "atan", "atanh",
-	"round", "ceil", "floor",
-	"fmod", "trunc",
-	"erf",
-	"nan", "isnan", "isinf",
-	"printf",
-};
+std::unordered_set<std::string> UserDeclaredFunctionNames;
 
 // Skeleton types lookup from internal SkePU class template name
 const std::unordered_map<std::string, Skeleton> SkeletonsLookup =
@@ -126,7 +117,7 @@ const std::unordered_map<std::string, Skeleton> SkeletonsLookup =
 	{"MapOverlap2D",         {"MapOverlap2D",       Skeleton::Type::MapOverlap2D,       1, 1}},
 	{"MapOverlap3D",         {"MapOverlap3D",       Skeleton::Type::MapOverlap3D,       1, 1}},
 	{"MapOverlap4D",         {"MapOverlap4D",       Skeleton::Type::MapOverlap4D,       1, 1}},
-	{"MapPool1D",            {"MapPool1D",          Skeleton::Type::MapPool1D,          1, 4}},
+	{"MapPool1D",            {"MapPool1D",          Skeleton::Type::MapPool1D,          1, 1}},
 	{"MapPool2D",            {"MapPool2D",          Skeleton::Type::MapPool2D,          1, 1}},
 	{"MapPool3D",            {"MapPool3D",          Skeleton::Type::MapPool3D,          1, 1}},
 	{"MapPool4D",            {"MapPool4D",          Skeleton::Type::MapPool4D,          1, 1}},
@@ -516,7 +507,7 @@ int main(int argc, const char **argv)
 	std::istringstream SSNames(AllowedFuncNames);
 	std::vector<std::string> Names{std::istream_iterator<std::string>{SSNames}, std::istream_iterator<std::string>{}};
 	for (std::string &name : Names)
-		AllowedFunctionNamesCalledInUFs.insert(name);
+		UserDeclaredFunctionNames.insert(name);
 
 	return Tool.run(clang::tooling::newFrontendActionFactory<SkePUFrontendAction>().get());
 }

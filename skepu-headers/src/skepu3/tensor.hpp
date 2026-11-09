@@ -265,7 +265,7 @@ namespace skepu
 					for (int k = 0; k < ten.size_k(); ++k)
 					{
 						auto val = ten(i,j,k);
-						std::cout << std::setw(5) << val << " ";
+						os << std::setw(5) << val << " ";
 					}
 					os << " | ";
 				}
@@ -615,7 +615,7 @@ namespace skepu
 					{
 						for (size_t l = 0; l < ten4.size_l(); ++l)
 						{
-							std::cout << std::setw(12) << std::fixed << ten4(i,j,k,l) << " ";
+							os << std::setw(12) << std::fixed << ten4(i,j,k,l) << " ";
 						}
 						os << "| ";
 					}
@@ -735,7 +735,7 @@ namespace skepu
 				{
 					for (size_t l = 0; l < ten4.size_l; ++l)
 					{
-						std::cout << std::setw(12) << std::fixed << ten4(i,j,k,l) << " ";
+						os << std::setw(12) << std::fixed << ten4(i,j,k,l) << " ";
 					}
 					os << "| ";
 				}

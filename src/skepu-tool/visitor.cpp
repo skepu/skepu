@@ -270,6 +270,7 @@ HandleSkeletonInstance(clang::VarDecl *d)
 	HandleFactoryCall(CExpr, d->getASTContext(), lambdaCodeLocation(d), TypeName, arity, FuncArgs);
 
 	#ifdef SKEPU_LSP
+		const clang::FunctionDecl *Callee = CExpr->getDirectCallee();
 		Skeleton *skeleton = new Skeleton{};
 		skeleton->type = SkeletonsLookup.at(TypeName).type;
 		skeleton->name = SkeletonsLookup.at(TypeName).name;
@@ -418,8 +419,7 @@ bool SkePUASTVisitor::VisitVarDecl(clang::VarDecl *d)
 	return RecursiveASTVisitor<SkePUASTVisitor>::VisitVarDecl(d);
 }
 
-// Is the type a SkePU container (a vector, matrix or tensor), as written for any element type?
-static bool IsContainerType(clang::QualType type)
+static std::string ClassTemplateName(clang::QualType type)
 {
 	type = type.getCanonicalType();
 	const clang::TemplateDecl *templateDecl = nullptr;
@@ -428,11 +428,20 @@ static bool IsContainerType(clang::QualType type)
 	else if (auto *record = type->getAsCXXRecordDecl())
 		if (auto *instance = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>(record))
 			templateDecl = instance->getSpecializedTemplate();
-	if (!templateDecl)
-		return false;
+	return templateDecl ? templateDecl->getQualifiedNameAsString() : "";
+}
 
-	const std::string name = templateDecl->getQualifiedNameAsString();
+static bool IsContainerType(clang::QualType type)
+{
+	const std::string name = ClassTemplateName(type);
 	return name == "skepu::Vector" || name == "skepu::Matrix" || name == "skepu::Tensor3" || name == "skepu::Tensor4";
+}
+
+// SkePY runtime containers (__skepu__) wrap a SkePU container; SkePY names them itself, so the tool does not
+static bool IsWrappedContainerType(clang::QualType type)
+{
+	const std::string name = ClassTemplateName(type);
+	return name == "__skepu__::Vector" || name == "__skepu__::Matrix" || name == "__skepu__::Tensor3" || name == "__skepu__::Tensor4";
 }
 
 #ifndef SKEPU_LSP
@@ -512,12 +521,12 @@ static bool MentionsContainer(clang::QualType type)
 		else
 			break;
 	}
-	return IsContainerType(type);
+	return IsContainerType(type) || IsWrappedContainerType(type);
 }
 #endif
 
-// A function that can have a region: defined in the file being processed, and not main, a constructor, a destructor, a constexpr function or a lambda's
-// function
+// A function can have a region unless it is not defined in the processed file, or is main, a constructor, a destructor, constexpr, a lambda body,
+// or macro-generated (an attribute macro such as SKEPU_TRACE_REGION_NAME does not count).
 bool SkePUASTVisitor::VisitFunctionDecl(clang::FunctionDecl *f)
 {
 	#ifndef SKEPU_LSP
@@ -525,14 +534,26 @@ bool SkePUASTVisitor::VisitFunctionDecl(clang::FunctionDecl *f)
 		auto *body = clang::dyn_cast_or_null<clang::CompoundStmt>(f->getBody());
 		if (!f->isThisDeclarationADefinition() || !body || f->isMain() || f->isDefaulted() || f->isDeleted() || f->isConstexpr() || f->isConsteval()
 			|| clang::isa<clang::CXXConstructorDecl>(f) || clang::isa<clang::CXXDestructorDecl>(f)
-			|| f->getBeginLoc().isMacroID() || body->getLBracLoc().isMacroID() || !SM.isWrittenInMainFile(body->getLBracLoc()))
+			|| f->getLocation().isMacroID() || body->getLBracLoc().isMacroID() || !SM.isWrittenInMainFile(body->getLBracLoc()))
 			return true;
 		if (auto *method = clang::dyn_cast<clang::CXXMethodDecl>(f))
 			if (method->getParent()->isLambda())
 				return true;
 
+		// annotations from tracing.h
+		std::string regionName;
+		for (const clang::AnnotateAttr *annotation : f->specific_attrs<clang::AnnotateAttr>())
+		{
+			llvm::StringRef text = annotation->getAnnotation();
+			if (text == "skepu::no_region")
+				return true;
+			if (text.starts_with("skepu::region="))
+				regionName = text.drop_front(std::string("skepu::region=").size()).str();
+		}
+
 		ScopeCandidate &candidate = ScopeCandidates[NormalizedFunction(f)];
 		candidate.definition = f;
+		candidate.regionName = regionName;
 		for (const clang::ParmVarDecl *parameter : f->parameters())
 			if (MentionsContainer(parameter->getType()))
 				candidate.direct = true;
@@ -552,7 +573,8 @@ bool SkePUASTVisitor::VisitDeclRefExpr(clang::DeclRefExpr *ref)
 			return true;
 		if (auto *function = clang::dyn_cast<clang::FunctionDecl>(ref->getDecl()))
 		{
-			if (function->getQualifiedNameAsString().compare(0, 7, "skepu::") == 0)
+			// SkePU or SkePY runtime function
+			if (function->getQualifiedNameAsString().compare(0, 7, "skepu::") == 0 || function->getQualifiedNameAsString().compare(0, 11, "__skepu__::") == 0)
 				candidate->second.direct = true;
 			else
 				candidate->second.callees.insert(NormalizedFunction(function));
@@ -645,10 +667,13 @@ void PlantAutoRegions()
 	{
 		const clang::FunctionDecl *f = candidate->definition;
 		auto *body = clang::dyn_cast<clang::CompoundStmt>(f->getBody());
-		const std::string file = SM.getFilename(SM.getSpellingLoc(f->getLocation())).str();
-		const unsigned line = SM.getSpellingLineNumber(f->getLocation());
+		// honors #line directives of frontends
+		const clang::PresumedLoc presumed = SM.getPresumedLoc(f->getLocation());
+		const std::string file = presumed.isValid() ? std::string(presumed.getFilename()) : SM.getFilename(SM.getSpellingLoc(f->getLocation())).str();
+		const unsigned line = presumed.isValid() ? presumed.getLine() : SM.getSpellingLineNumber(f->getLocation());
+		const std::string name = candidate->regionName.empty() ? f->getQualifiedNameAsString() : candidate->regionName;
 		// on the line of the brace: the line numbers stay
-		GlobalRewriter.InsertTextAfterToken(body->getLBracLoc(), " SKEPU_TRACE_AUTO_REGION(\"" + CStringLiteral(f->getQualifiedNameAsString())
+		GlobalRewriter.InsertTextAfterToken(body->getLBracLoc(), " SKEPU_TRACE_AUTO_REGION(\"" + CStringLiteral(name)
 			+ "\", \"" + CStringLiteral(file) + "\", " + std::to_string(line) + ");");
 		SkePULog() << "Trace region for " << f->getQualifiedNameAsString() << "\n";
 	}

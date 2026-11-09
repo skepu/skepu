@@ -492,7 +492,7 @@ inline float blend_helper_ex(float a, float b, int mode)
 	case MULTIPLY:
 		return (a * b);
 	case DIVIDE:
-		return (a / b);
+		return (b == 0.f ? 1.f : a / b);
 	case SCREEN:
 		return (1 - (1 - a) * (1 - b));
 	case OVERLAY:
@@ -507,7 +507,8 @@ inline unsigned char blend_helper(unsigned char a_in, unsigned char b_in, int mo
 	float a = a_in / 255.f;
 	float b = b_in / 255.f;
 	
-	return 255.f * blend_helper_ex(a, b, mode);
+	// modes such as DIVIDE leave [0, 1]
+	return 255.f * fmin(fmax(blend_helper_ex(a, b, mode), 0.f), 1.f);
 }
 
 inline RGBPixel blend_rgb(RGBPixel a, RGBPixel b, int mode)
@@ -927,7 +928,7 @@ inline RGBExtended convolution_kernel_rgbex_2d(skepu::Region2D<RGBExtended> in, 
 
 inline float gauss_weights_kernel(skepu::Index1D index, size_t r, float sigma)
 {
-	const float pi = 3.141592;
+	const float pi = 3.14159265358979f;
 	float i = (float)index.i - r;
 	return exp(-i*i / (2 * sigma * sigma)) / sqrt(2* pi * sigma * sigma);
 }
@@ -937,7 +938,8 @@ inline GrayscalePixel distance_kernel(GrayscalePixel x, GrayscalePixel y)
 	GrayscalePixel result;
 	float xf = (float)x.intensity / 255 - 0.5;
 	float yf = (float)y.intensity / 255 - 0.5;
-	result.intensity = 255 - sqrt(xf*xf + yf*yf) * 2 * 255;
+	// the distance from the center is at most 1/sqrt(2); clamp to the type
+	result.intensity = fmin(fmax(255 - sqrt(xf*xf + yf*yf) * 2 * 255, 0.f), 255.f);
 	return result;
 }
 
@@ -952,16 +954,16 @@ inline GrayscaleExtended distance_kernel_ex(GrayscaleExtended x, GrayscaleExtend
 
 inline RGBPixel random_displacement_rgb(skepu::Random<2>& rnd, skepu::Region2D<RGBPixel> in)
 {
-	int i = (rnd.get() % (2 * in.oi + 1)) - in.oi;
-	int j = (rnd.get() % (2 * in.oj + 1)) - in.oj;
+	int i = (int)(rnd.get() % (2 * in.oi + 1)) - (int)in.oi;
+	int j = (int)(rnd.get() % (2 * in.oj + 1)) - (int)in.oj;
 	
 	return in(i, j);
 }
 
 inline RGBExtended random_displacement_rgbex(skepu::Random<2>& rnd, skepu::Region2D<RGBExtended> in)
 {
-	int i = (rnd.get() % (2 * in.oi + 1)) - in.oi;
-	int j = (rnd.get() % (2 * in.oj + 1)) - in.oj;
+	int i = (int)(rnd.get() % (2 * in.oi + 1)) - (int)in.oi;
+	int j = (int)(rnd.get() % (2 * in.oj + 1)) - (int)in.oj;
 	RGBExtended result =  in(i, j);
 	return result;
 }
@@ -1004,7 +1006,7 @@ inline RGBPixel median_kernel(skepu::Region2D<RGBPixel> image)
 	
 	for (int c = 0; c < 3; c++)
 	{
-		int count = 2 * image.oi * (image.oi + 1);
+		int count = (int)((2 * image.oi + 1) * (2 * image.oj + 1) - 1) / 2; // rank of the median: 2r(r+1) for radius r
 		unsigned char coarseIndex;
 		for (coarseIndex = 0; coarseIndex < 16; ++coarseIndex)
 		{
@@ -1041,15 +1043,15 @@ inline RGBExtended median_kernel_ex(skepu::Region2D<RGBExtended> image)
 	{
 		for (int column = -image.oj; column <= image.oj; column++)
 		{ 
-			unsigned char imageValue = image(row, column).r * 256;
+			unsigned char imageValue = (unsigned char)fmin(fmax(image(row, column).r * 256, 0.f), 255.f);
 			fineHistogram[0][imageValue]++;
 			coarseHistogram[0][imageValue / 16]++;
 			
-			imageValue = image(row, column).g * 256;
+			imageValue = (unsigned char)fmin(fmax(image(row, column).g * 256, 0.f), 255.f);
 			fineHistogram[1][imageValue]++;
 			coarseHistogram[1][imageValue / 16]++;
 			
-			imageValue = image(row, column).b * 256;
+			imageValue = (unsigned char)fmin(fmax(image(row, column).b * 256, 0.f), 255.f);
 			fineHistogram[2][imageValue]++;
 			coarseHistogram[2][imageValue / 16]++;
 		}
@@ -1059,7 +1061,7 @@ inline RGBExtended median_kernel_ex(skepu::Region2D<RGBExtended> image)
 	
 	for (int c = 0; c < 3; c++)
 	{
-		int count = 2 * image.oi * (image.oi + 1);
+		int count = (int)((2 * image.oi + 1) * (2 * image.oj + 1) - 1) / 2; // rank of the median: 2r(r+1) for radius r
 		unsigned char coarseIndex;
 		for (coarseIndex = 0; coarseIndex < 16; ++coarseIndex)
 		{
@@ -1096,15 +1098,15 @@ inline HSVPixel median_kernel_hsv(skepu::Region2D<HSVPixel> image)
 	{
 		for (int column = -image.oj; column <= image.oj; column++)
 		{ 
-			unsigned char imageValue = image(row, column).h * 256 / 360.f;
+			unsigned char imageValue = (unsigned char)fmin(fmax(image(row, column).h * 256 / 360.f, 0.f), 255.f);
 			fineHistogram[0][imageValue]++;
 			coarseHistogram[0][imageValue / 16]++;
 			
-			imageValue = image(row, column).s * 256;
+			imageValue = (unsigned char)fmin(fmax(image(row, column).s * 256, 0.f), 255.f);
 			fineHistogram[1][imageValue]++;
 			coarseHistogram[1][imageValue / 16]++;
 			
-			imageValue = image(row, column).v * 256;
+			imageValue = (unsigned char)fmin(fmax(image(row, column).v * 256, 0.f), 255.f);
 			fineHistogram[2][imageValue]++;
 			coarseHistogram[2][imageValue / 16]++;
 		}
@@ -1114,7 +1116,7 @@ inline HSVPixel median_kernel_hsv(skepu::Region2D<HSVPixel> image)
 	
 	for (int c = 0; c < 3; c++)
 	{
-		int count = 2 * image.oi * (image.oi + 1);
+		int count = (int)((2 * image.oi + 1) * (2 * image.oj + 1) - 1) / 2; // rank of the median: 2r(r+1) for radius r
 		unsigned char coarseIndex;
 		for (coarseIndex = 0; coarseIndex < 16; ++coarseIndex)
 		{

@@ -65,6 +65,15 @@ ostream &operator<<(ostream &s, C &arg)
     return s;
 }
 
+// const and temporary scalars: the generic overload would win
+template<typename T>
+ostream &operator<<(ostream &s, Scalar<T> const& arg)
+{
+    SKEPU_TRACE_SCALAR_IO(arg.m_ids, "Output", __FILE__, __LINE__);
+    s.m_stream << arg;
+    return s;
+}
+
 template<typename T>
 ostream &&operator<<(ostream &&s, T const& arg)
 {

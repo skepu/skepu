@@ -26,9 +26,6 @@ A change to these needs a matching change in SkePY:
 * `examples/*.cpp`: the references of SkePY's example tests. After a change to an example or to a library it uses, run `shedskin/tests/skepu/reference.py -o`
   for it. `examples/lodepng.*` is copied to `shedskin/shedskin/lib/skepu/`.
 
-Known SkePU issues that SkePY runs into: user functions named like OpenCL C builtins (`half`, `trunc`) do not compile for OpenCL, and the order of the
-user-function structs in the output of `skepu-tool` varies between runs.
-
 ## License
 
 SkePY keeps the licenses of Shed Skin where it changes its files: the compiler is GPL-3.0-only, including our changes to it, which is why SkePY is a

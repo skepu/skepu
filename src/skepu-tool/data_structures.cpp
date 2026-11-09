@@ -1,6 +1,7 @@
 #include <cctype>
 #include <sstream>
 #include <unordered_set>
+#include "kernel_builtins.h"
 #include <unordered_map>
 
 #include "clang/Sema/Sema.h"
@@ -28,7 +29,8 @@ using namespace clang;
 using namespace clang::ast_matchers;
 
 // Defined in skepu.cpp
-extern std::unordered_set<std::string> AllowedFunctionNamesCalledInUFs;
+extern std::unordered_set<std::string> UserDeclaredFunctionNames;
+
 
 
 // This visitor traverses a userfunction AST node and finds references to other userfunctions and usertypes.
@@ -44,6 +46,41 @@ public:
 		bool invalid = false;
 		llvm::StringRef text = Lexer::getSourceText(CharSourceRange::getCharRange(ref->getBeginLoc(), ref->getNameInfo().getBeginLoc()), SM, Context.getLangOpts(), &invalid);
 		return !invalid && (text == "std::" || text == "::");
+	}
+
+	// Not decided by system-header status: library headers arrive as ordinary include paths, and SkePU's own headers may be system headers.
+	static bool isLibraryFunction(const FunctionDecl *f)
+	{
+		const SourceManager &SM = f->getASTContext().getSourceManager();
+		if (SM.isInMainFile(f->getLocation()))
+			return false;
+		if (f->getBuiltinID() != 0 || f->isExternC())
+			return true;
+		for (const DeclContext *context = f->getDeclContext(); context; context = context->getParent())
+			if (context->isStdNamespace())
+				return true;
+		return false;
+	}
+
+	// Only std::name and abs of a floating-point value are rewritten; other library functions are an error for OpenCL and CUDA (empty replacement, see StdCallReferences).
+	void HandleLibraryCall(CallExpr *c, Expr *callee, const FunctionDecl *Func, const std::string &name)
+	{
+		const bool known = kernelBuiltinFunctions().count(name) || UserDeclaredFunctionNames.count(name);
+		std::string plain = known ? name : "";
+		if (known && c->getNumArgs() == 1)
+			plain = openCLBuiltinName(name, c->getArg(0)->getType()->isFloatingType());
+
+		const auto *ref = dyn_cast<DeclRefExpr>(callee);
+		const bool stdQualified = ref && ref->hasQualifier() && !ref->getBeginLoc().isMacroID() && isStdQualifier(ref);
+		if (known && plain == name && !stdQualified)
+		{
+			SkePULog() << "Ignored reference to library function: '" << name << "'\n";
+			return;
+		}
+		if (stdQualified)
+			StdCallReferences.emplace_back(ref->getSourceRange(), plain, Func->getQualifiedNameAsString());
+		else if (!callee->getBeginLoc().isMacroID())
+			StdCallReferences.emplace_back(callee->getSourceRange(), plain, Func->getQualifiedNameAsString());
 	}
 
 	bool VisitCallExpr(CallExpr *c)
@@ -72,28 +109,11 @@ public:
 			std::string name = UnresolvedLookup->getName().getAsString();
 			SkePULog() << "Found unresolved lookup expr " << UnresolvedLookup->getName() <<"\n";
 
-			bool allowed = std::find(AllowedFunctionNamesCalledInUFs.begin(), AllowedFunctionNamesCalledInUFs.end(), name)
-				!= AllowedFunctionNamesCalledInUFs.end();
-
-			return allowed;
+			return kernelBuiltinFunctions().count(name) || UserDeclaredFunctionNames.count(name);
 		}
 
 		FunctionDecl *Func = c->getDirectCallee();
 		std::string name = Func->getName().str();
-
-		// A call that is qualified with std:: (or ::) is a call of the standard library function, which OpenCL C does not have:
-		// the builtin of the same name is used there (see StdCallReferences)
-		if (auto *ref = dyn_cast<DeclRefExpr>(callee))
-			if (ref->hasQualifier() && !ref->getBeginLoc().isMacroID() && isStdQualifier(ref)
-				&& (Func->getDeclContext()->getRedeclContext()->isStdNamespace() || AllowedFunctionNamesCalledInUFs.count(name)))
-			{
-				const bool allowed = AllowedFunctionNamesCalledInUFs.count(name) > 0;
-				std::string plain = name;
-				if (name == "abs" && c->getNumArgs() == 1 && c->getArg(0)->getType()->isFloatingType())
-					plain = "fabs";
-				StdCallReferences.emplace_back(ref->getSourceRange(), allowed ? plain : "", name);
-				return true;
-			}
 
 		if (name == "")
 		{
@@ -110,10 +130,9 @@ public:
 			SkePULog() << "Ignored reference to special function: '" << name << "'\n";
 			ReferencedGets.insert(dyn_cast<CXXMemberCallExpr>(c));
 		}
-		else if (std::find(AllowedFunctionNamesCalledInUFs.begin(), AllowedFunctionNamesCalledInUFs.end(), name) != AllowedFunctionNamesCalledInUFs.end())
+		else if (isLibraryFunction(Func) || UserDeclaredFunctionNames.count(name))
 		{
-			// Called function is explicitly allowed
-			SkePULog() << "Ignored reference to whitelisted function: '" << name << "'\n";
+			HandleLibraryCall(c, callee, Func, name);
 		}
 		else
 		{
@@ -226,7 +245,7 @@ public:
 	std::map<std::string, std::string> TypeAliases{};
 
 	std::vector<std::pair<const CallExpr*, UserFunction*>> UFReferences{};
-	std::set<UserFunction*> ReferencedUFs{};
+	UserFunctionSet ReferencedUFs{};
 	
 	std::set<const CallExpr*> ReferencedRets{};
 	std::set<CXXMemberCallExpr*> ReferencedGets{};
@@ -235,7 +254,7 @@ public:
 	// the code is copied to another scope (a qualifier like detail:: or a name from the enclosing namespace
 	// does not resolve there; in OpenCL C, a qualified name is not an identifier at all).
 	std::vector<std::pair<SourceRange, UserType*>> UTReferences{};
-	std::set<UserType*> ReferencedUTs{};
+	UserTypeSet ReferencedUTs{};
 
 	// The qualified names of user constants in the function, with the plain name of the constant
 	std::vector<std::pair<SourceRange, std::string>> ConstantReferences{};
@@ -826,6 +845,8 @@ UserFunction::UserFunction(clang::FunctionDecl *f)
 	#endif
 
 	std::stringstream SSUniqueName;
+	if (isKernelReservedName(this->rawName))
+		SSUniqueName << "skepu_uf_";
 	SSUniqueName << this->rawName;
 
 	// Handle userfunction templates
@@ -1036,9 +1057,39 @@ UserFunction::UserFunction(clang::FunctionDecl *f)
 			this->requiresDoublePrecision = true;
 }
 
-std::set<UserType*> UserFunction::allReferencedUTs() const
+static bool declBefore(const clang::Decl *a, const clang::Decl *b)
 {
-	std::set<UserType*> types = this->ReferencedUTs;
+	return a->getBeginLoc().getRawEncoding() < b->getBeginLoc().getRawEncoding();
+}
+
+// pointer order only breaks ties, so distinct entries are never merged
+bool DeclOrder::operator()(const UserFunction *a, const UserFunction *b) const
+{
+	if (declBefore(a->astDeclNode, b->astDeclNode)) return true;
+	if (declBefore(b->astDeclNode, a->astDeclNode)) return false;
+	if (a->uniqueName != b->uniqueName) return a->uniqueName < b->uniqueName;
+	return a < b;
+}
+
+bool DeclOrder::operator()(const UserType *a, const UserType *b) const
+{
+	if (declBefore(a->astDeclNode, b->astDeclNode)) return true;
+	if (declBefore(b->astDeclNode, a->astDeclNode)) return false;
+	if (a->name != b->name) return a->name < b->name;
+	return a < b;
+}
+
+bool DeclOrder::operator()(const UserConstant *a, const UserConstant *b) const
+{
+	if (declBefore(a->astDeclNode, b->astDeclNode)) return true;
+	if (declBefore(b->astDeclNode, a->astDeclNode)) return false;
+	if (a->name != b->name) return a->name < b->name;
+	return a < b;
+}
+
+UserTypeSet UserFunction::allReferencedUTs() const
+{
+	UserTypeSet types = this->ReferencedUTs;
 	std::set<const UserFunction*> visited{this};
 	std::vector<const UserFunction*> pending{this};
 	while (!pending.empty())

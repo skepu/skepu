@@ -25,6 +25,16 @@
 #endif
 #endif
 
+// Overrides skepu-tool's region for a function: none, or another name. For frontends that generate C++.
+// Defined with and without tracing: the tool reads them as annotations.
+#ifdef __clang__
+#define SKEPU_NO_TRACE_REGION __attribute__((annotate("skepu::no_region")))
+#define SKEPU_TRACE_REGION_NAME(name) __attribute__((annotate("skepu::region=" name)))
+#else
+#define SKEPU_NO_TRACE_REGION
+#define SKEPU_TRACE_REGION_NAME(name)
+#endif
+
 // The layout and the function bodies of the tracer depend on SKEPU_TRACING. Translation units
 // compiled with and without it can end up in one program (a precompiled source file and a plain
 // one that includes <skepu>, for example). The two variants are therefore different types, in

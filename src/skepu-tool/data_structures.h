@@ -114,6 +114,18 @@ public:
 	UserType(const clang::CXXRecordDecl *t);
 };
 
+class UserFunction;
+
+// pointer order varies between runs
+struct DeclOrder
+{
+	bool operator()(const UserFunction *a, const UserFunction *b) const;
+	bool operator()(const UserType *a, const UserType *b) const;
+	bool operator()(const UserConstant *a, const UserConstant *b) const;
+};
+using UserFunctionSet = std::set<UserFunction*, DeclOrder>;
+using UserTypeSet = std::set<UserType*, DeclOrder>;
+
 class UserFunction
 {
 public:
@@ -234,8 +246,8 @@ public:
 	std::vector<TemplateArgument> templateArguments{};
 
 	std::vector<std::pair<const clang::CallExpr*, UserFunction*>> UFReferences{};
-	std::set<UserFunction*> ReferencedUFs{};
-	std::set<UserType*> allReferencedUTs() const; // the user types of this function and of the functions that it calls, transitively
+	UserFunctionSet ReferencedUFs{};
+	UserTypeSet allReferencedUTs() const; // includes the types of called functions
 	
 	
 	std::set<const clang::CallExpr*> ReferencedRets{};
@@ -245,7 +257,7 @@ public:
 	std::vector<std::pair<clang::SourceRange, UserType*>> UTReferences{};
 	std::vector<std::tuple<clang::SourceRange, std::string, std::string>> StdCallReferences{}; // std:: calls: the OpenCL builtin ("" if none), the name
 	std::vector<std::pair<clang::SourceRange, std::string>> ConstantReferences{}; // qualified names of user constants, with the plain name
-	std::set<UserType*> ReferencedUTs{};
+	UserTypeSet ReferencedUTs{};
 	// the aliases (typedef, using) that the body names and that are declared outside the function, with the OpenCL type of each
 	std::map<std::string, std::string> TypeAliases{};
 

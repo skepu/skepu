@@ -66,6 +66,7 @@ extern std::vector<InlineInstance> InlineInstances;
 struct ScopeCandidate
 {
 	const clang::FunctionDecl *definition;
+	std::string regionName;                              // SKEPU_TRACE_REGION_NAME; empty: the function name
 	bool direct = false;                                 // makes events itself
 	std::set<const clang::FunctionDecl *> callees;       // the functions it refers to (normalized, see NormalizedFunction)
 };
@@ -76,6 +77,7 @@ extern std::unordered_map<const clang::TypeDecl*, UserType*> UserTypes;
 
 // User functions, name maps to AST entry and indexed indicator
 extern std::unordered_map<const clang::VarDecl*, UserConstant*> UserConstants;
+std::vector<UserConstant*> userConstantsInOrder();
 
 
 extern const std::unordered_map<std::string, Skeleton> SkeletonsLookup;

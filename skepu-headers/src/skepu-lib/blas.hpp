@@ -553,7 +553,7 @@ TR nrm2_uf_scaled(T x, TR scale)
 template<typename R>
 Scalar<R> sqrt_scalar(Scalar<R> sum)
 {
-	return Scalar<R>(sqrt((R)sum), sum.m_ids);
+	return Scalar<R>(sqrt((R)sum), sum.m_ids, LogValue::Yes);
 }
 
 template<typename R>
@@ -565,7 +565,7 @@ Scalar<R> sqrt_scalar(R sum)
 template<typename R>
 Scalar<R> scaled_sqrt_scalar(R scale, Scalar<R> sum)
 {
-	return Scalar<R>(scale * sqrt((R)sum), sum.m_ids);
+	return Scalar<R>(scale * sqrt((R)sum), sum.m_ids, LogValue::Yes);
 }
 
 template<typename R>

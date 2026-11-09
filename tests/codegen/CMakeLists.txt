@@ -8,6 +8,13 @@ skepu_add_test(fundamental_types EXCLUDE sequential DOUBLES)
 
 
 # ------------------------------------------------
+#   User functions named like OpenCL C builtins, or like the library functions that user functions may call
+# ------------------------------------------------
+
+skepu_add_test(opencl_reserved_names EXCLUDE sequential)
+
+
+# ------------------------------------------------
 #   User types that only the functions called by an operator use
 # ------------------------------------------------
 
@@ -343,9 +350,13 @@ skepu_add_tool_error_test(tool_userconstant_not_constexpr userconstant_not_const
 skepu_add_tool_error_test(tool_userconstant_no_initializer userconstant_no_initializer.cpp "must be declared constexpr")
 skepu_add_tool_error_test(tool_userconstant_valid userconstant_valid.cpp "")
 
-# The standard library has no counterpart in OpenCL C, only the math functions (see AllowedFunctionNamesCalledInUFs) have
+# Kernels have no library functions, only the math builtins (see kernel_builtins.h)
 skepu_add_tool_error_test(tool_std_call_opencl std_call.cpp "calls std::stable_sort" -opencl)
+skepu_add_tool_error_test(tool_std_call_cuda std_call.cpp "calls std::stable_sort" -cuda)
 skepu_add_tool_error_test(tool_std_call_cpu std_call.cpp "")
+skepu_add_tool_error_test(tool_library_call_opencl library_call.cpp "lgamma, a library function" -opencl)
+skepu_add_tool_error_test(tool_library_call_cuda library_call.cpp "lgamma, a library function" -cuda)
+skepu_add_tool_error_test(tool_library_call_openmp library_call.cpp "" -openmp)
 
 # The times of the CUDA and OpenCL backends are measured by the device without waiting for it at the calls (see tracing_cuda.hpp, tracing_opencl.h)
 foreach(_backend cuda opencl)

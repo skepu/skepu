@@ -1,3 +1,4 @@
+#include <functional>
 #include "code_gen.h"
 #include "code_gen_cl.h"
 
@@ -31,12 +32,7 @@ __kernel void {{KERNEL_NAME}}(
 	{
 		{{INDEX_INITIALIZER}}
 		{{CONTAINER_PROXIE_INNER}}
-#if !{{USE_MULTIRETURN}}
 		skepu_result = {{FUNCTION_NAME_MAP}}({{MAP_ARGS}});
-#else
-		{{MULTI_TYPE}} skepu_out_temp = {{FUNCTION_NAME_MAP}}({{MAP_ARGS}});
-		{{OUTPUT_ASSIGN}}
-#endif
 		skepu_i += skepu_gridSize;
 	}
 
@@ -44,13 +40,8 @@ __kernel void {{KERNEL_NAME}}(
 	{
 		{{INDEX_INITIALIZER}}
 		{{CONTAINER_PROXIE_INNER}}
-#if !{{USE_MULTIRETURN}}
 		{{MAP_RESULT_TYPE}} tempMap = {{FUNCTION_NAME_MAP}}({{MAP_ARGS}});
 		skepu_result = {{FUNCTION_NAME_REDUCE}}(skepu_result, tempMap);
-#else
-		{{MULTI_TYPE}} skepu_out_temp = {{FUNCTION_NAME_MAP}}({{MAP_ARGS}});
-		{{OUTPUT_ASSIGN}}
-#endif
 		skepu_i += skepu_gridSize;
 	}
 
@@ -211,6 +202,116 @@ public:
 )~~~";
 
 
+
+// Each returned value is reduced separately. The host passes one local buffer sized for all values per thread; the kernels split it per value.
+static std::string multiValueKernels_CL(UserFunction &mapFunc)
+{
+	std::vector<std::string> types;
+	for (const std::string &type : mapFunc.multipleReturnTypes)
+		types.push_back(multipleMemberTypeCL(type));
+
+	auto eachValue = [&](const std::function<std::string(size_t, const std::string &)> &text)
+	{
+		std::string all;
+		for (size_t k = 0; k < types.size(); ++k)
+			all += text(k, types[k]);
+		return all;
+	};
+	auto name = [](const char *base, size_t k) { return std::string(base) + std::to_string(k); };
+
+	const std::string results = eachValue([&](size_t k, const std::string &type) { return "\t" + type + " " + name("skepu_result_", k) + ";\n"; });
+	const std::string arrays = "\tsize_t skepu_offset = 0;\n" + eachValue([&](size_t k, const std::string &type)
+	{
+		return "\tskepu_offset = (skepu_offset + sizeof(" + type + ") - 1) / sizeof(" + type + ") * sizeof(" + type + ");\n"
+			"\t__local " + type + " *" + name("skepu_sdata_", k) + " = (__local " + type + " *)(skepu_sdata_raw + skepu_offset);\n"
+			"\tskepu_offset += sizeof(" + type + ") * skepu_blockSize;\n";
+	});
+	std::string tree;
+	for (size_t half = 512; half >= 1; half /= 2)
+		tree += "\tif (skepu_blockSize >= " + std::to_string(2 * half) + ") { if (skepu_tid < " + std::to_string(half) + " && skepu_tid + " + std::to_string(half) + " < skepu_n) { "
+			+ eachValue([&](size_t k, const std::string &) { return name("skepu_sdata_", k) + "[skepu_tid] = {{FUNCTION_NAME_REDUCE}}(" + name("skepu_sdata_", k) + "[skepu_tid], "
+				+ name("skepu_sdata_", k) + "[skepu_tid + " + std::to_string(half) + "]); "; })
+			+ "} barrier(CLK_LOCAL_MEM_FENCE); }\n";
+
+	const std::string first = eachValue([&](size_t k, const std::string &) { return "\t\t" + name("skepu_result_", k) + " = skepu_out_temp.e" + std::to_string(k) + ";\n"; });
+	const std::string next = eachValue([&](size_t k, const std::string &) { return "\t\t" + name("skepu_result_", k) + " = {{FUNCTION_NAME_REDUCE}}(" + name("skepu_result_", k) + ", skepu_out_temp.e" + std::to_string(k) + ");\n"; });
+	const std::string store = eachValue([&](size_t k, const std::string &) { return "\t" + name("skepu_sdata_", k) + "[skepu_tid] = " + name("skepu_result_", k) + ";\n"; });
+	const std::string write = eachValue([&](size_t k, const std::string &) { return "\t\t" + name("skepu_output_", k) + "[get_group_id(0)] = " + name("skepu_sdata_", k) + "[skepu_tid];\n"; });
+	const std::string firstOnly = eachValue([&](size_t k, const std::string &) { return "\t\t" + name("skepu_result_", k) + " = " + name("skepu_output_", k) + "[skepu_i];\n"; });
+	const std::string nextOnly = eachValue([&](size_t k, const std::string &) { return "\t\t" + name("skepu_result_", k) + " = {{FUNCTION_NAME_REDUCE}}(" + name("skepu_result_", k) + ", " + name("skepu_output_", k) + "[skepu_i]);\n"; });
+
+	return std::string(R"~~~(
+__kernel void {{KERNEL_NAME}}(
+	{{KERNEL_PARAMS}}
+	{{SIZE_PARAMS}}
+	{{STRIDE_PARAMS}}
+	size_t skepu_n,
+	size_t skepu_base,
+	__local char *skepu_sdata_raw
+)
+{
+	size_t skepu_global_prng_id = get_global_id(0);
+	size_t skepu_blockSize = get_local_size(0);
+	size_t skepu_tid = get_local_id(0);
+	size_t skepu_global_id = get_group_id(0) * skepu_blockSize + skepu_tid;
+	size_t skepu_i = get_group_id(0) * skepu_blockSize + skepu_tid;
+	size_t skepu_gridSize = skepu_blockSize * get_num_groups(0);
+	{{CONTAINER_PROXIES}}
+	{{STRIDE_INIT}}
+)~~~") + results + arrays + R"~~~(
+	if (skepu_i < skepu_n)
+	{
+		{{INDEX_INITIALIZER}}
+		{{CONTAINER_PROXIE_INNER}}
+		{{MULTI_TYPE}} skepu_out_temp = {{FUNCTION_NAME_MAP}}({{MAP_ARGS}});
+)~~~" + first + R"~~~(
+		skepu_i += skepu_gridSize;
+	}
+
+	while (skepu_i < skepu_n)
+	{
+		{{INDEX_INITIALIZER}}
+		{{CONTAINER_PROXIE_INNER}}
+		{{MULTI_TYPE}} skepu_out_temp = {{FUNCTION_NAME_MAP}}({{MAP_ARGS}});
+)~~~" + next + R"~~~(
+		skepu_i += skepu_gridSize;
+	}
+
+)~~~" + store + "\tbarrier(CLK_LOCAL_MEM_FENCE);\n\n" + tree + R"~~~(
+	if (skepu_tid == 0)
+	{
+)~~~" + write + R"~~~(	}
+}
+
+__kernel void {{KERNEL_NAME}}_ReduceOnly(
+	{{KERNEL_PARAMS_REDUCE_ONLY}}
+	size_t skepu_n,
+	__local char *skepu_sdata_raw
+)
+{
+	size_t skepu_blockSize = get_local_size(0);
+	size_t skepu_tid = get_local_id(0);
+	size_t skepu_i = get_group_id(0) * skepu_blockSize + get_local_id(0);
+	size_t skepu_gridSize = skepu_blockSize * get_num_groups(0);
+)~~~" + results + arrays + R"~~~(
+	if (skepu_i < skepu_n)
+	{
+)~~~" + firstOnly + R"~~~(		skepu_i += skepu_gridSize;
+	}
+
+	while (skepu_i < skepu_n)
+	{
+)~~~" + nextOnly + R"~~~(		skepu_i += skepu_gridSize;
+	}
+
+)~~~" + store + "\tbarrier(CLK_LOCAL_MEM_FENCE);\n\n" + tree + R"~~~(
+	if (skepu_tid == 0)
+	{
+)~~~" + write + R"~~~(	}
+}
+)~~~";
+}
+
 std::string createMapReduceKernelProgram_CL(SkeletonInstance &instance, UserFunction &mapFunc, UserFunction &reduceFunc, std::string dir)
 {
 	std::stringstream sourceStream, SSKernelParamList, SSMapFuncArgs, SSHostKernelParamList, SSKernelArgs;
@@ -220,7 +321,7 @@ std::string createMapReduceKernelProgram_CL(SkeletonInstance &instance, UserFunc
 	bool first = !indexInfo.hasIndex;
 	SSMapFuncArgs << indexInfo.mapFuncParam;
 	
-	std::string multiOutputAssign = handleOutputs_CL(mapFunc, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, true);
+	handleOutputs_CL(mapFunc, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, true);
 	handleOutputs_reduceOnly_CL(mapFunc, SSHostKernelParamListRO, SSKernelParamListRO, SSKernelArgsRO, true);
 	handleRandomParam_CL(mapFunc, sourceStream, SSMapFuncArgs, SSHostKernelParamList, SSKernelParamList, SSKernelArgs, first);
 	
@@ -251,7 +352,10 @@ std::string createMapReduceKernelProgram_CL(SkeletonInstance &instance, UserFunc
 	else
 		sourceStream << generateUserFunctionCode_CL(mapFunc, emittedUFs) << generateUserFunctionCode_CL(reduceFunc, emittedUFs);
 
-	sourceStream << MapReduceKernelTemplate_CL << ReduceKernelTemplate_CL;
+	if (mapFunc.multipleReturnTypes.size() > 0)
+		sourceStream << multiValueKernels_CL(mapFunc);
+	else
+		sourceStream << MapReduceKernelTemplate_CL << ReduceKernelTemplate_CL;
 	
 	std::stringstream SSKernelName;
 	SSKernelName << instance << "_" << transformToCXXIdentifier(ResultName) << "_MapReduceKernel_" << mapFunc.uniqueName << "_" << reduceFunc.uniqueName << "_arity_" << mapFunc.Varity << "uid_" << GlobalSkeletonIndex++;
@@ -291,8 +395,6 @@ std::string createMapReduceKernelProgram_CL(SkeletonInstance &instance, UserFunc
 		{"{{STRIDE_INIT}}",            SSStrideInit.str()},
 		{"{{TEMPLATE_HEADER}}",        indexInfo.templateHeader},
 		{"{{MULTI_TYPE}}",             mapFunc.multiReturnTypeNameGPU()},
-		{"{{USE_MULTIRETURN}}",        (mapFunc.multipleReturnTypes.size() > 0) ? "1" : "0"},
-		{"{{OUTPUT_ASSIGN}}",          multiOutputAssign},
 		
 		{"{{KERNEL_ARGS_REDUCE_ONLY}}",            SSKernelArgsRO.str()},
 		{"{{KERNEL_PARAMS_REDUCE_ONLY}}",          SSKernelParamListRO.str()},

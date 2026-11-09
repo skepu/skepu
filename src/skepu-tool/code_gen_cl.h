@@ -74,5 +74,7 @@ void handleRandomParam_CL(
 );
 void handleUserTypesConstantsAndPrecision_CL(std::vector<UserFunction const*> funcs, std::stringstream &sourceStream);
 
+std::string multipleMemberTypeCL(std::string type);
+
 std::string handleOutputs_CL(UserFunction &func, std::stringstream &SSHostKernelParamList, std::stringstream &SSKernelParamList, std::stringstream &SSKernelArgs, bool strided = false, std::string index = "skepu_i");
 std::string handleOutputs_reduceOnly_CL(UserFunction &func, std::stringstream &SSHostKernelParamList, std::stringstream &SSKernelParamList, std::stringstream &SSKernelArgs, bool strided = false, std::string index = "skepu_i");

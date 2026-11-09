@@ -1,6 +1,5 @@
-// The values of scalars in the trace (see tracing_scalar_values in CMakeLists.txt): a scalar that a skeleton returns (the result of a reduction) has a
-// "scalar_value" event with its object id and the number, before the call that outputs it. A scalar that is made from another one (a norm of a
-// sum) has the id of that one, and the later value is the one of the id. Not-finite numbers are strings; scalars of types that are not numbers have no event.
+// Scalar values in the trace: a scalar returned by a skeleton has a "scalar_value" event (object id, number) before the call that outputs it.
+// LogValue::Yes derives a later value of the source id; operators make no event. Non-finite numbers are strings; non-numeric scalars have no event.
 #include "../../external/catch2/catch.hpp"
 #include "../../external/nlohmann/json.hpp"
 
@@ -66,7 +65,7 @@ TEST_CASE("The values of scalars are in the trace")
 
 	// A scalar of the id of another one (as blas::nrm2 does), and numbers that JSON cannot write
 	skepu::Scalar<float> sum_scalar = sum_float(floats);
-	skepu::Scalar<float> derived(std::sqrt((float)sum_scalar), sum_scalar.m_ids);
+	skepu::Scalar<float> derived(std::sqrt((float)sum_scalar), sum_scalar.m_ids, skepu::LogValue::Yes);
 	skepu::Scalar<float> not_a_number(std::numeric_limits<float>::quiet_NaN());
 	skepu::Scalar<double> infinite(std::numeric_limits<double>::infinity());
 	skepu::Scalar<double> minus_infinite(-std::numeric_limits<double>::infinity());
@@ -74,8 +73,14 @@ TEST_CASE("The values of scalars are in the trace")
 	skepu::Scalar<unsigned long long> unsigned_large(18446744073709551615ULL);
 	skepu::Scalar<float> precise(0.1f);
 
-	// A scalar that has the ids of two (what an operation of two scalars makes) has no event
+	// operator results carry the ids of their operands and have no event
 	skepu::Scalar<float> combined = sum_scalar + not_a_number;
+	auto halved = sum_scalar / 2;
+	auto negated = -sum_scalar;
+	auto small = sum_scalar < 100.f;
+	REQUIRE(halved.m_ids == sum_scalar.m_ids);
+	REQUIRE(negated.m_ids == sum_scalar.m_ids);
+	REQUIRE(small.m_ids == sum_scalar.m_ids);
 	(void)combined;
 
 	const json trace = load_trace();
@@ -89,7 +94,7 @@ TEST_CASE("The values of scalars are in the trace")
 		REQUIRE(values[0].get<double>() == Approx(total_float));
 	}
 
-	// the second call of sum_float made sum_scalar; the derived scalar has its id and a later value
+	// sum_scalar comes from the second sum_float call; the derived scalar has its id and a later value
 	{
 		const auto id = sum_scalar.m_ids[0];
 		auto values = values_of(trace, id);

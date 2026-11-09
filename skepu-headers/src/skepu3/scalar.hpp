@@ -9,6 +9,10 @@
 namespace skepu
 {
 
+// Whether making a scalar logs its value. A scalar derived from others (operator result) has their ids and no event.
+// Yes: the value is logged as a later value of the id (blas::nrm2 of a sum).
+enum class LogValue { No, Yes };
+
 template<typename T>
 class Scalar
 {
@@ -31,14 +35,16 @@ private:
 
 public:
 
-	Scalar(T value, ID id): m_value{value}, m_ids{id}
+	Scalar(T value, ID id, LogValue log = LogValue::No): m_value{value}, m_ids{id}
 	{
-		this->trace_value();
+		if (log == LogValue::Yes)
+			this->trace_value();
 	}
 
-	Scalar(T value, std::vector<ID> id): m_value{value}, m_ids{id}
+	Scalar(T value, std::vector<ID> id, LogValue log = LogValue::No): m_value{value}, m_ids{id}
 	{
-		this->trace_value();
+		if (log == LogValue::Yes)
+			this->trace_value();
 	}
 
 	Scalar(T value, std::vector<ID> id1, std::vector<ID> id2): m_value{value}
