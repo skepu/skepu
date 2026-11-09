@@ -51,17 +51,12 @@ double power_of_two_above(double m)
 	return scale;
 }
 
-double absolute(double x)
-{
-	return x < 0 ? -x : x;
-}
-
 // The scale of a row of A, and of a column of B
 double row_scale(const skepu::MatRow<double> row)
 {
 	double largest = 0;
 	for (size_t j = 0; j < row.cols; ++j)
-		largest = absolute(row(j)) > largest ? absolute(row(j)) : largest;
+		largest = skepu::util::abs(row(j)) > largest ? skepu::util::abs(row(j)) : largest;
 	return power_of_two_above(largest);
 }
 
@@ -69,7 +64,7 @@ double column_scale(const skepu::MatCol<double> column)
 {
 	double largest = 0;
 	for (size_t i = 0; i < column.rows; ++i)
-		largest = absolute(column(i)) > largest ? absolute(column(i)) : largest;
+		largest = skepu::util::abs(column(i)) > largest ? skepu::util::abs(column(i)) : largest;
 	return power_of_two_above(largest);
 }
 
@@ -82,12 +77,6 @@ double divide_by_row_scale(skepu::Index2D index, double x, const skepu::Vec<doub
 double divide_by_column_scale(skepu::Index2D index, double x, const skepu::Vec<double> scale)
 {
 	return x / scale(index.col);
-}
-
-// The scale of an element of the product: the outer product of the scales of the rows of A and of the columns of B
-double outer_product(double row, double column)
-{
-	return row * column;
 }
 
 // A slice of a number u (|u| <= 1/2): the integer that is nearest to 2^7 u, and the remainder that is left for the next slices,
@@ -131,7 +120,7 @@ double to_double(long long x)
 double relative_error(double hi, double lo, double exact_hi, double exact_lo, double norm)
 {
 	const double difference = (hi - exact_hi) + (lo - exact_lo);
-	const double error = absolute(difference) / norm;
+	const double error = skepu::util::abs(difference) / norm;
 	return error > 1e-34 ? error : 1e-34;
 }
 
@@ -187,14 +176,15 @@ int main(int argc, char *argv[])
 				exact_lo(i, j) = (double)(sum - (__int128)high);
 			}
 	}, skepu::write(exact_hi, exact_lo));
-	const auto norm = skepu::MapReduce<1>(absolute, skepu::util::max<double>)(exact_hi);
+	const auto norm = skepu::MapReduce<1>(skepu::util::abs<double>, skepu::util::max<double>)(exact_hi);
 
 	// The scales, and the matrix of the scales of the elements of C
 	skepu::Vector<double> row_scales(n), column_scales(n);
 	skepu::Map<0>(row_scale)(row_scales, a);
 	skepu::Map<0>(column_scale)(column_scales, b);
 	skepu::Matrix<double> scales(n, n);
-	skepu::MapPairs<1, 1>(outer_product)(scales, row_scales, column_scales);
+	// the scale of an element of the product: row scale times column scale
+	skepu::MapPairs<1, 1>(skepu::util::mul<double>)(scales, row_scales, column_scales);
 
 	// The slices of A and of B
 	skepu::Map<1>(divide_by_row_scale)(a, a, row_scales);

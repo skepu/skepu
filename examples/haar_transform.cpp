@@ -42,9 +42,6 @@ float drop_small(float difference, float threshold)
 	return fabs(difference) < threshold ? 0.f : difference;
 }
 
-float is_nonzero(float x) { return x != 0.f ? 1.f : 0.f; }
-float square(float x) { return x * x; }
-float squared_error(float a, float b) { return (a - b) * (a - b); }
 
 int main(int argc, char *argv[])
 {
@@ -74,9 +71,9 @@ int main(int argc, char *argv[])
 	auto average = skepu::MapPool(haar_average);
 	auto difference = skepu::MapPool(haar_difference);
 	auto inverse = skepu::Map<0>(haar_inverse);
-	auto energy = skepu::MapReduce<1>(square, skepu::util::add<float>);
-	auto error = skepu::MapReduce<2>(squared_error, skepu::util::add<float>);
-	auto nonzero = skepu::MapReduce<1>(is_nonzero, skepu::util::add<float>);
+	auto energy = skepu::MapReduce<1>(skepu::util::square<float>, skepu::util::add<float>);
+	auto error = skepu::MapReduce<2>(skepu::util::squared_difference<float>, skepu::util::add<float>);
+	auto nonzero = skepu::MapReduce<1>(skepu::util::is_nonzero<float>, skepu::util::add<int>);
 	auto drop = skepu::Map<1>(drop_small);
 
 	skepu::Vector<float> original(n);

@@ -117,3 +117,13 @@ skepu_add_test(sparse BACKENDS sequential cpu openmp)
 # ------------------------------------------------
 
 skepu_add_test(filter EXCLUDE sequential)
+
+# ------------------------------------------------
+#   util functions called from user functions
+# ------------------------------------------------
+
+skepu_add_test(util_indirect)
+
+skepu_add_test(util_predicates)
+
+skepu_add_test(util_numeric)

@@ -54,6 +54,19 @@ instead of writing them for each skeleton: `identity`, `add`, `sub`, `mul`, `div
 `skepu::Map(skepu::util::square<float>)`. The binary functions also come in a form with
 operands of different types.
 
+The numeric functions are `abs` (signed and floating-point types), `absdiff`, `squared_difference`,
+`clamp(x, lo, hi)`, `lerp(a, b, t)`, which is `a + t * (b - a)`, and `muladd(a, b, c)`, which is
+`a * b + c`. Like the binary functions above, `absdiff`, `squared_difference`, `clamp`, `lerp` and
+`muladd` have a form with operands of different types for uniforms.
+
+The predicates return 1 or 0 as `int`: the comparisons `equal`, `not_equal`, `less`, `less_equal`,
+`greater` and `greater_equal` (also with operands of different types, so that one operand can be a
+uniform), `is_zero`, `is_nonzero`, `is_positive`, `is_negative`, `is_nan`, `is_finite`,
+`in_range(x, lo, hi)` and `is_close(a, b, rtol)`, which is `|a - b| <= rtol * max(1, |b|)`. The
+logical functions `logical_and`, `logical_or` and `logical_not` take `int` values; a `Reduce` with
+`logical_and` needs `setStartValue(1)`, as a reduction starts from 0. To count the elements that
+satisfy a predicate, use `skepu::MapReduce<1>(skepu::util::is_positive<float>, skepu::util::add<int>)`.
+
 ## Complex Numbers
 
 `skepu::complex::complex<T>` is a complex number type that is usable in user functions on all
