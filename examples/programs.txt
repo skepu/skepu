@@ -18,6 +18,7 @@ coulombic                  mpi       $(SIZE_BACKEND) $(RUN_BACKEND)
 dotproduct                 mpi       $(SIZE_BACKEND) $(RUN_BACKEND)
 edgedetect                 -         edge data/goose.png $(RUN_DIR)/result_edgedetect 2 $(RUN_BACKEND)
 fusion_patterns            -
+haar_transform             -         65536 0.05 4 $(RUN_BACKEND)
 heat_diffusion             -         2 64 100 $(RUN_BACKEND) redblack
 horner                     mpi       3 1 2 3 4 $(SIZE_BACKEND) $(RUN_BACKEND)
 image_manip                -         $(RUN_BACKEND)
@@ -40,4 +41,5 @@ ppmcc                      mpi       $(SIZE_BACKEND) $(RUN_BACKEND)
 pso                        mpi       4096 32 200 $(RUN_BACKEND)
 psnr                       mpi       128 128 $(RUN_BACKEND)
 riemann_sum                mpi       0 1 $(SIZE_BACKEND) $(RUN_BACKEND)
+sde                        -         data/sde-L03.png data/sde-R03.png $(RUN_DIR)/result_sde.png $(RUN_BACKEND)
 taylor                     mpi       0.1 $(SIZE_BACKEND) $(RUN_BACKEND)

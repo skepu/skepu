@@ -30,7 +30,7 @@ struct PixelInfo<skepu::filter::RGBPixel>
 template<typename Pixel>
 void ReadPngFileToMatrix(skepu::Matrix<Pixel> &inputMatrix, std::string filePath)
 {
-	skepu::external([&]
+	skepu::external("I/O", [&]
 	{
 		std::vector<unsigned char> image;
 		unsigned imageWidth, imageHeight;
@@ -45,7 +45,7 @@ void ReadPngFileToMatrix(skepu::Matrix<Pixel> &inputMatrix, std::string filePath
 template<typename Pixel>
 void WritePngFileMatrix(skepu::Matrix<Pixel> &imageData, std::string filePath)
 {
-	skepu::external(skepu::read(imageData), [&]
+	skepu::external("I/O", skepu::read(imageData), [&]
 	{
 		unsigned error = lodepng::encode(filePath, reinterpret_cast<unsigned char*>(imageData.data()), imageData.total_cols(), imageData.total_rows(), PixelInfo<Pixel>::type);
 		if (error) std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;

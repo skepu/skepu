@@ -35,7 +35,7 @@ int main()
 		square.setBackend(BackendSpec(Backend::Type::OpenCL)); square(stage, stage);
 		scale.setBackend(BackendSpec(Backend::Type::OpenCL)); scale(stage, stage);
 		total.setBackend(BackendSpec(Backend::Type::OpenCL));
-		skepu::Scalar<float> sum = total(stage);
+		auto sum = total(stage);
 		std::cout << "sum " << sum << "\n";
 	}
 
@@ -45,7 +45,7 @@ int main()
 		square.setBackend(BackendSpec(Backend::Type::CUDA)); square(stage, stage);
 		scale.setBackend(BackendSpec(Backend::Type::CUDA)); scale(stage, stage);
 		total.setBackend(BackendSpec(Backend::Type::CUDA));
-		skepu::Scalar<float> sum = total(stage);
+		auto sum = total(stage);
 		std::cout << "sum " << sum << "\n";
 	}
 

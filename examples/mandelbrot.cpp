@@ -55,7 +55,7 @@ void WritePngFileBinaryMatrix(skepu::Matrix<size_t> &imageData)
 		return res;
 	});
 	multiplier(copy, imageData);
-	skepu::external(skepu::read(copy), [&]
+	skepu::external("I/O", skepu::read(copy), [&]
 	{
 		unsigned error = lodepng::encode("mandelbrot.png", reinterpret_cast<unsigned char*>(copy.data()),
 			copy.total_cols(), copy.total_rows(), LCT_RGB);

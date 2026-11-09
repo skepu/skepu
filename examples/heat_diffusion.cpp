@@ -111,7 +111,7 @@ void relax(const Options &opt, Update &update, MaxChange &max_change, Container 
 
 		if (i == 1 || i % check_interval == 0 || i == opt.iterations)
 		{
-			const float largest_change = max_change(change);
+			const auto largest_change = max_change(change);
 			const bool converged = largest_change < opt.tolerance;
 			if (i == 1 || i % print_interval == 0 || i == opt.iterations || converged)
 				skepu::io::cout << i << "  " << largest_change << "\n";

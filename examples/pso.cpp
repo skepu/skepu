@@ -99,7 +99,7 @@ static void track_best(Swarm &swarm, int function)
 	// The best point of the swarm: the lowest value (the start value of a reduction is 0 unless it is set), the first particle that
 	// has it, and the position of that particle
 	swarm.lowest_value = skepu::Reduce(skepu::util::min<float>).setStartValue(FLT_MAX)(swarm.best_value);
-	const int best_particle = skepu::MapReduce<1>([](skepu::Index1D index, float best_value, float lowest) -> int
+	const auto best_particle = skepu::MapReduce<1>([](skepu::Index1D index, float best_value, float lowest) -> int
 	{
 		return (best_value == lowest) ? (int)index.i : INT_MAX;
 	}, skepu::util::min<int>).setStartValue(INT_MAX)(swarm.best_value, swarm.lowest_value);

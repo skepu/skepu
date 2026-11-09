@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 	auto integral = skepu::MapReduce<0>(riemann, skepu::util::add<float>);
 	integral.setDefaultSize(samples);
 	
-	float sum = integral(start, end, samples, 0.5);
+	auto sum = integral(start, end, samples, 0.5);
 	
 	skepu::io::cout << "Integral from " << start << " to " << end << " = " << sum << "\n";
 	

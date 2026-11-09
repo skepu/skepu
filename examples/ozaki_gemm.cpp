@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 				exact_lo(i, j) = (double)(sum - (__int128)high);
 			}
 	}, skepu::write(exact_hi, exact_lo));
-	const double norm = skepu::MapReduce<1>(absolute, skepu::util::max<double>)(exact_hi);
+	const auto norm = skepu::MapReduce<1>(absolute, skepu::util::max<double>)(exact_hi);
 
 	// The scales, and the matrix of the scales of the elements of C
 	skepu::Vector<double> row_scales(n), column_scales(n);
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
 			add_product(hi, lo, hi, lo, slice_products, scales, std::ldexp(1.0, -SLICE_BITS * (int)(s + t)));
 			++products;
 		}
-		const double error = largest_error(hi, lo, exact_hi, exact_lo, norm);
+		const auto error = largest_error(hi, lo, exact_hi, exact_lo, norm);
 		skepu::io::cout << w << "  " << products << "  " << error << "\n";
 	}
 	return 0;

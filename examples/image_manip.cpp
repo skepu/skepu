@@ -32,7 +32,7 @@ struct PixelInfo<skepu::filter::RGBPixel>
 template<typename Pixel>
 void ReadPngFileToMatrix(skepu::Matrix<Pixel> &inputMatrix, std::string filePath)
 {
-	skepu::external("Read PNG", [&]
+	skepu::external("I/O", [&]
 	{
 		std::vector<unsigned char> image_buf;
 		unsigned imageWidth, imageHeight;
@@ -47,7 +47,7 @@ void ReadPngFileToMatrix(skepu::Matrix<Pixel> &inputMatrix, std::string filePath
 template<typename Pixel>
 void WritePngFileMatrix(skepu::Matrix<Pixel> &imageData, std::string filePath)
 {
-	skepu::external("Write PNG", skepu::read(imageData), [&]
+	skepu::external("I/O", skepu::read(imageData), [&]
 	{
 		unsigned error = lodepng::encode(filePath, reinterpret_cast<unsigned char*>(imageData.data()), imageData.total_cols(), imageData.total_rows(), PixelInfo<Pixel>::type);
 		if (error) SKEPU_ERROR("decoder error " << error << ": " << lodepng_error_text(error));
@@ -197,49 +197,49 @@ int main(int argc, char* argv[])
 		}
 		else if (mode == "saturate")
 		{
-			float quantity;
+			float quantity = 0;
 			std::cin >> quantity;
 			saturate(*image, *image, quantity);
 		}
 		else if (mode == "desaturate")
 		{
-			float quantity;
+			float quantity = 0;
 			std::cin >> quantity;
 			desaturate(*image, *image, quantity);
 		}
 		else if (mode == "lighten")
 		{
-			float quantity;
+			float quantity = 0;
 			std::cin >> quantity;
 			lighten(*image, *image, quantity);
 		}
 		else if (mode == "darken")
 		{
-			float quantity;
+			float quantity = 0;
 			std::cin >> quantity;
 			darken(*image, *image, quantity);
 		}
 		else if (mode == "contrast")
 		{
-			float quantity;
+			float quantity = 0;
 			std::cin >> quantity;
 			contrast(*image, *image, quantity);
 		}
 		else if (mode == "rotate-color")
 		{
-			float quantity;
+			float quantity = 0;
 			std::cin >> quantity;
 			colorrotate(*image, *image, quantity);
 		}
 		else if (mode == "quantify")
 		{
-			float quantity;
+			float quantity = 0;
 			std::cin >> quantity;
 			quantify(*image, *image, quantity);
 		}
 		else if (mode == "smart-quantify")
 		{
-			size_t quantity;
+			size_t quantity = 0;
 			std::cin >> quantity;
 			skepu::Matrix<RGBExtended> samples(quantity, quantity);
 			uniform_sample(samples, *image, samples.size_i(), samples.size_j());
@@ -313,7 +313,7 @@ int main(int argc, char* argv[])
 		}
 		else if (mode == "displace")
 		{
-			size_t radius;
+			size_t radius = 0;
 			std::cin >> radius;
 			auto output = skepu::container_like(*image, "From 'displace'");
 			random_dist_rgb.setOverlap(radius, radius);
@@ -358,7 +358,7 @@ int main(int argc, char* argv[])
 		}
 		else if (mode == "box-blur")
 		{
-			size_t quantity;
+			size_t quantity = 0;
 			std::cin >> quantity;
 			auto temp   = skepu::container_like(*image);
 			const size_t blur_radius = ceil(quantity);
@@ -374,7 +374,7 @@ int main(int argc, char* argv[])
 		}
 		else if (mode == "gaussian-blur")
 		{
-			size_t quantity;
+			float quantity = 0; // (the standard deviation)
 			std::cin >> quantity;
 			auto temp   = skepu::container_like(*image);
 			auto output = skepu::container_like(*image);
@@ -394,7 +394,7 @@ int main(int argc, char* argv[])
 		else if (mode == "median")
 		{
 			auto temp1  = skepu::container_like(*image);
-			size_t quantity;
+			size_t quantity = 0;
 			std::cin >> quantity;
 			calculateMedian.setOverlap(quantity, quantity);
 			calculateMedian(temp1, *image);
@@ -402,7 +402,7 @@ int main(int argc, char* argv[])
 		}
 		else if (mode == "unsharp-mask")
 		{
-			float quantity;
+			float quantity = 0;
 			std::cin >> quantity;
 			auto temp1  = skepu::container_like(*image);
 			auto temp2  = skepu::container_like(*image);

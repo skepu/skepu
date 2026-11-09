@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 	auto mmprod = skepu::Map(mmmult_f<float>);
 	mmprod(res, lhs, rhs);
 	
-	std::cout << "res: " << res << "\n\nres2: " << res2 << "\n";
+	skepu::io::cout << "res: " << res << "\n\nres2: " << res2 << "\n";
 	
 	skepu::external(skepu::read(res, res2), [&]
 	{
