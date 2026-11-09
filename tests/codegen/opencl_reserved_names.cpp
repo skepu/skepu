@@ -12,11 +12,12 @@ float combine(float x) { return mix(x) + half(x) + dot(x, x) + select(x); }
 
 auto reserved_map = skepu::Map<1>(combine);
 
-// a user function named like a callable builtin is called instead, here with another result
-float max(float a, float b) { return (a > b ? a : b) + 100.f; }
-float min(float a, float b) { return (a < b ? a : b) - 100.f; }
+// a user function named like a callable builtin is called instead, here with another result. Three parameters: nvcc's headers define max(float, float)
+// and min(float, float), which a program cannot define again
+float max(float a, float b, float c) { return (a > b ? a : b) + c + 100.f; }
+float min(float a, float b, float c) { return (a < b ? a : b) + c - 100.f; }
 
-float shadowed(float a, float b) { return max(a, b) + min(a, b); }
+float shadowed(float a, float b) { return max(a, b, 0.f) + min(a, b, 0.f); }
 
 auto shadowed_map = skepu::Map<2>(shadowed);
 

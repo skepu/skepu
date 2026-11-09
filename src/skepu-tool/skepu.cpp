@@ -1,10 +1,10 @@
 #include <algorithm>
+#include <filesystem>
 #include "globals.h"
 #include "visitor.h"
 
 #ifdef SKEPU_LSP
 #include "support/Logger.h"
-#include <filesystem>
 #include "clang/AST/Type.h"
 #include "llvm/Support/FileSystem.h"
 #endif

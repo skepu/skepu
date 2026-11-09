@@ -1,5 +1,6 @@
 # Checks the names of the files in a trace (cmake -DTRACE=file [-DFILES=a.cpp;b.cpp] -P check_trace_paths.cmake): none is absolute or has "." or ".." in it, and the
 # files in FILES (a list of the names that the trace must have in header.files) are there.
+cmake_minimum_required(VERSION 3.18) # script mode has no policies of its own: IN_LIST below needs CMP0057
 if(NOT EXISTS ${TRACE})
 	message(FATAL_ERROR "no trace file ${TRACE}")
 endif()
