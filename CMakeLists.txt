@@ -258,7 +258,9 @@ target_compile_features(SkePU INTERFACE
 target_compile_options(SkePU INTERFACE
 	"$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,11>>:-Wno-attributes=skepu::>"
 	"$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,11>>:-Wno-attributes>"
-	"$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang,AppleClang>>:-Wno-unknown-attributes>")
+	"$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang,AppleClang>>:-Wno-unknown-attributes>"
+	# nvcc: the attribute (its front end warns whatever the host compiler is told), and what the generated code does not use
+	"$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Xcudafe \"--diag_suppress=2803 --diag_suppress=declared_but_not_referenced --diag_suppress=set_but_not_used\">")
 target_include_directories(SkePU INTERFACE
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/skepu-headers/src>
 	$<INSTALL_INTERFACE:include>)

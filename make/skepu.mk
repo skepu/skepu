@@ -145,7 +145,7 @@ ifneq (,$(findstring cuda,$(BACKENDS)))
 CXX := nvcc
 FILETYPE = cu
 NVCCPASS = -Xcompiler
-BACKEND_FLAGS += -Xcudafe "--diag_suppress=declared_but_not_referenced --diag_suppress=set_but_not_used"
+BACKEND_FLAGS += -Xcudafe "--diag_suppress=declared_but_not_referenced --diag_suppress=set_but_not_used --diag_suppress=2803"
 else
 FILETYPE = cpp
 endif

@@ -862,7 +862,7 @@ namespace skepu
 
 			// What an argument is (see rows.hpp): the horizontal vectors are needed in their entirety
 			template<size_t I>
-			constexpr mpi_detail::Role role() const
+			static constexpr mpi_detail::Role role()
 			{
 				if constexpr (I < outArity)
 					return mpi_detail::Role::Result;
@@ -875,7 +875,7 @@ namespace skepu
 			}
 
 			template<size_t... I>
-			constexpr bool has_matrow(pack_indices<I...>) const
+			static constexpr bool has_matrow(pack_indices<I...>)
 			{
 				return ((role<I>() == mpi_detail::Role::MatRow) || ...);
 			}

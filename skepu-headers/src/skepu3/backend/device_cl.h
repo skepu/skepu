@@ -196,11 +196,29 @@ namespace skepu
 				
 				// Create a command-queue on the GPU device
 				cl_int err;
-				#ifdef SKEPU_TRACING
+#ifdef SKEPU_TRACING
 				// the times of the calls come from the profiling of the device: see tracing_opencl.h
-				m_queue = clCreateCommandQueue(m_context, m_device, CL_QUEUE_PROFILING_ENABLE, &err);
+				const cl_command_queue_properties queueProperties = CL_QUEUE_PROFILING_ENABLE;
 #else
-				m_queue = clCreateCommandQueue(m_context, m_device, 0, &err);
+				const cl_command_queue_properties queueProperties = 0;
+#endif
+#if defined(CL_TARGET_OPENCL_VERSION) && CL_TARGET_OPENCL_VERSION >= 200
+				const cl_queue_properties properties[] = { CL_QUEUE_PROPERTIES, queueProperties, 0 };
+				m_queue = clCreateCommandQueueWithProperties(m_context, m_device, properties, &err);
+				if (err == CL_INVALID_OPERATION)
+				{
+					// a device of OpenCL 1.x does not have clCreateCommandQueueWithProperties, on a platform of any version; the call of 1.x is deprecated, not removed
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+					m_queue = clCreateCommandQueue(m_context, m_device, queueProperties, &err);
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+				}
+#else
+				m_queue = clCreateCommandQueue(m_context, m_device, queueProperties, &err);
 #endif
 				CL_CHECK_ERROR(err, "Error creating OpenCL command queue");
 			}

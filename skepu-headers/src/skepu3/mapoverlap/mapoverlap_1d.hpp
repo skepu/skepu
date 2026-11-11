@@ -150,7 +150,7 @@ namespace skepu
 
 				if (this->m_edge != Edge::None)
 				{
-					T start[3*overlap], end[3*overlap];
+					std::vector<T> start(3*overlap), end(3*overlap);
 
 					for (size_t i = 0; i < overlap; ++i)
 					{
@@ -327,7 +327,7 @@ namespace skepu
 
 				const int overlap = this->m_overlap[0];
 				size_t size = arg.size();
-				T start[3*overlap], end[3*overlap];
+				std::vector<T> start(3*overlap), end(3*overlap);
 
 				size_t rowWidth = arg.total_cols();
 				size_t colWidth = arg.total_rows();
@@ -458,7 +458,7 @@ namespace skepu
 				}
 
 				const int overlap = this->m_overlap[0];
-				T start[3*overlap], end[3*overlap];
+				std::vector<T> start(3*overlap), end(3*overlap);
 
 				size_t rowWidth = arg.total_cols();
 				size_t stride = 1;

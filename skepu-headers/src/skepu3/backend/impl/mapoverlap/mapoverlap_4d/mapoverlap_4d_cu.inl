@@ -72,7 +72,12 @@ namespace skepu
 
 				bool should_use_global_memory = true;
 
-				this->template configurePoolKernelParameters<T, unsigned, 3, 4>(properties.maxThreadsPerBlock, {&numThreads.x, &numThreads.y, &numThreads.z}, {&numBlocks.x, &numBlocks.y, &numBlocks.z},
+				// a kernel that uses many registers cannot have the largest block of the device (the launch fails: too many resources requested)
+				cudaFuncAttributes kernelAttributes;
+				CHECK_CUDA_ERROR(cudaFuncGetAttributes(&kernelAttributes, this->m_cuda_kernel));
+				const int maxThreadsPerBlock = std::min(properties.maxThreadsPerBlock, kernelAttributes.maxThreadsPerBlock);
+
+				this->template configurePoolKernelParameters<T, unsigned, 3, 4>(maxThreadsPerBlock, {&numThreads.x, &numThreads.y, &numThreads.z}, {&numBlocks.x, &numBlocks.y, &numBlocks.z},
 														 						should_use_global_memory, properties.sharedMemPerBlock, {&sharedI, &sharedJ, &sharedK, &sharedL}, {in_size_i, in_size_j, in_size_k, in_size_l});
 
 				sharedMemSize = 0;

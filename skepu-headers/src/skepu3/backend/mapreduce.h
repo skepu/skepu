@@ -141,12 +141,15 @@ namespace skepu
 
 			void traceParameters(tracing::Parameters &parameters) const override
 			{
-				int strides[arity + 1];
-				bool strided = false;
-				for (size_t i = 0; i < arity; ++i)
-					strided |= (strides[i] = this->m_strides[i]) != 1;
-				if (strided)
-					parameters.add("strides", strides, arity);
+				if constexpr (arity > 0)
+				{
+					int strides[arity];
+					bool strided = false;
+					for (size_t i = 0; i < arity; ++i)
+						strided |= (strides[i] = this->m_strides[i]) != 1;
+					if (strided)
+						parameters.add("strides", strides, arity);
+				}
 				parameters.addNumber("start_value", this->m_start);
 			}
 

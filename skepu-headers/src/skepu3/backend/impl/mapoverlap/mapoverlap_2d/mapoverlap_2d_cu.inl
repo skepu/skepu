@@ -67,7 +67,12 @@ namespace skepu
 				bool should_use_global_memory = (this->m_overlap[0] == 0 || this->m_overlap[0] <= this->m_strides[0]) &&
                         						(this->m_overlap[1] == 0 || this->m_overlap[1] <= this->m_strides[1]);
 
-				this->template configurePoolKernelParameters<T, unsigned, 2, 2>(properties.maxThreadsPerBlock, {&numThreads.x, &numThreads.y}, {&numBlocks.x, &numBlocks.y},
+				// a kernel that uses many registers cannot have the largest block of the device (the launch fails: too many resources requested)
+				cudaFuncAttributes kernelAttributes;
+				CHECK_CUDA_ERROR(cudaFuncGetAttributes(&kernelAttributes, this->m_cuda_kernel));
+				const int maxThreadsPerBlock = std::min(properties.maxThreadsPerBlock, kernelAttributes.maxThreadsPerBlock);
+
+				this->template configurePoolKernelParameters<T, unsigned, 2, 2>(maxThreadsPerBlock, {&numThreads.x, &numThreads.y}, {&numBlocks.x, &numBlocks.y},
 														 						should_use_global_memory, properties.sharedMemPerBlock, {&shared_i, &shared_j}, {in_size_i, in_size_j});
 				
 				shared_mem = shared_i * shared_j * sizeof(T);
