@@ -8,7 +8,6 @@
 // (Not for the OpenCL, CUDA and MPI backends: the sparse matrices are not supported by them yet.)
 #include <cmath>
 #include <iostream>
-#include <random>
 #include <set>
 #include <tuple>
 
@@ -63,12 +62,11 @@ T sparse_symmetrize(skepu::Index2D index, T r, T r_transposed, T n)
 static skepu::SparseMatrix<T> random_sparse(size_t n, size_t per_row)
 {
 	std::vector<std::tuple<size_t, size_t, T>> places;
-	std::mt19937 generator(7);
 	for (size_t row = 0; row < n; ++row)
 	{
 		std::set<size_t> columns{row};
 		for (size_t e = 0; e < per_row && columns.size() < n; ++e)
-			columns.insert(generator() % n);
+			columns.insert((row * 7 + e * 13 + row * e) % n);
 		for (size_t column : columns)
 			places.emplace_back(row, column, T(0));
 	}
@@ -130,10 +128,10 @@ int main(int argc, char *argv[])
 	T dot_xy = 0, norm_x = 0;
 	{
 		SKEPU_TRACE_SCOPE("Level 1: dot, dotu, nrm2, asum (reductions to a scalar)");
-		skepu::Scalar<T> d = blas::dot(n, x, 1, y, 1);   // (conjugated: the same as dotu for real vectors)
-		skepu::Scalar<T> du = blas::dotu(n, x, 1, y, 1);
-		skepu::Scalar<T> nx = blas::nrm2(n, x, 1);
-		skepu::Scalar<T> a = blas::asum(n, y, 1);
+		auto d = blas::dot(n, x, 1, y, 1);   // (conjugated: the same as dotu for real vectors)
+		auto du = blas::dotu(n, x, 1, y, 1);
+		auto nx = blas::nrm2(n, x, 1);
+		auto a = blas::asum(n, y, 1);
 		dot_xy = T(d) + T(du) + T(a);
 		norm_x = T(nx);
 	}
@@ -173,10 +171,10 @@ int main(int argc, char *argv[])
 		skepu::Map<0>(complex_vector_element)(cx);
 		blas::copy(n, cx, 1, cy, 1);
 		blas::scal(n, Complex{0.f, 1.f}, cy, 1);       // cy := i cx
-		skepu::Scalar<Complex> conj_dot = blas::dot(n, cx, 1, cy, 1);
-		skepu::Scalar<Complex> plain_dot = blas::dotu(n, cx, 1, cy, 1);
-		skepu::Scalar<T> cn = blas::nrm2(n, cx, 1);
-		skepu::Scalar<T> ca = blas::asum(n, cy, 1);
+		auto conj_dot = blas::dot(n, cx, 1, cy, 1);
+		auto plain_dot = blas::dotu(n, cx, 1, cy, 1);
+		auto cn = blas::nrm2(n, cx, 1);
+		auto ca = blas::asum(n, cy, 1);
 		size_t ci = blas::iamax(n, cx, 1);
 		(void)conj_dot; (void)plain_dot; (void)cn; (void)ca; (void)ci;
 	}
@@ -316,16 +314,16 @@ int main(int argc, char *argv[])
 		blas::copy(n, y, 1, r, 1);
 		blas::sparse::csrmv(Op::NoTrans, -1.f, Q, sx, 1, 1.f, r, 1);  // r := y - Q sx
 		blas::copy(n, r, 1, p, 1);
-		skepu::Scalar<T> rTr = blas::dot(n, r, 1, r, 1);
+		auto rTr = blas::dot(n, r, 1, r, 1);
 		for (int k = 0; k < 3; ++k)
 		{
 			SKEPU_TRACE_SCOPE("Iteration");
 			blas::sparse::csrmv(Op::NoTrans, 1.f, Q, p, 1, 0.f, Ap, 1);
-			skepu::Scalar<T> alpha = rTr / blas::dot(n, p, 1, Ap, 1);
+			auto alpha = rTr / blas::dot(n, p, 1, Ap, 1);
 			blas::axpy(n, alpha, p, 1, sx, 1);
 			blas::axpy(n, -alpha, Ap, 1, r, 1);
-			skepu::Scalar<T> rTr_new = blas::dot(n, r, 1, r, 1);
-			skepu::Scalar<T> beta = rTr_new / rTr;
+			auto rTr_new = blas::dot(n, r, 1, r, 1);
+			auto beta = rTr_new / rTr;
 			blas::scal(n, beta, p, 1);
 			blas::axpy(n, 1.f, r, 1, p, 1);
 			rTr = rTr_new;

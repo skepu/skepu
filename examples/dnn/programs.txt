@@ -1,0 +1,9 @@
+# The SkePU-DNN examples, one per line: name, flags, arguments of `make run/<name>` (see programs.txt for the form). Read by the Makefile of this directory.
+# The programs read their data sets from ../data (MNIST, CIFAR-10) and the models from models/.
+
+dnn_artificial   -  32 0.05 2 $(RUN_BACKEND)
+dnn_binary       -  32 0.05 1 $(RUN_BACKEND) 640 128
+dnn_cifar10      -  small 32 0.001 1 $(RUN_BACKEND) 1600 330 --adam
+dnn_mnist10      -  cnn 32 0.05 1 $(RUN_BACKEND) 1600 330
+dnn_model_file   -  models/mnist_cnn.dnn 32 0.05 2 $(RUN_BACKEND) 3200 640 trained.dnn
+dnn_signals1d    -  conv1d 32 0.003 2 $(RUN_BACKEND) 1600 330 --adam

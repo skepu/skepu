@@ -183,12 +183,12 @@ static auto gray_level = skepu::Map<1>(to_gray);
 // Writes the texture to PREFIX.png, or the frames to PREFIX0000.png, PREFIX0001.png, ...
 static void write_images(const std::string &prefix, skepu::Matrix<unsigned char> &image)
 {
-	skepu::external(skepu::read(image), [&] { write_png(prefix + ".png", image.data(), image.total_cols(), image.total_rows()); });
+	skepu::external("I/O", skepu::read(image), [&] { write_png(prefix + ".png", image.data(), image.total_cols(), image.total_rows()); });
 }
 
 static void write_images(const std::string &prefix, skepu::Tensor3<unsigned char> &images)
 {
-	skepu::external(skepu::read(images), [&]
+	skepu::external("I/O", skepu::read(images), [&]
 	{
 		for (size_t f = 0; f < images.size_i(); ++f)
 		{

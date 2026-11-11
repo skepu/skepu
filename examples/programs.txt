@@ -1,12 +1,11 @@
 # The example programs, one per line: name, flags, arguments of `make run/<name>`. Read by CMake (examples/CMakeLists.txt) and Make (programs.mk);
-# a program not listed is built by neither.
+# a program not listed is built by neither. The programs of the subdirectories are listed in the programs.txt there (dnn/, multifile/), in the same form;
+# only Make reads those.
 #
 #   flags      cpu-only   CPU backends only (sparse matrices lack OpenCL, CUDA and MPI support)
 #              mpi        supported by the MPI backend (others are not built in MPI mode)
 #              -          none; separate flags with commas, no spaces
 #   arguments  Make syntax: $(RUN_BACKEND), $(SIZE_BACKEND), $(RUN_DIR) from programs.mk; no semicolons (CMake reads the line)
-#
-# heat_diffusion: no red-black update mode or mirror mode in CUDA
 
 backend_switching          -
 blas_tour                  cpu-only  64 OpenMP

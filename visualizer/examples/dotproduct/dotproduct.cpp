@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 	skepu::io::cout << a << "\n";
 	skepu::io::cout << b << "\n";
 	
-	float res = dotprod(a, b);
+	auto res = dotprod(a, b);
 	
 	skepu::io::cout << res << "\n";
 	

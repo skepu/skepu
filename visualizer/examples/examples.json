@@ -95,9 +95,33 @@
     ]
   },
   {
+    "title": "Moving Average",
+    "trace": {
+      "openmp": "cma/trace_cma_openmp.json",
+      "opencl": "cma/trace_cma_opencl.json",
+      "cuda": "cma/trace_cma_cuda.json",
+      "mpi": [
+        "cma/mpi/trace_cma_mpi.json",
+        "cma/mpi/trace_cma_mpi.rank1.json",
+        "cma/mpi/trace_cma_mpi.rank2.json",
+        "cma/mpi/trace_cma_mpi.rank3.json"
+      ]
+    },
+    "cpp_files": {
+      "default": [
+        "cma/cma.cpp"
+      ],
+      "mpi": [
+        "cma/mpi/cma.cpp"
+      ]
+    }
+  },
+  {
     "title": "Heat Diffusion",
     "trace": {
       "openmp": "heat_diffusion/trace_heat_diffusion_openmp.json",
+      "opencl": "heat_diffusion/trace_heat_diffusion_opencl.json",
+      "cuda": "heat_diffusion/trace_heat_diffusion_cuda.json",
       "mpi": [
         "heat_diffusion/mpi/trace_heat_diffusion_mpi.json",
         "heat_diffusion/mpi/trace_heat_diffusion_mpi.rank1.json",
@@ -107,6 +131,8 @@
     },
     "snapshot_archive": {
       "openmp": "heat_diffusion/snapshots_heat_diffusion.zip",
+      "opencl": "heat_diffusion/snapshots_heat_diffusion_opencl.zip",
+      "cuda": "heat_diffusion/snapshots_heat_diffusion_cuda.zip",
       "mpi": "heat_diffusion/mpi/snapshots_heat_diffusion_mpi.zip"
     },
     "cpp_files": [
@@ -118,6 +144,7 @@
     "trace": {
       "openmp": "ode_lorenz/trace_ode_lorenz_openmp.json",
       "opencl": "ode_lorenz/trace_ode_lorenz_opencl.json",
+      "cuda": "ode_lorenz/trace_ode_lorenz_cuda.json",
       "mpi": [
         "ode_lorenz/mpi/trace_ode_lorenz_mpi.json",
         "ode_lorenz/mpi/trace_ode_lorenz_mpi.rank1.json",
@@ -128,6 +155,7 @@
     "snapshot_archive": {
       "openmp": "ode_lorenz/snapshots_ode_lorenz_openmp.zip",
       "opencl": "ode_lorenz/snapshots_ode_lorenz_opencl.zip",
+      "cuda": "ode_lorenz/snapshots_ode_lorenz_cuda.zip",
       "mpi": "ode_lorenz/mpi/snapshots_ode_lorenz_mpi.zip"
     },
     "cpp_files": [
@@ -139,6 +167,7 @@
     "trace": {
       "openmp": "ode_fisher/trace_ode_fisher_openmp.json",
       "opencl": "ode_fisher/trace_ode_fisher_opencl.json",
+      "cuda": "ode_fisher/trace_ode_fisher_cuda.json",
       "mpi": [
         "ode_fisher/mpi/trace_ode_fisher_mpi.json",
         "ode_fisher/mpi/trace_ode_fisher_mpi.rank1.json",
@@ -149,6 +178,7 @@
     "snapshot_archive": {
       "openmp": "ode_fisher/snapshots_ode_fisher_openmp.zip",
       "opencl": "ode_fisher/snapshots_ode_fisher_opencl.zip",
+      "cuda": "ode_fisher/snapshots_ode_fisher_cuda.zip",
       "mpi": "ode_fisher/mpi/snapshots_ode_fisher_mpi.zip"
     },
     "cpp_files": [
@@ -158,10 +188,22 @@
   {
     "title": "Ozaki GEMM",
     "trace": {
-      "opencl": "ozaki_gemm/trace_ozaki_gemm_opencl.json"
+      "opencl": "ozaki_gemm/trace_ozaki_gemm_opencl.json",
+      "cuda": "ozaki_gemm/trace_ozaki_gemm_cuda.json"
     },
     "cpp_files": [
       "ozaki_gemm/ozaki_gemm.cpp"
+    ]
+  },
+  {
+    "title": "Stereo Disparity",
+    "trace": {
+      "openmp": "sde/trace_sde_openmp.json",
+      "opencl": "sde/trace_sde_opencl.json",
+      "cuda": "sde/trace_sde_cuda.json"
+    },
+    "cpp_files": [
+      "sde/sde.cpp"
     ]
   },
   {
@@ -252,6 +294,7 @@
     "trace": {
       "openmp": "pso/trace_pso_openmp.json",
       "opencl": "pso/trace_pso_opencl.json",
+      "cuda": "pso/trace_pso_cuda.json",
       "mpi": [
         "pso/mpi/trace_pso_mpi.json",
         "pso/mpi/trace_pso_mpi.rank1.json",
@@ -267,7 +310,8 @@
     "title": "DNN CIFAR-10",
     "trace": {
       "openmp": "dnn_cifar10/trace_dnn_cifar10_openmp.json",
-      "opencl": "dnn_cifar10/trace_dnn_cifar10_opencl.json"
+      "opencl": "dnn_cifar10/trace_dnn_cifar10_opencl.json",
+      "cuda": "dnn_cifar10/trace_dnn_cifar10_cuda.json"
     },
     "cpp_files": [
       "dnn_cifar10/dnn_cifar10.cpp"
@@ -276,7 +320,8 @@
   {
     "title": "DNN MNIST",
     "trace": {
-      "opencl": "dnn_mnist10/trace_dnn_mnist10_opencl.json"
+      "opencl": "dnn_mnist10/trace_dnn_mnist10_opencl.json",
+      "cuda": "dnn_mnist10/trace_dnn_mnist10_cuda.json"
     },
     "cpp_files": [
       "dnn_mnist10/dnn_mnist10.cpp"

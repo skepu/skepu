@@ -1,6 +1,5 @@
-// Example for SkeVU: calls that can be fused (skepu::Map(f) >> skepu::Map(g), a || b, see
-// examples/fusion.cpp), and calls that look as if they could but cannot. Every block is one region; turn on
-// Advanced > Fusion analysis to see the groups, and the reason why the other calls are not in one.
+// Example for SkeVU: calls that can be fused, and calls that look as if they could but cannot. Every block is one
+// region; turn on Advanced > Fusion analysis to see the groups, and the reason why the other calls are not in one.
 // (The program computes nothing of use: its calls are made to show the patterns.)
 #include <skepu>
 #include <skepu-lib/io.hpp>

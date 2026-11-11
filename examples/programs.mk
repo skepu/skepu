@@ -1,5 +1,5 @@
 # The SkePU example programs, their arguments and the settings of the examples. Included by examples/Makefile before make/skepu.mk.
-# A Makefile that includes ../Makefile (examples/dnn/Makefile) sets PROGS first and builds only its own programs.
+# A Makefile that includes ../Makefile (examples/dnn/Makefile) sets PROGRAMS_TABLE to its own table and builds only its programs.
 
 TRACE ?= 1
 RUN_CWD = .
@@ -10,7 +10,7 @@ COMMON_SOURCES ?= $(EXAMPLES_DIR)lodepng.cpp
 USER_INCLUDES  += -I $(EXAMPLES_DIR)
 
 # Programs.txt rows (also read by CMake): name, flags, arguments (the rest). make/skepu.mk filters PROGS by MPI_PROGS in MPI mode.
-PROGRAMS_TABLE := $(EXAMPLES_DIR)programs.txt
+PROGRAMS_TABLE ?= $(EXAMPLES_DIR)programs.txt
 HASH := \#
 table_rows := !/^[ \t]*($(HASH)|$$)/
 table_names = $(shell awk '$(table_rows) { print $$1 }' $(PROGRAMS_TABLE))

@@ -15,8 +15,8 @@
 #
 # Settings for this computer (BACKENDS, CXX, ...): make/local.mk, copied from make/local.mk.template.
 #
-# A Makefile in a subdirectory (or elsewhere) lists its programs and includes this one:
-#     PROGS = mnist
+# A Makefile in a subdirectory (dnn/, multifile/) has a table of its programs, in the form of programs.txt, and includes this one:
+#     PROGRAMS_TABLE := programs.txt
 #     include ../Makefile
 
 EXAMPLES_DIR := $(dir $(lastword $(MAKEFILE_LIST)))

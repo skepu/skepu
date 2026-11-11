@@ -1,0 +1,7 @@
+{"data":[
+{"comm":{"bytes_received":0,"bytes_sent":0,"collectives":0,"time_us":0},"end":1708,"local_elements":512,"pattern":"Map","rank":1,"ranks":4,"seq":1,"signature":17384549854718805144,"start":361,"type":"rank_call","work_end":1705,"work_start":361},
+{"bytes_received":15,"bytes_sent":15,"comm_seq":1,"end":2044,"operation":"allgather","phase":"before","rank":1,"reason":"the partial results of the processes are combined","seq":2,"start":1756,"type":"rank_communication"},
+{"comm":{"bytes_received":15,"bytes_sent":15,"collectives":1,"time_us":288},"end":2522,"local_elements":512,"pattern":"Scan","rank":1,"ranks":4,"seq":2,"signature":10227895418366211886,"start":1755,"type":"rank_call","work_end":2521,"work_start":2065},
+{"comm":{"bytes_received":0,"bytes_sent":0,"collectives":0,"time_us":0},"end":2804,"local_elements":512,"pattern":"Map","rank":1,"ranks":4,"seq":3,"signature":11631480202678935674,"start":2570,"type":"rank_call","work_end":2803,"work_start":2570},
+{"bytes_received":6144,"bytes_sent":6144,"comm_seq":2,"end":2960,"operation":"allgather","rank":1,"reason":"host access: the container is gathered","seq":0,"start":2862,"type":"rank_communication"}
+],"header":{"clock":{"end":{"local_us":3097,"offset_us":-53.5,"uncertainty_us":0.5},"method":"ping-pong","start":{"local_us":270,"offset_us":-54.0,"uncertainty_us":1.0}},"mpi":{"detail_rank":0,"host":"Precision-3260","pid":492226,"rank":1,"ranks":4,"role":"lean"}}}

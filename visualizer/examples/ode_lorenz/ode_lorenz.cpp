@@ -15,6 +15,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <utility>
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
@@ -82,22 +83,14 @@ skepu::multiple<T, T, T> lorenz_rk4(T x, T y, T z, T rho, int steps)
 	return skepu::ret(x, y, z);
 }
 
-template<typename T>
-T squared_deviation(T value, T mean)
-{
-	return (value - mean) * (value - mean);
-}
-
 // The mean and the standard deviation of the elements
-template<typename T>
-void statistics(skepu::Vector<T> &values, T &mean, T &deviation)
+template<typename T, typename Sum, typename SumSquares>
+auto statistics(Sum &sum, SumSquares &sum_squares, skepu::Vector<T> &values)
 {
-	auto sum = skepu::Reduce(skepu::util::add<T>);
-	auto sum_squares = skepu::MapReduce<1>(squared_deviation<T>, skepu::util::add<T>);
-	sum_squares.setLabel("sum of squared deviations");
 	const T n = (T)values.size();
-	mean = sum(values) / n;
-	deviation = std::sqrt(sum_squares(values, mean) / n);
+	const auto mean = sum(values) / n;
+	const T deviation = std::sqrt(sum_squares(values, mean) / n);
+	return std::make_pair(mean, deviation);
 }
 
 template<typename T>
@@ -105,6 +98,9 @@ void lorenz_ensemble(size_t size, int rounds)
 {
 	auto integrate = skepu::Map<3>(lorenz_rk4<T>);
 	integrate.setLabel("RK4");
+	auto sum = skepu::Reduce(skepu::util::add<T>);
+	auto sum_squares = skepu::MapReduce<1>(skepu::util::squared_difference<T>, skepu::util::add<T>);
+	sum_squares.setLabel("sum of squared deviations");
 
 	// The members start from a cloud of the standard deviation 0.001 around (1, 1, 1)
 	skepu::Vector<T> x(size), y(size), z(size);
@@ -116,8 +112,7 @@ void lorenz_ensemble(size_t size, int rounds)
 	for (int round = 0; round <= rounds; ++round)
 	{
 		SKEPU_TRACE_SCOPE("Round");
-		T mean, deviation;
-		statistics<T>(x, mean, deviation);
+		auto [mean, deviation] = statistics(sum, sum_squares, x);
 		skepu::io::cout << round * STEPS_PER_ROUND * STEP << "  " << mean << "  " << deviation << "\n";
 		SKEPU_TRACE_SNAPSHOT(x);
 

@@ -92,18 +92,18 @@ void initatoms(skepu::Vector<Atom> &atombuf)
 const float gridspacing = 0.1;
 const size_t matrixSize = 10;
 
-auto columbicPotential = skepu::Map<1>(coulombPotential_f);
+auto coulombPotential = skepu::Map<1>(coulombPotential_f);
 
 void coulombic(skepu::Matrix<float> &energy_out, skepu::Vector<Atom> &atombuf, skepu::BackendSpec *spec = nullptr)
 {
 	size_t atomcount = atombuf.size();
 	
 	if (spec)
-		columbicPotential.setBackend(*spec);
+		coulombPotential.setBackend(*spec);
 		
 	skepu::Matrix<float> grid_in(matrixSize, matrixSize);
 	
-	columbicPotential(energy_out, grid_in, atombuf, gridspacing);
+	coulombPotential(energy_out, grid_in, atombuf, gridspacing);
 }
 
 int main(int argc, char* argv[])

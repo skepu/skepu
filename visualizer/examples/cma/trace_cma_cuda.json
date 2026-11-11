@@ -1,0 +1,18 @@
+{"data":[
+{"elwise_inputs":[],"end":261166,"file":"skepu-headers/src/skepu3/backend/impl/environment.inl","label":"CUDA initialization","line":106,"outputs":[],"proxy_inputs":[],"scalar_inputs":[],"start":0,"type":"external"},
+{"elwise_inputs":[],"end":1804729,"file":"skepu-headers/src/skepu3/backend/impl/environment.inl","label":"CUDA bandwidth measurement","line":114,"outputs":[],"proxy_inputs":[],"scalar_inputs":[],"start":261167,"type":"external"},
+{"file":"examples/cma.cpp","label":"in","line":34,"object_id":1005,"time":1804735,"type":"allocation"},
+{"file":"examples/cma.cpp","label":"out","line":35,"object_id":1006,"time":1804737,"type":"allocation"},
+{"file":"examples/cma.cpp","label":"randomize.uniform","line":36,"region_depth":1,"time":1804743,"type":"region"},
+{"label":"[Global PRNG]","line":139,"object_id":1008,"region":"randomize.uniform","time":1804743,"type":"allocation"},
+{"label":"[Internal PRNG]","line":228,"object_id":1011,"region":"randomize.uniform","time":1890686,"type":"allocation"},
+{"backend":"CUDA","direction":"host-to-device","elements":2048,"end":1890699,"label":"[Internal PRNG]","line":611,"object_id":1011,"region":"randomize.uniform","start":1890693,"time":1890699,"type":"transfer"},
+{"label":"[Internal PRNG]","line":259,"object_id":1011,"region":"randomize.uniform","time":1915255,"type":"deallocation"},
+{"backend":"CUDA","devices":1,"elements":[2048],"elwise_inputs":[],"end":1915262,"file":"skepu-headers/src/skepu-lib/randomize.hpp","label":"randomize::uniform","line":227,"object_id":1007,"outputs":[1005],"pattern":"Map","prng":1008,"proxy_inputs":[],"region":"randomize.uniform","scalar_inputs":[],"start":1890645,"type":"skeleton_call"},
+{"file":"examples/cma.cpp","label":"cma","line":16,"region_depth":1,"time":1915285,"type":"region"},
+{"backend":"CUDA","devices":1,"elements":[2048],"elwise_inputs":[1005],"end":1915336,"file":"examples/cma.cpp","label":"prefix_sum","line":18,"object_id":1003,"outputs":[1005],"pattern":"Scan","proxy_inputs":[],"region":"cma","scalar_inputs":[],"start":1915292,"type":"skeleton_call"},
+{"backend":"CUDA","devices":1,"elements":[2048],"elwise_inputs":[1005],"end":1915352,"file":"examples/cma.cpp","label":"average","line":19,"object_id":1004,"outputs":[1006],"pattern":"Map","proxy_inputs":[],"region":"cma","scalar_inputs":[],"start":1915341,"type":"skeleton_call"},
+{"backend":"CUDA","direction":"device-to-host","elements":2048,"end":1915374,"label":"out","line":745,"object_id":1006,"start":1915362,"time":1915374,"type":"transfer"},
+{"label":"out","line":259,"object_id":1006,"time":1915382,"type":"deallocation"},
+{"label":"in","line":259,"object_id":1005,"time":1915445,"type":"deallocation"}
+],"header":{"files":{"examples/cma.cpp":"1bd667746d7f335d32f16607457fc268fc3da198f2f35c41459877334a8cfbae","skepu-headers/src/skepu-lib/randomize.hpp":"dc89be0c4338599b5fff72bd1134f563742aba1c229563e61e29aed542a40d3c","skepu-headers/src/skepu3/backend/impl/environment.inl":"c62588d92793e9d115a062e140657adf42443ed7e8359f1433a9e2ba5efdedd3"},"instances":{"1003":{"instance":{"end_line":13,"file":"examples/cma.cpp","line":13},"label":"prefix_sum","user_functions":[{"end_line":19,"file":"skepu-headers/src/skepu-lib/util.hpp","kind":"function","line":16,"name":"add"}]},"1004":{"instance":{"end_line":14,"file":"examples/cma.cpp","line":14},"label":"average","user_functions":[{"end_line":10,"file":"examples/cma.cpp","kind":"function","line":7,"name":"avg"}]},"1007":{"instance":{"end_line":224,"file":"skepu-headers/src/skepu-lib/randomize.hpp","line":224},"label":"randomize::uniform","user_functions":[{"end_line":146,"file":"skepu-headers/src/skepu-lib/randomize.hpp","kind":"function","line":140,"name":"uniform_integer_uf"}]}}}}

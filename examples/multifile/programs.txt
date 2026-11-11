@@ -1,0 +1,4 @@
+# The example of a program of several source files, one per line: name, flags, arguments of `make run/<name>` (see ../programs.txt for the form). Read by the
+# Makefile of this directory, which lists the sources (sources.multifile).
+
+multifile  -  3 1 2 3 4 $(SIZE_BACKEND) $(RUN_BACKEND)

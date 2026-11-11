@@ -30,41 +30,32 @@
 
 #include <skepu>
 #include <skepu-lib/io.hpp>
+#include <skepu-lib/util.hpp>
 
 // The user functions return the new temperature of an element, the average of its neighbours, and how much the temperature changed
-float absolute(float x)
-{
-	return x < 0 ? -x : x;
-}
-
 skepu::multiple<float, float> heat1D(skepu::Region1D<float> r)
 {
 	const float average = (r(-1) + r(1)) / 2;
-	return skepu::ret(average, absolute(average - r(0)));
+	return skepu::ret(average, skepu::util::abs(average - r(0)));
 }
 
 skepu::multiple<float, float> heat2D(skepu::Region2D<float> r)
 {
 	const float average = (r(-1, 0) + r(1, 0) + r(0, -1) + r(0, 1)) / 4;
-	return skepu::ret(average, absolute(average - r(0, 0)));
+	return skepu::ret(average, skepu::util::abs(average - r(0, 0)));
 }
 
 skepu::multiple<float, float> heat3D(skepu::Region3D<float> r)
 {
 	const float average = (r(-1, 0, 0) + r(1, 0, 0) + r(0, -1, 0) + r(0, 1, 0) + r(0, 0, -1) + r(0, 0, 1)) / 6;
-	return skepu::ret(average, absolute(average - r(0, 0, 0)));
+	return skepu::ret(average, skepu::util::abs(average - r(0, 0, 0)));
 }
 
 skepu::multiple<float, float> heat4D(skepu::Region4D<float> r)
 {
 	const float average = (r(-1, 0, 0, 0) + r(1, 0, 0, 0) + r(0, -1, 0, 0) + r(0, 1, 0, 0)
 		+ r(0, 0, -1, 0) + r(0, 0, 1, 0) + r(0, 0, 0, -1) + r(0, 0, 0, 1)) / 8;
-	return skepu::ret(average, absolute(average - r(0, 0, 0, 0)));
-}
-
-float largest(float a, float b)
-{
-	return a > b ? a : b;
+	return skepu::ret(average, skepu::util::abs(average - r(0, 0, 0, 0)));
 }
 
 
@@ -111,7 +102,7 @@ void relax(const Options &opt, Update &update, MaxChange &max_change, Container 
 
 		if (i == 1 || i % check_interval == 0 || i == opt.iterations)
 		{
-			const float largest_change = max_change(change);
+			const auto largest_change = max_change(change);
 			const bool converged = largest_change < opt.tolerance;
 			if (i == 1 || i % print_interval == 0 || i == opt.iterations || converged)
 				skepu::io::cout << i << "  " << largest_change << "\n";
@@ -134,7 +125,7 @@ void run1D(const Options &opt)
 	update.setOverlap(1);
 	update.setEdgeMode(skepu::Edge::None);
 	update.setUpdateMode(opt.red_black ? skepu::UpdateMode::RedBlack : skepu::UpdateMode::Normal);
-	auto max_change = skepu::Reduce(largest);
+	auto max_change = skepu::Reduce(skepu::util::max<float>);
 
 	// A rod, 0 at one end and 5 at the other
 	skepu::Vector<float> domain(opt.size, "Domain", 0);
@@ -153,7 +144,7 @@ void run2D(const Options &opt)
 	update.setOverlap(1, 1);
 	update.setEdgeMode(skepu::Edge::None);
 	update.setUpdateMode(opt.red_black ? skepu::UpdateMode::RedBlack : skepu::UpdateMode::Normal);
-	auto max_change = skepu::Reduce(largest);
+	auto max_change = skepu::Reduce(skepu::util::max<float>);
 
 	// A plate, 0 at the top edge, 5 at the bottom edge, and 2 at the sides
 	const size_t size = opt.size;
@@ -178,7 +169,7 @@ void run3D(const Options &opt)
 	update.setOverlap(1, 1, 1);
 	update.setEdgeMode(skepu::Edge::None);
 	update.setUpdateMode(opt.red_black ? skepu::UpdateMode::RedBlack : skepu::UpdateMode::Normal);
-	auto max_change = skepu::Reduce(largest);
+	auto max_change = skepu::Reduce(skepu::util::max<float>);
 
 	// A block, with a different temperature on each face
 	const size_t size = opt.size;
@@ -205,7 +196,7 @@ void run4D(const Options &opt)
 	update.setOverlap(1, 1, 1, 1);
 	update.setEdgeMode(skepu::Edge::None);
 	update.setUpdateMode(opt.red_black ? skepu::UpdateMode::RedBlack : skepu::UpdateMode::Normal);
-	auto max_change = skepu::Reduce(largest);
+	auto max_change = skepu::Reduce(skepu::util::max<float>);
 
 	// Two opposite faces at 1 and 5, the rest of the boundary at 0
 	const size_t size = opt.size;
