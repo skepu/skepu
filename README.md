@@ -17,8 +17,7 @@ An optional, experimental Python frontend (SkePY) is described in [SKEPY.md](SKE
 
 ### Cloning with submodules
 
-This repository should be cloned with `git clone --recursive --shallow-submodules $URL` in
-order to also clone the most recent commits of the submodules it links to. Furthermore, `git submodule update --init` can be used to clone submodules to an existing repository.
+Clone the repository with `git clone --recursive --shallow-submodules $URL` to get the most recent commits of the submodules it links to. `git submodule update --init` clones the submodules of an existing clone.
 
 Note: configuring the build patches files inside the `llvm` submodule, so it always counts as modified. `.gitmodules` therefore sets `ignore = dirty` and `git status` does not list it. Do not commit changes to the submodule.
 
@@ -32,9 +31,9 @@ To compile skepu-tool, run the following commands in the project root:
 
 `$ make -jN`
 
-Replace N in the last command with how many threads you want to build with in parallel, e.g. -j12.
+N is the number of parallel build jobs, for example `-j12`.
 
-If you also want to include the tests, run the following cmake command instead of the one above:
+To include the tests, run this cmake command instead of the one above:
 
 `$ cmake -DCMAKE_BUILD_TYPE=Release -DSKEPU_ENABLE_TESTING=ON ..`
 
@@ -44,10 +43,8 @@ To install SkePU into \<path\>, run the following command from
 `$ make DESTDIR=<path> install`
 
 If cmake does not generate Makefiles, use the option `-G "Unix Makefiles"`.
-For more information about build options, run ´cmake -LAH` in the build
-directory. For information about how to configure cmake with compilers,
-linkers, flags, and other such options, please refer to the cmake manuals at
-the [cmake homepage](https://cmake.org).
+`cmake -LAH` in the build directory lists the build options. Compilers, linkers
+and flags are configured as described in the [CMake documentation](https://cmake.org).
 
 ## Setting up the SkePU language server
 
@@ -57,37 +54,32 @@ The language server is a clangd with SkePU support. It is built in the same LLVM
 
 `$ cmake --build build -jN`
 
-Replace N with how many threads you want to build with in parallel, e.g. -j12. The first configuration applies `clangd.patch` to the `llvm` submodule (as `llvm.patch` is applied for `skepu-tool`) and adds `clang-tools-extra` to the LLVM projects; with `SKEPU_LSP` off (the default) clangd is not built.
+N is the number of parallel build jobs, for example `-j12`. The first configuration applies `clangd.patch` to the `llvm` submodule (as `llvm.patch` is applied for `skepu-tool`) and adds `clang-tools-extra` to the LLVM projects; with `SKEPU_LSP` off (the default) clangd is not built.
 
-The SkePU additions to clangd are in `src/skepu-lsp/` (and the analysis of `skepu-tool` in `src/skepu-tool/`); `clangd.patch` only adds the files to clangd's build and calls them from three places (hover, document symbols and signature help). After this you have built the clangd tool with modifications specific to SkePU. To use it, point to the clangd executable in \<project_root\>/build/llvm/bin/. For example, VSCode has a clangd extension which has an option to specify the path to a clangd executable.
+The SkePU additions to clangd are in `src/skepu-lsp/` (and the analysis of `skepu-tool` in `src/skepu-tool/`); `clangd.patch` only adds the files to clangd's build and calls them from three places (hover, document symbols and signature help). To use it, set the clangd path of the editor to `<project_root>/build/llvm/bin/clangd` (the VS Code clangd extension has the setting `clangd.path`).
 
-To make the LSP aware of SkePU and its files, you need to generate a compile_commands.json file. In the examples folder, `make compile-commands` writes one for the example programs. After doing this, the LSP should be able to find where the `#include <skepu>` and similar are fetched from. You might need to restart your code editor after generating the compile_commands.json for the changes to take effect.
+The language server needs a `compile_commands.json` to find the SkePU headers (`#include <skepu>` and similar) and the sources of a program. `make compile-commands` in `examples/` writes one for the example programs, and in the directory of any Makefile that includes `skepu.mk` one for its programs. The editor (or the language server) has to be restarted after the file is generated.
 
 ## A package for a course, lab or tutorial
 
-For a group of students that should not build SkePU and LLVM themselves, `packaging/make-package.sh` makes one tar file of what is needed: `skepu-tool`, the headers, the language
-server (if it is built, `-DSKEPU_LSP=ON`) and `skepu.mk`, which builds programs for OpenMP, CUDA and OpenCL by default (`packaging/files/`). Run it on a computer like the ones the
-students use, from a SkePU that has been built; it builds what is out of date, installs into a temporary directory and writes the tar file. What is particular to a course (its programs,
-Makefiles, data and README) is a directory, the overlay, added on top: `--overlay DIR`, or `-DSKEPU_PACKAGE_OVERLAY=DIR` with `cmake --build build --target skepu-package`. The package
-is tested by unpacking it and building a small program with it. See the top of the script for the options.
+`packaging/make-package.sh` makes a tar file of SkePU for a group that does not build it itself. See [packaging/README.md](packaging/README.md).
 
 ## Compatibility with SkePU 1 and 2
 
-SkePU 3 is not compatible with SkePU 2 nor with SkePU 1. Check the user
-guide for more information.
+SkePU 3 is not compatible with SkePU 2 or SkePU 1, and SkePU 2 is not
+compatible with SkePU 1. The user guide describes the differences.
 
-SkePU 1 code is not compatible with SkePU 2 and vice-versa. SkePU 2 is in large
-part based on concepts from SkePU 1, and the data structures are the same, so
-it should be fairly straightworward to port a SkePU 1 project to SkePU 2. It
-may require some effort to fit the SkePU 2 precompiler into a large project
-with non-trivial build system, however.
+SkePU 2 is based on the concepts of SkePU 1 and has the same data structures,
+so a SkePU 1 project is expected to be straightforward to port to SkePU 2.
+Fitting the SkePU 2 precompiler into a large project with a non-trivial build
+system can take more work.
 
 ## Directory layout
 
 ### `skepu-headers/src/`
 
-As SkePU 3 is a header library, this directory contains headers and source
-files for the SkePU runtime. Herafter refered to as \<skepu-headers\>.
+SkePU 3 is a header library. This directory has the headers and source files
+of the SkePU runtime; it is called \<skepu-headers\> below.
 
 #### `<skepu-headers>/skepu3`
 
@@ -111,13 +103,44 @@ Contains implementations of the various SkePU skeleton backends and containers.
 Contains the implementation of the MPI backend (distributed containers over the
 other backends). See its README.
 
-### `examples`
+### `src/skepu-tool`
 
-Contains SkePU 3 example programs. Note that the Makefile requires skepu-tool
-to have been built in <project root>/build to find skepu-tool.
+The source of the source-to-source precompiler, `skepu-tool`. The configuration
+links `<project_root>/llvm/clang/tools/skepu-tool` here and builds the tool in the
+LLVM tree.
+
+### `src/skepu-lsp`
+
+The SkePU additions to clangd (the language server).
 
 ### `llvm`
 
-Sources for the source-to-source Clang tool. This directory is part of the LLVM
-directory tree, and a symlink named
-`<project_root>/llvm/tools/clang/tools/skepu-tool` should link here.
+The LLVM submodule. The configuration applies `llvm.patch` to it.
+
+### `examples`
+
+The SkePU 3 example programs, and `programs.txt`, the table of them (flags and
+run arguments). `make` there builds with the `skepu-tool` in
+`<project_root>/build`. The paths are in `make/repo.mk`, and the settings of one
+computer in `make/local.mk` (copied from `make/local.mk.template`).
+
+### `make`
+
+The build rules for SkePU programs: `skepu.mk`, shared by the examples and the
+packages.
+
+### `packaging`
+
+`make-package.sh` and the files that go into a package.
+
+### `visualizer`
+
+SkeVU, the trace visualizer: a web page and a VS Code extension.
+
+### `tests`
+
+The test programs, built with `-DSKEPU_ENABLE_TESTING=ON`.
+
+### `user-guide`
+
+The SkePU user guide (Quarto).

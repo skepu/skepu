@@ -8,12 +8,12 @@
 #
 #   clean-skepu-lib  Remove the generated static/skepu-lib/ directory.
 #
-#   vsix             Build the VS Code extension as skepu-visualizer-<version>.vsix (npm run package, which builds the bundles and
+#   vsix             Build the VS Code extension as skepu-visualizer.vsix (npm run package, which builds the bundles and
 #                    compiles the extension), with the library headers in it, and the user guide: the simple edition of ../user-guide, which
-#                    needs Quarto. Without Quarto, or if the guide cannot be built, a warning is printed and the extension is built without
+#                    needs Quarto. Not built again if the file is newer than its sources (make -B vsix forces a build). Without Quarto, or if the guide cannot be built, a warning is printed and the extension is built without
 #                    the guide; GUIDE=0 leaves it out on purpose, QUARTO=/path/to/quarto names Quarto. What the guide is built in is removed
 #                    afterwards. Needs npm install first (@vscode/vsce is a dev dependency).
-#                    Install it with: codium --install-extension skepu-visualizer-<version>.vsix  (or code --install-extension ...)
+#                    Install it with: codium --install-extension skepu-visualizer.vsix  (or code --install-extension ...)
 #
 #   guide            The simple edition of the user guide, in guide/ (what `make vsix` does first; for trying the extension from this directory).
 #
@@ -35,7 +35,7 @@ QUARTO    ?= quarto
 ##
 ## The destination lives inside the visualizer tree so it is unambiguously a
 ## copy — not a symlink to live sources.  Add static/skepu-lib/ to .gitignore
-## if you do not want to commit the headers alongside the visualizer.
+## to keep the headers out of version control.
 
 skepu-lib: $(SKEPU_LIB_DST)/index.json
 
@@ -83,8 +83,17 @@ guide:
 clean-guide:
 	rm -rf $(GUIDE_DIR) $(GUIDE_SRC)/_book-simple
 
+VSIX := skepu-visualizer.vsix
+
+# What the extension is made of (see .vscodeignore): the sources of the viewer and of the extension, the files of the package, the library headers and the guide
+VSIX_SOURCES := $(shell find src script static style -type f ! -name '.*' 2>/dev/null) index.html package.json esbuild.js tsconfig.json README.vscode.md icon.png .vscodeignore
+GUIDE_SOURCES := $(shell find $(GUIDE_SRC)/src -type f 2>/dev/null) $(wildcard $(GUIDE_SRC)/_quarto*.yml)
+
+vsix: $(VSIX)
+
 # the guide is built for the package only: guide/, the book that it is made in and Quarto's cache, if there was none before, are removed after it
-vsix: skepu-lib
+$(VSIX): $(SKEPU_LIB_DST)/index.json $(VSIX_SOURCES) $(GUIDE_SOURCES)
+	@test -d node_modules || { echo "node_modules is missing: run npm install in $(CURDIR) first"; exit 1; }
 	@had_cache=0; test -d $(GUIDE_SRC)/.quarto && had_cache=1; \
 	if [ "$(GUIDE)" = 0 ]; then echo "guide: GUIDE=0: the extension is built without the user guide"; rm -rf $(GUIDE_DIR); else $(MAKE) --no-print-directory guide; fi; \
 	npm run package; status=$$?; \

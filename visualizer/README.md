@@ -33,7 +33,7 @@ npx serve -l 5001
 # → open http://localhost:5001
 ```
 
-While you edit SkeVU, the browser may keep serving old copies of the scripts and styles (`python3 -m http.server`
+While SkeVU is edited, the browser may keep serving old copies of the scripts and styles (`python3 -m http.server`
 sends no cache headers, so the browser guesses). `serve.py` is the same server with `Cache-Control: no-store`:
 
 ```bash
@@ -43,9 +43,9 @@ python3 serve.py 5005        # from any directory; → open http://localhost:500
 Upload a trace file via the file picker, or load one of the built-in examples
 from the **Files** menu.
 
-> **Why HTTP?**  The visualizer spawns Web Workers for layout and graph
-> processing.  Browsers block Worker creation from `file://` URLs, so a local
-> HTTP server is required.
+> **HTTP is required.**  The visualizer starts Web Workers for layout and graph
+> processing.  Browsers block Worker creation from `file://` URLs, so the page
+> has to be served by a local HTTP server.
 
 ---
 
@@ -162,7 +162,7 @@ To have it in every window, make a package and install it (`@vscode/vsce` is a d
 
 ```bash
 make vsix                                              # npm run package, with the library headers in it
-codium --install-extension skepu-visualizer-1.0.0.vsix  # or in the editor: Extensions, the ... menu, Install from VSIX...
+codium --install-extension skepu-visualizer.vsix  # or in the editor: Extensions, the ... menu, Install from VSIX...
 ```
 
 To try it without installing, start an editor with it as a development extension (this is a window of its own, and the only one that has the

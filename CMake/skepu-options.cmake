@@ -12,8 +12,8 @@ set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
 	"Debug" "Release")
 
-# In case this is a subproject, make sure that SKEPU_ENABLE_TESTING is set.
-# The default value is on iff we are in Debug mode, else the default is off.
+# SKEPU_ENABLE_TESTING is set also when this is a subproject. Its default is on
+# in Debug mode and off otherwise.
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	option(SKEPU_ENABLE_TESTING
 		"Enable the SkePU test bed."

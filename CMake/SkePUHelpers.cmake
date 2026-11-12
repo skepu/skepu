@@ -131,8 +131,8 @@ macro(skepu_configure)
 		endif()
 		list(APPEND _skepu_backends "-openmp")
 
-		# We need to be a bit careful with the OpenMP flags and libraries if CUDA is
-		# enabled...
+		# With CUDA enabled the OpenMP flag is passed to the host compiler
+		# (-Xcompiler).
 		if(_skepu_cuda)
 			list(APPEND _target_cxxflags "SHELL:-Xcompiler -fopenmp")
 		endif()
@@ -140,11 +140,11 @@ macro(skepu_configure)
 	endif()
 endmacro(skepu_configure)
 
-# We need to make sure that target_link_libraries and target_include_directories
-# is propagated to the skepu-tool command, so that any extra include directories
-# needed during precompilation is in the command.
+# target_link_libraries and target_include_directories are propagated to the
+# skepu-tool command, so that the include directories that the precompilation
+# needs are in the command.
 macro(skepu_generate_include_generators)
-	# We need these to run skepu-tool.
+	# skepu-tool needs these.
 	set(_clang_prop
 		$<TARGET_PROPERTY:SkePU::clang-headers,INTERFACE_INCLUDE_DIRECTORIES>)
 
@@ -172,14 +172,13 @@ endmacro(skepu_generate_include_generators)
 # Expects the results of skepu_filter_args and skepu_configure; sets _precompiled_src,
 # _skepu_targets and _output_dir.
 macro(skepu_precompile)
-	# Just keeps the output directory a bit tidier.
+	# The precompiled sources go to their own directory.
 	set(_output_dir ${CMAKE_CURRENT_BINARY_DIR}/skepu_precompiled)
 	if(NOT EXISTS ${_output_dir})
 		file(MAKE_DIRECTORY ${_output_dir})
 	endif()
 
-	# Add a custom target (per SkePU source file) so that cmake can procompile
-	# SkePU sources for us.
+	# A custom target for each SkePU source file precompiles it.
 	foreach(_file IN LISTS _skepu_src)
 		get_filename_component(_file_name ${_file} NAME_WE)
 		get_filename_component(_file_abs ${_file} ABSOLUTE
@@ -263,14 +262,13 @@ endfunction(skepu_add_library)
 # Note that the user is resposible for enabling CUDA,OpenCL,OpenMP, and OpenMPI
 # within their cmake scripts.
 function(skepu_add_executable name)
-	# We need the skepu headers when building.
+	# The SkePU headers are needed for the build.
 	skepu_filter_args(${ARGN})
 	skepu_configure()
 	skepu_precompile()
 
-	# Finally add an executable target with both the procompiled source and C++
-	# source (if any). Cmake will use the file extension to figure out if we are
-	# dealing with CUDA or C++, so we do not have to care about that.
+	# The executable target has the precompiled source and the C++ sources (if
+	# any). CMake takes the language, CUDA or C++, from the file extension.
 	add_executable(${name} ${_exclude_from_all} ${_precompiled_src} ${_src})
 	target_include_directories(${name} PRIVATE ${_output_dir})
 	target_link_libraries(${name} PRIVATE ${_target_libs})

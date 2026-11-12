@@ -247,7 +247,7 @@ describe('the example of the splash page (Coulombic on 4 MPI processes)', () => 
     });
 
     it('has the gather of the atoms before the call that reads them at random', () => {
-        const call = g.getAllNodes().find(n => n.label === 'columbicPotential');
+        const call = g.getAllNodes().find(n => n.label === 'coulombPotential');
         const comm = sourcesOf(call).find(n => n.type === 'communication');
         expect(comm.reason).toMatch(/random access/);
         expect(comm.phase).toBe('before');

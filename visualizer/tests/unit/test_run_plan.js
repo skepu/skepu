@@ -11,15 +11,15 @@ import { runOptionsHtml } from '../../src/runOptionsHtml.ts';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 const examples = readFileSync(join(ROOT, 'examples/Makefile'), 'utf8');
 const dnn = readFileSync(join(ROOT, 'examples/dnn/Makefile'), 'utf8');
-const smoke = readFileSync(join(ROOT, 'packaging/smoke/Makefile'), 'utf8');
+const hello = readFileSync(join(ROOT, 'packaging/files/template/Makefile'), 'utf8');
 const options = { overrides: {}, values: {}, make: 'make' };
-const run = (extra, makefile = smoke, source = '/p/programs/smoke.cpp') => planRun({ ...options, makefile, source, ...extra }, '/p/programs');
+const run = (extra, makefile = hello, source = '/p/programs/hello.cpp') => planRun({ ...options, makefile, source, ...extra }, '/p/programs');
 
 describe('the Makefiles', () => {
     it('are recognized by including skepu.mk or ../Makefile', () => {
         expect(isSkepuMakefile(examples)).toBe(true);
         expect(isSkepuMakefile(dnn)).toBe(true);
-        expect(isSkepuMakefile(smoke)).toBe(true);
+        expect(isSkepuMakefile(hello)).toBe(true);
         expect(isSkepuMakefile('all:\n\techo\n')).toBe(false);
     });
 });
@@ -54,11 +54,11 @@ describe('the plan of a run', () => {
     });
 
     it('has the trace where programs run (a package: the directory of skepu.mk)', () => {
-        expect(run({ values: { runCwd: '..', traceDir: 'trace' } }).trace).toBe('../trace/trace_smoke.json');
-        expect(run({ values: { runCwd: '.', traceDir: 'trace-mpi' } }).trace).toBe('trace-mpi/trace_smoke.json');
-        expect(run({}).trace).toBe('../trace/trace_smoke.json');                                    // make cannot say: skepu.mk is one directory up
-        expect(run({}, smoke.replace('../skepu.mk', 'skepu.mk')).trace).toBe('trace/trace_smoke.json');
-        expect(run({ overrides: { arguments: 'CPU 7' } }).commands).toEqual([['make', 'run/smoke', 'TRACE=1', 'lookup.smoke=CPU 7']]);
+        expect(run({ values: { runCwd: '..', traceDir: 'trace' } }).trace).toBe('../trace/trace_hello.json');
+        expect(run({ values: { runCwd: '.', traceDir: 'trace-mpi' } }).trace).toBe('trace-mpi/trace_hello.json');
+        expect(run({}).trace).toBe('../trace/trace_hello.json');                                    // make cannot say: skepu.mk is one directory up
+        expect(run({}, hello.replace('../skepu.mk', 'skepu.mk')).trace).toBe('trace/trace_hello.json');
+        expect(run({ overrides: { arguments: 'CPU 7' } }).commands).toEqual([['make', 'run/hello', 'TRACE=1', 'lookup.hello=CPU 7']]);
     });
 
     it('builds only: no arguments, no trace', () => {
@@ -66,7 +66,7 @@ describe('the plan of a run', () => {
         const plan = build(examples, '/x/examples/dotproduct.cpp', { backend: 'CPU', arguments: '5', snapshots: true });
         expect(plan.commands).toEqual([['make', 'bin/dotproduct', 'TRACE=1', 'TRACE_SNAPSHOTS=1']]);
         expect(plan.trace).toBeUndefined();
-        expect(build(smoke, '/p/smoke.cpp').commands).toEqual([['make', 'bin/smoke', 'TRACE=1']]);
+        expect(build(hello, '/p/hello.cpp').commands).toEqual([['make', 'bin/hello', 'TRACE=1']]);
     });
 
     it('is the same for every source: the lookup, the given arguments, or none', () => {
@@ -77,7 +77,7 @@ describe('the plan of a run', () => {
     });
 
     it('rejects names with spaces and Makefiles without skepu.mk', () => {
-        expect(run({}, smoke, '/p/smoke copy.cpp').error).toMatch(/space/);
+        expect(run({}, hello, '/p/hello copy.cpp').error).toMatch(/space/);
         expect(run({}, 'all:\n', '/p/a.cpp').error).toMatch(/skepu\.mk/);
     });
 });

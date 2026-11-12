@@ -4,7 +4,8 @@
 **/.DS_Store
 
 !package.json
-!README.md
+!README.vscode.md
+!icon.png
 !LICENSE.txt
 !NOTICE
 

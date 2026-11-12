@@ -28,7 +28,7 @@ A change to these needs a matching change in SkePY:
 
 ## License
 
-SkePY keeps the licenses of Shed Skin where it changes its files: the compiler is GPL-3.0-only, including our changes to it, which is why SkePY is a
+SkePY keeps the licenses of Shed Skin where it changes its files: the compiler is GPL-3.0-only, including the changes made in this repository, which is why SkePY is a
 separate repository. The new SkePU support (the `skepu` module and its wrappers, the examples and the tests) is under the SkePU license, by Axel
 Hammarberg, who made the first implementation, and August Ernstsson. The programs that SkePY generates contain neither compiler nor GPL code. The SkePU
 changes that SkePY needs, in this repository, are under SkePU's license.

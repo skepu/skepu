@@ -30,7 +30,8 @@ make BACKENDS="-openmp"     # or set BACKENDS = -openmp in local.mk (next to ske
 `make TRACE=1 run/<program>` builds with tracing and runs the program; the trace is `trace/trace_<program>.json` in the package root. SkeVU, the SkePU
 visualizer, shows it in a browser (Files > Load Trace, then the trace and the source files). A program run directly writes `trace/trace_<program>.json` relative to
 the current directory, if that directory exists. `TRACE_SNAPSHOTS=1` also saves the containers that the program marks with `SKEPU_TRACE_SNAPSHOT`, to `snapshots/`
-and, after `make run/<program>`, to `snapshots_<program>.zip` (the form SkeVU loads).
+and, after `make run/<program>`, to `snapshots_<program>.zip` (the form SkeVU loads). If `extras/` has `skepu-visualizer.vsix`, that is the SkeVU extension
+for VS Code: `code --install-extension extras/skepu-visualizer.vsix` (`codium` for VSCodium).
 
 ## Language server
 
@@ -42,4 +43,4 @@ and, after `make run/<program>`, to `snapshots_<program>.zip` (the form SkeVU lo
 - `include/`: SkePU (`skepu`, `skepu3/`, `skepu-lib/`) and what it includes (`external/`)
 - `extras/`: `lodepng`, for reading and writing PNG files
 - `skepu.mk`, `local.mk`: how programs are built, and the settings of this computer; `template/`: a small program with a Makefile
-- `VERSION`: which version of SkePU this is (and of the added material, if the package has some); `licenses/`
+- `VERSION.txt`: which version of SkePU this is (and of the added material, if the package has some); `licenses/`

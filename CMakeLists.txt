@@ -44,8 +44,7 @@ function(skepu_patched file marker result)
 	endif()
 endfunction()
 
-# We need to apply our patches to the llvm work tree, if it has not already been
-# done.
+# Applies the SkePU patches to the llvm work tree, if they are not applied yet.
 skepu_patched(${CMAKE_CURRENT_LIST_DIR}/llvm/clang/tools/CMakeLists.txt "skepu-tool" SkePU_LLVM_PATCHED)
 if(NOT SkePU_LLVM_PATCHED)
 	message(STATUS "[SkePU] Patching llvm")
@@ -110,14 +109,13 @@ set(SKEPU_TOOL_LLVM_DIR "${CMAKE_CURRENT_BINARY_DIR}/llvm")
 set(SKEPU_TOOL_BINARY_DIR "${SKEPU_TOOL_LLVM_DIR}/bin")
 
 
-# We need to build SkePU-tool as an external project for these reasons:
-# 1.	If llvm is added as a subproject, all it's targets would be added to make
-#			all.
-# 2.	If llvm is added as a subproject but EXCLUDE_FROM_ALL is set, then we
-#			could not whitelist the skepu-tool target again in the CMake versions that
-#			this was written for (3.10); the reasons 1 and 3 hold in any case.
-# 3.	If llvm is one subproject, and skepu-tool another, all linking information
-#			from llvm is lost and skepu-tool will not be able to build at all.
+# skepu-tool is built as an external project, for these reasons:
+# 1.	If llvm is a subproject, all of its targets are added to make all.
+# 2.	If llvm is a subproject with EXCLUDE_FROM_ALL, the skepu-tool target cannot be
+#			added to all again in the CMake versions that this was written for (3.10);
+#			reasons 1 and 3 hold in any case.
+# 3.	If llvm and skepu-tool are separate subprojects, the linking information of
+#			llvm is lost and skepu-tool cannot be built.
 include(ExternalProject)
 if(SKEPU_TOOL_STATIC)
 	set(SKEPU_STATIC_FLAGS "-DCMAKE_EXE_LINKER_FLAGS=\"-static\"")
@@ -151,9 +149,8 @@ if(SKEPU_LSP)
 	add_dependencies(clangd skepu-tool-llvm)
 endif()
 
-# The SkePUHelpers cmake script, which is used to generate targets for the
-# examples and the tests, depends on this variable being set. It is set if SkePU
-# has been installed, but we need to set it for the build as well.
+# SkePUHelpers.cmake, which makes the targets of the examples and the tests,
+# requires this variable. An installation sets it; the build has to set it too.
 set(SKEPU_EXECUTABLE ${CMAKE_BINARY_DIR}/llvm/bin/skepu-tool)
 
 # A SkePU source is precompiled again when the precompiler or a SkePU header changes (skepu_precompile). Not set in an installation, where the precompiler
@@ -167,8 +164,8 @@ add_executable(SkePU::skepu-tool IMPORTED GLOBAL)
 add_dependencies(SkePU::skepu-tool skepu-tool-llvm)
 # built by the external project; the targets give the build order, and CMP0111 wants a location
 set_target_properties(skepu-tool SkePU::skepu-tool PROPERTIES IMPORTED_LOCATION ${SKEPU_EXECUTABLE})
-# We don't have a native skepu-tool target, but the binary position is known,
-# so we install it as a program.
+# skepu-tool has no native target; the location of its binary is known, so it is
+# installed as a program.
 install(PROGRAMS ${SKEPU_TOOL_BINARY_DIR}/skepu-tool
 	DESTINATION bin)
 
@@ -177,10 +174,9 @@ install(PROGRAMS ${SKEPU_TOOL_BINARY_DIR}/skepu-tool
 install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/external/nlohmann ${CMAKE_CURRENT_LIST_DIR}/external/hash-library
 	DESTINATION include/external)
 
-# And the target exports are also available, so we install them as well for good
-# measure. CMake versions differ in where they write the export files (a fixed
-# directory, or one named by a hash), so look for them at install time instead
-# of relying on one location.
+# The target exports are installed too. CMake versions differ in where they write
+# the export files (a fixed directory, or one named by a hash), so they are
+# searched for at install time.
 install(CODE "
 	file(GLOB_RECURSE _skepu_tool_exports
 		\"${SKEPU_TOOL_LLVM_DIR}/tools/clang/tools/skepu-tool/CMakeFiles/Export/*skepu-toolTargets*.cmake\")
@@ -191,9 +187,8 @@ install(CODE "
 		DESTINATION \"\${CMAKE_INSTALL_PREFIX}/lib/cmake/SkePU\")
 ")
 
-# Now that we don't have a llvm subproject, we can actually use the target name
-# clang-headers. So we do. This target is used in the functions skepu_add_*
-# functions.
+# With no llvm subproject the target name clang-headers is available. The
+# functions skepu_add_* use it.
 add_library(clang-headers INTERFACE)
 add_library(SkePU::clang-headers ALIAS clang-headers)
 install(TARGETS clang-headers
@@ -217,12 +212,18 @@ target_include_directories(clang-headers INTERFACE
 	$<INSTALL_INTERFACE:lib/SkePU/clang-headers>)
 install(DIRECTORY ${SKEPU_CLANG_RESOURCE_HEADERS}/
 	DESTINATION lib/SkePU/clang-headers/)
-# TODO: We should probably install the clang licence in that directory.
+# TODO: install the Clang licence in that directory.
 
 # Package for a course, lab or tutorial: skepu-tool, headers, the language server if built, and skepu.mk, by packaging/make-package.sh.
 # SKEPU_PACKAGE_OVERLAY is a directory of the course's own files, added to it.
 set(SKEPU_PACKAGE_OVERLAY "" CACHE PATH "What is added to the package that the target skepu-package makes: the programs, Makefiles and data of a course")
+set(SKEPU_PACKAGE_VSIX "" CACHE STRING "The SkeVU extension put in extras/ of the package that the target skepu-package makes: a .vsix file, or AUTO to build it (make vsix in visualizer/) when it is out of date")
 set(_package_args --no-build --build-dir ${CMAKE_BINARY_DIR} --output ${CMAKE_BINARY_DIR})
+if(SKEPU_PACKAGE_VSIX STREQUAL "AUTO")
+	list(APPEND _package_args --vsix auto)
+elseif(SKEPU_PACKAGE_VSIX)
+	list(APPEND _package_args --vsix ${SKEPU_PACKAGE_VSIX})
+endif()
 if(SKEPU_PACKAGE_OVERLAY)
 	list(APPEND _package_args --overlay ${SKEPU_PACKAGE_OVERLAY})
 endif()

@@ -1,7 +1,7 @@
 {
   "name": "skepu-visualizer",
   "displayName": "SkeVU",
-  "description": "SkePU visualizer for web and as a VSCode extension",
+  "description": "Shows what a SkePU program did: skeleton calls, containers, timeline and source lines, from a trace.",
   "version": "1.0.0",
   "publisher": "skepu",
   "type": "module",
@@ -41,7 +41,7 @@
       },
       {
         "command": "skevu.runOptions",
-        "title": "SkeVU: Run and Show the Trace with Options\u2026",
+        "title": "SkeVU: Run and Show the Trace with Options…",
         "icon": "$(settings-gear)"
       }
     ],
@@ -85,7 +85,7 @@
     "lint": "eslint",
     "watch": "tsc -w -p ./",
     "license": "node -e \"require('fs').copyFileSync('../LICENSE.txt', 'LICENSE.txt')\"",
-    "package": "npm run license && vsce package --no-dependencies",
+    "package": "npm run license && vsce package --no-dependencies --readme-path README.vscode.md --out skepu-visualizer.vsix",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -110,5 +110,27 @@
     "onUri",
     "onLanguage:cpp",
     "onLanguage:cuda-cpp"
-  ]
+  ],
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "icon": "icon.png",
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "SkePU",
+    "skeleton programming",
+    "parallel programming",
+    "trace",
+    "visualization",
+    "HPC"
+  ],
+  "galleryBanner": {
+    "color": "#ffffff",
+    "theme": "light"
+  },
+  "bugs": {
+    "url": "https://github.com/skepu/skepu/issues"
+  },
+  "homepage": "https://github.com/skepu/skepu/tree/main/visualizer"
 }
