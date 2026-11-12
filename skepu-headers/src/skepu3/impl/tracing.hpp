@@ -459,7 +459,7 @@ namespace skepu
 			// container that is named later than that keeps the name that its older events have; a Raw capture is also kept in the traces of the other processes of an MPI program.
 			// A skeleton instance can be named again and again, for example by the layers of a network that share one: only the events
 			// before its first call, the builds of its kernels, get the name; its calls keep the name that it had at the call
-			auto capture = [=]{
+			auto capture = [this, id, label, instance]{
 			this->forRecentEvents([&](nlohmann::json &event)
 			{
 				auto object = event.find(Schema::Keys::OBJECT_ID);
@@ -477,7 +477,7 @@ namespace skepu
 		inline void Tracer::place(TraceID id, std::string const& file, int line)
 		{
 #ifdef SKEPU_TRACING
-			auto capture = [=]{
+			auto capture = [this, id, file, line]{
 			this->forRecentEvents([&](nlohmann::json &event)
 			{
 				auto object = event.find(Schema::Keys::OBJECT_ID);
@@ -762,7 +762,7 @@ namespace skepu
 #ifdef SKEPU_TRACING
 		inline void Tracer::raw(nlohmann::json entry)
 		{
-			auto capture = [=]{
+			auto capture = [this, entry]{
 			this->submit(entry);
 			}; this->push_capture(std::move(capture), CaptureKind::Raw);
 		}
@@ -1059,7 +1059,7 @@ namespace skepu
 		{
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
-			this->push_capture([=]{ this->replayBeginRegion(label, file, line, now, false); }, CaptureKind::Region);
+			this->push_capture([this, label, file, line, now]{ this->replayBeginRegion(label, file, line, now, false); }, CaptureKind::Region);
 #endif
 		}
 
@@ -1067,7 +1067,7 @@ namespace skepu
 		{
 #ifdef SKEPU_TRACING
 			unsigned long now = timestamp_now();
-			this->push_capture([=]{ this->replayBeginRegion(label, file, line, now, true); }, CaptureKind::Region);
+			this->push_capture([this, label, file, line, now]{ this->replayBeginRegion(label, file, line, now, true); }, CaptureKind::Region);
 #endif
 		}
 

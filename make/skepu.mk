@@ -18,7 +18,7 @@
 # file; make/repo.mk does so for a source tree.
 #
 # Settings: local.mk next to this file (copy make/local.mk.template), or the command line (make BACKENDS="-openmp"). Precedence, lowest first: the
-# defaults here, the including Makefile, local.mk, the command line.
+# defaults here, the including Makefile, local.mk, the command line. A program is built again when a setting that its build commands use changes (bin/.settings).
 #   BACKENDS            backends to build: -openmp -opencl -cuda (default); -mpi: see MPI
 #   CXX                 compiler (g++; nvcc if CUDA is a backend)
 #   SEQ_CXX             compiler for sequential builds and compile_commands.json (g++)
@@ -181,10 +181,16 @@ PTESTS    = $(addprefix $(OUT_DIR)/,$(PROGS))
 RUN_TESTS = $(addprefix $(RUN_DIR)/,$(PROGS))
 COMMON_PRECOMPILED = $(patsubst %.cpp,$(OUT_DIR)/%_precompiled.$(FILETYPE),$(COMMON_SKEPU_SOURCES))
 
-# Coarse dependencies (no per-program tracking): any change to the headers, the precompiler or a Makefile rebuilds all programs.
+# Coarse dependencies (no per-program tracking): any change to the headers, the precompiler, a Makefile or the settings below rebuilds all programs.
 SKEPU_HEADERS = $(shell find $(SKEPU_INCLUDE)/ -type f ! -name '.*')
 SEQ_DEPS      = $(SKEPU_HEADERS) $(MAKEFILE_LIST)
-PAR_DEPS      = $(SEQ_DEPS) $(SKEPU_TOOL)
+PAR_DEPS      = $(SEQ_DEPS) $(SKEPU_TOOL) $(BUILD_STAMP)
+
+# The settings that the build commands are made of, in a file that is written only when they change: a program is built again after another TRACE, BACKENDS,
+# CXX, or flags, which are no files that it depends on.
+BUILD_STAMP    = $(OUT_DIR)/.settings
+BUILD_SETTINGS = $(CXX)|$(BACKENDS)|$(SKEPU_FLAGS)|$(TARGET_FLAGS)|$(TRACE)|$(TRACE_SNAPSHOTS)|$(TRACE_DIR)|$(SNAPSHOT_DIR)|$(COMMON_SKEPU_SOURCES)|$(COMMON_SOURCES)|$(CPU_ONLY_PROGS)
+quote_shell    = '$(subst ','\'',$(1))'
 
 # ------------------------------------------------------------------- #
 # Rules.
@@ -204,6 +210,10 @@ all-run: $(RUN_TESTS)
 RUN_PATHS = $(RUN_CWD)/$(TRACE_DIR) $(if $(RUN_LOG),$(RUN_CWD)/$(RUN_DIR)) $(if $(filter 1,$(TRACE_SNAPSHOTS)),$(RUN_CWD)/$(SNAPSHOT_DIR))
 $(OUT_DIR) $(SEQ_DIR) $(WASM_DIR) $(WASM_BUILD) $(RUN_CWD)/$(TRACE_DIR) $(RUN_CWD)/$(RUN_DIR) $(RUN_CWD)/$(SNAPSHOT_DIR):
 	@mkdir -p $@
+
+.PHONY: FORCE
+$(BUILD_STAMP): FORCE | $(OUT_DIR)
+	@printf '%s\n' $(call quote_shell,$(BUILD_SETTINGS)) | cmp -s - $@ || printf '%s\n' $(call quote_shell,$(BUILD_SETTINGS)) > $@
 
 $(OUT_DIR)/%_precompiled.$(FILETYPE): %.cpp $(PAR_DEPS) | $(OUT_DIR)
 	$(DBGR) $(SKEPU_TOOL) $(BACKENDS) -name $*_precompiled $< -dir $(OUT_DIR) $(SKEPU_FLAGS)

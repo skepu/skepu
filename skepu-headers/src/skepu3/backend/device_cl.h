@@ -202,7 +202,8 @@ namespace skepu
 #else
 				const cl_command_queue_properties queueProperties = 0;
 #endif
-#if defined(CL_TARGET_OPENCL_VERSION) && CL_TARGET_OPENCL_VERSION >= 200
+// CL_VERSION_2_0 is defined by headers that declare OpenCL 2.0. Apple's are 1.2 whatever CL_TARGET_OPENCL_VERSION says (skepu defines it as 300 if unset)
+#ifdef CL_VERSION_2_0
 				const cl_queue_properties properties[] = { CL_QUEUE_PROPERTIES, queueProperties, 0 };
 				m_queue = clCreateCommandQueueWithProperties(m_context, m_device, properties, &err);
 				if (err == CL_INVALID_OPERATION)
