@@ -1,0 +1,165 @@
+## MapPairsReduce {#sec-mappairsreduce-documentation}
+
+::: {.content-visible when-format="html"}
+```{=html}
+{{< include ../visualizers/mappairsreduce.html >}}
+```
+:::
+
+### `MapPairsReduce(UF, UF)`
+Creates a `MapPairsReduce` instance with the supplied user functions. To specify the amount of vertical or horizontal input `Vector`s, you do so as template parameters when creating the `MapPairsReduce` instance, such as `skepu::MapPairsReduce<3, 2>(UF)` which would take 3 vertical and 2 horizontal input `Vector`s.
+
+```cpp
+#include <skepu>
+
+int mult(int a, int b)
+{
+    return a * b;
+}
+
+int sum(int a, int b)
+{
+    return a + b;
+}
+
+int main()
+{
+    auto mpr = skepu::MapPairsReduce(mult, sum);
+}
+```
+
+### `operator()`
+Calls the `MapPairsReduce` instance, performing the first user function on the input `Vector`s, and storing the result in the corresponding location in the intermediate `Matrix`. Afterwards, the second user function is performed on the `Matrix`, performing a 1D reduction to the output `Vector`. The vertical input `Vector`s are passed after the output `Matrix`, and the horizontal input `Vector`s are passed after the vertical input `Vector`s.
+
+```cpp
+#include <skepu>
+
+int mult(int v1, int v2, int h)
+{
+    return v1 * v2 * h;
+}
+
+int sum(int a, int b)
+{
+    return a + b;
+}
+
+int main()
+{
+    const int vSize = 3;
+    const int hSize = 7;
+    skepu::Vector<int> v1(vSize), v2(vSize), h(hSize), res(vSize);
+
+    auto mpr = skepu::MapPairsReduce<2, 1>(mult, sum);
+
+    mpr(res, v1, v2, h);
+}
+```
+
+### `setStartValue(T)`
+Sets the start value that the reduction will start on for each row or column in the `Reduce` phase. By default it is set to `T{}`, the default initialization of the type.
+
+```cpp
+#include <skepu>
+
+int mult(int a, int b)
+{
+    return a * b;
+}
+
+int sum(int a, int b)
+{
+    return a + b;
+}
+
+int main()
+{
+    auto mpr = skepu::MapPairsReduce(mult, sum);
+    mpr.setStartValue(10);
+}
+```
+
+### `setReduceMode(ReduceMode)`
+Sets the reduce mode of the `Reduce` phase. Can either be set to `ReduceMode::RowWise` or `ReduceMode::ColWise`. Is set to `ReduceMode::RowWise` by default.
+
+```cpp
+#include <skepu>
+
+int mult(int a, int b)
+{
+    return a * b;
+}
+
+int sum(int a, int b)
+{
+    return a + b;
+}
+
+int main()
+{
+    auto mpr = skepu::MapPairsReduce(mult, sum);
+    mpr.setReduceMode(skepu::ReduceMode::ColWise);
+}
+```
+
+### `setDefaultSize(size_t i, size_t j)`
+Sets the default size to be used in each dimension which will be used when one of the dimensions has 0 input `Vector`s. Is set to 1 in both dimensions by default.
+
+```cpp
+#include <skepu>
+
+int mult(int a, int b)
+{
+    return a * b;
+}
+
+int sum(int a, int b)
+{
+    return a + b;
+}
+
+int main()
+{
+    auto mpr = skepu::MapPairsReduce(mult, sum);
+    mpr.setDefaultSize(2, 2);
+}
+```
+
+:::{#lst-mappairsreduce}
+```cpp
+#include <skepu>
+#include <skepu-lib/io.hpp>
+
+int mult(int a, int b)
+{
+    return a * b;
+}
+
+int sum(int a, int b)
+{
+    return a + b;
+}
+
+int main()
+{
+    const int vSize = 3;
+    const int hSize = 7;
+    skepu::Vector<int> v(vSize), h(hSize, 2), res(hSize);
+
+    skepu::external(skepu::read(v, h), [&](){
+	    for (int i = 0; i < v.size_i(); ++i)
+			v(i) = i + 1;
+        for (int i = 0; i < h.size_i(); ++i)
+			h(i) = i + 1;
+	}, skepu::write(v, h));
+
+    auto mpr = skepu::MapPairsReduce(mult, sum);
+    mpr.setReduceMode(skepu::ReduceMode::ColWise);
+
+    mpr(res, v, h);
+
+    skepu::io::cout << res << "\n"; // Prints 7.... 6 12 18 24 30 36 42
+}
+```
+Example usage of the `MapPairsReduce` skeleton.
+:::

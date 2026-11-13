@@ -13,7 +13,9 @@ book:
   chapters:
     - index.qmd
     - src/installation.qmd
-    - src/programming.qmd
+#    - src/programming.qmd
+    - src/architecture.qmd
+    - src/documentation.qmd
     - src/stdlib.qmd
     - src/skevu.qmd
     - src/lsp.qmd

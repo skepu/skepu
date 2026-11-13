@@ -1,0 +1,61 @@
+---
+format:
+  html:
+    include-in-header:
+      - ../visualizers/viz-shared.html
+      - ../visualizers/viz-skeletons.html
+---
+
+# SkePU Documentation {#sec-documentation}
+This chapter gives short and concise descriptions for each of the functions that each SkePU skeleton has along with an example for each of them.
+
+## Shared between skeletons
+
+### `setBackend(BackendSpec)`
+Sets the backend that the skeleton instance will be executed on. Overrides any global configuration to the backend, e.g. via `setGlobalBackendSpec(BackendSpec)`.
+
+```cpp
+#include <skepu>
+
+int sum(int a, int b)
+{
+    return a + b;
+}
+
+int main()
+{
+    auto vsum = skepu::Map(sum);
+    
+    skepu::BackendSpec spec{"openmp"};
+
+    vsum.setBackend(spec);
+}
+```
+
+{{< include skeletons/map.qmd >}}
+
+{{< include skeletons/reduce.qmd >}}
+
+{{< include skeletons/mapoverlap.qmd >}}
+
+{{< include skeletons/mapoverlap1d.qmd >}}
+
+{{< include skeletons/mapoverlap2d.qmd >}}
+
+{{< include skeletons/mapoverlap3d.qmd >}}
+
+{{< include skeletons/mapoverlap4d.qmd >}}
+
+{{< include skeletons/mapreduce.qmd >}}
+
+{{< include skeletons/scan.qmd >}}
+
+{{< include skeletons/mappool2d.qmd >}}
+
+{{< include skeletons/mappool3d.qmd >}}
+
+{{< include skeletons/mappool4d.qmd >}}
+
+{{< include skeletons/mappairs.qmd >}}
+ 
+{{< include skeletons/mappairsreduce.qmd >}} 

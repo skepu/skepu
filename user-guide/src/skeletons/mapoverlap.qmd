@@ -1,0 +1,99 @@
+## MapOverlap {#sec-mapoverlap-documentation}
+
+::: {.content-visible when-format="html"}
+```{=html}
+{{< include ../visualizers/mapoverlap.html >}}
+```
+:::
+
+Below are the shared functions that each `MapOverlapND` skeleton has access to.
+
+### `setEdgeMode(Edge)`
+Sets the container edge handling strategy. Can be either `Edge::Duplicate`, `Edge::Pad`, `Edge::Cyclic`, or `Edge::None`. Default is `Edge::Duplicate`. When a region tries to access elements outside the extents of the input container, it will add elements to the region based on the edge handling strategy. The edge handling strategies work as follows:
+
+- `Edge::Duplicate` - duplicate padding of the value closest to the edge
+
+- `Edge::Pad` - fixed padding with a user-set value
+
+- `Edge::Cyclic` - cyclic (toroidal) padding
+
+- `Edge::None` - no edge handling.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region1D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        val += r(i);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    regionSum.setEdgeMode(skepu::Edge::None);
+}
+```
+
+### `getEdgeMode() -> Edge`
+Returns the current `Edge` used in the `MapOverlap` instance.
+```cpp
+#include <skepu>
+
+int sum(skepu::Region1D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        val += r(i);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    skepu::Edge edge = regionSum.getEdgeMode();
+}
+```
+
+
+### `setPad(T)`
+Sets the pad to be used when the edge mode is set to `Edge::Pad`. By default it is set to `T{}`, the default initialization of the type.
+```cpp
+#include <skepu>
+
+int sum(skepu::Region1D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        val += r(i);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    regionSum.setPad(10);
+}
+```
+
+### `getPad() -> T`
+Returns the current pad of the `MapOverlap` instance.
+```cpp
+#include <skepu>
+
+int sum(skepu::Region1D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        val += r(i);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    int pad = regionSum.getPad();
+}
+```

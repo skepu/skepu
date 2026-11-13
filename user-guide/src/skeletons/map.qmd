@@ -1,0 +1,70 @@
+## Map {#sec-map-documentation}
+
+::: {.content-visible when-format="html"}
+```{=html}
+{{< include ../visualizers/map.html >}}
+```
+:::
+
+### `Map(UF)`
+Creates a `Map` instance with the supplied user function.
+
+```cpp
+#include <skepu>
+
+int sum(int a, int b)
+{
+    return a + b;
+}
+
+int main()
+{
+    auto vsum = skepu::Map(sum);
+}
+```
+
+### `operator()`
+Calls the `Map` instance, performing the user function on the input parameters, and stores the result in the output containers. Below is an example with one output `Vector`, two input `Vector`s, one proxy `Vec`, and one scalar. 
+
+```cpp
+#include <skepu>
+
+int sum(int a, int b, skepu::Vec<int> v, int c)
+{
+    return a + b + v(0) + v(1) + c;
+}
+
+int main()
+{
+    skepu::Vector<int> a{1, 2, 3, 4}, b{4, 3, 2, 1}, v{1, 2};
+    skepu::Vector<int> out(a.size());
+
+    auto vsum = skepu::Map(sum);
+    vsum(out, a, b, v, 10);
+}
+```
+
+### `setStride(int...)`
+Sets the stride of the output and input containers of the `Map` instance. All strides are set to 1 by default.
+
+```cpp
+#include <skepu>
+#include <skepu-lib/io.hpp>
+
+skepu::multiple<int, int> mult(int a, int b)
+{
+    return skepu::ret(a * b, a * b);
+}
+
+int main()
+{
+    skepu::Vector<int> a{1, 2, 3, 4}, b{2, 2};
+    skepu::Vector<int> out1(b.size() * 4), out2(b.size() * 6);
+
+    auto vsum = skepu::Map(mult);
+    vsum.setStride(4, 6, 2, 1);
+    vsum(out1, out2, a, b);
+    skepu::io::cout << out1 << "\n"; // Prints 8.... 2 0 0 0 6 0 0 0 
+    skepu::io::cout << out2 << "\n"; // Prints 12.... 2 0 0 0 0 0 6 0 0 0 0 0
+}
+```

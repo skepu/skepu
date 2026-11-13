@@ -1,0 +1,178 @@
+## MapOverlap2D {#sec-mapoverlap2d-documentation}
+
+### `MapOverlap(UF(Region2D))`
+Creates a `MapOverlap2D` instance with the supplied user function.
+```cpp
+#include <skepu>
+
+int sum(skepu::Region2D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        for (int j = -r.oj; j <= r.oj; ++j)
+            val += r(i, j);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+}
+```
+
+### `operator()`
+Calls the `MapOverlap2D` instance, performing the user function on the input parameters, and stores the result in the output containers.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region2D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        for (int j = -r.oj; j <= r.oj; ++j)
+            val += r(i, j);
+    return val;
+}
+
+int main()
+{
+    skepu::Matrix<int> in(5, 5), out(5, 5);
+
+    auto regionSum = skepu::MapOverlap(sum);
+
+    regionSum(out, in);
+}
+```
+
+### `setOverlap(int oi, int oj)`
+Sets the overlap radius for the `MapOverlap2D` instance. Is set to 1 by default in each dimension. Cannot be less than 0. `oi` is the outermost dimension.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region2D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        for (int j = -r.oj; j <= r.oj; ++j)
+            val += r(i, j);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    regionSum.setOverlap(2, 2);
+}
+```
+
+### `setOverlap(int o)`
+Calls `setOverlap(o, o)`.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region2D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        for (int j = -r.oj; j <= r.oj; ++j)
+            val += r(i, j);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    regionSum.setOverlap(2);
+}
+```
+
+### `getOverlap() -> std::tuple<int, int>`
+Returns a tuple of the current overlap radius in each dimension of the `MapOverlap2D` instance.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region2D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        for (int j = -r.oj; j <= r.oj; ++j)
+            val += r(i, j);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    std::tuple<int, int> overlap = regionSum.getOverlap();
+}
+```
+
+### `setStride(int si, int sj)`
+Sets the stride for the dimensions of the `MapOverlap2D` instance. Is set to 1 by default in each dimension. Cannot be less than 0. `si` is the outermost dimension
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region2D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        for (int j = -r.oj; j <= r.oj; ++j)
+            val += r(i, j);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    regionSum.setStride(2, 2);
+}
+```
+
+### `setStride(int s)`
+Calls `setStride(s, s)`.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region2D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        for (int j = -r.oj; j <= r.oj; ++j)
+            val += r(i, j);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    regionSum.setStride(2);
+}
+```
+
+### `getStride() -> std::tuple<int, int>`
+Returns a tuple of the current stride in each dimension of the `MapOverlap2D` instance.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region2D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        for (int j = -r.oj; j <= r.oj; ++j)
+            val += r(i, j);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    std::tuple<int, int> stride = regionSum.getStride();
+}
+```

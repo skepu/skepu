@@ -1,0 +1,75 @@
+## MapReduce {#sec-mapreduce-documentation}
+
+
+### `MapReduce(UF, UF)`
+Creates a `MapReduce` instance with the supplied user functions. The first user function will be used during the `Map` phase, and the second user function will be used during the `Reduce` phase.
+
+```cpp
+#include <skepu>
+
+int mult(int a, int b)
+{
+    return a * b;
+}
+
+int sum(int a, int b)
+{
+    return a + b;
+}
+
+int main()
+{
+    auto dotproduct = skepu::MapReduce(mult, sum);
+}
+```
+
+### `operator()`
+Calls the `MapReduce` instance, performing a `Map` operation on the inputs using the first user function, then a `Reduce` operation on the intermediate result using the second user function, and returns a scalar similar to the `Reduce` skeleton. 
+
+```cpp
+#include <skepu>
+
+int mult(int a, int b)
+{
+    return a * b;
+}
+
+int sum(int a, int b)
+{
+    return a + b;
+}
+
+int main()
+{
+    skepu::Vector<int> a{1, 2, 3, 4}, b{4, 3, 2, 1};
+
+    auto dotproduct = skepu::MapReduce(mult, sum);
+    int result = dotproduct(a, b);
+}
+```
+
+### `setStride(int...)`
+Sets the stride of the input containers of the `MapReduce` instance. These strides are used during the `Map` phase of the skeleton. All strides are set to 1 by default.
+
+```cpp
+#include <skepu>
+
+int mult(int a, int b)
+{
+    return a * b;
+}
+
+int sum(int a, int b)
+{
+    return a + b;
+}
+
+int main()
+{
+    skepu::Vector<int> a{1, 2, 3, 4}, b{2, 2};
+
+    auto dotproduct = skepu::MapReduce(mult, sum);
+    dotproduct.setStride(2, 1);
+    std::cout << dotproduct(a, b) << "\n"; // Prints 8
+}
+```

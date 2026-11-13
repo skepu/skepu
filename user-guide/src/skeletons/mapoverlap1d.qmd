@@ -1,0 +1,158 @@
+## MapOverlap1D {#sec-mapoverlap1d-documentation}
+
+### `MapOverlap(UF(Region1D))`
+Creates a `MapOverlap1D` instance with the supplied user function.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region1D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        val += r(i);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+}
+```
+
+### `operator()`
+Calls the `MapOverlap1D` instance, performing the user function on the input parameters, and stores the result in the output containers. It has two overloads:
+
+- Row-wise/col-wise overlap from `Matrix` to `Matrix`
+
+- Regular overlap from `Vector` to `Vector`.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region1D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        val += r(i);
+    return val;
+}
+
+int main()
+{
+    skepu::Vector<int> v(5), out(5);
+    skepu::Matrix<int> m(5, 5), mOut(5, 5);
+
+    auto regionSum = skepu::MapOverlap(sum);
+
+    regionSum(out, v);
+    regionSum(mOut, m);
+}
+```
+
+### `setOverlapMode(Overlap)`
+Sets which overlap mode the row-wise/col-wise `Matrix` to `Matrix` overlap should perform. Can either be
+set to `Overlap::RowWise` or `Overlap::ColWise`. Is set to `Overlap::RowWise` by default.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region1D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        val += r(i);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    regionSum.setOverlapMode(skepu::Overlap::ColWise);
+}
+```
+
+### `getOverlapMode() -> Overlap`
+Returns the current `Overlap` used in the `MapOverlap1D` instance.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region1D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        val += r(i);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    skepu::Overlap overlapMode = regionSum.getOverlapMode();
+}
+```
+
+
+### `setOverlap(int)`
+Sets the overlap radius for the `MapOverlap1D` instance. Is set to 1 by default. Cannot be less than 0.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region1D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        val += r(i);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    regionSum.setOverlap(2);
+}
+```
+
+### `getOverlap() -> int`
+Returns the current overlap radius of the `MapOverlap1D` instance.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region1D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        val += r(i);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    int overlap = regionSum.getOverlap();
+}
+```
+
+### `setStride(int)`
+Sets the stride for the `MapOverlap1D` instance. Is set to 1 by default. Cannot be less than 0.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Region1D<int> r)
+{
+    int val = 0;
+    for (int i = -r.oi; i <= r.oi; ++i)
+        val += r(i);
+    return val;
+}
+
+int main()
+{
+    auto regionSum = skepu::MapOverlap(sum);
+    regionSum.setStride(2);
+}
+```

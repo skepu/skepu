@@ -1,0 +1,232 @@
+## MapPool3D {#sec-mappool3d-documentation}
+
+### `MapPool(UF(Pool3D))`
+Creates a `MapPool3D` instance with the supplied user function.
+```cpp
+#include <skepu>
+
+int sum(skepu::Pool3D<int> p)
+{
+    int val = 0;
+    for (int i = 0; i < p.si; ++i)
+        for (int j = 0; j < p.sj; ++j)
+            for (int k = 0; k < p.sk; ++k)
+                val += p(i, j, k);
+    return val;
+}
+
+int main()
+{
+    auto poolSum = skepu::MapPool(sum);
+}
+```
+
+### `operator()`
+Calls the `MapPool3D` instance, performing the user function on the input parameters, and stores the result in the output containers.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Pool3D<int> p)
+{
+    int val = 0;
+    for (int i = 0; i < p.si; ++i)
+        for (int j = 0; j < p.sj; ++j)
+            for (int k = 0; k < p.sk; ++k)
+                val += p(i, j, k);
+    return val;
+}
+
+int main()
+{
+    skepu::Tensor3<int> in(5, 5, 5), out(5, 5, 5);
+
+    auto poolSum = skepu::MapPool(sum);
+
+    poolSum(out, in);
+}
+```
+
+### `setPoolSize(int pi, int pj, int pk)`
+Sets the pool size for the `MapPool3D` instance. Is set to 1 by default in each dimension. Cannot be less than 0. `pi` is the outermost dimension.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Pool3D<int> p)
+{
+    int val = 0;
+    for (int i = 0; i < p.si; ++i)
+        for (int j = 0; j < p.sj; ++j)
+            for (int k = 0; k < p.sk; ++k)
+                val += p(i, j, k);
+    return val;
+}
+
+int main()
+{
+    auto poolSum = skepu::MapPool(sum);
+    poolSum.setPoolSize(2, 2, 2);
+}
+```
+
+### `setPoolSize(int p)`
+Calls `setPoolSize(p, p, p)`.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Pool3D<int> p)
+{
+    int val = 0;
+    for (int i = 0; i < p.si; ++i)
+        for (int j = 0; j < p.sj; ++j)
+            for (int k = 0; k < p.sk; ++k)
+                val += p(i, j, k);
+    return val;
+}
+
+int main()
+{
+    auto poolSum = skepu::MapPool(sum);
+    poolSum.setPoolSize(2);
+}
+```
+
+### `getPoolSize() -> std::tuple<int, int, int>`
+Returns a tuple of the current pool size in each dimension of the `MapPool3D` instance.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Pool3D<int> p)
+{
+    int val = 0;
+    for (int i = 0; i < p.si; ++i)
+        for (int j = 0; j < p.sj; ++j)
+            for (int k = 0; k < p.sk; ++k)
+                val += p(i, j, k);
+    return val;
+}
+
+int main()
+{
+    auto poolSum = skepu::MapPool(sum);
+    std::tuple<int, int, int> poolSizes = poolSum.getPoolSize();
+}
+```
+
+### `setStride(int si, int sj, int sk)`
+Sets the stride for the dimensions of the `MapPool3D` instance. Is set to 1 by default in each dimension. Cannot be less than 0. `si` is the outermost dimension.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Pool3D<int> p)
+{
+    int val = 0;
+    for (int i = 0; i < p.si; ++i)
+        for (int j = 0; j < p.sj; ++j)
+            for (int k = 0; k < p.sk; ++k)
+                val += p(i, j, k);
+    return val;
+}
+
+int main()
+{
+    auto poolSum = skepu::MapPool(sum);
+    poolSum.setStride(2, 2, 2);
+}
+```
+
+### `setStride(int s)`
+Calls `setStride(s, s, s)`.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Pool3D<int> p)
+{
+    int val = 0;
+    for (int i = 0; i < p.si; ++i)
+        for (int j = 0; j < p.sj; ++j)
+            for (int k = 0; k < p.sk; ++k)
+                val += p(i, j, k);
+    return val;
+}
+
+int main()
+{
+    auto poolSum = skepu::MapPool(sum);
+    poolSum.setStride(2);
+}
+```
+
+### `getStride() -> std::tuple<int, int, int>`
+Returns a tuple of the current stride in each dimension of the `MapPool3D` instance.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Pool3D<int> p)
+{
+    int val = 0;
+    for (int i = 0; i < p.si; ++i)
+        for (int j = 0; j < p.sj; ++j)
+            for (int k = 0; k < p.sk; ++k)
+                val += p(i, j, k);
+    return val;
+}
+
+int main()
+{
+    auto poolSum = skepu::MapPool(sum);
+    std::tuple<int, int, int> stride = poolSum.getStride();
+}
+```
+
+### `setPoolSizeAndStride(int pi, int pj, int pk)`
+Calls `setPoolSize(pi, pj, pk)` and `setStride(pi, pj, pk)`.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Pool3D<int> p)
+{
+    int val = 0;
+    for (int i = 0; i < p.si; ++i)
+        for (int j = 0; j < p.sj; ++j)
+            for (int k = 0; k < p.sk; ++k)
+                val += p(i, j, k);
+    return val;
+}
+
+int main()
+{
+    auto poolSum = skepu::MapPool(sum);
+    poolSum.setPoolSizeAndStride(2, 2, 2);
+}
+```
+
+### `setPoolSizeAndStride(int p)`
+Calls `setPoolSize(p)` and `setStride(p)`.
+
+```cpp
+#include <skepu>
+
+int sum(skepu::Pool3D<int> p)
+{
+    int val = 0;
+    for (int i = 0; i < p.si; ++i)
+        for (int j = 0; j < p.sj; ++j)
+            for (int k = 0; k < p.sk; ++k)
+                val += p(i, j, k);
+    return val;
+}
+
+int main()
+{
+    auto poolSum = skepu::MapPool(sum);
+    poolSum.setPoolSizeAndStride(2);
+}
+```
