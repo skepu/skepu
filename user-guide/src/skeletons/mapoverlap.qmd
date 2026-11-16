@@ -1,9 +1,7 @@
 ## MapOverlap {#sec-mapoverlap-documentation}
 
 ::: {.content-visible when-format="html"}
-```{=html}
-{{< include ../visualizers/mapoverlap.html >}}
-```
+{{< skeleton-viz mapoverlap >}}
 :::
 
 Below are the shared functions that each `MapOverlapND` skeleton has access to.

@@ -41,6 +41,13 @@ function loadDeps(vizBase) {
     link.href = vizBase + 'static/highlight/styles/default.css';
     document.head.appendChild(link);
 
+    ['timeline.css', 'source.css'].forEach(function (file) {
+      var css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = vizBase + 'style/' + file;
+      document.head.appendChild(css);
+    });
+
     var [gv, tdp, scv, tv] = await Promise.all(
       ['GraphView', 'TraceDataProvider', 'SourceCodeView', 'TimelineView']
         .map(function (m) { return import(vizBase + 'script/' + m + '.js'); }));
@@ -95,11 +102,6 @@ function fmtDur(us) {
   return us.toFixed(0) + ' μs';
 }
 
-function fmtMs(ms) {
-  if (ms == null) return '—';
-  return ms < 1000 ? ms + ' ms' : (ms / 1000).toFixed(2) + ' s';
-}
-
 function setLoading(pid, active) {
   var el = $(pid + '-loading');
   if (el) el.style.display = active ? 'flex' : 'none';
@@ -109,16 +111,6 @@ function setError(pid, msg) {
   setLoading(pid, false);
   var el = $(pid + '-error');
   if (el) { el.textContent = '⚠ ' + msg; el.style.display = 'block'; }
-}
-
-function updateStats(pid, stats) {
-  var el = $(pid + '-stats');
-  if (!el) return;
-  var parts = ['Nodes <b>' + stats.nodeCount + '</b>', 'Edges <b>' + stats.edgeCount + '</b>'];
-  if (stats.timelineNodes && stats.timelineNodes.length)
-    parts.push('Timeline <b>' + stats.timelineNodes.length + '</b>');
-  parts.push('Model <b>' + fmtMs(stats.modelingMs) + '</b>', 'Layout <b>' + fmtMs(stats.renderingMs) + '</b>');
-  el.innerHTML = parts.map(function (p) { return '<span>' + p + '</span>'; }).join('');
 }
 
 function showInfo(pid, data) {
@@ -186,17 +178,17 @@ function buildControls(pid, view, controls) {
     if (def.type === 'checkbox') {
       var box = document.createElement('input');
       box.type = 'checkbox';
-      box.checked = !!view.settings[def.key];
-      box.addEventListener('change', function () { view.settings[def.key] = box.checked; view.render(); });
+      box.checked = !!view.settings.get(def.key);
+      box.addEventListener('change', function () { view.settings.set(def.key, box.checked); view.render(); });
       label.append(box, ' ' + def.label);
     } else {
       var sel = document.createElement('select');
       def.options.forEach(function (o) {
         var opt = new Option(o.label, o.value);
-        if (o.value === view.settings[def.key]) opt.selected = true;
+        if (o.value === view.settings.get(def.key)) opt.selected = true;
         sel.appendChild(opt);
       });
-      sel.addEventListener('change', function () { view.settings[def.key] = sel.value; view.render(); });
+      sel.addEventListener('change', function () { view.settings.set(def.key, sel.value); view.render(); });
       label.append(def.label + ' ', sel);
     }
     row.appendChild(label);
@@ -278,7 +270,6 @@ async function mount(pid, config) {
         onRenderStart: function () { setLoading(pid, true); },
         onRenderEnd: function (stats) {
           setLoading(pid, false);
-          updateStats(pid, stats);
           graphNodes = stats.graphNodes || [];
         },
         onError: function (err) { setError(pid, err.message || String(err)); },
@@ -292,6 +283,7 @@ async function mount(pid, config) {
       srcView = new deps.SourceCodeView({
         tabBarEl: $(pid + '-tab-bar'), tabPanesEl: $(pid + '-tab-panes'),
         hljsThemeLinkEl: $('te-hljs-theme'), initialTheme: 'default',
+        codePaths: false,
       });
       srcView.attachProvider(provider);   // keeps the source pane in sync with the graph
     }
@@ -335,9 +327,12 @@ async function mount(pid, config) {
   async function run() {
     if (runBtn.disabled) return;
     runBtn.disabled = true;
-    runBtn.textContent = '⏳ Running…';
+    // a run that is quick leaves the button as it is: no flicker
+    var busy = setTimeout(function () { runBtn.classList.add('busy'); runBtn.textContent = '⏳ Running…'; }, 300);
     var trace = await runWasm(wasm, argvEl.value.trim().split(/\s+/).filter(Boolean), outputEl, views.length > 0);
+    clearTimeout(busy);
     runBtn.disabled = false;
+    runBtn.classList.remove('busy');
     runBtn.textContent = '▶ Run';
     if (!trace) return;   // no trace: leave a previous visualization as it is
 

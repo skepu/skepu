@@ -13,7 +13,7 @@
   Parameters
   ----------
   views     Comma-separated subset of graph, source, timeline, or none.  Default: graph.
-  height    Height in pixels of the graph and source panes.  Default: 420.
+  height    Height in pixels of the graph and source panes.  Default: 300.
   label     Heading bar.
   controls  Interactive controls to offer: regions, collapse-iter, element-accesses,
             anti-deps, direction, node-color.  Default: none (a read-only panel).
@@ -21,10 +21,15 @@
             opt-anti-deps (true/false), opt-direction (vertical|horizontal),
             opt-node-color (duration-total|dag-depth|total-order|fixed).
   example, backend   (trace-embed) Example index and backend name.  Default: 0, openmp.
+  id        (trace-wasm) Prefix of the element ids.  Default: te-<number>.
+  hide-argv (trace-wasm) true: no field of the arguments.
   js        (trace-wasm) Emscripten glue .js, relative to the rendered page.
   src       (trace-wasm) C++ source, relative to the project root: read at build time to be
             shown in the source view, and listed above the program with code="true".
   argv      (trace-wasm) Default arguments.
+
+  {{< skeleton-viz map >}}  The access-pattern visualizer of a skeleton (map, mapoverlap, reduce, mappairs,
+        mappairsreduce, mappool, scan); a list of them, or `all`, gives a tab for each.
 
   The runtime is skevu.js; the panels load the visualizer from the viz/ directory of the
   book (installed by scripts/install_viz.py).
@@ -104,7 +109,7 @@ local function common(kwargs)
     label    = param(kwargs, "label", nil),
     views    = split_list(param(kwargs, "views", "graph")),   -- "none": no views
     controls = split_list(param(kwargs, "controls", "")),
-    height   = tonumber(param(kwargs, "height", "420")) or 420,
+    height   = tonumber(param(kwargs, "height", "300")) or 300,
     settings = {},
   }
   for name, key in pairs(OPT_SETTINGS) do
@@ -133,7 +138,7 @@ local function add_dependency()
   })
 end
 
--- The views of a panel: graph (with statistics, details and controls), source and timeline.
+-- The views of a panel: graph (with details and controls), source and timeline.
 local function views_html(id, c)
   local h = {}
   local function add(s) table.insert(h, s) end
@@ -145,7 +150,6 @@ local function views_html(id, c)
     add('<div id="' .. id .. '-loading" class="te-loading"><div class="te-spinner"></div><span>Loading…</span></div>')
     add('<div id="' .. id .. '-error" class="te-error"></div>')
     add('</div>')
-    add('<div id="' .. id .. '-stats" class="te-stats-bar"></div>')
     add('<div id="' .. id .. '-info" class="te-info-box te-info-empty">Click a node to see details</div>')
     if #c.controls > 0 then add('<div id="' .. id .. '-controls" class="te-controls-row"></div>') end
     add('</div>')
@@ -158,7 +162,7 @@ local function views_html(id, c)
   end
   add('</div>')
   if c.has.timeline then
-    add('<div class="te-timeline-wrap"><div id="' .. id .. '-timeline" class="te-timeline-scroll"></div></div>')
+    add('<div class="te-timeline-wrap"><div id="' .. id .. '-timeline" class="te-timeline-scroll tl-container"></div></div>')
   end
   return table.concat(h, "\n")
 end
@@ -177,7 +181,19 @@ local function mount_script(id, c, extra)
     '<script>skevu.mount("' .. id .. '", ' .. quarto.json.encode(config) .. ');</script>')
 end
 
+local function skeleton_viz(args)
+  if not quarto.doc.is_format("html") or simple_edition() then return {} end
+  quarto.doc.add_html_dependency({
+    name = "skeleton-viz", version = "1.0.0",
+    scripts = { "skeleton-viz.js", "skeletons.js" }, stylesheets = { "skeleton-viz.css" },
+  })
+  local ids = args[1] and pandoc.utils.stringify(args[1]) or "all"
+  return pandoc.RawBlock("html", '<div data-skeleton-viz="' .. html_escape(ids) .. '"></div>')
+end
+
 return {
+  ["skeleton-viz"] = skeleton_viz,
+
   ["trace-embed"] = function(args, kwargs)
     if not quarto.doc.is_format("html") then return {} end
     if simple_edition() then return omitted(kwargs) end
@@ -200,7 +216,7 @@ return {
     if not simple then add_dependency() end
     local c = common(kwargs)
     counter = counter + 1
-    local id = "te-" .. counter
+    local id = param(kwargs, "id", "te-" .. counter)
 
     local src_path = param(kwargs, "src", nil)
     local source = src_path and (read_file(src_path) or ("// source file not found: " .. src_path))
@@ -220,7 +236,7 @@ return {
     table.insert(blocks, pandoc.RawBlock("html", table.concat({
       '<div class="te-wasm-section">',
       '  <div class="te-wasm-run-row">',
-      '    <input id="' .. id .. '-argv" class="te-wasm-argv" type="text" value="'
+      '    <input id="' .. id .. '-argv" class="te-wasm-argv' .. (param(kwargs, "hide-argv", "false") == "true" and " te-wasm-argv-hidden" or "") .. '" type="text" value="'
         .. html_escape(param(kwargs, "argv", "")) .. '" placeholder="arguments…">',
       '    <button id="' .. id .. '-run" class="te-wasm-run">▶ Run</button>',
       '    <button id="' .. id .. '-clear" class="te-wasm-clear">Clear</button>',

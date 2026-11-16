@@ -1,9 +1,7 @@
 ## MapPool2D {#sec-mappool2d-documentation}
 
 ::: {.content-visible when-format="html"}
-```{=html}
-{{< include ../visualizers/mappool.html >}}
-```
+{{< skeleton-viz mappool >}}
 :::
 
 ### `MapPool(UF(Pool2D))`
@@ -29,8 +27,9 @@ int main()
 ### `operator()`
 Calls the `MapPool2D` instance, performing the user function on the input parameters, and stores the result in the output containers.
 
-```cpp
+```{.cpp .run}
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 int sum(skepu::Pool2D<int> p)
 {
@@ -43,12 +42,22 @@ int sum(skepu::Pool2D<int> p)
 
 int main()
 {
-    skepu::Matrix<int> in(5, 5), out(5, 5);
+    skepu::Matrix<int> in(5, 5, 1), out(5, 5);
 
     auto poolSum = skepu::MapPool(sum);
 
     poolSum(out, in);
+    skepu::io::cout << out << "\n";
 }
+```
+
+```{.text .output}
+Matrix[5×5]:
+1 1 1 1 1
+1 1 1 1 1
+1 1 1 1 1
+1 1 1 1 1
+1 1 1 1 1
 ```
 
 ### `setPoolSize(int pi, int pj)`

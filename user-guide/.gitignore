@@ -7,3 +7,9 @@ _pdf/
 
 # macOS
 .DS_Store
+
+# Listings built for the browser (scripts/build_listings.py)
+/listings/*.cpp
+/listings/bin-wasm/
+/listings/wasm/
+/listings/bin/

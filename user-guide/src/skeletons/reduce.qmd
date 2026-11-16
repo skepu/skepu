@@ -1,9 +1,7 @@
 ## Reduce {#sec-reduce-documentation}
 
 ::: {.content-visible when-format="html"}
-```{=html}
-{{< include ../visualizers/reduce.html >}}
-```
+{{< skeleton-viz reduce >}}
 :::
 
 ### `Reduce(UF)`
@@ -54,8 +52,9 @@ Performs the reduction as specified by the user function on the input. The outpu
 
 - `Reduce2D(Matrix)` -> scalar
 
-```cpp
+```{.cpp .run}
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 int sum(int a, int b)
 {
@@ -69,16 +68,23 @@ int mult(int a, int b)
 
 int main()
 {
-    skepu::Vector<int> v(4);
-    skepu::Matrix<int> m(4, 4);
+    skepu::Vector<int> v(4, 1);
+    skepu::Matrix<int> m(4, 4, 1);
     auto summer = skepu::Reduce(sum);
     int res = summer(v);
+    skepu::io::cout << res << "\n";
     res = summer(m);
     summer(v, m);
+    skepu::io::cout << v << "\n";
 
     auto summulter = skepu::Reduce(sum, mult);
     res = summulter(m);
 }
+```
+
+```{.text .output}
+4
+Vector[4]: 4 4 4 4
 ```
 
 ### `setReduceMode(ReduceMode)`
@@ -103,8 +109,9 @@ int main()
 Sets the start value that the reduction will start on. By default it is set to `T{}`, the default initialization of the type. This is useful for reduction where the starting value matters such as
 finding the minimum or maximum value in a SkePU container.
 
-```cpp
+```{.cpp .run}
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 int minimum(int a, int b)
 {
@@ -117,13 +124,18 @@ int main()
     auto vmin = skepu::Reduce(minimum);
     vmin.setStartValue(v(0));
     int result = vmin(v);
+    skepu::io::cout << result << "\n";
 }
+```
+
+```{.text .output}
+1
 ```
 
 ### Reduce Examples
 
 :::{#lst-reduce-example}
-```cpp
+```{.cpp .run}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -140,15 +152,19 @@ int main()
     vmin.setStartValue(v(0)); // start value defaults to 0 otherwise
     int result = vmin(v);
 
-    skepu::io::cout << result << "\n"; // Prints 1
+    skepu::io::cout << result << "\n";
     return 0;
 }
+```
+
+```{.text .output}
+1
 ```
 Example usage of the `Reduce` skeleton.
 :::
 
 :::{#lst-reduce-example-2}
-```cpp
+```{.cpp .run}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -173,22 +189,28 @@ int main()
     std::cout << summer(v) << " "
               << summer(m) << " "
               << summer(t3) << " "
-              << summer(t4) << "\n"; // Prints 2 4 8 16
+              << summer(t4) << "\n";
     
-    std::cout << summer(v, m) << "\n"; // Prints 2.... 2 2
+    std::cout << summer(v, m) << "\n";
     
     auto summer2D = skepu::Reduce(sum, mult);
     summer2D.setStartValue(1); // start value defaults to 0 otherwise
 
-    std::cout << summer2D(m) << "\n"; // Prints 9
+    std::cout << summer2D(m) << "\n";
 }
+```
+
+```{.text .output}
+2 4 8 16
+Vector[2]: 2 2
+9
 ```
 Example usage of the `Reduce` skeleton on the different SkePU containers.
 :::
 
 
 
-```{#lst-reduce-mtv-vts-example .cpp lst-cap="Reduction from matrix to vector, and from vector to scalar."}
+```{#lst-reduce-mtv-vts-example .cpp .run lst-cap="Reduction from matrix to vector, and from vector to scalar."}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -205,19 +227,24 @@ int main()
   auto summer = skepu::Reduce(sum);
   summer(v, m);
   
-  skepu::io::cout << v << "\n"; // Prints 5.... 5 5 5 5 5
+  skepu::io::cout << v << "\n";
   
   summer.setStartValue(0);
   int result = summer(v);
   
-  skepu::io::cout << result << "\n"; // Prints 25
+  skepu::io::cout << result << "\n";
 
   return 0;
 }
 ```
 
+```{.text .output}
+Vector[5]: 5 5 5 5 5
+25
+```
 
-```{#lst-reduce-mts-example .cpp lst-cap="Reduction from matrix to scalar."}
+
+```{#lst-reduce-mts-example .cpp .run lst-cap="Reduction from matrix to scalar."}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -234,14 +261,18 @@ int main()
   summer.setStartValue(0);
   int result = summer(m);
   
-  skepu::io::cout << result << "\n"; // Prints 25
+  skepu::io::cout << result << "\n";
 
   return 0;
 }
 ```
 
+```{.text .output}
+25
+```
 
-```{#lst-reduce-modes-example .cpp lst-cap="Difference between colwise and rowwise reduction on a matrix."}
+
+```{#lst-reduce-modes-example .cpp .run lst-cap="Difference between colwise and rowwise reduction on a matrix."}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -266,25 +297,30 @@ int main()
   }, skepu::write(m));
 
   skepu::io::cout << m << "\n";
-  // Prints:
-  // Matrix: (5 X 5)
-  // 1 1 1 1 1
-  // 2 2 2 2 2
-  // 3 3 3 3 3
-  // 4 4 4 4 4
-  // 5 5 5 5 5
 
   auto summer = skepu::Reduce(sum);
   summer.setReduceMode(skepu::ReduceMode::RowWise);
   summer(v, m);
   
-  skepu::io::cout << v << "\n"; // Prints 5.... 5 10 15 20 25
+  skepu::io::cout << v << "\n";
   
   summer.setReduceMode(skepu::ReduceMode::ColWise);
   summer(v, m);
   
-  skepu::io::cout << v << "\n"; // Prints 5.... 15 15 15 15 15
+  skepu::io::cout << v << "\n";
 
   return 0;
 }
+```
+
+```{.text .output}
+Matrix[5×5]:
+1 1 1 1 1
+2 2 2 2 2
+3 3 3 3 3
+4 4 4 4 4
+5 5 5 5 5
+
+Vector[5]: 5 10 15 20 25
+Vector[5]: 15 15 15 15 15
 ```

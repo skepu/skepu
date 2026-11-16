@@ -1,9 +1,7 @@
 ## MapPairsReduce {#sec-mappairsreduce-documentation}
 
 ::: {.content-visible when-format="html"}
-```{=html}
-{{< include ../visualizers/mappairsreduce.html >}}
-```
+{{< skeleton-viz mappairsreduce >}}
 :::
 
 ### `MapPairsReduce(UF, UF)`
@@ -31,8 +29,9 @@ int main()
 ### `operator()`
 Calls the `MapPairsReduce` instance, performing the first user function on the input `Vector`s, and storing the result in the corresponding location in the intermediate `Matrix`. Afterwards, the second user function is performed on the `Matrix`, performing a 1D reduction to the output `Vector`. The vertical input `Vector`s are passed after the output `Matrix`, and the horizontal input `Vector`s are passed after the vertical input `Vector`s.
 
-```cpp
+```{.cpp .run}
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 int mult(int v1, int v2, int h)
 {
@@ -48,12 +47,17 @@ int main()
 {
     const int vSize = 3;
     const int hSize = 7;
-    skepu::Vector<int> v1(vSize), v2(vSize), h(hSize), res(vSize);
+    skepu::Vector<int> v1(vSize, 1), v2(vSize, 1), h(hSize, 1), res(vSize);
 
     auto mpr = skepu::MapPairsReduce<2, 1>(mult, sum);
 
     mpr(res, v1, v2, h);
+    skepu::io::cout << res << "\n";
 }
+```
+
+```{.text .output}
+Vector[3]: 7 7 7
 ```
 
 ### `setStartValue(T)`
@@ -126,7 +130,7 @@ int main()
 ```
 
 :::{#lst-mappairsreduce}
-```cpp
+```{.cpp .run}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -158,8 +162,12 @@ int main()
 
     mpr(res, v, h);
 
-    skepu::io::cout << res << "\n"; // Prints 7.... 6 12 18 24 30 36 42
+    skepu::io::cout << res << "\n";
 }
+```
+
+```{.text .output}
+Vector[7]: 6 12 18 24 30 36 42
 ```
 Example usage of the `MapPairsReduce` skeleton.
 :::

@@ -7,20 +7,20 @@
 
 /* ── Outer panel ────────────────────────────────────────────────────────── */
 .te-panel {
-  margin: 1.5em 0;
+  margin: 0.8em 0;
   border: 1px solid #dde;
   border-radius: 8px;
   overflow: hidden;
   background: #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-  font-size: 14px;
+  font-size: 13px;
   font-family: system-ui, sans-serif;
 }
 
 /* ── Optional label bar ─────────────────────────────────────────────────── */
 .te-label {
-  padding: 10px 16px 8px;
-  font-size: 0.9rem;
+  padding: 4px 10px;
+  font-size: 0.8rem;
   font-weight: 600;
   border-bottom: 1px solid #eee;
   background: #f8f8fc;
@@ -104,28 +104,15 @@
   max-width: 80%;
 }
 
-/* ── Stats bar ──────────────────────────────────────────────────────────── */
-.te-stats-bar {
-  padding: 6px 16px;
-  border-top: 1px solid #eee;
-  font-size: 0.75rem;
-  color: #666;
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  min-height: 28px;
-  align-items: center;
-}
-
-.te-stats-bar b { color: #333; }
-
 /* ── Info box ───────────────────────────────────────────────────────────── */
 .te-info-box {
-  padding: 8px 16px 10px;
+  height: 4.6em;
+  overflow-y: auto;
+  padding: 4px 10px;
   border-top: 1px solid #eee;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
   color: #444;
-  min-height: 46px;
   background: #fafafa;
 }
 
@@ -140,11 +127,11 @@
 
 /* ── Controls row ───────────────────────────────────────────────────────── */
 .te-controls-row {
-  padding: 6px 16px;
+  padding: 2px 10px;
   border-top: 1px solid #eee;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 2px 10px;
   align-items: center;
 }
 
@@ -186,88 +173,19 @@
   flex: 1 1 auto;
 }
 
-/* ── Tab buttons (.cpp-tab) — names used by SourceCodeView ──────────────── */
-.cpp-tab {
-  background: none;
-  border: none;
-  border-right: 1px solid #ccc;
-  padding: 0.45em 0.9em;
-  cursor: pointer;
-  font-family: monospace;
-  font-size: 0.78em;
-  white-space: nowrap;
-  color: #555;
-  flex-shrink: 0;
-}
-.cpp-tab:hover  { background: #eee; }
-.cpp-tab.active {
-  background: #fff;
-  color: #000;
-  font-weight: 600;
-  border-bottom: 2px solid #fff;
-  border-top: 2px solid #0055cc;
-  margin-bottom: -1px;
-}
+/* Tab buttons are smaller than in the viewer */
+.te-tab-bar .cpp-tab { padding: 0.25em 0.7em; font-size: 0.75em; flex-shrink: 0; }
 
-/* ── Tab panes (.cpp-tab-pane) — names used by SourceCodeView ───────────── */
-.cpp-tab-pane {
-  display: none;
-  position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0;
-  overflow-y: auto;
+/* Colours of the shared source listing (visualizer/style/source.css) */
+.te-panel {
+  --highlight: #0055cc;
+  --highlight-alpha: rgba(0, 85, 204, 0.18);
+  --highlight-alpha-soft: rgba(0, 85, 204, 0.09);
 }
-.cpp-tab-pane.active { display: block; }
-
-/* Hide pre until hljs finishes; spinner while loading */
-.cpp-tab-pane.hljs-loading pre { visibility: hidden; }
-.cpp-tab-pane.hljs-loading.active::after {
-  content: '';
-  position: absolute;
-  top: 50%; left: 50%;
-  width: 2em; height: 2em;
-  margin: -1em 0 0 -1em;
-  border: 3px solid #ddd;
-  border-top-color: #888;
-  border-radius: 50%;
-  animation: te-spin 0.7s linear infinite;
-  pointer-events: none;
-}
-
-/* ── hljs line numbers ──────────────────────────────────────────────────── */
-pre code.hljs  { padding: 0 !important; font-size: 0.8em; }
-
-.hljs-ln-numbers {
-  text-align: right;
-  color: #bbb;
-  border-right: 1px solid #ddd;
-  vertical-align: top;
-  padding-right: 2em !important;
-  padding-left:  0.6em !important;
-  margin-right: 1em;
-}
-.hljs-ln-code   { padding-left: 0.5em !important; }
-.hljs-ln tr:hover { background-color: #ddd; }
-
-/* ── Badge pills (inserted by SourceCodeView) ───────────────────────────── */
-.badge {
-  background-color: #e6820a;
-  color: #fff;
-  font-size: 0.9em;
-  border-radius: 100%;
-  cursor: pointer;
-  display: inline-block;
-  height: 1.5em; width: 1.5em;
-  line-height: 1.5em;
-  position: relative;
-  right: -1.75em;
-  margin-left: -1.5em;
-  text-align: center;
-  transition: 0.3s transform;
-}
-.badge:hover { transform: scale(1.2); }
-
-/* ── Source line highlight ──────────────────────────────────────────────── */
-.line-selected { background-color: rgba(230, 130, 10, 0.2) !important; }
+/* Bootstrap, which the book uses, styles .badge as well */
+.te-tab-panes .badge { padding: 0; font-weight: normal; white-space: normal; }
+.te-tab-panes pre,
+.te-tab-panes pre code { line-height: 1.3; margin: 0; }
 
 /* ── Timeline row ───────────────────────────────────────────────────────── */
 .te-timeline-wrap {
@@ -277,15 +195,10 @@ pre code.hljs  { padding: 0 !important; font-size: 0.8em; }
 }
 
 .te-timeline-scroll {
-  overflow-x: auto;
-  overflow-y: visible;
-  min-height: 40px;
-}
-
-/* Timeline selection highlight (class applied by TimelineView) */
-.gantt-bar.gantt-selected {
-  stroke: #0055cc !important;
-  stroke-width: 2.5 !important;
+  position: relative;
+  overflow: auto;
+  overscroll-behavior: contain;
+  height: 120px;
 }
 
 /* ── Cytoscape hover tooltip (inserted into document.body by GraphView) ─── */
@@ -332,7 +245,8 @@ pre code.hljs  { padding: 0 !important; font-size: 0.8em; }
 }
 .te-wasm-run   { background: #0055cc; color: #fff; border-color: #0044aa; }
 .te-wasm-run:hover   { background: #0044aa; }
-.te-wasm-run:disabled { opacity: 0.55; cursor: default; }
+.te-wasm-run:disabled { cursor: default; }
+.te-wasm-run.busy { opacity: 0.55; }
 .te-wasm-clear:hover  { background: #e0e0e0; }
 
 .te-wasm-output {
@@ -380,3 +294,28 @@ pre code.hljs  { padding: 0 !important; font-size: 0.8em; }
   border-radius: 0;
   font-size: 0.8rem;
 }
+
+/* ── A runner that is attached to its listing (listings.lua) ─────────────── */
+.te-listing {
+  margin: 1em 0;
+  border: 1px solid #d5dae3;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.te-listing > .code-copy-outer-scaffold { margin: 0 !important; }
+.te-listing div.sourceCode { margin: 0 !important; border: none; border-radius: 0; }
+.te-listing div.sourceCode pre { padding: 0 0.5em; border: none; border-radius: 0; }
+.te-listing div.sourceCode pre code { padding: 0; }
+.te-listing > .te-panel { margin: 0; border: none; border-top: 1px solid #d5dae3; border-radius: 0; box-shadow: none; }
+.te-listing .te-wasm-section { padding: 4px 8px; border: none; background: #f6f8fa; }
+.te-listing .te-wasm-run-row { margin: 0; }
+.te-listing .te-wasm-run, .te-listing .te-wasm-clear { padding: 2px 10px; font-size: 0.75rem; }
+.te-listing .te-wasm-output { max-height: 14em; margin: 4px 0 0; }
+.te-wasm-argv-hidden { display: none; }
+
+/* The expected output of a listing that has no runner */
+.te-output { margin: -0.4em 0 1em; }
+.te-output > p { margin: 0 0 0.15em; font-size: 0.8em; color: #6b778c; }
+.te-output pre { margin: 0; font-size: 0.8em; background: #f6f8fa; border: 1px solid #d5dae3; border-radius: 4px; }
+.quarto-float:has(.te-listing) + .te-output { display: none; }
+

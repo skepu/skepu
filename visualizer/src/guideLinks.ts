@@ -6,7 +6,7 @@ export const SKELETON_ANCHORS = ['map', 'reduce', 'mapreduce', 'scan', 'mapoverl
 
 /**
  * Where each anchor is in the rendered book (user-guide/, in its simple edition): the page and the id of the section, as the sources have them
- * ({#sec-map} in src/documentation.qmd, which the book makes src/documentation.html#sec-map). tests/unit/test_guide.js checks them against the sources.
+ * (the page src/documentation.html includes src/skeletons/*.qmd). tests/unit/test_guide.js checks them against the sources.
  */
 export const GUIDE_SECTIONS: Record<string, string> = {
 	map: 'src/documentation.html#sec-map-documentation',
@@ -16,8 +16,8 @@ export const GUIDE_SECTIONS: Record<string, string> = {
 	mapoverlap: 'src/documentation.html#sec-mapoverlap-documentation',
 	mappairs: 'src/documentation.html#sec-mappairs-documentation',
 	mappairsreduce: 'src/documentation.html#sec-mappairsreduce-documentation',
-	mappool: 'src/documentation.html#sec-mappool-documentation',
-	programming: 'src/documentation.html#sec-skeletons',
+	mappool: 'src/documentation.html#sec-mappool2d-documentation',
+	programming: 'src/architecture.html#sec-skeletons',
 	skevu: 'src/skevu.html',
 	lsp: 'src/lsp.html#sec-lsp',
 };

@@ -1,9 +1,7 @@
 ## MapPairs {#sec-mappairs-documentation}
 
 ::: {.content-visible when-format="html"}
-```{=html}
-{{< include ../visualizers/mappairs.html >}}
-```
+{{< skeleton-viz mappairs >}}
 :::
 
 ### `MapPairs(UF)`
@@ -26,8 +24,9 @@ int main()
 ### `operator()`
 Calls the `MapPairs` instance, performing the user function on input `Vector`s, and storing the result in the corresponding location in the output `Matrix`. The vertical input `Vector`s are passed after the output `Matrix`, and the horizontal input `Vector`s are passed after the vertical input `Vector`s.
 
-```cpp
+```{.cpp .run}
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 int sum(int v1, int v2, int h)
 {
@@ -38,11 +37,19 @@ int main()
 {
     const int vSize = 3;
     const int hSize = 7;
-    skepu::Vector<int> v1(vSize), v2(vSize), h(hSize);
+    skepu::Vector<int> v1(vSize, 1), v2(vSize, 1), h(hSize, 1);
     skepu::Matrix<int> res(vSize, hSize);
 
     auto cartesian = skepu::MapPairs<2, 1>(sum);
 
     cartesian(res, v1, v2, h);
+    skepu::io::cout << res << "\n";
 }
+```
+
+```{.text .output}
+Matrix[3×7]:
+3 3 3 3 3 3 3
+3 3 3 3 3 3 3
+3 3 3 3 3 3 3
 ```

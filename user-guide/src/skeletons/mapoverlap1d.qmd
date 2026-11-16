@@ -27,8 +27,9 @@ Calls the `MapOverlap1D` instance, performing the user function on the input par
 
 - Regular overlap from `Vector` to `Vector`.
 
-```cpp
+```{.cpp .run}
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 int sum(skepu::Region1D<int> r)
 {
@@ -40,14 +41,26 @@ int sum(skepu::Region1D<int> r)
 
 int main()
 {
-    skepu::Vector<int> v(5), out(5);
-    skepu::Matrix<int> m(5, 5), mOut(5, 5);
+    skepu::Vector<int> v(5, 1), out(5);
+    skepu::Matrix<int> m(5, 5, 1), mOut(5, 5);
 
     auto regionSum = skepu::MapOverlap(sum);
 
     regionSum(out, v);
+    skepu::io::cout << out << "\n";
     regionSum(mOut, m);
+    skepu::io::cout << mOut << "\n";
 }
+```
+
+```{.text .output}
+Vector[5]: 3 3 3 3 3
+Matrix[5×5]:
+3 3 3 3 3
+3 3 3 3 3
+3 3 3 3 3
+3 3 3 3 3
+3 3 3 3 3
 ```
 
 ### `setOverlapMode(Overlap)`

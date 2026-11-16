@@ -1,11 +1,3 @@
----
-format:
-  html:
-    include-in-header:
-      - ../visualizers/viz-shared.html
-      - ../visualizers/viz-skeletons.html
----
-
 # SkePU Architecture {#sec-architecture}
 
 This chapter gives a high-level introduction to programming with
@@ -291,7 +283,7 @@ come first, followed by *element-wise* containers (if any), followed by
 that contains 2 input containers (*element-wise* input arguments), 1 proxy container (*random-access* input argument),
 and 1 scalar value (uniform input argument)
 
-``` {#lst-skepu-variadic-example .cpp lst-cap="SkePU program showcasing the *three-way variadicity* of the input arguments."}
+``` {#lst-skepu-variadic-example .cpp .run lst-cap="SkePU program showcasing the *three-way variadicity* of the input arguments."}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 int func(int a, int b, skepu::Vec<int> c, int d)
@@ -304,8 +296,12 @@ int main()
     skepu::Vector<int> out(2), a{1, 2}, b{3, 4}, c{5, 6};
     auto mapper = skepu::Map<2>(func);
     mapper(out, a, b, c, 7);
-    skepu::io::cout << out << "\n"; // prints 2.... 22 24
+    skepu::io::cout << out << "\n";
 }
+```
+
+```{.text .output}
+Vector[2]: 22 24
 ```
 
 *element-wise* (\"elwise\") parameters defined in a user function are scalar
@@ -368,7 +364,7 @@ utilizing multi-valued return. The skeleton instance declaration and invocation 
 ordinary `Map`, but instead of supplying one output container as the
 first argument, specify several of the correct types and order
 
-```{#lst-multireturn .cpp lst-cap="SkePU program showcasing the *four-way variadicity* of the four argument types."}
+```{#lst-multireturn .cpp .run lst-cap="SkePU program showcasing the *four-way variadicity* of the four argument types."}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 skepu::multiple<int, float>
@@ -383,9 +379,14 @@ int main()
     skepu::Vector<float> out2(2), c{4.2, 6.7};
     auto mapper = skepu::Map<2>(multi_f);
     mapper(out, out2, a, b, c, 7);
-    skepu::io::cout << out << "\n"; // prints 2.... 7 12
-    skepu::io::cout << out2 << "\n"; // prints 2.... 7.03333 7.2
+    skepu::io::cout << out << "\n";
+    skepu::io::cout << out2 << "\n";
 }
+```
+
+```{.text .output}
+Vector[2]: 7 12
+Vector[2]: 7.03333 7.2
 ```
 
 Multi-valued return statements are available in the skeletons which
@@ -560,7 +561,7 @@ An example can be found in
 ![Illustrative diagram of the operand access scopes in the Map skeleton.](../figures/diag/map.png){#fig-diag-map fig-alt="Diagram of the operand access scopes of the Map skeleton." width=70%}
 
 :::{#lst-map}
-```cpp
+```{.cpp .run}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -577,9 +578,13 @@ int main()
     auto vsum = skepu::Map(sum);
     vsum(result, v1, v2);
 
-    skepu::io::cout << result << "\n"; // Prints 5 5 5 5
+    skepu::io::cout << result << "\n";
     return 0;
 }
+```
+
+```{.text .output}
+Vector[4]: 5 5 5 5
 ```
 Example usage of the `Map` skeleton.
 :::
@@ -593,9 +598,7 @@ Example usage of the `Map` skeleton.
   code="true" >}}
 
 ::: {.content-visible when-format="html"}
-```{=html}
-{{< include ../visualizers/map.html >}}
-```
+{{< skeleton-viz map >}}
 :::
 
 #### OpenMP Scheduling Modes {#sec-openmpsched}
@@ -659,7 +662,7 @@ example can be found in @lst-reduce-example-2, performing a 1D reduction on all 
 and a 2D reduction on a `Matrix`.
 
 :::{#lst-reduce-example}
-```cpp
+```{.cpp .run}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -676,15 +679,19 @@ int main()
     vmin.setStartValue(v(0)); // start value defaults to 0 otherwise
     int result = vmin(v);
 
-    skepu::io::cout << result << "\n"; // Prints 1
+    skepu::io::cout << result << "\n";
     return 0;
 }
+```
+
+```{.text .output}
+1
 ```
 Example usage of the `Reduce` skeleton.
 :::
 
 :::{#lst-reduce-example-2}
-```cpp
+```{.cpp .run}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -709,26 +716,30 @@ int main()
     std::cout << summer(v) << " "
               << summer(m) << " "
               << summer(t3) << " "
-              << summer(t4) << "\n"; // Prints 2 8 8 16
+              << summer(t4) << "\n";
     
-    std::cout << summer(v, m) << "\n"; // Prints 2.... 2 2
+    std::cout << summer(v, m) << "\n";
     
     auto summer2D = skepu::Reduce(sum, mult);
     summer2D.setStartValue(1); // start value defaults to 0 otherwise
 
-    std::cout << summer2D(m) << "\n"; // Prints 9
+    std::cout << summer2D(m) << "\n";
 }
+```
+
+```{.text .output}
+2 4 8 16
+Vector[2]: 2 2
+9
 ```
 Example usage of the `Reduce` skeleton on the different SkePU containers.
 :::
 
 ::: {.content-visible when-format="html"}
-```{=html}
-{{< include ../visualizers/reduce.html >}}
-```
+{{< skeleton-viz reduce >}}
 :::
 
-```{#lst-reduce-mtv-vts-example .cpp lst-cap="Reduction from matrix to vector, and from vector to scalar."}
+```{#lst-reduce-mtv-vts-example .cpp .run lst-cap="Reduction from matrix to vector, and from vector to scalar."}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -745,19 +756,24 @@ int main()
   auto summer = skepu::Reduce(sum);
   summer(v, m);
   
-  skepu::io::cout << v << "\n"; // Prints 5.... 5 5 5 5 5
+  skepu::io::cout << v << "\n";
   
   summer.setStartValue(0);
   int result = summer(v);
   
-  skepu::io::cout << result << "\n"; // Prints 25
+  skepu::io::cout << result << "\n";
 
   return 0;
 }
 ```
 
+```{.text .output}
+Vector[5]: 5 5 5 5 5
+25
+```
 
-```{#lst-reduce-mts-example .cpp lst-cap="Reduction from matrix to scalar."}
+
+```{#lst-reduce-mts-example .cpp .run lst-cap="Reduction from matrix to scalar."}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -774,14 +790,18 @@ int main()
   summer.setStartValue(0);
   int result = summer(m);
   
-  skepu::io::cout << result << "\n"; // Prints 25
+  skepu::io::cout << result << "\n";
 
   return 0;
 }
 ```
 
+```{.text .output}
+25
+```
 
-```{#lst-reduce-modes-example .cpp lst-cap="Difference between colwise and rowwise reduction on a matrix."}
+
+```{#lst-reduce-modes-example .cpp .run lst-cap="Difference between colwise and rowwise reduction on a matrix."}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -806,27 +826,32 @@ int main()
   }, skepu::write(m));
 
   skepu::io::cout << m << "\n";
-  // Prints:
-  // Matrix: (5 X 5)
-  // 1 1 1 1 1
-  // 2 2 2 2 2
-  // 3 3 3 3 3
-  // 4 4 4 4 4
-  // 5 5 5 5 5
 
   auto summer = skepu::Reduce(sum);
   summer.setReduceMode(skepu::ReduceMode::RowWise);
   summer(v, m);
   
-  skepu::io::cout << v << "\n"; // Prints 5.... 5 10 15 20 25
+  skepu::io::cout << v << "\n";
   
   summer.setReduceMode(skepu::ReduceMode::ColWise);
   summer(v, m);
   
-  skepu::io::cout << v << "\n"; // Prints 5.... 15 15 15 15 15
+  skepu::io::cout << v << "\n";
 
   return 0;
 }
+```
+
+```{.text .output}
+Matrix[5×5]:
+1 1 1 1 1
+2 2 2 2 2
+3 3 3 3 3
+4 4 4 4 4
+5 5 5 5 5
+
+Vector[5]: 5 10 15 20 25
+Vector[5]: 15 15 15 15 15
 ```
 
 
@@ -903,7 +928,7 @@ An example can be found in
 @lst-scan-example.
 
 :::{#lst-scan-example}
-```cpp
+```{.cpp .run}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -921,21 +946,24 @@ int main()
     vscan.setScanMode(skepu::ScanMode::Inclusive);
     vscan(result, v);
 
-    skepu::io::cout << result << "\n"; // Prints 1 2 3 4 5
+    skepu::io::cout << result << "\n";
 
     vscan.setScanMode(skepu::ScanMode::Exclusive);
     vscan(result, v);
 
-    skepu::io::cout << result << "\n"; // Prints 0 1 2 3 4
+    skepu::io::cout << result << "\n";
 }
+```
+
+```{.text .output}
+Vector[5]: 1 2 3 4 5
+Vector[5]: 0 1 2 3 4
 ```
 Example usage of the `Scan` skeleton.
 :::
 
 ::: {.content-visible when-format="html"}
-```{=html}
-{{< include ../visualizers/scan.html >}}
-```
+{{< skeleton-viz scan >}}
 :::
 
 ### MapOverlap {#sec-mapoverlap}
@@ -1057,9 +1085,7 @@ Example usage of the `MapOverlap` skeleton: 1D convolution with a 1D five-point 
 :::
 
 ::: {.content-visible when-format="html"}
-```{=html}
-{{< include ../visualizers/mapoverlap.html >}}
-```
+{{< skeleton-viz mapoverlap >}}
 :::
 
 #### Edge handling modes
@@ -1281,9 +1307,7 @@ Grayscaling of each image pixel from its RGB values stored in the innermost dime
 :::
 
 ::: {.content-visible when-format="html"}
-```{=html}
-{{< include ../visualizers/mappool.html >}}
-```
+{{< skeleton-viz mappool >}}
 :::
 
 ### MapPairs {#sec-mappairs}
@@ -1304,7 +1328,7 @@ in `Map`, there is an optional `Index2D` parameter in the user function
 signature to access this index.
 
 :::{#lst-mappairs}
-```cpp
+```{.cpp .run}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -1330,12 +1354,14 @@ int main()
     cartesian(res, v, h);
 
     skepu::io::cout << res << "\n";
-    // Prints
-    // Matrix: (3 X 7)
-    // 2 2 2 2 2 2 2
-    // 4 4 4 4 4 4 4
-    // 6 6 6 6 6 6 6
 }
+```
+
+```{.text .output}
+Matrix[3×7]:
+2 2 2 2 2 2 2
+4 4 4 4 4 4 4
+6 6 6 6 6 6 6
 ```
 Example usage of the `MapPairs` skeleton.
 :::
@@ -1363,9 +1389,7 @@ This instance would accept three vertical and two horizontal input
 vectors.
 
 ::: {.content-visible when-format="html"}
-```{=html}
-{{< include ../visualizers/mappairs.html >}}
-```
+{{< skeleton-viz mappairs >}}
 :::
 
 ### MapPairsReduce {#sec-mappairsreduce}
@@ -1380,7 +1404,7 @@ usage of this skeleton can be seen in
 @lst-mappairsreduce.
 
 :::{#lst-mappairsreduce}
-```cpp
+```{.cpp .run}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -1412,8 +1436,12 @@ int main()
 
     mpr(res, v, h);
 
-    skepu::io::cout << res << "\n"; // Prints 7.... 6 12 18 24 30 36 42
+    skepu::io::cout << res << "\n";
 }
+```
+
+```{.text .output}
+Vector[7]: 6 12 18 24 30 36 42
 ```
 Example usage of the `MapPairsReduce` skeleton.
 :::
@@ -1428,9 +1456,7 @@ The intermediate `Matrix` is not guaranteed to be stored in memory at
 any point.
 
 ::: {.content-visible when-format="html"}
-```{=html}
-{{< include ../visualizers/mappairsreduce.html >}}
-```
+{{< skeleton-viz mappairsreduce >}}
 :::
 
 ## Strided Access to Data-Containers
@@ -1441,7 +1467,7 @@ can be found in
 @lst-strided, resulting in the access pattern of
 @fig-strided.
 
-```{#lst-strided .cpp lst-cap="Example for strided access to *element-wise* accessed data-container operands."}
+```{#lst-strided .cpp .run lst-cap="Example for strided access to *element-wise* accessed data-container operands."}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -1469,8 +1495,11 @@ int main()
     adder(out, in_a, in_b);
    
     skepu::io::cout << out << "\n";
-    // Prints 16.... 2 0 9 0 16 0 23 0 30 0 37 0 44 0 51 0
 }
+```
+
+```{.text .output}
+Vector[16]: 2 0 9 0 16 0 23 0 30 0 37 0 44 0 51 0
 ```
 
 ![Strided elementwise access example. Image source:

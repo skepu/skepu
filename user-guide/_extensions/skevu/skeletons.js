@@ -1,22 +1,19 @@
-<script>
-/* -------------------------------------------------------------------------
- * SkePUSkeletons — one entry per skeleton.
+/*
+ * SkePUSkeletons — the registry of the access-pattern visualizers; skeleton-viz.js mounts them.
  *
- * Each entry:
- *   name          — display label (used by the explorer's buttons)
- *   desc          — string, or function(params) => string for mode-dependent text
- *   legend        — [{bg, border, label}, …]
- *   extraControls — [{type, id, label, min, max, default} | {type:"toggle", …}]
- *                   controls beyond the shared rows/cols pair
- *   defaults      — {rows, cols, …extras} for standalone files
- *   render(areaEl, params) — builds the visualisation into areaEl
+ * An entry:
+ *   name          — label of the tab and the section
+ *   desc          — string, or function(params) => string for text that depends on a mode
+ *   legend        — [{bg, border, label}]
+ *   extraControls — [{type: "number", id, label, min, max, default} | {type: "toggle", id, label, options, default}], beyond rows and cols
+ *   defaults      — {rows, cols, ...values of the extra controls}
+ *   codeGen(params), render(areaEl, params) — the listing and the drawing; render rebuilds its DOM each call
  *
- * render() may be called repeatedly; it rebuilds the DOM each time and
- * captures all hover-state in fresh closures, so no external state is needed.
- * ------------------------------------------------------------------------- */
+ * SkePUEntries (below) lists what has a tab: a skeleton, or a skeleton with variants that are entries of their own.
+ */
 window.SkePUSkeletons = {};
 
-const { buildMatrix, makeMatrixGroup } = VizUtils;
+const { buildMatrix, makeMatrixGroup, stack } = VizUtils;
 
 /* Produce a typed container declaration based on dimensions. */
 function containerDecl(name, rows, cols) {
@@ -25,29 +22,47 @@ function containerDecl(name, rows, cols) {
     : `skepu::Matrix<int> ${name}(${rows}, ${cols});`;
 }
 
+/* The outputs, proxies and uniforms of a call, in the order of the signature: output(s), element-wise inputs, proxies, uniforms.
+ * Returns the return type and extra parameters of the user function, the names of the outputs, and the declarations and arguments of the proxy and the uniforms. */
+function operandCode({ outputs = 1, proxy = "none", uniforms = 0 } = {}) {
+  const proxies = { vec: ["skepu::Vec<int>", "skepu::Vector<int> proxy(3);"], mat: ["skepu::Mat<int>", "skepu::Matrix<int> proxy(3, 3);"],
+                    matrow: ["skepu::MatRow<int>", "skepu::Matrix<int> proxy(3, 3);"], matcol: ["skepu::MatCol<int>", "skepu::Matrix<int> proxy(3, 3);"] };
+  const names = Array.from({ length: uniforms }, (_, i) => uniforms === 1 ? "u" : `u${i + 1}`);
+  return {
+    ret: outputs === 1 ? "int" : `skepu::multiple<${Array(outputs).fill("int").join(", ")}>`,
+    retExpr: e => outputs === 1 ? e : `skepu::ret(${Array(outputs).fill(e).join(", ")})`,
+    params: [...(proxy in proxies ? [`${proxies[proxy][0]} p`] : []), ...names.map(n => `int ${n}`)],
+    outNames: Array.from({ length: outputs }, (_, i) => outputs === 1 ? "out" : `out${i + 1}`),
+    decls: [...(proxy in proxies ? [proxies[proxy][1]] : []), ...names.map((n, i) => `int ${n} = ${i + 1};`)],
+    args: [...(proxy in proxies ? ["proxy"] : []), ...names],
+  };
+}
+
 /* Produce a C-style user function with int params and a dummy body. */
-function funcDecl(name, paramNames) {
-  const params = paramNames.map(p => `int ${p}`).join(", ");
-  const body   = paramNames.join(" + ");
-  return `int ${name}(${params}) { return ${body}; }`;
+function funcDecl(name, paramNames, o = operandCode()) {
+  const params = [...paramNames.map(p => `int ${p}`), ...o.params].join(", ");
+  return `${o.ret} ${name}(${params}) { return ${o.retExpr(paramNames.join(" + "))}; }`;
 }
 
 /* ---- Map ---------------------------------------------------------------- */
 SkePUSkeletons.map = {
   name: "Map",
-  codeGen({ rows, cols, numInputs = 2 }) {
-    const n = numInputs;
+  operands: true, outputs: true,
+  codeGen(p) {
+    const { rows, cols, numInputs: n = 2 } = p;
+    const o = operandCode(p);
     const inNames  = Array.from({ length: n }, (_, i) => n === 1 ? "in" : `in${i + 1}`);
     const argNames = Array.from({ length: n }, (_, i) => String.fromCharCode(97 + i)); // a, b, c, d
     return [
-      funcDecl("f", argNames),
+      funcDecl("f", argNames, o),
       "",
       "auto skel = skepu::Map(f);",
       "",
+      ...o.outNames.map(name => containerDecl(name, rows, cols)),
       ...inNames.map(name => containerDecl(name, rows, cols)),
-      containerDecl("out", rows, cols),
+      ...o.decls,
       "",
-      `skel(out, ${inNames.join(", ")});`,
+      `skel(${[...o.outNames, ...inNames, ...o.args].join(", ")});`,
     ].join("\n");
   },
   desc: "Each output cell reads exactly one cell at the same position from every input container. Multiple inputs are shown side by side.",
@@ -58,7 +73,7 @@ SkePUSkeletons.map = {
   extraControls: [
     { type: "number", id: "numInputs", label: "Inputs", min: 1, max: 4, default: 2 },
   ],
-  defaults: { rows: 1, cols: 5, numInputs: 2 },
+  defaults: { rows: 4, cols: 6, numInputs: 2 },
   render(areaEl, { rows, cols, numInputs = 2 }) {
     let allInputCells = [], outputCells = [];
 
@@ -76,38 +91,37 @@ SkePUSkeletons.map = {
     const inputsRow = document.createElement("div");
     inputsRow.className = "viz-row";
     for (let i = 0; i < numInputs; i++) {
-      const { group, mat } = makeMatrixGroup(numInputs === 1 ? "INPUT" : `INPUT ${i + 1}`);
+      const { group, mat } = makeMatrixGroup(numInputs === 1 ? "IN" : `IN ${i + 1}`);
       allInputCells.push(buildMatrix(mat, rows, cols, null, null, null));
       inputsRow.appendChild(group);
     }
-    const { group: outGroup, mat: outEl } = makeMatrixGroup("OUTPUT — hover a cell");
+    const { group: outGroup, mat: outEl } = makeMatrixGroup("OUT");
     outputCells = buildMatrix(outEl, rows, cols, null, onOutputHover, clearHighlights);
 
-    const container = document.createElement("div");
-    container.className = "viz-stack";
-    container.appendChild(inputsRow);
-    container.appendChild(outGroup);
-    areaEl.innerHTML = "";
-    areaEl.appendChild(container);
+    stack(areaEl, [outGroup, inputsRow]);
   },
 };
 
 /* ---- MapOverlap --------------------------------------------------------- */
 SkePUSkeletons.mapoverlap = {
   name: "MapOverlap",
-  codeGen({ rows, cols }) {
+  operands: true, outputs: true,
+  codeGen(p) {
+    const { rows, cols } = p;
+    const o = operandCode(p);
     const is1D   = rows === 1;
     const region = is1D ? "skepu::Region1D<int>" : "skepu::Region2D<int>";
     const center = is1D ? "r(0)" : "r(0, 0)";
     return [
-      `int f(${region} r) { return ${center}; }`,
+      `${o.ret} f(${[`${region} r`, ...o.params].join(", ")}) { return ${o.retExpr(center)}; }`,
       "",
       "auto skel = skepu::MapOverlap(f);",
       "",
-      containerDecl("in",  rows, cols),
-      containerDecl("out", rows, cols),
+      ...o.outNames.map(name => containerDecl(name, rows, cols)),
+      containerDecl("in", rows, cols),
+      ...o.decls,
       "",
-      "skel(out, in);",
+      `skel(${[...o.outNames, "in", ...o.args].join(", ")});`,
     ].join("\n");
   },
   desc: "Each output cell reads its input cell plus a surrounding halo. Row and column overlap radii are configurable independently; a radius of 0 disables overlap in that dimension.",
@@ -142,17 +156,12 @@ SkePUSkeletons.mapoverlap = {
       }
     }
 
-    const { group: inGroup, mat: inEl }   = makeMatrixGroup("INPUT");
-    const { group: outGroup, mat: outEl } = makeMatrixGroup("OUTPUT — hover a cell");
+    const { group: inGroup, mat: inEl }   = makeMatrixGroup("IN");
+    const { group: outGroup, mat: outEl } = makeMatrixGroup("OUT");
     inputCells  = buildMatrix(inEl,  rows, cols, null, null, null);
     outputCells = buildMatrix(outEl, rows, cols, null, onOutputHover, clearHighlights);
 
-    const container = document.createElement("div");
-    container.className = "viz-stack";
-    container.appendChild(inGroup);
-    container.appendChild(outGroup);
-    areaEl.innerHTML = "";
-    areaEl.appendChild(container);
+    stack(areaEl, [outGroup, inGroup]);
   },
 };
 
@@ -176,7 +185,7 @@ SkePUSkeletons.reduce_full = {
     { bg: "#B5D4F4", border: "#378ADD", label: "Accessed element" },
   ],
   extraControls: [],
-  defaults: { rows: 1, cols: 5 },
+  defaults: { rows: 4, cols: 6 },
   render(areaEl, { rows, cols }) {
     let inputCells = [], outputCells = [];
 
@@ -190,17 +199,12 @@ SkePUSkeletons.reduce_full = {
       inputCells.forEach(row => row.forEach(c => c.classList.add("highlight-primary")));
     }
 
-    const { group: inGroup, mat: inEl }   = makeMatrixGroup("INPUT");
-    const { group: outGroup, mat: outEl } = makeMatrixGroup("OUTPUT — hover the cell");
+    const { group: inGroup, mat: inEl }   = makeMatrixGroup("IN");
+    const { group: outGroup, mat: outEl } = makeMatrixGroup("OUT");
     inputCells  = buildMatrix(inEl,  rows, cols, null,     null, null);
     outputCells = buildMatrix(outEl, 1,    1,    () => "Σ", onOutputHover, clearHighlights);
 
-    const container = document.createElement("div");
-    container.className = "viz-stack";
-    container.appendChild(inGroup);
-    container.appendChild(outGroup);
-    areaEl.innerHTML = "";
-    areaEl.appendChild(container);
+    stack(areaEl, [outGroup, inGroup]);
   },
 };
 
@@ -226,7 +230,7 @@ SkePUSkeletons.reduce_row = {
     { bg: "#B5D4F4", border: "#378ADD", label: "Accessed row" },
   ],
   extraControls: [],
-  defaults: { rows: 3, cols: 5 },
+  defaults: { rows: 4, cols: 6 },
   render(areaEl, { rows, cols }) {
     let inputCells = [], outputCells = [];
 
@@ -240,17 +244,12 @@ SkePUSkeletons.reduce_row = {
       for (let c = 0; c < cols; c++) inputCells[outR][c].classList.add("highlight-primary");
     }
 
-    const { group: inGroup, mat: inEl }   = makeMatrixGroup("INPUT");
-    const { group: outGroup, mat: outEl } = makeMatrixGroup("OUTPUT");
+    const { group: inGroup, mat: inEl }   = makeMatrixGroup("IN");
+    const { group: outGroup, mat: outEl } = makeMatrixGroup("OUT");
     inputCells  = buildMatrix(inEl,  rows, cols, null,           null, null);
     outputCells = buildMatrix(outEl, rows, 1,    r => `r${r}`, onOutputHover, clearHighlights);
 
-    const container = document.createElement("div");
-    container.className = "viz-row";
-    container.appendChild(inGroup);
-    container.appendChild(outGroup);
-    areaEl.innerHTML = "";
-    areaEl.appendChild(container);
+    stack(areaEl, [outGroup, inGroup]);
   },
 };
 
@@ -276,7 +275,7 @@ SkePUSkeletons.reduce_col = {
     { bg: "#B5D4F4", border: "#378ADD", label: "Accessed column" },
   ],
   extraControls: [],
-  defaults: { rows: 3, cols: 5 },
+  defaults: { rows: 4, cols: 6 },
   render(areaEl, { rows, cols }) {
     let inputCells = [], outputCells = [];
 
@@ -290,17 +289,12 @@ SkePUSkeletons.reduce_col = {
       for (let r = 0; r < rows; r++) inputCells[r][outC].classList.add("highlight-primary");
     }
 
-    const { group: inGroup, mat: inEl }   = makeMatrixGroup("INPUT");
-    const { group: outGroup, mat: outEl } = makeMatrixGroup("OUTPUT");
+    const { group: inGroup, mat: inEl }   = makeMatrixGroup("IN");
+    const { group: outGroup, mat: outEl } = makeMatrixGroup("OUT");
     inputCells  = buildMatrix(inEl,  rows, cols, null,                null, null);
     outputCells = buildMatrix(outEl, 1,    cols, (r, c) => `c${c}`, onOutputHover, clearHighlights);
 
-    const container = document.createElement("div");
-    container.className = "viz-stack";
-    container.appendChild(inGroup);
-    container.appendChild(outGroup);
-    areaEl.innerHTML = "";
-    areaEl.appendChild(container);
+    stack(areaEl, [outGroup, inGroup]);
   },
 };
 
@@ -326,7 +320,7 @@ SkePUSkeletons.reduce_2op = {
     { bg: "#C0DD97", border: "#639922", label: "Accessed by second operator (partial → scalar)" },
   ],
   extraControls: [],
-  defaults: { rows: 3, cols: 5 },
+  defaults: { rows: 4, cols: 6 },
   render(areaEl, { rows, cols }) {
     let inputCells = [], partialCells = [], outputCells = [];
 
@@ -351,46 +345,40 @@ SkePUSkeletons.reduce_2op = {
       }
     }
 
-    const { group: inGroup,      mat: inEl }      = makeMatrixGroup("INPUT");
+    const { group: inGroup,      mat: inEl }      = makeMatrixGroup("IN");
     const { group: partialGroup, mat: partialEl } = makeMatrixGroup("PARTIAL (op 1)");
-    const { group: outGroup,     mat: outEl }     = makeMatrixGroup("OUTPUT (op 2)");
+    const { group: outGroup,     mat: outEl }     = makeMatrixGroup("OUT (op 2)");
 
     inputCells   = buildMatrix(inEl,      rows, cols, null,        null,           null);
     partialCells = buildMatrix(partialEl, rows, 1,    r => `r${r}`, onPartialHover, clearHighlights);
     outputCells  = buildMatrix(outEl,     1,    1,    () => "Σ",    onOutputHover,  clearHighlights);
 
-    const rightStack = document.createElement("div");
-    rightStack.className = "viz-stack";
-    rightStack.appendChild(partialGroup);
-    rightStack.appendChild(outGroup);
-
-    const outer = document.createElement("div");
-    outer.className = "viz-row";
-    outer.appendChild(inGroup);
-    outer.appendChild(rightStack);
-    areaEl.innerHTML = "";
-    areaEl.appendChild(outer);
+    stack(areaEl, [outGroup, partialGroup, inGroup]);
   },
 };
 
 /* ---- MapPairs ----------------------------------------------------------- */
 SkePUSkeletons.mappairs = {
   name: "MapPairs",
-  codeGen({ rows, cols, nvert = 1, nhoriz = 1 }) {
+  operands: true, outputs: true,
+  codeGen(p) {
+    const { rows, cols, nvert = 1, nhoriz = 1 } = p;
+    const o = operandCode(p);
     const vertNames  = Array.from({ length: nvert  }, (_, i) => `vert${nvert  === 1 ? "" : i + 1}`);
     const horizNames = Array.from({ length: nhoriz }, (_, i) => `horiz${nhoriz === 1 ? "" : i + 1}`);
     const vArgs = Array.from({ length: nvert  }, (_, i) => nvert  === 1 ? "v" : `v${i + 1}`);
     const hArgs = Array.from({ length: nhoriz }, (_, i) => nhoriz === 1 ? "h" : `h${i + 1}`);
     return [
-      funcDecl("f", [...vArgs, ...hArgs]),
+      funcDecl("f", [...vArgs, ...hArgs], o),
       "",
       "auto skel = skepu::MapPairs(f);",
       "",
+      ...o.outNames.map(name => containerDecl(name, rows, cols)),
       ...vertNames.map(n  => `skepu::Vector<int> ${n}(${rows});`),
       ...horizNames.map(n => `skepu::Vector<int> ${n}(${cols});`),
-      containerDecl("out", rows, cols),
+      ...o.decls,
       "",
-      `skel(out, ${[...vertNames, ...horizNames].join(", ")});`,
+      `skel(${[...o.outNames, ...vertNames, ...horizNames, ...o.args].join(", ")});`,
     ].join("\n");
   },
   desc: "Output cell (i, j) reads element i from every vertical input vector and element j from every horizontal input vector — a generalised outer-product computation. Hover an output cell to see its accessed elements.",
@@ -403,7 +391,7 @@ SkePUSkeletons.mappairs = {
     { type: "number", id: "nvert",  label: "Vert inputs",  min: 1, max: 3, default: 1 },
     { type: "number", id: "nhoriz", label: "Horiz inputs", min: 1, max: 3, default: 1 },
   ],
-  defaults: { rows: 3, cols: 5, nvert: 1, nhoriz: 1 },
+  defaults: { rows: 4, cols: 5, nvert: 1, nhoriz: 1 },
   render(areaEl, { rows, cols, nvert = 1, nhoriz = 1 }) {
     let vertCells = [], horizCells = [], outputCells = [];
 
@@ -428,7 +416,7 @@ SkePUSkeletons.mappairs = {
     horizCells = [];
     for (let h = 0; h < nhoriz; h++) {
       const { group, mat } = makeMatrixGroup(
-        nhoriz === 1 ? "HORIZ INPUT" : `HORIZ INPUT ${h + 1}`, "viz-vec-group");
+        nhoriz === 1 ? "HORIZ IN" : `HORIZ IN ${h + 1}`, "viz-vec-group");
       horizCells.push(buildMatrix(mat, 1, cols, (r, c) => `h${c}`, null, null));
       horizArea.appendChild(group);
     }
@@ -438,45 +426,42 @@ SkePUSkeletons.mappairs = {
     vertCells = [];
     for (let v = 0; v < nvert; v++) {
       const { group, mat } = makeMatrixGroup(
-        nvert === 1 ? "VERT INPUT" : `VERT ${v + 1}`, "viz-vec-group");
+        nvert === 1 ? "VERT IN" : `VERT ${v + 1}`, "viz-vec-group");
       vertCells.push(buildMatrix(mat, rows, 1, (r) => `v${r}`, null, null));
       vertArea.appendChild(group);
     }
 
     const { group: outGroup, mat: outMat } = makeMatrixGroup(
-      "OUTPUT — hover a cell", "viz-vec-group");
+      "OUT", "viz-vec-group");
     outputCells = buildMatrix(outMat, rows, cols, null, onOutputHover, clearHighlights);
 
-    const grid = document.createElement("div");
-    grid.className = "mp-grid";
-    grid.appendChild(corner);
-    grid.appendChild(horizArea);
-    grid.appendChild(vertArea);
-    grid.appendChild(outGroup);
-    areaEl.innerHTML = "";
-    areaEl.appendChild(grid);
+    stack(areaEl, [outGroup, vertArea, horizArea, corner], "mp-grid");
   },
 };
 
 /* ---- MapPairsReduce ----------------------------------------------------- */
 SkePUSkeletons.mappairsreduce = {
   name: "MapPairsReduce",
-  codeGen({ rows, cols, nvert = 1, nhoriz = 1, mode = "row" }) {
+  operands: true,
+  codeGen(p) {
+    const { rows, cols, nvert = 1, nhoriz = 1, mode = "row" } = p;
+    const o = operandCode({ ...p, outputs: 1 });
     const vertNames  = Array.from({ length: nvert  }, (_, i) => `vert${nvert  === 1 ? "" : i + 1}`);
     const horizNames = Array.from({ length: nhoriz }, (_, i) => `horiz${nhoriz === 1 ? "" : i + 1}`);
     const vArgs = Array.from({ length: nvert  }, (_, i) => nvert  === 1 ? "v" : `v${i + 1}`);
     const hArgs = Array.from({ length: nhoriz }, (_, i) => nhoriz === 1 ? "h" : `h${i + 1}`);
     return [
-      funcDecl("f1", [...vArgs, ...hArgs]),
+      funcDecl("f1", [...vArgs, ...hArgs], o),
       funcDecl("f2", ["a", "b"]),
       "",
       "auto skel = skepu::MapPairsReduce(f1, f2);",
       "",
+      `skepu::Vector<int> out(${mode === "row" ? rows : cols});`,
       ...vertNames.map(n  => `skepu::Vector<int> ${n}(${rows});`),
       ...horizNames.map(n => `skepu::Vector<int> ${n}(${cols});`),
-      `skepu::Vector<int> out(${mode === "row" ? rows : cols});`,
+      ...o.decls,
       "",
-      `skel(out, ${[...vertNames, ...horizNames].join(", ")});`,
+      `skel(${["out", ...vertNames, ...horizNames, ...o.args].join(", ")});`,
     ].join("\n");
   },
   desc({ mode = "row" } = {}) {
@@ -493,11 +478,11 @@ SkePUSkeletons.mappairsreduce = {
   extraControls: [
     { type: "number", id: "nvert",  label: "Vert inputs",  min: 1, max: 3, default: 1 },
     { type: "number", id: "nhoriz", label: "Horiz inputs", min: 1, max: 3, default: 1 },
-    { type: "toggle", id: "mode",
+    { type: "toggle", id: "mode", label: "Mode",
       options: [{ value: "row", label: "Row-wise" }, { value: "col", label: "Col-wise" }],
       default: "row" },
   ],
-  defaults: { rows: 3, cols: 5, nvert: 1, nhoriz: 1, mode: "row" },
+  defaults: { rows: 4, cols: 5, nvert: 1, nhoriz: 1, mode: "row" },
   render(areaEl, { rows, cols, nvert = 1, nhoriz = 1, mode = "row" }) {
     let vertCells = [], horizCells = [], interCells = [], outputCells = [];
 
@@ -537,7 +522,7 @@ SkePUSkeletons.mappairsreduce = {
     horizCells = [];
     for (let h = 0; h < nhoriz; h++) {
       const { group, mat } = makeMatrixGroup(
-        nhoriz === 1 ? "HORIZ INPUT" : `HORIZ INPUT ${h + 1}`, "viz-vec-group");
+        nhoriz === 1 ? "HORIZ IN" : `HORIZ IN ${h + 1}`, "viz-vec-group");
       horizCells.push(buildMatrix(mat, 1, cols, (r, c) => `h${c}`, null, null));
       horizArea.appendChild(group);
     }
@@ -547,18 +532,18 @@ SkePUSkeletons.mappairsreduce = {
     vertCells = [];
     for (let v = 0; v < nvert; v++) {
       const { group, mat } = makeMatrixGroup(
-        nvert === 1 ? "VERT INPUT" : `VERT INPUT ${v + 1}`, "viz-vec-group");
+        nvert === 1 ? "VERT IN" : `VERT IN ${v + 1}`, "viz-vec-group");
       vertCells.push(buildMatrix(mat, rows, 1, (r) => `v${r}`, null, null));
       vertArea.appendChild(group);
     }
 
     const { group: interGroup, mat: interMat } = makeMatrixGroup(
-      "INTERMEDIATE — hover a cell", "viz-vec-group");
+      "INTERMEDIATE", "viz-vec-group");
     interCells = buildMatrix(interMat, rows, cols, null, onInterHover, clearHighlights);
 
     const isRow = mode === "row";
     const { group: outGroup, mat: outMat } = makeMatrixGroup(
-      "OUTPUT — hover a cell", "viz-vec-group");
+      "OUT", "viz-vec-group");
     outputCells = buildMatrix(
       outMat,
       isRow ? rows : 1,
@@ -566,49 +551,32 @@ SkePUSkeletons.mappairsreduce = {
       isRow ? (r) => `r${r}` : (r, c) => `c${c}`,
       onOutputHover, clearHighlights);
 
-    const grid = document.createElement("div");
-    grid.className = "mpr-grid";
-    if (isRow) {
-      grid.style.gridTemplateColumns = "auto auto auto";
-      grid.style.gridTemplateRows    = "auto auto";
-      const blank = document.createElement("div");
-      grid.appendChild(corner);    // [0,0]
-      grid.appendChild(horizArea); // [0,1]
-      grid.appendChild(blank);     // [0,2]
-      grid.appendChild(vertArea);  // [1,0]
-      grid.appendChild(interGroup);// [1,1]
-      grid.appendChild(outGroup);  // [1,2]
-    } else {
-      grid.style.gridTemplateColumns = "auto auto";
-      grid.style.gridTemplateRows    = "auto auto auto";
-      const blank = document.createElement("div");
-      grid.appendChild(corner);    // [0,0]
-      grid.appendChild(horizArea); // [0,1]
-      grid.appendChild(vertArea);  // [1,0]
-      grid.appendChild(interGroup);// [1,1]
-      grid.appendChild(blank);     // [2,0]
-      grid.appendChild(outGroup);  // [2,1]
-    }
-    areaEl.innerHTML = "";
-    areaEl.appendChild(grid);
+    const blank = document.createElement("div");
+    // the output first; the intermediate result, the vertical and the horizontal inputs aligned with it
+    if (isRow) stack(areaEl, [outGroup, interGroup, vertArea, blank, horizArea, corner], "mpr-grid mpr-by-row");
+    else       stack(areaEl, [blank, outGroup, vertArea, interGroup, corner, horizArea], "mpr-grid mpr-by-col");
   },
 };
 
 /* ---- MapPool ------------------------------------------------------------ */
 SkePUSkeletons.mappool = {
   name: "MapPool",
-  codeGen({ rows, cols, poolH = 2, poolW = 2 }) {
+  operands: true, outputs: true,
+  codeGen(p) {
+    const { rows, cols, poolH = 2, poolW = 2 } = p;
+    const o = operandCode(p);
     const outRows = Math.floor(rows / poolH);
     const outCols = Math.floor(cols / poolW);
     return [
-      funcDecl("f", ["a", "b"]),
+      funcDecl("f", ["a", "b"], o),
       "",
       "auto skel = skepu::MapPool(f);",
       "",
-      containerDecl("in",  rows,    cols),
-      containerDecl("out", outRows, outCols),
+      ...o.outNames.map(name => containerDecl(name, outRows, outCols)),
+      containerDecl("in", rows, cols),
+      ...o.decls,
       "",
-      "skel(out, in);",
+      `skel(${[...o.outNames, "in", ...o.args].join(", ")});`,
     ].join("\n");
   },
   desc: "Each output cell (i, j) reduces a ph × pw block of input cells starting at (i·ph, j·pw). Output dimensions are ⌊rows/ph⌋ × ⌊cols/pw⌋. Faded input cells fall outside all pools. Hover an output cell to see its pool.",
@@ -620,7 +588,7 @@ SkePUSkeletons.mappool = {
     { type: "number", id: "poolH", label: "Pool rows", min: 1, max: 4, default: 2 },
     { type: "number", id: "poolW", label: "Pool cols", min: 1, max: 4, default: 2 },
   ],
-  defaults: { rows: 4, cols: 6, poolH: 2, poolW: 2 },
+  defaults: { rows: 6, cols: 8, poolH: 2, poolW: 2 },
   render(areaEl, { rows, cols, poolH = 2, poolW = 2 }) {
     const outRows = Math.floor(rows / poolH);
     const outCols = Math.floor(cols / poolW);
@@ -638,15 +606,10 @@ SkePUSkeletons.mappool = {
           inputCells[oR * poolH + dr][oC * poolW + dc].classList.add("highlight-pool");
     }
 
-    const { group: inGroup, mat: inEl }   = makeMatrixGroup("INPUT");
-    const { group: outGroup, mat: outEl } = makeMatrixGroup("OUTPUT — hover a cell");
+    const { group: inGroup, mat: inEl }   = makeMatrixGroup("IN");
+    const { group: outGroup, mat: outEl } = makeMatrixGroup("OUT");
 
-    const container = document.createElement("div");
-    container.className = "viz-stack";
-    container.appendChild(inGroup);
-    container.appendChild(outGroup);
-    areaEl.innerHTML = "";
-    areaEl.appendChild(container);
+    stack(areaEl, [outGroup, inGroup]);
 
     inputCells  = buildMatrix(inEl,  rows,    cols,    null, null, null);
     outputCells = buildMatrix(outEl, outRows, outCols, null, onOutputHover, clearHighlights);
@@ -683,7 +646,7 @@ SkePUSkeletons.scan = {
     { bg: "#B5D4F4", border: "#378ADD", label: "Accumulated input elements" },
   ],
   extraControls: [
-    { type: "toggle", id: "mode",
+    { type: "toggle", id: "mode", label: "Mode",
       options: [{ value: "inclusive", label: "Inclusive" }, { value: "exclusive", label: "Exclusive" }],
       default: "inclusive" },
   ],
@@ -709,17 +672,46 @@ SkePUSkeletons.scan = {
       );
     }
 
-    const { group: inGroup, mat: inEl }   = makeMatrixGroup("INPUT");
-    const { group: outGroup, mat: outEl } = makeMatrixGroup("OUTPUT — hover a cell");
+    const { group: inGroup, mat: inEl }   = makeMatrixGroup("IN");
+    const { group: outGroup, mat: outEl } = makeMatrixGroup("OUT");
     inputCells  = buildMatrix(inEl,  rows, cols, labelFn, null, null);
     outputCells = buildMatrix(outEl, rows, cols, labelFn, onOutputHover, clearHighlights);
 
-    const container = document.createElement("div");
-    container.className = "viz-stack";
-    container.appendChild(inGroup);
-    container.appendChild(outGroup);
-    areaEl.innerHTML = "";
-    areaEl.appendChild(container);
+    stack(areaEl, [outGroup, inGroup]);
   },
 };
-</script>
+
+window.SkePUEntries = [
+  { id: "map", key: "map" },
+  { id: "mapoverlap", key: "mapoverlap" },
+  { id: "reduce", name: "Reduce", variants: [
+    { key: "reduce_full", name: "Full" },
+    { key: "reduce_row",  name: "Row-wise" },
+    { key: "reduce_col",  name: "Col-wise" },
+    { key: "reduce_2op",  name: "2-operator" },
+  ] },
+  { id: "mappairs", key: "mappairs" },
+  { id: "mappairsreduce", key: "mappairsreduce" },
+  { id: "mappool", key: "mappool" },
+  { id: "scan", key: "scan" },
+];
+
+/* Controls and proxies that every skeleton with the flags `outputs` and `operands` has, beyond its own.
+ * A proxy is a fixed container, 3 elements or 3×3, that the user function may read at any index (Vec, Mat) or the row or column of the output's index (MatRow, MatCol). */
+window.SkePUOperands = {
+  outputsControl: { type: "number", id: "outputs", label: "Outputs", min: 1, max: 3, default: 1 },
+  controls: [
+    { type: "toggle", id: "proxy", label: "Proxy", default: "none",
+      options: [{ value: "none", label: "None" }, { value: "vec", label: "Vec" }, { value: "mat", label: "Mat" },
+                { value: "matrow", label: "MatRow" }, { value: "matcol", label: "MatCol" }] },
+    { type: "number", id: "uniforms", label: "Uniforms", min: 0, max: 3, default: 0 },
+  ],
+  proxyLegend: { bg: "#DCD3F2", border: "#8C79C7", label: "Proxy element(s) that the function may read" },
+  uniformLegend: { bg: "#F6D5C6", border: "#D0805A", label: "Uniform" },
+  proxies: {
+    vec:    { rows: 1, cols: 3, access: "all", label: "Vec" },
+    mat:    { rows: 3, cols: 3, access: "all", label: "Mat" },
+    matrow: { rows: 3, cols: 3, access: "row", label: "MatRow" },
+    matcol: { rows: 3, cols: 3, access: "col", label: "MatCol" },
+  },
+};

@@ -1,17 +1,9 @@
----
-format:
-  html:
-    include-in-header:
-      - visualizers/viz-shared.html
-      - visualizers/viz-skeletons.html
----
-
 # Introduction {#sec-intro}
 
 SkePU is a skeleton programming framework for multicore and multi-GPU
 systems with a C++ interface. It includes data-parallel skeletons such
 as `Map` and `Reduce` generalized to a flexible programming interface.
-SkePU emphasizes on ease of use and portability. A key feature is therefore 
+SkePU emphasizes ease of use and portability. A key feature is therefore
 that you only need to write a single main file, which can then be compiled
 and executed on different backends such as OpenMP and CUDA. This main file
 can also be written in a sequential manner, leaving the underlying framework
@@ -31,7 +23,7 @@ implicit for all symbols in this document.
 We will introduce the SkePU syntax with an example, see
 @lst-lcg.
 
-```{#lst-lcg .cpp lst-cap="SkePU Example - PPMC"}
+```{#lst-lcg .cpp .run lst-cap="SkePU Example - PPMC"}
 #include <iostream>
 #include <cmath>
 #include <skepu>
@@ -107,7 +99,7 @@ see its details.
     example="3"
     backend="openmp"
     views="graph,source,timeline"
-    height="420"
+    height="300"
     label="Dot Product — OpenMP backend"
     controls="regions,direction,node-color"
     opt-regions="false"
@@ -121,7 +113,7 @@ The next example is a complete SkePU program, compiled to WebAssembly so that it
     argv="10"
     label="Map: element-wise squaring"
     views="graph,source,timeline"
-    height="400"
+    height="300"
     controls="direction,node-color"
 >}}
 
@@ -136,7 +128,5 @@ The skeletons differ in which input elements each output element is computed fro
 output element to see them, and pick a skeleton with the tabs.
 
 ::: {.content-visible when-format="html"}
-```{=html}
-{{< include visualizers/explorer.html >}}
-```
+{{< skeleton-viz all >}}
 :::

@@ -12,7 +12,7 @@ nothing to install or build: it runs directly from the source files.
     example="3"
     backend="openmp"
     views="graph,source,timeline"
-    height="360"
+    height="280"
     label="A trace in SkeVU: Dot Product, OpenMP backend"
     controls="direction,node-color"
 >}}
@@ -173,7 +173,7 @@ Similarly, multiple parallel edges with the same type are grouped into one label
 **View › Reset View** (or re-applying settings) re-runs the automatic layout and
 fits the graph to the window.
 
-**View › Save Image** exports the current graph as a PNG file.
+**Actions › Save Graph as Image** exports the current graph as a PNG file.
 
 ### Selecting a node
 
@@ -199,7 +199,8 @@ code region are nested inside the corresponding region node.
 | **Actions › Selected Node › Collapse Once** (`-`) | Collapse the selected region without affecting nested ones. |
 | **Actions › Selected Node › Expand Once** (`+`) | Expand the selected region one level. |
 | **Actions › All Regions › Collapse** | Collapse all regions at once. |
-| **Actions › All Regions › Expand** | Expand all regions at once. |
+| **Actions › All Regions › Expand Once** | Expand every region one level. |
+| **Actions › All Regions › Expand Recursive** | Expand all regions and the regions nested in them. |
 
 When a region is collapsed, its child nodes are hidden from the graph.
 Edges that cross the region boundary are *promoted*: they appear as edges
@@ -230,35 +231,99 @@ duration, backend, etc.).
 
 ## Menu Bar {#sec-menus}
 
+Items marked *web* are present only in the web version, items marked *extension* only in the VS Code extension. Where an item has a key, the key is given in parentheses.
+
 ### Files {#sec-files-menu}
 
-See [Loading a Trace](#sec-loading).
+Web version only. See [Loading a Trace](#sec-loading).
 
 ### View {#sec-view-menu}
 
 | Item | Description |
 |---|---|
-| **Graph Mode** | Choose graph mode. |
-| **Apply Settings** (`Space`) | Re-fetch the graph from the trace worker with the current settings and re-run layout. |
-| **Restore Defaults** | Reset all settings to their defaults and re-render the graph. |
-| **Reset View** | Re-run layout and fit the graph to the window without changing settings. |
-| **Save Image** | Export the graph as a PNG. |
+| **Dependence DAG** / **Program Tree** | Graph mode: the data-flow graph of the run, or the call tree of the program. |
+| **Reset View** | Re-run the layout and fit the graph to the window; settings are unchanged. |
+| **Scroll Behaviour** | **Pan**: the wheel and a two-finger swipe pan the graph. **Zoom**: they zoom it. Shift+wheel always pans sideways; Ctrl or ⌘+wheel and pinch zoom in the pan mode. |
 | **Legend** | Show or hide the colour legend below the graph. |
-| **Timeline** (`G`) | Show or hide the Gantt chart at the bottom of the window. |
-| **Source Panel** (`S`) | Show or hide the source code / info area on the right. |
-| **Info Panel** | Show or hide the info panel that appears at the bottom of the source panel when a node is highlighted. |
-| **Progress Bar** | Shows how far in the graph the highlighted node is situation. Also used in the simulation (see [Simulation Mode](#sec-simulation)). |
-| **Code Paths** | Show or hide arrows indicating execution order in the source code view. |
-| **Definitions** | Highlight in the source vode view where skeletons are defined. |
-| **Timeline Scale** | A slider (1× – 20×) that stretches the Gantt chart horizontally. Useful for inspecting dense regions. |
-| **Source Code Theme** | Choose a syntax-highlighting colour theme for the source panel. |
-| **Colour Spectrum** | Choose a color to be used for the nodes and Gantt bars (see [Color](#sec-nodes-color)). |
+| **Timeline** (`G`) | Show or hide the Gantt chart. |
+| **Source Panel** (`S`) | Show or hide the source panel (web). |
+| **Info Panel** (`O`) | Whether the info panel opens when a node is selected. |
+| **Progress Bar** | Show the position of the selected node, or of the [simulation](#sec-simulation), in the run. |
+| **Source Code ›** | *Web.* **Code Paths**: arrows for the execution order in the source view. **Definitions**: mark where skeleton instances and user functions are defined. **Theme ›**: syntax-highlighting theme. |
+| **Dark mode** (`M`) | Toggle between light and dark appearance (web). |
+| **Apply Settings** (`Space`) | Fetch the graph from the trace worker with the current settings and re-run the layout. |
+| **Restore Defaults** | Reset all settings to their defaults and re-render. |
+
+### Nodes {#sec-nodes-menu}
+
+#### Aggregate (`I`) {#sec-aggregate}
+
+Merges the iterations of a loop into one node that shows accumulated timing statistics. The key toggles between **Off** and **By Name**.
+
+| Mode | Description |
+|---|---|
+| **Off** *(default)* | Every call and every iteration is a node of its own. |
+| **By Name** | Operations of one region with the same name are merged, wherever in the source they are called. |
+| **By Name and Location** | Operations with the same name are merged only if they are called from the same source line. |
+
+#### Node types
+
+| Toggle | Key | Description |
+|---|---|---|
+| **Updates** | `U` | Container write nodes (shown after skeleton calls when data-flow edges are disabled). |
+| **Allocations** | `A` | Container allocation events. |
+| **Deallocations** | `D` | Container deallocation events. |
+| **Snapshots** | `K` | Container snapshots. |
+| **Transfers** | `T` | Device↔host data transfers. |
+| **Kernel Builds** | — | Run-time GPU kernel builds. |
+| **Communications** | — | MPI calls (e.g. bcast, gather). Present for MPI traces. |
+| **Element Accesses** | — | Scalar element-access nodes. |
+| **Regions** | `R` | Instrumented regions as compound nodes (see [Regions](#sec-regions)). |
+| **Fusion Candidates** | `F` | Mark chains of calls that could be fused into one (see [Fusion Analysis](#sec-fusion)). |
+
+**Fusion Options ›** modify the analysis: **Ignore Regions** fuses calls across region boundaries and **Ignore Snapshots** does not let a snapshot of a container stop its fusion. Regions and snapshots exist only in traced runs.
+
+#### Color {#sec-nodes-color}
+
+The metric mapped to the colour of skeleton-call and external-access nodes.
+
+| Mode | Description |
+|---|---|
+| **Total Time** *(default)* | Execution time accumulated over all iterations. |
+| **Elements** | Number of elements processed (product of all dimensions). |
+| **Time/element** | Execution time per element. |
+| **Iterations** | Number of executions of the node (relevant with [Aggregate](#sec-aggregate) on). |
+| **Duration Variance** | Variance in duration between the iterations of an aggregated call. |
+| **Rank Imbalance (MPI)** | Variance in execution time of identical calls across MPI ranks. |
+| **Busiest Rank's Bytes (MPI)** | Bytes sent plus received by the rank that moves the most, averaged over the iterations of a call. |
+| **DAG Depth** | Longest-path depth in the dependence graph. |
+| **Program Sequence** | Position in the execution order of the trace. |
+| **Pattern** | Skeleton pattern (Map, Reduce, …); each pattern has a fixed colour. |
+| **Backend** | Execution backend (CPU, OpenMP, CUDA, OpenCL); each backend has a fixed colour. |
+
+#### Size
+
+The metric mapped to node size.
+
+| Mode | Description |
+|---|---|
+| **Fixed** *(default)* | All nodes the same size. |
+| **Total Time** | Larger nodes ran longer. |
+| **Elements** | Larger nodes processed more elements. |
+| **Time/element** | Larger nodes had a higher per-element cost. |
+| **Iterations** | Larger nodes were executed more times. |
+| **Duration Variance** | Larger nodes varied more in duration between iterations. |
+
+#### Color Spectrum
+
+The colour scale for nodes and Gantt bars (see [Color](#sec-nodes-color)).
+
 :::: {.columns}
 ::: {.column width="76%"}
 * **Red–Green** *(default)* --- Low = green, high = red.
-* **Viridis** --- Perceptually uniform; good for colour-blind users.
+* **Viridis** --- Perceptually uniform; suitable for colour-blind users.
 * **Plasma** --- High-contrast sequential.
-* **Inferno** --- Dark-background sequential.
+* **Inferno** --- Sequential, for dark backgrounds.
 * **Cividis** --- Colour-blind-safe sequential.
 * **Cool–Warm** --- Diverging blue–red.
 * **Grayscale** --- Monochrome.
@@ -269,133 +334,61 @@ See [Loading a Trace](#sec-loading).
 :::
 ::::
 
-|  |  |
-|---|---|
-| **Dark mode** (`M`) | Toggle between light and dark mode. |
-| **Scroll Behaviour** | Select action for scrolling without using a modifier key. |
-
-
-
-### Nodes {#sec-nodes-menu}
-
-Controls which node types are included in the graph.
-
-| Toggle | Key | Description |
-|---|---|---|
-| **Updates** | `U` | Container write nodes (shown after skeleton calls when data-flow edges are disabled). |
-| **Allocations** | `A` | Container allocation events. |
-| **Deallocations** | `D` | Container deallocation events. |
-| **Snapshots** | `K` | Container snapshots. |
-| **Transfers** | `T` | Device↔host data transfers. |
-| **Kernel Builds** | — | Run-time GPU kernel builds. |
-| **Communications** | — | MPI calls (e.g. bcast, gather.) |
-| **Element Accesses** | — | Scalar element-access nodes. |
-| **Regions** | `R` | Show instrumented region nodes as compound containers. |
-
-#### Color {#sec-nodes-color}
-
-Controls the metric mapped to skeleton-call and external-access node colour.
-
-| Mode | Description |
-|---|---|
-| **Total Time** *(default)* | Total accumulated execution time across all iterations. |
-| **Elements** | Number of elements processed (product of all dimensions). |
-| **Time/element** | Execution time per element. |
-| **Iterations** | Number of times this node was executed (relevant with [Aggregate Iteration](#sec-advanced) on). |
-| **Duration Variance** | The variance in duration of the same skeleton call if aggregate iteration is enabled. |
-| **Rank Imbalance (MPI)** | The variance in execution time between identical skeleton calls across different MPI ranks. |
-| **DAG depth** | Longest-path depth in the dependency graph. |
-| **Program Sequence** | Execution order (total_order) in the trace. |
-| **Pattern** | SkePU skeleton pattern (Map, Reduce, …); each pattern gets a fixed colour. |
-| **Backend** | Execution backend (CPU, OpenMP, CUDA, OpenCL); each backend gets a fixed colour. |
-
-#### Size
-
-Controls the metric mapped to node size.
-
-| Mode | Description |
-|---|---|
-| **Fixed** *(default)* | All nodes the same size. |
-| **Total Time** | Larger nodes ran longer. |
-| **Elements** | Larger nodes processed more elements. |
-| **Time/element** | Larger nodes had higher per-element cost. |
-| **Iterations** | Larger nodes were executed more times. |
-| **Duration Variance** | The variance in duration of the same skeleton call if aggregate iteration is enabled. |
-
 ### Edges {#sec-edges-menu}
 
 | Item | Description |
 |---|---|
-| **Anti-Dependences** (`n`) | Show write-after-read hazard edges (red). |
-| **Virtual Datasets** | Show decorative links between container updates in the same virtual-alias group. |
-| **Labels** (`l`) | Show container names on edges. |
-| **Direction** | **Vertical** (top-to-bottom, default) or **Horizontal** (left-to-right) layout. |
-| **Width** | Metric mapped to edge width (see table below). |
-| **Opacity** | Metric mapped to edge opacity (see table below). |
+| **Anti-Dependences** (`N`) | Write-after-read hazard edges (red). |
+| **Virtual Datasets** | Decorative links between container updates in the same virtual-alias group. |
+| **Labels** (`L`) | Container names on edges. |
+| **Direction** | **Vertical** (top to bottom, default) or **Horizontal** (left to right). |
+| **Width** | Metric mapped to edge width. |
+| **Opacity** | Metric mapped to edge opacity. |
 
-Both **Width** and **Opacity** support the same set of modes:
+**Width** and **Opacity** have the same modes:
 
 | Mode | Description |
 |---|---|
-| **Fixed** *(default)* | All edges the same width / opacity. |
-| **Elements** | Scaled by the number of elements exchanged across the edge. |
-| **Iterations** | Scaled by the number of times the edge was traversed. |
-| **Program Order Span** | Scaled by the gap in program-order sequence number between the source and target nodes. Wider / more opaque edges connect events that are far apart in execution order, helping reveal long-range dependencies. |
-| **Critical Path** | Edges on the critical path are drawn thick / fully opaque; all others are thin / faded. Useful for visually tracing the bottleneck chain through the graph. |
-| **Cross-Backend** | Edges that cross a backend boundary (e.g. CPU → OpenCL) are drawn thick / fully opaque; same-backend edges are thin / faded. Quickly reveals inter-backend communication overhead. |
+| **Fixed** *(default)* | All edges the same. |
+| **Elements** | Number of elements exchanged across the edge. |
+| **Iterations** | Number of traversals of the edge. |
+| **Program Order Span** | Distance in program order between the source and target nodes; long-range dependences stand out. |
+| **Critical Path** | Edges on the critical path are thick or opaque, the others thin or faded. |
+| **Cross-Backend** | Edges that cross a backend boundary (e.g. CPU → OpenCL) are thick or opaque, the others thin or faded. |
 
 ### Actions {#sec-actions-menu}
 
-#### Simulate
+| Item | Description |
+|---|---|
+| **Simulate** (`P`) | Play back the trace node by node in execution order, highlighting each node in all views. See [Simulation Mode](#sec-simulation). |
+| **Save Graph as Image** | Export the graph as a PNG file. |
+| **Next Source Tab** (`Tab`) | Cycle forward through the source tabs (web). `Shift+Tab` cycles backward. |
+| **Selected Node ›** | **Collapse Recursive** (`C`), **Expand Recursive** (`E`), **Collapse Once** (`-`), **Expand Once** (`+`) for the selected region. |
+| **All Regions ›** | **Collapse**, **Expand Once**, **Expand Recursive** for every region. |
+| **All Fusions ›** | **Collapse**, **Expand** for every fusion group. |
 
-Plays back the trace event by event in execution order, highlighting each node
-across all views. See [Simulation Mode](#sec-simulation) for details.
-
-#### Zoom to Measured Interval (`z`)
-
-Adjusts the timeline scale and scroll position so that the interval between the
-locked cursor line and the hover cursor line fills the visible timeline area. The
-locked and hover cursors are set by interacting with the timeline; see
-[Timeline](#sec-timeline).
-
-#### Next Source Tab (`Tab`)
-
-Cycles forward through the tabs in the source panel. `Shift+Tab` cycles backward.
-
-#### Selected Node
-
-Collapse/expand the currently selected region node. See [Regions](#sec-regions).
-
-#### All Regions / All Fusions
-
-Collapse or expand every region (or fusion group) in the graph at once.
-
-### Advanced {#sec-advanced}
-
-| Item | Key | Description |
-|---|---|---|
-| **Aggregate iteration** | `i` | Merge all iterations of the same skeleton call into a single node. The merged node shows accumulated timing statistics. Useful for programs with many iterations of the same loop body. |
-| **Aggregate by** | - | Choose how the **Aggregate iteration** should be performed. |
-| **Fusion analysis** | `f` | Analyse the task graph for skeleton calls that could be fused into a single kernel pass. Detected groups are highlighted as compound Fusion nodes in the graph. See [Fusion Analysis](#sec-fusion) for details. |
+See [Regions](#sec-regions) for the semantics of collapsing and expanding.
 
 ### ? Help button
 
-Show the available shortcuts, and access to the **Guided Tour** button
+Shows the keyboard shortcuts, from which the **Guided Tour** can be started.
 
 ![](../figures/skevu/info_screen.png){#info-screen style="border: 2px solid black;" fig-alt="Info screen." width=50%}
 
 ### ⓘ Info button
 
-Displays trace statistics for the currently loaded graph:
+Trace statistics for the loaded graph:
 
-- Number of trace events, graph nodes, edges, timeline bars, and snapshot files.
-- Server-side analysis time, client-side rendering time, and total response time.
+- Number of trace events, graph nodes, edges, timeline bars and snapshot files.
+- Server-side analysis time, client-side rendering time and total response time.
+
+While the graph is being laid out, a **Rendering…** indicator in the menu bar offers **Stop rendering**.
 
 ---
 
 ## Fusion Analysis {#sec-fusion}
 
-Fusion analysis (enabled via **Advanced › Fusion Analysis** or `f`) identifies
+Fusion analysis (enabled via **Nodes › Fusion Candidates** or `F`) identifies
 skeleton calls whose intermediate data could be eliminated by merging them into a
 single kernel pass — a common compiler optimization for data-parallel programs.
 The analysis runs in the trace worker whenever the graph is rendered with the option
@@ -477,12 +470,9 @@ trace. Click again to move it.
 is set, a double-headed arrow and a value appears between the two lines,
 measuring the elapsed time between them.
 
-**Zoom to Measured Interval** (`z` or **Actions › Zoom to Measured Interval**) —
-fits the locked–hover interval to 90% of the visible timeline width. Useful for
-zooming into a region of interest.
-
-**Timeline Scale slider** (**View › Timeline Scale**, range 1× – 20×) — stretches
-the entire timeline horizontally. The chart is horizontally scrollable.
+**Drag** pans the timeline and **Shift+drag** zooms to the dragged range.
+**Ctrl or ⌘+wheel** and pinch zoom; the vertical zoom slider (1× – 1000×) sets the
+scale, and a double-click on it resets to 1×.
 
 ---
 
@@ -556,7 +546,7 @@ Displayed fields depend on node type and may include:
 | **Direction** | Transfer direction (device-to-host / host-to-device). |
 | **Instance** | The location of the skeleton instance construction. |
 | **User function** | The location of the user funtion(s) used in the skeleton. |
-| **Fusion pattern** | The skeleton pattern of the sink stage in a fusion group (Map, Reduce, MapReduce, or MapOverlap). Shown on Fusion nodes when **Fusion analysis** is enabled. |
+| **Fusion pattern** | The skeleton pattern of the sink stage in a fusion group (Map, Reduce, MapReduce, or MapOverlap). Shown on Fusion nodes when **Fusion Candidates** is enabled. |
 
 ### Duration plot
 
@@ -635,8 +625,8 @@ Shortcuts are active when the focus is not on a text input field. Modifier keys
 | `r` | Toggle Regions |
 | `u` | Toggle Updates |
 | `l` | Toggle Edge Labels |
-| `i` | Toggle Aggregate Iteration |
-| `f` | Toggle Fusion Analysis |
+| `i` | Toggle Aggregate (Off / By Name) |
+| `f` | Toggle Fusion Candidates |
 
 ### Views
 
@@ -656,12 +646,6 @@ Shortcuts are active when the focus is not on a text input field. Modifier keys
 | `c` | Collapse selected region (recursive) |
 | `+` | Expand selected region (one level) |
 | `-` | Collapse selected region (one level) |
-
-### Timeline
-
-| Key | Action |
-|---|---|
-| `z` | Zoom Timeline to Measured Interval |
 
 ### Simulation
 

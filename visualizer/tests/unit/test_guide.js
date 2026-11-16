@@ -1,7 +1,7 @@
 // test_guide.js — the links to the user guide (src/guideLinks.ts): the address of a link, the page of the guide in a webview, and the anchors that the
 // hover of a skeleton links to (src/skeletonHover.ts) against the sections that the sources of the guide (../user-guide) have.
 import { describe, it, expect } from 'vitest';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GUIDE_ANCHORS, GUIDE_SECTIONS, SKELETON_ANCHORS, guideAnchor, guideTarget, splitTarget, resolveGuideLink, classifyLink, parseGuideUri, buildGuideHtml, skeletonAnchor, skeletonOfDetail, afterSkepuNamespace, guideHoverMarkdown } from '../../src/guideLinks.ts';
@@ -145,12 +145,14 @@ describe('the sections of the guide', () => {
             const [page, id] = target.split('#');
             const source = join(GUIDE_SOURCES, page.replace(/\.html$/, '.qmd'));
             expect(existsSync(source), `${anchor}: ${source}`).toBe(true);
-            if (id) expect(readFileSync(source, 'utf8'), `${anchor}: {#${id}}`).toContain(`{#${id}}`);
+            const included = join(dirname(source), 'skeletons');
+            const text = [source, ...(existsSync(included) ? readdirSync(included).map(f => join(included, f)) : [])].map(f => readFileSync(f, 'utf8')).join('\n');
+            if (id) expect(text, `${anchor}: {#${id}}`).toContain(`{#${id}}`);
         }
     });
 
     it('are named by the anchors, with the first page for any other name', () => {
-        expect(guideTarget('map')).toBe('src/programming.html#sec-map');
+        expect(guideTarget('map')).toBe('src/documentation.html#sec-map-documentation');
         expect(guideTarget('lsp')).toBe('src/lsp.html#sec-lsp');
         expect(guideTarget(undefined)).toBe('index.html');
         expect(guideTarget('nothing')).toBe('index.html');

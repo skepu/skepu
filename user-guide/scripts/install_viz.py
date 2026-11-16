@@ -20,10 +20,11 @@ if not OUTPUT.is_absolute():
 	OUTPUT = PROJECT / OUTPUT
 VISUALIZER = PROJECT.parent / "visualizer"
 
-# The simple edition of the book (the profile `simple`) has no panels: no copy of the visualizer, and no WebAssembly programs either (resources: demos/).
+# The simple edition of the book (the profile `simple`) has no panels: no copy of the visualizer, and no WebAssembly programs either (resources: demos/, listings/wasm/).
 if "simple" in os.environ.get("QUARTO_PROFILE", "").split(","):
 	shutil.rmtree(OUTPUT / "demos", ignore_errors=True)
-	print(f"install_viz: simple edition: no viz/, no demos/ in {OUTPUT}")
+	shutil.rmtree(OUTPUT / "listings", ignore_errors=True)
+	print(f"install_viz: simple edition: no viz/, demos/ or listings/ in {OUTPUT}")
 	sys.exit(0)
 
 # Only the HTML book has panels; Quarto lists the files of this render when it runs us.
@@ -33,6 +34,8 @@ if rendered is not None and not any(f.endswith(".html") for f in rendered.split(
 
 # What the panels use; everything else in the visualizer (node_modules, tests, the stand-alone app) stays out.
 PARTS = ["script", "static", "examples"]
+# The style sheets of the views; the rest of the style directory is the stand-alone app's.
+STYLE_FILES = ["timeline.css", "source.css"]
 # Large and used only by the stand-alone app's style sheet.
 SKIP = shutil.ignore_patterns("cmu-font", ".DS_Store")
 
@@ -43,4 +46,7 @@ target = OUTPUT / "viz"
 shutil.rmtree(target, ignore_errors=True)
 for part in PARTS:
 	shutil.copytree(VISUALIZER / part, target / part, ignore=SKIP)
+(target / "style").mkdir()
+for f in STYLE_FILES:
+	shutil.copy(VISUALIZER / "style" / f, target / "style" / f)
 print(f"install_viz: {', '.join(PARTS)} -> {target}")

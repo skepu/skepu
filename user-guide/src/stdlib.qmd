@@ -67,7 +67,7 @@ logical functions `logical_and`, `logical_or` and `logical_not` take `int` value
 `logical_and` needs `setStartValue(1)`, as a reduction starts from 0. To count the elements that
 satisfy a predicate, use `skepu::MapReduce<1>(skepu::util::is_positive<float>, skepu::util::add<int>)`.
 
-```cpp
+```{.cpp .run}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 #include <skepu-lib/util.hpp>
@@ -80,8 +80,12 @@ int main()
 
    add(out, a, b);
 
-   skepu::io::cout << out << "\n"; // prints 3.... 3 3 3
+   skepu::io::cout << out << "\n";
 }
+```
+
+```{.text .output}
+Vector[3]: 3 3 3
 ```
 
 ## Complex Numbers

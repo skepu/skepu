@@ -102,7 +102,7 @@ export const STEPS = [
     text: 'Selects anti-dependences, virtual datasets and edge labels, the direction of the layout, and the width and opacity of edges by a measure such as element count or critical path.',
     prepare: async function() { openMenu('Edges'); await wait(120); } },
   { id: 'simulate', target: () => dropdownOf('Actions'), title: 'Actions', side: 'right',
-    text: 'Simulate replays the run node by node (P starts and pauses it; the arrow keys step through it). Zoom to Measured Interval fits the timeline. The remaining groups collapse or expand the selected node, all regions, or fusion nodes.',
+    text: 'Simulate replays the run node by node (P starts and pauses it; the arrow keys step through it). The remaining groups collapse or expand the selected node, all regions, or fusion nodes.',
     prepare: async function() { openMenu('Actions'); await wait(120); } },
   { id: 'files', target: () => dropdownOf('Files'), title: 'Loading traces', side: 'right', when: ctx => !ctx.vscode,
     text: 'A trace is loaded here together with the source files that it refers to; the other example traces can be opened from the same menu.',

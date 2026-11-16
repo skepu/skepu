@@ -25,8 +25,9 @@ int main()
 ### `operator()`
 Calls the `MapOverlap4D` instance, performing the user function on the input parameters, and stores the result in the output containers.
 
-```cpp
+```{.cpp .run}
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 int sum(skepu::Region4D<int> r)
 {
@@ -41,12 +42,17 @@ int sum(skepu::Region4D<int> r)
 
 int main()
 {
-    skepu::Tensor4<int> in(5, 5, 5, 5), out(5, 5, 5, 5);
+    skepu::Tensor4<int> in(5, 5, 5, 5, "", 1), out(5, 5, 5, 5);
 
     auto regionSum = skepu::MapOverlap(sum);
 
     regionSum(out, in);
+    skepu::io::cout << out(2, 2, 2, 2) << "\n";
 }
+```
+
+```{.text .output}
+81
 ```
 
 ### `setOverlap(int oi, int oj, int ok, int ol)`

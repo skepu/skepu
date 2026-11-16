@@ -26,8 +26,9 @@ int main()
 ### `operator()`
 Calls the `MapReduce` instance, performing a `Map` operation on the inputs using the first user function, then a `Reduce` operation on the intermediate result using the second user function, and returns a scalar similar to the `Reduce` skeleton. 
 
-```cpp
+```{.cpp .run}
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 int mult(int a, int b)
 {
@@ -45,13 +46,18 @@ int main()
 
     auto dotproduct = skepu::MapReduce(mult, sum);
     int result = dotproduct(a, b);
+    skepu::io::cout << result << "\n";
 }
+```
+
+```{.text .output}
+20
 ```
 
 ### `setStride(int...)`
 Sets the stride of the input containers of the `MapReduce` instance. These strides are used during the `Map` phase of the skeleton. All strides are set to 1 by default.
 
-```cpp
+```{.cpp .run}
 #include <skepu>
 
 int mult(int a, int b)
@@ -70,6 +76,10 @@ int main()
 
     auto dotproduct = skepu::MapReduce(mult, sum);
     dotproduct.setStride(2, 1);
-    std::cout << dotproduct(a, b) << "\n"; // Prints 8
+    std::cout << dotproduct(a, b) << "\n";
 }
+```
+
+```{.text .output}
+8
 ```

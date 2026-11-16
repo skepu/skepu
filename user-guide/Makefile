@@ -5,7 +5,7 @@
 
 QUARTO ?= quarto
 
-.PHONY: all html simple pdf demos viz preview clean
+.PHONY: all html simple pdf demos viz listings preview clean
 
 all: html
 
@@ -16,13 +16,16 @@ simple:
 	QUARTO_PROFILE=simple $(QUARTO) render --to html
 
 pdf:
-	$(QUARTO) render --to pdf --output-dir _pdf
+	SKEPU_LISTINGS=off $(QUARTO) render --to pdf --output-dir _pdf
 
 demos:
 	$(MAKE) -C demos all-wasm
 
 viz:
 	python3 scripts/install_viz.py
+
+listings:
+	python3 scripts/build_listings.py
 
 preview:
 	$(QUARTO) preview

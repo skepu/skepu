@@ -1,9 +1,7 @@
 ## Scan {#sec-scan-documentation}
 
 ::: {.content-visible when-format="html"}
-```{=html}
-{{< include ../visualizers/scan.html >}}
-```
+{{< skeleton-viz scan >}}
 :::
 
 ### `Scan(UF)`
@@ -27,7 +25,7 @@ int main()
 ### `setScanMode(ScanMode)`
 Sets the scan mode, the two options are `ScanMode::Inclusive` and `ScanMode::Exclusive`. The default is `ScanMode::Inclusive`.
 
-```cpp
+```{.cpp .run}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -44,19 +42,24 @@ int main()
     vscan.setScanMode(skepu::ScanMode::Inclusive);
     vscan(out, in);
 
-    skepu::io::cout << out << "\n"; // Prints 5.... 1 2 3 4 5
+    skepu::io::cout << out << "\n";
 
     vscan.setScanMode(skepu::ScanMode::Exclusive);
     vscan(out, in);
 
-    skepu::io::cout << out << "\n"; // Prints 5.... 0 1 2 3 4
+    skepu::io::cout << out << "\n";
 }
+```
+
+```{.text .output}
+Vector[5]: 1 2 3 4 5
+Vector[5]: 0 1 2 3 4
 ```
 
 ### `setStartValue(T)`
 Sets the start value that the scan will start on if running in `ScanMode::Exclusive`. By default it is set to `T{}`, the default initialization of the type.
 
-```cpp
+```{.cpp .run}
 #include <skepu>
 #include <skepu-lib/io.hpp>
 
@@ -75,6 +78,10 @@ int main()
     vscan.setStartValue(10);
     vscan(out, in);
 
-    skepu::io::cout << out << "\n"; // Prints 5.... 10 11 12 13 14
+    skepu::io::cout << out << "\n";
 }
+```
+
+```{.text .output}
+Vector[5]: 10 11 12 13 14
 ```

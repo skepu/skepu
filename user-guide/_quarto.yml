@@ -1,5 +1,7 @@
 project:
   type: book
+  pre-render:
+    - scripts/build_listings.py
   post-render:
     - scripts/install_viz.py
 
@@ -13,7 +15,6 @@ book:
   chapters:
     - index.qmd
     - src/installation.qmd
-#    - src/programming.qmd
     - src/architecture.qmd
     - src/documentation.qmd
     - src/stdlib.qmd
@@ -22,6 +23,9 @@ book:
     - src/blas.qmd
     - src/changelog.qmd
     - src/acknowledgements.qmd
+
+filters:
+  - skevu
 
 bibliography: bibliography.bib
 csl: ieee.csl
@@ -36,6 +40,7 @@ format:
     css: custom.css
     resources:
       - "demos/"
+      - "listings/wasm/"
     grid:
       sidebar-width: 230px
       body-width: 880px

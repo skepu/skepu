@@ -24,8 +24,9 @@ int main()
 ### `operator()`
 Calls the `MapPool3D` instance, performing the user function on the input parameters, and stores the result in the output containers.
 
-```cpp
+```{.cpp .run}
 #include <skepu>
+#include <skepu-lib/io.hpp>
 
 int sum(skepu::Pool3D<int> p)
 {
@@ -39,12 +40,17 @@ int sum(skepu::Pool3D<int> p)
 
 int main()
 {
-    skepu::Tensor3<int> in(5, 5, 5), out(5, 5, 5);
+    skepu::Tensor3<int> in(5, 5, 5, "", 1), out(5, 5, 5);
 
     auto poolSum = skepu::MapPool(sum);
 
     poolSum(out, in);
+    skepu::io::cout << out(2, 2, 2) << "\n";
 }
+```
+
+```{.text .output}
+1
 ```
 
 ### `setPoolSize(int pi, int pj, int pk)`
