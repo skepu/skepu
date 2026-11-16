@@ -331,6 +331,7 @@ namespace skepu
 		// Could be used with operator () above to avoid unneccesary function calls
 		// due to implicit synch.
 		void updateHost(bool = true) const;
+		bool isHostValid() const;
 		void invalidateDeviceData(bool = true) const;
 		void updateHostAndInvalidateDevice();
 		void releaseDeviceAllocations();

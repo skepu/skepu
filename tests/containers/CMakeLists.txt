@@ -32,3 +32,9 @@ if(SKEPU_CUDA AND SKEPU_OPENCL)
 	target_link_libraries(coherence_probe_logged PRIVATE catch2_main)
 	target_compile_definitions(coherence_probe_logged PRIVATE SKEPU_DEBUG=1 SKEPU_TRACING SKEPU_TRACE_FILE=${CMAKE_CURRENT_BINARY_DIR}/coherence_probe_logged_trace.json)
 endif()
+
+# ------------------------------------------------
+#   isHostValid: whether a device holds newer data than the host copy
+# ------------------------------------------------
+
+skepu_add_test(host_valid)

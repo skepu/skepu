@@ -143,6 +143,10 @@ namespace skepu
 		// A stream with a name (the label that a trace shows) and, optionally, a seed: skepu::PRNG prng("noise"); the default seed is the one of PRNG().
 		explicit PRNG(std::string label, State seed = SKEPU_RAND_DEFAULT_SEED): PRNG(seed, label) {}
 
+		// for frontends that save and restore a stream
+		State state() const { return this->m_state; }
+		void setState(State state) { this->m_state = state; }
+
 		void registerInstance(void *obj, size_t iterations)
 		{
 			this->m_target_instance = obj;

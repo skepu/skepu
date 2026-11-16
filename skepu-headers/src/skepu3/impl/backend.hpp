@@ -30,12 +30,12 @@
 
 // Set default GPU block count if not supplied from elsewhere.
 #ifndef SKEPU_DEFAULT_GPU_BLOCKS
-#define SKEPU_DEFAULT_GPU_BLOCKS 256
+#define SKEPU_DEFAULT_GPU_BLOCKS 65535
 #endif
 
 // Set default GPU thread count if not supplied from elsewhere.
 #ifndef SKEPU_DEFAULT_GPU_THREADS
-#define SKEPU_DEFAULT_GPU_THREADS 65535
+#define SKEPU_DEFAULT_GPU_THREADS 256
 #endif
 
 // Set default hybrid partition ratio if not supplied from elsewhere.
@@ -113,7 +113,7 @@ namespace skepu
 			else if (s == "opencl") return Type::OpenCL;
 			else if (s == "cuda") return Type::CUDA;
 			else if (s == "hybrid") return Type::Hybrid;
-			else if (s == "auto") return Type::CUDA;
+			else if (s == "auto") return Type::Auto;
 			else SKEPU_ERROR("Invalid string for backend type conversion");
 		}
 
@@ -188,8 +188,8 @@ namespace skepu
 
 		static constexpr size_t defaultNumDevices {SKEPU_DEFAULT_MAX_DEVICES};
 		static constexpr size_t defaultCPUThreads {SKEPU_DEFAULT_CPU_THREADS};
-		static constexpr size_t defaultGPUThreads {SKEPU_DEFAULT_GPU_BLOCKS};
-		static constexpr size_t defaultGPUBlocks {SKEPU_DEFAULT_GPU_THREADS};
+		static constexpr size_t defaultGPUThreads {SKEPU_DEFAULT_GPU_THREADS};
+		static constexpr size_t defaultGPUBlocks {SKEPU_DEFAULT_GPU_BLOCKS};
 		static constexpr float defaultCPUPartitionRatio {SKEPU_DEFAULT_CPU_PARTITION_RATIO};
 
 		BackendSpec(Backend::Type type)
@@ -343,7 +343,7 @@ namespace skepu
 		o << "-----------------------------\n SkePU Backend Specification\n-----------------------------\n";
 		o << " - Backend Type: " << b.m_backend << "\n";
 
-		if (b.m_backend == Backend::Type::OpenMP)
+		if (b.m_backend == Backend::Type::OpenMP || b.m_backend == Backend::Type::Hybrid)
 		{
 			o << " - OpenMP Threads:    " << b.m_CPUThreads << "\n";
 			o << " - OpenMP Scheduling: " << b.m_openmp_scheduling_mode << "\n";
@@ -372,7 +372,7 @@ namespace skepu
 		return m_globalBackendSpec;
 	}
 
-	inline void setGlobalBackendSpec(BackendSpec &spec)
+	inline void setGlobalBackendSpec(const BackendSpec &spec)
 	{
 		internalGlobalBackendSpecAccessor() = spec;
 	}

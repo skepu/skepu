@@ -43,6 +43,8 @@ namespace skepu
 			void copyDeviceToDevice(cl_mem copyToPointer, size_t numElements, size_t dstOffset = 0, size_t srcOffset = 0) const;
 
 			cl_mem getDeviceDataPointer() const;
+
+			bool hasNewerData() const { return m_deviceDataHasChanged; }
 			void changeDeviceData(bool condition = true);
 
 			// marks first initialization, useful when want to separate actual OpenCL allocation and memory copy (HTD) such as when using mulit-GPU OpenCL.

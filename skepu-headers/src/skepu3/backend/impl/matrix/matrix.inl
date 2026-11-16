@@ -361,6 +361,26 @@ inline void Matrix<T>::updateHost(bool enable) const
 }
 
 /*!
+ *  Whether the host copy is current. Checks the device allocations; copies nothing.
+ */
+template <typename T>
+inline bool Matrix<T>::isHostValid() const
+{
+#ifdef SKEPU_OPENCL
+	for (const auto &memptr : this->m_deviceMemPointers_CL)
+		if (memptr.second->hasNewerData())
+			return false;
+#endif
+
+#ifdef SKEPU_CUDA
+	if (!m_valid)
+		return false;
+#endif
+
+	return true;
+}
+
+/*!
  *  Invalidates (mark copies data invalid) all device data that this matrix has allocated.
  */
 template <typename T>

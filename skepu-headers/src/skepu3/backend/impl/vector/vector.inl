@@ -304,6 +304,26 @@ namespace skepu
 	}
 
 	/*!
+	 *  Whether the host copy is current. Checks the device allocations; copies nothing.
+	 */
+	template <typename T>
+	inline bool Vector<T>::isHostValid() const
+	{
+#ifdef SKEPU_OPENCL
+		for (const auto &memptr : this->m_deviceMemPointers_CL)
+			if (memptr.second->hasNewerData())
+				return false;
+#endif
+
+#ifdef SKEPU_CUDA
+		if (!m_valid)
+			return false;
+#endif
+
+		return true;
+	}
+
+	/*!
 	 *  Invalidates (mark copies data invalid) all device data that this vector has allocated.
 	 */
 	template <typename T>

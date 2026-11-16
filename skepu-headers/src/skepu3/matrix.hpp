@@ -661,6 +661,7 @@ namespace skepu
 		// due to implicit synch.
 
 		void updateHost(bool = true) const;
+		bool isHostValid() const;
 		void invalidateDeviceData(bool = true) const;
 		void updateHostAndInvalidateDevice();
 		void releaseDeviceAllocations();
