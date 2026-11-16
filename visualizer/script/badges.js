@@ -2,15 +2,18 @@
 'use strict';
 
 // The nodes that have a badge at their line of a source file (the extension marks the lines of the same types: src/nodeLines.ts, which a
-// test compares with this). A snapshot is the line of the SKEPU_TRACE_SNAPSHOT call.
-export const SOURCE_TYPES = ['skeleton_call', 'external', 'region', 'snapshot'];
+// test compares with this). A snapshot is the line of the SKEPU_TRACE_SNAPSHOT call, an allocation the line where the container was made.
+export const SOURCE_TYPES = ['skeleton_call', 'external', 'region', 'snapshot', 'allocation'];
+// no arrows between the calls
+const OFF_THE_WAY = ['snapshot', 'allocation'];
 
 /**
  * @param {Array} badgeNodes        [{ data: { id, type, file, line, total_order, total_orders, locations,
  *                                     trace_index, trace_indices, hidden } }] from the graph response
  * @param {Array} traceLineRanges   [[first line, last line]] of each event in the trace file
  * @returns {{ badges, traceBadges, orders, sites }}
- *   badges       'file:line' -> { count, hiddenCount, entries: [{ id, iterIdx }], file, line, onlySnapshots } (a line of snapshots has no arrows)
+ *   badges       'file:line' -> { count, hiddenCount, entries: [{ id, iterIdx }], file, line, onlySnapshots, noArrows } (a line of snapshots and
+ *                allocations only has no arrows)
  *   traceBadges  trace index -> { count, hiddenCount, entries, range }
  *   orders       node id -> total order of each of its iterations
  *   sites        the places where the instances and user functions of the calls are defined, for the marks and the
@@ -46,8 +49,9 @@ export function collectBadges(badgeNodes, traceLineRanges) {
                 const [file, line] = (data.locations && data.locations[i]) || [data.file, data.line];
                 if (!file || line === -1 || line == null) continue;
                 const key = file + ':' + line;
-                const b = badges[key] ??= { count: 0, hiddenCount: 0, entries: [], file, line, onlySnapshots: true };
+                const b = badges[key] ??= { count: 0, hiddenCount: 0, entries: [], file, line, onlySnapshots: true, noArrows: true };
                 if (data.type !== 'snapshot') b.onlySnapshots = false;
+                if (!OFF_THE_WAY.includes(data.type)) b.noArrows = false;
                 b.count++;
                 if (hidden) b.hiddenCount++;
                 b.entries.push({ id: data.id, iterIdx: i });

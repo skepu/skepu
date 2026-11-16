@@ -13,7 +13,7 @@ export interface NodeData {
  * The nodes that mark a line of a source file: those that have a gutter badge in the viewer (SOURCE_TYPES of script/badges.js, which
  * tests/unit/test_node_lines.js compares this with). The viewer shows the regions only if the setting says so.
  */
-export const SOURCE_NODE_TYPES = ['skeleton_call', 'external', 'region', 'snapshot'];
+export const SOURCE_NODE_TYPES = ['skeleton_call', 'external', 'region', 'snapshot', 'allocation'];
 
 /** The nodes of the graph that get a badge or a lens: as in the viewer (badgeNodesToShow of script/badges.js), the regions only if they are shown. */
 export function nodesWithBadges<T extends { data: { type: string } }>(nodes: T[], showRegions: boolean): T[] {
@@ -51,7 +51,7 @@ export function pathEndsWith(path: string, end: string): boolean {
 
 /**
  * The first and last line (0-based) a node marks in the file, or null if none. In the trace file: the lines of the node's event. In a source file: the
- * line of the node (a skeleton call, an `external`, a region or a snapshot) in that file; an event may have no file or line (an `external` made without
+ * line of the node (a skeleton call, an `external`, a region, a snapshot or an allocation) in that file; an event may have no file or line (an `external` made without
  * C++20 has neither) and is then in no file.
  */
 export function linesOfNode(data: NodeData, fileName: string, isTraceFile: boolean, traceLineRanges: number[][]): [number, number] | null {

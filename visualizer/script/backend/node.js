@@ -685,6 +685,9 @@ export class AllocationNode extends DataNode {
 
         this.type      = 'allocation';
         this.timestamp = jsonData.time ?? null;
+        // named by a frontend such as SkePY; without a file, the line of an allocation event is in SkePU's own headers
+        this.file      = jsonData.file ?? null;
+        this.line      = jsonData.file ? (jsonData.line ?? null) : null;
         this.isPrng    = false;
         graph.writeToID(jsonData.object_id, this, 'ALL');
         graph._allocationNodes.set(jsonData.object_id, this);
@@ -710,10 +713,18 @@ export class AllocationNode extends DataNode {
             data.total_orders  = this.totalOrders;
             data.trace_indices = this.traceIndices;
         }
+        if (this.file) {
+            data.file = this.file;
+            data.line = this.line;
+        }
         return data;
     }
 
-    infoData() { return super.infoData(); }
+    infoData() {
+        const info = { ...super.infoData(), Container: this.label };
+        if (this.file) { info.File = this.file; info.Line = this.line; }
+        return info;
+    }
 }
 
 // ── DeallocationNode ──────────────────────────────────────────────────────────

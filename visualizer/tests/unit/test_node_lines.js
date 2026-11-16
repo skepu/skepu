@@ -24,7 +24,7 @@ describe('the lines of a node in a source file', () => {
 
     it('are none for the calls of another file and for nodes that are not calls', () => {
         expect(linesOfNode({ ...call, file: '/examples/other.cpp' }, FILE, false, [])).toBeNull();
-        expect(linesOfNode({ ...call, type: 'allocation' }, FILE, false, [])).toBeNull();
+        expect(linesOfNode({ ...call, type: 'deallocation' }, FILE, false, [])).toBeNull();
         expect(linesOfNode({ ...call, type: 'container_update' }, FILE, false, [])).toBeNull();
     });
 
