@@ -68,6 +68,23 @@ namespace skepu
 		size_t size_i, size_j, size_k;
 		size_t stride_1, stride_2;
 	};
+
+	template<typename T>
+	std::ostream &operator<<(std::ostream &os, const Ten3<T> &t)
+	{
+		os << "Ten3[" << t.size_i << "×" << t.size_j << "×" << t.size_k << "]:\n";
+		for (size_t j = 0; j < t.size_j; ++j)
+		{
+			for (size_t i = 0; i < t.size_i; ++i)
+			{
+				for (size_t k = 0; k < t.size_k; ++k)
+					os << std::setw(5) << t(i, j, k) << " ";
+				os << " | ";
+			}
+			os << "\n";
+		}
+		return os << "\n";
+	}
 	
 	
 	template <typename T>
@@ -254,9 +271,9 @@ namespace skepu
 		
 		friend std::ostream& operator<<(std::ostream &os, Tensor3<T>& ten)
 		{
-			os << "Tensor3: (" << ten.size_i()
-				<< " x " << ten.size_j()
-				<< " x " << ten.size_k() << ")\n";
+			os << "Tensor3[" << ten.size_i()
+				<< "×" << ten.size_j()
+				<< "×" << ten.size_k() << "]:\n";
 			
 			for (int j = 0; j < ten.size_j(); ++j)
 			{
@@ -605,7 +622,7 @@ namespace skepu
 		friend std::ostream& operator<<(std::ostream &os, Tensor4<T>& ten4)
 		{
 			ten4.updateHost();
-			os << "Tensor4: (" << ten4.size_i() << " x " << ten4.size_j() << " x " << ten4.size_k() << " x " << ten4.size_l() << ")\n";
+			os << "Tensor4[" << ten4.size_i() << "×" << ten4.size_j() << "×" << ten4.size_k() << "×" << ten4.size_l() << "]:\n";
 			
 			for (size_t i = 0; i < ten4.size_i(); ++i)
 			{
@@ -725,7 +742,7 @@ namespace skepu
 	template<typename T>
 	std::ostream& operator<<(std::ostream &os, Ten4<T>& ten4)
 	{
-		os << "Ten4: (" << ten4.size_i << " x " << ten4.size_j << " x " << ten4.size_k << " x " << ten4.size_l << ")\n";
+		os << "Ten4[" << ten4.size_i << "×" << ten4.size_j << "×" << ten4.size_k << "×" << ten4.size_l << "]:\n";
 		
 		for (size_t i = 0; i < ten4.size_i; ++i)
 		{

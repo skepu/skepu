@@ -57,6 +57,19 @@ namespace skepu
 		T  operator()(size_t i, size_t j) const { return this->data[i * this->cols + j]; }
 	};
 
+	template<typename T>
+	std::ostream &operator<<(std::ostream &os, const Mat<T> &m)
+	{
+		os << "Mat[" << m.rows << "×" << m.cols << "]:\n";
+		for (size_t i = 0; i < m.rows; ++i)
+		{
+			for (size_t j = 0; j < m.cols; ++j)
+				os << m.data[i * m.cols + j] << " ";
+			os << "\n";
+		}
+		return os;
+	}
+
 	// Proxy matrix for user functions
 	template<typename T>
 	struct MatRow
@@ -84,6 +97,15 @@ namespace skepu
 		#endif
 				T  operator()(size_t index) const { return this->data[index]; }
 	};
+
+	template<typename T>
+	std::ostream &operator<<(std::ostream &os, const MatRow<T> &r)
+	{
+		os << "MatRow[" << r.cols << "]: ";
+		for (size_t j = 0; j < r.cols; ++j)
+			os << r.data[j] << " ";
+		return os;
+	}
 
 
 	// Proxy matrix for user functions
@@ -113,6 +135,15 @@ namespace skepu
 		#endif
 				T  operator()(size_t index) const { return this->data[index * this->cols]; }
 	};
+
+	template<typename T>
+	std::ostream &operator<<(std::ostream &os, const MatCol<T> &c)
+	{
+		os << "MatCol[" << c.rows << "]: ";
+		for (size_t i = 0; i < c.rows; ++i)
+			os << c.data[i * c.cols] << " ";
+		return os;
+	}
 
 
 	template <typename T>
@@ -216,7 +247,7 @@ namespace skepu
 		{
 			matrix.updateHost();
 
-			os << "Matrix: (" << matrix.total_rows() << " X " << matrix.total_cols() << ")\n";
+			os << "Matrix[" << matrix.total_rows() << "×" << matrix.total_cols() << "]:\n";
 			for(typename Matrix<T>::size_type i = 0; i < matrix.size(); i++)
 			{
 				os << matrix(i / matrix.total_cols(), i % matrix.total_cols()) << " ";

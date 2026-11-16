@@ -324,12 +324,12 @@ namespace skepu
 	template<typename T>
 	std::ostream& operator<<(std::ostream &os, Region1D<T>& r)
 	{
-		os << "Region1: (" << (2 * r.oi + 1) << ")\n";
+		os << "Region1D[" << (2 * r.oi + 1) << "]:\n";
 		
 		for (int i = -r.oi; i <= r.oi; ++i)
 		{
 			auto val = r(i);
-			std::cout << std::setw(5) << val << " ";
+			os << std::setw(5) << val << " ";
 		}
 		return os << "\n";
 	}
@@ -337,15 +337,15 @@ namespace skepu
 	template<typename T>
 	std::ostream& operator<<(std::ostream &os, Region2D<T>& r)
 	{
-		os << "Region2: (" << (2 * r.oi + 1)
-			<< " x " << (2 * r.oj + 1) << ")\n";
+		os << "Region2D[" << (2 * r.oi + 1)
+			<< "×" << (2 * r.oj + 1) << "]:\n";
 		
 		for (int i = -r.oi; i <= r.oi; ++i)
 		{
 			for (int j = -r.oj; j <= r.oj; ++j)
 			{
 				auto val = r(i,j);
-				std::cout << std::setw(5) << val << " ";
+				os << std::setw(5) << val << " ";
 			}
 			os << "\n";
 		}
@@ -355,9 +355,9 @@ namespace skepu
 	template<typename T>
 	std::ostream& operator<<(std::ostream &os, Region3D<T>& r)
 	{
-		os << "Region3: (" << (2 * r.oi + 1)
-			<< " x " << (2 * r.oj + 1)
-			<< " x " << (2 * r.ok + 1) << ")\n";
+		os << "Region3D[" << (2 * r.oi + 1)
+			<< "×" << (2 * r.oj + 1)
+			<< "×" << (2 * r.ok + 1) << "]:\n";
 		
 		for (int j = -r.oj; j <= r.oj; ++j)
 		{
@@ -366,7 +366,7 @@ namespace skepu
 				for (int k = -r.ok; k <= r.ok; ++k)
 				{
 					auto val = r(i,j,k);
-					std::cout << std::setw(5) << val << " ";
+					os << std::setw(5) << val << " ";
 				}
 				os << " | ";
 			}
@@ -378,10 +378,10 @@ namespace skepu
 	template<typename T>
 	std::ostream& operator<<(std::ostream &os, Region4D<T>& r)
 	{
-		os << "Region4: (" << (2 * r.oi + 1)
-			<< " x " << (2 * r.oj + 1)
-			<< " x " << (2 * r.ok + 1)
-			<< " x " << (2 * r.ol + 1) << ")\n";
+		os << "Region4D[" << (2 * r.oi + 1)
+			<< "×" << (2 * r.oj + 1)
+			<< "×" << (2 * r.ok + 1)
+			<< "×" << (2 * r.ol + 1) << "]:\n";
 		
 		os << "strides[" << r.stride1 << ", " << r.stride2 << ", " << r.stride3 << "]\n";
 		os << "index[" << r.idx.i << ", " << r.idx.j << ", " << r.idx.k << ", " << r.idx.l << "]\n";
@@ -396,7 +396,7 @@ namespace skepu
 					for (int l = -r.ol; l <= r.ol; ++l)
 					{
 						auto val = r(i,j,k,l);
-						std::cout << std::setw(12) << std::fixed << val << " ";
+						os << std::setw(12) << std::fixed << val << " ";
 					}
 					os << " | ";
 				}
@@ -644,12 +644,12 @@ namespace skepu
 	template<typename T>
 	std::ostream& operator<<(std::ostream &os, Pool1D<T>& p)
 	{
-		os << "Pool1D: (" << p.si << ")\n";
+		os << "Pool1D[" << p.si << "]:\n";
 		
 		for (int i = 0; i < p.si; ++i)
 		{
 			auto val = p(i);
-			std::cout << std::setw(5) << val << " ";
+			os << std::setw(5) << val << " ";
 		}
 		return os << "\n";
 	}
@@ -657,15 +657,15 @@ namespace skepu
 	template<typename T>
 	std::ostream& operator<<(std::ostream &os, Pool2D<T>& p)
 	{
-		os << "Pool2D: (" << p.si
-			<< " x " << p.sj << ") @ [" << p.idx.row << ", " << p.idx.col << "]\n";
+		os << "Pool2D[" << p.si
+			<< "×" << p.sj << "] @ [" << p.idx.row << ", " << p.idx.col << "]:\n";
 		
 		for (size_t i = 0; i < p.si; ++i)
 		{
 			for (size_t j = 0; j < p.sj; ++j)
 			{
 				auto val = p(i,j);
-				std::cout << std::setw(5) << val << " ";
+				os << std::setw(5) << val << " ";
 			}
 			os << "\n";
 		}
@@ -675,9 +675,9 @@ namespace skepu
 	template<typename T>
 	std::ostream& operator<<(std::ostream &os, Pool3D<T>& p)
 	{
-		os << "Pool3D: (" << p.si
-			<< " x " << p.sj
-			<< " x " << p.sk << ") @ [" << p.idx.i << ", " << p.idx.j << ", " << p.idx.k << "]\n";
+		os << "Pool3D[" << p.si
+			<< "×" << p.sj
+			<< "×" << p.sk << "] @ [" << p.idx.i << ", " << p.idx.j << ", " << p.idx.k << "]:\n";
 		
 		for (size_t j = 0; j < p.sj; ++j)
 		{
@@ -686,7 +686,7 @@ namespace skepu
 				for (size_t k = 0; k < p.sk; ++k)
 				{
 					auto val = p(i,j,k);
-					std::cout << std::setw(5) << val << " ";
+					os << std::setw(5) << val << " ";
 				}
 				os << " | ";
 			}
@@ -698,10 +698,10 @@ namespace skepu
 	template<typename T>
 	std::ostream& operator<<(std::ostream &os, Pool4D<T>& p)
 	{
-		os << "Pool4D: (" << p.si
-			<< " x " << p.sj
-			<< " x " << p.sk
-			<< " x " << p.sl << ")\n";
+		os << "Pool4D[" << p.si
+			<< "×" << p.sj
+			<< "×" << p.sk
+			<< "×" << p.sl << "]:\n";
 		
 		for (size_t i = 0; i < p.si; ++i)
 		{
@@ -712,7 +712,7 @@ namespace skepu
 					for (size_t l = 0; l < p.sl; ++l)
 					{
 						auto val = p(i,j,k,l);
-						std::cout << std::setw(5) << val << " ";
+						os << std::setw(5) << val << " ";
 					}
 					os << " | ";
 				}

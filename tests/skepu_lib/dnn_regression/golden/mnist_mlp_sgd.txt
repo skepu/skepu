@@ -339,7 +339,7 @@ Epoch 1 Train Batch 168 - Loss: 0.270374 - Accuracy: 0.96875
 Epoch 1 Train Batch 169 - Loss: 0.362441 - Accuracy: 0.84375
 Epoch 1 Train Loss: 0.335701 Train Acc: 0.910503 Validation Loss: 0.308992 Validation Acc: 0.916667
 Test loss: 0.398674 Test accuracy: 0.88
-Matrix: (10 X 10)
+Matrix[10×10]:
 83 0 0 1 0 0 1 0 0 0 
 0 122 0 2 0 0 1 0 1 0 
 1 1 96 7 0 0 1 4 4 2 

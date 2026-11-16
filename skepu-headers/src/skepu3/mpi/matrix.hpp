@@ -81,7 +81,7 @@ namespace skepu
 		friend std::ostream &operator<<(std::ostream &os, const Matrix &matrix)
 		{
 			const T *data = matrix.read_access();
-			os << "Matrix: (" << matrix.total_rows() << " X " << matrix.total_cols() << ")\n";
+			os << "Matrix[" << matrix.total_rows() << "×" << matrix.total_cols() << "]:\n";
 			for (size_type i = 0; i < matrix.size(); i++)
 			{
 				os << data[i] << " ";

@@ -45,7 +45,7 @@ Epoch 0 Train Batch 44 - Loss: 0.814531 - Accuracy: 0.71875
 Epoch 0 Train Batch 45 - Loss: 0.747725 - Accuracy: 0.75
 Epoch 0 Train Loss: 1.42597 Train Acc: 0.54375 Validation Loss: 0.687384 Validation Acc: 0.8625
 Test loss: 0.795828 Test accuracy: 0.778788
-Matrix: (10 X 10)
+Matrix[10×10]:
 29 0 0 0 0 0 0 0 0 0 
 0 35 0 4 0 0 4 0 0 1 
 0 1 19 7 0 0 7 3 0 0 

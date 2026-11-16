@@ -28,8 +28,8 @@ def main():
     ap.add_argument("--strict", action="store_true", help="require identical lines")
     args = ap.parse_args()
 
-    golden = open(args.golden).read().splitlines()
-    actual = open(args.actual).read().splitlines()
+    golden = open(args.golden, encoding="utf-8").read().splitlines()
+    actual = open(args.actual, encoding="utf-8").read().splitlines()
     problems = []
 
     if len(golden) != len(actual):

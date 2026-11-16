@@ -69,6 +69,15 @@ namespace skepu
 		size_t size;
 	};
 
+	template<typename T>
+	std::ostream &operator<<(std::ostream &os, const Vec<T> &v)
+	{
+		os << "Vec[" << v.size << "]: ";
+		for (size_t i = 0; i < v.size; ++i)
+			os << v.data[i] << " ";
+		return os;
+	}
+
 	template <typename T>
 	class VectorIterator;
 
@@ -129,7 +138,7 @@ namespace skepu
 		friend std::ostream& operator<< (std::ostream& output, Vector<T>& vec)
 		{
 			vec.flush();
-			output << vec.size() << ".... ";
+			output << "Vector[" << vec.size() << "]: ";
 			for (typename Vector<T>::size_type i = 0; i < vec.size(); ++i)
 			{
 				output<<vec(i) <<" ";

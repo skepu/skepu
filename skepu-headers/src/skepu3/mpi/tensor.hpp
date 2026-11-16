@@ -80,7 +80,7 @@ namespace skepu
 		friend std::ostream &operator<<(std::ostream &os, const Tensor3 &ten)
 		{
 			const T *data = ten.read_access();
-			os << "Tensor3: (" << ten.size_i() << " x " << ten.size_j() << " x " << ten.size_k() << ")\n";
+			os << "Tensor3[" << ten.size_i() << "×" << ten.size_j() << "×" << ten.size_k() << "]:\n";
 			for (size_t i = 0; i < ten.size(); ++i)
 				os << data[i] << ((i + 1) % ten.size_k() == 0 ? "\n" : " ");
 			return os;
@@ -170,7 +170,7 @@ namespace skepu
 		friend std::ostream &operator<<(std::ostream &os, const Tensor4 &ten)
 		{
 			const T *data = ten.read_access();
-			os << "Tensor4: (" << ten.size_i() << " x " << ten.size_j() << " x " << ten.size_k() << " x " << ten.size_l() << ")\n";
+			os << "Tensor4[" << ten.size_i() << "×" << ten.size_j() << "×" << ten.size_k() << "×" << ten.size_l() << "]:\n";
 			for (size_t i = 0; i < ten.size(); ++i)
 				os << data[i] << ((i + 1) % ten.size_l() == 0 ? "\n" : " ");
 			return os;

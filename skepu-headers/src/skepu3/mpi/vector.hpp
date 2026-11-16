@@ -90,7 +90,7 @@ namespace skepu
 		friend std::ostream &operator<<(std::ostream &output, const Vector &vec)
 		{
 			const T *data = vec.read_access();
-			output << vec.size() << ".... ";
+			output << "Vector[" << vec.size() << "]: ";
 			for (size_t i = 0; i < vec.size(); ++i)
 				output << data[i] << " ";
 			return output;
