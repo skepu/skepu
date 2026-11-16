@@ -807,33 +807,6 @@ html.no-splash .welcome-card { visibility: hidden; }
   min-height: 0;
 }
 
-#gantt-svg-container svg {
-  display: block;
-  font-family: monospace;
-  font-size: 11px;
-  cursor: inherit;
-}
-
-.tl-body { position: relative; display: flex; flex-direction: column; height: max(100%, var(--tl-h, 0px)); cursor: grab; -webkit-user-select: none; user-select: none; }
-.tl-over-lock .tl-body, .tl-over-lock .tl-axis svg { cursor: pointer; }
-.tl-panning, .tl-panning * { cursor: grabbing !important; }
-.tl-ranging, .tl-ranging * { cursor: col-resize !important; }
-.tl-range { position: absolute; top: 0; display: none; z-index: 2; pointer-events: none; box-sizing: border-box;
-  background: rgba(74, 144, 217, 0.18); border: 1px solid var(--highlight, #4a90d9); border-width: 0 1px; }
-.tl-labels { position: sticky; left: 0; z-index: 3; }
-.tl-rows { position: sticky; left: 0; pointer-events: none; }
-.tl-rows > div { position: absolute; left: 0; width: 100%; }
-.tl-sticky { position: sticky; left: 0; z-index: 2; overflow: hidden; pointer-events: none; }
-.tl-sticky > div { position: absolute; display: flex; align-items: center; box-sizing: border-box; overflow: hidden; white-space: nowrap; font: 11px monospace; }
-.tl-beyond { position: absolute; top: 0; pointer-events: none; }
-.tl-plot { position: absolute; top: 0; }
-.tl-axis { position: sticky; bottom: 0; margin-top: auto; z-index: 3; display: grid; grid-template-columns: minmax(0, 1fr); }
-.tl-axis > * { grid-area: 1 / 1; justify-self: start; }
-.tl-axis-bg { position: sticky; left: 0; box-sizing: border-box; pointer-events: none; }
-.tl-axis-svg { position: relative; z-index: 1; }
-.tl-corner { position: sticky; left: 0; z-index: 2; height: 100%; }
-.tl-toggle, .tl-click { cursor: pointer; }
-
 #gantt-zoom {
   flex: 0 0 30px;
   display: flex;
@@ -847,13 +820,6 @@ html.no-splash .welcome-card { visibility: hidden; }
   cursor: ns-resize;
   outline-offset: -2px;
 }
-.tl-zoom-track { position: relative; flex: 1 1 auto; width: 4px; border-radius: 2px; background: #ddd; }
-.tl-zoom-fill { position: absolute; left: 0; bottom: 0; width: 100%; border-radius: 2px; background: var(--highlight, #4a90d9); }
-.tl-zoom-thumb {
-  position: absolute; left: 50%; width: 14px; height: 6px; margin: 0 0 -3px -7px;
-  border-radius: 3px; background: #fff; border: 1px solid #888; box-sizing: border-box;
-}
-.tl-zoom-text { margin-bottom: 6px; font: 9px monospace; color: #666; }
 
 #timeline-no-events-msg {
   padding: 0.5em;
@@ -862,23 +828,8 @@ html.no-splash .welcome-card { visibility: hidden; }
   font-size: 0.8em;
 }
 
-.pointer-events-none {
-  pointer-events: none;
-}
-
 .display-none {
   display: none;
-}
-
-.gantt-bar {
-  cursor: pointer;
-}
-
-
-.gantt-bar.gantt-selected
-{
-  stroke: var(--highlight) !important;
-  stroke-width: 2.5 !important;
 }
 
 #cy:hover
@@ -915,34 +866,6 @@ html.no-splash .welcome-card { visibility: hidden; }
 }
 #cpp_tab_bar::-webkit-scrollbar { display: none; }  /* Chrome / Safari */
 
-.cpp-tab
-{
-  background: none;
-  border: none;
-  border-right: 1px solid #ccc;
-  padding: 0.5em 1em;
-  cursor: pointer;
-  font-family: monospace;
-  font-size: 0.8em;
-  white-space: nowrap;
-  color: #555;
-}
-
-.cpp-tab:hover
-{
-  background-color: #e4e4e4;
-}
-
-.cpp-tab.active
-{
-  background-color: white;
-  color: black;
-  font-weight: 600;
-  border-bottom: 2px solid white;
-  border-top: 2px solid #0055cc;
-  margin-bottom: -1px;
-}
-
 #cpp_tab_panes
 {
   flex: 1 1 auto;
@@ -951,47 +874,6 @@ html.no-splash .welcome-card { visibility: hidden; }
   overflow: hidden;
 }
 
-.cpp-tab-pane
-{
-  display: none;
-  position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0;
-  overflow-y: auto;
-}
-
-.cpp-tab-pane.active
-{
-  display: block;
-}
-
-/* ── Syntax-highlight loading state ────────────────────────────────────── */
-/* Panes start with hljs-loading in the HTML so raw code is never visible  */
-/* before highlight.js runs.  The class is removed by _highlightBlock().   */
-.cpp-tab-pane.hljs-loading pre {
-  visibility: hidden;
-}
-/* Centered spinner shown only when the loading pane is also active         */
-.cpp-tab-pane.hljs-loading.active::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 2em;
-  height: 2em;
-  margin: -1em 0 0 -1em;
-  border: 3px solid #ddd;
-  border-top-color: #888;
-  border-radius: 50%;
-  animation: hljs-spin 0.7s linear infinite;
-  pointer-events: none;
-}
-@keyframes hljs-spin {
-  to { transform: rotate(360deg); }
-}
-html.dark-mode .cpp-tab-pane.hljs-loading.active::after {
-  border-color: #3a3848;
-  border-top-color: #9890b0;
-}
 #info_window
 {
   flex: 0 0 0em;
@@ -1338,140 +1220,6 @@ html.dark-mode .heatmap-nav-axis-label         { color: #7868a0; }
 }
 
 
-
-
-
-
-
-pre code.hljs
-{
-  padding: 0 !important;
-  font-size: 0.8em;
-}
-
-.hljs-ln-numbers
-{
-  text-align: right;
-  color: #bbb;
-  border-right: 1px solid #ddd;
-  vertical-align: top;
-  padding-right: 2em !important;
-  padding-left: 0.6em !important;
-  margin-right: 1em;
-}
-
-/* for block of code */
-.hljs-ln-code
-{
-  padding-left: .5em !important;
-}
-
-.hljs-ln tr:hover
-{
-  background-color: #ddd;
-}
-
-/* Dark code theme — conditioned on hljs-theme-dark class, not on dark mode toggle */
-body.hljs-theme-dark .hljs-ln-numbers
-{
-  color: #555;
-  border-right-color: #3a3848;
-}
-
-body.hljs-theme-dark .hljs-ln tr:hover
-{
-  background-color: rgba(255,255,255,0.07);
-}
-
-
-/* Badges of the previous graph: kept until the new ones replace them at once, dimmed if that takes a while */
-#cpp_tab_panes.badges-stale .badge
-{
-  opacity: 0.45;
-  pointer-events: none;
-  transition: opacity 0.15s ease 0.4s;
-}
-
-/* A badge must not change the height of its source line: its box is smaller than the line, centred on it, with margins that take no height
-   from the line box, and it is drawn larger with a transform, which does not take part in the layout. */
-.badge
-{
-  --badge-scale: 1.2;
-  background-color: var(--highlight);
-  color: white;   /* overridden in dark mode below — orange bg suits black text */
-  font-size: 0.9em;
-  border-radius: 100%;
-  cursor: pointer;
-  display: inline-block;
-  height: 1.25em;
-  width: 1.25em;
-  line-height: 1.25em;
-  position: relative;
-  top: -0.07em;
-  right: -1.62em;
-  margin-left: -1.25em;
-  margin-top: -0.3em;
-  margin-bottom: -0.3em;
-  vertical-align: middle;
-  text-align: center;
-  transform: scale(var(--badge-scale));
-  transition: 0.3s transform;
-}
-
-.badge:hover
-{
-  transform: scale(calc(var(--badge-scale) * 1.2));
-}
-
-/* Graph-hover highlight — applied by SourceCodeView when the pointer enters the
-   corresponding Cytoscape node or edge. */
-.badge.badge-node-hover
-{
-  transform: scale(calc(var(--badge-scale) * 1.3));
-  box-shadow: 0 0 0 3px var(--highlight), 0 0 8px 2px rgba(0,0,0,0.25);
-  z-index: 10;
-}
-
-/* SVG arrow path highlighted when the corresponding Cytoscape edge is hovered. */
-path.badge-arrow-hover
-{
-  stroke-width: 3;
-  stroke: var(--highlight);
-  opacity: 1 !important;
-}
-
-/* Tab title highlighted when the hovered graph node has a badge in an inactive tab. */
-.cpp-tab.badge-tab-hover
-{
-  color: var(--highlight);
-  border-top-color: var(--highlight);
-  font-weight: 600;
-}
-
-.line-selected
-{
-  background-color: var(--source-hl, var(--highlight-alpha)) !important;
-}
-
-/* Where the instance and the user functions of the selected call are defined: the colour of the selection, with less opacity than
-   the line that is selected (the call, or the definition that was asked for); the shading fades in and out */
-.hljs-ln-line
-{
-  transition: background-color 0.4s ease-out;
-}
-
-.def-function, .def-pin-function, .def-instance, .def-pin-instance, .def-call
-{
-  background-color: var(--source-hl-soft, var(--highlight-alpha-soft));
-}
-
-.hljs-ln-n.def-site
-{
-  cursor: pointer;
-  text-decoration: underline dotted;
-}
-
-
 #split-gutter
 {
   flex: 0 0 7px;
@@ -1535,27 +1283,11 @@ html.dark-mode #gantt-svg-container {
 html.dark-mode #gantt-resizer { background: #3a3848; }
 html.dark-mode #gantt-resizer:hover { background: #4a4860; }
 html.dark-mode #gantt-zoom { border-right-color: #3a3848; }
-html.dark-mode .tl-zoom-track { background: #3a3848; }
-html.dark-mode .tl-zoom-thumb { background: #cfcbe0; border-color: #6a6480; }
-html.dark-mode .tl-zoom-text { color: #a09ab8; }
 
 /* Source / right pane */
 html.dark-mode #right_pane {
   background: #1e1c26;
   border-color: #3a3848;
-}
-html.dark-mode .cpp-tab {
-  background: #2a2838;
-  color: #c0bcd0;
-  border-color: #3a3848;
-}
-html.dark-mode .cpp-tab.active {
-  background: #1e1c26;
-  color: #e8e4f0;
-  border-top-color: #e8720c;
-}
-html.dark-mode .cpp-tab-pane {
-  background: #1e1c26;
 }
 
 /* Info pane */
@@ -1690,9 +1422,6 @@ html.dark-mode .submenu.menu-hot > .submenu-title {
 html.dark-mode #cpp_tab_bar {
   background-color: #22202a;
   border-bottom-color: #3a3848;
-}
-html.dark-mode .cpp-tab:hover {
-  background-color: #3a3848;
 }
 
 /* ── Cytoscape hover tooltip ─────────────────────────────────────────────── */
@@ -1968,13 +1697,6 @@ html.dark-mode .welcome-language-seg.selected { background: #1a6abf; color: #fff
 body.welcome-mode #right_pane,
 body.welcome-mode #split-gutter { display: none !important; }
 
-/* The menu of the trace pane for the trace file of a process (MPI programs) */
-.cpp-trace-rank {
-  font-size: 11px;
-  margin: 2px 0 2px 4px;
-  padding: 0 2px;
-  align-self: center;
-}
 
 /* The editor (VS Code) shows the source in its own editors: the webview has no source pane, and what is for the browser is left out. */
 [data-mpi][hidden] { display: none !important; }

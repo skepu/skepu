@@ -1,0 +1,44 @@
+/* The timeline chart that TimelineView draws into its container (class tl-container). Used by the viewer and by the embedded panels of the user guide. */
+
+.tl-container svg {
+  display: block;
+  font-family: monospace;
+  font-size: 11px;
+  cursor: inherit;
+}
+
+.tl-body { position: relative; display: flex; flex-direction: column; height: max(100%, var(--tl-h, 0px)); cursor: grab; -webkit-user-select: none; user-select: none; }
+.tl-over-lock .tl-body, .tl-over-lock .tl-axis svg { cursor: pointer; }
+.tl-panning, .tl-panning * { cursor: grabbing !important; }
+.tl-ranging, .tl-ranging * { cursor: col-resize !important; }
+.tl-range { position: absolute; top: 0; display: none; z-index: 2; pointer-events: none; box-sizing: border-box;
+  background: rgba(74, 144, 217, 0.18); border: 1px solid var(--highlight, #4a90d9); border-width: 0 1px; }
+.tl-labels { position: sticky; left: 0; z-index: 3; }
+.tl-rows { position: sticky; left: 0; pointer-events: none; }
+.tl-rows > div { position: absolute; left: 0; width: 100%; }
+.tl-sticky { position: sticky; left: 0; z-index: 2; overflow: hidden; pointer-events: none; }
+.tl-sticky > div { position: absolute; display: flex; align-items: center; box-sizing: border-box; overflow: hidden; white-space: nowrap; font: 11px monospace; }
+.tl-beyond { position: absolute; top: 0; pointer-events: none; }
+.tl-plot { position: absolute; top: 0; }
+.tl-axis { position: sticky; bottom: 0; margin-top: auto; z-index: 3; display: grid; grid-template-columns: minmax(0, 1fr); }
+.tl-axis > * { grid-area: 1 / 1; justify-self: start; }
+.tl-axis-bg { position: sticky; left: 0; box-sizing: border-box; pointer-events: none; }
+.tl-axis-svg { position: relative; z-index: 1; }
+.tl-corner { position: sticky; left: 0; z-index: 2; height: 100%; }
+.tl-toggle, .tl-click { cursor: pointer; }
+
+.gantt-bar { cursor: pointer; }
+.gantt-bar.gantt-selected { stroke: var(--highlight, #0055cc) !important; stroke-width: 2.5 !important; }
+
+.pointer-events-none { pointer-events: none; }
+
+.tl-zoom-track { position: relative; flex: 1 1 auto; width: 4px; border-radius: 2px; background: #ddd; }
+.tl-zoom-fill { position: absolute; left: 0; bottom: 0; width: 100%; border-radius: 2px; background: var(--highlight, #4a90d9); }
+.tl-zoom-thumb {
+  position: absolute; left: 50%; width: 14px; height: 6px; margin: 0 0 -3px -7px;
+  border-radius: 3px; background: #fff; border: 1px solid #888; box-sizing: border-box;
+}
+.tl-zoom-text { margin-bottom: 6px; font: 9px monospace; color: #666; }
+html.dark-mode .tl-zoom-track { background: #3a3848; }
+html.dark-mode .tl-zoom-thumb { background: #cfcbe0; border-color: #6a6480; }
+html.dark-mode .tl-zoom-text { color: #a09ab8; }

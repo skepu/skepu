@@ -1,0 +1,227 @@
+/* The source listing that SourceCodeView draws: line numbers, badges, selection, tabs. Used by the viewer and by the embedded panels of the user guide. */
+
+pre code.hljs
+{
+  padding: 0 !important;
+  font-size: 0.8em;
+}
+
+.hljs-ln-numbers
+{
+  text-align: right;
+  color: #bbb;
+  border-right: 1px solid #ddd;
+  vertical-align: top;
+  padding-right: 2em !important;
+  padding-left: 0.6em !important;
+  margin-right: 1em;
+}
+
+/* for block of code */
+.hljs-ln-code
+{
+  padding-left: .5em !important;
+}
+
+.hljs-ln tr:hover
+{
+  background-color: #ddd;
+}
+
+/* Dark code theme — conditioned on hljs-theme-dark class, not on dark mode toggle */
+body.hljs-theme-dark .hljs-ln-numbers
+{
+  color: #555;
+  border-right-color: #3a3848;
+}
+
+body.hljs-theme-dark .hljs-ln tr:hover
+{
+  background-color: rgba(255,255,255,0.07);
+}
+
+
+/* Badges of the previous graph: kept until the new ones replace them at once, dimmed if that takes a while */
+.badges-stale .badge
+{
+  opacity: 0.45;
+  pointer-events: none;
+  transition: opacity 0.15s ease 0.4s;
+}
+
+/* A badge must not change the height of its source line: its box is smaller than the line, centred on it, with margins that take no height
+   from the line box, and it is drawn larger with a transform, which does not take part in the layout. */
+.badge
+{
+  --badge-scale: 1.2;
+  background-color: var(--highlight);
+  color: white;   /* overridden in dark mode below — orange bg suits black text */
+  font-size: 0.9em;
+  border-radius: 100%;
+  cursor: pointer;
+  display: inline-block;
+  height: 1.25em;
+  width: 1.25em;
+  line-height: 1.25em;
+  position: relative;
+  top: -0.07em;
+  right: -1.62em;
+  margin-left: -1.25em;
+  margin-top: -0.3em;
+  margin-bottom: -0.3em;
+  vertical-align: middle;
+  text-align: center;
+  transform: scale(var(--badge-scale));
+  transition: 0.3s transform;
+}
+
+.badge:hover
+{
+  transform: scale(calc(var(--badge-scale) * 1.2));
+}
+
+/* Graph-hover highlight — applied by SourceCodeView when the pointer enters the
+   corresponding Cytoscape node or edge. */
+.badge.badge-node-hover
+{
+  transform: scale(calc(var(--badge-scale) * 1.3));
+  box-shadow: 0 0 0 3px var(--highlight), 0 0 8px 2px rgba(0,0,0,0.25);
+  z-index: 10;
+}
+
+/* SVG arrow path highlighted when the corresponding Cytoscape edge is hovered. */
+path.badge-arrow-hover
+{
+  stroke-width: 3;
+  stroke: var(--highlight);
+  opacity: 1 !important;
+}
+
+.line-selected
+{
+  background-color: var(--source-hl, var(--highlight-alpha)) !important;
+}
+
+/* Where the instance and the user functions of the selected call are defined: the colour of the selection, with less opacity than
+   the line that is selected (the call, or the definition that was asked for); the shading fades in and out */
+.hljs-ln-line
+{
+  transition: background-color 0.4s ease-out;
+}
+
+.def-function, .def-pin-function, .def-instance, .def-pin-instance, .def-call
+{
+  background-color: var(--source-hl-soft, var(--highlight-alpha-soft));
+}
+
+.hljs-ln-n.def-site
+{
+  cursor: pointer;
+  text-decoration: underline dotted;
+}
+
+/* Tabs and panes of the source listing */
+
+.cpp-tab
+{
+  background: none;
+  border: none;
+  border-right: 1px solid #ccc;
+  padding: 0.5em 1em;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.8em;
+  white-space: nowrap;
+  color: #555;
+}
+
+.cpp-tab:hover
+{
+  background-color: #e4e4e4;
+}
+
+.cpp-tab.active
+{
+  background-color: white;
+  color: black;
+  font-weight: 600;
+  border-bottom: 2px solid white;
+  border-top: 2px solid #0055cc;
+  margin-bottom: -1px;
+}
+
+.cpp-tab-pane
+{
+  display: none;
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  overflow-y: auto;
+}
+
+.cpp-tab-pane.active
+{
+  display: block;
+}
+
+/* ── Syntax-highlight loading state ────────────────────────────────────── */
+/* Panes start with hljs-loading in the HTML so raw code is never visible  */
+/* before highlight.js runs.  The class is removed by _highlightBlock().   */
+.cpp-tab-pane.hljs-loading pre {
+  visibility: hidden;
+}
+/* Centered spinner shown only when the loading pane is also active         */
+.cpp-tab-pane.hljs-loading.active::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2em;
+  height: 2em;
+  margin: -1em 0 0 -1em;
+  border: 3px solid #ddd;
+  border-top-color: #888;
+  border-radius: 50%;
+  animation: hljs-spin 0.7s linear infinite;
+  pointer-events: none;
+}
+@keyframes hljs-spin {
+  to { transform: rotate(360deg); }
+}
+html.dark-mode .cpp-tab-pane.hljs-loading.active::after {
+  border-color: #3a3848;
+  border-top-color: #9890b0;
+}
+
+html.dark-mode .cpp-tab {
+  background: #2a2838;
+  color: #c0bcd0;
+  border-color: #3a3848;
+}
+html.dark-mode .cpp-tab:hover {
+  background-color: #3a3848;
+}
+
+html.dark-mode .cpp-tab.active {
+  background: #1e1c26;
+  color: #e8e4f0;
+  border-top-color: #e8720c;
+}
+html.dark-mode .cpp-tab-pane {
+  background: #1e1c26;
+}
+
+/* The menu of the trace pane for the trace file of a process (MPI programs) */
+.cpp-trace-rank {
+  font-size: 11px;
+  margin: 2px 0 2px 4px;
+  padding: 0 2px;
+  align-self: center;
+}
+
+/* Tab title highlighted when the hovered graph node has a badge in an inactive tab. */
+.cpp-tab.badge-tab-hover
+{
+  color: var(--highlight);
+  border-top-color: var(--highlight);
+  font-weight: 600;
+}
