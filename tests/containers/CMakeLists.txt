@@ -7,6 +7,13 @@ skepu_add_test(containers BACKENDS sequential cpu)
 
 
 # ------------------------------------------------
+#   The stream output of the containers and the proxies
+# ------------------------------------------------
+
+skepu_add_test(print_format BACKENDS sequential)
+
+
+# ------------------------------------------------
 #   Swapping
 # ------------------------------------------------
 
