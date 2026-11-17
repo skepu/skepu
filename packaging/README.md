@@ -11,11 +11,10 @@ and used in place; nothing is installed. The options are listed by `make-package
 | `bin/clangd` | The language server, if SkePU was configured with `-DSKEPU_LSP=ON`. |
 | `include/`, `lib/` | The SkePU headers, the Clang headers that `skepu-tool` uses, and the CMake export files. |
 | `skepu.mk` | The build rules (`make/skepu.mk`): OpenMP, CUDA and OpenCL by default. |
-| `local.mk` | The template for the settings of one computer (`make/local.mk.template`). |
+| `local.mk` | The settings of the computer that made the package (`make/local.mk`: compiler, backends); the template (`make/local.mk.template`) if there is none. |
 | `template/` | A small program with a Makefile to start from (without an overlay; with one, the overlay's programs take its place). |
 | `extras/` | `lodepng`, and the SkeVU extension if it was requested. |
 | `licenses/`, `VERSION.txt` | The licences; the SkePU version, the date and computer of the build, and the overlay. |
-| `README.md`, `LSP.md` | The text for the package user (`files/`). |
 
 A Linux package is for Linux computers like the one it was made on: the programs that it needs, such as libstdc++, are the computer's.
 
@@ -27,13 +26,13 @@ SkePU has to be built first (`cmake --build build`; the LLVM build is long). The
 packaging/make-package.sh --name NAME --output DIR [--overlay DIR] [--vsix auto]
 ```
 
-It builds what is out of date (`--no-build` skips that), installs SkePU into a temporary directory, adds the other files and writes `DIR/NAME.tar.gz` with its
+It does not build; it warns if the build is out of date (build first with `cmake --build build --parallel N`). It installs SkePU into a temporary directory, adds the other files and writes `DIR/NAME.tar.gz` with its
 SHA-256. Through CMake: `cmake --build build --target skepu-package`, with `-DSKEPU_PACKAGE_OVERLAY=DIR` and `-DSKEPU_PACKAGE_VSIX=AUTO` (or a file) for the options below.
 
 ## Overlay
 
 The files of a course (programs, Makefiles, data, README) are a directory, the overlay, added on top of the package with `--overlay DIR`. A file with the name of a
-package file replaces it (a `README.md` of the overlay replaces `files/README.md`). `.git` and the patterns that the overlay lists in `.packageignore`, one per
+package file replaces it. `.git` and the patterns that the overlay lists in `.packageignore`, one per
 line, are not added. The Makefiles of the overlay include `skepu.mk` of the package root.
 
 ## SkeVU extension

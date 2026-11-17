@@ -201,6 +201,12 @@ html.dark-mode .menu-field input { border-color: #4a4660; }
   margin: 0.2em 0;
 }
 
+/* The "…" menu that takes the titles that do not fit (script/menu.js): its dropdown, and the submenus in it, open to the left when it is on the right half */
+#menubar > .menu { flex: 0 0 auto; }
+.menu[hidden] { display: none; }
+.menu-overflow.flip > .dropdown { left: auto; right: 0; }
+.menu-overflow.flip .submenu > .dropdown { left: auto; right: 100%; }
+
 /* Submenus */
 .submenu
 {

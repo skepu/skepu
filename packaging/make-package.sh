@@ -1,20 +1,19 @@
 #!/bin/bash
 # Makes a SkePU package: skepu-tool, the headers, the language server and skepu.mk (make/skepu.mk: the build rules) in one tar file, unpacked and used in place.
 # The same for any course, lab or tutorial: what is particular to one is a directory, the overlay, added on top. Run it on a computer like the lab's, from a
-# built SkePU (cmake --build build); it first builds what is out of date. A Linux package is for Linux computers like this one: the programs it needs, such as
+# built SkePU (cmake --build build); it does not build, and warns if the build is out of date. A Linux package is for Linux computers like this one: the programs it needs, such as
 # libstdc++, are the computer's.
 #
-#   packaging/make-package.sh [--build-dir DIR] [--overlay DIR] [--vsix [FILE|auto]] [--name NAME] [--output DIR] [--no-build] [--no-test]
+#   packaging/make-package.sh [--build-dir DIR] [--overlay DIR] [--vsix [FILE|auto]] [--name NAME] [--output DIR] [--no-test]
 #
 #   --build-dir DIR   the build directory of SkePU (default: build)
-#   --overlay DIR     the course's programs, Makefiles, data and documentation, added on top of the package; a file of the same name replaces the package's (README.md,
-#                     for example). Its Makefiles include skepu.mk of the package root. Not added: .git, and the patterns listed one per line in the overlay's
+#   --overlay DIR     the course's programs, Makefiles, data and documentation, added on top of the package; a file of the same name replaces the package's.
+#                     Its Makefiles include skepu.mk of the package root. Not added: .git, and the patterns listed one per line in the overlay's
 #                     .packageignore (PACKAGING.md, .gitignore).
 #   --vsix [FILE|auto] the SkeVU extension for VS Code, put in extras/ of the package as skepu-visualizer.vsix. auto: visualizer/skepu-visualizer.vsix, made by make vsix
 #                     in visualizer/ (which needs npm install, and builds it only if a source is newer); it is not built unless asked for
 #   --name NAME       package name, also the directory inside it (default: skepu-lab-<version>)
 #   --output DIR      where the tar file is written (default: the current directory)
-#   --no-build        skip the build (cmake --build)
 #   --no-test         skip unpacking the package and building with it
 #
 # Without an overlay the package has template/, a small program to start from, and the test builds and runs it. With an overlay it has the overlay's
@@ -30,7 +29,6 @@ OVERLAY=
 VSIX=
 NAME=
 OUTPUT=$PWD
-BUILD=1
 TEST=1
 while [ $# -gt 0 ]; do
 	case $1 in
@@ -46,7 +44,6 @@ while [ $# -gt 0 ]; do
 			fi ;;
 		--name)      NAME=$2; shift 2 ;;
 		--output)    mkdir -p "$2"; OUTPUT=$(cd "$2" && pwd); shift 2 ;;
-		--no-build)  BUILD=0; shift ;;
 		--no-test)   TEST=0; shift ;;
 		-h|--help)   sed -n '2,/^# Environment/p' "$0"; exit 0 ;;
 		*) echo "unknown option: $1 (see --help)" >&2; exit 2 ;;
@@ -57,9 +54,15 @@ VERSION=$(git -C "$ROOT" describe --always --dirty 2>/dev/null || echo unknown)
 NAME=${NAME:-skepu-$VERSION}
 [ -d "$BUILD_DIR" ] || { echo "no build directory: $BUILD_DIR (configure and build SkePU first)" >&2; exit 1; }
 
-if [ $BUILD = 1 ]; then
-	echo "== building what is out of date"
-	cmake --build "$BUILD_DIR"
+# Not built here: build first, in parallel (cmake --build DIR --parallel N)
+TOOL=$BUILD_DIR/llvm/bin/skepu-tool
+if [ ! -x "$TOOL" ]; then
+	echo "no skepu-tool in $BUILD_DIR/llvm/bin: build SkePU first" >&2; exit 1
+fi
+NEWER=$(find "$ROOT/src" "$ROOT/CMakeLists.txt" "$ROOT/CMake" -type f -newer "$TOOL" 2>/dev/null | head -3)
+if [ -n "$NEWER" ]; then
+	echo "warning: the build is out of date (newer than skepu-tool):" >&2
+	echo "$NEWER" | sed 's/^/  /' >&2
 fi
 
 STAGE=$(mktemp -d "${TMPDIR:-/tmp}/skepu-package.XXXXXX")
@@ -84,20 +87,23 @@ if [ -x "$BUILD_DIR/llvm/bin/clangd" ]; then
 	strip "$PKG/bin/clangd" 2>/dev/null || true
 else
 	echo "warning: no language server in $BUILD_DIR/llvm/bin (configure with -DSKEPU_LSP=ON): the package has none" >&2
-	rm -f "$STAGE/lsp-missing"; touch "$STAGE/lsp-missing"
 fi
 
-echo "== adding skepu.mk, the documentation and the template"
+echo "== adding skepu.mk and the template"
 cp -R "$ROOT/packaging/files/." "$PKG/"
 if [ -n "$OVERLAY" ]; then rm -rf "$PKG/template"; fi
 cp "$ROOT/make/skepu.mk" "$PKG/skepu.mk"
-cp "$ROOT/make/local.mk.template" "$PKG/local.mk"
+if [ -f "$ROOT/make/local.mk" ]; then
+	cp "$ROOT/make/local.mk" "$PKG/local.mk"
+else
+	echo "warning: no make/local.mk: the package has the template, with defaults only" >&2
+	cp "$ROOT/make/local.mk.template" "$PKG/local.mk"
+fi
 mkdir -p "$PKG/extras" "$PKG/licenses"
 cp "$ROOT/examples/lodepng.cpp" "$ROOT/examples/lodepng.h" "$PKG/extras/"
 [ -n "$VSIX" ] && cp "$VSIX" "$PKG/extras/skepu-visualizer.vsix"
 cp "$ROOT/LICENSE.txt" "$ROOT/CONTRIBUTORS.txt" "$PKG/licenses/"
 [ -f "$ROOT/llvm/clang/LICENSE.TXT" ] && cp "$ROOT/llvm/clang/LICENSE.TXT" "$PKG/licenses/LLVM-LICENSE.TXT"
-[ -f "$STAGE/lsp-missing" ] && rm -f "$PKG/LSP.md"
 printf 'SkePU %s, packaged %s on %s (%s)\n' "$VERSION" "$(date +%Y-%m-%d)" "$(uname -n)" "$(uname -sm)" > "$PKG/VERSION.txt"
 
 if [ -n "$OVERLAY" ]; then

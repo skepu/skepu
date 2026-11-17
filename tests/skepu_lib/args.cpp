@@ -247,13 +247,15 @@ TEST_CASE("args: a name that is declared again with another type, kind or defaul
 
 TEST_CASE("args: a name that is declared again is in the usage once")
 {
-	auto [status, message] = exit_of({"--help"}, [](skepu::args::Parser &args)
+	auto result = exit_of({"--help"}, [](skepu::args::Parser &args)
 	{
 		args.get<size_t>("height");
 		args.get<size_t>("height");
 		args.named<int>("frames", 0);
 		args.named<int>("frames", 0);
 	});
+	const auto &status = result.first;
+	const auto &message = result.second;
 	CHECK(status == 0);
 	auto count = [&](const std::string &text) { size_t n = 0; for (auto at = message.find(text); at != std::string::npos; at = message.find(text, at + 1)) ++n; return n; };
 	CHECK(count("<height>") == 1);

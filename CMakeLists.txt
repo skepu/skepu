@@ -218,7 +218,7 @@ install(DIRECTORY ${SKEPU_CLANG_RESOURCE_HEADERS}/
 # SKEPU_PACKAGE_OVERLAY is a directory of the course's own files, added to it.
 set(SKEPU_PACKAGE_OVERLAY "" CACHE PATH "What is added to the package that the target skepu-package makes: the programs, Makefiles and data of a course")
 set(SKEPU_PACKAGE_VSIX "" CACHE STRING "The SkeVU extension put in extras/ of the package that the target skepu-package makes: a .vsix file, or AUTO to build it (make vsix in visualizer/) when it is out of date")
-set(_package_args --no-build --build-dir ${CMAKE_BINARY_DIR} --output ${CMAKE_BINARY_DIR})
+set(_package_args --build-dir ${CMAKE_BINARY_DIR} --output ${CMAKE_BINARY_DIR})
 if(SKEPU_PACKAGE_VSIX STREQUAL "AUTO")
 	list(APPEND _package_args --vsix auto)
 elseif(SKEPU_PACKAGE_VSIX)
