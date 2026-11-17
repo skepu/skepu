@@ -38,8 +38,8 @@ line, are not added. The Makefiles of the overlay include `skepu.mk` of the pack
 ## SkeVU extension
 
 `--vsix auto` puts `visualizer/skepu-visualizer.vsix` in `extras/`, made first by `make vsix` in `visualizer/` if a source is newer. That needs `npm install` in
-`visualizer/`, and Quarto for the user guide that the extension contains (without Quarto the extension has no guide, with a warning). `--vsix FILE` takes a file that is
-built already. In the package the file is always `extras/skepu-visualizer.vsix`.
+`visualizer/`, a Node that `@vscode/vsce` runs on (its `engines`; `make vsix` says so if the Node is older), and Quarto for the user guide that the extension contains (without Quarto the extension has no guide, with a warning). `--vsix FILE` takes a file that is
+built already: the extension is plain JavaScript, so it can be built on any computer with Node and used for packages made elsewhere. In the package the file is always `extras/skepu-visualizer.vsix`.
 
 ## Test
 
